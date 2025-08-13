@@ -16,6 +16,6 @@ public class RuoYiApplication
     {
         // System.setProperty("spring.devtools.restart.enabled", "false");
         SpringApplication.run(RuoYiApplication.class, args);
-        System.out.println("(♥◠‿◠)ﾉﾞ  框架平台启动成功   ლ(´ڡ`ლ)ﾞ  \n" );
+        System.out.println("(♥◠‿◠)ﾉﾞ  吉安东管理中心重点车辆监测平台启动成功   ლ(´ڡ`ლ)ﾞ  \n" );
     }
 }
