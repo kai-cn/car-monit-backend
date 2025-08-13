@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.manager.mapper.BussTestMapper">
+
+    <resultMap type="com.ruoyi.manager.domain.BussTest" id="BussTestResult">
+        <result property="id"    column="id"    />
+        <result property="billName"    column="bill_name"    />
+        <result property="billType"    column="bill_type"    />
+        <result property="amount"    column="amount"    />
+        <result property="deptId"    column="dept_id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="applyTime"    column="apply_time"    />
+        <result property="applyTime2"    column="apply_time2"    />
+        <result property="fileIds"    column="file_ids"    />
+        <result property="flowKey"    column="flow_key"    />
+        <result property="flowRuid"    column="flow_ruid"    />
+        <result property="flowApplyOid"    column="flow_apply_oid"    />
+        <result property="flowStatus"    column="flow_status"    />
+        <result property="shTime"    column="sh_time"    />
+        <result property="backCol1"    column="back_col1"    />
+        <result property="backCol2"    column="back_col2"    />
+        <result property="remark"    column="remark"    />
+        <result property="status"    column="status"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="tenantId"    column="tenant_id"    />
+
+    </resultMap>
+
+    <sql id="selectBussTestVo">
+        t.id,
+        t.bill_name,
+        t.bill_type,
+        t.amount,
+        t.dept_id,
+        t.user_id,
+        t.apply_time,
+        t.apply_time2,
+        t.file_ids,
+        t.flow_key,
+        t.flow_ruid,
+        t.flow_apply_oid,
+        t.flow_status,
+        t.sh_time,
+        t.back_col1,
+        t.back_col2,
+        t.remark,
+        t.status,
+        t.sort,
+        t.eps_id,
+        t.del_flag,
+        t.create_by,
+        t.create_time,
+        t.update_by,
+        t.update_time,
+        t.tenant_id
+    </sql>
+
+
+    <select id="selectBussTestList" parameterType="com.ruoyi.manager.domain.BussTest" resultMap="BussTestResult">
+        SELECT
+        <include refid="selectBussTestVo"/>
+        FROM buss_test t
+        WHERE t.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="billName != null  and billName != ''"> and t.bill_name like concat('%', #{billName}, '%')</if>
+        <if test="billType != null  and billType != ''"> and t.bill_type = #{billType}</if>
+        <if test="amount != null "> and t.amount = #{amount}</if>
+        <if test="deptId != null "> and t.dept_id = #{deptId}</if>
+        <if test="userId != null "> and t.user_id = #{userId}</if>
+        <if test="applyTime != null "> and t.apply_time = #{applyTime}</if>
+        <if test="applyTime2 != null "> and t.apply_time2 = #{applyTime2}</if>
+        <if test="fileIds != null  and fileIds != ''"> and t.file_ids = #{fileIds}</if>
+        <if test="flowKey != null  and flowKey != ''"> and t.flow_key = #{flowKey}</if>
+        <if test="flowRuid != null  and flowRuid != ''"> and t.flow_ruid = #{flowRuid}</if>
+        <if test="flowApplyOid != null  and flowApplyOid != ''"> and t.flow_apply_oid = #{flowApplyOid}</if>
+        <if test="flowStatus != null  and flowStatus != ''"> and t.flow_status = #{flowStatus}</if>
+        <if test="shTime != null "> and t.sh_time = #{shTime}</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectBussTestById" parameterType="String" resultMap="BussTestResult">
+         select
+         <include refid="selectBussTestVo"/>
+         from buss_test t
+         where t.id = #{id}
+    </select>
+
+
+    <update id="deleteBussTestById" parameterType="String">
+        update buss_test set del_flag = '1' where id = #{id}
+    </update>
+
+    <update id="deleteBussTestByIds" parameterType="String">
+        update buss_test set del_flag = '1' where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.SysIndexMenuMapper">
+    
+    <resultMap type="SysIndexMenu" id="SysIndexMenuResult">
+        <result property="id"    column="ID"    />
+        <result property="userId"    column="USER_ID"    />
+        <result property="menuId"    column="MENU_ID"    />
+        <result property="sort"    column="SORT"    />
+        <result property="epsId"    column="EPS_ID"    />
+        <result property="delFlag"    column="DEL_FLAG"    />
+        <result property="createBy"    column="CREATE_BY"    />
+        <result property="createTime"    column="CREATE_TIME"    />
+        <result property="updateBy"    column="UPDATE_BY"    />
+        <result property="updateTime"    column="UPDATE_TIME"    />
+        <result property="tenantId"    column="TENANT_ID"    />
+        <result property="menuName"    column="menu_name"    />
+    </resultMap>
+
+    <sql id="selectSysIndexMenuVo">
+         t.ID, t.USER_ID, t.MENU_ID, t.SORT, t.EPS_ID, t.DEL_FLAG, t.CREATE_BY, t.CREATE_TIME, t.UPDATE_BY, t.UPDATE_TIME, t.TENANT_ID    </sql>
+
+    <select id="selectSysIndexMenuList" parameterType="SysIndexMenu" resultMap="SysIndexMenuResult">
+        select t2.menu_name as menuName2,t1.menu_id,t1.menu_name
+		from sys_menu t1, sys_menu t2
+		where t1.menu_type='C' and t1.visible = '0'
+		and t2.menu_id = t1.parent_id
+        <if test="userId != 1 ">
+            and exists (
+            select 1 from sys_role_menu rm,sys_user_role ur
+            where rm.role_id = ur.role_id and rm.menu_id = t1.menu_id and ur.user_id = #{userId}
+            )
+        </if>
+		and not exists (
+  		  select 1 from sys_index_menu tim where  tim.del_flag = '0'
+  		   and tim.menu_id = t1.menu_id and tim.user_id = #{userId}
+		)
+		and not exists (
+		   select 1 from sys_menu t3 where t3.menu_type = 'C' and t3.parent_id = t1.menu_id
+		)
+        <if test="menuName != null and menuName != ''">
+            and t1.menu_name like concat('%',#{menuName},'%')
+        </if>
+        <if test="menuName2 != null and menuName2 != ''">
+            and t2.menu_name like concat('%',#{menuName2},'%')
+        </if>
+		order by  t2.parent_id,t2.order_num,t1.order_num,t1.menu_id
+    </select>
+
+    <!-- 查询我常用的菜单-->
+    <select id="getList"  parameterType="SysIndexMenu"  resultMap="SysIndexMenuResult">
+		select t.id,t1.menu_name,concat(t2.path,'/',t1.path) as menuUrl
+		from SYS_INDEX_MENU t
+		left join sys_menu t1 on t.MENU_ID = t1.menu_id
+		left join sys_menu t2 on t1.parent_id = t2.menu_id
+		where t.del_flag='0'
+		and t.USER_ID = #{userId}
+		order by t.CREATE_TIME desc
+		limit 9
+	</select>
+
+    <select id="selectSysIndexMenuById" parameterType="Long" resultMap="SysIndexMenuResult">
+        select
+        <include refid="selectSysIndexMenuVo"/>
+        from sys_index_menu t
+        where t.ID = #{id}
+    </select>
+        
+    <insert id="insertSysIndexMenu" parameterType="SysIndexMenu">
+        insert into sys_index_menu
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">ID,</if>
+            <if test="userId != null">USER_ID,</if>
+            <if test="menuId != null">MENU_ID,</if>
+            <if test="sort != null">SORT,</if>
+            <if test="epsId != null">EPS_ID,</if>
+            <if test="delFlag != null">DEL_FLAG,</if>
+            <if test="createBy != null">CREATE_BY,</if>
+            <if test="createTime != null">CREATE_TIME,</if>
+            <if test="updateBy != null">UPDATE_BY,</if>
+            <if test="updateTime != null">UPDATE_TIME,</if>
+            <if test="tenantId != null">TENANT_ID,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="menuId != null">#{menuId},</if>
+            <if test="sort != null">#{sort},</if>
+            <if test="epsId != null">#{epsId},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="tenantId != null">#{tenantId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateSysIndexMenu" parameterType="SysIndexMenu">
+        update sys_index_menu
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">USER_ID = #{userId},</if>
+            <if test="menuId != null">MENU_ID = #{menuId},</if>
+            <if test="sort != null">SORT = #{sort},</if>
+            <if test="epsId != null">EPS_ID = #{epsId},</if>
+            <if test="delFlag != null">DEL_FLAG = #{delFlag},</if>
+            <if test="createBy != null">CREATE_BY = #{createBy},</if>
+            <if test="createTime != null">CREATE_TIME = #{createTime},</if>
+            <if test="updateBy != null">UPDATE_BY = #{updateBy},</if>
+            <if test="updateTime != null">UPDATE_TIME = #{updateTime},</if>
+            <if test="tenantId != null">TENANT_ID = #{tenantId},</if>
+        </trim>
+        where ID = #{id}
+    </update>
+
+    <update id="deleteSysIndexMenuById" parameterType="Long">
+        update sys_index_menu set del_flag = '1' where ID = #{id}
+    </update>
+
+    <update id="deleteSysIndexMenuByIds" parameterType="String">
+        update sys_index_menu set del_flag = '1' where ID in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <delete id="deleteByMenuUserId">
+        delete from sys_index_menu
+        where menu_id =  #{menuId} and user_id = #{userId}
+    </delete>
+</mapper>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.flow.mapper.FlowNameMapper">
+
+    <resultMap type="FlowName" id="FlowNameResult">
+        <result property="id"    column="ID"    />
+        <result property="flowKey"    column="FLOW_KEY"    />
+        <result property="flowTitle"    column="FLOW_TITLE"    />
+        <result property="flowContext"    column="FLOW_CONTEXT"    />
+        <result property="bussName"    column="BUSS_NAME"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="tenantId" column="tenant_id"/>
+        <result property="flowBusinessType" column="flow_business_type"/>
+    </resultMap>
+
+    <sql id="selectFlowNameVo">
+         t.ID, t.FLOW_KEY, t.FLOW_TITLE, t.FLOW_CONTEXT, t.BUSS_NAME,t.sort, t.eps_id, t.del_flag,
+         t.create_by, t.create_time, t.update_by, t.update_time,t.tenant_id, t.flow_business_type
+    </sql>
+
+    <select id="selectFlowNameList" parameterType="FlowName" resultMap="FlowNameResult">
+        select
+        <include refid="selectFlowNameVo"/>,IFNULL(sd.dept_name,'系统默认') tenantName
+        from flow_name t
+        left join sys_dept sd on sd.dept_id = t.tenant_id
+        where t.del_flag = '0'
+            <if test="id != null  and id != ''"> and t.id = #{id}</if>
+            <if test="flowBusinessType != null  and flowBusinessType != ''"> and t.flow_business_type = #{flowBusinessType}</if>
+            <if test="flowKey != null  and flowKey != ''"> and t.FLOW_KEY =  #{flowKey} </if>
+            <if test="flowTitle != null  and flowTitle != ''"> and t.FLOW_TITLE like concat('%', #{flowTitle}, '%') </if>
+            <if test="tenantName != null  and tenantName != ''"> and IFNULL(sd.dept_name,'系统默认') like concat('%', #{tenantName}, '%') </if>
+            <if test="flowContext != null  and flowContext != ''"> and t.FLOW_CONTEXT like concat('%', #{flowContext}, '%')</if>
+            <if test="sort != null "> and t.sort = #{sort}</if>
+            <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+            <if test="createBy != null "> and t.create_by = #{createBy}</if>
+            <if test="tenantId != null ">and t.tenant_id = #{tenantId}</if>
+          order by t.tenant_id,t.flow_key,t.id
+    </select>
+
+    <select id="selectFlowNameById" parameterType="String" resultMap="FlowNameResult">
+        select
+        <include refid="selectFlowNameVo"/>
+        from flow_name t
+        where t.ID = #{id}
+    </select>
+
+    <insert id="insertFlowName" parameterType="FlowName">
+        insert into flow_name
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">ID,</if>
+            <if test="flowBusinessType != null">flow_business_type,</if>
+            <if test="flowKey != null">FLOW_KEY,</if>
+            <if test="flowTitle != null">FLOW_TITLE,</if>
+            <if test="flowContext != null">FLOW_CONTEXT,</if>
+            <if test="bussName != null">BUSS_NAME,</if>
+            <if test="sort != null">sort,</if>
+            <if test="epsId != null">eps_id,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="tenantId != null">tenant_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="flowBusinessType != null">#{flowBusinessType},</if>
+            <if test="flowKey != null">#{flowKey},</if>
+            <if test="flowTitle != null">#{flowTitle},</if>
+            <if test="flowContext != null">#{flowContext},</if>
+            <if test="bussName != null">#{bussName},</if>
+            <if test="sort != null">#{sort},</if>
+            <if test="epsId != null">#{epsId},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="tenantId != null">#{tenantId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFlowName" parameterType="FlowName">
+        update flow_name
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="flowKey != null">FLOW_KEY = #{flowKey},</if>
+            <if test="flowBusinessType != null">flow_business_type = #{flowBusinessType},</if>
+            <if test="flowTitle != null">FLOW_TITLE = #{flowTitle},</if>
+            <if test="flowContext != null">FLOW_CONTEXT = #{flowContext},</if>
+            <if test="bussName != null">BUSS_NAME = #{bussName},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="epsId != null">eps_id = #{epsId},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where ID = #{id}
+    </update>
+
+    <update id="deleteFlowNameById" parameterType="String">
+        update flow_name set del_flag = '1' where ID = #{id}
+    </update>
+
+    <update id="deleteFlowNameByIds" parameterType="String">
+        update flow_name set del_flag = '1' where ID in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+
+    <!-- 节点key是否存在 -->
+    <select id="isExitsKey" parameterType="FlowName" resultType="java.lang.Integer">
+        select count(1) from flow_name t
+        where t.del_flag = '0'  and t.FLOW_KEY = #{flowKey} and t.create_by = -1
+        <if test="tenantId != null ">and t.tenant_id = #{tenantId}</if>
+        <if test="id != null  and id != ''"> and t.id != #{id}</if>
+    </select>
+</mapper>

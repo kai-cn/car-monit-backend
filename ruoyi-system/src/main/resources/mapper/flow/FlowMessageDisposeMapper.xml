@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.flow.mapper.FlowMessageDisposeMapper">
+
+    <resultMap type="FlowMessageDispose" id="FlowMessageDisposeResult">
+        <result property="id"    column="ID"    />
+        <result property="mid"    column="MID"    />
+        <result property="bussId"    column="BUSS_ID"    />
+        <result property="bussName"    column="BUSS_NAME"    />
+        <result property="msgStatus"    column="MSG_STATUS"    />
+        <result property="hangTime"    column="HANG_TIME"    />
+        <result property="disposeOther"    column="DISPOSE_OTHER"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectFlowMessageDisposeVo">
+         t.ID, t.MID, t.BUSS_ID, t.BUSS_NAME, t.MSG_STATUS, t.HANG_TIME, t.DISPOSE_OTHER, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time    </sql>
+
+    <select id="selectFlowMessageDisposeList" parameterType="FlowMessageDispose" resultMap="FlowMessageDisposeResult">
+        select
+        <include refid="selectFlowMessageDisposeVo"/>
+        from flow_message_dispose t
+        where t.del_flag = '0'
+            <if test="id != null  and id != ''"> and t.id = #{id}</if>
+            <if test="mid != null  and mid != ''"> and t.MID = #{mid}</if>
+            <if test="bussId != null  and bussId != ''"> and t.BUSS_ID = #{bussId}</if>
+            <if test="bussName != null  and bussName != ''"> and t.BUSS_NAME like concat('%', #{bussName}, '%')</if>
+            <if test="msgStatus != null  and msgStatus != ''"> and t.MSG_STATUS = #{msgStatus}</if>
+            <if test="hangTime != null "> and t.HANG_TIME = #{hangTime}</if>
+            <if test="disposeOther != null  and disposeOther != ''"> and t.DISPOSE_OTHER = #{disposeOther}</if>
+            <if test="sort != null "> and t.sort = #{sort}</if>
+            <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+            <if test="createBy != null "> and t.create_by = #{createBy}</if>
+          order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectFlowMessageDisposeById" parameterType="String" resultMap="FlowMessageDisposeResult">
+        select
+        <include refid="selectFlowMessageDisposeVo"/>
+        from flow_message_dispose t
+        where t.ID = #{id}
+    </select>
+
+    <insert id="insertFlowMessageDispose" parameterType="FlowMessageDispose">
+        insert into flow_message_dispose
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">ID,</if>
+            <if test="mid != null">MID,</if>
+            <if test="bussId != null">BUSS_ID,</if>
+            <if test="bussName != null">BUSS_NAME,</if>
+            <if test="msgStatus != null">MSG_STATUS,</if>
+            <if test="hangTime != null">HANG_TIME,</if>
+            <if test="disposeOther != null">DISPOSE_OTHER,</if>
+            <if test="sort != null">sort,</if>
+            <if test="epsId != null">eps_id,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="mid != null">#{mid},</if>
+            <if test="bussId != null">#{bussId},</if>
+            <if test="bussName != null">#{bussName},</if>
+            <if test="msgStatus != null">#{msgStatus},</if>
+            <if test="hangTime != null">#{hangTime},</if>
+            <if test="disposeOther != null">#{disposeOther},</if>
+            <if test="sort != null">#{sort},</if>
+            <if test="epsId != null">#{epsId},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateFlowMessageDispose" parameterType="FlowMessageDispose">
+        update flow_message_dispose
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="mid != null">MID = #{mid},</if>
+            <if test="bussId != null">BUSS_ID = #{bussId},</if>
+            <if test="bussName != null">BUSS_NAME = #{bussName},</if>
+            <if test="msgStatus != null">MSG_STATUS = #{msgStatus},</if>
+            <if test="hangTime != null">HANG_TIME = #{hangTime},</if>
+            <if test="disposeOther != null">DISPOSE_OTHER = #{disposeOther},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="epsId != null">eps_id = #{epsId},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where ID = #{id}
+    </update>
+
+    <update id="deleteFlowMessageDisposeById" parameterType="String">
+        update flow_message_dispose set del_flag = '1' where ID = #{id}
+    </update>
+
+    <update id="deleteFlowMessageDisposeByIds" parameterType="String">
+        update flow_message_dispose set del_flag = '1' where ID in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+
+    <delete id="removeFlowMessage" parameterType="FlowMessageDispose">
+        delete from flow_message_dispose
+        where MID = #{mid}
+        <if test="bussId != null  and bussId != ''"> and BUSS_ID = #{bussId}</if>
+    </delete>
+
+
+    <update id="saveSzzdFlowMessage" parameterType="FlowMessageDispose">
+        update flow_message_dispose set MSG_STATUS = '1'
+        where del_flag = '0' and  MID = #{mid}
+        <if test="bussId != null  and bussId != ''"> and BUSS_ID = #{bussId}</if>
+    </update>
+
+
+    <update id="saveSzzdFlowMessageAll" parameterType="FlowMessageDispose">
+        update flow_message_dispose set MSG_STATUS = '1',BUSS_ID = #{bussId}
+        where del_flag = '0' and  MID = #{mid}  and MSG_STATUS = '2'
+    </update>
+
+    <!-- 根据消息id更新业务流消息信息 -->
+    <update id="updateBusinessByMessageId" parameterType="FlowMessageDispose">
+        UPDATE flow_message_dispose SET buss_name = #{bussName}, msg_status = #{msgStatus}, hang_time = #{hangTime}
+        WHERE del_flag = '0' AND mid = #{mid}
+    </update>
+
+</mapper>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.SysUtilMapper">
+
+<resultMap id="sysUtilMap" type="com.ruoyi.system.domain.SysUtil">
+     <result property="bussType" column="buss_type"/>
+     <result property="bussCode" column="buss_code"/>
+  </resultMap>
+
+  <!--分页查询-->
+  <select id="getBussCode" resultMap="sysUtilMap">
+      select
+        count(1) countNum
+      from
+        ${tbsName} t
+      where ${queryCondtion}
+  </select>
+
+
+</mapper>

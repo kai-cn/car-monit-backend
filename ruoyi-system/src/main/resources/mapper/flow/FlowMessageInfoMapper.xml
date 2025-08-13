@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.flow.mapper.FlowMessageInfoMapper">
+
+    <resultMap type="FlowMessageInfo" id="FlowMessageInfoResult">
+        <result property="id"    column="ID"    />
+        <result property="messageNo"    column="message_no"    />
+        <result property="billOid"    column="BILL_OID"    />
+        <result property="bussType"    column="BUSS_TYPE"    />
+        <result property="flowRuid"    column="FLOW_RUID"    />
+        <result property="msgTitle"    column="MSG_TITLE"    />
+        <result property="msgContext"    column="MSG_CONTEXT"    />
+        <result property="msgType"    column="MSG_TYPE"    />
+        <result property="msgUrl"    column="MSG_URL"    />
+        <result property="pcOid"    column="PC_OID"    />
+        <result property="applyName"    column="APPLY_NAME"    />
+        <result property="backCol1"    column="BACK_COL1"    />
+        <result property="backCol2"    column="BACK_COL2"    />
+        <result property="backCol3"    column="BACK_COL3"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectFlowMessageInfoVo">
+         t.ID, t.message_no, t.BILL_OID, t.BUSS_TYPE, t.FLOW_RUID, t.MSG_TITLE, t.MSG_CONTEXT, t.MSG_TYPE, t.MSG_URL, t.PC_OID,
+         t.APPLY_NAME, t.BACK_COL1, t.BACK_COL2, t.BACK_COL3, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time
+    </sql>
+
+    <select id="selectFlowMessageInfoList" parameterType="FlowMessageInfo" resultMap="FlowMessageInfoResult">
+        select
+        <include refid="selectFlowMessageInfoVo"/>,app.FLOW_STATUS flowStatus,app.BACK_COL1 curEmpNames
+        <if test="flag != null and flag == 'myxx' ">
+            ,(select t2.MSG_STATUS from flow_message_dispose t2 where t2.del_flag = '0' and t2.mid = t.id and t2.BUSS_ID = #{userId}) msgStatus
+        </if>
+
+        from flow_message_info t
+        left join FLOW_APPLY_INFO app on app.del_flag = '0' and app.BILL_OID = t.BILL_OID
+        where t.del_flag = '0'
+            <if test="id != null  and id != ''"> and t.id = #{id}</if>
+            <if test="messageNo != null  and messageNo != ''"> and t.message_no = #{messageNo}</if>
+            <if test="billOid != null  and billOid != ''"> and t.BILL_OID = #{billOid}</if>
+            <if test="bussType != null  and bussType != ''"> and t.BUSS_TYPE = #{bussType}</if>
+            <if test="flowRuid != null  and flowRuid != ''"> and t.FLOW_RUID = #{flowRuid}</if>
+            <if test="msgTitle != null  and msgTitle != ''"> and t.MSG_TITLE like concat('%', #{msgTitle}, '%')</if>
+            <if test="msgContext != null  and msgContext != ''"> and t.MSG_CONTEXT like concat('%', #{msgContext}, '%')</if>
+            <if test="msgType != null  and msgType != ''"> and t.MSG_TYPE = #{msgType}</if>
+            <if test="msgUrl != null  and msgUrl != ''"> and t.MSG_URL = #{msgUrl}</if>
+            <if test="pcOid != null  and pcOid != ''"> and t.PC_OID = #{pcOid}</if>
+            <if test="applyName != null  and applyName != ''"> and t.APPLY_NAME like concat('%', #{applyName}, '%')</if>
+            <if test="backCol1 != null  and backCol1 != ''"> and t.BACK_COL1 = #{backCol1}</if>
+            <if test="backCol2 != null  and backCol2 != ''"> and t.BACK_COL2 = #{backCol2}</if>
+            <if test="backCol3 != null  and backCol3 != ''"> and t.BACK_COL3 = #{backCol3}</if>
+            <if test="sort != null "> and t.sort = #{sort}</if>
+            <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+            <if test="createBy != null "> and t.create_by = #{createBy}</if>
+
+           <!--我的待办-->
+           <if test="flag != null and flag == 'mydb' ">
+               and t.MSG_TYPE = '2'
+               and  exists (select 1 from flow_message_dispose t1 where t1.del_flag = '0' and t1.mid = t.id and t1.BUSS_ID = #{userId} and t1.MSG_STATUS = '2')
+           </if>
+
+           <!--我的已办-->
+           <if test="flag != null and flag == 'myyb' ">
+               and t.MSG_TYPE = '2'
+               and  exists (select 1 from flow_message_dispose t1 where t1.del_flag = '0' and t1.mid = t.id and t1.BUSS_ID = #{userId} and t1.MSG_STATUS = '1')
+           </if>
+
+          <!--我的已结-->
+          <if test="flag != null and flag == 'myyj' ">
+               and t.MSG_TYPE = '2'
+               and  exists (select 1 from flow_message_dispose t1 where t1.del_flag = '0' and t1.mid = t.id and t1.BUSS_ID = #{userId} and t1.MSG_STATUS = '1')
+               and app.FLOW_STATUS = '3'
+           </if>
+
+          <!--我的消息-->
+          <if test="flag != null and flag == 'myxx' ">
+              and t.MSG_TYPE = '1'
+              and  exists (select 1 from flow_message_dispose t1 where t1.del_flag = '0' and t1.mid = t.id and t1.BUSS_ID = #{userId})
+           </if>
+
+          order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectFlowMessageInfoById" parameterType="String" resultMap="FlowMessageInfoResult">
+        select
+        <include refid="selectFlowMessageInfoVo"/>
+        from flow_message_info t
+        where t.ID = #{id}
+    </select>
+
+    <insert id="insertFlowMessageInfo" parameterType="FlowMessageInfo">
+        insert into flow_message_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">ID,</if>
+            <if test="messageNo != null">message_no,</if>
+            <if test="billOid != null">BILL_OID,</if>
+            <if test="bussType != null">BUSS_TYPE,</if>
+            <if test="flowRuid != null">FLOW_RUID,</if>
+            <if test="msgTitle != null">MSG_TITLE,</if>
+            <if test="msgContext != null">MSG_CONTEXT,</if>
+            <if test="msgType != null">MSG_TYPE,</if>
+            <if test="msgUrl != null">MSG_URL,</if>
+            <if test="pcOid != null">PC_OID,</if>
+            <if test="applyName != null">APPLY_NAME,</if>
+            <if test="backCol1 != null">BACK_COL1,</if>
+            <if test="backCol2 != null">BACK_COL2,</if>
+            <if test="backCol3 != null">BACK_COL3,</if>
+            <if test="sort != null">sort,</if>
+            <if test="epsId != null">eps_id,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="messageNo != null">#{messageNo},</if>
+            <if test="billOid != null">#{billOid},</if>
+            <if test="bussType != null">#{bussType},</if>
+            <if test="flowRuid != null">#{flowRuid},</if>
+            <if test="msgTitle != null">#{msgTitle},</if>
+            <if test="msgContext != null">#{msgContext},</if>
+            <if test="msgType != null">#{msgType},</if>
+            <if test="msgUrl != null">#{msgUrl},</if>
+            <if test="pcOid != null">#{pcOid},</if>
+            <if test="applyName != null">#{applyName},</if>
+            <if test="backCol1 != null">#{backCol1},</if>
+            <if test="backCol2 != null">#{backCol2},</if>
+            <if test="backCol3 != null">#{backCol3},</if>
+            <if test="sort != null">#{sort},</if>
+            <if test="epsId != null">#{epsId},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateFlowMessageInfo" parameterType="FlowMessageInfo">
+        update flow_message_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="billOid != null">BILL_OID = #{billOid},</if>
+            <if test="messageNo != null">message_no = #{messageNo},</if>
+            <if test="bussType != null">BUSS_TYPE = #{bussType},</if>
+            <if test="flowRuid != null">FLOW_RUID = #{flowRuid},</if>
+            <if test="msgTitle != null">MSG_TITLE = #{msgTitle},</if>
+            <if test="msgContext != null">MSG_CONTEXT = #{msgContext},</if>
+            <if test="msgType != null">MSG_TYPE = #{msgType},</if>
+            <if test="msgUrl != null">MSG_URL = #{msgUrl},</if>
+            <if test="pcOid != null">PC_OID = #{pcOid},</if>
+            <if test="applyName != null">APPLY_NAME = #{applyName},</if>
+            <if test="backCol1 != null">BACK_COL1 = #{backCol1},</if>
+            <if test="backCol2 != null">BACK_COL2 = #{backCol2},</if>
+            <if test="backCol3 != null">BACK_COL3 = #{backCol3},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="epsId != null">eps_id = #{epsId},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where ID = #{id}
+    </update>
+
+    <update id="deleteFlowMessageInfoById" parameterType="String">
+        update flow_message_info set del_flag = '1' where ID = #{id}
+    </update>
+
+    <update id="deleteFlowMessageInfoByIds" parameterType="String">
+        update flow_message_info set del_flag = '1' where ID in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>
