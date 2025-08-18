@@ -1,6 +1,9 @@
 package com.ruoyi.system.service.impl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.core.domain.entity.SysDictData;
@@ -106,4 +109,18 @@ public class SysDictDataServiceImpl implements ISysDictDataService
         }
         return row;
     }
+
+    /**
+     * 根据条件分页查询字典数据
+     *
+     * @return 字典数据集合信息
+     */
+    public Map<String,String> selectDictDataMap(String dictValue){
+        SysDictData sysDictData = new SysDictData();
+        sysDictData.setDictType(dictValue);
+        List<SysDictData> dictList = dictDataMapper.selectDictDataList(sysDictData);
+        Map<String,String> dictMap = dictList.stream().collect(Collectors.toMap(SysDictData::getDictValue,SysDictData::getDictLabel));
+        return dictMap;
+    }
+
 }

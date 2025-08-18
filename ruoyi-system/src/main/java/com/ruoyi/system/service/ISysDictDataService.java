@@ -1,6 +1,8 @@
 package com.ruoyi.system.service;
 
 import java.util.List;
+import java.util.Map;
+
 import com.ruoyi.common.core.domain.entity.SysDictData;
 
 /**
@@ -58,4 +60,11 @@ public interface ISysDictDataService
      * @return 结果
      */
     public int updateDictData(SysDictData dictData);
+
+    /**
+     * 根据条件分页查询字典数据
+     *
+     * @return 字典数据集合信息
+     */
+    public Map<String,String> selectDictDataMap(String dictValue);
 }

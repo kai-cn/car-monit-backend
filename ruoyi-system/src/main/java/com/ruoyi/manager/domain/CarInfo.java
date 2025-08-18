@@ -2,6 +2,8 @@ package com.ruoyi.manager.domain;
 
 import java.math.BigDecimal;
 import java.util.Date;
+
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -176,5 +178,21 @@ public class CarInfo extends BasePlusEntity implements Custom {
     /** 备注 */
     @Excel(name = "备注")
     private String remark;
+
+    // 时间查询
+    @TableField(exist = false)
+    private String applyTime1;
+
+    @TableField(exist = false)
+    private String applyTime2;
+
+    // 车牌号查询
+    @TableField(exist = false)
+    private String carNoQuery;
+
+    // 查询时间
+    @TableField(exist = false)
+    private String createTimeStr;
+
 
 }
