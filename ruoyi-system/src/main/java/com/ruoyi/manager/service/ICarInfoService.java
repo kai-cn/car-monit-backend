@@ -1,9 +1,10 @@
 package com.ruoyi.manager.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarInfo;
+
 import java.util.List;
-import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
  * 车辆信息Service接口
@@ -44,5 +45,12 @@ public interface ICarInfoService extends IService<CarInfo> {
      * @return 结果
      */
     AjaxResult deleteCarInfoByIds(String[] ids);
+
+    /**
+     * 导入
+     * @param list
+     * @return
+     */
+    AjaxResult doImport(List<CarInfo> list);
 
 }

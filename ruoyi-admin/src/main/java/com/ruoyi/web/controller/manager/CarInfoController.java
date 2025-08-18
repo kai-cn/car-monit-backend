@@ -1,39 +1,34 @@
 package com.ruoyi.web.controller.manager;
 
-import java.io.OutputStream;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
-import com.ruoyi.common.core.domain.entity.SysDictData;
-import com.ruoyi.common.utils.CommonUtil;
-import com.ruoyi.common.utils.DateUtils;
-import com.ruoyi.system.service.ISysDictDataService;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.service.ICarInfoService;
-import com.ruoyi.common.utils.poi.ExcelUtil;
-import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.system.service.ISysDictDataService;
+import com.ruoyi.web.util.ImportEntity;
+import com.ruoyi.web.util.ImportErrorEntity;
+import com.ruoyi.web.util.ImportSysUtil;
+import com.ruoyi.web.util.ImportUtil;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 车辆信息Controller
@@ -145,6 +140,139 @@ public class CarInfoController extends BaseController {
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids) {
         return carInfoService.deleteCarInfoByIds(ids);
+    }
+
+    @PreAuthorize("@ss.hasPermi('manager:carinfo:add')")
+    @Log(title = "车辆信息", businessType = BusinessType.IMPORT)
+    @PostMapping("/import")
+    public AjaxResult doImport(@RequestParam("file") MultipartFile file) throws Exception {
+        // 校验文件格式
+        String fileName = file.getOriginalFilename();
+        if (fileName.lastIndexOf(".xlsx") == -1) {
+            return AjaxResult.error("请上传Excel文件(.xlsx)");
+        }
+        ImportSysUtil importUtil = new ImportSysUtil();
+        XSSFSheet sheet = importUtil.getXSSFSheet(file.getInputStream(), 0); // 得到sheet页
+        List<ImportEntity> gzList = initList(); // 初始化导入头部、属性、校验规则
+
+        // 获取头部
+        String[] colsName =  new String[gzList.size()];
+        for (int i = 0; i < gzList.size(); i++) {
+            colsName[i] = gzList.get(i).getColName();
+        }
+        // 校验头部
+        if (!importUtil.colVdaExcel07(sheet, colsName)) {
+            return AjaxResult.error("导入失败,模板不正确,请下载对应的模板！");
+        }
+        // 校验数据
+        List<String[]> sheetList = importUtil.dataRtnExcel07(sheet, colsName); // 返回结果集
+        if (sheetList.size() == 0) {
+            return AjaxResult.error("导入失败,模板excel没有数据可以导入，请确定！");
+        }
+        // 校验数据格式
+        List<ImportErrorEntity> errorList = new ArrayList<ImportErrorEntity>(); // 错误列表
+        List<CarInfo> importList = new ArrayList<CarInfo>(); // 导入的数据
+        for (int i = 0; i < sheetList.size(); i++) {
+            String[] strs = sheetList.get(i);
+            Object rtnObj = ImportUtil.importExcel(errorList, gzList, i, strs, CarInfo.class); // 结果集转对象
+            if (errorList.size() == 0 && null != rtnObj) {
+                CarInfo importbo = (CarInfo) rtnObj;
+                importList.add(importbo);
+            }
+
+            if (errorList.size() > 100){
+                break;
+            }
+        }
+
+        // 校验数据
+        if (errorList.size() == 0) {
+
+            //字典
+            // 车型
+            Map<String,String> carTypeMap = sysDictDataService.selectDictDataLaleMap("car_type");
+
+            // 车种
+            Map<String,String> carVehicleMap = sysDictDataService.selectDictDataLaleMap("car_vehicle");
+
+            // 逃费类型
+            Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataLaleMap("escaped_type");
+
+
+
+            for (int i = 0; i < importList.size(); i++) {
+                CarInfo addbo = importList.get(i);
+
+                // 车型
+                String carType =  CommonUtil.isNull(addbo.getCarType());
+                if (carTypeMap.containsKey(carType)) {
+                    addbo.setCarType(CommonUtil.isNull(carTypeMap.get(carType)));
+                } else {
+                    errorList.add(importUtil.getErrorBO(i + 1, "车型", carType + " 车型不存在,请在字典菜单维护！"));
+                }
+
+                // 车种
+                String carVehicle =  CommonUtil.isNull(addbo.getCarVehicle());
+                if (carVehicleMap.containsKey(carVehicle)) {
+                    addbo.setCarType(CommonUtil.isNull(carVehicleMap.get(carVehicle)));
+                } else {
+                    errorList.add(importUtil.getErrorBO(i + 1, "车种", carVehicle + " 车种不存在,请在字典菜单维护！"));
+                }
+
+
+                // 车种
+                String escapedType =  CommonUtil.isNull(addbo.getEscapedType());
+                if (escapedTypeMap.containsKey(escapedType)) {
+                    addbo.setCarType(CommonUtil.isNull(escapedTypeMap.get(escapedType)));
+                } else {
+                    errorList.add(importUtil.getErrorBO(i + 1, "逃费类型", escapedType + " 逃费类型不存在,请在字典菜单维护！"));
+                }
+
+
+                if (errorList.size() > 100){
+                    break;
+                }
+            }
+
+        }
+
+        // 插入数据库
+        if (errorList.size() == 0) {
+            for (int i=0;i<importList.size();i++){
+                CarInfo addbo = importList.get(i);
+                // 根据身份证
+                CarInfo querybo = new CarInfo();
+                querybo.setCarNo(CommonUtil.isNull(addbo.getCarNo()));
+                List<CarInfo> queryList = carInfoService.selectCarInfoList(querybo);
+                if (queryList.size() > 0){
+                    addbo.setId(queryList.get(0).getId());
+                }
+            }
+            carInfoService.doImport(importList);
+        }
+
+        // 错误提示
+        if (errorList.size() > 0) {
+            return AjaxResult.error("error",errorList);
+        }
+
+        return AjaxResult.success("数据导入成功",importList);
+    }
+
+    /**
+     * 初始化导入头部、属性、校验规则
+     */
+    public List<ImportEntity> initList() {
+        List<ImportEntity> boList = new ArrayList<ImportEntity>();
+        // 校验规则 1 必填 2小数 3整数 4日期 5身份证 6年月 多个逗号分隔例如：1,2
+        boList.add(new ImportEntity("车牌号","carNo","1"));
+        boList.add(new ImportEntity("车型","carType",""));
+        boList.add(new ImportEntity("车种","carVehicle",""));
+        boList.add(new ImportEntity("轴数","carNum","3"));
+        boList.add(new ImportEntity("逃费类型","escapedType","1"));
+        boList.add(new ImportEntity("逃费金额（元）","escapedAmount","1,2"));
+        boList.add(new ImportEntity("备注","remark",""));
+        return boList;
     }
 
 }

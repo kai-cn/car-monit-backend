@@ -54,6 +54,9 @@ public class DownTemplateController {
 		} else if ("importSupplierAnnualScore".equals(type)) {
 			// 供应商年度评分导入模板
 			url = url + "/importSupplierAnnualScore.xlsx";
+		} else if ("carinfo".equals(type)) {
+			// 供应商年度评分导入模板
+			url = url + "/importCar.xlsx";
 		}
 
 		try {

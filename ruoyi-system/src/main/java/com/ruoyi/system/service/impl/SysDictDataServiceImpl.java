@@ -123,4 +123,17 @@ public class SysDictDataServiceImpl implements ISysDictDataService
         return dictMap;
     }
 
+    /**
+     * 根据条件分页查询字典数据
+     *
+     * @return 字典数据集合信息
+     */
+    public Map<String,String> selectDictDataLaleMap(String dictValue){
+        SysDictData sysDictData = new SysDictData();
+        sysDictData.setDictType(dictValue);
+        List<SysDictData> dictList = dictDataMapper.selectDictDataList(sysDictData);
+        Map<String,String> dictMap = dictList.stream().collect(Collectors.toMap(SysDictData::getDictLabel,SysDictData::getDictValue));
+        return dictMap;
+    }
+
 }

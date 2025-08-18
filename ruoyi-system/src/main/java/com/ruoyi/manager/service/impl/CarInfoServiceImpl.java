@@ -3,8 +3,8 @@ package com.ruoyi.manager.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
-import com.ruoyi.manager.mapper.CarInfoMapper;
 import com.ruoyi.manager.domain.CarInfo;
+import com.ruoyi.manager.mapper.CarInfoMapper;
 import com.ruoyi.manager.service.ICarInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -95,6 +95,20 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
     {
         int count = carInfoMapper.deleteCarInfoById(id);
         return AjaxResult.success(count);
+    }
+
+
+    /**
+     * 导入
+     *
+     * @param list
+     * @return
+     */
+    public AjaxResult doImport(List<CarInfo> list) {
+        if (null != list && list.size() > 0) {
+            this.saveOrUpdateBatch(list);
+        }
+        return AjaxResult.success();
     }
 
 
