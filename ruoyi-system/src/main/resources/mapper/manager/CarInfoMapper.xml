@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.manager.mapper.CarInfoMapper">
+
+    <resultMap type="com.ruoyi.manager.domain.CarInfo" id="CarInfoResult">
+        <result property="id"    column="id"    />
+        <result property="carNo"    column="car_no"    />
+        <result property="carType"    column="car_type"    />
+        <result property="carVehicle"    column="car_vehicle"    />
+        <result property="carNum"    column="car_num"    />
+        <result property="escapedType"    column="escaped_type"    />
+        <result property="escapedTypeName"    column="escaped_type_name"    />
+        <result property="escapedAmount"    column="escaped_amount"    />
+        <result property="escapedNum"    column="escaped_num"    />
+        <result property="returnAmount"    column="return_amount"    />
+        <result property="isWhite"    column="is_white"    />
+        <result property="whiteRemark"    column="white_remark"    />
+        <result property="fileIds"    column="file_ids"    />
+        <result property="brand"    column="brand"    />
+        <result property="plateColor"    column="plate_color"    />
+        <result property="plateType"    column="plate_type"    />
+        <result property="carColor"    column="car_color"    />
+        <result property="dataSource"    column="data_source"    />
+        <result property="dataSourceName"    column="data_source_name"    />
+        <result property="lastPassTime"    column="last_pass_time"    />
+        <result property="lastPassPicture"    column="last_pass_picture"    />
+        <result property="lastPassType"    column="last_pass_type"    />
+        <result property="lastPassAddress"    column="last_pass_address"    />
+        <result property="lastPassLongitude"    column="last_pass_longitude"    />
+        <result property="lastPassLatitude"    column="last_pass_latitude"    />
+        <result property="lastPassCardirection"    column="last_pass_cardirection"    />
+        <result property="roadSectionId"    column="road_section_id"    />
+        <result property="roadSectionName"    column="road_section_name"    />
+        <result property="nextPassTime"    column="next_pass_time"    />
+        <result property="nextPassType"    column="next_pass_type"    />
+        <result property="nextPassAddress"    column="next_pass_address"    />
+        <result property="nextPassLongitude"    column="next_pass_longitude"    />
+        <result property="nextPassLatitude"    column="next_pass_latitude"    />
+        <result property="orgId"    column="org_id"    />
+        <result property="orgName"    column="org_name"    />
+        <result property="backCol1"    column="back_col1"    />
+        <result property="backCol2"    column="back_col2"    />
+        <result property="remark"    column="remark"    />
+        <result property="status"    column="status"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="tenantId"    column="tenant_id"    />
+
+    </resultMap>
+
+    <sql id="selectCarInfoVo">
+        t.id,
+        t.car_no,
+        t.car_type,
+        t.car_vehicle,
+        t.car_num,
+        t.escaped_type,
+        t.escaped_type_name,
+        t.escaped_amount,
+        t.escaped_num,
+        t.return_amount,
+        t.is_white,
+        t.white_remark,
+        t.file_ids,
+        t.brand,
+        t.plate_color,
+        t.plate_type,
+        t.car_color,
+        t.data_source,
+        t.data_source_name,
+        t.last_pass_time,
+        t.last_pass_picture,
+        t.last_pass_type,
+        t.last_pass_address,
+        t.last_pass_longitude,
+        t.last_pass_latitude,
+        t.last_pass_cardirection,
+        t.road_section_id,
+        t.road_section_name,
+        t.next_pass_time,
+        t.next_pass_type,
+        t.next_pass_address,
+        t.next_pass_longitude,
+        t.next_pass_latitude,
+        t.org_id,
+        t.org_name,
+        t.back_col1,
+        t.back_col2,
+        t.remark,
+        t.status,
+        t.sort,
+        t.eps_id,
+        t.del_flag,
+        t.create_by,
+        t.create_time,
+        t.update_by,
+        t.update_time,
+        t.tenant_id
+    </sql>
+
+
+    <select id="selectCarInfoList" parameterType="com.ruoyi.manager.domain.CarInfo" resultMap="CarInfoResult">
+        SELECT
+        <include refid="selectCarInfoVo"/>
+        FROM car_info t
+        WHERE t.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+        <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
+        <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
+        <if test="carNum != null "> and t.car_num = #{carNum}</if>
+        <if test="escapedType != null  and escapedType != ''"> and t.escaped_type = #{escapedType}</if>
+        <if test="escapedTypeName != null  and escapedTypeName != ''"> and t.escaped_type_name like concat('%', #{escapedTypeName}, '%')</if>
+        <if test="escapedAmount != null "> and t.escaped_amount = #{escapedAmount}</if>
+        <if test="escapedNum != null "> and t.escaped_num = #{escapedNum}</if>
+        <if test="returnAmount != null "> and t.return_amount = #{returnAmount}</if>
+        <if test="isWhite != null  and isWhite != ''"> and t.is_white = #{isWhite}</if>
+        <if test="whiteRemark != null  and whiteRemark != ''"> and t.white_remark = #{whiteRemark}</if>
+        <if test="fileIds != null  and fileIds != ''"> and t.file_ids = #{fileIds}</if>
+        <if test="brand != null  and brand != ''"> and t.brand = #{brand}</if>
+        <if test="plateColor != null  and plateColor != ''"> and t.plate_color = #{plateColor}</if>
+        <if test="plateType != null  and plateType != ''"> and t.plate_type = #{plateType}</if>
+        <if test="carColor != null  and carColor != ''"> and t.car_color = #{carColor}</if>
+        <if test="dataSource != null  and dataSource != ''"> and t.data_source = #{dataSource}</if>
+        <if test="dataSourceName != null  and dataSourceName != ''"> and t.data_source_name like concat('%', #{dataSourceName}, '%')</if>
+        <if test="lastPassTime != null "> and t.last_pass_time = #{lastPassTime}</if>
+        <if test="lastPassPicture != null  and lastPassPicture != ''"> and t.last_pass_picture = #{lastPassPicture}</if>
+        <if test="lastPassType != null  and lastPassType != ''"> and t.last_pass_type = #{lastPassType}</if>
+        <if test="lastPassAddress != null  and lastPassAddress != ''"> and t.last_pass_address = #{lastPassAddress}</if>
+        <if test="lastPassLongitude != null  and lastPassLongitude != ''"> and t.last_pass_longitude = #{lastPassLongitude}</if>
+        <if test="lastPassLatitude != null  and lastPassLatitude != ''"> and t.last_pass_latitude = #{lastPassLatitude}</if>
+        <if test="lastPassCardirection != null  and lastPassCardirection != ''"> and t.last_pass_cardirection = #{lastPassCardirection}</if>
+        <if test="roadSectionId != null  and roadSectionId != ''"> and t.road_section_id = #{roadSectionId}</if>
+        <if test="roadSectionName != null  and roadSectionName != ''"> and t.road_section_name like concat('%', #{roadSectionName}, '%')</if>
+        <if test="nextPassTime != null "> and t.next_pass_time = #{nextPassTime}</if>
+        <if test="nextPassType != null  and nextPassType != ''"> and t.next_pass_type = #{nextPassType}</if>
+        <if test="nextPassAddress != null  and nextPassAddress != ''"> and t.next_pass_address = #{nextPassAddress}</if>
+        <if test="nextPassLongitude != null  and nextPassLongitude != ''"> and t.next_pass_longitude = #{nextPassLongitude}</if>
+        <if test="nextPassLatitude != null  and nextPassLatitude != ''"> and t.next_pass_latitude = #{nextPassLatitude}</if>
+        <if test="orgId != null  and orgId != ''"> and t.org_id = #{orgId}</if>
+        <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectCarInfoById" parameterType="String" resultMap="CarInfoResult">
+         select
+         <include refid="selectCarInfoVo"/>
+         from car_info t
+         where t.id = #{id}
+    </select>
+
+
+    <update id="deleteCarInfoById" parameterType="String">
+        update car_info set del_flag = '1' where id = #{id}
+    </update>
+
+    <update id="deleteCarInfoByIds" parameterType="String">
+        update car_info set del_flag = '1' where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

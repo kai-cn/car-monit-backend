@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.manager.mapper.CarSuspiciousCheckMapper">
+
+    <resultMap type="com.ruoyi.manager.domain.CarSuspiciousCheck" id="CarSuspiciousCheckResult">
+        <result property="id"    column="id"    />
+        <result property="carId"    column="car_id"    />
+        <result property="carNo"    column="car_no"    />
+        <result property="suspicousFlag"    column="suspicous_flag"    />
+        <result property="attachments"    column="attachments"    />
+        <result property="backCol1"    column="back_col1"    />
+        <result property="backCol2"    column="back_col2"    />
+        <result property="remark"    column="remark"    />
+        <result property="status"    column="status"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="tenantId"    column="tenant_id"    />
+
+    </resultMap>
+
+    <sql id="selectCarSuspiciousCheckVo">
+        t.id,
+        t.car_id,
+        t.car_no,
+        t.suspicous_flag,
+        t.attachments,
+        t.back_col1,
+        t.back_col2,
+        t.remark,
+        t.status,
+        t.sort,
+        t.eps_id,
+        t.del_flag,
+        t.create_by,
+        t.create_time,
+        t.update_by,
+        t.update_time,
+        t.tenant_id
+    </sql>
+
+
+    <select id="selectCarSuspiciousCheckList" parameterType="com.ruoyi.manager.domain.CarSuspiciousCheck" resultMap="CarSuspiciousCheckResult">
+        SELECT
+        <include refid="selectCarSuspiciousCheckVo"/>
+        FROM car_suspicious_check t
+        WHERE t.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="carId != null  and carId != ''"> and t.car_id = #{carId}</if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+        <if test="suspicousFlag != null  and suspicousFlag != ''"> and t.suspicous_flag = #{suspicousFlag}</if>
+        <if test="attachments != null  and attachments != ''"> and t.attachments = #{attachments}</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectCarSuspiciousCheckById" parameterType="String" resultMap="CarSuspiciousCheckResult">
+         select
+         <include refid="selectCarSuspiciousCheckVo"/>
+         from car_suspicious_check t
+         where t.id = #{id}
+    </select>
+
+
+    <update id="deleteCarSuspiciousCheckById" parameterType="String">
+        update car_suspicious_check set del_flag = '1' where id = #{id}
+    </update>
+
+    <update id="deleteCarSuspiciousCheckByIds" parameterType="String">
+        update car_suspicious_check set del_flag = '1' where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

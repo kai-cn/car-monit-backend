@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.manager.mapper.GantryTradeInfoMapper">
+
+    <resultMap type="com.ruoyi.manager.domain.GantryTradeInfo" id="GantryTradeInfoResult">
+        <result property="id"    column="id"    />
+        <result property="carNo"    column="car_no"    />
+        <result property="carType"    column="car_type"    />
+        <result property="carVehicle"    column="car_vehicle"    />
+        <result property="carNum"    column="car_num"    />
+        <result property="inStationId"    column="in_station_id"    />
+        <result property="inStation"    column="in_station"    />
+        <result property="inTime"    column="in_time"    />
+        <result property="outStationId"    column="out_station_id"    />
+        <result property="outStation"    column="out_station"    />
+        <result property="outTime"    column="out_time"    />
+        <result property="chargeType"    column="charge_type"    />
+        <result property="amount"    column="amount"    />
+        <result property="backCol1"    column="back_col1"    />
+        <result property="backCol2"    column="back_col2"    />
+        <result property="remark"    column="remark"    />
+        <result property="status"    column="status"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="tenantId"    column="tenant_id"    />
+
+    </resultMap>
+
+    <sql id="selectGantryTradeInfoVo">
+        t.id,
+        t.car_no,
+        t.car_type,
+        t.car_vehicle,
+        t.car_num,
+        t.in_station_id,
+        t.in_station,
+        t.in_time,
+        t.out_station_id,
+        t.out_station,
+        t.out_time,
+        t.charge_type,
+        t.amount,
+        t.back_col1,
+        t.back_col2,
+        t.remark,
+        t.status,
+        t.sort,
+        t.eps_id,
+        t.del_flag,
+        t.create_by,
+        t.create_time,
+        t.update_by,
+        t.update_time,
+        t.tenant_id
+    </sql>
+
+
+    <select id="selectGantryTradeInfoList" parameterType="com.ruoyi.manager.domain.GantryTradeInfo" resultMap="GantryTradeInfoResult">
+        SELECT
+        <include refid="selectGantryTradeInfoVo"/>
+        FROM gantry_trade_info t
+        WHERE t.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+        <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
+        <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
+        <if test="carNum != null "> and t.car_num = #{carNum}</if>
+        <if test="inStationId != null  and inStationId != ''"> and t.in_station_id = #{inStationId}</if>
+        <if test="inStation != null  and inStation != ''"> and t.in_station = #{inStation}</if>
+        <if test="inTime != null "> and t.in_time = #{inTime}</if>
+        <if test="outStationId != null  and outStationId != ''"> and t.out_station_id = #{outStationId}</if>
+        <if test="outStation != null  and outStation != ''"> and t.out_station = #{outStation}</if>
+        <if test="outTime != null "> and t.out_time = #{outTime}</if>
+        <if test="chargeType != null  and chargeType != ''"> and t.charge_type = #{chargeType}</if>
+        <if test="amount != null "> and t.amount = #{amount}</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectGantryTradeInfoById" parameterType="String" resultMap="GantryTradeInfoResult">
+         select
+         <include refid="selectGantryTradeInfoVo"/>
+         from gantry_trade_info t
+         where t.id = #{id}
+    </select>
+
+
+    <update id="deleteGantryTradeInfoById" parameterType="String">
+        update gantry_trade_info set del_flag = '1' where id = #{id}
+    </update>
+
+    <update id="deleteGantryTradeInfoByIds" parameterType="String">
+        update gantry_trade_info set del_flag = '1' where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

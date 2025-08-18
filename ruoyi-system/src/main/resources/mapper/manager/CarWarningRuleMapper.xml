@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.manager.mapper.CarWarningRuleMapper">
+
+    <resultMap type="com.ruoyi.manager.domain.CarWarningRule" id="CarWarningRuleResult">
+        <result property="id"    column="id"    />
+        <result property="ruleName"    column="rule_name"    />
+        <result property="noticeRangeId"    column="notice_range_id"    />
+        <result property="noticeRangeAnme"    column="notice_range_anme"    />
+        <result property="notice"    column="notice"    />
+        <result property="noticeType"    column="notice_type"    />
+        <result property="noticeUserId"    column="notice_user_id"    />
+        <result property="noticeUserName"    column="notice_user_name"    />
+        <result property="orgId"    column="org_id"    />
+        <result property="orgName"    column="org_name"    />
+        <result property="backCol1"    column="back_col1"    />
+        <result property="backCol2"    column="back_col2"    />
+        <result property="remark"    column="remark"    />
+        <result property="status"    column="status"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="tenantId"    column="tenant_id"    />
+
+    </resultMap>
+
+    <sql id="selectCarWarningRuleVo">
+        t.id,
+        t.rule_name,
+        t.notice_range_id,
+        t.notice_range_anme,
+        t.notice,
+        t.notice_type,
+        t.notice_user_id,
+        t.notice_user_name,
+        t.org_id,
+        t.org_name,
+        t.back_col1,
+        t.back_col2,
+        t.remark,
+        t.status,
+        t.sort,
+        t.eps_id,
+        t.del_flag,
+        t.create_by,
+        t.create_time,
+        t.update_by,
+        t.update_time,
+        t.tenant_id
+    </sql>
+
+
+    <select id="selectCarWarningRuleList" parameterType="com.ruoyi.manager.domain.CarWarningRule" resultMap="CarWarningRuleResult">
+        SELECT
+        <include refid="selectCarWarningRuleVo"/>
+        FROM car_warning_rule t
+        WHERE t.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="ruleName != null  and ruleName != ''"> and t.rule_name like concat('%', #{ruleName}, '%')</if>
+        <if test="noticeRangeId != null  and noticeRangeId != ''"> and t.notice_range_id = #{noticeRangeId}</if>
+        <if test="noticeRangeAnme != null  and noticeRangeAnme != ''"> and t.notice_range_anme = #{noticeRangeAnme}</if>
+        <if test="notice != null  and notice != ''"> and t.notice = #{notice}</if>
+        <if test="noticeType != null  and noticeType != ''"> and t.notice_type = #{noticeType}</if>
+        <if test="noticeUserId != null  and noticeUserId != ''"> and t.notice_user_id = #{noticeUserId}</if>
+        <if test="noticeUserName != null  and noticeUserName != ''"> and t.notice_user_name like concat('%', #{noticeUserName}, '%')</if>
+        <if test="orgId != null  and orgId != ''"> and t.org_id = #{orgId}</if>
+        <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectCarWarningRuleById" parameterType="String" resultMap="CarWarningRuleResult">
+         select
+         <include refid="selectCarWarningRuleVo"/>
+         from car_warning_rule t
+         where t.id = #{id}
+    </select>
+
+
+    <update id="deleteCarWarningRuleById" parameterType="String">
+        update car_warning_rule set del_flag = '1' where id = #{id}
+    </update>
+
+    <update id="deleteCarWarningRuleByIds" parameterType="String">
+        update car_warning_rule set del_flag = '1' where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

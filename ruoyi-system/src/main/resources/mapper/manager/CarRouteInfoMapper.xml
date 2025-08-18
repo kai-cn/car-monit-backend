@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.manager.mapper.CarRouteInfoMapper">
+
+    <resultMap type="com.ruoyi.manager.domain.CarRouteInfo" id="CarRouteInfoResult">
+        <result property="id"    column="id"    />
+        <result property="carId"    column="car_id"    />
+        <result property="carNo"    column="car_no"    />
+        <result property="carType"    column="car_type"    />
+        <result property="carVehicle"    column="car_vehicle"    />
+        <result property="carNum"    column="car_num"    />
+        <result property="startAddress"    column="start_address"    />
+        <result property="startLongitude"    column="start_longitude"    />
+        <result property="startLatitude"    column="start_latitude"    />
+        <result property="endAddress"    column="end_address"    />
+        <result property="endLongitude"    column="end_longitude"    />
+        <result property="endLatitude"    column="end_latitude"    />
+        <result property="routeDetail"    column="route_detail"    />
+        <result property="backCol1"    column="back_col1"    />
+        <result property="backCol2"    column="back_col2"    />
+        <result property="remark"    column="remark"    />
+        <result property="status"    column="status"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="tenantId"    column="tenant_id"    />
+
+    </resultMap>
+
+    <sql id="selectCarRouteInfoVo">
+        t.id,
+        t.car_id,
+        t.car_no,
+        t.car_type,
+        t.car_vehicle,
+        t.car_num,
+        t.start_address,
+        t.start_longitude,
+        t.start_latitude,
+        t.end_address,
+        t.end_longitude,
+        t.end_latitude,
+        t.route_detail,
+        t.back_col1,
+        t.back_col2,
+        t.remark,
+        t.status,
+        t.sort,
+        t.eps_id,
+        t.del_flag,
+        t.create_by,
+        t.create_time,
+        t.update_by,
+        t.update_time,
+        t.tenant_id
+    </sql>
+
+
+    <select id="selectCarRouteInfoList" parameterType="com.ruoyi.manager.domain.CarRouteInfo" resultMap="CarRouteInfoResult">
+        SELECT
+        <include refid="selectCarRouteInfoVo"/>
+        FROM car_route_info t
+        WHERE t.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="carId != null  and carId != ''"> and t.car_id = #{carId}</if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+        <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
+        <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
+        <if test="carNum != null "> and t.car_num = #{carNum}</if>
+        <if test="startAddress != null  and startAddress != ''"> and t.start_address = #{startAddress}</if>
+        <if test="startLongitude != null  and startLongitude != ''"> and t.start_longitude = #{startLongitude}</if>
+        <if test="startLatitude != null  and startLatitude != ''"> and t.start_latitude = #{startLatitude}</if>
+        <if test="endAddress != null  and endAddress != ''"> and t.end_address = #{endAddress}</if>
+        <if test="endLongitude != null  and endLongitude != ''"> and t.end_longitude = #{endLongitude}</if>
+        <if test="endLatitude != null  and endLatitude != ''"> and t.end_latitude = #{endLatitude}</if>
+        <if test="routeDetail != null  and routeDetail != ''"> and t.route_detail = #{routeDetail}</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectCarRouteInfoById" parameterType="String" resultMap="CarRouteInfoResult">
+         select
+         <include refid="selectCarRouteInfoVo"/>
+         from car_route_info t
+         where t.id = #{id}
+    </select>
+
+
+    <update id="deleteCarRouteInfoById" parameterType="String">
+        update car_route_info set del_flag = '1' where id = #{id}
+    </update>
+
+    <update id="deleteCarRouteInfoByIds" parameterType="String">
+        update car_route_info set del_flag = '1' where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>
