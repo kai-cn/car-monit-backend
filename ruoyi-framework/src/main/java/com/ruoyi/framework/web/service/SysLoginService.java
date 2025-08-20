@@ -7,6 +7,7 @@ import com.ruoyi.common.exception.CustomException;
 import com.ruoyi.common.exception.user.CaptchaException;
 import com.ruoyi.common.exception.user.CaptchaExpireException;
 import com.ruoyi.common.exception.user.UserPasswordNotMatchException;
+import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.MessageUtils;
 import com.ruoyi.framework.manager.AsyncManager;
 import com.ruoyi.framework.manager.factory.AsyncFactory;
@@ -47,19 +48,22 @@ public class SysLoginService
      */
     public String login(String username, String password, String code, String uuid)
     {
-        String verifyKey = Constants.CAPTCHA_CODE_KEY + uuid;
-        String captcha = redisCache.getCacheObject(verifyKey);
-        redisCache.deleteObject(verifyKey);
-        if (captcha == null)
-        {
-            AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.jcaptcha.expire")));
-            throw new CaptchaExpireException();
+        if (CommonUtil.isNotBlank(code)){
+            String verifyKey = Constants.CAPTCHA_CODE_KEY + uuid;
+            String captcha = redisCache.getCacheObject(verifyKey);
+            redisCache.deleteObject(verifyKey);
+            if (captcha == null)
+            {
+                AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.jcaptcha.expire")));
+                throw new CaptchaExpireException();
+            }
+            if (!code.equalsIgnoreCase(captcha))
+            {
+                AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.jcaptcha.error")));
+                throw new CaptchaException();
+            }
         }
-        if (!code.equalsIgnoreCase(captcha))
-        {
-            AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.jcaptcha.error")));
-            throw new CaptchaException();
-        }
+
 
         // 用户验证
         Authentication authentication = null;
