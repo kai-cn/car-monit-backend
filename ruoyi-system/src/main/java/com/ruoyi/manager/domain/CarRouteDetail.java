@@ -1,6 +1,8 @@
 package com.ruoyi.manager.domain;
 
 import java.util.Date;
+
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -124,4 +126,10 @@ public class CarRouteDetail extends BasePlusEntity implements Custom {
     @Excel(name = "备注")
     private String remark;
 
+    // 时间查询
+    @TableField(exist = false)
+    private String applyTime1;
+
+    @TableField(exist = false)
+    private String applyTime2;
 }

@@ -1,7 +1,17 @@
 package com.ruoyi.web.controller.manager;
 
+import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import cn.afterturn.easypoi.excel.ExcelExportUtil;
+import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.system.service.ISysDictDataService;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +31,8 @@ import com.ruoyi.manager.service.ICarWarningInfoService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * 预警车辆Controller
  *
@@ -33,6 +45,9 @@ public class CarWarningInfoController extends BaseController {
 
     @Autowired
     private ICarWarningInfoService carWarningInfoService;
+
+    @Autowired
+    private ISysDictDataService sysDictDataService;
 
     /**
      * 查询预警车辆列表
@@ -52,10 +67,39 @@ public class CarWarningInfoController extends BaseController {
     @PreAuthorize("@ss.hasPermi('manager:carwarning:export')")
     @Log(title = "预警车辆", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
-    public AjaxResult export(CarWarningInfo carWarningInfo) {
+    public AjaxResult export(CarWarningInfo carWarningInfo, HttpServletResponse response) {
         List<CarWarningInfo> list = carWarningInfoService.selectCarWarningInfoList(carWarningInfo);
-        ExcelUtil<CarWarningInfo> util = new ExcelUtil<CarWarningInfo>(CarWarningInfo.class);
-        return util.exportExcel(list, "预警车辆数据");
+        // 车型
+        Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
+        // 车种
+        Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle");
+
+
+
+        list.stream().forEach(dp -> {
+            if (null != dp.getGantryTime()){
+                dp.setGantryTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getGantryTime()));
+            }
+            dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
+            dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
+        });
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/carWarningInfo.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**

@@ -97,6 +97,8 @@
         <if test="epsId != null "> and t.eps_id = #{epsId}</if>
         <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
         <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
         order by t.create_time desc,t.id
     </select>
 

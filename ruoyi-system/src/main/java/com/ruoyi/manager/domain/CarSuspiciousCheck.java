@@ -1,5 +1,6 @@
 package com.ruoyi.manager.domain;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -51,5 +52,12 @@ public class CarSuspiciousCheck extends BasePlusEntity implements Custom {
     /** 备注 */
     @Excel(name = "备注")
     private String remark;
+
+    // 时间查询
+    @TableField(exist = false)
+    private String applyTime1;
+
+    @TableField(exist = false)
+    private String applyTime2;
 
 }

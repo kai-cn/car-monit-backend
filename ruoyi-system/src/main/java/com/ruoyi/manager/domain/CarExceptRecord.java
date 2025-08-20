@@ -2,6 +2,8 @@ package com.ruoyi.manager.domain;
 
 import java.math.BigDecimal;
 import java.util.Date;
+
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -100,6 +102,13 @@ public class CarExceptRecord extends BasePlusEntity implements Custom {
     /** 状态（0未补交1全部补交） */
     @Excel(name = "状态", readConverterExp = "0=未补交1全部补交")
     private String status;
+
+    // 时间查询
+    @TableField(exist = false)
+    private String applyTime1;
+
+    @TableField(exist = false)
+    private String applyTime2;
 
 
 }

@@ -1,6 +1,8 @@
 package com.ruoyi.manager.domain;
 
 import java.util.Date;
+
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -104,6 +106,16 @@ public class CarWarningInfo extends BasePlusEntity implements Custom {
     /** 状态（0正常1停用） */
     @Excel(name = "状态", readConverterExp = "0=正常1停用")
     private String status;
+
+    @TableField(exist = false)
+    private String gantryTimeStr;
+
+    // 时间查询
+    @TableField(exist = false)
+    private String applyTime1;
+
+    @TableField(exist = false)
+    private String applyTime2;
 
 
 }
