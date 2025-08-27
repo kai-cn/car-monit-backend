@@ -1,7 +1,17 @@
 package com.ruoyi.web.controller.manager;
 
+import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import cn.afterturn.easypoi.excel.ExcelExportUtil;
+import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.system.service.ISysDictDataService;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +31,8 @@ import com.ruoyi.manager.service.ICarSuspiciousCheckService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * 可疑车辆人工核实Controller
  *
@@ -33,6 +45,8 @@ public class CarSuspiciousCheckController extends BaseController {
 
     @Autowired
     private ICarSuspiciousCheckService carSuspiciousCheckService;
+    @Autowired
+    private ISysDictDataService sysDictDataService;
 
     /**
      * 查询可疑车辆人工核实列表
@@ -52,10 +66,31 @@ public class CarSuspiciousCheckController extends BaseController {
     @PreAuthorize("@ss.hasPermi('manager:suspiciouscheck:export')")
     @Log(title = "可疑车辆人工核实", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
-    public AjaxResult export(CarSuspiciousCheck carSuspiciousCheck) {
+    public AjaxResult export(CarSuspiciousCheck carSuspiciousCheck, HttpServletResponse response) {
         List<CarSuspiciousCheck> list = carSuspiciousCheckService.selectCarSuspiciousCheckList(carSuspiciousCheck);
-        ExcelUtil<CarSuspiciousCheck> util = new ExcelUtil<CarSuspiciousCheck>(CarSuspiciousCheck.class);
-        return util.exportExcel(list, "可疑车辆人工核实数据");
+
+        list.stream().forEach(dp -> {
+            if (null != dp.getCreateTime()){
+                dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
+            }
+        });
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/carSuspiciousCheck.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**

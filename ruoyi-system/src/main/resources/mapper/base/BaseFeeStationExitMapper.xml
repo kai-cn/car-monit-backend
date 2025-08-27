@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.BaseFeeStationExitMapper">
+
+    <resultMap type="com.ruoyi.base.domain.BaseFeeStationExit" id="BaseFeeStationExitResult">
+        <result property="bigId"    column="big_id"    />
+        <result property="actualFeeClass"    column="actual_fee_class"    />
+        <result property="axleCount"    column="axle_count"    />
+        <result property="discountFee"    column="discount_fee"    />
+        <result property="electricalPercentage"    column="electrical_percentage"    />
+        <result property="enAxleCount"    column="en_axle_count"    />
+        <result property="enTime"    column="en_time"    />
+        <result property="enTollLaneHex"    column="en_toll_lane_hex"    />
+        <result property="enTollLaneId"    column="en_toll_lane_id"    />
+        <result property="enTollStationId"    column="en_toll_station_id"    />
+        <result property="enTollStationName"    column="en_toll_station_name"    />
+        <result property="enVehicleClass"    column="en_vehicle_class"    />
+        <result property="enVehicleId"    column="en_vehicle_id"    />
+        <result property="enVehicleType"    column="en_vehicle_type"    />
+        <result property="enWeight"    column="en_weight"    />
+        <result property="entryOperatorId"    column="entry_operator_id"    />
+        <result property="exTime"    column="ex_time"    />
+        <result property="exTollLaneId"    column="ex_toll_lane_id"    />
+        <result property="exTollStationId"    column="ex_toll_station_id"    />
+        <result property="exTollStationName"    column="ex_toll_station_name"    />
+        <result property="exVehicleClass"    column="ex_vehicle_class"    />
+        <result property="exWeight"    column="ex_weight"    />
+        <result property="fee"    column="fee"    />
+        <result property="feeBoardPlay"    column="fee_board_play"    />
+        <result property="feeMileage"    column="fee_mileage"    />
+        <result property="feeRate"    column="fee_rate"    />
+        <result property="id"    column="id"    />
+        <result property="identification"    column="identification"    />
+        <result property="identifyVehicleId"    column="identify_vehicle_id"    />
+        <result property="laneType"    column="lane_type"    />
+        <result property="mediaNo"    column="media_no"    />
+        <result property="mediaType"    column="media_type"    />
+        <result property="noCardCount"    column="no_card_count"    />
+        <result property="obuId"    column="obu_id"    />
+        <result property="obuSign"    column="obu_sign"    />
+        <result property="obuTotalAmount"    column="obu_total_amount"    />
+        <result property="obuTotalDiscountAmount"    column="obu_total_discount_amount"    />
+        <result property="operId"    column="oper_id"    />
+        <result property="params"    column="params"    />
+        <result property="passId"    column="pass_id"    />
+        <result property="paycardId"    column="paycard_id"    />
+        <result property="payFee"    column="pay_fee"    />
+        <result property="payType"    column="pay_type"    />
+        <result property="provFee"    column="prov_fee"    />
+        <result property="provTransCount"    column="prov_trans_count"    />
+        <result property="provinceCount"    column="province_count"    />
+        <result property="receiveTime"    column="receive_time"    />
+        <result property="shift"    column="shift"    />
+        <result property="shortFee"    column="short_fee"    />
+        <result property="shortFeeMileage"    column="short_fee_mileage"    />
+        <result property="signStatus"    column="sign_status"    />
+        <result property="spcrateVersion"    column="spcrate_version"    />
+        <result property="specialType"    column="special_type"    />
+        <result property="splitProvince"    column="split_province"    />
+        <result property="tac"    column="tac"    />
+        <result property="terminalNo"    column="terminal_no"    />
+        <result property="terminalTransNo"    column="terminal_trans_no"    />
+        <result property="transFee"    column="trans_fee"    />
+        <result property="transPaytype"    column="trans_paytype"    />
+        <result property="transType"    column="trans_type"    />
+        <result property="vehicleSign"    column="vehicle_sign"    />
+        <result property="vehicleSignId"    column="vehicle_sign_id"    />
+        <result property="loadTime"    column="load_time"    />
+        <result property="gradeLevel"    column="grade_level"    />
+        <result property="backCol1"    column="back_col1"    />
+        <result property="backCol2"    column="back_col2"    />
+        <result property="remark"    column="remark"    />
+        <result property="status"    column="status"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="tenantId"    column="tenant_id"    />
+
+    </resultMap>
+
+    <sql id="selectBaseFeeStationExitVo">
+        t.big_id,
+        t.actual_fee_class,
+        t.axle_count,
+        t.discount_fee,
+        t.electrical_percentage,
+        t.en_axle_count,
+        t.en_time,
+        t.en_toll_lane_hex,
+        t.en_toll_lane_id,
+        t.en_toll_station_id,
+        t.en_toll_station_name,
+        t.en_vehicle_class,
+        t.en_vehicle_id,
+        t.en_vehicle_type,
+        t.en_weight,
+        t.entry_operator_id,
+        t.ex_time,
+        t.ex_toll_lane_id,
+        t.ex_toll_station_id,
+        t.ex_toll_station_name,
+        t.ex_vehicle_class,
+        t.ex_weight,
+        t.fee,
+        t.fee_board_play,
+        t.fee_mileage,
+        t.fee_rate,
+        t.id,
+        t.identification,
+        t.identify_vehicle_id,
+        t.lane_type,
+        t.media_no,
+        t.media_type,
+        t.no_card_count,
+        t.obu_id,
+        t.obu_sign,
+        t.obu_total_amount,
+        t.obu_total_discount_amount,
+        t.oper_id,
+        t.params,
+        t.pass_id,
+        t.paycard_id,
+        t.pay_fee,
+        t.pay_type,
+        t.prov_fee,
+        t.prov_trans_count,
+        t.province_count,
+        t.receive_time,
+        t.shift,
+        t.short_fee,
+        t.short_fee_mileage,
+        t.sign_status,
+        t.spcrate_version,
+        t.special_type,
+        t.split_province,
+        t.tac,
+        t.terminal_no,
+        t.terminal_trans_no,
+        t.trans_fee,
+        t.trans_paytype,
+        t.trans_type,
+        t.vehicle_sign,
+        t.vehicle_sign_id,
+        t.load_time,
+        t.grade_level,
+        t.back_col1,
+        t.back_col2,
+        t.remark,
+        t.status,
+        t.sort,
+        t.eps_id,
+        t.del_flag,
+        t.create_by,
+        t.create_time,
+        t.update_by,
+        t.update_time,
+        t.tenant_id
+    </sql>
+
+
+    <select id="selectBaseFeeStationExitList" parameterType="com.ruoyi.base.domain.BaseFeeStationExit" resultMap="BaseFeeStationExitResult">
+        SELECT
+        <include refid="selectBaseFeeStationExitVo"/>
+        FROM base_fee_station_exit t
+        WHERE t.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="actualFeeClass != null  and actualFeeClass != ''"> and t.actual_fee_class = #{actualFeeClass}</if>
+        <if test="axleCount != null "> and t.axle_count = #{axleCount}</if>
+        <if test="discountFee != null "> and t.discount_fee = #{discountFee}</if>
+        <if test="electricalPercentage != null "> and t.electrical_percentage = #{electricalPercentage}</if>
+        <if test="enAxleCount != null "> and t.en_axle_count = #{enAxleCount}</if>
+        <if test="enTime != null "> and t.en_time = #{enTime}</if>
+        <if test="enTollLaneHex != null  and enTollLaneHex != ''"> and t.en_toll_lane_hex = #{enTollLaneHex}</if>
+        <if test="enTollLaneId != null  and enTollLaneId != ''"> and t.en_toll_lane_id = #{enTollLaneId}</if>
+        <if test="enTollStationId != null  and enTollStationId != ''"> and t.en_toll_station_id = #{enTollStationId}</if>
+        <if test="enTollStationName != null  and enTollStationName != ''"> and t.en_toll_station_name like concat('%', #{enTollStationName}, '%')</if>
+        <if test="enVehicleClass != null "> and t.en_vehicle_class = #{enVehicleClass}</if>
+        <if test="enVehicleId != null  and enVehicleId != ''"> and t.en_vehicle_id = #{enVehicleId}</if>
+        <if test="enVehicleType != null "> and t.en_vehicle_type = #{enVehicleType}</if>
+        <if test="enWeight != null "> and t.en_weight = #{enWeight}</if>
+        <if test="entryOperatorId != null  and entryOperatorId != ''"> and t.entry_operator_id = #{entryOperatorId}</if>
+        <if test="exTime != null "> and t.ex_time = #{exTime}</if>
+        <if test="exTollLaneId != null  and exTollLaneId != ''"> and t.ex_toll_lane_id = #{exTollLaneId}</if>
+        <if test="exTollStationId != null  and exTollStationId != ''"> and t.ex_toll_station_id = #{exTollStationId}</if>
+        <if test="exTollStationName != null  and exTollStationName != ''"> and t.ex_toll_station_name like concat('%', #{exTollStationName}, '%')</if>
+        <if test="exVehicleClass != null "> and t.ex_vehicle_class = #{exVehicleClass}</if>
+        <if test="exWeight != null "> and t.ex_weight = #{exWeight}</if>
+        <if test="fee != null "> and t.fee = #{fee}</if>
+        <if test="feeBoardPlay != null  and feeBoardPlay != ''"> and t.fee_board_play = #{feeBoardPlay}</if>
+        <if test="feeMileage != null "> and t.fee_mileage = #{feeMileage}</if>
+        <if test="feeRate != null "> and t.fee_rate = #{feeRate}</if>
+        <if test="identification != null  and identification != ''"> and t.identification = #{identification}</if>
+        <if test="identifyVehicleId != null  and identifyVehicleId != ''"> and t.identify_vehicle_id = #{identifyVehicleId}</if>
+        <if test="laneType != null  and laneType != ''"> and t.lane_type = #{laneType}</if>
+        <if test="mediaNo != null  and mediaNo != ''"> and t.media_no = #{mediaNo}</if>
+        <if test="mediaType != null  and mediaType != ''"> and t.media_type = #{mediaType}</if>
+        <if test="noCardCount != null "> and t.no_card_count = #{noCardCount}</if>
+        <if test="obuId != null  and obuId != ''"> and t.obu_id = #{obuId}</if>
+        <if test="obuSign != null  and obuSign != ''"> and t.obu_sign = #{obuSign}</if>
+        <if test="obuTotalAmount != null "> and t.obu_total_amount = #{obuTotalAmount}</if>
+        <if test="obuTotalDiscountAmount != null "> and t.obu_total_discount_amount = #{obuTotalDiscountAmount}</if>
+        <if test="operId != null  and operId != ''"> and t.oper_id = #{operId}</if>
+        <if test="params != null  and params != ''"> and t.params = #{params}</if>
+        <if test="passId != null  and passId != ''"> and t.pass_id = #{passId}</if>
+        <if test="paycardId != null  and paycardId != ''"> and t.paycard_id = #{paycardId}</if>
+        <if test="payFee != null "> and t.pay_fee = #{payFee}</if>
+        <if test="payType != null  and payType != ''"> and t.pay_type = #{payType}</if>
+        <if test="provFee != null "> and t.prov_fee = #{provFee}</if>
+        <if test="provTransCount != null "> and t.prov_trans_count = #{provTransCount}</if>
+        <if test="provinceCount != null "> and t.province_count = #{provinceCount}</if>
+        <if test="receiveTime != null "> and t.receive_time = #{receiveTime}</if>
+        <if test="shift != null  and shift != ''"> and t.shift = #{shift}</if>
+        <if test="shortFee != null "> and t.short_fee = #{shortFee}</if>
+        <if test="shortFeeMileage != null "> and t.short_fee_mileage = #{shortFeeMileage}</if>
+        <if test="signStatus != null  and signStatus != ''"> and t.sign_status = #{signStatus}</if>
+        <if test="spcrateVersion != null "> and t.spcrate_version = #{spcrateVersion}</if>
+        <if test="specialType != null  and specialType != ''"> and t.special_type = #{specialType}</if>
+        <if test="splitProvince != null  and splitProvince != ''"> and t.split_province = #{splitProvince}</if>
+        <if test="tac != null  and tac != ''"> and t.tac = #{tac}</if>
+        <if test="terminalNo != null  and terminalNo != ''"> and t.terminal_no = #{terminalNo}</if>
+        <if test="terminalTransNo != null  and terminalTransNo != ''"> and t.terminal_trans_no = #{terminalTransNo}</if>
+        <if test="transFee != null "> and t.trans_fee = #{transFee}</if>
+        <if test="transPaytype != null  and transPaytype != ''"> and t.trans_paytype = #{transPaytype}</if>
+        <if test="transType != null  and transType != ''"> and t.trans_type = #{transType}</if>
+        <if test="vehicleSign != null  and vehicleSign != ''"> and t.vehicle_sign = #{vehicleSign}</if>
+        <if test="vehicleSignId != null  and vehicleSignId != ''"> and t.vehicle_sign_id = #{vehicleSignId}</if>
+        <if test="loadTime != null "> and t.load_time = #{loadTime}</if>
+        <if test="gradeLevel != null  and gradeLevel != ''"> and t.grade_level = #{gradeLevel}</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectBaseFeeStationExitById" parameterType="String" resultMap="BaseFeeStationExitResult">
+         select
+         <include refid="selectBaseFeeStationExitVo"/>
+         from base_fee_station_exit t
+         where t.big_id = #{bigId}
+    </select>
+
+
+    <update id="deleteBaseFeeStationExitById" parameterType="String">
+        update base_fee_station_exit set del_flag = '1' where big_id = #{bigId}
+    </update>
+
+    <update id="deleteBaseFeeStationExitByIds" parameterType="String">
+        update base_fee_station_exit set del_flag = '1' where big_id in
+        <foreach item="bigId" collection="array" open="(" separator="," close=")">
+            #{bigId}
+        </foreach>
+    </update>
+</mapper>

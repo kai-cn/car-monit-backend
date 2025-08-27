@@ -113,4 +113,8 @@ public class CarSuspicious extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private String applyTime2;
 
+    // 查询时间
+    @TableField(exist = false)
+    private String createTimeStr;
+
 }

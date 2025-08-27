@@ -1,16 +1,9 @@
 package com.ruoyi.common.core.redis;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.BoundSetOperations;
-import org.springframework.data.redis.core.HashOperations;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Component;
 
 /**
@@ -24,6 +17,9 @@ public class RedisCache
 {
     @Autowired
     public RedisTemplate redisTemplate;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * 缓存基本的对象，Integer、String、实体类等
@@ -265,4 +261,57 @@ public class RedisCache
     {
         return redisTemplate.keys(pattern);
     }
+
+
+    /**
+     * 根绝月份查询数据
+     * @param prefix
+     * @param yearMonthList
+     * @return
+     */
+    public List<Object> getDataByMonthWithScan(String prefix, List<String> yearMonthList, String provinceCode, String cityCode, Boolean isDay) {
+        return stringRedisTemplate.execute((RedisCallback<List<Object>>) connection -> {
+            List<Object> result = new ArrayList<>();
+            for (String yearMonth : yearMonthList) {
+                String pattern;
+                if(null == cityCode){
+                    pattern = prefix  + yearMonth  + ":" + provinceCode + "*";
+                } else {
+                    if(isDay){
+                        // 按日存储数据
+                        yearMonth = yearMonth + "*";
+                    }
+                    pattern = prefix  + yearMonth + ":" + provinceCode + ":" + cityCode + "*";
+                }
+
+                ScanOptions options = ScanOptions.scanOptions()
+                        .match(pattern)
+                        .count(100)
+                        .build();
+
+                // 使用原生连接进行SCAN
+                try (Cursor<byte[]> cursor = connection.scan(options)) {
+                    List<byte[]> keys = new ArrayList<>();
+                    while (cursor.hasNext()) {
+                        keys.add(cursor.next());
+                    }
+
+                    // 2. 批量获取Hash数据
+                    if (!keys.isEmpty()) {
+                        for (byte[] keyBytes : keys) {
+                            Map<byte[], byte[]> hashData = connection.hGetAll(keyBytes);
+                            if (hashData != null && !hashData.isEmpty()) {
+                                // 反序列化Hash数据
+                                hashData.forEach((k, v) -> {
+                                    result.add(redisTemplate.getHashValueSerializer().deserialize(v));
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            return result;
+        });
+    }
+
 }

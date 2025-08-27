@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.BaseServiceAreaInfoMapper">
+
+    <resultMap type="com.ruoyi.base.domain.BaseServiceAreaInfo" id="BaseServiceAreaInfoResult">
+        <result property="agentPk"    column="agent_pk"    />
+        <result property="yxtzj"    column="yxtzj"    />
+        <result property="fwqbm"    column="fwqbm"    />
+        <result property="fwqmc"    column="fwqmc"    />
+        <result property="wd"    column="wd"    />
+        <result property="fxmc"    column="fxmc"    />
+        <result property="fxdm"    column="fxdm"    />
+        <result property="jd"    column="jd"    />
+        <result property="sslxbh"    column="sslxbh"    />
+        <result property="sslxmc"    column="sslxmc"    />
+        <result property="ssldbh"    column="ssldbh"    />
+        <result property="ssldmc"    column="ssldmc"    />
+        <result property="sczhkgs"    column="sczhkgs"    />
+        <result property="sczhszgs"    column="sczhszgs"    />
+        <result property="ssglzxbm"    column="ssglzxbm"    />
+        <result property="ssglzxmc"    column="ssglzxmc"    />
+        <result property="xzqhmc"    column="xzqhmc"    />
+        <result property="yyrq"    column="yyrq"    />
+        <result property="cws"    column="cws"    />
+        <result property="sfszlkk"    column="sfszlkk"    />
+        <result property="cdzs"    column="cdzs"    />
+        <result property="sfcyfw"    column="sfcyfw"    />
+        <result property="sftgzsfw"    column="sftgzsfw"    />
+        <result property="sftgqxfw"    column="sftgqxfw"    />
+        <result property="sftgcsfw"    column="sftgcsfw"    />
+        <result property="sftgjyfw"    column="sftgjyfw"    />
+        <result property="mj"    column="mj"    />
+        <result property="sftgcshfw"    column="sftgcshfw"    />
+        <result property="xzqhdm"    column="xzqhdm"    />
+        <result property="synx"    column="synx"    />
+        <result property="lyxt"    column="lyxt"    />
+        <result property="loadTime"    column="load_time"    />
+        <result property="allColPk"    column="all_col_pk"    />
+        <result property="backCol1"    column="back_col1"    />
+        <result property="backCol2"    column="back_col2"    />
+        <result property="remark2"    column="remark2"    />
+        <result property="status"    column="status"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="tenantId"    column="tenant_id"    />
+
+    </resultMap>
+
+    <sql id="selectBaseServiceAreaInfoVo">
+        t.agent_pk,
+        t.yxtzj,
+        t.fwqbm,
+        t.fwqmc,
+        t.wd,
+        t.fxmc,
+        t.fxdm,
+        t.jd,
+        t.sslxbh,
+        t.sslxmc,
+        t.ssldbh,
+        t.ssldmc,
+        t.sczhkgs,
+        t.sczhszgs,
+        t.ssglzxbm,
+        t.ssglzxmc,
+        t.xzqhmc,
+        t.yyrq,
+        t.cws,
+        t.sfszlkk,
+        t.cdzs,
+        t.sfcyfw,
+        t.sftgzsfw,
+        t.sftgqxfw,
+        t.sftgcsfw,
+        t.sftgjyfw,
+        t.mj,
+        t.sftgcshfw,
+        t.xzqhdm,
+        t.synx,
+        t.lyxt,
+        t.load_time,
+        t.all_col_pk,
+        t.back_col1,
+        t.back_col2,
+        t.remark2,
+        t.status,
+        t.sort,
+        t.eps_id,
+        t.del_flag,
+        t.create_by,
+        t.create_time,
+        t.update_by,
+        t.update_time,
+        t.tenant_id
+    </sql>
+
+
+    <select id="selectBaseServiceAreaInfoList" parameterType="com.ruoyi.base.domain.BaseServiceAreaInfo" resultMap="BaseServiceAreaInfoResult">
+        SELECT
+        <include refid="selectBaseServiceAreaInfoVo"/>
+        FROM base_service_area_info t
+        WHERE t.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="yxtzj != null  and yxtzj != ''"> and t.yxtzj = #{yxtzj}</if>
+        <if test="fwqbm != null  and fwqbm != ''"> and t.fwqbm = #{fwqbm}</if>
+        <if test="fwqmc != null  and fwqmc != ''"> and t.fwqmc = #{fwqmc}</if>
+        <if test="wd != null  and wd != ''"> and t.wd = #{wd}</if>
+        <if test="fxmc != null  and fxmc != ''"> and t.fxmc = #{fxmc}</if>
+        <if test="fxdm != null  and fxdm != ''"> and t.fxdm = #{fxdm}</if>
+        <if test="jd != null  and jd != ''"> and t.jd = #{jd}</if>
+        <if test="sslxbh != null  and sslxbh != ''"> and t.sslxbh = #{sslxbh}</if>
+        <if test="sslxmc != null  and sslxmc != ''"> and t.sslxmc = #{sslxmc}</if>
+        <if test="ssldbh != null  and ssldbh != ''"> and t.ssldbh = #{ssldbh}</if>
+        <if test="ssldmc != null  and ssldmc != ''"> and t.ssldmc = #{ssldmc}</if>
+        <if test="sczhkgs != null  and sczhkgs != ''"> and t.sczhkgs = #{sczhkgs}</if>
+        <if test="sczhszgs != null  and sczhszgs != ''"> and t.sczhszgs = #{sczhszgs}</if>
+        <if test="ssglzxbm != null  and ssglzxbm != ''"> and t.ssglzxbm = #{ssglzxbm}</if>
+        <if test="ssglzxmc != null  and ssglzxmc != ''"> and t.ssglzxmc = #{ssglzxmc}</if>
+        <if test="xzqhmc != null  and xzqhmc != ''"> and t.xzqhmc = #{xzqhmc}</if>
+        <if test="yyrq != null  and yyrq != ''"> and t.yyrq = #{yyrq}</if>
+        <if test="cws != null  and cws != ''"> and t.cws = #{cws}</if>
+        <if test="sfszlkk != null  and sfszlkk != ''"> and t.sfszlkk = #{sfszlkk}</if>
+        <if test="cdzs != null  and cdzs != ''"> and t.cdzs = #{cdzs}</if>
+        <if test="sfcyfw != null  and sfcyfw != ''"> and t.sfcyfw = #{sfcyfw}</if>
+        <if test="sftgzsfw != null  and sftgzsfw != ''"> and t.sftgzsfw = #{sftgzsfw}</if>
+        <if test="sftgqxfw != null  and sftgqxfw != ''"> and t.sftgqxfw = #{sftgqxfw}</if>
+        <if test="sftgcsfw != null  and sftgcsfw != ''"> and t.sftgcsfw = #{sftgcsfw}</if>
+        <if test="sftgjyfw != null  and sftgjyfw != ''"> and t.sftgjyfw = #{sftgjyfw}</if>
+        <if test="mj != null  and mj != ''"> and t.mj = #{mj}</if>
+        <if test="sftgcshfw != null  and sftgcshfw != ''"> and t.sftgcshfw = #{sftgcshfw}</if>
+        <if test="xzqhdm != null  and xzqhdm != ''"> and t.xzqhdm = #{xzqhdm}</if>
+        <if test="synx != null  and synx != ''"> and t.synx = #{synx}</if>
+        <if test="lyxt != null  and lyxt != ''"> and t.lyxt = #{lyxt}</if>
+        <if test="loadTime != null  and loadTime != ''"> and t.load_time = #{loadTime}</if>
+        <if test="allColPk != null  and allColPk != ''"> and t.all_col_pk = #{allColPk}</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="remark2 != null  and remark2 != ''"> and t.remark2 = #{remark2}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectBaseServiceAreaInfoById" parameterType="String" resultMap="BaseServiceAreaInfoResult">
+         select
+         <include refid="selectBaseServiceAreaInfoVo"/>
+         from base_service_area_info t
+         where t.agent_pk = #{agentPk}
+    </select>
+
+
+    <update id="deleteBaseServiceAreaInfoById" parameterType="String">
+        update base_service_area_info set del_flag = '1' where agent_pk = #{agentPk}
+    </update>
+
+    <update id="deleteBaseServiceAreaInfoByIds" parameterType="String">
+        update base_service_area_info set del_flag = '1' where agent_pk in
+        <foreach item="agentPk" collection="array" open="(" separator="," close=")">
+            #{agentPk}
+        </foreach>
+    </update>
+</mapper>

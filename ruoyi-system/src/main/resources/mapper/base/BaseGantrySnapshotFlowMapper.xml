@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.BaseGantrySnapshotFlowMapper">
+
+    <resultMap type="com.ruoyi.base.domain.BaseGantrySnapshotFlow" id="BaseGantrySnapshotFlowResult">
+        <result property="bigId"    column="big_id"    />
+        <result property="dataSource"    column="data_source"    />
+        <result property="cameraType"    column="camera_type"    />
+        <result property="deviceId"    column="device_id"    />
+        <result property="gantryCode"    column="gantry_code"    />
+        <result property="roadCode"    column="road_code"    />
+        <result property="roadName"    column="road_name"    />
+        <result property="sectionCode"    column="section_code"    />
+        <result property="sectionName"    column="section_name"    />
+        <result property="tollCode"    column="toll_code"    />
+        <result property="tollName"    column="toll_name"    />
+        <result property="orgCode"    column="org_code"    />
+        <result property="orgName"    column="org_name"    />
+        <result property="hexCode"    column="hex_code"    />
+        <result property="direction"    column="direction"    />
+        <result property="pileno"    column="pileno"    />
+        <result property="lon"    column="lon"    />
+        <result property="lat"    column="lat"    />
+        <result property="deviceIp"    column="device_ip"    />
+        <result property="siteId"    column="site_id"    />
+        <result property="laneId"    column="lane_id"    />
+        <result property="snapshotTimeUnix"    column="snapshot_time_unix"    />
+        <result property="snapshotTime"    column="snapshot_time"    />
+        <result property="receivedTimeUnix"    column="received_time_unix"    />
+        <result property="receivedTime"    column="received_time"    />
+        <result property="plateNumber"    column="plate_number"    />
+        <result property="plateColor"    column="plate_color"    />
+        <result property="plateColorCode"    column="plate_color_code"    />
+        <result property="plateType"    column="plate_type"    />
+        <result property="plateTypeCode"    column="plate_type_code"    />
+        <result property="plateConfidence"    column="plate_confidence"    />
+        <result property="carBrand"    column="car_brand"    />
+        <result property="carColor"    column="car_color"    />
+        <result property="carColorCode"    column="car_color_code"    />
+        <result property="carType"    column="car_type"    />
+        <result property="carTypeCode"    column="car_type_code"    />
+        <result property="carDirection"    column="car_direction"    />
+        <result property="snapPicturePath"    column="snap_picture_path"    />
+        <result property="loadTime"    column="load_time"    />
+        <result property="gradeLevel"    column="grade_level"    />
+        <result property="backCol1"    column="back_col1"    />
+        <result property="backCol2"    column="back_col2"    />
+        <result property="remark"    column="remark"    />
+        <result property="status"    column="status"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="tenantId"    column="tenant_id"    />
+
+    </resultMap>
+
+    <sql id="selectBaseGantrySnapshotFlowVo">
+        t.big_id,
+        t.data_source,
+        t.camera_type,
+        t.device_id,
+        t.gantry_code,
+        t.road_code,
+        t.road_name,
+        t.section_code,
+        t.section_name,
+        t.toll_code,
+        t.toll_name,
+        t.org_code,
+        t.org_name,
+        t.hex_code,
+        t.direction,
+        t.pileno,
+        t.lon,
+        t.lat,
+        t.device_ip,
+        t.site_id,
+        t.lane_id,
+        t.snapshot_time_unix,
+        t.snapshot_time,
+        t.received_time_unix,
+        t.received_time,
+        t.plate_number,
+        t.plate_color,
+        t.plate_color_code,
+        t.plate_type,
+        t.plate_type_code,
+        t.plate_confidence,
+        t.car_brand,
+        t.car_color,
+        t.car_color_code,
+        t.car_type,
+        t.car_type_code,
+        t.car_direction,
+        t.snap_picture_path,
+        t.load_time,
+        t.grade_level,
+        t.back_col1,
+        t.back_col2,
+        t.remark,
+        t.status,
+        t.sort,
+        t.eps_id,
+        t.del_flag,
+        t.create_by,
+        t.create_time,
+        t.update_by,
+        t.update_time,
+        t.tenant_id
+    </sql>
+
+
+    <select id="selectBaseGantrySnapshotFlowList" parameterType="com.ruoyi.base.domain.BaseGantrySnapshotFlow" resultMap="BaseGantrySnapshotFlowResult">
+        SELECT
+        <include refid="selectBaseGantrySnapshotFlowVo"/>
+        FROM base_gantry_snapshot_flow t
+        WHERE t.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="dataSource != null  and dataSource != ''"> and t.data_source = #{dataSource}</if>
+        <if test="cameraType != null  and cameraType != ''"> and t.camera_type = #{cameraType}</if>
+        <if test="deviceId != null  and deviceId != ''"> and t.device_id = #{deviceId}</if>
+        <if test="gantryCode != null  and gantryCode != ''"> and t.gantry_code = #{gantryCode}</if>
+        <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
+        <if test="roadName != null  and roadName != ''"> and t.road_name like concat('%', #{roadName}, '%')</if>
+        <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
+        <if test="sectionName != null  and sectionName != ''"> and t.section_name like concat('%', #{sectionName}, '%')</if>
+        <if test="tollCode != null  and tollCode != ''"> and t.toll_code = #{tollCode}</if>
+        <if test="tollName != null  and tollName != ''"> and t.toll_name like concat('%', #{tollName}, '%')</if>
+        <if test="orgCode != null  and orgCode != ''"> and t.org_code = #{orgCode}</if>
+        <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
+        <if test="hexCode != null  and hexCode != ''"> and t.hex_code = #{hexCode}</if>
+        <if test="direction != null "> and t.direction = #{direction}</if>
+        <if test="pileno != null  and pileno != ''"> and t.pileno = #{pileno}</if>
+        <if test="lon != null "> and t.lon = #{lon}</if>
+        <if test="lat != null "> and t.lat = #{lat}</if>
+        <if test="deviceIp != null  and deviceIp != ''"> and t.device_ip = #{deviceIp}</if>
+        <if test="siteId != null "> and t.site_id = #{siteId}</if>
+        <if test="laneId != null "> and t.lane_id = #{laneId}</if>
+        <if test="snapshotTimeUnix != null "> and t.snapshot_time_unix = #{snapshotTimeUnix}</if>
+        <if test="snapshotTime != null "> and t.snapshot_time = #{snapshotTime}</if>
+        <if test="receivedTimeUnix != null "> and t.received_time_unix = #{receivedTimeUnix}</if>
+        <if test="receivedTime != null  and receivedTime != ''"> and t.received_time = #{receivedTime}</if>
+        <if test="plateNumber != null  and plateNumber != ''"> and t.plate_number = #{plateNumber}</if>
+        <if test="plateColor != null  and plateColor != ''"> and t.plate_color = #{plateColor}</if>
+        <if test="plateColorCode != null "> and t.plate_color_code = #{plateColorCode}</if>
+        <if test="plateType != null  and plateType != ''"> and t.plate_type = #{plateType}</if>
+        <if test="plateTypeCode != null "> and t.plate_type_code = #{plateTypeCode}</if>
+        <if test="plateConfidence != null "> and t.plate_confidence = #{plateConfidence}</if>
+        <if test="carBrand != null  and carBrand != ''"> and t.car_brand = #{carBrand}</if>
+        <if test="carColor != null  and carColor != ''"> and t.car_color = #{carColor}</if>
+        <if test="carColorCode != null "> and t.car_color_code = #{carColorCode}</if>
+        <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
+        <if test="carTypeCode != null "> and t.car_type_code = #{carTypeCode}</if>
+        <if test="carDirection != null  and carDirection != ''"> and t.car_direction = #{carDirection}</if>
+        <if test="snapPicturePath != null  and snapPicturePath != ''"> and t.snap_picture_path = #{snapPicturePath}</if>
+        <if test="loadTime != null "> and t.load_time = #{loadTime}</if>
+        <if test="gradeLevel != null "> and t.grade_level = #{gradeLevel}</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.big_id
+    </select>
+
+    <select id="selectBaseGantrySnapshotFlowById" parameterType="String" resultMap="BaseGantrySnapshotFlowResult">
+         select
+         <include refid="selectBaseGantrySnapshotFlowVo"/>
+         from base_gantry_snapshot_flow t
+         where t.big_id = #{bigId}
+    </select>
+
+
+    <update id="deleteBaseGantrySnapshotFlowById" parameterType="String">
+        update base_gantry_snapshot_flow set del_flag = '1' where big_id = #{bigId}
+    </update>
+
+    <update id="deleteBaseGantrySnapshotFlowByIds" parameterType="String">
+        update base_gantry_snapshot_flow set del_flag = '1' where big_id in
+        <foreach item="bigId" collection="array" open="(" separator="," close=")">
+            #{bigId}
+        </foreach>
+    </update>
+</mapper>

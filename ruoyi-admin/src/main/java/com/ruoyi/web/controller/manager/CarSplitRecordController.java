@@ -1,7 +1,16 @@
 package com.ruoyi.web.controller.manager;
 
-import java.util.Arrays;
+import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import cn.afterturn.easypoi.excel.ExcelExportUtil;
+import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.system.service.ISysDictDataService;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,8 +27,9 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.manager.domain.CarSplitRecord;
 import com.ruoyi.manager.service.ICarSplitRecordService;
-import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * 拆分流水Controller
@@ -33,6 +43,8 @@ public class CarSplitRecordController extends BaseController {
 
     @Autowired
     private ICarSplitRecordService carSplitRecordService;
+    @Autowired
+    private ISysDictDataService sysDictDataService;
 
     /**
      * 查询拆分流水列表
@@ -52,10 +64,43 @@ public class CarSplitRecordController extends BaseController {
     @PreAuthorize("@ss.hasPermi('manager:splitrecord:export')")
     @Log(title = "拆分流水", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
-    public AjaxResult export(CarSplitRecord carSplitRecord) {
+    public AjaxResult export(CarSplitRecord carSplitRecord, HttpServletResponse response) {
         List<CarSplitRecord> list = carSplitRecordService.selectCarSplitRecordList(carSplitRecord);
-        ExcelUtil<CarSplitRecord> util = new ExcelUtil<CarSplitRecord>(CarSplitRecord.class);
-        return util.exportExcel(list, "拆分流水数据");
+        // 车型
+        Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
+
+        // 车种
+        Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle");
+
+        // 车种
+        Map<String,String> passTypeMap = sysDictDataService.selectDictDataMap("pass_type");
+
+        list.stream().forEach(dp -> {
+            if (null != dp.getCreateTime()){
+                dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
+            }
+            dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
+            dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
+            dp.setPassType(CommonUtil.isNull(passTypeMap.get(dp.getCarVehicle())));
+
+        });
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/carSplitRecord.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**

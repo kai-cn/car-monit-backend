@@ -1,7 +1,17 @@
 package com.ruoyi.web.controller.manager;
 
+import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import cn.afterturn.easypoi.excel.ExcelExportUtil;
+import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.system.service.ISysDictDataService;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +31,8 @@ import com.ruoyi.manager.service.ICarExceptRecordService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * 异常车辆流水Controller
  *
@@ -33,6 +45,8 @@ public class CarExceptRecordController extends BaseController {
 
     @Autowired
     private ICarExceptRecordService carExceptRecordService;
+    @Autowired
+    private ISysDictDataService sysDictDataService;
 
     /**
      * 查询异常车辆流水列表
@@ -52,10 +66,44 @@ public class CarExceptRecordController extends BaseController {
     @PreAuthorize("@ss.hasPermi('manager:exceptrecord:export')")
     @Log(title = "异常车辆流水", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
-    public AjaxResult export(CarExceptRecord carExceptRecord) {
+    public AjaxResult export(CarExceptRecord carExceptRecord, HttpServletResponse response) {
         List<CarExceptRecord> list = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);
-        ExcelUtil<CarExceptRecord> util = new ExcelUtil<CarExceptRecord>(CarExceptRecord.class);
-        return util.exportExcel(list, "异常车辆流水数据");
+        // 车型
+        Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
+
+        // 车种
+        Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle");
+
+        // 逃费类型
+        Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataMap("escaped_type");
+
+
+
+        list.stream().forEach(dp -> {
+            if (null != dp.getCreateTime()){
+                dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
+            }
+            dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
+            dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
+            dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
+        });
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/carExceptRecord.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**

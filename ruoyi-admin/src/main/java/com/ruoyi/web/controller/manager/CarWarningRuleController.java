@@ -1,6 +1,16 @@
 package com.ruoyi.web.controller.manager;
 
+import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import cn.afterturn.easypoi.excel.ExcelExportUtil;
+import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.system.service.ISysDictDataService;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +30,8 @@ import com.ruoyi.manager.service.ICarWarningRuleService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * 预警规则Controller
  *
@@ -32,6 +44,8 @@ public class CarWarningRuleController extends BaseController {
 
     @Autowired
     private ICarWarningRuleService carWarningRuleService;
+    @Autowired
+    private ISysDictDataService sysDictDataService;
 
     /**
      * 查询预警规则列表
@@ -51,10 +65,30 @@ public class CarWarningRuleController extends BaseController {
     @PreAuthorize("@ss.hasPermi('manager:warningrule:export')")
     @Log(title = "预警规则", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
-    public AjaxResult export(CarWarningRule carWarningRule) {
+    public AjaxResult export(CarWarningRule carWarningRule, HttpServletResponse response) {
         List<CarWarningRule> list = carWarningRuleService.selectCarWarningRuleList(carWarningRule);
-        ExcelUtil<CarWarningRule> util = new ExcelUtil<CarWarningRule>(CarWarningRule.class);
-        return util.exportExcel(list, "预警规则数据");
+        list.stream().forEach(dp -> {
+            if (null != dp.getCreateTime()){
+                dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
+            }
+        });
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/carWarningRule.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
