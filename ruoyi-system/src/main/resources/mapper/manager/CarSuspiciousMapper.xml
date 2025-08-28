@@ -20,7 +20,9 @@
         <result property="isExcept"    column="is_except"    />
         <result property="orgId"    column="org_id"    />
         <result property="orgName"    column="org_name"    />
+        <result property="isWhite"    column="is_white"    />
         <result property="backCol1"    column="back_col1"    />
+        <result property="whiteRemark"    column="white_remark"    />
         <result property="backCol2"    column="back_col2"    />
         <result property="remark"    column="remark"    />
         <result property="status"    column="status"    />
@@ -53,7 +55,9 @@
         t.is_except,
         t.org_id,
         t.org_name,
+        t.is_white,
         t.back_col1,
+        t.white_remark,
         t.back_col2,
         t.remark,
         t.status,
@@ -90,7 +94,9 @@
         <if test="isExcept != null  and isExcept != ''"> and t.is_except = #{isExcept}</if>
         <if test="orgId != null  and orgId != ''"> and t.org_id = #{orgId}</if>
         <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
+        <if test="isWhite != null  and isWhite != ''"> and t.is_white = #{isWhite}</if>
         <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="whiteRemark != null  and whiteRemark != ''"> and t.white_remark = #{whiteRemark}</if>
         <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
         <if test="status != null  and status != ''"> and t.status = #{status}</if>
         <if test="sort != null "> and t.sort = #{sort}</if>
@@ -103,10 +109,10 @@
     </select>
 
     <select id="selectCarSuspiciousById" parameterType="String" resultMap="CarSuspiciousResult">
-         select
-         <include refid="selectCarSuspiciousVo"/>
-         from car_suspicious t
-         where t.id = #{id}
+        select
+        <include refid="selectCarSuspiciousVo"/>
+        from car_suspicious t
+        where t.id = #{id}
     </select>
 
 

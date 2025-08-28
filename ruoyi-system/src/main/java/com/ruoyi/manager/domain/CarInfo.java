@@ -163,6 +163,14 @@ public class CarInfo extends BasePlusEntity implements Custom {
     @Excel(name = "管理中心名称")
     private String orgName;
 
+    /** 司机名称 */
+    @Excel(name = "司机名称")
+    private String linkName;
+
+    /** 联系方式 */
+    @Excel(name = "联系方式")
+    private String linkPhone;
+
     /** 备用字段1 */
     @Excel(name = "备用字段1")
     private String backCol1;

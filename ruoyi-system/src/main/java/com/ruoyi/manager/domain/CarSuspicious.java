@@ -90,6 +90,14 @@ public class CarSuspicious extends BasePlusEntity implements Custom {
     @Excel(name = "管理中心名称")
     private String orgName;
 
+    /** 是否在白名单（0否1是） */
+    @Excel(name = "是否在白名单", readConverterExp = "0=否1是")
+    private String isWhite;
+
+    /** 白名单原因 */
+    @Excel(name = "白名单原因")
+    private String whiteRemark;
+
     /** 备用字段1 */
     @Excel(name = "备用字段1")
     private String backCol1;

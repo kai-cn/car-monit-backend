@@ -8,8 +8,12 @@
         <result property="carNo"    column="car_no"    />
         <result property="suspicousFlag"    column="suspicous_flag"    />
         <result property="attachments"    column="attachments"    />
+        <result property="escapedType"    column="escaped_type"    />
         <result property="backCol1"    column="back_col1"    />
+        <result property="chargeAmount"    column="charge_amount"    />
+        <result property="totalAmount"    column="total_amount"    />
         <result property="backCol2"    column="back_col2"    />
+        <result property="difAmount"    column="dif_amount"    />
         <result property="remark"    column="remark"    />
         <result property="status"    column="status"    />
         <result property="sort"    column="sort"    />
@@ -29,8 +33,12 @@
         t.car_no,
         t.suspicous_flag,
         t.attachments,
+        t.escaped_type,
         t.back_col1,
+        t.charge_amount,
+        t.total_amount,
         t.back_col2,
+        t.dif_amount,
         t.remark,
         t.status,
         t.sort,
@@ -54,8 +62,12 @@
         <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
         <if test="suspicousFlag != null  and suspicousFlag != ''"> and t.suspicous_flag = #{suspicousFlag}</if>
         <if test="attachments != null  and attachments != ''"> and t.attachments = #{attachments}</if>
+        <if test="escapedType != null  and escapedType != ''"> and t.escaped_type = #{escapedType}</if>
         <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="chargeAmount != null "> and t.charge_amount = #{chargeAmount}</if>
+        <if test="totalAmount != null "> and t.total_amount = #{totalAmount}</if>
         <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="difAmount != null "> and t.dif_amount = #{difAmount}</if>
         <if test="status != null  and status != ''"> and t.status = #{status}</if>
         <if test="sort != null "> and t.sort = #{sort}</if>
         <if test="epsId != null "> and t.eps_id = #{epsId}</if>
@@ -67,10 +79,10 @@
     </select>
 
     <select id="selectCarSuspiciousCheckById" parameterType="String" resultMap="CarSuspiciousCheckResult">
-         select
-         <include refid="selectCarSuspiciousCheckVo"/>
-         from car_suspicious_check t
-         where t.id = #{id}
+        select
+        <include refid="selectCarSuspiciousCheckVo"/>
+        from car_suspicious_check t
+        where t.id = #{id}
     </select>
 
 

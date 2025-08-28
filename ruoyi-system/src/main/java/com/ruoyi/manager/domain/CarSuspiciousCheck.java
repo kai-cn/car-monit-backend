@@ -9,6 +9,8 @@ import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BasePlusEntity;
 import com.ruoyi.common.core.domain.Custom;
 
+import java.math.BigDecimal;
+
 /**
  * 可疑车辆人工核实对象 car_suspicious_check
  *
@@ -32,6 +34,22 @@ public class CarSuspiciousCheck extends BasePlusEntity implements Custom {
     /** 是否为可疑车辆 */
     @Excel(name = "是否为可疑车辆")
     private String suspicousFlag;
+
+    /** 逃费类型（字典：1少轴2屏蔽3货车客标4有入无出5绿通换挂） */
+    @Excel(name = "逃费类型", readConverterExp = "字=典：1少轴2屏蔽3货车客标4有入无出5绿通换挂")
+    private String escapedType;
+
+    /** 收费金额 */
+    @Excel(name = "收费金额")
+    private BigDecimal chargeAmount;
+
+    /** 应缴金额 */
+    @Excel(name = "应缴金额")
+    private BigDecimal totalAmount;
+
+    /** 差额 */
+    @Excel(name = "差额")
+    private BigDecimal difAmount;
 
     /** 附件 */
     @Excel(name = "附件")
