@@ -1,11 +1,12 @@
 package com.ruoyi.base.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.base.domain.BaseTollStationInfo;
+import com.ruoyi.base.mapper.BaseTollStationInfoMapper;
+import com.ruoyi.base.service.IBaseTollStationInfoService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
-import com.ruoyi.base.mapper.BaseTollStationInfoMapper;
-import com.ruoyi.base.domain.BaseTollStationInfo;
-import com.ruoyi.base.service.IBaseTollStationInfoService;
+import com.ruoyi.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,6 +66,11 @@ public class BaseTollStationInfoServiceImpl extends ServiceImpl<BaseTollStationI
         else
         {
             // 新增 主键
+            baseTollStationInfo.setDelFlag("0");
+            baseTollStationInfo.setCreateTime(DateUtils.getTimestamp());
+            baseTollStationInfo.setUpdateTime(DateUtils.getTimestamp());
+            baseTollStationInfo.setCreateBy(1L);
+
             baseTollStationInfoMapper.insert(baseTollStationInfo);
         }
         return AjaxResult.success("操作成功！",baseTollStationInfo.getId());
