@@ -1,12 +1,12 @@
 package com.ruoyi.base.domain;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.ruoyi.common.annotation.Excel;
+import com.ruoyi.common.core.domain.BasePlusEntityNew;
+import com.ruoyi.common.core.domain.Custom;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-import com.ruoyi.common.annotation.Excel;
-import com.ruoyi.common.core.domain.BasePlusEntity;
-import com.ruoyi.common.core.domain.Custom;
 
 /**
  * 收费所基础信息对象 base_toll_booth_info
@@ -18,7 +18,7 @@ import com.ruoyi.common.core.domain.Custom;
 @TableName("base_toll_booth_info")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-public class BaseTollBoothInfo extends BasePlusEntity implements Custom {
+public class BaseTollBoothInfo extends BasePlusEntityNew implements Custom {
 
     /** 代理主键 */
     private String agentPk;

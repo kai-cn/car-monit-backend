@@ -1,12 +1,12 @@
 package com.ruoyi.base.domain;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.ruoyi.common.annotation.Excel;
+import com.ruoyi.common.core.domain.BasePlusEntityNew;
+import com.ruoyi.common.core.domain.Custom;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-import com.ruoyi.common.annotation.Excel;
-import com.ruoyi.common.core.domain.BasePlusEntity;
-import com.ruoyi.common.core.domain.Custom;
 
 /**
  * 收费站基础信息位置对象 base_sfzjcxx
@@ -18,7 +18,7 @@ import com.ruoyi.common.core.domain.Custom;
 @TableName("base_sfzjcxx")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-public class BaseSfzjcxx extends BasePlusEntity implements Custom {
+public class BaseSfzjcxx extends BasePlusEntityNew implements Custom {
 
     /** 代理主键 */
     private String agentPk;

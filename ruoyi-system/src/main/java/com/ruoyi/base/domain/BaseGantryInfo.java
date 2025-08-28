@@ -1,12 +1,12 @@
 package com.ruoyi.base.domain;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.ruoyi.common.annotation.Excel;
+import com.ruoyi.common.core.domain.BasePlusEntityNew;
+import com.ruoyi.common.core.domain.Custom;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-import com.ruoyi.common.annotation.Excel;
-import com.ruoyi.common.core.domain.BasePlusEntity;
-import com.ruoyi.common.core.domain.Custom;
 
 /**
  * 门架信息对象 base_gantry_info
@@ -18,7 +18,7 @@ import com.ruoyi.common.core.domain.Custom;
 @TableName("base_gantry_info")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-public class BaseGantryInfo extends BasePlusEntity implements Custom {
+public class BaseGantryInfo extends BasePlusEntityNew implements Custom {
 
     /** 门架编号（分离） */
     @Excel(name = "门架编号", readConverterExp = "分=离")

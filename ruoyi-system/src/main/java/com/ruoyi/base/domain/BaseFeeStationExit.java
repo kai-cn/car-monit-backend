@@ -1,15 +1,16 @@
 package com.ruoyi.base.domain;
 
-import java.math.BigDecimal;
-import java.util.Date;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ruoyi.common.annotation.Excel;
+import com.ruoyi.common.core.domain.BasePlusEntityNew;
+import com.ruoyi.common.core.domain.Custom;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-import com.ruoyi.common.annotation.Excel;
-import com.ruoyi.common.core.domain.BasePlusEntity;
-import com.ruoyi.common.core.domain.Custom;
+
+import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * 收费站出口流水对象 base_fee_station_exit
@@ -21,7 +22,7 @@ import com.ruoyi.common.core.domain.Custom;
 @TableName("base_fee_station_exit")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-public class BaseFeeStationExit extends BasePlusEntity implements Custom {
+public class BaseFeeStationExit extends BasePlusEntityNew implements Custom {
 
     /** 主键 */
     private String bigId;

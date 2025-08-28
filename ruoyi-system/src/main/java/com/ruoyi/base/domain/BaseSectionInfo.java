@@ -1,14 +1,15 @@
 package com.ruoyi.base.domain;
 
-import java.util.Date;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ruoyi.common.annotation.Excel;
+import com.ruoyi.common.core.domain.BasePlusEntityNew;
+import com.ruoyi.common.core.domain.Custom;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-import com.ruoyi.common.annotation.Excel;
-import com.ruoyi.common.core.domain.BasePlusEntity;
-import com.ruoyi.common.core.domain.Custom;
+
+import java.util.Date;
 
 /**
  * 路段信息对象 base_section_info
@@ -20,7 +21,7 @@ import com.ruoyi.common.core.domain.Custom;
 @TableName("base_section_info")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-public class BaseSectionInfo extends BasePlusEntity implements Custom {
+public class BaseSectionInfo extends BasePlusEntityNew implements Custom {
 
     /** 路线编码 */
     @Excel(name = "路线编码")
