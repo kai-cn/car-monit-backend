@@ -1,5 +1,7 @@
 package com.ruoyi.base.domain;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,6 +23,7 @@ import com.ruoyi.common.core.domain.Custom;
 public class DwdLcztSfzjcxx implements Custom {
 
     /** 代理主键 */
+    @TableId(value = "agentPk", type = IdType.ASSIGN_UUID)
     private String agentPk;
 
     /** 源系统主键 */

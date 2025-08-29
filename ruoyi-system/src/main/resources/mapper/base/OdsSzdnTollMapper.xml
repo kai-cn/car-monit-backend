@@ -62,7 +62,7 @@
         SELECT
         <include refid="selectOdsSzdnTollVo"/>
         FROM ods_szdn_toll t
-        WHERE
+        WHERE 1=1
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
         <if test="idCard != null  and idCard != ''"> and t.id_card = #{idCard}</if>
@@ -87,8 +87,7 @@
         <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
         <if test="tollOrgCode != null  and tollOrgCode != ''"> and t.toll_org_code = #{tollOrgCode}</if>
         <if test="isAccess != null  and isAccess != ''"> and t.is_access = #{isAccess}</if>
-        <if test="createBy != null "> and t.create_by = #{createBy}</if>
-        order by t.create_time desc,t.id
+        order by t.id
     </select>
 
     <select id="selectOdsSzdnTollById" parameterType="String" resultMap="OdsSzdnTollResult">

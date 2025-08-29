@@ -48,8 +48,8 @@
         SELECT
         <include refid="selectOdsYhglVBaseOrgVo"/>
         FROM ods_yhgl_v_base_org t
-        WHERE
-        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        WHERE 1=1
+        <if test="bigId != null  and bigId != ''"> and t.big_id = #{bigId}</if>
         <if test="orgCode != null  and orgCode != ''"> and t.org_code = #{orgCode}</if>
         <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
         <if test="orgShortName != null  and orgShortName != ''"> and t.org_short_name like concat('%', #{orgShortName}, '%')</if>
@@ -66,8 +66,7 @@
         <if test="orgIsYhAutarky != null  and orgIsYhAutarky != ''"> and t.org_is_yh_autarky = #{orgIsYhAutarky}</if>
         <if test="loadTime != null "> and t.load_time = #{loadTime}</if>
         <if test="gradeLevel != null "> and t.grade_level = #{gradeLevel}</if>
-        <if test="createBy != null "> and t.create_by = #{createBy}</if>
-        order by t.create_time desc,t.id
+        order by t.big_id
     </select>
 
     <select id="selectOdsYhglVBaseOrgById" parameterType="String" resultMap="OdsYhglVBaseOrgResult">

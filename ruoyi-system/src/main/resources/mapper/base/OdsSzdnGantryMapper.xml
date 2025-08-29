@@ -58,7 +58,7 @@
         SELECT
         <include refid="selectOdsSzdnGantryVo"/>
         FROM ods_szdn_gantry t
-        WHERE
+        WHERE 1=1
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="gantryCode != null  and gantryCode != ''"> and t.gantry_code = #{gantryCode}</if>
         <if test="gantryName != null  and gantryName != ''"> and t.gantry_name like concat('%', #{gantryName}, '%')</if>
@@ -80,8 +80,7 @@
         <if test="belongGroup != null  and belongGroup != ''"> and t.belong_group = #{belongGroup}</if>
         <if test="gantryCodeMerge != null  and gantryCodeMerge != ''"> and t.gantry_code_merge = #{gantryCodeMerge}</if>
         <if test="gantryNameAlias != null  and gantryNameAlias != ''"> and t.gantry_name_alias = #{gantryNameAlias}</if>
-        <if test="createBy != null "> and t.create_by = #{createBy}</if>
-        order by t.create_time desc,t.id
+        order by t.id
     </select>
 
     <select id="selectOdsSzdnGantryById" parameterType="String" resultMap="OdsSzdnGantryResult">

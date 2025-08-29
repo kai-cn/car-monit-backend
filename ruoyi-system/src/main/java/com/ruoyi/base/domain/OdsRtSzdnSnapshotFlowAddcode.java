@@ -2,6 +2,9 @@ package com.ruoyi.base.domain;
 
 import java.math.BigDecimal;
 import java.util.Date;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -24,6 +27,7 @@ import com.ruoyi.common.core.domain.Custom;
 public class OdsRtSzdnSnapshotFlowAddcode implements Custom {
 
     /** 主键 */
+    @TableId(value = "bigId", type = IdType.ASSIGN_UUID)
     private String bigId;
 
     /** 数据类型 */

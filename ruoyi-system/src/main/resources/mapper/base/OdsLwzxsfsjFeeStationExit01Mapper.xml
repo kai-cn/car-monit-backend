@@ -30,7 +30,6 @@
         <result property="exweight"    column="exweight"    />
         <result property="feeboardplay"    column="feeboardplay"    />
         <result property="feemileage"    column="feemileage"    />
-        <result property="id"    column="id"    />
         <result property="identification"    column="identification"    />
         <result property="feerate"    column="feerate"    />
         <result property="identifyvehicleid"    column="identifyvehicleid"    />
@@ -146,8 +145,8 @@
         SELECT
         <include refid="selectOdsLwzxsfsjFeeStationExit01Vo"/>
         FROM ods_lwzxsfsj_fee_station_exit_01 t
-        WHERE
-        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        WHERE 1=1
+        <if test="bigId != null  and bigId != ''"> and t.big_id = #{bigId}</if>
         <if test="actualfeeclass != null  and actualfeeclass != ''"> and t.actualfeeclass = #{actualfeeclass}</if>
         <if test="axlecount != null "> and t.axlecount = #{axlecount}</if>
         <if test="discountfee != null "> and t.discountfee = #{discountfee}</if>
@@ -212,8 +211,7 @@
         <if test="vehiclesign != null  and vehiclesign != ''"> and t.vehiclesign = #{vehiclesign}</if>
         <if test="gradeLevel != null  and gradeLevel != ''"> and t.grade_level = #{gradeLevel}</if>
         <if test="vehiclesignid != null  and vehiclesignid != ''"> and t.vehiclesignid = #{vehiclesignid}</if>
-        <if test="createBy != null "> and t.create_by = #{createBy}</if>
-        order by t.create_time desc,t.id
+        order by t.big_id
     </select>
 
     <select id="selectOdsLwzxsfsjFeeStationExit01ById" parameterType="String" resultMap="OdsLwzxsfsjFeeStationExit01Result">

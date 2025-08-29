@@ -48,8 +48,8 @@
         SELECT
         <include refid="selectDwdLcztSfsjcxxVo"/>
         FROM dwd_lczt_sfsjcxx t
-        WHERE
-        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        WHERE 1=1
+        <if test="agentPk != null  and agentPk != ''"> and t.agent_pk = #{id}</if>
         <if test="yxtzj != null  and yxtzj != ''"> and t.yxtzj = #{yxtzj}</if>
         <if test="sfsbm != null  and sfsbm != ''"> and t.sfsbm = #{sfsbm}</if>
         <if test="sfsmc != null  and sfsmc != ''"> and t.sfsmc = #{sfsmc}</if>
@@ -66,8 +66,7 @@
         <if test="lyxt != null  and lyxt != ''"> and t.lyxt = #{lyxt}</if>
         <if test="loadTime != null  and loadTime != ''"> and t.load_time = #{loadTime}</if>
         <if test="allColPk != null  and allColPk != ''"> and t.all_col_pk = #{allColPk}</if>
-        <if test="createBy != null "> and t.create_by = #{createBy}</if>
-        order by t.create_time desc,t.id
+        order by t.create_time desc,t.agent_pk
     </select>
 
     <select id="selectDwdLcztSfsjcxxById" parameterType="String" resultMap="DwdLcztSfsjcxxResult">

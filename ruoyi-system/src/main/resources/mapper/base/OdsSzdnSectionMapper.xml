@@ -40,7 +40,7 @@
         SELECT
         <include refid="selectOdsSzdnSectionVo"/>
         FROM ods_szdn_section t
-        WHERE
+        WHERE 1=1
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
         <if test="roadName != null  and roadName != ''"> and t.road_name like concat('%', #{roadName}, '%')</if>
@@ -54,8 +54,7 @@
         <if test="orgCategory != null  and orgCategory != ''"> and t.org_category = #{orgCategory}</if>
         <if test="mileage != null "> and t.mileage = #{mileage}</if>
         <if test="openDate != null "> and t.open_date = #{openDate}</if>
-        <if test="createBy != null "> and t.create_by = #{createBy}</if>
-        order by t.create_time desc,t.id
+        order by t.id
     </select>
 
     <select id="selectOdsSzdnSectionById" parameterType="String" resultMap="OdsSzdnSectionResult">

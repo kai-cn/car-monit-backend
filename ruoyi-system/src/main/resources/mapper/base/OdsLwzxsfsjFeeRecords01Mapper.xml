@@ -278,8 +278,8 @@
         SELECT
         <include refid="selectOdsLwzxsfsjFeeRecords01Vo"/>
         FROM ods_lwzxsfsj_fee_records_01 t
-        WHERE
-        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        WHERE 1=1
+        <if test="bigId != null  and bigId != ''"> and t.big_id = #{bigId}</if>
         <if test="algorithmidentifier != null  and algorithmidentifier != ''"> and t.algorithmidentifier = #{algorithmidentifier}</if>
         <if test="antennaid != null  and antennaid != ''"> and t.antennaid = #{antennaid}</if>
         <if test="axlecount != null "> and t.axlecount = #{axlecount}</if>
@@ -411,8 +411,7 @@
         <if test="verifycode != null  and verifycode != ''"> and t.verifycode = #{verifycode}</if>
         <if test="loadTime != null "> and t.load_time = #{loadTime}</if>
         <if test="gradeLevel != null "> and t.grade_level = #{gradeLevel}</if>
-        <if test="createBy != null "> and t.create_by = #{createBy}</if>
-        order by t.create_time desc,t.id
+        order by t.big_id
     </select>
 
     <select id="selectOdsLwzxsfsjFeeRecords01ById" parameterType="String" resultMap="OdsLwzxsfsjFeeRecords01Result">

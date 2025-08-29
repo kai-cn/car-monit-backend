@@ -1,5 +1,7 @@
 package com.ruoyi.base.domain;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,6 +22,7 @@ import com.ruoyi.common.core.domain.Custom;
 @EqualsAndHashCode(callSuper = false)
 public class OdsSzdnGantry implements Custom {
 
+    @TableId(value = "id", type = IdType.ASSIGN_UUID)
     private String id;
 
     /** 门架编号（分离） */
