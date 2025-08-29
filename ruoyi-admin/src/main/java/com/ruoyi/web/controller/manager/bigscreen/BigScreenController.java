@@ -1,92 +1,107 @@
 package com.ruoyi.web.controller.manager.bigscreen;
 
-import cn.hutool.core.util.StrUtil;
+import com.ruoyi.base.domain.OdsSzdnSection;
+import com.ruoyi.base.domain.OdsSzdnToll;
+import com.ruoyi.base.service.IOdsSzdnSectionService;
+import com.ruoyi.base.service.IOdsSzdnTollService;
 import com.ruoyi.common.core.domain.AjaxResult;
-import com.ruoyi.common.core.redis.RedisCache;
-import com.ruoyi.manager.domain.dto.BigScreenParam;
-import com.ruoyi.manager.domain.vo.bigscreen.center.OrderAndEnterpriseInfoVo;
-import com.ruoyi.manager.domain.vo.bigscreen.center.OrderAndEnterpriseVo;
-import com.ruoyi.manager.domain.vo.bigscreen.center.OrderDetailVo;
-import com.ruoyi.manager.service.IBigScreenService;
+import com.ruoyi.manager.domain.vo.bigscreen.*;
+import com.ruoyi.manager.service.ICarAduitFreeService;
+import com.ruoyi.manager.service.ICarConfimFreeService;
+import com.ruoyi.manager.service.ICarInfoService;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+import static com.ruoyi.common.utils.PageUtils.startPage;
+
+@ApiOperation("大屏接口")
 @RestController
-@RequestMapping("/screen/bigScreen")
+@RequestMapping("/manager/bigScreen")
 @CrossOrigin(origins = "*")
 public class BigScreenController {
 
     @Autowired
-    private RedisCache redisCache;
-
+    private ICarConfimFreeService carConfimFreeService;
     @Autowired
-    private IBigScreenService bigScreenService;
-
-
-
-    /**
-     * 中间- 订单或公司聚冗数据
-     * @param bigScreenParam
-     * @return
-     */
-    @RequestMapping("orderAndEnterprise")
-    public AjaxResult orderAndEnterprise(BigScreenParam bigScreenParam){
-        try {
-            if(StrUtil.isEmpty(bigScreenParam.getCode())){
-                return AjaxResult.error("请选择区域");
-            }
-            List<OrderAndEnterpriseVo> list = this.bigScreenService.returnOrderAndEnterprise(bigScreenParam);
-            return AjaxResult.success(list);
-        }catch (Exception e){
-            return AjaxResult.error("数据异常, 请联系管理员");
-        }
-    }
-
-    /**
-     *
-     * @param bigScreenParam
-     * @return
-     */
-    @RequestMapping("orderAndEnterpriseInfo")
-    public AjaxResult orderAndEnterpriseInfo(BigScreenParam bigScreenParam){
-        try {
-            if(null == bigScreenParam.getType() || StrUtil.isEmpty(bigScreenParam.getCode())){
-                return AjaxResult.error("参数不存在");
-            }
-            List<OrderAndEnterpriseInfoVo> list = this.bigScreenService.orderAndEnterpriseInfo(bigScreenParam);
-            return AjaxResult.success(list);
-        }catch (Exception e){
-            return AjaxResult.error("数据异常, 请联系管理员");
-        }
-    }
+    private ICarAduitFreeService carAduitFreeService;
+    @Autowired
+    private ICarInfoService carInfoService;
+    @Autowired
+    private IOdsSzdnSectionService odsSzdnSectionService;
+    @Autowired
+    private IOdsSzdnTollService odsSzdnTollService;
 
 
     /**
      *
-     * @return
      */
-    @RequestMapping("orderAndEnterpriseDetail")
-    public AjaxResult orderAndEnterpriseDetail(BigScreenParam bigScreenParam){
-        try {
-            if(null == bigScreenParam.getType()){
-                return AjaxResult.error("请求参数不存在");
-            }
-            OrderDetailVo orderDetailVo = new OrderDetailVo();
-            if(1 == bigScreenParam.getType()){
-                orderDetailVo = this.bigScreenService.returnOrderDetail(bigScreenParam);
-            } else {
-                String cacheObject = redisCache.getCacheObject("big_screen:enterprise_detail");
-                if(StrUtil.isEmpty(cacheObject)){
-                    redisCache.setCacheObject("big_screen:enterprise_detail", "");
-                }
-            }
-            return AjaxResult.success(orderDetailVo);
-        }catch (Exception e){
-            return AjaxResult.error("数据异常, 请联系管理员");
-        }
+    @ApiOperation("重点关注车辆统计")
+    @GetMapping(value = "/carStatistics")
+    public AjaxResult<CarStatisticsVO> getCarStatistics() {
+        CarStatisticsVO carStatisticsVO = carConfimFreeService.getCarStatistics();
+        return AjaxResult.success(carStatisticsVO);
+    }
+
+    /**
+     * 地图
+     */
+    @ApiOperation("车辆地图")
+    @GetMapping(value = "/carLocation")
+    public AjaxResult<List<CarLocationVO>> getCarLocation(CarLocationParam param) {
+        List<CarLocationVO> carLocationVOList = carInfoService.carLocation(param);
+        return AjaxResult.success(carLocationVOList);
+    }
+
+    @ApiOperation("路段列表")
+    @GetMapping(value = "/sectionList")
+    public AjaxResult<List<SectionVO>> getSectionList() {
+        List<SectionVO> collect = odsSzdnSectionService.lambdaQuery().select(OdsSzdnSection::getSectionCode, OdsSzdnSection::getSectionName).list()
+                .stream().map(item -> {
+                    SectionVO sectionVO = new SectionVO();
+                    sectionVO.setSectionCode(item.getSectionCode());
+                    sectionVO.setSectionName(item.getSectionName());
+                    return sectionVO;
+                }).collect(Collectors.toList());
+        return AjaxResult.success(collect);
+    }
+
+    @ApiOperation("收费站列表")
+    @GetMapping(value = "/tollList")
+    public AjaxResult<List<TollVO>> getTollList() {
+        List<TollVO> collect = odsSzdnTollService.lambdaQuery().select(OdsSzdnToll::getTollCode, OdsSzdnToll::getTollName).list()
+                .stream().map(item -> {
+            TollVO tollVO = new TollVO();
+            tollVO.setTollCode(item.getTollCode());
+            tollVO.setTollName(item.getTollName());
+            return tollVO;
+        }).collect(Collectors.toList());
+        return AjaxResult.success(collect);
+    }
+
+    /**
+     * 重点车辆库统计
+     */
+    @ApiOperation("重点车辆库统计")
+    @GetMapping(value = "/carVoList")
+    public AjaxResult<List<CarInfoVO>> carVoList() {
+        startPage();
+        List<CarInfoVO> carVoList = carInfoService.selectCarVoList();
+        return AjaxResult.success(carVoList);
+    }
+
+
+    /**
+     * 追缴统计
+     */
+    @ApiOperation("追缴统计")
+    @GetMapping(value = "/carAudit")
+    public AjaxResult<List<CarAuditVO>> getCarAudit() {
+        List<CarAuditVO> carAuditVOList = carAduitFreeService.getCarAudit();
+        Long count = carConfimFreeService.lambdaQuery().count();
+        return AjaxResult.success(carAuditVOList);
     }
 }

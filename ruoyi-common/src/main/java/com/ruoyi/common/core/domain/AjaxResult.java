@@ -9,8 +9,9 @@ import com.ruoyi.common.utils.StringUtils;
  * 操作消息提醒
  * 
  * @author ruoyi
+ * @param <T> 数据泛型
  */
-public class AjaxResult extends HashMap<String, Object>
+public class AjaxResult<T> extends HashMap<String, Object>
 {
     private static final long serialVersionUID = 1L;
 
@@ -49,7 +50,7 @@ public class AjaxResult extends HashMap<String, Object>
      * @param msg 返回内容
      * @param data 数据对象
      */
-    public AjaxResult(int code, String msg, Object data)
+    public AjaxResult(int code, String msg, T data)
     {
         super.put(CODE_TAG, code);
         super.put(MSG_TAG, msg);
@@ -62,32 +63,36 @@ public class AjaxResult extends HashMap<String, Object>
     /**
      * 返回成功消息
      * 
+     * @param <T> 数据泛型
      * @return 成功消息
      */
-    public static AjaxResult success()
+    public static <T> AjaxResult<T> success()
     {
-        return AjaxResult.success("操作成功");
+        return AjaxResult.<T>success("操作成功");
     }
 
     /**
      * 返回成功数据
      * 
+     * @param data 数据对象
+     * @param <T> 数据泛型
      * @return 成功消息
      */
-    public static AjaxResult success(Object data)
+    public static <T> AjaxResult<T> success(T data)
     {
-        return AjaxResult.success("操作成功", data);
+        return AjaxResult.<T>success("操作成功", data);
     }
 
     /**
      * 返回成功消息
      * 
      * @param msg 返回内容
+     * @param <T> 数据泛型
      * @return 成功消息
      */
-    public static AjaxResult success(String msg)
+    public static <T> AjaxResult<T> success(String msg)
     {
-        return AjaxResult.success(msg, null);
+        return AjaxResult.<T>success(msg, null);
     }
 
     /**
@@ -95,22 +100,24 @@ public class AjaxResult extends HashMap<String, Object>
      * 
      * @param msg 返回内容
      * @param data 数据对象
+     * @param <T> 数据泛型
      * @return 成功消息
      */
-    public static AjaxResult success(String msg, Object data)
+    public static <T> AjaxResult<T> success(String msg, T data)
     {
-        return new AjaxResult(HttpStatus.SUCCESS, msg, data);
+        return new AjaxResult<>(HttpStatus.SUCCESS, msg, data);
     }
 
     /**
      * 返回警告消息
      *
      * @param msg 返回内容
+     * @param <T> 数据泛型
      * @return 警告消息
      */
-    public static AjaxResult warn(String msg)
+    public static <T> AjaxResult<T> warn(String msg)
     {
-        return AjaxResult.warn(msg, null);
+        return AjaxResult.<T>warn(msg, null);
     }
 
     /**
@@ -118,32 +125,35 @@ public class AjaxResult extends HashMap<String, Object>
      *
      * @param msg 返回内容
      * @param data 数据对象
+     * @param <T> 数据泛型
      * @return 警告消息
      */
-    public static AjaxResult warn(String msg, Object data)
+    public static <T> AjaxResult<T> warn(String msg, T data)
     {
-        return new AjaxResult(HttpStatus.WARN, msg, data);
+        return new AjaxResult<>(HttpStatus.WARN, msg, data);
     }
 
     /**
      * 返回错误消息
      * 
+     * @param <T> 数据泛型
      * @return 错误消息
      */
-    public static AjaxResult error()
+    public static <T> AjaxResult<T> error()
     {
-        return AjaxResult.error("操作失败");
+        return AjaxResult.<T>error("操作失败");
     }
 
     /**
      * 返回错误消息
      * 
      * @param msg 返回内容
+     * @param <T> 数据泛型
      * @return 错误消息
      */
-    public static AjaxResult error(String msg)
+    public static <T> AjaxResult<T> error(String msg)
     {
-        return AjaxResult.error(msg, null);
+        return AjaxResult.<T>error(msg, null);
     }
 
     /**
@@ -151,11 +161,12 @@ public class AjaxResult extends HashMap<String, Object>
      * 
      * @param msg 返回内容
      * @param data 数据对象
+     * @param <T> 数据泛型
      * @return 错误消息
      */
-    public static AjaxResult error(String msg, Object data)
+    public static <T> AjaxResult<T> error(String msg, T data)
     {
-        return new AjaxResult(HttpStatus.ERROR, msg, data);
+        return new AjaxResult<>(HttpStatus.ERROR, msg, data);
     }
 
     /**
@@ -163,11 +174,12 @@ public class AjaxResult extends HashMap<String, Object>
      * 
      * @param code 状态码
      * @param msg 返回内容
+     * @param <T> 数据泛型
      * @return 错误消息
      */
-    public static AjaxResult error(int code, String msg)
+    public static <T> AjaxResult<T> error(int code, String msg)
     {
-        return new AjaxResult(code, msg, null);
+        return new AjaxResult<>(code, msg, null);
     }
 
     /**
@@ -208,7 +220,7 @@ public class AjaxResult extends HashMap<String, Object>
      * @return 数据对象
      */
     @Override
-    public AjaxResult put(String key, Object value)
+    public AjaxResult<T> put(String key, Object value)
     {
         super.put(key, value);
         return this;

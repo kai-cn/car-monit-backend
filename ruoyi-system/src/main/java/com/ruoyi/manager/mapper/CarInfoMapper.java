@@ -2,6 +2,9 @@ package com.ruoyi.manager.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.manager.domain.CarInfo;
+import com.ruoyi.manager.domain.vo.bigscreen.CarInfoVO;
+import com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam;
+import com.ruoyi.manager.domain.vo.bigscreen.CarLocationVO;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -45,4 +48,7 @@ public interface CarInfoMapper extends BaseMapper<CarInfo> {
      */
     int deleteCarInfoById(String id);
 
+    List<CarLocationVO> getCarLocation(CarLocationParam carInfo);
+
+    List<CarInfoVO> selectCarVoList();
 }

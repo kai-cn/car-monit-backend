@@ -134,6 +134,10 @@ public class CarInfo extends BasePlusEntity implements Custom {
     @Excel(name = "管理中心路段名称")
     private String roadSectionName;
 
+    /** 所属路段编码 */
+    @Excel(name = "所属路段编码")
+    private String sectionCode;
+
     /** 预计下一个通行时间 */
     @JsonFormat(pattern = "yyyy-MM-dd")
     @Excel(name = "预计下一个通行时间", width = 30, dateFormat = "yyyy-MM-dd")
@@ -163,25 +167,49 @@ public class CarInfo extends BasePlusEntity implements Custom {
     @Excel(name = "管理中心名称")
     private String orgName;
 
+    /** 备用字段1 */
+    @Excel(name = "备用字段1")
+    private String backCol1;
+
     /** 司机名称 */
     @Excel(name = "司机名称")
     private String linkName;
 
-    /** 联系方式 */
-    @Excel(name = "联系方式")
-    private String linkPhone;
-
-    /** 备用字段1 */
-    @Excel(name = "备用字段1")
-    private String backCol1;
+    /** 所属管理中心机构编码 */
+    @Excel(name = "所属管理中心机构编码")
+    private String orgCode;
 
     /** 备用字段2 */
     @Excel(name = "备用字段2")
     private String backCol2;
 
+    /** 联系方式 */
+    @Excel(name = "联系方式")
+    private String linkPhone;
+
+    /** 门架编号（分离） */
+    @Excel(name = "门架编号", readConverterExp = "分=离")
+    private String gantryCode;
+
+    /** 所属路线编码 */
+    @Excel(name = "所属路线编码")
+    private String roadCode;
+
     /** 状态（0正常1停用） */
     @Excel(name = "状态", readConverterExp = "0=正常1停用")
     private String status;
+
+    /** 所属路线名称 */
+    @Excel(name = "所属路线名称")
+    private String roadName;
+
+    /** 所属收费站编码 */
+    @Excel(name = "所属收费站编码")
+    private String tollCode;
+
+    /** 所属收费站名称 */
+    @Excel(name = "所属收费站名称")
+    private String tollName;
 
     /** 备注 */
     @Excel(name = "备注")

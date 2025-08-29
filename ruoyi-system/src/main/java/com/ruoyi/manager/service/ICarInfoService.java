@@ -3,6 +3,9 @@ package com.ruoyi.manager.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarInfo;
+import com.ruoyi.manager.domain.vo.bigscreen.CarInfoVO;
+import com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam;
+import com.ruoyi.manager.domain.vo.bigscreen.CarLocationVO;
 
 import java.util.List;
 
@@ -53,4 +56,9 @@ public interface ICarInfoService extends IService<CarInfo> {
      */
     AjaxResult doImport(List<CarInfo> list);
 
+    List<CarLocationVO> carLocation(CarLocationParam carInfo);
+
+    List<CarInfoVO> selectCarVoList();
+
+    List<CarInfoVO> getCarAudit();
 }

@@ -89,6 +89,10 @@
          where t.id = #{id}
     </select>
 
+    <select id="getCarAudit" resultType="com.ruoyi.manager.domain.vo.bigscreen.CarAuditVO">
+
+    </select>
+
 
     <update id="deleteCarAduitFreeById" parameterType="String">
         update car_aduit_free set del_flag = '1' where id = #{id}

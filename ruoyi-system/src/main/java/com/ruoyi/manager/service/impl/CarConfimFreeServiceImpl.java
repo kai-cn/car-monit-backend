@@ -3,14 +3,17 @@ package com.ruoyi.manager.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 import com.ruoyi.manager.mapper.CarConfimFreeMapper;
 import com.ruoyi.manager.domain.CarConfimFree;
 import com.ruoyi.manager.service.ICarConfimFreeService;
+import com.ruoyi.system.service.ISysDictDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 确认补缴Service业务层处理
@@ -23,6 +26,8 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
 
     @Autowired
     private CarConfimFreeMapper carConfimFreeMapper;
+    @Autowired
+    private ISysDictDataService sysDictDataService;
 
     /**
      * 查询确认补缴
@@ -97,6 +102,17 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
         return AjaxResult.success(count);
     }
 
-
-
+    @Override
+    public CarStatisticsVO getCarStatistics() {
+        CarStatisticsVO carStatistics = carConfimFreeMapper.getCarStatistics();
+        if(carStatistics != null) {
+            String escapedType = carStatistics.getEscapedType();
+            // 逃费类型
+            Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataLaleMap("escaped_type");
+            carStatistics.setEscapedTypeName(escapedTypeMap.get(escapedType));
+            return carStatistics;
+        } else {
+          return new CarStatisticsVO();
+        }
+    }
 }

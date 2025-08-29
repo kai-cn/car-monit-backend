@@ -3,6 +3,7 @@ package com.ruoyi.manager.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.manager.domain.vo.bigscreen.CarAuditVO;
 import com.ruoyi.manager.mapper.CarAduitFreeMapper;
 import com.ruoyi.manager.domain.CarAduitFree;
 import com.ruoyi.manager.service.ICarAduitFreeService;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -98,5 +100,8 @@ public class CarAduitFreeServiceImpl extends ServiceImpl<CarAduitFreeMapper, Car
     }
 
 
-
+    @Override
+    public List<CarAuditVO> getCarAudit() {
+        return carAduitFreeMapper.getCarAudit();
+    }
 }

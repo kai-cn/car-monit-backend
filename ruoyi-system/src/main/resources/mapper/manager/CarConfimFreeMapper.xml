@@ -95,6 +95,11 @@
          where t.id = #{id}
     </select>
 
+    <select id="getCarStatistics" resultType="com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO">
+        select escaped_type, sum(f.amount), count(distinct car_id)
+        from car_confim_free f inner join car_info i on f.car_id = i.id group by i.escaped_type;
+    </select>
+
 
     <update id="deleteCarConfimFreeById" parameterType="String">
         update car_confim_free set del_flag = '1' where id = #{id}

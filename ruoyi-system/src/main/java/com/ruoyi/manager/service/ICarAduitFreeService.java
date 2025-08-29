@@ -4,6 +4,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarAduitFree;
 import java.util.List;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.ruoyi.manager.domain.vo.bigscreen.CarAuditVO;
 
 /**
  * 补缴处理Service接口
@@ -45,4 +46,5 @@ public interface ICarAduitFreeService extends IService<CarAduitFree> {
      */
     AjaxResult deleteCarAduitFreeByIds(String[] ids);
 
+    List<CarAuditVO> getCarAudit();
 }
