@@ -2,6 +2,7 @@ package com.ruoyi.base.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.base.domain.OdsSzdnSection;
+import org.apache.ibatis.annotations.Update;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -44,5 +45,11 @@ public interface OdsSzdnSectionMapper extends BaseMapper<OdsSzdnSection> {
      * @return 结果
      */
     int deleteOdsSzdnSectionById(String id);
+
+    /**
+     * 清空表
+     */
+    @Update("TRUNCATE TABLE ods_szdn_section")
+    void truncateTable();
 
 }

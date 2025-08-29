@@ -2,6 +2,7 @@ package com.ruoyi.base.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.base.domain.DwdLcztSfsjcxx;
+import org.apache.ibatis.annotations.Update;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -45,4 +46,6 @@ public interface DwdLcztSfsjcxxMapper extends BaseMapper<DwdLcztSfsjcxx> {
      */
     int deleteDwdLcztSfsjcxxById(String agentPk);
 
+    @Update("TRUNCATE TABLE dwd_lczt_sfsjcxx")
+    void truncateTable();
 }

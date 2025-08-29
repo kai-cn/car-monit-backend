@@ -45,4 +45,6 @@ public interface IDwdLcztSfzjcxxService extends IService<DwdLcztSfzjcxx> {
      */
     AjaxResult deleteDwdLcztSfzjcxxByIds(String[] agentPks);
 
+    void truncateTable();
+
 }

@@ -45,4 +45,6 @@ public interface IOdsSzdnGantryService extends IService<OdsSzdnGantry> {
      */
     AjaxResult deleteOdsSzdnGantryByIds(String[] ids);
 
+    void truncateTable();
+
 }

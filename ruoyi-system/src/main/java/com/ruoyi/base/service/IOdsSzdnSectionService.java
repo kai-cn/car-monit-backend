@@ -45,4 +45,9 @@ public interface IOdsSzdnSectionService extends IService<OdsSzdnSection> {
      */
     AjaxResult deleteOdsSzdnSectionByIds(String[] ids);
 
+    /**
+     * 清空表数据
+     */
+    void truncateTable();
+
 }

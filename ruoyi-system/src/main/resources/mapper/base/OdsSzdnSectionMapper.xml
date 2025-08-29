@@ -35,7 +35,6 @@
         t.open_date
     </sql>
 
-
     <select id="selectOdsSzdnSectionList" parameterType="com.ruoyi.base.domain.OdsSzdnSection" resultMap="OdsSzdnSectionResult">
         SELECT
         <include refid="selectOdsSzdnSectionVo"/>

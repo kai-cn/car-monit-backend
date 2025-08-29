@@ -27,7 +27,7 @@ import com.ruoyi.common.core.domain.Custom;
 public class OdsRtSzdnSnapshotFlowAddcode implements Custom {
 
     /** 主键 */
-    @TableId(value = "bigId", type = IdType.INPUT)
+    @TableId(value = "big_id", type = IdType.INPUT)
     private String bigId;
 
     /** 数据类型 */

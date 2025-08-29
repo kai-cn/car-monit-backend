@@ -2,6 +2,7 @@ package com.ruoyi.base.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.base.domain.OdsYhglVBaseOrg;
+import org.apache.ibatis.annotations.Update;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -44,5 +45,8 @@ public interface OdsYhglVBaseOrgMapper extends BaseMapper<OdsYhglVBaseOrg> {
      * @return 结果
      */
     int deleteOdsYhglVBaseOrgById(String bigId);
+
+    @Update("TRUNCATE TABLE ods_yhgl_v_base_org")
+    void truncateTable();
 
 }

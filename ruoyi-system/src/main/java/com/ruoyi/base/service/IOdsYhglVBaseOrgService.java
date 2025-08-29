@@ -45,4 +45,5 @@ public interface IOdsYhglVBaseOrgService extends IService<OdsYhglVBaseOrg> {
      */
     AjaxResult deleteOdsYhglVBaseOrgByIds(String[] bigIds);
 
+    void truncateTable();
 }

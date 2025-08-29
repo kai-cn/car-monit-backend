@@ -84,6 +84,11 @@ public class OdsYhglVBaseOrgServiceImpl extends ServiceImpl<OdsYhglVBaseOrgMappe
         return AjaxResult.success(count);
     }
 
+    @Override
+    public void truncateTable() {
+        odsYhglVBaseOrgMapper.truncateTable();
+    }
+
     /**
      * 删除机构信息信息
      *

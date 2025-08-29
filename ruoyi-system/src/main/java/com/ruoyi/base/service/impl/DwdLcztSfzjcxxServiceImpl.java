@@ -84,6 +84,11 @@ public class DwdLcztSfzjcxxServiceImpl extends ServiceImpl<DwdLcztSfzjcxxMapper,
         return AjaxResult.success(count);
     }
 
+    @Override
+    public void truncateTable() {
+        dwdLcztSfzjcxxMapper.truncateTable();
+    }
+
     /**
      * 删除收费站基础信息信息
      *

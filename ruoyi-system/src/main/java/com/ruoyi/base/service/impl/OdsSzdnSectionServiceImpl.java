@@ -84,6 +84,11 @@ public class OdsSzdnSectionServiceImpl extends ServiceImpl<OdsSzdnSectionMapper,
         return AjaxResult.success(count);
     }
 
+    @Override
+    public void truncateTable() {
+        odsSzdnSectionMapper.truncateTable();
+    }
+
     /**
      * 删除路段信息信息
      *

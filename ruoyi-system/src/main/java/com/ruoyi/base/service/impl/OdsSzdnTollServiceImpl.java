@@ -84,6 +84,11 @@ public class OdsSzdnTollServiceImpl extends ServiceImpl<OdsSzdnTollMapper, OdsSz
         return AjaxResult.success(count);
     }
 
+    @Override
+    public void truncateTable() {
+        odsSzdnTollMapper.truncateTable();
+    }
+
     /**
      * 删除收费站基础信息信息
      *

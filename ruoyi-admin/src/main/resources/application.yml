@@ -158,3 +158,18 @@ sms:
   sendSupplierInvitationsNoticeTemplete:
   sendInvitationSupplierTemplate:
   sendYckbSupplierTemplate:
+
+forest:
+  bean-id: forestConfiguration
+  backend: httpclient
+  max-connections: 1000 # 连接池最大连接数，默认值为500
+  max-route-connections: 500 # 每个路由的最大连接数，默认值为500
+  timeout: 60000 # 请求超时时间，单位为毫秒, 默认值为3000
+  connect-timeout: 60000 # 连接超时时间，单位为毫秒, 默认值为2000
+  logEnabled: true # 打开或关闭日志，默认为true
+  retryer: com.dtflys.forest.retryer.BackOffRetryer
+  retry-count: 2
+  max-retry-interval: 1000
+
+vehicleMonitor:
+  baseUrl: http://172.30.101.8:9901

@@ -2,6 +2,7 @@ package com.ruoyi.base.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.base.domain.OdsSzdnGantry;
+import org.apache.ibatis.annotations.Update;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -45,4 +46,6 @@ public interface OdsSzdnGantryMapper extends BaseMapper<OdsSzdnGantry> {
      */
     int deleteOdsSzdnGantryById(String id);
 
+    @Update("TRUNCATE TABLE ods_szdn_gantry")
+    void truncateTable();
 }

@@ -45,4 +45,6 @@ public interface IOdsSzdnTollService extends IService<OdsSzdnToll> {
      */
     AjaxResult deleteOdsSzdnTollByIds(String[] ids);
 
+    void truncateTable();
+
 }

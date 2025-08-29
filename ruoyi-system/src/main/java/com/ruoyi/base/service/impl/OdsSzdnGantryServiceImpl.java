@@ -84,6 +84,11 @@ public class OdsSzdnGantryServiceImpl extends ServiceImpl<OdsSzdnGantryMapper, O
         return AjaxResult.success(count);
     }
 
+    @Override
+    public void truncateTable() {
+        odsSzdnGantryMapper.truncateTable();
+    }
+
     /**
      * 删除门架信息信息
      *
