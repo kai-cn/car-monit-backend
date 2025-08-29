@@ -27,7 +27,7 @@ import com.ruoyi.common.core.domain.Custom;
 public class OdsLwzxsfsjFeeStationExit01 implements Custom {
 
     /** 主键 */
-    @TableId(value = "bigId", type = IdType.ASSIGN_UUID)
+    @TableId(value = "bigId", type = IdType.INPUT)
     private String bigId;
 
     /** 实际计费方式 */

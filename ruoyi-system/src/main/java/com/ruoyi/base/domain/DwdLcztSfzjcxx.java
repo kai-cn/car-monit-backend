@@ -23,7 +23,7 @@ import com.ruoyi.common.core.domain.Custom;
 public class DwdLcztSfzjcxx implements Custom {
 
     /** 代理主键 */
-    @TableId(value = "agentPk", type = IdType.ASSIGN_UUID)
+    @TableId(value = "agentPk", type = IdType.INPUT)
     private String agentPk;
 
     /** 源系统主键 */

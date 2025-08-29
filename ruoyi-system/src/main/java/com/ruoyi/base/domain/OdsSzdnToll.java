@@ -25,7 +25,7 @@ import com.ruoyi.common.core.domain.Custom;
 @EqualsAndHashCode(callSuper = false)
 public class OdsSzdnToll implements Custom {
 
-    @TableId(value = "id", type = IdType.ASSIGN_UUID)
+    @TableId(value = "id", type = IdType.INPUT)
     private String id;
 
     /** 路线编号 */

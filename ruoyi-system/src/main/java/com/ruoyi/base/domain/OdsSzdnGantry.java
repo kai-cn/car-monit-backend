@@ -22,7 +22,7 @@ import com.ruoyi.common.core.domain.Custom;
 @EqualsAndHashCode(callSuper = false)
 public class OdsSzdnGantry implements Custom {
 
-    @TableId(value = "id", type = IdType.ASSIGN_UUID)
+    @TableId(value = "id", type = IdType.INPUT)
     private String id;
 
     /** 门架编号（分离） */
