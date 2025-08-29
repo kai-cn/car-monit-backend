@@ -138,7 +138,7 @@
         <if test="snappicturepath != null  and snappicturepath != ''"> and t.snappicturepath = #{snappicturepath}</if>
         <if test="loadtime != null "> and t.loadtime = #{loadtime}</if>
         <if test="gradelevel != null "> and t.gradelevel = #{gradelevel}</if>
-        order by t.id
+        order by t.big_id
     </select>
 
     <select id="selectOdsRtSzdnSnapshotFlowAddcodeById" parameterType="String" resultMap="OdsRtSzdnSnapshotFlowAddcodeResult">

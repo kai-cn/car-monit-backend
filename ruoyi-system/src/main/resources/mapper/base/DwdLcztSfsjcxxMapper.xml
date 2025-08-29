@@ -66,7 +66,7 @@
         <if test="lyxt != null  and lyxt != ''"> and t.lyxt = #{lyxt}</if>
         <if test="loadTime != null  and loadTime != ''"> and t.load_time = #{loadTime}</if>
         <if test="allColPk != null  and allColPk != ''"> and t.all_col_pk = #{allColPk}</if>
-        order by t.create_time desc,t.agent_pk
+        order by t.agent_pk
     </select>
 
     <select id="selectDwdLcztSfsjcxxById" parameterType="String" resultMap="DwdLcztSfsjcxxResult">
