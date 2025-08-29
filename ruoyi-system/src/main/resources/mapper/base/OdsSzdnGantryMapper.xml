@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.OdsSzdnGantryMapper">
+
+    <resultMap type="com.ruoyi.base.domain.OdsSzdnGantry" id="OdsSzdnGantryResult">
+        <result property="id"    column="id"    />
+        <result property="gantryCode"    column="gantry_code"    />
+        <result property="gantryName"    column="gantry_name"    />
+        <result property="roadCode"    column="road_code"    />
+        <result property="sectionCode"    column="section_code"    />
+        <result property="tollCode"    column="toll_code"    />
+        <result property="orgCode"    column="org_code"    />
+        <result property="hexCode"    column="hex_code"    />
+        <result property="direction"    column="direction"    />
+        <result property="pileNo"    column="pile_no"    />
+        <result property="lon"    column="lon"    />
+        <result property="lat"    column="lat"    />
+        <result property="remark"    column="remark"    />
+        <result property="isVirtual"    column="is_virtual"    />
+        <result property="mileage"    column="mileage"    />
+        <result property="boundaryGantryType"    column="boundary_gantry_type"    />
+        <result property="gantryType"    column="gantry_type"    />
+        <result property="cityCode"    column="city_code"    />
+        <result property="districtName"    column="district_name"    />
+        <result property="belongGroup"    column="belong_group"    />
+        <result property="gantryCodeMerge"    column="gantry_code_merge"    />
+        <result property="gantryNameAlias"    column="gantry_name_alias"    />
+
+    </resultMap>
+
+    <sql id="selectOdsSzdnGantryVo">
+        t.id,
+        t.gantry_code,
+        t.gantry_name,
+        t.road_code,
+        t.section_code,
+        t.toll_code,
+        t.org_code,
+        t.hex_code,
+        t.direction,
+        t.pile_no,
+        t.lon,
+        t.lat,
+        t.remark,
+        t.is_virtual,
+        t.mileage,
+        t.boundary_gantry_type,
+        t.gantry_type,
+        t.city_code,
+        t.district_name,
+        t.belong_group,
+        t.gantry_code_merge,
+        t.gantry_name_alias
+    </sql>
+
+
+    <select id="selectOdsSzdnGantryList" parameterType="com.ruoyi.base.domain.OdsSzdnGantry" resultMap="OdsSzdnGantryResult">
+        SELECT
+        <include refid="selectOdsSzdnGantryVo"/>
+        FROM ods_szdn_gantry t
+        WHERE
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="gantryCode != null  and gantryCode != ''"> and t.gantry_code = #{gantryCode}</if>
+        <if test="gantryName != null  and gantryName != ''"> and t.gantry_name like concat('%', #{gantryName}, '%')</if>
+        <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
+        <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
+        <if test="tollCode != null  and tollCode != ''"> and t.toll_code = #{tollCode}</if>
+        <if test="orgCode != null  and orgCode != ''"> and t.org_code = #{orgCode}</if>
+        <if test="hexCode != null  and hexCode != ''"> and t.hex_code = #{hexCode}</if>
+        <if test="direction != null  and direction != ''"> and t.direction = #{direction}</if>
+        <if test="pileNo != null  and pileNo != ''"> and t.pile_no = #{pileNo}</if>
+        <if test="lon != null  and lon != ''"> and t.lon = #{lon}</if>
+        <if test="lat != null  and lat != ''"> and t.lat = #{lat}</if>
+        <if test="isVirtual != null  and isVirtual != ''"> and t.is_virtual = #{isVirtual}</if>
+        <if test="mileage != null  and mileage != ''"> and t.mileage = #{mileage}</if>
+        <if test="boundaryGantryType != null  and boundaryGantryType != ''"> and t.boundary_gantry_type = #{boundaryGantryType}</if>
+        <if test="gantryType != null  and gantryType != ''"> and t.gantry_type = #{gantryType}</if>
+        <if test="cityCode != null  and cityCode != ''"> and t.city_code = #{cityCode}</if>
+        <if test="districtName != null  and districtName != ''"> and t.district_name like concat('%', #{districtName}, '%')</if>
+        <if test="belongGroup != null  and belongGroup != ''"> and t.belong_group = #{belongGroup}</if>
+        <if test="gantryCodeMerge != null  and gantryCodeMerge != ''"> and t.gantry_code_merge = #{gantryCodeMerge}</if>
+        <if test="gantryNameAlias != null  and gantryNameAlias != ''"> and t.gantry_name_alias = #{gantryNameAlias}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectOdsSzdnGantryById" parameterType="String" resultMap="OdsSzdnGantryResult">
+         select
+         <include refid="selectOdsSzdnGantryVo"/>
+         from ods_szdn_gantry t
+         where t.id = #{id}
+    </select>
+
+
+    <update id="deleteOdsSzdnGantryById" parameterType="String">
+        update ods_szdn_gantry set del_flag = '1' where id = #{id}
+    </update>
+
+    <update id="deleteOdsSzdnGantryByIds" parameterType="String">
+        update ods_szdn_gantry set del_flag = '1' where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.OdsSzdnSectionMapper">
+
+    <resultMap type="com.ruoyi.base.domain.OdsSzdnSection" id="OdsSzdnSectionResult">
+        <result property="id"    column="id"    />
+        <result property="roadCode"    column="road_code"    />
+        <result property="roadName"    column="road_name"    />
+        <result property="sectionCode"    column="section_code"    />
+        <result property="sectionName"    column="section_name"    />
+        <result property="startPileNo"    column="start_pile_no"    />
+        <result property="endPileNo"    column="end_pile_no"    />
+        <result property="orgCode"    column="org_code"    />
+        <result property="orgName"    column="org_name"    />
+        <result property="orgLevelCode"    column="org_level_code"    />
+        <result property="orgCategory"    column="org_category"    />
+        <result property="mileage"    column="mileage"    />
+        <result property="openDate"    column="open_date"    />
+
+    </resultMap>
+
+    <sql id="selectOdsSzdnSectionVo">
+        t.id,
+        t.road_code,
+        t.road_name,
+        t.section_code,
+        t.section_name,
+        t.start_pile_no,
+        t.end_pile_no,
+        t.org_code,
+        t.org_name,
+        t.org_level_code,
+        t.org_category,
+        t.mileage,
+        t.open_date
+    </sql>
+
+
+    <select id="selectOdsSzdnSectionList" parameterType="com.ruoyi.base.domain.OdsSzdnSection" resultMap="OdsSzdnSectionResult">
+        SELECT
+        <include refid="selectOdsSzdnSectionVo"/>
+        FROM ods_szdn_section t
+        WHERE
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
+        <if test="roadName != null  and roadName != ''"> and t.road_name like concat('%', #{roadName}, '%')</if>
+        <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
+        <if test="sectionName != null  and sectionName != ''"> and t.section_name like concat('%', #{sectionName}, '%')</if>
+        <if test="startPileNo != null "> and t.start_pile_no = #{startPileNo}</if>
+        <if test="endPileNo != null "> and t.end_pile_no = #{endPileNo}</if>
+        <if test="orgCode != null  and orgCode != ''"> and t.org_code = #{orgCode}</if>
+        <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
+        <if test="orgLevelCode != null  and orgLevelCode != ''"> and t.org_level_code = #{orgLevelCode}</if>
+        <if test="orgCategory != null  and orgCategory != ''"> and t.org_category = #{orgCategory}</if>
+        <if test="mileage != null "> and t.mileage = #{mileage}</if>
+        <if test="openDate != null "> and t.open_date = #{openDate}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectOdsSzdnSectionById" parameterType="String" resultMap="OdsSzdnSectionResult">
+         select
+         <include refid="selectOdsSzdnSectionVo"/>
+         from ods_szdn_section t
+         where t.id = #{id}
+    </select>
+
+
+    <update id="deleteOdsSzdnSectionById" parameterType="String">
+        update ods_szdn_section set del_flag = '1' where id = #{id}
+    </update>
+
+    <update id="deleteOdsSzdnSectionByIds" parameterType="String">
+        update ods_szdn_section set del_flag = '1' where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

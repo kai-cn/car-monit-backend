@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.OdsLwzxsfsjFeeStationExit01Mapper">
+
+    <resultMap type="com.ruoyi.base.domain.OdsLwzxsfsjFeeStationExit01" id="OdsLwzxsfsjFeeStationExit01Result">
+        <result property="bigId"    column="big_id"    />
+        <result property="actualfeeclass"    column="actualfeeclass"    />
+        <result property="axlecount"    column="axlecount"    />
+        <result property="discountfee"    column="discountfee"    />
+        <result property="electricalpercentage"    column="electricalpercentage"    />
+        <result property="enaxlecount"    column="enaxlecount"    />
+        <result property="entime"    column="entime"    />
+        <result property="entolllanehex"    column="entolllanehex"    />
+        <result property="entolllaneid"    column="entolllaneid"    />
+        <result property="entollstationid"    column="entollstationid"    />
+        <result property="entollstationname"    column="entollstationname"    />
+        <result property="envehicleclass"    column="envehicleclass"    />
+        <result property="envehicleid"    column="envehicleid"    />
+        <result property="envehicletype"    column="envehicletype"    />
+        <result property="enweight"    column="enweight"    />
+        <result property="entryoperatorid"    column="entryoperatorid"    />
+        <result property="extime"    column="extime"    />
+        <result property="extolllaneid"    column="extolllaneid"    />
+        <result property="extollstationid"    column="extollstationid"    />
+        <result property="extollstationname"    column="extollstationname"    />
+        <result property="exvehicleclass"    column="exvehicleclass"    />
+        <result property="exvehicleid"    column="exvehicleid"    />
+        <result property="exvehicletype"    column="exvehicletype"    />
+        <result property="fee"    column="fee"    />
+        <result property="exweight"    column="exweight"    />
+        <result property="feeboardplay"    column="feeboardplay"    />
+        <result property="feemileage"    column="feemileage"    />
+        <result property="id"    column="id"    />
+        <result property="identification"    column="identification"    />
+        <result property="feerate"    column="feerate"    />
+        <result property="identifyvehicleid"    column="identifyvehicleid"    />
+        <result property="lanetype"    column="lanetype"    />
+        <result property="mediano"    column="mediano"    />
+        <result property="mediatype"    column="mediatype"    />
+        <result property="nocardcount"    column="nocardcount"    />
+        <result property="obuid"    column="obuid"    />
+        <result property="obusign"    column="obusign"    />
+        <result property="obutotalamount"    column="obutotalamount"    />
+        <result property="obutotaldiscountamount"    column="obutotaldiscountamount"    />
+        <result property="params"    column="params"    />
+        <result property="operid"    column="operid"    />
+        <result property="passid"    column="passid"    />
+        <result property="paycardid"    column="paycardid"    />
+        <result property="payfee"    column="payfee"    />
+        <result property="paytype"    column="paytype"    />
+        <result property="provfee"    column="provfee"    />
+        <result property="provtranscount"    column="provtranscount"    />
+        <result property="provincecount"    column="provincecount"    />
+        <result property="shift"    column="shift"    />
+        <result property="receivetime"    column="receivetime"    />
+        <result property="shortfee"    column="shortfee"    />
+        <result property="shortfeemileage"    column="shortfeemileage"    />
+        <result property="signstatus"    column="signstatus"    />
+        <result property="spcrateversion"    column="spcrateversion"    />
+        <result property="tac"    column="tac"    />
+        <result property="specialtype"    column="specialtype"    />
+        <result property="splitprovince"    column="splitprovince"    />
+        <result property="terminalno"    column="terminalno"    />
+        <result property="terminaltransno"    column="terminaltransno"    />
+        <result property="transfee"    column="transfee"    />
+        <result property="transpaytype"    column="transpaytype"    />
+        <result property="transtype"    column="transtype"    />
+        <result property="loadTime"    column="load_time"    />
+        <result property="vehiclesign"    column="vehiclesign"    />
+        <result property="gradeLevel"    column="grade_level"    />
+        <result property="vehiclesignid"    column="vehiclesignid"    />
+
+    </resultMap>
+
+    <sql id="selectOdsLwzxsfsjFeeStationExit01Vo">
+        t.big_id,
+        t.actualfeeclass,
+        t.axlecount,
+        t.discountfee,
+        t.electricalpercentage,
+        t.enaxlecount,
+        t.entime,
+        t.entolllanehex,
+        t.entolllaneid,
+        t.entollstationid,
+        t.entollstationname,
+        t.envehicleclass,
+        t.envehicleid,
+        t.envehicletype,
+        t.enweight,
+        t.entryoperatorid,
+        t.extime,
+        t.extolllaneid,
+        t.extollstationid,
+        t.extollstationname,
+        t.exvehicleclass,
+        t.exvehicleid,
+        t.exvehicletype,
+        t.fee,
+        t.exweight,
+        t.feeboardplay,
+        t.feemileage,
+        t.id,
+        t.identification,
+        t.feerate,
+        t.identifyvehicleid,
+        t.lanetype,
+        t.mediano,
+        t.mediatype,
+        t.nocardcount,
+        t.obuid,
+        t.obusign,
+        t.obutotalamount,
+        t.obutotaldiscountamount,
+        t.params,
+        t.operid,
+        t.passid,
+        t.paycardid,
+        t.payfee,
+        t.paytype,
+        t.provfee,
+        t.provtranscount,
+        t.provincecount,
+        t.shift,
+        t.receivetime,
+        t.shortfee,
+        t.shortfeemileage,
+        t.signstatus,
+        t.spcrateversion,
+        t.tac,
+        t.specialtype,
+        t.splitprovince,
+        t.terminalno,
+        t.terminaltransno,
+        t.transfee,
+        t.transpaytype,
+        t.transtype,
+        t.load_time,
+        t.vehiclesign,
+        t.grade_level,
+        t.vehiclesignid
+    </sql>
+
+
+    <select id="selectOdsLwzxsfsjFeeStationExit01List" parameterType="com.ruoyi.base.domain.OdsLwzxsfsjFeeStationExit01" resultMap="OdsLwzxsfsjFeeStationExit01Result">
+        SELECT
+        <include refid="selectOdsLwzxsfsjFeeStationExit01Vo"/>
+        FROM ods_lwzxsfsj_fee_station_exit_01 t
+        WHERE
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="actualfeeclass != null  and actualfeeclass != ''"> and t.actualfeeclass = #{actualfeeclass}</if>
+        <if test="axlecount != null "> and t.axlecount = #{axlecount}</if>
+        <if test="discountfee != null "> and t.discountfee = #{discountfee}</if>
+        <if test="electricalpercentage != null "> and t.electricalpercentage = #{electricalpercentage}</if>
+        <if test="enaxlecount != null "> and t.enaxlecount = #{enaxlecount}</if>
+        <if test="entime != null "> and t.entime = #{entime}</if>
+        <if test="entolllanehex != null  and entolllanehex != ''"> and t.entolllanehex = #{entolllanehex}</if>
+        <if test="entolllaneid != null  and entolllaneid != ''"> and t.entolllaneid = #{entolllaneid}</if>
+        <if test="entollstationid != null  and entollstationid != ''"> and t.entollstationid = #{entollstationid}</if>
+        <if test="entollstationname != null  and entollstationname != ''"> and t.entollstationname like concat('%', #{entollstationname}, '%')</if>
+        <if test="envehicleclass != null "> and t.envehicleclass = #{envehicleclass}</if>
+        <if test="envehicleid != null  and envehicleid != ''"> and t.envehicleid = #{envehicleid}</if>
+        <if test="envehicletype != null "> and t.envehicletype = #{envehicletype}</if>
+        <if test="enweight != null "> and t.enweight = #{enweight}</if>
+        <if test="entryoperatorid != null  and entryoperatorid != ''"> and t.entryoperatorid = #{entryoperatorid}</if>
+        <if test="extime != null "> and t.extime = #{extime}</if>
+        <if test="extolllaneid != null  and extolllaneid != ''"> and t.extolllaneid = #{extolllaneid}</if>
+        <if test="extollstationid != null  and extollstationid != ''"> and t.extollstationid = #{extollstationid}</if>
+        <if test="extollstationname != null  and extollstationname != ''"> and t.extollstationname like concat('%', #{extollstationname}, '%')</if>
+        <if test="exvehicleclass != null "> and t.exvehicleclass = #{exvehicleclass}</if>
+        <if test="exvehicleid != null  and exvehicleid != ''"> and t.exvehicleid = #{exvehicleid}</if>
+        <if test="exvehicletype != null "> and t.exvehicletype = #{exvehicletype}</if>
+        <if test="fee != null "> and t.fee = #{fee}</if>
+        <if test="exweight != null "> and t.exweight = #{exweight}</if>
+        <if test="feeboardplay != null  and feeboardplay != ''"> and t.feeboardplay = #{feeboardplay}</if>
+        <if test="feemileage != null "> and t.feemileage = #{feemileage}</if>
+        <if test="identification != null  and identification != ''"> and t.identification = #{identification}</if>
+        <if test="feerate != null "> and t.feerate = #{feerate}</if>
+        <if test="identifyvehicleid != null  and identifyvehicleid != ''"> and t.identifyvehicleid = #{identifyvehicleid}</if>
+        <if test="lanetype != null  and lanetype != ''"> and t.lanetype = #{lanetype}</if>
+        <if test="mediano != null  and mediano != ''"> and t.mediano = #{mediano}</if>
+        <if test="mediatype != null  and mediatype != ''"> and t.mediatype = #{mediatype}</if>
+        <if test="nocardcount != null "> and t.nocardcount = #{nocardcount}</if>
+        <if test="obuid != null  and obuid != ''"> and t.obuid = #{obuid}</if>
+        <if test="obusign != null  and obusign != ''"> and t.obusign = #{obusign}</if>
+        <if test="obutotalamount != null "> and t.obutotalamount = #{obutotalamount}</if>
+        <if test="obutotaldiscountamount != null "> and t.obutotaldiscountamount = #{obutotaldiscountamount}</if>
+        <if test="params != null  and params != ''"> and t.params = #{params}</if>
+        <if test="operid != null  and operid != ''"> and t.operid = #{operid}</if>
+        <if test="passid != null  and passid != ''"> and t.passid = #{passid}</if>
+        <if test="paycardid != null  and paycardid != ''"> and t.paycardid = #{paycardid}</if>
+        <if test="payfee != null "> and t.payfee = #{payfee}</if>
+        <if test="paytype != null  and paytype != ''"> and t.paytype = #{paytype}</if>
+        <if test="provfee != null "> and t.provfee = #{provfee}</if>
+        <if test="provtranscount != null "> and t.provtranscount = #{provtranscount}</if>
+        <if test="provincecount != null "> and t.provincecount = #{provincecount}</if>
+        <if test="shift != null  and shift != ''"> and t.shift = #{shift}</if>
+        <if test="receivetime != null "> and t.receivetime = #{receivetime}</if>
+        <if test="shortfee != null "> and t.shortfee = #{shortfee}</if>
+        <if test="shortfeemileage != null "> and t.shortfeemileage = #{shortfeemileage}</if>
+        <if test="signstatus != null  and signstatus != ''"> and t.signstatus = #{signstatus}</if>
+        <if test="spcrateversion != null  and spcrateversion != ''"> and t.spcrateversion = #{spcrateversion}</if>
+        <if test="tac != null  and tac != ''"> and t.tac = #{tac}</if>
+        <if test="specialtype != null  and specialtype != ''"> and t.specialtype = #{specialtype}</if>
+        <if test="splitprovince != null  and splitprovince != ''"> and t.splitprovince = #{splitprovince}</if>
+        <if test="terminalno != null  and terminalno != ''"> and t.terminalno = #{terminalno}</if>
+        <if test="terminaltransno != null  and terminaltransno != ''"> and t.terminaltransno = #{terminaltransno}</if>
+        <if test="transfee != null "> and t.transfee = #{transfee}</if>
+        <if test="transpaytype != null  and transpaytype != ''"> and t.transpaytype = #{transpaytype}</if>
+        <if test="transtype != null  and transtype != ''"> and t.transtype = #{transtype}</if>
+        <if test="loadTime != null "> and t.load_time = #{loadTime}</if>
+        <if test="vehiclesign != null  and vehiclesign != ''"> and t.vehiclesign = #{vehiclesign}</if>
+        <if test="gradeLevel != null  and gradeLevel != ''"> and t.grade_level = #{gradeLevel}</if>
+        <if test="vehiclesignid != null  and vehiclesignid != ''"> and t.vehiclesignid = #{vehiclesignid}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectOdsLwzxsfsjFeeStationExit01ById" parameterType="String" resultMap="OdsLwzxsfsjFeeStationExit01Result">
+         select
+         <include refid="selectOdsLwzxsfsjFeeStationExit01Vo"/>
+         from ods_lwzxsfsj_fee_station_exit_01 t
+         where t.big_id = #{bigId}
+    </select>
+
+
+    <update id="deleteOdsLwzxsfsjFeeStationExit01ById" parameterType="String">
+        update ods_lwzxsfsj_fee_station_exit_01 set del_flag = '1' where big_id = #{bigId}
+    </update>
+
+    <update id="deleteOdsLwzxsfsjFeeStationExit01ByIds" parameterType="String">
+        update ods_lwzxsfsj_fee_station_exit_01 set del_flag = '1' where big_id in
+        <foreach item="bigId" collection="array" open="(" separator="," close=")">
+            #{bigId}
+        </foreach>
+    </update>
+</mapper>

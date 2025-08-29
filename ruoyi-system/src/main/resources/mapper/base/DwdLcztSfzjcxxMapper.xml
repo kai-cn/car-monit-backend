@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.DwdLcztSfzjcxxMapper">
+
+    <resultMap type="com.ruoyi.base.domain.DwdLcztSfzjcxx" id="DwdLcztSfzjcxxResult">
+        <result property="agentPk"    column="agent_pk"    />
+        <result property="yxtzj"    column="yxtzj"    />
+        <result property="sfzdm"    column="sfzdm"    />
+        <result property="sfzmc"    column="sfzmc"    />
+        <result property="jd"    column="jd"    />
+        <result property="wd"    column="wd"    />
+        <result property="sslxbh"    column="sslxbh"    />
+        <result property="sslxmc"    column="sslxmc"    />
+        <result property="ssldbh"    column="ssldbh"    />
+        <result property="ssldmc"    column="ssldmc"    />
+        <result property="sczhK"    column="sczh_k"    />
+        <result property="sczhN"    column="sczh_n"    />
+        <result property="ssglzxbm"    column="ssglzxbm"    />
+        <result property="ssglzxmc"    column="ssglzxmc"    />
+        <result property="lyxt"    column="lyxt"    />
+        <result property="loadTime"    column="load_time"    />
+        <result property="allColPk"    column="all_col_pk"    />
+
+    </resultMap>
+
+    <sql id="selectDwdLcztSfzjcxxVo">
+        t.agent_pk,
+        t.yxtzj,
+        t.sfzdm,
+        t.sfzmc,
+        t.jd,
+        t.wd,
+        t.sslxbh,
+        t.sslxmc,
+        t.ssldbh,
+        t.ssldmc,
+        t.sczh_k,
+        t.sczh_n,
+        t.ssglzxbm,
+        t.ssglzxmc,
+        t.lyxt,
+        t.load_time,
+        t.all_col_pk
+    </sql>
+
+
+    <select id="selectDwdLcztSfzjcxxList" parameterType="com.ruoyi.base.domain.DwdLcztSfzjcxx" resultMap="DwdLcztSfzjcxxResult">
+        SELECT
+        <include refid="selectDwdLcztSfzjcxxVo"/>
+        FROM dwd_lczt_sfzjcxx t
+        WHERE
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="yxtzj != null  and yxtzj != ''"> and t.yxtzj = #{yxtzj}</if>
+        <if test="sfzdm != null  and sfzdm != ''"> and t.sfzdm = #{sfzdm}</if>
+        <if test="sfzmc != null  and sfzmc != ''"> and t.sfzmc = #{sfzmc}</if>
+        <if test="jd != null  and jd != ''"> and t.jd = #{jd}</if>
+        <if test="wd != null  and wd != ''"> and t.wd = #{wd}</if>
+        <if test="sslxbh != null  and sslxbh != ''"> and t.sslxbh = #{sslxbh}</if>
+        <if test="sslxmc != null  and sslxmc != ''"> and t.sslxmc = #{sslxmc}</if>
+        <if test="ssldbh != null  and ssldbh != ''"> and t.ssldbh = #{ssldbh}</if>
+        <if test="ssldmc != null  and ssldmc != ''"> and t.ssldmc = #{ssldmc}</if>
+        <if test="sczhK != null  and sczhK != ''"> and t.sczh_k = #{sczhK}</if>
+        <if test="sczhN != null  and sczhN != ''"> and t.sczh_n = #{sczhN}</if>
+        <if test="ssglzxbm != null  and ssglzxbm != ''"> and t.ssglzxbm = #{ssglzxbm}</if>
+        <if test="ssglzxmc != null  and ssglzxmc != ''"> and t.ssglzxmc = #{ssglzxmc}</if>
+        <if test="lyxt != null  and lyxt != ''"> and t.lyxt = #{lyxt}</if>
+        <if test="loadTime != null  and loadTime != ''"> and t.load_time = #{loadTime}</if>
+        <if test="allColPk != null  and allColPk != ''"> and t.all_col_pk = #{allColPk}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectDwdLcztSfzjcxxById" parameterType="String" resultMap="DwdLcztSfzjcxxResult">
+         select
+         <include refid="selectDwdLcztSfzjcxxVo"/>
+         from dwd_lczt_sfzjcxx t
+         where t.agent_pk = #{agentPk}
+    </select>
+
+
+    <update id="deleteDwdLcztSfzjcxxById" parameterType="String">
+        update dwd_lczt_sfzjcxx set del_flag = '1' where agent_pk = #{agentPk}
+    </update>
+
+    <update id="deleteDwdLcztSfzjcxxByIds" parameterType="String">
+        update dwd_lczt_sfzjcxx set del_flag = '1' where agent_pk in
+        <foreach item="agentPk" collection="array" open="(" separator="," close=")">
+            #{agentPk}
+        </foreach>
+    </update>
+</mapper>

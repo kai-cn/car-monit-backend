@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.OdsRtSzdnSnapshotFlowAddcodeMapper">
+
+    <resultMap type="com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode" id="OdsRtSzdnSnapshotFlowAddcodeResult">
+        <result property="bigId"    column="big_id"    />
+        <result property="datasource"    column="datasource"    />
+        <result property="cameratype"    column="cameratype"    />
+        <result property="deviceid"    column="deviceid"    />
+        <result property="gantrycode"    column="gantrycode"    />
+        <result property="gantryname"    column="gantryname"    />
+        <result property="roadcode"    column="roadcode"    />
+        <result property="roadname"    column="roadname"    />
+        <result property="sectioncode"    column="sectioncode"    />
+        <result property="sectionname"    column="sectionname"    />
+        <result property="tollcode"    column="tollcode"    />
+        <result property="tollname"    column="tollname"    />
+        <result property="orgcode"    column="orgcode"    />
+        <result property="orgname"    column="orgname"    />
+        <result property="direction"    column="direction"    />
+        <result property="hexcode"    column="hexcode"    />
+        <result property="pileno"    column="pileno"    />
+        <result property="lon"    column="lon"    />
+        <result property="lat"    column="lat"    />
+        <result property="deviceip"    column="deviceip"    />
+        <result property="siteid"    column="siteid"    />
+        <result property="laneid"    column="laneid"    />
+        <result property="snapshottimeunix"    column="snapshottimeunix"    />
+        <result property="snapshottime"    column="snapshottime"    />
+        <result property="receivedtimeunix"    column="receivedtimeunix"    />
+        <result property="receivedtime"    column="receivedtime"    />
+        <result property="platenumber"    column="platenumber"    />
+        <result property="platecolor"    column="platecolor"    />
+        <result property="platecolorcode"    column="platecolorcode"    />
+        <result property="platetype"    column="platetype"    />
+        <result property="platetypecode"    column="platetypecode"    />
+        <result property="plateconfidence"    column="plateconfidence"    />
+        <result property="carbrand"    column="carbrand"    />
+        <result property="carcolor"    column="carcolor"    />
+        <result property="carcolorcode"    column="carcolorcode"    />
+        <result property="cartype"    column="cartype"    />
+        <result property="cartypecode"    column="cartypecode"    />
+        <result property="cardirection"    column="cardirection"    />
+        <result property="snappicturepath"    column="snappicturepath"    />
+        <result property="loadtime"    column="loadtime"    />
+        <result property="gradelevel"    column="gradelevel"    />
+
+    </resultMap>
+
+    <sql id="selectOdsRtSzdnSnapshotFlowAddcodeVo">
+        t.big_id,
+        t.datasource,
+        t.cameratype,
+        t.deviceid,
+        t.gantrycode,
+        t.gantryname,
+        t.roadcode,
+        t.roadname,
+        t.sectioncode,
+        t.sectionname,
+        t.tollcode,
+        t.tollname,
+        t.orgcode,
+        t.orgname,
+        t.direction,
+        t.hexcode,
+        t.pileno,
+        t.lon,
+        t.lat,
+        t.deviceip,
+        t.siteid,
+        t.laneid,
+        t.snapshottimeunix,
+        t.snapshottime,
+        t.receivedtimeunix,
+        t.receivedtime,
+        t.platenumber,
+        t.platecolor,
+        t.platecolorcode,
+        t.platetype,
+        t.platetypecode,
+        t.plateconfidence,
+        t.carbrand,
+        t.carcolor,
+        t.carcolorcode,
+        t.cartype,
+        t.cartypecode,
+        t.cardirection,
+        t.snappicturepath,
+        t.loadtime,
+        t.gradelevel
+    </sql>
+
+
+    <select id="selectOdsRtSzdnSnapshotFlowAddcodeList" parameterType="com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode" resultMap="OdsRtSzdnSnapshotFlowAddcodeResult">
+        SELECT
+        <include refid="selectOdsRtSzdnSnapshotFlowAddcodeVo"/>
+        FROM ods_rt_szdn_snapshot_flow_addcode t
+        WHERE
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="datasource != null  and datasource != ''"> and t.datasource = #{datasource}</if>
+        <if test="cameratype != null  and cameratype != ''"> and t.cameratype = #{cameratype}</if>
+        <if test="deviceid != null  and deviceid != ''"> and t.deviceid = #{deviceid}</if>
+        <if test="gantrycode != null  and gantrycode != ''"> and t.gantrycode = #{gantrycode}</if>
+        <if test="gantryname != null  and gantryname != ''"> and t.gantryname like concat('%', #{gantryname}, '%')</if>
+        <if test="roadcode != null  and roadcode != ''"> and t.roadcode = #{roadcode}</if>
+        <if test="roadname != null  and roadname != ''"> and t.roadname like concat('%', #{roadname}, '%')</if>
+        <if test="sectioncode != null  and sectioncode != ''"> and t.sectioncode = #{sectioncode}</if>
+        <if test="sectionname != null  and sectionname != ''"> and t.sectionname like concat('%', #{sectionname}, '%')</if>
+        <if test="tollcode != null  and tollcode != ''"> and t.tollcode = #{tollcode}</if>
+        <if test="tollname != null  and tollname != ''"> and t.tollname like concat('%', #{tollname}, '%')</if>
+        <if test="orgcode != null  and orgcode != ''"> and t.orgcode = #{orgcode}</if>
+        <if test="orgname != null  and orgname != ''"> and t.orgname like concat('%', #{orgname}, '%')</if>
+        <if test="direction != null "> and t.direction = #{direction}</if>
+        <if test="hexcode != null  and hexcode != ''"> and t.hexcode = #{hexcode}</if>
+        <if test="pileno != null  and pileno != ''"> and t.pileno = #{pileno}</if>
+        <if test="lon != null "> and t.lon = #{lon}</if>
+        <if test="lat != null "> and t.lat = #{lat}</if>
+        <if test="deviceip != null  and deviceip != ''"> and t.deviceip = #{deviceip}</if>
+        <if test="siteid != null "> and t.siteid = #{siteid}</if>
+        <if test="laneid != null "> and t.laneid = #{laneid}</if>
+        <if test="snapshottimeunix != null "> and t.snapshottimeunix = #{snapshottimeunix}</if>
+        <if test="snapshottime != null "> and t.snapshottime = #{snapshottime}</if>
+        <if test="receivedtimeunix != null "> and t.receivedtimeunix = #{receivedtimeunix}</if>
+        <if test="receivedtime != null "> and t.receivedtime = #{receivedtime}</if>
+        <if test="platenumber != null  and platenumber != ''"> and t.platenumber = #{platenumber}</if>
+        <if test="platecolor != null  and platecolor != ''"> and t.platecolor = #{platecolor}</if>
+        <if test="platecolorcode != null "> and t.platecolorcode = #{platecolorcode}</if>
+        <if test="platetype != null  and platetype != ''"> and t.platetype = #{platetype}</if>
+        <if test="platetypecode != null "> and t.platetypecode = #{platetypecode}</if>
+        <if test="plateconfidence != null "> and t.plateconfidence = #{plateconfidence}</if>
+        <if test="carbrand != null  and carbrand != ''"> and t.carbrand = #{carbrand}</if>
+        <if test="carcolor != null  and carcolor != ''"> and t.carcolor = #{carcolor}</if>
+        <if test="carcolorcode != null "> and t.carcolorcode = #{carcolorcode}</if>
+        <if test="cartype != null  and cartype != ''"> and t.cartype = #{cartype}</if>
+        <if test="cartypecode != null "> and t.cartypecode = #{cartypecode}</if>
+        <if test="cardirection != null  and cardirection != ''"> and t.cardirection = #{cardirection}</if>
+        <if test="snappicturepath != null  and snappicturepath != ''"> and t.snappicturepath = #{snappicturepath}</if>
+        <if test="loadtime != null "> and t.loadtime = #{loadtime}</if>
+        <if test="gradelevel != null "> and t.gradelevel = #{gradelevel}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectOdsRtSzdnSnapshotFlowAddcodeById" parameterType="String" resultMap="OdsRtSzdnSnapshotFlowAddcodeResult">
+         select
+         <include refid="selectOdsRtSzdnSnapshotFlowAddcodeVo"/>
+         from ods_rt_szdn_snapshot_flow_addcode t
+         where t.big_id = #{bigId}
+    </select>
+
+
+    <update id="deleteOdsRtSzdnSnapshotFlowAddcodeById" parameterType="String">
+        update ods_rt_szdn_snapshot_flow_addcode set del_flag = '1' where big_id = #{bigId}
+    </update>
+
+    <update id="deleteOdsRtSzdnSnapshotFlowAddcodeByIds" parameterType="String">
+        update ods_rt_szdn_snapshot_flow_addcode set del_flag = '1' where big_id in
+        <foreach item="bigId" collection="array" open="(" separator="," close=")">
+            #{bigId}
+        </foreach>
+    </update>
+</mapper>

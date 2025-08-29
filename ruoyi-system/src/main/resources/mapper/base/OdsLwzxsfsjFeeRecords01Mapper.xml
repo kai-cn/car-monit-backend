@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.OdsLwzxsfsjFeeRecords01Mapper">
+
+    <resultMap type="com.ruoyi.base.domain.OdsLwzxsfsjFeeRecords01" id="OdsLwzxsfsjFeeRecords01Result">
+        <result property="bigId"    column="big_id"    />
+        <result property="algorithmidentifier"    column="algorithmidentifier"    />
+        <result property="antennaid"    column="antennaid"    />
+        <result property="axlecount"    column="axlecount"    />
+        <result property="balanceafter"    column="balanceafter"    />
+        <result property="balancebefore"    column="balancebefore"    />
+        <result property="cardfeesumafter"    column="cardfeesumafter"    />
+        <result property="cardfeesumbefore"    column="cardfeesumbefore"    />
+        <result property="computerorder"    column="computerorder"    />
+        <result property="consumetime"    column="consumetime"    />
+        <result property="cpucardid"    column="cpucardid"    />
+        <result property="cpucardtype"    column="cpucardtype"    />
+        <result property="cpuenddate"    column="cpuenddate"    />
+        <result property="cpuissueid"    column="cpuissueid"    />
+        <result property="cpunetid"    column="cpunetid"    />
+        <result property="cpustartdate"    column="cpustartdate"    />
+        <result property="cpuvehicleplate"    column="cpuvehicleplate"    />
+        <result property="cpuvehicletype"    column="cpuvehicletype"    />
+        <result property="cpuversion"    column="cpuversion"    />
+        <result property="dealstatus"    column="dealstatus"    />
+        <result property="discountfee"    column="discountfee"    />
+        <result property="discountfeegroup"    column="discountfeegroup"    />
+        <result property="enlanetype"    column="enlanetype"    />
+        <result property="entime"    column="entime"    />
+        <result property="entolllaneid"    column="entolllaneid"    />
+        <result property="entollstationhex"    column="entollstationhex"    />
+        <result property="fee"    column="fee"    />
+        <result property="feecalcresult"    column="feecalcresult"    />
+        <result property="feecalcspecial"    column="feecalcspecial"    />
+        <result property="feecalcspecials"    column="feecalcspecials"    />
+        <result property="feegroup"    column="feegroup"    />
+        <result property="feeinfo1"    column="feeinfo1"    />
+        <result property="feeinfo2"    column="feeinfo2"    />
+        <result property="feeinfo3"    column="feeinfo3"    />
+        <result property="feemileage"    column="feemileage"    />
+        <result property="feeprovbeginhex"    column="feeprovbeginhex"    />
+        <result property="feespare1"    column="feespare1"    />
+        <result property="feespare2"    column="feespare2"    />
+        <result property="feevehicletype"    column="feevehicletype"    />
+        <result property="gantryhex"    column="gantryhex"    />
+        <result property="gantryhexopposite"    column="gantryhexopposite"    />
+        <result property="gantryid"    column="gantryid"    />
+        <result property="gantryordernum"    column="gantryordernum"    />
+        <result property="gantrytype"    column="gantrytype"    />
+        <result property="holidaystate"    column="holidaystate"    />
+        <result property="hourbatchno"    column="hourbatchno"    />
+        <result property="keyversion"    column="keyversion"    />
+        <result property="lastgantryhex"    column="lastgantryhex"    />
+        <result property="lastgantrytime"    column="lastgantrytime"    />
+        <result property="matchstatus"    column="matchstatus"    />
+        <result property="mediatype"    column="mediatype"    />
+        <result property="nocardtimesafter"    column="nocardtimesafter"    />
+        <result property="nocardtimesbefore"    column="nocardtimesbefore"    />
+        <result property="obuelectrical"    column="obuelectrical"    />
+        <result property="obuenddate"    column="obuenddate"    />
+        <result property="obufeesumafter"    column="obufeesumafter"    />
+        <result property="obufeesumbefore"    column="obufeesumbefore"    />
+        <result property="obuinfotyperead"    column="obuinfotyperead"    />
+        <result property="obuinfotypewrite"    column="obuinfotypewrite"    />
+        <result property="obuissueid"    column="obuissueid"    />
+        <result property="obulastgantryhex"    column="obulastgantryhex"    />
+        <result property="obulastgantrytime"    column="obulastgantrytime"    />
+        <result property="obumac"    column="obumac"    />
+        <result property="obumileageafter"    column="obumileageafter"    />
+        <result property="obumileagebefore"    column="obumileagebefore"    />
+        <result property="obupassstate"    column="obupassstate"    />
+        <result property="obupayfeesumafter"    column="obupayfeesumafter"    />
+        <result property="obupayfeesumbefore"    column="obupayfeesumbefore"    />
+        <result property="obuprovfeesumafter"    column="obuprovfeesumafter"    />
+        <result property="obuprovfeesumbefore"    column="obuprovfeesumbefore"    />
+        <result property="obuprovpayfeesumafter"    column="obuprovpayfeesumafter"    />
+        <result property="obuprovpayfeesumbefore"    column="obuprovpayfeesumbefore"    />
+        <result property="obuprovtradesuccnumafter"    column="obuprovtradesuccnumafter"    />
+        <result property="obuprovtradesuccnumbefore"    column="obuprovtradesuccnumbefore"    />
+        <result property="obusign"    column="obusign"    />
+        <result property="obusn"    column="obusn"    />
+        <result property="obustartdate"    column="obustartdate"    />
+        <result property="obustate"    column="obustate"    />
+        <result property="obutotaltradesuccnumafter"    column="obutotaltradesuccnumafter"    />
+        <result property="obutotaltradesuccnumbefore"    column="obutotaltradesuccnumbefore"    />
+        <result property="obutraderesult"    column="obutraderesult"    />
+        <result property="obuvehicleplate"    column="obuvehicleplate"    />
+        <result property="obuvehicletype"    column="obuvehicletype"    />
+        <result property="obuversion"    column="obuversion"    />
+        <result property="params"    column="params"    />
+        <result property="passid"    column="passid"    />
+        <result property="passstate"    column="passstate"    />
+        <result property="pathfitflag"    column="pathfitflag"    />
+        <result property="payfee"    column="payfee"    />
+        <result property="payfeegroup"    column="payfeegroup"    />
+        <result property="pcrsuversion"    column="pcrsuversion"    />
+        <result property="provminfee"    column="provminfee"    />
+        <result property="provincenumafter"    column="provincenumafter"    />
+        <result property="provincenumbefore"    column="provincenumbefore"    />
+        <result property="ratecompute"    column="ratecompute"    />
+        <result property="ratefitcount"    column="ratefitcount"    />
+        <result property="rateversion"    column="rateversion"    />
+        <result property="readciphertextverify"    column="readciphertextverify"    />
+        <result property="receivetime"    column="receivetime"    />
+        <result property="servicetype"    column="servicetype"    />
+        <result property="stationdbtime"    column="stationdbtime"    />
+        <result property="stationdealtime"    column="stationdealtime"    />
+        <result property="stationmatchtime"    column="stationmatchtime"    />
+        <result property="stationvalidtime"    column="stationvalidtime"    />
+        <result property="tac"    column="tac"    />
+        <result property="terminalno"    column="terminalno"    />
+        <result property="terminaltransno"    column="terminaltransno"    />
+        <result property="tollintervalid"    column="tollintervalid"    />
+        <result property="tollintervalsign"    column="tollintervalsign"    />
+        <result property="totalweight"    column="totalweight"    />
+        <result property="tradeid"    column="tradeid"    />
+        <result property="tradereadciphertext"    column="tradereadciphertext"    />
+        <result property="traderesult"    column="traderesult"    />
+        <result property="tradetype"    column="tradetype"    />
+        <result property="tradewriteciphertext"    column="tradewriteciphertext"    />
+        <result property="transfee"    column="transfee"    />
+        <result property="transno"    column="transno"    />
+        <result property="transtime"    column="transtime"    />
+        <result property="transtype"    column="transtype"    />
+        <result property="validstatus"    column="validstatus"    />
+        <result property="vehicleclass"    column="vehicleclass"    />
+        <result property="vehiclehight"    column="vehiclehight"    />
+        <result property="vehiclelength"    column="vehiclelength"    />
+        <result property="vehicleplate"    column="vehicleplate"    />
+        <result property="vehicleseat"    column="vehicleseat"    />
+        <result property="vehiclesign"    column="vehiclesign"    />
+        <result property="vehicletype"    column="vehicletype"    />
+        <result property="vehicleusertype"    column="vehicleusertype"    />
+        <result property="vehiclewidth"    column="vehiclewidth"    />
+        <result property="verifycode"    column="verifycode"    />
+        <result property="loadTime"    column="load_time"    />
+        <result property="gradeLevel"    column="grade_level"    />
+
+    </resultMap>
+
+    <sql id="selectOdsLwzxsfsjFeeRecords01Vo">
+        t.big_id,
+        t.algorithmidentifier,
+        t.antennaid,
+        t.axlecount,
+        t.balanceafter,
+        t.balancebefore,
+        t.cardfeesumafter,
+        t.cardfeesumbefore,
+        t.computerorder,
+        t.consumetime,
+        t.cpucardid,
+        t.cpucardtype,
+        t.cpuenddate,
+        t.cpuissueid,
+        t.cpunetid,
+        t.cpustartdate,
+        t.cpuvehicleplate,
+        t.cpuvehicletype,
+        t.cpuversion,
+        t.dealstatus,
+        t.discountfee,
+        t.discountfeegroup,
+        t.enlanetype,
+        t.entime,
+        t.entolllaneid,
+        t.entollstationhex,
+        t.fee,
+        t.feecalcresult,
+        t.feecalcspecial,
+        t.feecalcspecials,
+        t.feegroup,
+        t.feeinfo1,
+        t.feeinfo2,
+        t.feeinfo3,
+        t.feemileage,
+        t.feeprovbeginhex,
+        t.feespare1,
+        t.feespare2,
+        t.feevehicletype,
+        t.gantryhex,
+        t.gantryhexopposite,
+        t.gantryid,
+        t.gantryordernum,
+        t.gantrytype,
+        t.holidaystate,
+        t.hourbatchno,
+        t.keyversion,
+        t.lastgantryhex,
+        t.lastgantrytime,
+        t.matchstatus,
+        t.mediatype,
+        t.nocardtimesafter,
+        t.nocardtimesbefore,
+        t.obuelectrical,
+        t.obuenddate,
+        t.obufeesumafter,
+        t.obufeesumbefore,
+        t.obuinfotyperead,
+        t.obuinfotypewrite,
+        t.obuissueid,
+        t.obulastgantryhex,
+        t.obulastgantrytime,
+        t.obumac,
+        t.obumileageafter,
+        t.obumileagebefore,
+        t.obupassstate,
+        t.obupayfeesumafter,
+        t.obupayfeesumbefore,
+        t.obuprovfeesumafter,
+        t.obuprovfeesumbefore,
+        t.obuprovpayfeesumafter,
+        t.obuprovpayfeesumbefore,
+        t.obuprovtradesuccnumafter,
+        t.obuprovtradesuccnumbefore,
+        t.obusign,
+        t.obusn,
+        t.obustartdate,
+        t.obustate,
+        t.obutotaltradesuccnumafter,
+        t.obutotaltradesuccnumbefore,
+        t.obutraderesult,
+        t.obuvehicleplate,
+        t.obuvehicletype,
+        t.obuversion,
+        t.params,
+        t.passid,
+        t.passstate,
+        t.pathfitflag,
+        t.payfee,
+        t.payfeegroup,
+        t.pcrsuversion,
+        t.provminfee,
+        t.provincenumafter,
+        t.provincenumbefore,
+        t.ratecompute,
+        t.ratefitcount,
+        t.rateversion,
+        t.readciphertextverify,
+        t.receivetime,
+        t.servicetype,
+        t.stationdbtime,
+        t.stationdealtime,
+        t.stationmatchtime,
+        t.stationvalidtime,
+        t.tac,
+        t.terminalno,
+        t.terminaltransno,
+        t.tollintervalid,
+        t.tollintervalsign,
+        t.totalweight,
+        t.tradeid,
+        t.tradereadciphertext,
+        t.traderesult,
+        t.tradetype,
+        t.tradewriteciphertext,
+        t.transfee,
+        t.transno,
+        t.transtime,
+        t.transtype,
+        t.validstatus,
+        t.vehicleclass,
+        t.vehiclehight,
+        t.vehiclelength,
+        t.vehicleplate,
+        t.vehicleseat,
+        t.vehiclesign,
+        t.vehicletype,
+        t.vehicleusertype,
+        t.vehiclewidth,
+        t.verifycode,
+        t.load_time,
+        t.grade_level
+    </sql>
+
+
+    <select id="selectOdsLwzxsfsjFeeRecords01List" parameterType="com.ruoyi.base.domain.OdsLwzxsfsjFeeRecords01" resultMap="OdsLwzxsfsjFeeRecords01Result">
+        SELECT
+        <include refid="selectOdsLwzxsfsjFeeRecords01Vo"/>
+        FROM ods_lwzxsfsj_fee_records_01 t
+        WHERE
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="algorithmidentifier != null  and algorithmidentifier != ''"> and t.algorithmidentifier = #{algorithmidentifier}</if>
+        <if test="antennaid != null  and antennaid != ''"> and t.antennaid = #{antennaid}</if>
+        <if test="axlecount != null "> and t.axlecount = #{axlecount}</if>
+        <if test="balanceafter != null "> and t.balanceafter = #{balanceafter}</if>
+        <if test="balancebefore != null "> and t.balancebefore = #{balancebefore}</if>
+        <if test="cardfeesumafter != null "> and t.cardfeesumafter = #{cardfeesumafter}</if>
+        <if test="cardfeesumbefore != null "> and t.cardfeesumbefore = #{cardfeesumbefore}</if>
+        <if test="computerorder != null  and computerorder != ''"> and t.computerorder = #{computerorder}</if>
+        <if test="consumetime != null "> and t.consumetime = #{consumetime}</if>
+        <if test="cpucardid != null  and cpucardid != ''"> and t.cpucardid = #{cpucardid}</if>
+        <if test="cpucardtype != null  and cpucardtype != ''"> and t.cpucardtype = #{cpucardtype}</if>
+        <if test="cpuenddate != null  and cpuenddate != ''"> and t.cpuenddate = #{cpuenddate}</if>
+        <if test="cpuissueid != null  and cpuissueid != ''"> and t.cpuissueid = #{cpuissueid}</if>
+        <if test="cpunetid != null  and cpunetid != ''"> and t.cpunetid = #{cpunetid}</if>
+        <if test="cpustartdate != null  and cpustartdate != ''"> and t.cpustartdate = #{cpustartdate}</if>
+        <if test="cpuvehicleplate != null  and cpuvehicleplate != ''"> and t.cpuvehicleplate = #{cpuvehicleplate}</if>
+        <if test="cpuvehicletype != null  and cpuvehicletype != ''"> and t.cpuvehicletype = #{cpuvehicletype}</if>
+        <if test="cpuversion != null  and cpuversion != ''"> and t.cpuversion = #{cpuversion}</if>
+        <if test="dealstatus != null  and dealstatus != ''"> and t.dealstatus = #{dealstatus}</if>
+        <if test="discountfee != null "> and t.discountfee = #{discountfee}</if>
+        <if test="discountfeegroup != null  and discountfeegroup != ''"> and t.discountfeegroup = #{discountfeegroup}</if>
+        <if test="enlanetype != null  and enlanetype != ''"> and t.enlanetype = #{enlanetype}</if>
+        <if test="entime != null "> and t.entime = #{entime}</if>
+        <if test="entolllaneid != null  and entolllaneid != ''"> and t.entolllaneid = #{entolllaneid}</if>
+        <if test="entollstationhex != null  and entollstationhex != ''"> and t.entollstationhex = #{entollstationhex}</if>
+        <if test="fee != null "> and t.fee = #{fee}</if>
+        <if test="feecalcresult != null  and feecalcresult != ''"> and t.feecalcresult = #{feecalcresult}</if>
+        <if test="feecalcspecial != null  and feecalcspecial != ''"> and t.feecalcspecial = #{feecalcspecial}</if>
+        <if test="feecalcspecials != null  and feecalcspecials != ''"> and t.feecalcspecials = #{feecalcspecials}</if>
+        <if test="feegroup != null  and feegroup != ''"> and t.feegroup = #{feegroup}</if>
+        <if test="feeinfo1 != null  and feeinfo1 != ''"> and t.feeinfo1 = #{feeinfo1}</if>
+        <if test="feeinfo2 != null  and feeinfo2 != ''"> and t.feeinfo2 = #{feeinfo2}</if>
+        <if test="feeinfo3 != null  and feeinfo3 != ''"> and t.feeinfo3 = #{feeinfo3}</if>
+        <if test="feemileage != null "> and t.feemileage = #{feemileage}</if>
+        <if test="feeprovbeginhex != null  and feeprovbeginhex != ''"> and t.feeprovbeginhex = #{feeprovbeginhex}</if>
+        <if test="feespare1 != null  and feespare1 != ''"> and t.feespare1 = #{feespare1}</if>
+        <if test="feespare2 != null  and feespare2 != ''"> and t.feespare2 = #{feespare2}</if>
+        <if test="feevehicletype != null  and feevehicletype != ''"> and t.feevehicletype = #{feevehicletype}</if>
+        <if test="gantryhex != null  and gantryhex != ''"> and t.gantryhex = #{gantryhex}</if>
+        <if test="gantryhexopposite != null  and gantryhexopposite != ''"> and t.gantryhexopposite = #{gantryhexopposite}</if>
+        <if test="gantryid != null  and gantryid != ''"> and t.gantryid = #{gantryid}</if>
+        <if test="gantryordernum != null "> and t.gantryordernum = #{gantryordernum}</if>
+        <if test="gantrytype != null  and gantrytype != ''"> and t.gantrytype = #{gantrytype}</if>
+        <if test="holidaystate != null  and holidaystate != ''"> and t.holidaystate = #{holidaystate}</if>
+        <if test="hourbatchno != null  and hourbatchno != ''"> and t.hourbatchno = #{hourbatchno}</if>
+        <if test="keyversion != null  and keyversion != ''"> and t.keyversion = #{keyversion}</if>
+        <if test="lastgantryhex != null  and lastgantryhex != ''"> and t.lastgantryhex = #{lastgantryhex}</if>
+        <if test="lastgantrytime != null "> and t.lastgantrytime = #{lastgantrytime}</if>
+        <if test="matchstatus != null  and matchstatus != ''"> and t.matchstatus = #{matchstatus}</if>
+        <if test="mediatype != null  and mediatype != ''"> and t.mediatype = #{mediatype}</if>
+        <if test="nocardtimesafter != null "> and t.nocardtimesafter = #{nocardtimesafter}</if>
+        <if test="nocardtimesbefore != null "> and t.nocardtimesbefore = #{nocardtimesbefore}</if>
+        <if test="obuelectrical != null "> and t.obuelectrical = #{obuelectrical}</if>
+        <if test="obuenddate != null  and obuenddate != ''"> and t.obuenddate = #{obuenddate}</if>
+        <if test="obufeesumafter != null "> and t.obufeesumafter = #{obufeesumafter}</if>
+        <if test="obufeesumbefore != null "> and t.obufeesumbefore = #{obufeesumbefore}</if>
+        <if test="obuinfotyperead != null  and obuinfotyperead != ''"> and t.obuinfotyperead = #{obuinfotyperead}</if>
+        <if test="obuinfotypewrite != null  and obuinfotypewrite != ''"> and t.obuinfotypewrite = #{obuinfotypewrite}</if>
+        <if test="obuissueid != null  and obuissueid != ''"> and t.obuissueid = #{obuissueid}</if>
+        <if test="obulastgantryhex != null  and obulastgantryhex != ''"> and t.obulastgantryhex = #{obulastgantryhex}</if>
+        <if test="obulastgantrytime != null "> and t.obulastgantrytime = #{obulastgantrytime}</if>
+        <if test="obumac != null  and obumac != ''"> and t.obumac = #{obumac}</if>
+        <if test="obumileageafter != null "> and t.obumileageafter = #{obumileageafter}</if>
+        <if test="obumileagebefore != null "> and t.obumileagebefore = #{obumileagebefore}</if>
+        <if test="obupassstate != null  and obupassstate != ''"> and t.obupassstate = #{obupassstate}</if>
+        <if test="obupayfeesumafter != null "> and t.obupayfeesumafter = #{obupayfeesumafter}</if>
+        <if test="obupayfeesumbefore != null "> and t.obupayfeesumbefore = #{obupayfeesumbefore}</if>
+        <if test="obuprovfeesumafter != null "> and t.obuprovfeesumafter = #{obuprovfeesumafter}</if>
+        <if test="obuprovfeesumbefore != null "> and t.obuprovfeesumbefore = #{obuprovfeesumbefore}</if>
+        <if test="obuprovpayfeesumafter != null "> and t.obuprovpayfeesumafter = #{obuprovpayfeesumafter}</if>
+        <if test="obuprovpayfeesumbefore != null "> and t.obuprovpayfeesumbefore = #{obuprovpayfeesumbefore}</if>
+        <if test="obuprovtradesuccnumafter != null "> and t.obuprovtradesuccnumafter = #{obuprovtradesuccnumafter}</if>
+        <if test="obuprovtradesuccnumbefore != null "> and t.obuprovtradesuccnumbefore = #{obuprovtradesuccnumbefore}</if>
+        <if test="obusign != null  and obusign != ''"> and t.obusign = #{obusign}</if>
+        <if test="obusn != null  and obusn != ''"> and t.obusn = #{obusn}</if>
+        <if test="obustartdate != null  and obustartdate != ''"> and t.obustartdate = #{obustartdate}</if>
+        <if test="obustate != null  and obustate != ''"> and t.obustate = #{obustate}</if>
+        <if test="obutotaltradesuccnumafter != null "> and t.obutotaltradesuccnumafter = #{obutotaltradesuccnumafter}</if>
+        <if test="obutotaltradesuccnumbefore != null "> and t.obutotaltradesuccnumbefore = #{obutotaltradesuccnumbefore}</if>
+        <if test="obutraderesult != null  and obutraderesult != ''"> and t.obutraderesult = #{obutraderesult}</if>
+        <if test="obuvehicleplate != null  and obuvehicleplate != ''"> and t.obuvehicleplate = #{obuvehicleplate}</if>
+        <if test="obuvehicletype != null  and obuvehicletype != ''"> and t.obuvehicletype = #{obuvehicletype}</if>
+        <if test="obuversion != null  and obuversion != ''"> and t.obuversion = #{obuversion}</if>
+        <if test="params != null  and params != ''"> and t.params = #{params}</if>
+        <if test="passid != null  and passid != ''"> and t.passid = #{passid}</if>
+        <if test="passstate != null  and passstate != ''"> and t.passstate = #{passstate}</if>
+        <if test="pathfitflag != null  and pathfitflag != ''"> and t.pathfitflag = #{pathfitflag}</if>
+        <if test="payfee != null "> and t.payfee = #{payfee}</if>
+        <if test="payfeegroup != null  and payfeegroup != ''"> and t.payfeegroup = #{payfeegroup}</if>
+        <if test="pcrsuversion != null  and pcrsuversion != ''"> and t.pcrsuversion = #{pcrsuversion}</if>
+        <if test="provminfee != null "> and t.provminfee = #{provminfee}</if>
+        <if test="provincenumafter != null "> and t.provincenumafter = #{provincenumafter}</if>
+        <if test="provincenumbefore != null "> and t.provincenumbefore = #{provincenumbefore}</if>
+        <if test="ratecompute != null  and ratecompute != ''"> and t.ratecompute = #{ratecompute}</if>
+        <if test="ratefitcount != null "> and t.ratefitcount = #{ratefitcount}</if>
+        <if test="rateversion != null  and rateversion != ''"> and t.rateversion = #{rateversion}</if>
+        <if test="readciphertextverify != null  and readciphertextverify != ''"> and t.readciphertextverify = #{readciphertextverify}</if>
+        <if test="receivetime != null "> and t.receivetime = #{receivetime}</if>
+        <if test="servicetype != null  and servicetype != ''"> and t.servicetype = #{servicetype}</if>
+        <if test="stationdbtime != null "> and t.stationdbtime = #{stationdbtime}</if>
+        <if test="stationdealtime != null "> and t.stationdealtime = #{stationdealtime}</if>
+        <if test="stationmatchtime != null "> and t.stationmatchtime = #{stationmatchtime}</if>
+        <if test="stationvalidtime != null "> and t.stationvalidtime = #{stationvalidtime}</if>
+        <if test="tac != null  and tac != ''"> and t.tac = #{tac}</if>
+        <if test="terminalno != null  and terminalno != ''"> and t.terminalno = #{terminalno}</if>
+        <if test="terminaltransno != null  and terminaltransno != ''"> and t.terminaltransno = #{terminaltransno}</if>
+        <if test="tollintervalid != null  and tollintervalid != ''"> and t.tollintervalid = #{tollintervalid}</if>
+        <if test="tollintervalsign != null  and tollintervalsign != ''"> and t.tollintervalsign = #{tollintervalsign}</if>
+        <if test="totalweight != null "> and t.totalweight = #{totalweight}</if>
+        <if test="tradeid != null  and tradeid != ''"> and t.tradeid = #{tradeid}</if>
+        <if test="tradereadciphertext != null  and tradereadciphertext != ''"> and t.tradereadciphertext = #{tradereadciphertext}</if>
+        <if test="traderesult != null  and traderesult != ''"> and t.traderesult = #{traderesult}</if>
+        <if test="tradetype != null  and tradetype != ''"> and t.tradetype = #{tradetype}</if>
+        <if test="tradewriteciphertext != null  and tradewriteciphertext != ''"> and t.tradewriteciphertext = #{tradewriteciphertext}</if>
+        <if test="transfee != null "> and t.transfee = #{transfee}</if>
+        <if test="transno != null  and transno != ''"> and t.transno = #{transno}</if>
+        <if test="transtime != null "> and t.transtime = #{transtime}</if>
+        <if test="transtype != null  and transtype != ''"> and t.transtype = #{transtype}</if>
+        <if test="validstatus != null  and validstatus != ''"> and t.validstatus = #{validstatus}</if>
+        <if test="vehicleclass != null  and vehicleclass != ''"> and t.vehicleclass = #{vehicleclass}</if>
+        <if test="vehiclehight != null "> and t.vehiclehight = #{vehiclehight}</if>
+        <if test="vehiclelength != null "> and t.vehiclelength = #{vehiclelength}</if>
+        <if test="vehicleplate != null  and vehicleplate != ''"> and t.vehicleplate = #{vehicleplate}</if>
+        <if test="vehicleseat != null  and vehicleseat != ''"> and t.vehicleseat = #{vehicleseat}</if>
+        <if test="vehiclesign != null  and vehiclesign != ''"> and t.vehiclesign = #{vehiclesign}</if>
+        <if test="vehicletype != null  and vehicletype != ''"> and t.vehicletype = #{vehicletype}</if>
+        <if test="vehicleusertype != null  and vehicleusertype != ''"> and t.vehicleusertype = #{vehicleusertype}</if>
+        <if test="vehiclewidth != null "> and t.vehiclewidth = #{vehiclewidth}</if>
+        <if test="verifycode != null  and verifycode != ''"> and t.verifycode = #{verifycode}</if>
+        <if test="loadTime != null "> and t.load_time = #{loadTime}</if>
+        <if test="gradeLevel != null "> and t.grade_level = #{gradeLevel}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectOdsLwzxsfsjFeeRecords01ById" parameterType="String" resultMap="OdsLwzxsfsjFeeRecords01Result">
+         select
+         <include refid="selectOdsLwzxsfsjFeeRecords01Vo"/>
+         from ods_lwzxsfsj_fee_records_01 t
+         where t.big_id = #{bigId}
+    </select>
+
+
+    <update id="deleteOdsLwzxsfsjFeeRecords01ById" parameterType="String">
+        update ods_lwzxsfsj_fee_records_01 set del_flag = '1' where big_id = #{bigId}
+    </update>
+
+    <update id="deleteOdsLwzxsfsjFeeRecords01ByIds" parameterType="String">
+        update ods_lwzxsfsj_fee_records_01 set del_flag = '1' where big_id in
+        <foreach item="bigId" collection="array" open="(" separator="," close=")">
+            #{bigId}
+        </foreach>
+    </update>
+</mapper>

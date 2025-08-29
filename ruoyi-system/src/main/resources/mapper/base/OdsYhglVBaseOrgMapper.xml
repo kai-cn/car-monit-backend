@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.OdsYhglVBaseOrgMapper">
+
+    <resultMap type="com.ruoyi.base.domain.OdsYhglVBaseOrg" id="OdsYhglVBaseOrgResult">
+        <result property="bigId"    column="big_id"    />
+        <result property="orgCode"    column="org_code"    />
+        <result property="orgName"    column="org_name"    />
+        <result property="orgShortName"    column="org_short_name"    />
+        <result property="orgParentId"    column="org_parent_id"    />
+        <result property="orgLevelCode"    column="org_level_code"    />
+        <result property="orgIsVirtual"    column="org_is_virtual"    />
+        <result property="orgMaintenance"    column="org_maintenance"    />
+        <result property="orgSequence"    column="org_sequence"    />
+        <result property="orgIsManager"    column="org_is_manager"    />
+        <result property="orgIsDeleted"    column="org_is_deleted"    />
+        <result property="orgCategory"    column="org_category"    />
+        <result property="orgIsAuthorized"    column="org_is_authorized"    />
+        <result property="orgAddress"    column="org_address"    />
+        <result property="orgIsYhAutarky"    column="org_is_yh_autarky"    />
+        <result property="loadTime"    column="load_time"    />
+        <result property="gradeLevel"    column="grade_level"    />
+
+    </resultMap>
+
+    <sql id="selectOdsYhglVBaseOrgVo">
+        t.big_id,
+        t.org_code,
+        t.org_name,
+        t.org_short_name,
+        t.org_parent_id,
+        t.org_level_code,
+        t.org_is_virtual,
+        t.org_maintenance,
+        t.org_sequence,
+        t.org_is_manager,
+        t.org_is_deleted,
+        t.org_category,
+        t.org_is_authorized,
+        t.org_address,
+        t.org_is_yh_autarky,
+        t.load_time,
+        t.grade_level
+    </sql>
+
+
+    <select id="selectOdsYhglVBaseOrgList" parameterType="com.ruoyi.base.domain.OdsYhglVBaseOrg" resultMap="OdsYhglVBaseOrgResult">
+        SELECT
+        <include refid="selectOdsYhglVBaseOrgVo"/>
+        FROM ods_yhgl_v_base_org t
+        WHERE
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="orgCode != null  and orgCode != ''"> and t.org_code = #{orgCode}</if>
+        <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
+        <if test="orgShortName != null  and orgShortName != ''"> and t.org_short_name like concat('%', #{orgShortName}, '%')</if>
+        <if test="orgParentId != null  and orgParentId != ''"> and t.org_parent_id = #{orgParentId}</if>
+        <if test="orgLevelCode != null  and orgLevelCode != ''"> and t.org_level_code = #{orgLevelCode}</if>
+        <if test="orgIsVirtual != null  and orgIsVirtual != ''"> and t.org_is_virtual = #{orgIsVirtual}</if>
+        <if test="orgMaintenance != null  and orgMaintenance != ''"> and t.org_maintenance = #{orgMaintenance}</if>
+        <if test="orgSequence != null "> and t.org_sequence = #{orgSequence}</if>
+        <if test="orgIsManager != null  and orgIsManager != ''"> and t.org_is_manager = #{orgIsManager}</if>
+        <if test="orgIsDeleted != null  and orgIsDeleted != ''"> and t.org_is_deleted = #{orgIsDeleted}</if>
+        <if test="orgCategory != null "> and t.org_category = #{orgCategory}</if>
+        <if test="orgIsAuthorized != null  and orgIsAuthorized != ''"> and t.org_is_authorized = #{orgIsAuthorized}</if>
+        <if test="orgAddress != null  and orgAddress != ''"> and t.org_address = #{orgAddress}</if>
+        <if test="orgIsYhAutarky != null  and orgIsYhAutarky != ''"> and t.org_is_yh_autarky = #{orgIsYhAutarky}</if>
+        <if test="loadTime != null "> and t.load_time = #{loadTime}</if>
+        <if test="gradeLevel != null "> and t.grade_level = #{gradeLevel}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectOdsYhglVBaseOrgById" parameterType="String" resultMap="OdsYhglVBaseOrgResult">
+         select
+         <include refid="selectOdsYhglVBaseOrgVo"/>
+         from ods_yhgl_v_base_org t
+         where t.big_id = #{bigId}
+    </select>
+
+
+    <update id="deleteOdsYhglVBaseOrgById" parameterType="String">
+        update ods_yhgl_v_base_org set del_flag = '1' where big_id = #{bigId}
+    </update>
+
+    <update id="deleteOdsYhglVBaseOrgByIds" parameterType="String">
+        update ods_yhgl_v_base_org set del_flag = '1' where big_id in
+        <foreach item="bigId" collection="array" open="(" separator="," close=")">
+            #{bigId}
+        </foreach>
+    </update>
+</mapper>
