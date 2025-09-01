@@ -211,6 +211,14 @@ public class CarInfo extends BasePlusEntity implements Custom {
     @Excel(name = "所属收费站名称")
     private String tollName;
 
+    /** 服务区编码 */
+    @Excel(name = "服务区编码")
+    private String fwqbm;
+
+    /** 服务区名称 */
+    @Excel(name = "服务区名称")
+    private String fwqmc;
+
     /** 备注 */
     @Excel(name = "备注")
     private String remark;

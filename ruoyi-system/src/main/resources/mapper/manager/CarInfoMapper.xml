@@ -59,6 +59,8 @@
         <result property="updateBy"    column="update_by"    />
         <result property="updateTime"    column="update_time"    />
         <result property="tenantId"    column="tenant_id"    />
+        <result property="fwqbm"    column="fwqbm"    />
+        <result property="fwqmc"    column="fwqmc"    />
 
     </resultMap>
 
@@ -118,7 +120,9 @@
         t.create_time,
         t.update_by,
         t.update_time,
-        t.tenant_id
+        t.tenant_id,
+        t.fwqbm,
+        t.fwqmc
     </sql>
 
 
@@ -179,6 +183,8 @@
         <if test="tollName != null  and tollName != ''"> and t.toll_name like concat('%', #{tollName}, '%')</if>
         <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
         <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        <if test="fwqbm != null  and fwqbm != ''"> and t.fwqbm = #{fwqbm}</if>
+        <if test="fwqmc != null  and fwqmc != ''"> and t.fwqmc = #{fwqmc}</if>
         <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
         <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
         order by t.create_time desc,t.id
