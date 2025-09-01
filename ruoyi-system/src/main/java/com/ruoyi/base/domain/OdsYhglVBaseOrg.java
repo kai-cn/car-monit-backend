@@ -70,9 +70,8 @@ public class OdsYhglVBaseOrg implements Custom {
     private String orgIsDeleted;
 
     /** 机构分类： 01集团 02公司 03管理中心 10部门 11所 12服务区 13养护区 14站 15项目办 16信息中心 17项目部  99其它 */
-    @JsonFormat(pattern = "yyyy-MM-dd")
     @Excel(name = "机构分类： 01集团 02公司 03管理中心 10部门 11所 12服务区 13养护区 14站 15项目办 16信息中心 17项目部  99其它", width = 30, dateFormat = "yyyy-MM-dd")
-    private Date orgCategory;
+    private String orgCategory;
 
     /** 是否授权机构 1：是 0：否 */
     @Excel(name = "是否授权机构 1：是 0：否")

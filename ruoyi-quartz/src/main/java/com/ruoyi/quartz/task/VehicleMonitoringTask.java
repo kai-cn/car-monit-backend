@@ -104,10 +104,10 @@ public class VehicleMonitoringTask {
             return;
         }
 
-        List<DwdLcztSfzjcxx> list = JSONUtil.toList(jsonArray, DwdLcztSfzjcxx.class);
+        List<OdsSzdnToll> list = JSONUtil.toList(jsonArray, OdsSzdnToll.class);
 
-        this.dwdLcztSfzjcxxService.truncateTable();
-        this.dwdLcztSfzjcxxService.saveOrUpdateBatch(list);
+        this.odsSzdnTollService.truncateTable();
+        this.odsSzdnTollService.saveOrUpdateBatch(list);
     }
 
     /**
@@ -171,10 +171,10 @@ public class VehicleMonitoringTask {
             return;
         }
 
-        List<OdsSzdnToll> list = JSONUtil.toList(jsonArray, OdsSzdnToll.class);
+        List<DwdLcztSfzjcxx> list = JSONUtil.toList(jsonArray, DwdLcztSfzjcxx.class);
 
-        this.odsSzdnTollService.truncateTable();
-        this.odsSzdnTollService.saveOrUpdateBatch(list);
+        this.dwdLcztSfzjcxxService.truncateTable();
+        this.dwdLcztSfzjcxxService.saveOrUpdateBatch(list);
     }
 
 
