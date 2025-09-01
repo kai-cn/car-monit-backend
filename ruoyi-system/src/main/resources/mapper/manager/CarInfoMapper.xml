@@ -30,38 +30,37 @@
         <result property="lastPassLatitude"    column="last_pass_latitude"    />
         <result property="lastPassCardirection"    column="last_pass_cardirection"    />
         <result property="roadSectionId"    column="road_section_id"    />
-        <result property="roadSectionName"    column="road_section_name"    />
         <result property="sectionCode"    column="section_code"    />
+        <result property="roadSectionName"    column="road_section_name"    />
         <result property="nextPassTime"    column="next_pass_time"    />
         <result property="nextPassType"    column="next_pass_type"    />
         <result property="nextPassAddress"    column="next_pass_address"    />
         <result property="nextPassLongitude"    column="next_pass_longitude"    />
         <result property="nextPassLatitude"    column="next_pass_latitude"    />
         <result property="orgId"    column="org_id"    />
-        <result property="orgName"    column="org_name"    />
-        <result property="backCol1"    column="back_col1"    />
-        <result property="linkName"    column="link_name"    />
         <result property="orgCode"    column="org_code"    />
-        <result property="backCol2"    column="back_col2"    />
-        <result property="linkPhone"    column="link_phone"    />
+        <result property="orgName"    column="org_name"    />
         <result property="gantryCode"    column="gantry_code"    />
-        <result property="remark"    column="remark"    />
         <result property="roadCode"    column="road_code"    />
-        <result property="status"    column="status"    />
         <result property="roadName"    column="road_name"    />
-        <result property="sort"    column="sort"    />
         <result property="tollCode"    column="toll_code"    />
-        <result property="epsId"    column="eps_id"    />
         <result property="tollName"    column="toll_name"    />
+        <result property="fwqbm"    column="fwqbm"    />
+        <result property="fwqmc"    column="fwqmc"    />
+        <result property="linkName"    column="link_name"    />
+        <result property="linkPhone"    column="link_phone"    />
+        <result property="backCol1"    column="back_col1"    />
+        <result property="backCol2"    column="back_col2"    />
+        <result property="remark"    column="remark"    />
+        <result property="status"    column="status"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
         <result property="delFlag"    column="del_flag"    />
         <result property="createBy"    column="create_by"    />
         <result property="createTime"    column="create_time"    />
         <result property="updateBy"    column="update_by"    />
         <result property="updateTime"    column="update_time"    />
         <result property="tenantId"    column="tenant_id"    />
-        <result property="fwqbm"    column="fwqbm"    />
-        <result property="fwqmc"    column="fwqmc"    />
-
     </resultMap>
 
     <sql id="selectCarInfoVo">
@@ -92,37 +91,37 @@
         t.last_pass_latitude,
         t.last_pass_cardirection,
         t.road_section_id,
-        t.road_section_name,
         t.section_code,
+        t.road_section_name,
         t.next_pass_time,
         t.next_pass_type,
         t.next_pass_address,
         t.next_pass_longitude,
         t.next_pass_latitude,
         t.org_id,
-        t.org_name,
-        t.back_col1,
-        t.link_name,
         t.org_code,
-        t.back_col2,
-        t.link_phone,
+        t.org_name,
         t.gantry_code,
-        t.remark,
         t.road_code,
-        t.status,
         t.road_name,
-        t.sort,
         t.toll_code,
-        t.eps_id,
         t.toll_name,
+        t.fwqbm,
+        t.fwqmc,
+        t.link_name,
+        t.link_phone,
+        t.back_col1,
+        t.back_col2,
+        t.remark,
+        t.status,
+        t.sort,
+        t.eps_id,
         t.del_flag,
         t.create_by,
         t.create_time,
         t.update_by,
         t.update_time,
-        t.tenant_id,
-        t.fwqbm,
-        t.fwqmc
+        t.tenant_id
     </sql>
 
 
@@ -133,7 +132,6 @@
         WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
-        <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
         <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
         <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
         <if test="carNum != null "> and t.car_num = #{carNum}</if>
@@ -159,32 +157,33 @@
         <if test="lastPassLatitude != null  and lastPassLatitude != ''"> and t.last_pass_latitude = #{lastPassLatitude}</if>
         <if test="lastPassCardirection != null  and lastPassCardirection != ''"> and t.last_pass_cardirection = #{lastPassCardirection}</if>
         <if test="roadSectionId != null  and roadSectionId != ''"> and t.road_section_id = #{roadSectionId}</if>
-        <if test="roadSectionName != null  and roadSectionName != ''"> and t.road_section_name like concat('%', #{roadSectionName}, '%')</if>
         <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
+        <if test="roadSectionName != null  and roadSectionName != ''"> and t.road_section_name like concat('%', #{roadSectionName}, '%')</if>
         <if test="nextPassTime != null "> and t.next_pass_time = #{nextPassTime}</if>
         <if test="nextPassType != null  and nextPassType != ''"> and t.next_pass_type = #{nextPassType}</if>
         <if test="nextPassAddress != null  and nextPassAddress != ''"> and t.next_pass_address = #{nextPassAddress}</if>
         <if test="nextPassLongitude != null  and nextPassLongitude != ''"> and t.next_pass_longitude = #{nextPassLongitude}</if>
         <if test="nextPassLatitude != null  and nextPassLatitude != ''"> and t.next_pass_latitude = #{nextPassLatitude}</if>
         <if test="orgId != null  and orgId != ''"> and t.org_id = #{orgId}</if>
-        <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
-        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
-        <if test="linkName != null  and linkName != ''"> and t.link_name like concat('%', #{linkName}, '%')</if>
         <if test="orgCode != null  and orgCode != ''"> and t.org_code = #{orgCode}</if>
-        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
-        <if test="linkPhone != null  and linkPhone != ''"> and t.link_phone = #{linkPhone}</if>
+        <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
         <if test="gantryCode != null  and gantryCode != ''"> and t.gantry_code = #{gantryCode}</if>
         <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
-        <if test="status != null  and status != ''"> and t.status = #{status}</if>
         <if test="roadName != null  and roadName != ''"> and t.road_name like concat('%', #{roadName}, '%')</if>
-        <if test="sort != null "> and t.sort = #{sort}</if>
         <if test="tollCode != null  and tollCode != ''"> and t.toll_code = #{tollCode}</if>
-        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
         <if test="tollName != null  and tollName != ''"> and t.toll_name like concat('%', #{tollName}, '%')</if>
-        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
-        <if test="createBy != null "> and t.create_by = #{createBy}</if>
         <if test="fwqbm != null  and fwqbm != ''"> and t.fwqbm = #{fwqbm}</if>
         <if test="fwqmc != null  and fwqmc != ''"> and t.fwqmc = #{fwqmc}</if>
+        <if test="linkName != null  and linkName != ''"> and t.link_name like concat('%', #{linkName}, '%')</if>
+        <if test="linkPhone != null  and linkPhone != ''"> and t.link_phone = #{linkPhone}</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
         <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
         <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
         order by t.create_time desc,t.id

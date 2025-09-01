@@ -122,21 +122,21 @@ public class CarInfo extends BasePlusEntity implements Custom {
     @Excel(name = "最后通行维度")
     private String lastPassLatitude;
 
-    /** 行驶方向(1上行2下行3未知) */
-    @Excel(name = "行驶方向(1上行2下行3未知)")
+    /** 驾驶(1上行2下行3未知) */
+    @Excel(name = "驾驶(1上行2下行3未知)")
     private String lastPassCardirection;
 
     /** 管理中心路段id */
     @Excel(name = "管理中心路段id")
     private String roadSectionId;
 
-    /** 管理中心路段名称 */
-    @Excel(name = "管理中心路段名称")
-    private String roadSectionName;
-
     /** 所属路段编码 */
     @Excel(name = "所属路段编码")
     private String sectionCode;
+
+    /** 管理中心路段名称 */
+    @Excel(name = "管理中心路段名称")
+    private String roadSectionName;
 
     /** 预计下一个通行时间 */
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -163,29 +163,13 @@ public class CarInfo extends BasePlusEntity implements Custom {
     @Excel(name = "管理中心id")
     private String orgId;
 
-    /** 管理中心名称 */
-    @Excel(name = "管理中心名称")
-    private String orgName;
-
-    /** 备用字段1 */
-    @Excel(name = "备用字段1")
-    private String backCol1;
-
-    /** 司机名称 */
-    @Excel(name = "司机名称")
-    private String linkName;
-
     /** 所属管理中心机构编码 */
     @Excel(name = "所属管理中心机构编码")
     private String orgCode;
 
-    /** 备用字段2 */
-    @Excel(name = "备用字段2")
-    private String backCol2;
-
-    /** 联系方式 */
-    @Excel(name = "联系方式")
-    private String linkPhone;
+    /** 管理中心名称 */
+    @Excel(name = "管理中心名称")
+    private String orgName;
 
     /** 门架编号（分离） */
     @Excel(name = "门架编号", readConverterExp = "分=离")
@@ -194,10 +178,6 @@ public class CarInfo extends BasePlusEntity implements Custom {
     /** 所属路线编码 */
     @Excel(name = "所属路线编码")
     private String roadCode;
-
-    /** 状态（0正常1停用） */
-    @Excel(name = "状态", readConverterExp = "0=正常1停用")
-    private String status;
 
     /** 所属路线名称 */
     @Excel(name = "所属路线名称")
@@ -218,6 +198,26 @@ public class CarInfo extends BasePlusEntity implements Custom {
     /** 服务区名称 */
     @Excel(name = "服务区名称")
     private String fwqmc;
+
+    /** 司机名称 */
+    @Excel(name = "司机名称")
+    private String linkName;
+
+    /** 联系方式 */
+    @Excel(name = "联系方式")
+    private String linkPhone;
+
+    /** 备用字段1 */
+    @Excel(name = "备用字段1")
+    private String backCol1;
+
+    /** 备用字段2 */
+    @Excel(name = "备用字段2")
+    private String backCol2;
+
+    /** 状态（0正常1停用） */
+    @Excel(name = "状态", readConverterExp = "0=正常1停用")
+    private String status;
 
     /** 备注 */
     @Excel(name = "备注")
