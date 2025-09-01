@@ -238,5 +238,9 @@ public class CarInfo extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private String createTimeStr;
 
+    // 录入单位以及用户
+    @TableField(exist = false)
+    private String createInfo;
+
 
 }

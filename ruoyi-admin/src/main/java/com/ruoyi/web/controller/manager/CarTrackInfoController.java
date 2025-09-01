@@ -2,6 +2,8 @@ package com.ruoyi.web.controller.manager;
 
 import java.util.Arrays;
 import java.util.List;
+
+import com.ruoyi.common.utils.CommonUtil;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,6 +47,22 @@ public class CarTrackInfoController extends BaseController {
         List<CarTrackInfo> list = carTrackInfoService.selectCarTrackInfoList(carTrackInfo);
         return getDataTable(list);
     }
+
+    /**
+     * 通过车俩ID查询
+     *
+     * @param carTrackInfo
+     * @return
+     */
+    @GetMapping("/listByCarId")
+    public AjaxResult listByCarId(CarTrackInfo carTrackInfo) {
+        if (CommonUtil.isBlank(carTrackInfo.getCarId())) {
+            carTrackInfo.setCarId("-1");
+        }
+        List<CarTrackInfo> list = carTrackInfoService.selectCarTrackInfoList(carTrackInfo);
+        return AjaxResult.success(list);
+    }
+
 
     /**
      * 导出车辆行驶轨迹列表

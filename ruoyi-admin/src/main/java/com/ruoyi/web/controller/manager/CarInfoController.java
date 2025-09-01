@@ -67,6 +67,9 @@ public class CarInfoController extends BaseController {
     public AjaxResult export(CarInfo carInfo, HttpServletResponse response) {
         List<CarInfo> list = carInfoService.selectCarInfoList(carInfo);
 
+        // 车牌颜色
+        Map<String,String> plateColorMap = sysDictDataService.selectDictDataMap("plate_color");
+
         // 车型
         Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
 
@@ -81,6 +84,7 @@ public class CarInfoController extends BaseController {
             if (null != dp.getCreateTime()){
                 dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
             }
+            dp.setPlateColor(CommonUtil.isNull(plateColorMap.get(dp.getPlateColor())));
             dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
             dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
             dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
@@ -189,6 +193,10 @@ public class CarInfoController extends BaseController {
         if (errorList.size() == 0) {
 
             //字典
+
+            // 车牌颜色
+            Map<String,String> plateColorMap = sysDictDataService.selectDictDataLaleMap("plate_color");
+
             // 车型
             Map<String,String> carTypeMap = sysDictDataService.selectDictDataLaleMap("car_type");
 
@@ -202,6 +210,14 @@ public class CarInfoController extends BaseController {
 
             for (int i = 0; i < importList.size(); i++) {
                 CarInfo addbo = importList.get(i);
+
+                // 车牌颜色
+                String plateColor =  CommonUtil.isNull(addbo.getPlateColor());
+                if (plateColorMap.containsKey(plateColor)) {
+                    addbo.setPlateColor(CommonUtil.isNull(plateColorMap.get(plateColor)));
+                } else {
+                    errorList.add(importUtil.getErrorBO(i + 1, "车牌颜色", plateColor + " 车牌颜色不存在,请在字典菜单维护！"));
+                }
 
                 // 车型
                 String carType =  CommonUtil.isNull(addbo.getCarType());
@@ -265,6 +281,7 @@ public class CarInfoController extends BaseController {
     public List<ImportEntity> initList() {
         List<ImportEntity> boList = new ArrayList<ImportEntity>();
         // 校验规则 1 必填 2小数 3整数 4日期 5身份证 6年月 多个逗号分隔例如：1,2
+        boList.add(new ImportEntity("车牌颜色","plateColor",""));
         boList.add(new ImportEntity("车牌号","carNo","1"));
         boList.add(new ImportEntity("车型","carType",""));
         boList.add(new ImportEntity("车种","carVehicle",""));
