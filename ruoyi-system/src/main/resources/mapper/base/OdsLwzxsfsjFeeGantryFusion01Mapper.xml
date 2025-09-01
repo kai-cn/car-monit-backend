@@ -234,7 +234,6 @@
         <if test="vid != null  and vid != ''"> and t.vid = #{vid}</if>
         <if test="loadTime != null "> and t.load_time = #{loadTime}</if>
         <if test="gradeLevel != null "> and t.grade_level = #{gradeLevel}</if>
-        <if test="createBy != null "> and t.create_by = #{createBy}</if>
         order by t.big_id
     </select>
 
