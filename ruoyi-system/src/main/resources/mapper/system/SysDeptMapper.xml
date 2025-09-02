@@ -6,6 +6,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
 	<resultMap type="SysDept" id="SysDeptResult">
 		<id     property="deptId"     column="dept_id"     />
+		<result property="orgCode"   column="org_code"   />
 		<result property="parentId"   column="parent_id"   />
 		<result property="ancestors"  column="ancestors"   />
 		<result property="deptName"   column="dept_name"   />
@@ -35,15 +36,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="deptJc"    column="dept_jc"    />
 		<result property="tenantId"    column="tenant_id"    />
 	</resultMap>
-	
+
 	<sql id="selectDeptVo">
-        select d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader_id, d.leader, d.fgld_id, d.fgld_name,
+        select d.dept_id,d.org_code, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader_id, d.leader, d.fgld_id, d.fgld_name,
         d.bank_name, d.account, d.social_code, d.postal_code, d.address,
          d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time,
          d.is_zbzg, d.is_uint, d.tree_leavel, d.sub_code, d.dept_jc,d.tenant_id
         from sys_dept d
     </sql>
-    
+
 	<select id="selectDeptList" parameterType="SysDept" resultMap="SysDeptResult">
         <include refid="selectDeptVo"/>
         where d.del_flag = '0'
@@ -98,7 +99,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
 		order by d.parent_id, d.order_num
     </select>
-    
+
     <select id="selectDeptListByRoleId" resultType="Integer">
 		select d.dept_id
 		from sys_dept d
@@ -109,29 +110,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
 		order by d.parent_id, d.order_num
 	</select>
-    
+
     <select id="selectDeptById" parameterType="Long" resultMap="SysDeptResult">
 		<include refid="selectDeptVo"/>
 		where dept_id = #{deptId}
 	</select>
-    
+
     <select id="checkDeptExistUser" parameterType="Long" resultType="int">
 		select count(1) from sys_user where dept_id = #{deptId} and del_flag = '0'
 	</select>
-	
+
 	<select id="hasChildByDeptId" parameterType="Long" resultType="int">
 		select count(1) from sys_dept
 		where del_flag = '0' and parent_id = #{deptId} limit 1
 	</select>
-	
+
 	<select id="selectChildrenDeptById" parameterType="Long" resultMap="SysDeptResult">
 		select * from sys_dept where find_in_set(#{deptId}, ancestors)
 	</select>
-	
+
 	<select id="selectNormalChildrenDeptById" parameterType="Long" resultType="int">
 		select count(*) from sys_dept where status = 0 and del_flag = '0' and find_in_set(#{deptId}, ancestors)
 	</select>
-	
+
 	<select id="checkDeptNameUnique" resultMap="SysDeptResult">
 	    <include refid="selectDeptVo"/>
 		where dept_name=#{deptName} and parent_id = #{parentId} limit 1
@@ -223,7 +224,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
  		</set>
  		where dept_id = #{deptId}
 	</update>
-	
+
 	<update id="updateDeptChildren" parameterType="java.util.List">
 	    update sys_dept set ancestors =
 	    <foreach collection="depts" item="item" index="index"
@@ -236,7 +237,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	        #{item.deptId}
 	    </foreach>
 	</update>
-	 
+
 	 <update id="updateDeptStatus" parameterType="SysDept">
  	    update sys_dept
  	    <set>
@@ -246,7 +247,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </set>
  	    where dept_id in (${ancestors})
 	</update>
-	
+
 	<delete id="deleteDeptById" parameterType="Long">
 		update sys_dept set del_flag = '2' where dept_id = #{deptId}
 	</delete>
@@ -266,4 +267,4 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	   where  is_uint = '0' and parent_id =#{tenantId}
 	</update>
 
-</mapper> 
+</mapper>

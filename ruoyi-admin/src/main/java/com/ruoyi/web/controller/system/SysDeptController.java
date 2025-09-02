@@ -108,7 +108,7 @@ public class SysDeptController extends BaseController {
         } else if (flag.equals("onlyMyDept")) {
             dept.setDeptId(SecurityUtils.getEpsId());
         }else {
-            dept.setDeptId(-1l);
+            dept.setDeptId(-1L);
         }
         List<SysDept> depts = deptService.selectDeptList(dept);
         return AjaxResult.success(deptService.buildDeptTreeSelect(depts));
