@@ -1,6 +1,5 @@
 package com.ruoyi.system.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.core.domain.TreeSelect;
@@ -16,16 +15,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * 部门管理 服务实现
- *
+ * 
  * @author ruoyi
  */
 @Service
-public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> implements ISysDeptService
+public class SysDeptServiceImpl implements ISysDeptService
 {
     @Autowired
     private SysDeptMapper deptMapper;
@@ -35,7 +37,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
     /**
      * 查询部门管理数据
-     *
+     * 
      * @param dept 部门信息
      * @return 部门信息集合
      */
@@ -48,7 +50,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
     /**
      * 构建前端所需要树结构
-     *
+     * 
      * @param depts 部门列表
      * @return 树结构列表
      */
@@ -56,10 +58,10 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
     public List<SysDept> buildDeptTree(List<SysDept> depts)
     {
         List<SysDept> returnList = new ArrayList<SysDept>();
-        List<String> tempList = new ArrayList<String>();
+        List<Long> tempList = new ArrayList<Long>();
         for (SysDept dept : depts)
         {
-            tempList.add(dept.getOrgCode());
+            tempList.add(dept.getDeptId());
         }
         for (Iterator<SysDept> iterator = depts.iterator(); iterator.hasNext();)
         {
@@ -80,7 +82,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
     /**
      * 构建前端所需要下拉树结构
-     *
+     * 
      * @param depts 部门列表
      * @return 下拉树结构列表
      */
@@ -93,7 +95,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
     /**
      * 根据角色ID查询部门树信息
-     *
+     * 
      * @param roleId 角色ID
      * @return 选中部门列表
      */
@@ -106,7 +108,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
     /**
      * 根据部门ID查询信息
-     *
+     * 
      * @param deptId 部门ID
      * @return 部门信息
      */
@@ -118,7 +120,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
     /**
      * 根据ID查询所有子部门（正常状态）
-     *
+     * 
      * @param deptId 部门ID
      * @return 子部门数
      */
@@ -130,7 +132,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
     /**
      * 是否存在子节点
-     *
+     * 
      * @param deptId 部门ID
      * @return 结果
      */
@@ -143,7 +145,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
     /**
      * 查询部门是否存在用户
-     *
+     * 
      * @param deptId 部门ID
      * @return 结果 true 存在 false 不存在
      */
@@ -156,7 +158,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
     /**
      * 校验部门名称是否唯一
-     *
+     * 
      * @param dept 部门信息
      * @return 结果
      */
@@ -174,7 +176,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
     /**
      * 新增保存部门信息
-     *
+     * 
      * @param dept 部门信息
      * @return 结果
      */
@@ -191,82 +193,82 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
         dept.setAncestors(info.getAncestors() + "," + dept.getParentId());*/
 
         // 修改部门编码
-//        String parentSubCode = ""; //父节点code
-//        if (null == dept.getParentId())
-//        {
-//            dept.setParentId("0");
-//            dept.setIsUint("1"); //顶级节点一定是单位
-//        }
-//        // 设置树级别
-//        if (dept.getParentId().equals("0")) {
-//            dept.setTreeLeavel(1);
-//            parentSubCode = "001";
-//        } else {
-//            // 查询父节点
-//            SysDept parentBO = deptMapper.selectDeptById(dept.getParentId());
-//            dept.setTreeLeavel(parentBO.getTreeLeavel() + 1);
-//            parentSubCode = parentBO.getSubCode();
-//        }
-//        boolean flag = true;
-//        if (null !=dept.getDeptId())
-//        {
-//            SysDept tmpbo = deptMapper.selectDeptById(dept.getDeptId());
-//            if (tmpbo.getParentId().equals(dept.getParentId()) )
-//            {
-//                flag = false;
-//            }
-//        }
-//
-//        if (flag) {
-//            // 设置subCode
-//            SysDept pbo = new SysDept();
-//            pbo.setParentId(dept.getParentId());
-//            int counts = deptMapper.selectDeptList(pbo).size();
-//            String subCode = "";
-//            if (dept.getParentId().equals(0L)) {
-//                subCode = "00"+  (counts + 1);
-//            }else{
-//                if (counts < 9) {
-//                    subCode = parentSubCode + "-00" + (counts + 1);
-//                } else if (counts < 99) {
-//                    subCode = parentSubCode + "-0" + (counts + 1);
-//                } else {
-//                    subCode = parentSubCode + "-" + (counts + 1);
-//                }
-//            }
-//            dept.setSubCode(subCode);
-//        }
-//
-//        // 如果是部门 -没有招标
-//        if (dept.getIsUint().equals("0")){
-//            dept.setIsZbzg("0");
-//        }
-//
-//        int count = deptMapper.insertDept(dept);
-//
-//        // 修改租户id
-//        if (dept.getIsUint().equals("0")){
-//            SysDept deptEpsId = deptMapper.selectTenantId(dept);
-//            if (null !=deptEpsId){
-//                SysDept insertbo = new SysDept();
-//                insertbo.setDeptId(dept.getDeptId());
-//                insertbo.setTenantId(deptEpsId.getDeptId());
-//                deptMapper.updateDept(insertbo);
-//            }
-//        }else{
-//            // 是单位
-//            SysDept insertbo = new SysDept();
-//            insertbo.setDeptId(dept.getDeptId());
-//            insertbo.setTenantId(dept.getDeptId());
-//            deptMapper.updateDept(insertbo);
-//        }
+        String parentSubCode = ""; //父节点code
+        if (null == dept.getParentId())
+        {
+            dept.setParentId(0L);
+            dept.setIsUint("1"); //顶级节点一定是单位
+        }
+        // 设置树级别
+        if (dept.getParentId().equals(0L)) {
+            dept.setTreeLeavel(1);
+            parentSubCode = "001";
+        } else {
+            // 查询父节点
+            SysDept parentBO = deptMapper.selectDeptById(dept.getParentId());
+            dept.setTreeLeavel(parentBO.getTreeLeavel() + 1);
+            parentSubCode = parentBO.getSubCode();
+        }
+        boolean flag = true;
+        if (null !=dept.getDeptId())
+        {
+            SysDept tmpbo = deptMapper.selectDeptById(dept.getDeptId());
+            if (tmpbo.getParentId().equals(dept.getParentId()) )
+            {
+                flag = false;
+            }
+        }
 
-        return 1;
+        if (flag) {
+            // 设置subCode
+            SysDept pbo = new SysDept();
+            pbo.setParentId(dept.getParentId());
+            int counts = deptMapper.selectDeptList(pbo).size();
+            String subCode = "";
+            if (dept.getParentId().equals(0L)) {
+                subCode = "00"+  (counts + 1);
+            }else{
+                if (counts < 9) {
+                    subCode = parentSubCode + "-00" + (counts + 1);
+                } else if (counts < 99) {
+                    subCode = parentSubCode + "-0" + (counts + 1);
+                } else {
+                    subCode = parentSubCode + "-" + (counts + 1);
+                }
+            }
+            dept.setSubCode(subCode);
+        }
+
+        // 如果是部门 -没有招标
+        if (dept.getIsUint().equals("0")){
+            dept.setIsZbzg("0");
+        }
+
+        int count = deptMapper.insertDept(dept);
+
+        // 修改租户id
+        if (dept.getIsUint().equals("0")){
+            SysDept deptEpsId = deptMapper.selectTenantId(dept);
+            if (null !=deptEpsId){
+                SysDept insertbo = new SysDept();
+                insertbo.setDeptId(dept.getDeptId());
+                insertbo.setTenantId(deptEpsId.getDeptId());
+                deptMapper.updateDept(insertbo);
+            }
+        }else{
+            // 是单位
+            SysDept insertbo = new SysDept();
+            insertbo.setDeptId(dept.getDeptId());
+            insertbo.setTenantId(dept.getDeptId());
+            deptMapper.updateDept(insertbo);
+        }
+
+        return count;
     }
 
     /**
      * 修改保存部门信息
-     *
+     * 
      * @param dept 部门信息
      * @return 结果
      */
@@ -286,79 +288,79 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
         }*/
 
         // 修改部门编码
-//        String parentSubCode = ""; //父节点code
-//        if (null == dept.getParentId())
-//        {
-//            dept.setParentId("0");
-//            dept.setIsUint("1"); //顶级节点一定是单位
-//        }
-//        // 设置树级别
-//        if (dept.getParentId().equals(0L)) {
-//            dept.setTreeLeavel(1);
-//            parentSubCode = "001";
-//        } else {
-//            // 查询父节点
-//            SysDept parentBO = deptMapper.selectDeptById(dept.getParentId());
-//            dept.setTreeLeavel(parentBO.getTreeLeavel() + 1);
-//            parentSubCode = parentBO.getSubCode();
-//        }
-//        boolean flag = true;
-//        if (null != dept.getDeptId())
-//        {
-//            SysDept tmpbo = deptMapper.selectDeptById(dept.getDeptId());
-//            if (tmpbo.getParentId().equals(dept.getParentId()))
-//            {
-//                flag = false;
-//            }
-//        }
-//
-//        if (flag) {
-//            // 设置subCode
-//            SysDept pbo = new SysDept();
-//            pbo.setParentId(dept.getParentId());
-//            int counts = deptMapper.selectDeptList(pbo).size();
-//            String subCode = "";
-//            if (dept.getParentId().equals(0L)) {
-//                subCode = "00"+  (counts + 1);
-//            }else{
-//                if (counts < 9) {
-//                    subCode = parentSubCode + "-00" + (counts + 1);
-//                } else if (counts < 99) {
-//                    subCode = parentSubCode + "-0" + (counts + 1);
-//                } else {
-//                    subCode = parentSubCode + "-" + (counts + 1);
-//                }
-//            }
-//            dept.setSubCode(subCode);
-//        }
-//
-//        // 如果是部门 -没有招标
-//        if (dept.getIsUint().equals("0")){
-//            dept.setIsZbzg("0");
-//        }
-//
-//        int result = deptMapper.updateDept(dept);
-//
-//        // 如果是子公司, 自己的租户id是自己的id
-//       /* if ("1".equals(dept.getIsUint())) {
-//            // 子公司
-//            dept.setTenantId(dept.getDeptId());
-//        } else {
-//            SysDept deptEpsId = deptMapper.selectTenantId(dept);
-//            if (null !=deptEpsId){
-//                dept.setTenantId(deptEpsId.getDeptId());
-//            }
-//        }*/
-//
-//        /*if (UserConstants.DEPT_NORMAL.equals(dept.getStatus()))
-//        {
-//            // 如果该部门是启用状态，则启用该部门的所有上级部门
-//            updateParentDeptStatus(dept);
-//        }*/
-//
-//        // 批量修改 租户id
-//        updateTenantId(dept.getSubCode());
-        return 1;
+        String parentSubCode = ""; //父节点code
+        if (null == dept.getParentId())
+        {
+            dept.setParentId(0L);
+            dept.setIsUint("1"); //顶级节点一定是单位
+        }
+        // 设置树级别
+        if (dept.getParentId().equals(0L)) {
+            dept.setTreeLeavel(1);
+            parentSubCode = "001";
+        } else {
+            // 查询父节点
+            SysDept parentBO = deptMapper.selectDeptById(dept.getParentId());
+            dept.setTreeLeavel(parentBO.getTreeLeavel() + 1);
+            parentSubCode = parentBO.getSubCode();
+        }
+        boolean flag = true;
+        if (null !=dept.getDeptId())
+        {
+            SysDept tmpbo = deptMapper.selectDeptById(dept.getDeptId());
+            if (tmpbo.getParentId().equals(dept.getParentId()))
+            {
+                flag = false;
+            }
+        }
+
+        if (flag) {
+            // 设置subCode
+            SysDept pbo = new SysDept();
+            pbo.setParentId(dept.getParentId());
+            int counts = deptMapper.selectDeptList(pbo).size();
+            String subCode = "";
+            if (dept.getParentId().equals(0L)) {
+                subCode = "00"+  (counts + 1);
+            }else{
+                if (counts < 9) {
+                    subCode = parentSubCode + "-00" + (counts + 1);
+                } else if (counts < 99) {
+                    subCode = parentSubCode + "-0" + (counts + 1);
+                } else {
+                    subCode = parentSubCode + "-" + (counts + 1);
+                }
+            }
+            dept.setSubCode(subCode);
+        }
+
+        // 如果是部门 -没有招标
+        if (dept.getIsUint().equals("0")){
+            dept.setIsZbzg("0");
+        }
+
+        int result = deptMapper.updateDept(dept);
+
+        // 如果是子公司, 自己的租户id是自己的id
+       /* if ("1".equals(dept.getIsUint())) {
+            // 子公司
+            dept.setTenantId(dept.getDeptId());
+        } else {
+            SysDept deptEpsId = deptMapper.selectTenantId(dept);
+            if (null !=deptEpsId){
+                dept.setTenantId(deptEpsId.getDeptId());
+            }
+        }*/
+
+        /*if (UserConstants.DEPT_NORMAL.equals(dept.getStatus()))
+        {
+            // 如果该部门是启用状态，则启用该部门的所有上级部门
+            updateParentDeptStatus(dept);
+        }*/
+
+        // 批量修改 租户id
+        updateTenantId(dept.getSubCode());
+        return result;
     }
 
 
@@ -390,7 +392,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
     /**
      * 修改该部门的父级部门状态
-     *
+     * 
      * @param dept 当前部门
      */
     private void updateParentDeptStatus(SysDept dept)
@@ -403,7 +405,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
     /**
      * 修改子元素关系
-     *
+     * 
      * @param deptId 被修改的部门ID
      * @param newAncestors 新的父ID集合
      * @param oldAncestors 旧的父ID集合
@@ -423,7 +425,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
     /**
      * 删除部门管理信息
-     *
+     * 
      * @param deptId 部门ID
      * @return 结果
      */
@@ -460,7 +462,7 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
         while (it.hasNext())
         {
             SysDept n = (SysDept) it.next();
-            if (StringUtils.isNotNull(n.getParentId()) && Objects.equals(n.getParentId(), t.getOrgCode()))
+            if (StringUtils.isNotNull(n.getParentId()) && n.getParentId().longValue() == t.getDeptId().longValue())
             {
                 tlist.add(n);
             }
@@ -530,12 +532,6 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
 
         return null;
     }
-
-    @Override
-    public int deleteTableData() {
-        return deptMapper.deleteTableData();
-    }
-
 
     private String getSqlDeptIds(List<SysDept> deptList){
         String deptIds = "";

@@ -66,7 +66,7 @@ public class BigScreenController {
      */
     @ApiOperation("车辆地图")
     @GetMapping(value = "/carLocation")
-    public AjaxResult<List<CarLocationVO>> getCarLocation(CarLocationParam param) {
+    public AjaxResult getCarLocation(CarLocationParam param) {
         String type = param.getType();
         if(StringUtils.isNotBlank(type)) {
             switch (type) {

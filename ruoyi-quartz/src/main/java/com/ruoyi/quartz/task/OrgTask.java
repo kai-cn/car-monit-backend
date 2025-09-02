@@ -38,8 +38,8 @@ public class OrgTask {
         List<SysDept> sysDeptList = list.stream().filter(v -> "00000011".equals(v.getOrgLevelCode()) || v.getOrgLevelCode().contains("000000110053")).map(v -> {
             SysDept sysDept = new SysDept();
             sysDept.setDeptId(Long.parseLong(v.getBigId()));
-            sysDept.setOrgCode(v.getOrgCode());
-            sysDept.setParentId(v.getOrgParentId());
+           /* sysDept.setOrgCode(v.getOrgCode());
+            sysDept.setParentId(v.getOrgParentId());*/
             sysDept.setDeptName(v.getOrgName());
             sysDept.setSubCode(v.getOrgLevelCode());
             sysDept.setDeptJc(v.getOrgShortName());
@@ -51,7 +51,7 @@ public class OrgTask {
         }).collect(Collectors.toList());
 
 
-        this.sysDeptService.deleteTableData();
-        this.sysDeptService.saveOrUpdateBatch(sysDeptList);
+       /* this.sysDeptService.deleteTableData();
+        this.sysDeptService.saveOrUpdateBatch(sysDeptList);*/
     }
 }

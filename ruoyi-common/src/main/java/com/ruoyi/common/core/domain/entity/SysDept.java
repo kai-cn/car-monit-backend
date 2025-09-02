@@ -1,11 +1,6 @@
 package com.ruoyi.common.core.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import com.ruoyi.common.core.domain.BaseEntity;
-import lombok.Getter;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -17,25 +12,18 @@ import java.util.List;
 
 /**
  * 部门表 sys_dept
- *
+ * 
  * @author ruoyi
  */
-@TableName("sys_dept")
 public class SysDept extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
     /** 部门ID */
-    @TableId(type = IdType.AUTO)
     private Long deptId;
 
-    /**
-     * 组织机构编码 与parentId 对应
-     */
-    private String orgCode;
-
     /** 父部门ID */
-    private String parentId;
+    private Long parentId;
 
     /** 祖级列表 */
     private String ancestors;
@@ -103,11 +91,9 @@ public class SysDept extends BaseEntity
     private String delFlag;
 
     /** 父部门名称 */
-    @TableField(exist = false)
     private String parentName;
-
+    
     /** 子部门 */
-    @TableField(exist = false)
     private List<SysDept> children = new ArrayList<SysDept>();
 
     /**
@@ -118,32 +104,17 @@ public class SysDept extends BaseEntity
     /**
      * 标志
      */
-    @TableField(exist = false)
     private String flag;
 
     /**
      * 数据
      */
-    @TableField(exist = false)
     private String dataId;
 
 
     // 查询下面子节点包括自己
-    @TableField(exist = false)
     private String deptSubCode;
 
-
-    public String getOrgCode() {
-        return orgCode;
-    }
-
-    public void setOrgCode(String orgCode) {
-        this.orgCode = orgCode;
-    }
-
-    public String getParentId() {
-        return parentId;
-    }
 
     public String getDeptSubCode() {
         return deptSubCode;
@@ -179,7 +150,13 @@ public class SysDept extends BaseEntity
         this.deptId = deptId;
     }
 
-    public void setParentId(String parentId) {
+    public Long getParentId()
+    {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId)
+    {
         this.parentId = parentId;
     }
 
