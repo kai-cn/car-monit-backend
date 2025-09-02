@@ -61,6 +61,13 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
     @Override
     public AjaxResult saveCarInfo(CarInfo carInfo)
     {
+        carInfo.setCarNo(CommonUtil.isNull(carInfo.getCarNo())); //去掉空格
+        // 判断车牌号是否重复
+        int countNum = carInfoMapper.isExitsCar(carInfo);
+        if (countNum > 0){
+            return AjaxResult.error("车牌号存在重复，请确定！");
+        }
+
         if (CommonUtil.isNotBlank(carInfo.getId()))
         {
             // 修改

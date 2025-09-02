@@ -147,7 +147,7 @@
         <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
         <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
         <if test="carNum != null "> and t.car_num = #{carNum}</if>
-        <if test="escapedType != null  and escapedType != ''"> and t.escaped_type = #{escapedType}</if>
+        <if test="escapedType != null  and escapedType != ''"> and t.escaped_type like concat('%', #{escapedType}, '%') </if>
         <if test="escapedTypeName != null  and escapedTypeName != ''"> and t.escaped_type_name like concat('%', #{escapedTypeName}, '%')</if>
         <if test="escapedAmount != null "> and t.escaped_amount = #{escapedAmount}</if>
         <if test="escapedNum != null "> and t.escaped_num = #{escapedNum}</if>
@@ -255,4 +255,12 @@
             #{id}
         </foreach>
     </update>
+
+    <!-- 判断车俩是否存在 -->
+    <select id="isExitsCar" parameterType="com.ruoyi.manager.domain.vo.bigscreen.CarInfoVO" resultType="java.lang.Integer">
+        select count(1) from car_info t
+        where t.del_flag = '0' and t.car_no = #{carNo}
+        <if test="id != null  and id != ''"> and t.id != #{id}</if>
+    </select>
+
 </mapper>

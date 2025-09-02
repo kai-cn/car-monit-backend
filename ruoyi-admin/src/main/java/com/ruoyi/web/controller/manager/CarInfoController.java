@@ -87,7 +87,21 @@ public class CarInfoController extends BaseController {
             dp.setPlateColor(CommonUtil.isNull(plateColorMap.get(dp.getPlateColor())));
             dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
             dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
-            dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
+
+
+            // 需要循环 : 逃费类型
+            String bussName = "";
+            String bussType = CommonUtil.deleteEnd(dp.getEscapedType());
+            if (CommonUtil.isNotBlank(bussType)) {
+                String[] bussTypeStr = bussType.split(",");
+                for (int i = 0; i < bussTypeStr.length; i++) {
+                    if (escapedTypeMap.containsKey(bussTypeStr[i])) {
+                        bussName = bussName + escapedTypeMap.get(bussTypeStr[i]) + ",";
+                    }
+                }
+            }
+            dp.setEscapedType(CommonUtil.deleteEnd(bussName));
+
         });
 
         Map<String,Object> map = new HashMap<String,Object>();
@@ -236,14 +250,22 @@ public class CarInfoController extends BaseController {
                 }
 
 
-                // 车种
-                String escapedType =  CommonUtil.isNull(addbo.getEscapedType());
-                if (escapedTypeMap.containsKey(escapedType)) {
-                    addbo.setCarType(CommonUtil.isNull(escapedTypeMap.get(escapedType)));
-                } else {
-                    errorList.add(importUtil.getErrorBO(i + 1, "逃费类型", escapedType + " 逃费类型不存在,请在字典菜单维护！"));
+                // 逃费类型
+                String escapedType = CommonUtil.deleteEnd(addbo.getEscapedType());
+                escapedType = escapedType.replace("，", ",");
+                String escapedTypeValue = "";
+                if (!escapedType.equals("")){
+                    String[] bussTypeStr = escapedType.split(",");
+                    for (int zz = 0; zz < bussTypeStr.length; zz++) {
+                        if (escapedTypeMap.containsKey(bussTypeStr[zz])) {
+                            escapedTypeValue = escapedTypeValue + CommonUtil.isNull(escapedTypeMap.get(bussTypeStr[zz])) + ",";
+                        }
+                        else {
+                            errorList.add(importUtil.getErrorBO(i + 1, "逃费类型", bussTypeStr[zz] + " 逃费类型不存在,请在字典菜单维护！"));
+                        }
+                    }
                 }
-
+                addbo.setEscapedType(CommonUtil.deleteEnd(escapedTypeValue));
 
                 if (errorList.size() > 100){
                     break;
@@ -254,13 +276,14 @@ public class CarInfoController extends BaseController {
 
         // 插入数据库
         if (errorList.size() == 0) {
-            for (int i=0;i<importList.size();i++){
+            for (int i = 0; i < importList.size(); i++) {
                 CarInfo addbo = importList.get(i);
+                addbo.setCarNo(CommonUtil.isNull(addbo.getCarNo())); //去掉空格
                 // 根据身份证
                 CarInfo querybo = new CarInfo();
                 querybo.setCarNo(CommonUtil.isNull(addbo.getCarNo()));
                 List<CarInfo> queryList = carInfoService.selectCarInfoList(querybo);
-                if (queryList.size() > 0){
+                if (queryList.size() > 0) {
                     addbo.setId(queryList.get(0).getId());
                 }
             }

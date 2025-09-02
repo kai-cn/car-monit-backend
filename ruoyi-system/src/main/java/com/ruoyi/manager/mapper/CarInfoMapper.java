@@ -40,6 +40,15 @@ public interface CarInfoMapper extends BaseMapper<CarInfo> {
      */
     int deleteCarInfoByIds(String[] ids);
 
+
+    /**
+     * 判断车牌号是否重复
+     *
+     * @param carInfo 车辆信息
+     * @return 车辆信息集合
+     */
+    int isExitsCar(CarInfo carInfo);
+
     /**
      * 删除车辆信息
      *
