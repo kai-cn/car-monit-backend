@@ -4,18 +4,17 @@ import java.lang.management.ManagementFactory;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.*;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.time.DateFormatUtils;
 
 /**
  * 时间工具类
- *
+ * 
  * @author ruoyi
  */
 public class DateUtils extends org.apache.commons.lang3.time.DateUtils
@@ -31,15 +30,13 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils
     public static String YYYY_MM_DD_HH_MM_SS = "yyyy-MM-dd HH:mm:ss";
 
     private static String[] parsePatterns = {
-            "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM",
+            "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM", 
             "yyyy/MM/dd", "yyyy/MM/dd HH:mm:ss", "yyyy/MM/dd HH:mm", "yyyy/MM",
             "yyyy.MM.dd", "yyyy.MM.dd HH:mm:ss", "yyyy.MM.dd HH:mm", "yyyy.MM"};
 
-    private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyyMM");
-
     /**
      * 获取当前Date型日期
-     *
+     * 
      * @return Date() 当前日期
      */
     public static Date getNowDate()
@@ -49,7 +46,7 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils
 
     /**
      * 获取当前日期, 默认格式为yyyy-MM-dd
-     *
+     * 
      * @return String
      */
     public static String getDate()
@@ -207,28 +204,5 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils
     public static Timestamp getTimestampNew()
     {
         return  Timestamp.valueOf(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
-    }
-
-    /**
-     * 获取两个日期之间的所有月份（包含开始和结束月份）
-     * @param startDate 开始日期
-     * @param endDate 结束日期
-     * @return 年月列表，格式为yyyyMM
-     */
-    public static List<String> getMonthsBetween(Date startDate, Date endDate) {
-        // 转换为YearMonth对象
-        YearMonth start = YearMonth.from(startDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
-        YearMonth end = YearMonth.from(endDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
-
-        // 生成月份范围
-        List<YearMonth> yearMonths = new ArrayList<>();
-        for (YearMonth month = start; !month.isAfter(end); month = month.plusMonths(1)) {
-            yearMonths.add(month);
-        }
-
-        // 格式化为字符串
-        return yearMonths.stream()
-                .map(ym -> ym.format(MONTH_FORMATTER))
-                .collect(Collectors.toList());
     }
 }
