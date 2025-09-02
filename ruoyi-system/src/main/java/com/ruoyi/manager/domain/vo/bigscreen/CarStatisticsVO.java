@@ -28,8 +28,8 @@ public class CarStatisticsVO {
     private String escapedTypeName;
 
     @ApiModelProperty("车辆数量")
-    private Integer number;
+    private Integer number = 0;
 
     @ApiModelProperty("逃费金额")
-    private BigDecimal escapedAmount;
+    private BigDecimal escapedAmount = BigDecimal.ZERO;
 }

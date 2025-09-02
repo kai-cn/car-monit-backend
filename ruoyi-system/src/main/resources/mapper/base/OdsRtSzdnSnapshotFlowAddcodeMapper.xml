@@ -148,6 +148,11 @@
          where t.big_id = #{bigId}
     </select>
 
+    <select id="getTopTen" resultType="com.ruoyi.manager.domain.vo.bigscreen.TopTenVO">
+        select sectionname, count(distinct platenumber) carNum
+        from ods_rt_szdn_snapshot_flow_addcode group by sectionname order by carNum desc limit 10;
+    </select>
+
 
     <update id="deleteOdsRtSzdnSnapshotFlowAddcodeById" parameterType="String">
         update ods_rt_szdn_snapshot_flow_addcode set del_flag = '1' where big_id = #{bigId}

@@ -96,8 +96,15 @@
     </select>
 
     <select id="getCarStatistics" resultType="com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO">
-        select escaped_type, sum(f.amount), count(distinct car_id)
-        from car_confim_free f inner join car_info i on f.car_id = i.id group by i.escaped_type;
+        select escaped_type, sum(f.amount) escapedAmount , count(distinct car_id) number
+        from car_confim_free f inner join car_info i on f.car_id = i.id
+        where f.del_flag = '0'
+        group by i.escaped_type;
+    </select>
+
+    <select id="getCarConfirm" resultType="java.math.BigDecimal">
+        select sum(ifnull(amount, 0)) finishedAmount
+        from car_confim_free f where f.del_flag = '0'
     </select>
 
 

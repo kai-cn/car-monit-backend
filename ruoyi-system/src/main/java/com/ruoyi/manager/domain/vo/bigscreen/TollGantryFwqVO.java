@@ -11,12 +11,15 @@ import lombok.Data;
  */
 @ApiModel(description = "收费站Vo")
 @Data
-public class TollVO {
+public class TollGantryFwqVO {
 
-    @ApiModelProperty("所属收费站编码")
-    private String tollCode;
+    @ApiModelProperty("1收费站、2门架、3服务区")
+    private String type;
 
-    @ApiModelProperty("所属收费站名称")
-    private String tollName;
+    @ApiModelProperty("编码")
+    private String code;
+
+    @ApiModelProperty("名称")
+    private String name;
 
 }

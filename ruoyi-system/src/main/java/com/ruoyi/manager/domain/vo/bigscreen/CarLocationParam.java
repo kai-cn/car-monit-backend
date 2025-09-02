@@ -41,4 +41,14 @@ public class CarLocationParam {
     @ApiModelProperty("逃费类型（字典：1少轴2屏蔽3货车客标4有入无出5绿通换挂")
     private String escapedType;
 
+    @ApiModelProperty("服务区编码")
+    private String fwqbm;
+
+    @ApiModelProperty("1收费站、2门架、3服务区")
+    private String type;
+
+    @ApiModelProperty("编码")
+    private String code;
+
+
 }

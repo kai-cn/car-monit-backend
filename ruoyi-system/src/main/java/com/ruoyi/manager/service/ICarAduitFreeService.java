@@ -2,9 +2,12 @@ package com.ruoyi.manager.service;
 
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarAduitFree;
+
+import java.math.BigDecimal;
 import java.util.List;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.ruoyi.manager.domain.vo.bigscreen.CarAuditVO;
+import com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam;
+import com.ruoyi.manager.domain.vo.bigscreen.incomeStatisticVO;
 
 /**
  * 补缴处理Service接口
@@ -46,5 +49,7 @@ public interface ICarAduitFreeService extends IService<CarAduitFree> {
      */
     AjaxResult deleteCarAduitFreeByIds(String[] ids);
 
-    List<CarAuditVO> getCarAudit();
+    BigDecimal getCarAudit();
+
+    List<incomeStatisticVO> incomeStatistic(IncomeStatisticParam param);
 }

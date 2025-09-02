@@ -3,7 +3,11 @@ package com.ruoyi.manager.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.manager.domain.CarAduitFree;
 import com.ruoyi.manager.domain.vo.bigscreen.CarAuditVO;
+import com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam;
+import com.ruoyi.manager.domain.vo.bigscreen.incomeStatisticVO;
 import org.springframework.stereotype.Repository;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -46,5 +50,7 @@ public interface CarAduitFreeMapper extends BaseMapper<CarAduitFree> {
      */
     int deleteCarAduitFreeById(String id);
 
-    List<CarAuditVO> getCarAudit();
+    BigDecimal getCarAudit();
+
+    List<incomeStatisticVO> incomeStatistic(IncomeStatisticParam param);
 }

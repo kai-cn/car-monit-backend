@@ -6,6 +6,7 @@ import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.base.mapper.OdsRtSzdnSnapshotFlowAddcodeMapper;
 import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode;
 import com.ruoyi.base.service.IOdsRtSzdnSnapshotFlowAddcodeService;
+import com.ruoyi.manager.domain.vo.bigscreen.TopTenVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -97,6 +98,8 @@ public class OdsRtSzdnSnapshotFlowAddcodeServiceImpl extends ServiceImpl<OdsRtSz
         return AjaxResult.success(count);
     }
 
-
-
+    @Override
+    public List<TopTenVO> getTopTen() {
+        return odsRtSzdnSnapshotFlowAddcodeMapper.getTopTen();
+    }
 }

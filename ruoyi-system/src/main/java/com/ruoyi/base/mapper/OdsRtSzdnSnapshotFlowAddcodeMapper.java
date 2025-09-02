@@ -2,6 +2,7 @@ package com.ruoyi.base.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode;
+import com.ruoyi.manager.domain.vo.bigscreen.TopTenVO;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -45,4 +46,5 @@ public interface OdsRtSzdnSnapshotFlowAddcodeMapper extends BaseMapper<OdsRtSzdn
      */
     int deleteOdsRtSzdnSnapshotFlowAddcodeById(String bigId);
 
+    List<TopTenVO> getTopTen();
 }

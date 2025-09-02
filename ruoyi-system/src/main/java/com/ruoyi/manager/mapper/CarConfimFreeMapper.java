@@ -2,8 +2,11 @@ package com.ruoyi.manager.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.manager.domain.CarConfimFree;
+import com.ruoyi.manager.domain.vo.bigscreen.CarAuditVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 import org.springframework.stereotype.Repository;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -46,5 +49,7 @@ public interface CarConfimFreeMapper extends BaseMapper<CarConfimFree> {
      */
     int deleteCarConfimFreeById(String id);
 
-    CarStatisticsVO getCarStatistics();
+    List<CarStatisticsVO> getCarStatistics();
+
+    BigDecimal getCarConfirm();
 }

@@ -15,11 +15,11 @@ import java.math.BigDecimal;
 @Data
 public class CarAuditVO {
     @ApiModelProperty("追缴总次数")
-    private Integer count;
+    private Integer totalCount = 0;
     @ApiModelProperty("追缴已完成次数")
-    private Integer finishedCount;
+    private Integer finishedCount = 0;
     @ApiModelProperty("追缴费用（元）")
-    private BigDecimal amount;
+    private BigDecimal totalAmount = BigDecimal.ZERO;
     @ApiModelProperty("追缴已完成费用（元）")
-    private BigDecimal finishedAmount;
+    private BigDecimal finishedAmount = BigDecimal.ZERO;
 }
