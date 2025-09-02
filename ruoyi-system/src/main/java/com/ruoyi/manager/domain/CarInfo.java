@@ -61,6 +61,26 @@ public class CarInfo extends BasePlusEntity implements Custom {
     @Excel(name = "累计追缴金额", readConverterExp = "元=")
     private BigDecimal returnAmount;
 
+    /** 应缴金额 */
+    @Excel(name = "应缴金额")
+    private BigDecimal totalAmount;
+
+    /** 收费金额 */
+    @Excel(name = "收费金额")
+    private BigDecimal chargeAmount;
+
+    /** 差额 */
+    @Excel(name = "差额")
+    private BigDecimal difAmount;
+
+    /** 处理单位id */
+    @Excel(name = "处理单位id")
+    private String auitOrgId;
+
+    /** 处理单位 */
+    @Excel(name = "处理单位")
+    private String auitOrgName;
+
     /** 是否在白名单（0否1是） */
     @Excel(name = "是否在白名单", readConverterExp = "0=否1是")
     private String isWhite;
@@ -191,14 +211,6 @@ public class CarInfo extends BasePlusEntity implements Custom {
     @Excel(name = "所属收费站名称")
     private String tollName;
 
-    /** 服务区编码 */
-    @Excel(name = "服务区编码")
-    private String fwqbm;
-
-    /** 服务区名称 */
-    @Excel(name = "服务区名称")
-    private String fwqmc;
-
     /** 司机名称 */
     @Excel(name = "司机名称")
     private String linkName;
@@ -206,6 +218,14 @@ public class CarInfo extends BasePlusEntity implements Custom {
     /** 联系方式 */
     @Excel(name = "联系方式")
     private String linkPhone;
+
+    /** 服务区编码 */
+    @Excel(name = "服务区编码")
+    private String fwqbm;
+
+    /** 服务区名称 */
+    @Excel(name = "服务区名称")
+    private String fwqmc;
 
     /** 备用字段1 */
     @Excel(name = "备用字段1")

@@ -13,6 +13,11 @@
         <result property="escapedAmount"    column="escaped_amount"    />
         <result property="escapedNum"    column="escaped_num"    />
         <result property="returnAmount"    column="return_amount"    />
+        <result property="totalAmount"    column="total_amount"    />
+        <result property="chargeAmount"    column="charge_amount"    />
+        <result property="difAmount"    column="dif_amount"    />
+        <result property="auitOrgId"    column="auit_org_id"    />
+        <result property="auitOrgName"    column="auit_org_name"    />
         <result property="isWhite"    column="is_white"    />
         <result property="whiteRemark"    column="white_remark"    />
         <result property="fileIds"    column="file_ids"    />
@@ -45,10 +50,10 @@
         <result property="roadName"    column="road_name"    />
         <result property="tollCode"    column="toll_code"    />
         <result property="tollName"    column="toll_name"    />
-        <result property="fwqbm"    column="fwqbm"    />
-        <result property="fwqmc"    column="fwqmc"    />
         <result property="linkName"    column="link_name"    />
         <result property="linkPhone"    column="link_phone"    />
+        <result property="fwqbm"    column="fwqbm"    />
+        <result property="fwqmc"    column="fwqmc"    />
         <result property="backCol1"    column="back_col1"    />
         <result property="backCol2"    column="back_col2"    />
         <result property="remark"    column="remark"    />
@@ -74,6 +79,11 @@
         t.escaped_amount,
         t.escaped_num,
         t.return_amount,
+        t.total_amount,
+        t.charge_amount,
+        t.dif_amount,
+        t.auit_org_id,
+        t.auit_org_name,
         t.is_white,
         t.white_remark,
         t.file_ids,
@@ -106,10 +116,10 @@
         t.road_name,
         t.toll_code,
         t.toll_name,
-        t.fwqbm,
-        t.fwqmc,
         t.link_name,
         t.link_phone,
+        t.fwqbm,
+        t.fwqmc,
         t.back_col1,
         t.back_col2,
         t.remark,
@@ -142,6 +152,11 @@
         <if test="escapedAmount != null "> and t.escaped_amount = #{escapedAmount}</if>
         <if test="escapedNum != null "> and t.escaped_num = #{escapedNum}</if>
         <if test="returnAmount != null "> and t.return_amount = #{returnAmount}</if>
+        <if test="totalAmount != null "> and t.total_amount = #{totalAmount}</if>
+        <if test="chargeAmount != null "> and t.charge_amount = #{chargeAmount}</if>
+        <if test="difAmount != null "> and t.dif_amount = #{difAmount}</if>
+        <if test="auitOrgId != null  and auitOrgId != ''"> and t.auit_org_id = #{auitOrgId}</if>
+        <if test="auitOrgName != null  and auitOrgName != ''"> and t.auit_org_name like concat('%', #{auitOrgName}, '%')</if>
         <if test="isWhite != null  and isWhite != ''"> and t.is_white = #{isWhite}</if>
         <if test="whiteRemark != null  and whiteRemark != ''"> and t.white_remark = #{whiteRemark}</if>
         <if test="fileIds != null  and fileIds != ''"> and t.file_ids = #{fileIds}</if>
@@ -174,10 +189,10 @@
         <if test="roadName != null  and roadName != ''"> and t.road_name like concat('%', #{roadName}, '%')</if>
         <if test="tollCode != null  and tollCode != ''"> and t.toll_code = #{tollCode}</if>
         <if test="tollName != null  and tollName != ''"> and t.toll_name like concat('%', #{tollName}, '%')</if>
-        <if test="fwqbm != null  and fwqbm != ''"> and t.fwqbm = #{fwqbm}</if>
-        <if test="fwqmc != null  and fwqmc != ''"> and t.fwqmc = #{fwqmc}</if>
         <if test="linkName != null  and linkName != ''"> and t.link_name like concat('%', #{linkName}, '%')</if>
         <if test="linkPhone != null  and linkPhone != ''"> and t.link_phone = #{linkPhone}</if>
+        <if test="fwqbm != null  and fwqbm != ''"> and t.fwqbm = #{fwqbm}</if>
+        <if test="fwqmc != null  and fwqmc != ''"> and t.fwqmc = #{fwqmc}</if>
         <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
         <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
         <if test="status != null  and status != ''"> and t.status = #{status}</if>
