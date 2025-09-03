@@ -71,6 +71,12 @@
         t.tenant_id
     </sql>
 
+    <sql id="selectCarSuspiciousVo2">
+        t.car_no,
+        t.car_type,
+        t.escaped_type
+    </sql>
+
 
     <select id="selectCarSuspiciousList" parameterType="com.ruoyi.manager.domain.CarSuspicious" resultMap="CarSuspiciousResult">
         SELECT
@@ -113,6 +119,14 @@
         <include refid="selectCarSuspiciousVo"/>
         from car_suspicious t
         where t.id = #{id}
+    </select>
+
+    <select id="selectCarSuspiciousListLimit10" resultType="com.ruoyi.manager.domain.CarSuspicious">
+        SELECT
+        <include refid="selectCarSuspiciousVo2"/>
+        FROM car_suspicious t
+        WHERE t.del_flag = '0'
+        order by t.create_time desc,t.id limit 10
     </select>
 
 

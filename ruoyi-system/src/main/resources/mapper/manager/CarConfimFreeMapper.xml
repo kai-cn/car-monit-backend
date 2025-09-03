@@ -107,6 +107,11 @@
         from car_confim_free f where f.del_flag = '0'
     </select>
 
+    <select id="selectOrgId" resultType="java.lang.String">
+        select org_id
+        from car_confim_free where car_id = #{carId} and find_in_set(except_ids, #{id}) > 0;
+    </select>
+
 
     <update id="deleteCarConfimFreeById" parameterType="String">
         update car_confim_free set del_flag = '1' where id = #{id}

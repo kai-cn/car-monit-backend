@@ -45,4 +45,5 @@ public interface ICarSuspiciousService extends IService<CarSuspicious> {
      */
     AjaxResult deleteCarSuspiciousByIds(String[] ids);
 
+    List<CarSuspicious> selectCarSuspiciousListLimit10();
 }

@@ -52,4 +52,6 @@ public interface ICarConfimFreeService extends IService<CarConfimFree> {
     List<CarStatisticsVO> getCarStatistics();
 
     BigDecimal getCarConfirm();
+
+    String selectOrgId(String carId, String id);
 }

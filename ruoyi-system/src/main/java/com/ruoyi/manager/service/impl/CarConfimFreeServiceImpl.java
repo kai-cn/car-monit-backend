@@ -126,4 +126,9 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
     public BigDecimal getCarConfirm() {
         return carConfimFreeMapper.getCarConfirm();
     }
+
+    @Override
+    public String selectOrgId(String carId, String id) {
+        return carConfimFreeMapper.selectOrgId(carId, id);
+    }
 }

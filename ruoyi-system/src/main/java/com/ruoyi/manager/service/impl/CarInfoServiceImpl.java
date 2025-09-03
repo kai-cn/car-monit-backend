@@ -9,10 +9,13 @@ import com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam;
 import com.ruoyi.manager.domain.vo.bigscreen.CarLocationVO;
 import com.ruoyi.manager.mapper.CarInfoMapper;
 import com.ruoyi.manager.service.ICarInfoService;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
@@ -124,7 +127,18 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
 
     @Override
     public List<CarLocationVO> carLocation(CarLocationParam carInfo) {
-       return carInfoMapper.getCarLocation(carInfo);
+        List<CarLocationVO> carLocation = carInfoMapper.getCarLocation(carInfo);
+        if(CollectionUtils.isNotEmpty(carLocation)) {
+            for (CarLocationVO carLocationVO : carLocation) {
+                if(StringUtils.isNotBlank(carLocationVO.getLonStr())) {
+                    carLocationVO.setLon(new BigDecimal(carLocationVO.getLonStr()));
+                }
+                if(StringUtils.isNotBlank(carLocationVO.getLatStr())) {
+                    carLocationVO.setLat(new BigDecimal(carLocationVO.getLatStr()));
+                }
+            }
+        }
+        return carLocation;
     }
 
     @Override

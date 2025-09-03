@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -97,6 +98,8 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         return AjaxResult.success(count);
     }
 
-
-
+    @Override
+    public List<CarSuspicious> selectCarSuspiciousListLimit10() {
+        return carSuspiciousMapper.selectCarSuspiciousListLimit10();
+    }
 }

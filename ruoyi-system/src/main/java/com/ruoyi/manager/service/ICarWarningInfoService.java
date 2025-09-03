@@ -45,4 +45,5 @@ public interface ICarWarningInfoService extends IService<CarWarningInfo> {
      */
     AjaxResult deleteCarWarningInfoByIds(String[] ids);
 
+    List<CarWarningInfo> selectCarWarningInfoListLimit100();
 }

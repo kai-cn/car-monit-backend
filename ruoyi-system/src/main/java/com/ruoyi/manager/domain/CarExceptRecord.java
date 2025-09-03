@@ -114,5 +114,14 @@ public class CarExceptRecord extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private String createTimeStr;
 
+    // 录入单位
+    @TableField(exist = false)
+    private String orgId;
+
+    // 补缴状态 0未补缴
+    @TableField(exist = false)
+    private String supplementaryStatus = "0";
+
+
 
 }

@@ -1,5 +1,6 @@
 package com.ruoyi.manager.domain.vo.bigscreen;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 /**
@@ -9,6 +10,8 @@ import lombok.Data;
  */
 @Data
 public class TopTenVO {
+    @ApiModelProperty("路段名称")
     private String sectionName;
+    @ApiModelProperty("车辆数量")
     private Integer carNum;
 }

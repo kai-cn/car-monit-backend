@@ -2,12 +2,11 @@ package com.ruoyi.web.controller.manager.bigscreen;
 
 import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.*;
+import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResultNew;
+import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.manager.domain.CarAduitFree;
-import com.ruoyi.manager.domain.CarConfimFree;
-import com.ruoyi.manager.domain.CarSuspicious;
-import com.ruoyi.manager.domain.CarWarningInfo;
+import com.ruoyi.manager.domain.*;
 import com.ruoyi.manager.domain.vo.bigscreen.*;
 import com.ruoyi.manager.service.*;
 import io.swagger.annotations.ApiOperation;
@@ -16,16 +15,16 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 
 @ApiOperation("大屏接口")
 @RestController
 @RequestMapping("/manager/bigScreen")
 @CrossOrigin(origins = "*")
-public class BigScreenController {
+public class BigScreenController extends BaseController {
 
     @Autowired
     private ICarConfimFreeService carConfimFreeService;
@@ -49,6 +48,8 @@ public class BigScreenController {
     private ICarSuspiciousService carSuspiciousService;
     @Autowired
     private IOdsYhglVBaseOrgService baseOrgService;
+    @Autowired
+    private ICarExceptRecordService carExceptRecordService;
 
 
     /**
@@ -66,7 +67,7 @@ public class BigScreenController {
      */
     @ApiOperation("车辆地图")
     @GetMapping(value = "/carLocation")
-    public AjaxResultNew getCarLocation(CarLocationParam param) {
+    public AjaxResultNew<List<CarLocationVO>> getCarLocation(CarLocationParam param) {
         String type = param.getType();
         if(StringUtils.isNotBlank(type)) {
             switch (type) {
@@ -100,10 +101,13 @@ public class BigScreenController {
 
     @ApiOperation("收费站门架服务区列表")
     @GetMapping(value = "/tollGantryFwqList")
-    public AjaxResultNew<List<TollGantryFwqVO>> getTollList(@RequestParam String type) {
+    public AjaxResultNew<List<TollGantryFwqVO>> getTollList(@RequestParam(name = "sectionCode", required = false) String sectionCode, @RequestParam String type) {
+        if(StringUtils.isBlank(sectionCode)) {
+            return AjaxResultNew.success(new ArrayList<>());
+        }
         List<TollGantryFwqVO> collect = new ArrayList<>();
         if ("1".equals(type)) {
-            collect = tollService.lambdaQuery().select(OdsSzdnToll::getTollCode, OdsSzdnToll::getTollName).list()
+            collect = tollService.lambdaQuery().select(OdsSzdnToll::getTollCode, OdsSzdnToll::getTollName).eq(OdsSzdnToll::getSectionCode, sectionCode).list()
                     .stream().map(item -> {
                         TollGantryFwqVO vo = new TollGantryFwqVO();
                         vo.setType("1");
@@ -112,7 +116,7 @@ public class BigScreenController {
                         return vo;
                     }).collect(Collectors.toList());
         } else if ("2".equals(type)) {
-            collect = gantryService.lambdaQuery().select(OdsSzdnGantry::getGantryCode, OdsSzdnGantry::getGantryName).list()
+            collect = gantryService.lambdaQuery().select(OdsSzdnGantry::getGantryCode, OdsSzdnGantry::getGantryName).eq(OdsSzdnGantry::getSectionCode, sectionCode).list()
                     .stream().map(item -> {
                         TollGantryFwqVO vo = new TollGantryFwqVO();
                         vo.setType("2");
@@ -121,7 +125,7 @@ public class BigScreenController {
                         return vo;
                     }).collect(Collectors.toList());
         } else if ("3".equals(type)) {
-            collect = fwqjcxxService.lambdaQuery().select(DwdLcztFwqjcxx::getFwqbm, DwdLcztFwqjcxx::getFwqmc).list()
+            collect = fwqjcxxService.lambdaQuery().select(DwdLcztFwqjcxx::getFwqbm, DwdLcztFwqjcxx::getFwqmc).eq(DwdLcztFwqjcxx::getSsldbh, sectionCode).list()
                     .stream().map(item -> {
                         TollGantryFwqVO vo = new TollGantryFwqVO();
                         vo.setType("3");
@@ -176,7 +180,7 @@ public class BigScreenController {
     @ApiOperation("车辆预警")
     @GetMapping(value = "/carWarning")
     public AjaxResultNew<List<CarWarningInfo>> getCarWarning() {
-        List<CarWarningInfo> warningInfoList = carWarningInfoService.selectCarWarningInfoList(new CarWarningInfo());
+        List<CarWarningInfo> warningInfoList = carWarningInfoService.selectCarWarningInfoListLimit100();
         return AjaxResultNew.success(warningInfoList);
     }
 
@@ -186,7 +190,7 @@ public class BigScreenController {
     @ApiOperation("异常数据")
     @GetMapping(value = "/exceptionCar")
     public AjaxResultNew<List<CarSuspicious>> getExceptionCar() {
-        List<CarSuspicious> carSuspicious = carSuspiciousService.selectCarSuspiciousList(new CarSuspicious());
+        List<CarSuspicious> carSuspicious = carSuspiciousService.selectCarSuspiciousListLimit10();
         return AjaxResultNew.success(carSuspicious);
     }
 
@@ -224,14 +228,23 @@ public class BigScreenController {
             param.setStartDate(start);
         }
         List<incomeStatisticVO> voList =  carAduitFreeService.incomeStatistic(param);
-        /*if(StringUtils.isNotBlank(param.getQueryDateType())) {
-            String queryDateType = param.getQueryDateType();
-            if("1".equals(queryDateType)) {
-                //1年
-            } else if("2".equals(queryDateType)) {
-                //2月
-            }
-        }*/
         return AjaxResultNew.success(voList);
+    }
+
+    @GetMapping("/exceptRecordList")
+    public TableDataInfo list(CarExceptRecord carExceptRecord) {
+        startPage();
+        List<CarExceptRecord> list = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);
+        TableDataInfo dataTable = getDataTable(list);
+        List<CarExceptRecord> rows = (List<CarExceptRecord>) dataTable.getRows();
+        for (CarExceptRecord row : rows) {
+           String orgId = carConfimFreeService.selectOrgId(row.getCarId(), row.getId());
+           row.setOrgId(orgId);
+            Long count = carAduitFreeService.lambdaQuery().eq(CarAduitFree::getCarId, row.getCarId()).count();
+            if (count != null && count > 0) {
+                row.setSupplementaryStatus("1");
+            }
+        }
+        return dataTable;
     }
 }

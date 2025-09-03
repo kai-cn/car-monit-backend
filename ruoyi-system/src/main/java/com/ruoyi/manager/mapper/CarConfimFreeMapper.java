@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.manager.domain.CarConfimFree;
 import com.ruoyi.manager.domain.vo.bigscreen.CarAuditVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -52,4 +53,6 @@ public interface CarConfimFreeMapper extends BaseMapper<CarConfimFree> {
     List<CarStatisticsVO> getCarStatistics();
 
     BigDecimal getCarConfirm();
+
+    String selectOrgId(@Param("carId") String carId, @Param("id") String id);
 }

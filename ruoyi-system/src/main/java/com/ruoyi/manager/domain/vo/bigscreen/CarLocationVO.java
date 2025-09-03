@@ -4,6 +4,8 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 /**
  * @Author: zhukai
  * @Date: 2025/08/28/15:00
@@ -19,12 +21,16 @@ public class CarLocationVO {
      * 最后通行经度
      */
     @ApiModelProperty("最后通行经度")
-    private String lon;
+    private BigDecimal lon;
 
     /**
      * 最后通行维度
      */
     @ApiModelProperty("最后通行维度")
-    private String lat;
+    private BigDecimal lat;
+
+    private String lonStr;
+
+    private String latStr;
 
 }

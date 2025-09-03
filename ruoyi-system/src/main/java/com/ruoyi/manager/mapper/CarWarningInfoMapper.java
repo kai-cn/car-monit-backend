@@ -45,4 +45,5 @@ public interface CarWarningInfoMapper extends BaseMapper<CarWarningInfo> {
      */
     int deleteCarWarningInfoById(String id);
 
+    List<CarWarningInfo> selectCarWarningInfoListLimit100();
 }

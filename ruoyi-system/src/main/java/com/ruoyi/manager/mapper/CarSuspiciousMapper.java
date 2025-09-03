@@ -45,4 +45,5 @@ public interface CarSuspiciousMapper extends BaseMapper<CarSuspicious> {
      */
     int deleteCarSuspiciousById(String id);
 
+    List<CarSuspicious> selectCarSuspiciousListLimit10();
 }

@@ -97,6 +97,8 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
         return AjaxResult.success(count);
     }
 
-
-
+    @Override
+    public List<CarWarningInfo> selectCarWarningInfoListLimit100() {
+        return carWarningInfoMapper.selectCarWarningInfoListLimit100();
+    }
 }
