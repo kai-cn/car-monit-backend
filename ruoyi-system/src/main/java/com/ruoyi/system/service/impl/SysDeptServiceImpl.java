@@ -545,6 +545,17 @@ public class SysDeptServiceImpl implements ISysDeptService
 
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void saveAll(List<SysDept> depts) {
+        if (null != depts && depts.size() > 0) {
+            // 先删除所有的，然后新增
+            deptMapper.deleteDeptAll();
+            for (SysDept dept:depts){
+                deptMapper.insertDept(dept);
+            }
+        }
+    }
+
 }
 
 

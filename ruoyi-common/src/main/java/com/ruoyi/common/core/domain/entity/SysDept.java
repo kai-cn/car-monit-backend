@@ -52,10 +52,10 @@ public class SysDept extends BaseEntity
     /** 账号 */
     private String account;
 
-    /** 统一社会信用代码 */
+    /** 部门编码 */
     private String socialCode;
 
-    /** 邮政编码 */
+    /** 父编码 */
     private String postalCode;
 
     /** 通讯地址 */

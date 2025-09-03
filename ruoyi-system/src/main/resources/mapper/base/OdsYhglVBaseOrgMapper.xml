@@ -40,7 +40,8 @@
         t.org_address,
         t.org_is_yh_autarky,
         t.load_time,
-        t.grade_level
+        t.grade_level,
+        (select t1.big_id from  ods_yhgl_v_base_org t1 where t1.org_code = t.org_parent_id) parentId
     </sql>
 
 

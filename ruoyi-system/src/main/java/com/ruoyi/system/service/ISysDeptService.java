@@ -122,4 +122,7 @@ public interface ISysDeptService
      */
     Set<SysDept> selectHeadOffice();
 
+
+    void saveAll(List<SysDept> depts);
+
 }

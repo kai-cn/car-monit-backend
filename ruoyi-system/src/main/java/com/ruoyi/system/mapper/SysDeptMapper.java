@@ -134,4 +134,13 @@ public interface SysDeptMapper
      * @return 结果
      */
     public int updateTenantId(SysDept dept);
+
+
+    /**
+     * 删除部门管理信息
+     *
+     * @param
+     * @return 结果
+     */
+    public int deleteDeptAll();
 }

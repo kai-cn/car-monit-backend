@@ -29,7 +29,8 @@ public class OrgTask {
     @Transactional(rollbackFor = Exception.class)
     public void syncOrgInfo() {
         // 查询同步的组织数据
-        List<OdsYhglVBaseOrg> list = odsYhglVBaseOrgService.list();
+        OdsYhglVBaseOrg orgbo = new OdsYhglVBaseOrg();
+        List<OdsYhglVBaseOrg> list = odsYhglVBaseOrgService.selectOdsYhglVBaseOrgList(orgbo);
         if(CollectionUtil.isEmpty(list)){
             return ;
         }
@@ -38,20 +39,24 @@ public class OrgTask {
         List<SysDept> sysDeptList = list.stream().filter(v -> "00000011".equals(v.getOrgLevelCode()) || v.getOrgLevelCode().contains("000000110053")).map(v -> {
             SysDept sysDept = new SysDept();
             sysDept.setDeptId(Long.parseLong(v.getBigId()));
-           /* sysDept.setOrgCode(v.getOrgCode());
-            sysDept.setParentId(v.getOrgParentId());*/
+            sysDept.setParentId(v.getParentId());
             sysDept.setDeptName(v.getOrgName());
             sysDept.setSubCode(v.getOrgLevelCode());
             sysDept.setDeptJc(v.getOrgShortName());
             sysDept.setDelFlag(v.getOrgIsDeleted());
-            sysDept.setCreateBy("admin");
+
+            // 部门编码
+            sysDept.setSocialCode(v.getOrgCode());
+            // 父编码
+            sysDept.setPostalCode(v.getOrgParentId());
+
+
+            sysDept.setCreateBy("-9999");
             sysDept.setCreateTime(DateUtils.getTimestamp());
             sysDept.setUpdateTime(DateUtils.getTimestamp());
             return sysDept;
+
         }).collect(Collectors.toList());
-
-
-       /* this.sysDeptService.deleteTableData();
-        this.sysDeptService.saveOrUpdateBatch(sysDeptList);*/
+        this.sysDeptService.saveAll(sysDeptList);
     }
 }
