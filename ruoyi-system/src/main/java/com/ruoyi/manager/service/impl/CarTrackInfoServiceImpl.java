@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -43,7 +44,20 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
      */
     @Override
     public List<CarTrackInfo> selectCarTrackInfoList(CarTrackInfo carTrackInfo) {
-        return carTrackInfoMapper.selectCarTrackInfoList(carTrackInfo);
+        List<CarTrackInfo> list = carTrackInfoMapper.selectCarTrackInfoList(carTrackInfo);
+        if (null != list && list.size() > 0) {
+            for (CarTrackInfo rtn : list) {
+
+                if (CommonUtil.isNotBlank(rtn.getLongitude())){
+                    rtn.setLongitudeDec(new BigDecimal(rtn.getLongitude()));
+                }
+
+                if (CommonUtil.isNotBlank(rtn.getLatitude())){
+                    rtn.setLatitudeDec(new BigDecimal(rtn.getLatitude()));
+                }
+            }
+        }
+        return list;
     }
 
 

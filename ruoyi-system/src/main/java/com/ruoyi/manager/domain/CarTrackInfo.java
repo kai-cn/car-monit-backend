@@ -1,5 +1,6 @@
 package com.ruoyi.manager.domain;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -96,5 +97,16 @@ public class CarTrackInfo extends BasePlusEntity implements Custom {
 
     @TableField(exist = false)
     private String applyTime2;
+
+
+    /** 经度 */
+    @TableField(exist = false)
+    @Excel(name = "经度")
+    private BigDecimal longitudeDec;
+
+    /** 维度 */
+    @TableField(exist = false)
+    @Excel(name = "维度")
+    private BigDecimal latitudeDec;
 
 }
