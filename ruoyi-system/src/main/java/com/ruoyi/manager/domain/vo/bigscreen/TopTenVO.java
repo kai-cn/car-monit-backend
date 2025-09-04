@@ -14,4 +14,8 @@ public class TopTenVO {
     private String sectionName;
     @ApiModelProperty("车辆数量")
     private Integer carNum;
+    @ApiModelProperty("排名")
+    private Integer rank;
+    @ApiModelProperty("百分比")
+    private String rate;
 }

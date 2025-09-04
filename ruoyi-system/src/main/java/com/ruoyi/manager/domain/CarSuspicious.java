@@ -118,6 +118,22 @@ public class CarSuspicious extends BasePlusEntity implements Custom {
     @Excel(name = "白名单原因")
     private String whiteRemark;
 
+    /** 所属路线编码 */
+    @Excel(name = "所属路线编码")
+    private String roadCode;
+
+    /** 所属路线名称 */
+    @Excel(name = "所属路线名称")
+    private String roadName;
+
+    /** 所属路段名称 */
+    @Excel(name = "所属路段名称")
+    private String sectionName;
+
+    /** 所属路段编码 */
+    @Excel(name = "所属路段编码")
+    private String sectionCode;
+
     /** 备用字段1 */
     @Excel(name = "备用字段1")
     private String backCol1;

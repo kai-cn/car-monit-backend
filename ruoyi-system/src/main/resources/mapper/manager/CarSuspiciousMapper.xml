@@ -21,6 +21,10 @@
         <result property="orgId"    column="org_id"    />
         <result property="orgName"    column="org_name"    />
         <result property="isWhite"    column="is_white"    />
+        <result property="roadCode"    column="road_code"    />
+        <result property="roadName"    column="road_name"    />
+        <result property="sectionName"    column="section_name"    />
+        <result property="sectionCode"    column="section_code"    />
         <result property="backCol1"    column="back_col1"    />
         <result property="whiteRemark"    column="white_remark"    />
         <result property="backCol2"    column="back_col2"    />
@@ -56,6 +60,10 @@
         t.org_id,
         t.org_name,
         t.is_white,
+        t.road_code,
+        t.road_name,
+        t.section_name,
+        t.section_code,
         t.back_col1,
         t.white_remark,
         t.back_col2,
@@ -84,12 +92,12 @@
         FROM car_suspicious t
         WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
-        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no like concat('%', #{carNo}, '%')</if>
         <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
         <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
         <if test="carNum != null "> and t.car_num = #{carNum}</if>
         <if test="inStationId != null  and inStationId != ''"> and t.in_station_id = #{inStationId}</if>
-        <if test="inStation != null  and inStation != ''"> and t.in_station = #{inStation}</if>
+        <if test="inStation != null  and inStation != ''"> and t.in_station like concat('%', #{inStation}, '%')</if>
         <if test="inTime != null "> and t.in_time = #{inTime}</if>
         <if test="gantryStationId != null  and gantryStationId != ''"> and t.gantry_station_id = #{gantryStationId}</if>
         <if test="gantrytStation != null  and gantrytStation != ''"> and t.gantryt_station = #{gantrytStation}</if>
@@ -123,8 +131,8 @@
 
     <select id="selectCarSuspiciousListLimit10" resultType="com.ruoyi.manager.domain.CarSuspicious">
         SELECT
-        <include refid="selectCarSuspiciousVo2"/>
-        FROM car_suspicious t
+        <include refid="selectCarSuspiciousVo2"/>, c.road_section_name sectionName
+        FROM car_suspicious t left join car_info c on t.car_no = c.car_no and c.del_flag = '0'
         WHERE t.del_flag = '0'
         order by t.create_time desc,t.id limit 10
     </select>

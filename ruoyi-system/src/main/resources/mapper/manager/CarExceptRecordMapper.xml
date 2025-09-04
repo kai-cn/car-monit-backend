@@ -73,16 +73,16 @@
         WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="carId != null  and carId != ''"> and t.car_id = #{carId}</if>
-        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no like concat('%', #{carNo}, '%')</if>
         <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
         <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
         <if test="carNum != null "> and t.car_num = #{carNum}</if>
         <if test="passType != null  and passType != ''"> and t.pass_type = #{passType}</if>
         <if test="inStationId != null  and inStationId != ''"> and t.in_station_id = #{inStationId}</if>
-        <if test="inStation != null  and inStation != ''"> and t.in_station = #{inStation}</if>
+        <if test="inStation != null  and inStation != ''"> and t.in_station like concat('%', #{inStation}, '%')</if>
         <if test="inTime != null "> and t.in_time = #{inTime}</if>
         <if test="outStationId != null  and outStationId != ''"> and t.out_station_id = #{outStationId}</if>
-        <if test="outStation != null  and outStation != ''"> and t.out_station = #{outStation}</if>
+        <if test="outStation != null  and outStation != ''"> and t.out_station like concat('%', #{outStation}, '%')</if>
         <if test="outTime != null "> and t.out_time = #{outTime}</if>
         <if test="totalAmount != null "> and t.total_amount = #{totalAmount}</if>
         <if test="chargeAmount != null "> and t.charge_amount = #{chargeAmount}</if>

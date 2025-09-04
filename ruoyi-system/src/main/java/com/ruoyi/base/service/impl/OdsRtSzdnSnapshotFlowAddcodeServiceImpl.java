@@ -56,19 +56,15 @@ public class OdsRtSzdnSnapshotFlowAddcodeServiceImpl extends ServiceImpl<OdsRtSz
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public AjaxResult saveOdsRtSzdnSnapshotFlowAddcode(OdsRtSzdnSnapshotFlowAddcode odsRtSzdnSnapshotFlowAddcode)
-    {
-        if (CommonUtil.isNotBlank(odsRtSzdnSnapshotFlowAddcode.getBigId()))
-        {
+    public AjaxResult saveOdsRtSzdnSnapshotFlowAddcode(OdsRtSzdnSnapshotFlowAddcode odsRtSzdnSnapshotFlowAddcode) {
+        if (CommonUtil.isNotBlank(odsRtSzdnSnapshotFlowAddcode.getBigId())) {
             // 修改
             odsRtSzdnSnapshotFlowAddcodeMapper.updateById(odsRtSzdnSnapshotFlowAddcode);
-        }
-        else
-        {
+        } else {
             // 新增 主键
             odsRtSzdnSnapshotFlowAddcodeMapper.insert(odsRtSzdnSnapshotFlowAddcode);
         }
-        return AjaxResult.success("操作成功！",odsRtSzdnSnapshotFlowAddcode.getBigId());
+        return AjaxResult.success("操作成功！", odsRtSzdnSnapshotFlowAddcode.getBigId());
     }
 
     /**
@@ -79,8 +75,7 @@ public class OdsRtSzdnSnapshotFlowAddcodeServiceImpl extends ServiceImpl<OdsRtSz
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public AjaxResult deleteOdsRtSzdnSnapshotFlowAddcodeByIds(String[] bigIds)
-    {
+    public AjaxResult deleteOdsRtSzdnSnapshotFlowAddcodeByIds(String[] bigIds) {
         int count = odsRtSzdnSnapshotFlowAddcodeMapper.deleteOdsRtSzdnSnapshotFlowAddcodeByIds(bigIds);
         return AjaxResult.success(count);
     }
@@ -92,14 +87,27 @@ public class OdsRtSzdnSnapshotFlowAddcodeServiceImpl extends ServiceImpl<OdsRtSz
      * @return 结果
      */
     @Transactional(rollbackFor = Exception.class)
-    public AjaxResult deleteOdsRtSzdnSnapshotFlowAddcodeById(String bigId)
-    {
+    public AjaxResult deleteOdsRtSzdnSnapshotFlowAddcodeById(String bigId) {
         int count = odsRtSzdnSnapshotFlowAddcodeMapper.deleteOdsRtSzdnSnapshotFlowAddcodeById(bigId);
         return AjaxResult.success(count);
     }
 
     @Override
     public List<TopTenVO> getTopTen() {
-        return odsRtSzdnSnapshotFlowAddcodeMapper.getTopTen();
+        List<TopTenVO> topTen = odsRtSzdnSnapshotFlowAddcodeMapper.getTopTen();
+        int i = 1;
+        Integer topOne = -1;
+        for (TopTenVO topTenVO : topTen) {
+            if(i == 1) {
+                topTenVO.setRate("100");
+                topOne = topTenVO.getCarNum();
+            } else {
+                if(topOne != -1) {
+                    topTenVO.setRate((int)(Double.valueOf(topTenVO.getCarNum()) / topOne * 100) + "");
+                }
+            }
+            topTenVO.setRank(i++);
+        }
+        return topTen;
     }
 }
