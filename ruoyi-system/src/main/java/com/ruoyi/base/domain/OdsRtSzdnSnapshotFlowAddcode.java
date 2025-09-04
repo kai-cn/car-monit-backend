@@ -1,18 +1,18 @@
 package com.ruoyi.base.domain;
 
-import java.math.BigDecimal;
-import java.util.Date;
-
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ruoyi.common.annotation.Excel;
+import com.ruoyi.common.core.domain.Custom;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-import com.ruoyi.common.annotation.Excel;
-import com.ruoyi.common.core.domain.BasePlusEntity;
-import com.ruoyi.common.core.domain.Custom;
+
+import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * 门架抓拍流水对象 ods_rt_szdn_snapshot_flow_addcode
@@ -118,8 +118,7 @@ public class OdsRtSzdnSnapshotFlowAddcode implements Custom {
     @Excel(name = "抓拍时间Unix格式")
     private Long snapshottimeunix;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 抓拍时间 */
     private Date snapshottime;
 
     /** 接收时间Unix格式 */
@@ -191,6 +190,30 @@ public class OdsRtSzdnSnapshotFlowAddcode implements Custom {
     /** 分类分级 */
     @Excel(name = "分类分级")
     private Integer gradelevel;
+
+
+    // 临时生成ID
+    @TableField(exist = false)
+    private String id;
+
+    // 临时生成ID
+    @TableField(exist = false)
+    private String snapshottimeStr;
+
+    // 时间查询
+    @TableField(exist = false)
+    private String applyTime1;
+
+    @TableField(exist = false)
+    private String applyTime2;
+
+    // 当前页面
+    @TableField(exist = false)
+    private Integer pageNum;
+
+    // 分页大小
+    @TableField(exist = false)
+    private Integer pageSize;
 
 
 }
