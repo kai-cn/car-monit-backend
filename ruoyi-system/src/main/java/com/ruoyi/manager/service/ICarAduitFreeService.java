@@ -52,4 +52,6 @@ public interface ICarAduitFreeService extends IService<CarAduitFree> {
     BigDecimal getCarAudit();
 
     List<incomeStatisticVO> incomeStatistic(IncomeStatisticParam param);
+
+    Integer selectAuditCount();
 }

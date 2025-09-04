@@ -107,6 +107,10 @@
         group by a.org_id;
     </select>
 
+    <select id="selectAuditCount" resultType="java.lang.Integer">
+        select count(distinct confirm_id) confirmCount from car_aduit_free where del_flag = '0';
+    </select>
+
 
     <update id="deleteCarAduitFreeById" parameterType="String">
         update car_aduit_free set del_flag = '1' where id = #{id}

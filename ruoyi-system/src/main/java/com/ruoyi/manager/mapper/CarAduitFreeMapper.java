@@ -53,4 +53,6 @@ public interface CarAduitFreeMapper extends BaseMapper<CarAduitFree> {
     BigDecimal getCarAudit();
 
     List<incomeStatisticVO> incomeStatistic(IncomeStatisticParam param);
+
+    Integer selectAuditCount();
 }

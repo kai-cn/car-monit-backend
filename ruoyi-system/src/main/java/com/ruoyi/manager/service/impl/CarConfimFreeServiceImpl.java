@@ -2,6 +2,7 @@ package com.ruoyi.manager.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.manager.domain.vo.bigscreen.CarAuditVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
@@ -104,16 +105,18 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
     @Override
     public List<CarStatisticsVO> getCarStatistics() {
         // 逃费类型
-        Map<String, String> escapedTypeMap = sysDictDataService.selectDictDataMap("escaped_type");
+        SysDictData sysDictData = new SysDictData();
+        sysDictData.setDictType("escaped_type");
+        List<SysDictData> dictDataList = sysDictDataService.selectDictDataList(sysDictData);
         List<CarStatisticsVO> list = carConfimFreeMapper.getCarStatistics();
         Map<String, CarStatisticsVO> voMap = list.stream().collect(Collectors.toMap(CarStatisticsVO::getEscapedType, v -> v));
         List<CarStatisticsVO> res = new ArrayList<>();
-        escapedTypeMap.forEach((k, v) -> {
+        dictDataList.forEach((item) -> {
             CarStatisticsVO vo = new CarStatisticsVO();
             res.add(vo);
-            vo.setEscapedType(k);
-            vo.setEscapedTypeName(v);
-            CarStatisticsVO vo1 = voMap.get(k);
+            vo.setEscapedType(item.getDictValue());
+            vo.setEscapedTypeName(item.getDictLabel());
+            CarStatisticsVO vo1 = voMap.get(vo.getEscapedType());
             if (vo1 != null) {
                 vo.setNumber(vo1.getNumber());
                 vo.setEscapedAmount(vo1.getEscapedAmount());

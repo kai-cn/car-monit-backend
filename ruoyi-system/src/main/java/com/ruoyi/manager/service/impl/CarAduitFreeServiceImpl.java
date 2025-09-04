@@ -110,4 +110,9 @@ public class CarAduitFreeServiceImpl extends ServiceImpl<CarAduitFreeMapper, Car
     public List<incomeStatisticVO> incomeStatistic(IncomeStatisticParam param) {
         return carAduitFreeMapper.incomeStatistic(param);
     }
+
+    @Override
+    public Integer selectAuditCount() {
+        return carAduitFreeMapper.selectAuditCount();
+    }
 }

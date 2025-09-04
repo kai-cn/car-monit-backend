@@ -17,15 +17,16 @@ public class CarLocationVO {
 
     @ApiModelProperty("主键id")
     private String id;
-    /**
-     * 最后通行经度
-     */
+
+    @ApiModelProperty("车牌号")
+    private String carNo;
+
+    @ApiModelProperty("车型")
+    private String carType;
+
     @ApiModelProperty("最后通行经度")
     private BigDecimal lon;
 
-    /**
-     * 最后通行维度
-     */
     @ApiModelProperty("最后通行维度")
     private BigDecimal lat;
 

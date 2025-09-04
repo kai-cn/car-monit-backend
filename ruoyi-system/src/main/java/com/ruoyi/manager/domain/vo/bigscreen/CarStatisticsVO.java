@@ -14,16 +14,10 @@ import java.math.BigDecimal;
 @ApiModel(description = "车辆统计Vo")
 @Data
 public class CarStatisticsVO {
-    /**
-     * 逃费类型（字典：1少轴2屏蔽3货车客标4有入无出5绿通换挂）
-     */
 
     @ApiModelProperty("逃费类型（字典：1少轴2屏蔽3货车客标4有入无出5绿通换挂）")
     private String escapedType;
 
-    /**
-     * 逃费类型名称
-     */
     @ApiModelProperty("逃费类型名称")
     private String escapedTypeName;
 

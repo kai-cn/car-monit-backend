@@ -164,12 +164,12 @@ public class BigScreenController extends BaseController {
             vo.setFinishedAmount(finishedAmount);
         }
         Long confirmCount = carConfimFreeService.lambdaQuery().eq(CarConfimFree::getDelFlag, "0").count();
-        Long auditCount = carAduitFreeService.lambdaQuery().eq(CarAduitFree::getDelFlag, "0").count();
+        Integer auditCount = carAduitFreeService.selectAuditCount();
         if (confirmCount != null && confirmCount > 0) {
             vo.setTotalCount(Math.toIntExact(confirmCount));
         }
         if (auditCount != null && auditCount > 0) {
-            vo.setFinishedCount(Math.toIntExact(auditCount));
+            vo.setFinishedCount(auditCount);
         }
         return AjaxResultNew.success(vo);
     }

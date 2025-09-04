@@ -216,6 +216,8 @@
     <select id="getCarLocation" parameterType="com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam" resultType="com.ruoyi.manager.domain.vo.bigscreen.CarLocationVO">
         select
         t.id,
+        t.car_no,
+        t.car_type,
         t.last_pass_longitude as lonStr,
         t.last_pass_latitude as latStr
         from car_info t
