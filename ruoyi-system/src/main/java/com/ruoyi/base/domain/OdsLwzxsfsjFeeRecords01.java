@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -564,5 +565,13 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     @Excel(name = "分类分级")
     private Long gradeLevel;
 
+
+    // 当前页面
+    @TableField(exist = false)
+    private Integer pageNum;
+
+    // 分页大小
+    @TableField(exist = false)
+    private Integer pageSize;
 
 }

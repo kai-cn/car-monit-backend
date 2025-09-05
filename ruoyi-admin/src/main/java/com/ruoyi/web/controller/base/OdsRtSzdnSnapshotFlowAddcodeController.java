@@ -3,13 +3,11 @@ package com.ruoyi.web.controller.base;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode;
-import com.ruoyi.base.service.IOdsRtSzdnSnapshotFlowAddcodeService;
 import com.ruoyi.base.service.forest.HttpOdsRtSzdnSnapshotFlowAddcodeService;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.exception.ServiceException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,10 +25,6 @@ import javax.annotation.Resource;
 @RestController
 @RequestMapping("/base/snapshotflow")
 public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
-
-
-    @Autowired
-    private IOdsRtSzdnSnapshotFlowAddcodeService odsRtSzdnSnapshotFlowAddcodeService;
 
     @Resource
     private HttpOdsRtSzdnSnapshotFlowAddcodeService httpOdsRtSzdnSnapshotFlowAddcodeService;
@@ -65,7 +59,7 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
      */
     @GetMapping(value = "/{bigId}")
     public AjaxResult getInfo(@PathVariable("bigId") String bigId) {
-        return AjaxResult.success(odsRtSzdnSnapshotFlowAddcodeService.selectOdsRtSzdnSnapshotFlowAddcodeById(bigId));
+        return AjaxResult.success(httpOdsRtSzdnSnapshotFlowAddcodeService.selectOdsRtSzdnSnapshotFlowAddcodeById(bigId));
     }
 
 

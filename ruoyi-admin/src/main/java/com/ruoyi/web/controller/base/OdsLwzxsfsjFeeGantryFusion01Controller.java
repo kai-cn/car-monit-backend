@@ -57,13 +57,11 @@ public class OdsLwzxsfsjFeeGantryFusion01Controller extends BaseController {
         return JSONUtil.toBean(jsonObject, TableDataInfo.class);
     }
 
-    /**
-     * 获取交易流水详细信息
-     */
     @GetMapping(value = "/{bigId}")
     public AjaxResult getInfo(@PathVariable("bigId") String bigId) {
-        return AjaxResult.success(odsLwzxsfsjFeeGantryFusion01Service.selectOdsLwzxsfsjFeeGantryFusion01ById(bigId));
+        return AjaxResult.success(httpOdsLwzxsfsjFeeGantryFusion01Service.selectOdsLwzxsfsjFeeGantryFusion01ById(bigId));
     }
+
 
 //    /**
 //     * 导出交易流水列表

@@ -1,18 +1,18 @@
 package com.ruoyi.base.domain;
 
-import java.math.BigDecimal;
-import java.util.Date;
-
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ruoyi.common.annotation.Excel;
+import com.ruoyi.common.core.domain.Custom;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-import com.ruoyi.common.annotation.Excel;
-import com.ruoyi.common.core.domain.BasePlusEntity;
-import com.ruoyi.common.core.domain.Custom;
+
+import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * 收费站出口流水对象 ods_lwzxsfsj_fee_station_exit_01
@@ -290,5 +290,12 @@ public class OdsLwzxsfsjFeeStationExit01 implements Custom {
     @Excel(name = "车牌识别流水号")
     private String vehiclesignid;
 
+    // 当前页面
+    @TableField(exist = false)
+    private Integer pageNum;
+
+    // 分页大小
+    @TableField(exist = false)
+    private Integer pageSize;
 
 }
