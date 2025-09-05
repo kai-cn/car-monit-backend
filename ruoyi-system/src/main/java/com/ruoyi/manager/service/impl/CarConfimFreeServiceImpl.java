@@ -96,6 +96,14 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
     @Transactional(rollbackFor = Exception.class)
     @Override
     public AjaxResult saveCarConfimFree(CarConfimFree carConfimFree) {
+
+        String exceptIds = CommonUtil.deleteEnd(carConfimFree.getExceptIds());
+        List<String> exceptIdList = Arrays.asList(exceptIds.split(","));
+        List<CarConfimFree> list = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
+        if (null != list && list.size() > 0) {
+            return AjaxResult.error("请勿重复补缴！");
+        }
+
         if (CommonUtil.isNotBlank(carConfimFree.getId())) {
             // 修改
             carConfimFreeMapper.updateById(carConfimFree);
@@ -103,7 +111,7 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             // 新增 主键
             carConfimFreeMapper.insert(carConfimFree);
         }
-
+        
         // 修改明细
         List<CarAduitFree> carAduitFreeList = carConfimFree.getCarAduitFreeList();
         if (null != carAduitFreeList && carAduitFreeList.size() > 0) {
