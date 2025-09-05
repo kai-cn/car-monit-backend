@@ -1,6 +1,8 @@
 package com.ruoyi.base.domain;
 
 import java.util.Date;
+
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -314,6 +316,27 @@ public class OdsLwzxsfsjFeeGantryFusion01 implements Custom {
     /** 分类分级 */
     @Excel(name = "分类分级")
     private Long gradeLevel;
+
+    // 时间查询
+    @TableField(exist = false)
+    private String inApplyTime1;
+
+    @TableField(exist = false)
+    private String inApplyTime2;
+
+    @TableField(exist = false)
+    private String outApplyTime1;
+
+    @TableField(exist = false)
+    private String outApplyTime2;
+
+    // 当前页面
+    @TableField(exist = false)
+    private Integer pageNum;
+
+    // 分页大小
+    @TableField(exist = false)
+    private Integer pageSize;
 
 
 }

@@ -2,6 +2,7 @@ package com.ruoyi.web.controller.base;
 
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.ruoyi.base.domain.OdsLwzxsfsjFeeGantryFusion01;
 import com.ruoyi.base.domain.model.OdsLwzxsfsjFeeGantryFusion01Model;
 import com.ruoyi.base.service.forest.HttpOdsLwzxsfsjFeeGantryFusion01Service;
 import com.ruoyi.common.core.controller.BaseController;
@@ -32,8 +33,17 @@ public class OdsLwzxsfsjFeeGantryFusion01Controller extends BaseController {
      */
     @PreAuthorize("@ss.hasPermi('base:feeGantry:list')")
     @GetMapping("/list")
-    public TableDataInfo list(OdsLwzxsfsjFeeGantryFusion01Model odsLwzxsfsjFeeGantryFusion01Model) {
-        JSONObject jsonObject = httpOdsLwzxsfsjFeeGantryFusion01Service.getOdsLwzxsfsjFeeGantryFusion01Page(odsLwzxsfsjFeeGantryFusion01Model);
+    public TableDataInfo list(OdsLwzxsfsjFeeGantryFusion01 odsLwzxsfsjFeeGantryFusion01) {
+        // 当前页面
+        if (null == odsLwzxsfsjFeeGantryFusion01.getPageNum()){
+            odsLwzxsfsjFeeGantryFusion01.setPageNum(1);
+        }
+        // 分页大小
+        if (null == odsLwzxsfsjFeeGantryFusion01.getPageSize()){
+            odsLwzxsfsjFeeGantryFusion01.setPageSize(10);
+        }
+
+        JSONObject jsonObject = httpOdsLwzxsfsjFeeGantryFusion01Service.getOdsLwzxsfsjFeeGantryFusion01Page(odsLwzxsfsjFeeGantryFusion01);
         if(null == jsonObject || 200 != jsonObject.getInt("code")){
             logger.error("门架抓拍交易流水数据获取异常：" + jsonObject);
             throw new ServiceException("获取数据异常,请联系管理员");
