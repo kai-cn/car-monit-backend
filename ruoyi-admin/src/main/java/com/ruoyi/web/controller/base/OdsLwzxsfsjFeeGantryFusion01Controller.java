@@ -3,13 +3,16 @@ package com.ruoyi.web.controller.base;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.ruoyi.base.domain.OdsLwzxsfsjFeeGantryFusion01;
-import com.ruoyi.base.domain.model.OdsLwzxsfsjFeeGantryFusion01Model;
+import com.ruoyi.base.service.IOdsLwzxsfsjFeeGantryFusion01Service;
 import com.ruoyi.base.service.forest.HttpOdsLwzxsfsjFeeGantryFusion01Service;
 import com.ruoyi.common.core.controller.BaseController;
+import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.exception.ServiceException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,6 +27,9 @@ import javax.annotation.Resource;
 @RestController
 @RequestMapping("/base/feeGantry")
 public class OdsLwzxsfsjFeeGantryFusion01Controller extends BaseController {
+
+    @Autowired
+    private IOdsLwzxsfsjFeeGantryFusion01Service odsLwzxsfsjFeeGantryFusion01Service;
 
     @Resource
     private HttpOdsLwzxsfsjFeeGantryFusion01Service httpOdsLwzxsfsjFeeGantryFusion01Service;
@@ -49,6 +55,14 @@ public class OdsLwzxsfsjFeeGantryFusion01Controller extends BaseController {
             throw new ServiceException("获取数据异常,请联系管理员");
         }
         return JSONUtil.toBean(jsonObject, TableDataInfo.class);
+    }
+
+    /**
+     * 获取交易流水详细信息
+     */
+    @GetMapping(value = "/{bigId}")
+    public AjaxResult getInfo(@PathVariable("bigId") String bigId) {
+        return AjaxResult.success(odsLwzxsfsjFeeGantryFusion01Service.selectOdsLwzxsfsjFeeGantryFusion01ById(bigId));
     }
 
 //    /**
