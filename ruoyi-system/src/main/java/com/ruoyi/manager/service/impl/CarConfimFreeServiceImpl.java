@@ -111,7 +111,7 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             // 新增 主键
             carConfimFreeMapper.insert(carConfimFree);
         }
-        
+
         // 修改明细
         List<CarAduitFree> carAduitFreeList = carConfimFree.getCarAduitFreeList();
         if (null != carAduitFreeList && carAduitFreeList.size() > 0) {
@@ -237,6 +237,7 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
         carConfimFree.setCarNo(CarExceptRecordRtn.getCarNo());
         carConfimFree.setCarType(CarExceptRecordRtn.getCarType());
         carConfimFree.setCarVehicle(CarExceptRecordRtn.getCarVehicle());
+        carConfimFree.setExceptIds(exceptIds);
 
 
         return AjaxResult.success(carConfimFree);
