@@ -122,6 +122,11 @@ public class CarExceptRecord extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private String supplementaryStatus = "0";
 
+    /** 异常流水ids */
+    @Excel(name = "异常流水ids")
+    @TableField(exist = false)
+    private String exceptIds;
+
 
 
 }

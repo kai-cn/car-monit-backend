@@ -127,7 +127,7 @@ public class Server
     private void setCpuInfo(CentralProcessor processor)
     {
         // CPU信息
-        long[] prevTicks = processor.getSystemCpuLoadTicks();
+       /* long[] prevTicks = processor.getSystemCpuLoadTicks();
         Util.sleep(OSHI_WAIT_SECOND);
         long[] ticks = processor.getSystemCpuLoadTicks();
         long nice = ticks[TickType.NICE.getIndex()] - prevTicks[TickType.NICE.getIndex()];
@@ -144,7 +144,7 @@ public class Server
         cpu.setSys(cSys);
         cpu.setUsed(user);
         cpu.setWait(iowait);
-        cpu.setFree(idle);
+        cpu.setFree(idle);*/
     }
 
     /**

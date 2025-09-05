@@ -50,6 +50,15 @@ public interface CarAduitFreeMapper extends BaseMapper<CarAduitFree> {
      */
     int deleteCarAduitFreeById(String id);
 
+    /**
+     * 删除补缴处理
+     *
+     * @param fkId 补缴处理ID
+     * @return 结果
+     */
+    int deleteCarAduitFreeByConfirmId(String fkId);
+
+
     BigDecimal getCarAudit();
 
     List<incomeStatisticVO> incomeStatistic(IncomeStatisticParam param);

@@ -49,9 +49,21 @@ public interface ICarAduitFreeService extends IService<CarAduitFree> {
      */
     AjaxResult deleteCarAduitFreeByIds(String[] ids);
 
+
+    /**
+     * 批量删除补缴处理
+     *
+     * @param fkId 补交ID
+     * @return 结果
+     */
+    AjaxResult deleteCarAduitFreeByConfirmId(String fkId);
+
+
     BigDecimal getCarAudit();
 
     List<incomeStatisticVO> incomeStatistic(IncomeStatisticParam param);
 
     Integer selectAuditCount();
+
+
 }

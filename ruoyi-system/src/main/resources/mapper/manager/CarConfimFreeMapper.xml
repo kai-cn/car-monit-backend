@@ -85,6 +85,7 @@
         <if test="epsId != null "> and t.eps_id = #{epsId}</if>
         <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
         <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        <if test="exceptIds != null  and exceptIds != ''"> and find_in_set(t.id,#{exceptIds}) > 0 </if>
         order by t.create_time desc,t.id
     </select>
 
@@ -106,11 +107,13 @@
         select sum(ifnull(amount, 0)) finishedAmount
         from car_confim_free f where f.del_flag = '0'
     </select>
+
+
     <select id="selectCarConfimFreeByExceptIds" resultType="com.ruoyi.manager.domain.CarConfimFree">
         SELECT
         <include refid="selectCarConfimFreeVo"/>
         FROM car_confim_free t
-        WHERE
+        WHERE t.del_flag = '0'
         <foreach collection="list" item="id" separator=" OR ">
             FIND_IN_SET(#{id}, t.except_ids)
         </foreach>

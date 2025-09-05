@@ -79,7 +79,7 @@
         <if test="epsId != null "> and t.eps_id = #{epsId}</if>
         <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
         <if test="createBy != null "> and t.create_by = #{createBy}</if>
-        order by t.create_time desc,t.id
+        order by t.create_time,t.id
     </select>
 
     <select id="selectCarAduitFreeById" parameterType="String" resultMap="CarAduitFreeResult">
@@ -122,4 +122,10 @@
             #{id}
         </foreach>
     </update>
+
+
+    <delete id="deleteCarAduitFreeByConfirmId" parameterType="String">
+        delete from  car_aduit_free  where confirm_id = #{fkId}
+    </delete>
+
 </mapper>

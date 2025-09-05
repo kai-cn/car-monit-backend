@@ -54,4 +54,14 @@ public interface ICarConfimFreeService extends IService<CarConfimFree> {
     BigDecimal getCarConfirm();
 
     String selectOrgId(String carId, String id);
+
+
+    /**
+     * 查询确认补缴
+     *
+     * @param exceptIds
+     * @return 确认补缴
+     */
+    AjaxResult selectCarConfimFreeByExceptIds(String exceptIds);
+
 }

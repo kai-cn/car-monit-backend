@@ -94,4 +94,10 @@ public class CarConfimFree extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private List<CarAduitFree> carAduitFreeList;
 
+    /**
+     * 异常数组
+     */
+    @TableField(exist = false)
+    private List<CarExceptRecord> carExceptRecordList;
+
 }

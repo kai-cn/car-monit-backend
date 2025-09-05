@@ -100,6 +100,21 @@ public class CarAduitFreeServiceImpl extends ServiceImpl<CarAduitFreeMapper, Car
         return AjaxResult.success(count);
     }
 
+    /**
+     * 批量删除补缴处理
+     *
+     * @param fkId 补交ID
+     * @return 结果
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public AjaxResult deleteCarAduitFreeByConfirmId(String fkId) {
+        int count = 0;
+        if (CommonUtil.isNotBlank(fkId)) {
+            count = carAduitFreeMapper.deleteCarAduitFreeByConfirmId(fkId);
+        }
+        return AjaxResult.success(count);
+    }
+
 
     @Override
     public BigDecimal getCarAudit() {

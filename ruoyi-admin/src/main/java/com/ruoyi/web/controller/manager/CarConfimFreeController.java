@@ -96,4 +96,13 @@ public class CarConfimFreeController extends BaseController {
         return carConfimFreeService.deleteCarConfimFreeByIds(ids);
     }
 
+
+    /**
+     * 查询确认追缴:选择异常查询
+     */
+    @GetMapping(value = "/{exceptIds}")
+    public AjaxResult getExceptIds(@PathVariable("exceptIds") String exceptIds) {
+        return carConfimFreeService.selectCarConfimFreeByExceptIds(exceptIds);
+    }
+
 }
