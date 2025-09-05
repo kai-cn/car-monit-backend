@@ -50,7 +50,7 @@ public class CarAduitFree extends BasePlusEntity implements Custom {
     private String orgName;
 
     /** 录入人员ids */
-    @Excel(name = "录入人员ids")
+    @Excel(name = "处理人员ids")
     private String userIds;
 
     /** 处理人员 */

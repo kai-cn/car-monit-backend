@@ -55,4 +55,6 @@ public interface CarConfimFreeMapper extends BaseMapper<CarConfimFree> {
     BigDecimal getCarConfirm();
 
     String selectOrgId(@Param("carId") String carId, @Param("id") String id);
+
+    List<CarConfimFree> selectCarConfimFreeByExceptIds(List<String> exceptIds);
 }

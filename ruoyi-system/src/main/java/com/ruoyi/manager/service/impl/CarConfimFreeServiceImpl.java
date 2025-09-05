@@ -1,14 +1,21 @@
 package com.ruoyi.manager.service.impl;
 
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.manager.domain.CarAduitFree;
+import com.ruoyi.manager.domain.CarExceptRecord;
 import com.ruoyi.manager.domain.vo.bigscreen.CarAuditVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 import com.ruoyi.manager.mapper.CarConfimFreeMapper;
 import com.ruoyi.manager.domain.CarConfimFree;
+import com.ruoyi.manager.service.ICarAduitFreeService;
 import com.ruoyi.manager.service.ICarConfimFreeService;
+import com.ruoyi.manager.service.ICarExceptRecordService;
 import com.ruoyi.system.service.ISysDictDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +24,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,6 +42,10 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
     private CarConfimFreeMapper carConfimFreeMapper;
     @Autowired
     private ISysDictDataService sysDictDataService;
+    @Autowired
+    private ICarExceptRecordService carExceptRecordService;
+    @Autowired
+    private ICarAduitFreeService carAduitFreeService;
 
     /**
      * 查询确认补缴
@@ -67,12 +79,60 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
     @Transactional(rollbackFor = Exception.class)
     @Override
     public AjaxResult saveCarConfimFree(CarConfimFree carConfimFree) {
+        String exceptIds = carConfimFree.getExceptIds();
+        if(StrUtil.isEmpty(exceptIds)){
+            return AjaxResult.error("请选择异常车辆！");
+        }
+
+        // 查询异常车辆流水
+        LambdaQueryWrapper<CarExceptRecord> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.in(CarExceptRecord::getId, Arrays.asList(exceptIds.split(",")));
+        List<CarExceptRecord> carExceptList = carExceptRecordService.list(queryWrapper);
+        if(CollectionUtils.isEmpty(carExceptList)){
+            return AjaxResult.error("异常车辆流水不存在！");
+        }
+
+        List<String> carNoList = carExceptList.stream().distinct().map(CarExceptRecord::getCarNo).collect(Collectors.toList());
+        if(carNoList.size() > 1){
+            return AjaxResult.error("请勿选择多辆车！");
+        }
+
+        List<String> exceptIdList = Arrays.asList(exceptIds.split(","));
+        List<CarConfimFree> list = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
+        if(!CollectionUtils.isEmpty(list)){
+            return AjaxResult.error("请勿重复补缴！");
+        }
+
         if (CommonUtil.isNotBlank(carConfimFree.getId())) {
             // 修改
             carConfimFreeMapper.updateById(carConfimFree);
         } else {
+            carConfimFree.setCarNo(carExceptList.get(0).getCarNo());
+            carConfimFree.setCarType(carExceptList.get(0).getCarType());
+            carConfimFree.setCarVehicle(carExceptList.get(0).getCarVehicle());
+            carConfimFree.setCarId(carExceptList.get(0).getCarId());
+            carConfimFree.setCreateTime(DateUtils.getTimestamp());
+
             // 新增 主键
             carConfimFreeMapper.insert(carConfimFree);
+
+            // 补缴处理
+            List<CarAduitFree> carAduitFreeList = carConfimFree.getCarAduitFreeList();
+            if(!CollectionUtils.isEmpty(carAduitFreeList)){
+                carAduitFreeList.forEach(item -> {
+                    item.setConfirmId(carConfimFree.getId());
+                    item.setCarId(carExceptList.get(0).getCarNo());
+                    item.setCarType(carExceptList.get(0).getCarType());
+                    item.setCarVehicle(carExceptList.get(0).getCarVehicle());
+                    item.setCarNo(carExceptList.get(0).getCarNo());
+                    item.setCreateTime(DateUtils.getTimestamp());
+                });
+                this.carAduitFreeService.saveBatch(carAduitFreeList);
+            }
+
+            // 修改异常车辆流水状态,设置全部补缴
+            List<CarExceptRecord> carExceptRecordList = carExceptList.stream().map(item -> item.setStatus("1")).collect(Collectors.toList());
+            this.carExceptRecordService.updateBatchById(carExceptRecordList);
         }
         return AjaxResult.success("操作成功！", carConfimFree.getId());
     }

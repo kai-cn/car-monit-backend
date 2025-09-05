@@ -1,6 +1,9 @@
 package com.ruoyi.manager.domain;
 
 import java.math.BigDecimal;
+import java.util.List;
+
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -84,5 +87,11 @@ public class CarConfimFree extends BasePlusEntity implements Custom {
     /** 备注 */
     @Excel(name = "备注")
     private String remark;
+
+    /**
+     * 补缴处理
+     */
+    @TableField(exist = false)
+    private List<CarAduitFree> carAduitFreeList;
 
 }
