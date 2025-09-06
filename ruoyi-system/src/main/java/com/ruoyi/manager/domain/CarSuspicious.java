@@ -1,5 +1,6 @@
 package com.ruoyi.manager.domain;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -160,5 +161,17 @@ public class CarSuspicious extends BasePlusEntity implements Custom {
     // 查询时间
     @TableField(exist = false)
     private String createTimeStr;
+
+    /**
+     * 车辆信息
+     */
+    @TableField(exist = false)
+    private CarInfo carInfo;
+
+    /**
+     * 车辆核实信息
+     */
+    @TableField(exist = false)
+    private CarSuspiciousCheck carSuspiciousCheck;
 
 }

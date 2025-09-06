@@ -45,4 +45,5 @@ public interface ICarSuspiciousCheckService extends IService<CarSuspiciousCheck>
      */
     AjaxResult deleteCarSuspiciousCheckByIds(String[] ids);
 
+    void deleteCarSuspiciousCheckBySuspiciousId(String id);
 }

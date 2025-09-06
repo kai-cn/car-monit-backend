@@ -147,4 +147,7 @@ public class CarSuspiciousController extends BaseController {
         return carSuspiciousService.deleteCarSuspiciousByIds(ids);
     }
 
+
+
+
 }
