@@ -20,6 +20,7 @@
         <result property="chargeAmount"    column="charge_amount"    />
         <result property="difAmount"    column="dif_amount"    />
         <result property="escapedType"    column="escaped_type"    />
+        <result property="remark"    column="remark"    />
         <result property="backCol1"    column="back_col1"    />
         <result property="backCol2"    column="back_col2"    />
         <result property="status"    column="status"    />
@@ -52,6 +53,7 @@
         t.charge_amount,
         t.dif_amount,
         t.escaped_type,
+        t.remark,
         t.back_col1,
         t.back_col2,
         t.status,
