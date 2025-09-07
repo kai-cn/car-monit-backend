@@ -69,7 +69,6 @@ public class CarConfimFreeController extends BaseController {
     /**
      * 新增确认补缴
      */
-    @PreAuthorize("@ss.hasPermi('manager:confimfree:add')")
     @Log(title = "确认补缴", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody CarConfimFree carConfimFree) {
@@ -79,7 +78,6 @@ public class CarConfimFreeController extends BaseController {
     /**
      * 修改确认补缴
      */
-    @PreAuthorize("@ss.hasPermi('manager:confimfree:edit')")
     @Log(title = "确认补缴", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody CarConfimFree carConfimFree) {
@@ -89,7 +87,6 @@ public class CarConfimFreeController extends BaseController {
     /**
      * 删除确认补缴
      */
-    @PreAuthorize("@ss.hasPermi('manager:confimfree:remove')")
     @Log(title = "确认补缴", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids) {
@@ -100,7 +97,7 @@ public class CarConfimFreeController extends BaseController {
     /**
      * 查询确认追缴:选择异常查询
      */
-    @GetMapping(value = "/{exceptIds}")
+    @GetMapping(value = "/except/{exceptIds}")
     public AjaxResult getExceptIds(@PathVariable("exceptIds") String exceptIds) {
         return carConfimFreeService.selectCarConfimFreeByExceptIds(exceptIds);
     }

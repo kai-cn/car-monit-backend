@@ -26,11 +26,6 @@ import com.ruoyi.common.core.domain.Custom;
 public class CarExceptRecord extends BasePlusEntity implements Custom {
 
 
-    /**
-     * 可疑车辆id
-     */
-    private String carSuspiciousId;
-
     /** 车辆id */
     @Excel(name = "车辆id")
     private String carId;

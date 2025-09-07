@@ -220,7 +220,7 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             return AjaxResult.error("异常车辆流水不存在！");
         }
 
-        List<String> carNoList = carExceptRecordList.stream().distinct().map(CarExceptRecord::getCarNo).collect(Collectors.toList());
+        List<String> carNoList = carExceptRecordList.stream().map(CarExceptRecord::getCarNo).distinct().collect(Collectors.toList());
         if(carNoList.size() > 1){
             return AjaxResult.error("请勿选择多辆车！");
         }

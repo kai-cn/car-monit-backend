@@ -113,9 +113,9 @@
         SELECT
         <include refid="selectCarConfimFreeVo"/>
         FROM car_confim_free t
-        WHERE t.del_flag = '0'
+        WHERE t.del_flag = '0' and
         <foreach collection="list" item="id" separator=" OR ">
-            FIND_IN_SET(#{id}, t.except_ids)
+            find_in_set(#{id}, t.except_ids) > 0
         </foreach>
     </select>
 

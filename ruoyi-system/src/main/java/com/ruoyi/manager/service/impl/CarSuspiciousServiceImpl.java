@@ -66,7 +66,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
         // 人工核实详情
         LambdaQueryWrapper<CarSuspiciousCheck> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(CarSuspiciousCheck::getCarSuspiciousId,carSuspicious.getId());
+        queryWrapper.eq(CarSuspiciousCheck::getCarId,carSuspicious.getId());
         List<CarSuspiciousCheck> list = this.carSuspiciousCheckService.list();
         carSuspicious.setCarSuspiciousCheck(CollectionUtil.isNotEmpty(list) ? list.get(0): new CarSuspiciousCheck());
 
@@ -113,11 +113,11 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
         // 删除人工核验详情
         this.carSuspiciousCheckService.remove(Wrappers.<CarSuspiciousCheck>lambdaQuery()
-                .eq(CarSuspiciousCheck::getCarSuspiciousId,carSuspicious.getId()));
+                .eq(CarSuspiciousCheck::getCarId,carSuspicious.getId()));
 
         // 删除异常车辆信息
         this.carExceptRecordService.remove(Wrappers.<CarExceptRecord>lambdaQuery()
-                .eq(CarExceptRecord::getCarSuspiciousId,carSuspicious.getId()));
+                .eq(CarExceptRecord::getCarId,carSuspicious.getId()));
 
         // 确认逃费
         if("1".equals(carSuspicious.getIsExcept())){
@@ -133,7 +133,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             // 人工核实详情
             CarSuspiciousCheck carSuspiciousCheck = carSuspicious.getCarSuspiciousCheck();
             if(null != carSuspiciousCheck){
-                carSuspiciousCheck.setCarSuspiciousId(carSuspicious.getId());
+                carSuspiciousCheck.setCarId(carSuspicious.getId());
                 carSuspiciousCheck.setAttachments(carSuspicious.getFileIds());
                 carSuspiciousCheck.setSuspicousFlag(carSuspicious.getIsExcept());
 
@@ -158,7 +158,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
      */
     private static CarExceptRecord getCarExceptRecord(CarSuspicious carSuspicious, CarInfo carInfo, CarSuspiciousCheck carSuspiciousCheck) {
         CarExceptRecord carExceptRecord = new CarExceptRecord();
-        carExceptRecord.setCarSuspiciousId(carSuspicious.getId());
+       // carExceptRecord.setCarSuspiciousId(carSuspicious.getId());
         carExceptRecord.setCarId(carInfo.getId());
         carExceptRecord.setCarNo(carInfo.getCarNo());
         carExceptRecord.setCarType(carInfo.getCarType());

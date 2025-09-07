@@ -97,6 +97,11 @@ public class CarSuspiciousCheckServiceImpl extends ServiceImpl<CarSuspiciousChec
         return AjaxResult.success(count);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public AjaxResult deleteCarSuspiciousCheckBySuspiciousId(String id){
+        return AjaxResult.success();
+    }
+
 
 
 }
