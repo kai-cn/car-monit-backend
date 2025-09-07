@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -64,6 +65,21 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
                 carExceptRecord.setExceptIds(exceptIds);
                 List<CarExceptRecord> carExceptRecordList = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);
                 carConfimFree.setCarExceptRecordList(carExceptRecordList);
+
+                BigDecimal totalAmount = BigDecimal.ZERO;
+                BigDecimal chargeAmount = BigDecimal.ZERO;
+                BigDecimal difAmount = BigDecimal.ZERO;
+                for (CarExceptRecord record : carExceptRecordList) {
+                    if (null != record.getDifAmount()){
+                        difAmount = difAmount.add(record.getDifAmount());
+                    }
+                }
+                // 判断大于0
+                if (difAmount.compareTo(BigDecimal.ZERO) != 0) {
+                    difAmount = difAmount.setScale(2, RoundingMode.HALF_UP);
+                }
+                carConfimFree.setDifAmount(difAmount);
+
             }
 
             // 处理
@@ -216,7 +232,8 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
         List<CarExceptRecord> carExceptRecordList = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);
         carConfimFree.setCarExceptRecordList(carExceptRecordList);
 
-        if(CollectionUtils.isEmpty(carExceptRecordList)){
+        if(null !=carExceptRecordList && carExceptRecordList.size() > 0){
+        }else{
             return AjaxResult.error("异常车辆流水不存在！");
         }
 
@@ -238,6 +255,22 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
         carConfimFree.setCarType(CarExceptRecordRtn.getCarType());
         carConfimFree.setCarVehicle(CarExceptRecordRtn.getCarVehicle());
         carConfimFree.setExceptIds(exceptIds);
+
+
+        // -------------- 应交金额
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal chargeAmount = BigDecimal.ZERO;
+        BigDecimal difAmount = BigDecimal.ZERO;
+        for (CarExceptRecord record : carExceptRecordList) {
+            if (null != record.getDifAmount()){
+                difAmount = difAmount.add(record.getDifAmount());
+            }
+        }
+        // 判断大于0
+        if (difAmount.compareTo(BigDecimal.ZERO) != 0) {
+            difAmount = difAmount.setScale(2, RoundingMode.HALF_UP);
+        }
+        carConfimFree.setDifAmount(difAmount);
 
 
         return AjaxResult.success(carConfimFree);

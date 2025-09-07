@@ -100,4 +100,20 @@ public class CarConfimFree extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private List<CarExceptRecord> carExceptRecordList;
 
+
+    /** 应缴金额 */
+    @Excel(name = "应缴金额")
+    @TableField(exist = false)
+    private BigDecimal totalAmount;
+
+    /** 收费金额 */
+    @Excel(name = "收费金额")
+    @TableField(exist = false)
+    private BigDecimal chargeAmount;
+
+    /** 差额 */
+    @Excel(name = "差额")
+    @TableField(exist = false)
+    private BigDecimal difAmount;
+
 }

@@ -40,7 +40,7 @@
         t.link_name,
         t.link_phone,
         t.org_id,
-        t.org_name,
+        sd.dept_name org_name,
         t.user_ids,
         t.user_names,
         t.amount,
@@ -64,6 +64,7 @@
         SELECT
         <include refid="selectCarConfimFreeVo"/>
         FROM car_confim_free t
+        left join sys_dept sd on sd.dept_id = t.org_id
         WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="carId != null  and carId != ''"> and t.car_id = #{carId}</if>
@@ -93,6 +94,7 @@
          select
          <include refid="selectCarConfimFreeVo"/>
          from car_confim_free t
+         left join sys_dept sd on sd.dept_id = t.org_id
          where t.id = #{id}
     </select>
 
@@ -113,6 +115,7 @@
         SELECT
         <include refid="selectCarConfimFreeVo"/>
         FROM car_confim_free t
+        left join sys_dept sd on sd.dept_id = t.org_id
         WHERE t.del_flag = '0' and
         <foreach collection="list" item="id" separator=" OR ">
             find_in_set(#{id}, t.except_ids) > 0
