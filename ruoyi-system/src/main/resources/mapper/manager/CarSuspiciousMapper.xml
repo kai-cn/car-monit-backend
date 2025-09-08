@@ -4,29 +4,41 @@
 
     <resultMap type="com.ruoyi.manager.domain.CarSuspicious" id="CarSuspiciousResult">
         <result property="id"    column="id"    />
+        <result property="plateColor"    column="plate_color"    />
         <result property="carNo"    column="car_no"    />
         <result property="carType"    column="car_type"    />
         <result property="carVehicle"    column="car_vehicle"    />
         <result property="carNum"    column="car_num"    />
+        <result property="passType"    column="pass_type"    />
         <result property="inStationId"    column="in_station_id"    />
         <result property="inStation"    column="in_station"    />
         <result property="inTime"    column="in_time"    />
+        <result property="outStationId"    column="out_station_id"    />
+        <result property="outStation"    column="out_station"    />
+        <result property="outTime"    column="out_time"    />
         <result property="gantryStationId"    column="gantry_station_id"    />
         <result property="gantrytStation"    column="gantryt_station"    />
         <result property="gantryTime"    column="gantry_time"    />
         <result property="fileIds"    column="file_ids"    />
+        <result property="outGantryStationId"    column="out_gantry_station_id"    />
+        <result property="outGantrytStation"    column="out_gantryt_station"    />
+        <result property="outGantryTime"    column="out_gantry_time"    />
+        <result property="outFileIds"    column="out_file_ids"    />
         <result property="escapedType"    column="escaped_type"    />
         <result property="escapedTypeName"    column="escaped_type_name"    />
+        <result property="escapedNum"    column="escaped_num"    />
         <result property="isExcept"    column="is_except"    />
+        <result property="checkStatus"    column="check_status"    />
         <result property="orgId"    column="org_id"    />
         <result property="orgName"    column="org_name"    />
         <result property="isWhite"    column="is_white"    />
+        <result property="whiteRemark"    column="white_remark"    />
         <result property="roadCode"    column="road_code"    />
         <result property="roadName"    column="road_name"    />
-        <result property="sectionName"    column="section_name"    />
         <result property="sectionCode"    column="section_code"    />
+        <result property="sectionName"    column="section_name"    />
+        <result property="trackJosn"    column="track_josn"    />
         <result property="backCol1"    column="back_col1"    />
-        <result property="whiteRemark"    column="white_remark"    />
         <result property="backCol2"    column="back_col2"    />
         <result property="remark"    column="remark"    />
         <result property="status"    column="status"    />
@@ -38,34 +50,45 @@
         <result property="updateBy"    column="update_by"    />
         <result property="updateTime"    column="update_time"    />
         <result property="tenantId"    column="tenant_id"    />
-
     </resultMap>
 
     <sql id="selectCarSuspiciousVo">
         t.id,
+        t.plate_color,
         t.car_no,
         t.car_type,
         t.car_vehicle,
         t.car_num,
+        t.pass_type,
         t.in_station_id,
         t.in_station,
         t.in_time,
+        t.out_station_id,
+        t.out_station,
+        t.out_time,
         t.gantry_station_id,
         t.gantryt_station,
         t.gantry_time,
         t.file_ids,
+        t.out_gantry_station_id,
+        t.out_gantryt_station,
+        t.out_gantry_time,
+        t.out_file_ids,
         t.escaped_type,
         t.escaped_type_name,
+        t.escaped_num,
         t.is_except,
+        t.check_status,
         t.org_id,
         t.org_name,
         t.is_white,
+        t.white_remark,
         t.road_code,
         t.road_name,
-        t.section_name,
         t.section_code,
+        t.section_name,
+        t.track_josn,
         t.back_col1,
-        t.white_remark,
         t.back_col2,
         t.remark,
         t.status,
@@ -79,12 +102,6 @@
         t.tenant_id
     </sql>
 
-    <sql id="selectCarSuspiciousVo2">
-        t.car_no,
-        t.car_type,
-        t.escaped_type
-    </sql>
-
 
     <select id="selectCarSuspiciousList" parameterType="com.ruoyi.manager.domain.CarSuspicious" resultMap="CarSuspiciousResult">
         SELECT
@@ -92,25 +109,41 @@
         FROM car_suspicious t
         WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
-        <if test="carNo != null  and carNo != ''"> and t.car_no like concat('%', #{carNo}, '%')</if>
+        <if test="plateColor != null  and plateColor != ''"> and t.plate_color = #{plateColor}</if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
         <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
         <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
         <if test="carNum != null "> and t.car_num = #{carNum}</if>
+        <if test="passType != null  and passType != ''"> and t.pass_type = #{passType}</if>
         <if test="inStationId != null  and inStationId != ''"> and t.in_station_id = #{inStationId}</if>
-        <if test="inStation != null  and inStation != ''"> and t.in_station like concat('%', #{inStation}, '%')</if>
+        <if test="inStation != null  and inStation != ''"> and t.in_station = #{inStation}</if>
         <if test="inTime != null "> and t.in_time = #{inTime}</if>
+        <if test="outStationId != null  and outStationId != ''"> and t.out_station_id = #{outStationId}</if>
+        <if test="outStation != null  and outStation != ''"> and t.out_station = #{outStation}</if>
+        <if test="outTime != null "> and t.out_time = #{outTime}</if>
         <if test="gantryStationId != null  and gantryStationId != ''"> and t.gantry_station_id = #{gantryStationId}</if>
         <if test="gantrytStation != null  and gantrytStation != ''"> and t.gantryt_station = #{gantrytStation}</if>
         <if test="gantryTime != null "> and t.gantry_time = #{gantryTime}</if>
         <if test="fileIds != null  and fileIds != ''"> and t.file_ids = #{fileIds}</if>
+        <if test="outGantryStationId != null  and outGantryStationId != ''"> and t.out_gantry_station_id = #{outGantryStationId}</if>
+        <if test="outGantrytStation != null  and outGantrytStation != ''"> and t.out_gantryt_station = #{outGantrytStation}</if>
+        <if test="outGantryTime != null "> and t.out_gantry_time = #{outGantryTime}</if>
+        <if test="outFileIds != null  and outFileIds != ''"> and t.out_file_ids = #{outFileIds}</if>
         <if test="escapedType != null  and escapedType != ''"> and t.escaped_type = #{escapedType}</if>
         <if test="escapedTypeName != null  and escapedTypeName != ''"> and t.escaped_type_name like concat('%', #{escapedTypeName}, '%')</if>
+        <if test="escapedNum != null "> and t.escaped_num = #{escapedNum}</if>
         <if test="isExcept != null  and isExcept != ''"> and t.is_except = #{isExcept}</if>
+        <if test="checkStatus != null  and checkStatus != ''"> and t.check_status = #{checkStatus}</if>
         <if test="orgId != null  and orgId != ''"> and t.org_id = #{orgId}</if>
         <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
         <if test="isWhite != null  and isWhite != ''"> and t.is_white = #{isWhite}</if>
-        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
         <if test="whiteRemark != null  and whiteRemark != ''"> and t.white_remark = #{whiteRemark}</if>
+        <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
+        <if test="roadName != null  and roadName != ''"> and t.road_name like concat('%', #{roadName}, '%')</if>
+        <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
+        <if test="sectionName != null  and sectionName != ''"> and t.section_name like concat('%', #{sectionName}, '%')</if>
+        <if test="trackJosn != null  and trackJosn != ''"> and t.track_josn = #{trackJosn}</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
         <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
         <if test="status != null  and status != ''"> and t.status = #{status}</if>
         <if test="sort != null "> and t.sort = #{sort}</if>
@@ -131,8 +164,8 @@
 
     <select id="selectCarSuspiciousListLimit10" resultType="com.ruoyi.manager.domain.CarSuspicious">
         SELECT
-        <include refid="selectCarSuspiciousVo2"/>, c.road_section_name sectionName
-        FROM car_suspicious t left join car_info c on t.car_no = c.car_no and c.del_flag = '0'
+        t.car_no,t.car_type, t.escaped_type, t.section_name
+        FROM car_suspicious t
         WHERE t.del_flag = '0'
         order by t.create_time desc,t.id limit 10
     </select>

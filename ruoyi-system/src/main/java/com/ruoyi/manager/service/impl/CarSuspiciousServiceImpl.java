@@ -2,27 +2,24 @@ package com.ruoyi.manager.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.manager.domain.CarExceptRecord;
 import com.ruoyi.manager.domain.CarInfo;
+import com.ruoyi.manager.domain.CarSuspicious;
 import com.ruoyi.manager.domain.CarSuspiciousCheck;
 import com.ruoyi.manager.mapper.CarSuspiciousMapper;
-import com.ruoyi.manager.domain.CarSuspicious;
 import com.ruoyi.manager.service.ICarExceptRecordService;
 import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarSuspiciousCheckService;
 import com.ruoyi.manager.service.ICarSuspiciousService;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -95,23 +92,25 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
     @Override
     public AjaxResult saveCarSuspicious(CarSuspicious carSuspicious)
     {
-        CarInfo carInfo = carSuspicious.getCarInfo();
-        if(null == carInfo || StrUtil.isEmpty(carInfo.getCarNo())){
-            return AjaxResult.error("人工核检失败, 车辆信息不存在");
-        }
-
+        Long userId = 1L;
         if (CommonUtil.isNotBlank(carSuspicious.getId()))
         {
+            carSuspicious.setUpdateBy(userId); // 更新人
+            carSuspicious.setUpdateTime(DateUtils.getTimestampNew()); // 更新时间
             // 修改
             carSuspiciousMapper.updateById(carSuspicious);
         }
         else
         {
+            carSuspicious.setCreateBy(userId); // 创建人
+            carSuspicious.setCreateTime(DateUtils.getTimestampNew()); // 创建时间
+            carSuspicious.setUpdateBy(userId); // 更新人
+            carSuspicious.setUpdateTime(DateUtils.getTimestampNew()); // 更新时间
             // 新增 主键
             carSuspiciousMapper.insert(carSuspicious);
         }
 
-        // 删除人工核验详情
+       /* // 删除人工核验详情
         this.carSuspiciousCheckService.remove(Wrappers.<CarSuspiciousCheck>lambdaQuery()
                 .eq(CarSuspiciousCheck::getCarId,carSuspicious.getId()));
 
@@ -145,7 +144,8 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
             CarExceptRecord carExceptRecord = getCarExceptRecord(carSuspicious, carInfo, carSuspiciousCheck);
             this.carExceptRecordService.saveCarExceptRecord(carExceptRecord);
-        }
+        }*/
+
         return AjaxResult.success("操作成功！",carSuspicious.getId());
     }
 
