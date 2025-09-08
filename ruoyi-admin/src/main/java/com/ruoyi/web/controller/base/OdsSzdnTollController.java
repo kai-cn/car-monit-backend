@@ -35,13 +35,25 @@ public class OdsSzdnTollController extends BaseController {
     private IOdsSzdnTollService odsSzdnTollService;
 
     /**
-     * 查询收费站基础信息列表
+     * 查询收费站基础信息列表：菜单列表界面
      */
     @PreAuthorize("@ss.hasPermi('base:toll:list')")
     @GetMapping("/list")
     public TableDataInfo list(OdsSzdnToll odsSzdnToll) {
         startPage();
         // odsSzdnToll.setTenantId(SecurityUtils.getTenantId()); // 查询我自己单位的租户
+        List<OdsSzdnToll> list = odsSzdnTollService.selectOdsSzdnTollList(odsSzdnToll);
+        return getDataTable(list);
+    }
+
+
+
+    /**
+     * 查询收费站基础信息列表：弹出界面窗口
+     */
+    @GetMapping("/listAll")
+    public TableDataInfo listAll(OdsSzdnToll odsSzdnToll) {
+        startPage();
         List<OdsSzdnToll> list = odsSzdnTollService.selectOdsSzdnTollList(odsSzdnToll);
         return getDataTable(list);
     }

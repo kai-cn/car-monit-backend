@@ -59,7 +59,7 @@ public class CarExceptRecord extends BasePlusEntity implements Custom {
     private String inStation;
 
     /** 入口时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "入口时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date inTime;
 
@@ -72,7 +72,7 @@ public class CarExceptRecord extends BasePlusEntity implements Custom {
     private String outStation;
 
     /** 出口时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "出口时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date outTime;
 
