@@ -1,17 +1,17 @@
 package com.ruoyi.manager.domain;
 
-import java.math.BigDecimal;
-import java.util.Date;
-
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ruoyi.common.annotation.Excel;
+import com.ruoyi.common.core.domain.BasePlusEntityInput;
+import com.ruoyi.common.core.domain.Custom;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-import com.ruoyi.common.annotation.Excel;
-import com.ruoyi.common.core.domain.BasePlusEntity;
-import com.ruoyi.common.core.domain.Custom;
+
+import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * 车辆信息对象 car_info
@@ -23,7 +23,7 @@ import com.ruoyi.common.core.domain.Custom;
 @TableName("car_info")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-public class CarInfo extends BasePlusEntity implements Custom {
+public class CarInfo extends BasePlusEntityInput implements Custom {
 
     /** 车牌号 */
     @Excel(name = "车牌号")

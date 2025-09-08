@@ -3,6 +3,7 @@ package com.ruoyi.manager.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.vo.bigscreen.CarInfoVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam;
@@ -10,12 +11,12 @@ import com.ruoyi.manager.domain.vo.bigscreen.CarLocationVO;
 import com.ruoyi.manager.mapper.CarInfoMapper;
 import com.ruoyi.manager.service.ICarInfoService;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -78,6 +79,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
         }
         else
         {
+            carInfo.setId(StringUtils.getUUID()); // 主键
             // 新增 主键
             carInfoMapper.insert(carInfo);
         }
@@ -120,7 +122,25 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
      */
     public AjaxResult doImport(List<CarInfo> list) {
         if (null != list && list.size() > 0) {
-            this.saveOrUpdateBatch(list);
+            List<CarInfo> addlist = new ArrayList<CarInfo>();
+            List<CarInfo> updatalist = new ArrayList<CarInfo>();
+            for (CarInfo carInfo : list) {
+                if (CommonUtil.isNotBlank(carInfo.getId())){
+                    updatalist.add(carInfo);
+                }else{
+                    carInfo.setId(StringUtils.getUUID()); // 主键
+                    addlist.add(carInfo);
+                }
+            }
+
+            // 新增
+            if (addlist.size() > 0) {
+                this.saveBatch(addlist);
+            }
+            // 修改
+            if (updatalist.size() > 0) {
+                this.updateBatchById(updatalist);
+            }
         }
         return AjaxResult.success();
     }
@@ -130,10 +150,10 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
         List<CarLocationVO> carLocation = carInfoMapper.getCarLocation(carInfo);
         if(CollectionUtils.isNotEmpty(carLocation)) {
             for (CarLocationVO carLocationVO : carLocation) {
-                if(StringUtils.isNotBlank(carLocationVO.getLonStr())) {
+                if(CommonUtil.isNotBlank(carLocationVO.getLonStr())) {
                     carLocationVO.setLon(new BigDecimal(carLocationVO.getLonStr()));
                 }
-                if(StringUtils.isNotBlank(carLocationVO.getLatStr())) {
+                if(CommonUtil.isNotBlank(carLocationVO.getLatStr())) {
                     carLocationVO.setLat(new BigDecimal(carLocationVO.getLatStr()));
                 }
             }
