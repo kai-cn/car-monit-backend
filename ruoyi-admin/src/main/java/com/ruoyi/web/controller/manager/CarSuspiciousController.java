@@ -50,13 +50,23 @@ public class CarSuspiciousController extends BaseController {
     private ISysDictDataService sysDictDataService;
 
     /**
-     * 查询可疑车辆列表
+     * 查询可疑车辆列表：菜单列表
      */
     @PreAuthorize("@ss.hasPermi('manager:suspicious:list')")
     @GetMapping("/list")
     public TableDataInfo list(CarSuspicious carSuspicious) {
         startPage();
         // carSuspicious.setTenantId(SecurityUtils.getTenantId()); // 查询我自己单位的租户
+        List<CarSuspicious> list = carSuspiciousService.selectCarSuspiciousList(carSuspicious);
+        return getDataTable(list);
+    }
+
+    /**
+     * 查询可疑车辆列表：异常流水弹窗
+     */
+    @GetMapping("/listAll")
+    public TableDataInfo listAll(CarSuspicious carSuspicious) {
+        startPage();
         List<CarSuspicious> list = carSuspiciousService.selectCarSuspiciousList(carSuspicious);
         return getDataTable(list);
     }
