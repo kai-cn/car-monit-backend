@@ -83,7 +83,7 @@
         <if test="dynamicMonitorResource != null  and dynamicMonitorResource != ''"> and t.dynamic_monitor_resource = #{dynamicMonitorResource}</if>
         <if test="tollCodeMerge != null  and tollCodeMerge != ''"> and t.toll_code_merge = #{tollCodeMerge}</if>
         <if test="stateCodeMerge != null  and stateCodeMerge != ''"> and t.state_code_merge = #{stateCodeMerge}</if>
-        <if test="tollNameMerge != null  and tollNameMerge != ''"> and t.toll_name_merge = #{tollNameMerge}</if>
+        <if test="tollNameMerge != null  and tollNameMerge != ''"> and t.toll_name_merge like concat('%', #{tollNameMerge}, '%')</if>
         <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
         <if test="tollOrgCode != null  and tollOrgCode != ''"> and t.toll_org_code = #{tollOrgCode}</if>
         <if test="isAccess != null  and isAccess != ''"> and t.is_access = #{isAccess}</if>

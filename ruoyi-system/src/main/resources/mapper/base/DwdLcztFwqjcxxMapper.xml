@@ -84,7 +84,7 @@
         <if test="agentPk != null  and agentPk != ''"> and t.agent_pk = #{agentPk}</if>
         <if test="yxtzj != null  and yxtzj != ''"> and t.yxtzj = #{yxtzj}</if>
         <if test="fwqbm != null  and fwqbm != ''"> and t.fwqbm = #{fwqbm}</if>
-        <if test="fwqmc != null  and fwqmc != ''"> and t.fwqmc = #{fwqmc}</if>
+        <if test="fwqmc != null  and fwqmc != ''"> and t.fwqmc like concat('%', #{fwqmc}, '%')</if>
         <if test="wd != null  and wd != ''"> and t.wd = #{wd}</if>
         <if test="fxmc != null  and fxmc != ''"> and t.fxmc = #{fxmc}</if>
         <if test="fxdm != null  and fxdm != ''"> and t.fxdm = #{fxdm}</if>

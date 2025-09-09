@@ -52,7 +52,7 @@
         <if test="agentPk != null  and agentPk != ''"> and t.agent_pk = #{id}</if>
         <if test="yxtzj != null  and yxtzj != ''"> and t.yxtzj = #{yxtzj}</if>
         <if test="sfsbm != null  and sfsbm != ''"> and t.sfsbm = #{sfsbm}</if>
-        <if test="sfsmc != null  and sfsmc != ''"> and t.sfsmc = #{sfsmc}</if>
+        <if test="sfsmc != null  and sfsmc != ''"> and t.sfsmc like concat('%', #{sfsmc}, '%')</if>
         <if test="jd != null  and jd != ''"> and t.jd = #{jd}</if>
         <if test="wd != null  and wd != ''"> and t.wd = #{wd}</if>
         <if test="sslxbh != null  and sslxbh != ''"> and t.sslxbh = #{sslxbh}</if>
