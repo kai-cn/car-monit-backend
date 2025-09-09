@@ -65,7 +65,7 @@ public class CarWarningInfo extends BasePlusEntityNew implements Custom {
 
     /** 入口时间 */
     @ApiModelProperty("入口时间")
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "入口时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date inTime;
 
@@ -81,7 +81,7 @@ public class CarWarningInfo extends BasePlusEntityNew implements Custom {
 
     /** 经过时间 */
     @ApiModelProperty("经过时间")
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "经过时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date gantryTime;
 
@@ -91,7 +91,7 @@ public class CarWarningInfo extends BasePlusEntityNew implements Custom {
 
     /** 预计下一个通行时间 */
     @ApiModelProperty("预计下一个通行时间")
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "预计下一个通行时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date nextPassTime;
 

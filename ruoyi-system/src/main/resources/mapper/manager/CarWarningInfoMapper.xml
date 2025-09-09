@@ -67,37 +67,17 @@
         t.tenant_id
     </sql>
 
-    <sql id="selectCarWarningInfoVo2">
-        t.id,
-        t.car_id,
-        t.car_no,
-        t.car_type,
-        t.car_vehicle,
-        t.car_num,
-        t.in_station_id,
-        t.in_station,
-        t.in_time,
-        t.gantry_station_id,
-        t.gantryt_station,
-        t.gantry_time,
-        t.file_ids,
-        t.next_pass_time,
-        t.next_pass_type,
-        t.next_pass_address,
-        t.next_pass_longitude,
-        t.next_pass_latitude
-    </sql>
 
 
     <select id="selectCarWarningInfoList" parameterType="com.ruoyi.manager.domain.CarWarningInfo" resultMap="CarWarningInfoResult">
         SELECT
-        <include refid="selectCarWarningInfoVo"/>, c.escaped_type, c.escaped_amount
+        <include refid="selectCarWarningInfoVo"/>, c.escaped_type escapedType, c.escaped_amount escapedAmount
         FROM car_warning_info t
         inner join car_info c on t.car_id = c.id
         WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="carId != null  and carId != ''"> and t.car_id = #{carId}</if>
-        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no like concat('%', #{carNo}, '%')</if>
         <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
         <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
         <if test="carNum != null "> and t.car_num = #{carNum}</if>
@@ -105,7 +85,7 @@
         <if test="inStation != null  and inStation != ''"> and t.in_station = #{inStation}</if>
         <if test="inTime != null "> and t.in_time = #{inTime}</if>
         <if test="gantryStationId != null  and gantryStationId != ''"> and t.gantry_station_id = #{gantryStationId}</if>
-        <if test="gantrytStation != null  and gantrytStation != ''"> and t.gantryt_station = #{gantrytStation}</if>
+        <if test="gantrytStation != null  and gantrytStation != ''"> and t.gantryt_station like concat('%', #{gantrytStation}, '%')</if>
         <if test="gantryTime != null "> and t.gantry_time = #{gantryTime}</if>
         <if test="fileIds != null  and fileIds != ''"> and t.file_ids = #{fileIds}</if>
         <if test="nextPassTime != null "> and t.next_pass_time = #{nextPassTime}</if>
@@ -120,8 +100,8 @@
         <if test="epsId != null "> and t.eps_id = #{epsId}</if>
         <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
         <if test="createBy != null "> and t.create_by = #{createBy}</if>
-        <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
-        <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+        <if test="applyTime1 != null  and applyTime1 != ''">and t.in_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and t.in_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
         order by t.create_time desc,t.id
     </select>
 
@@ -134,7 +114,7 @@
 
     <select id="selectCarWarningInfoListLimit100" resultType="com.ruoyi.manager.domain.CarWarningInfo">
         SELECT
-        <include refid="selectCarWarningInfoVo2"/>, c.escaped_type, c.escaped_amount
+        <include refid="selectCarWarningInfoVo"/>, c.escaped_type escapedType, c.escaped_amount escapedAmount
         FROM car_warning_info t
         inner join car_info c on t.car_id = c.id
         WHERE t.del_flag = '0'
@@ -152,4 +132,5 @@
             #{id}
         </foreach>
     </update>
+
 </mapper>
