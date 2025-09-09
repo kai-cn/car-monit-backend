@@ -45,4 +45,5 @@ public interface ICarExceptRecordService extends IService<CarExceptRecord> {
      */
     AjaxResult deleteCarExceptRecordByIds(String[] ids);
 
+    void updateStatusByExceptId(List<String> exceptIdList, String status);
 }

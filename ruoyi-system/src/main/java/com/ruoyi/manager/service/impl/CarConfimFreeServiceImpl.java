@@ -21,10 +21,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -146,6 +143,17 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             });
             this.carAduitFreeService.saveBatch(carAduitFreeList);
         }
+
+        // 将处理金额进行累加
+        BigDecimal processingAmount = carAduitFreeList.stream()
+                .map(CarAduitFree::getAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 更新补缴状态
+        int comparison = carConfimFree.getAmount().compareTo(processingAmount);
+        String status = comparison == 0 ? "2" : comparison > 0 ? "1" : "0";
+        this.carExceptRecordService.updateStatusByExceptId(exceptIdList, status);
 
         return AjaxResult.success("操作成功！", carConfimFree.getId());
 

@@ -84,6 +84,11 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
         return AjaxResult.success(count);
     }
 
+    @Override
+    public void updateStatusByExceptId(List<String> exceptIdList, String status) {
+        carExceptRecordMapper.updateStatusByExceptId(exceptIdList, status);
+    }
+
     /**
      * 删除异常车辆流水信息
      *

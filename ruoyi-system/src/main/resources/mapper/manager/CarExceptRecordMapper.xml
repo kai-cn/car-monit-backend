@@ -121,4 +121,10 @@
             #{id}
         </foreach>
     </update>
+    <update id="updateStatusByExceptId">
+        update car_except_record set status = #{status} where id in
+        <foreach item="id" collection="exceptIdList" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
 </mapper>

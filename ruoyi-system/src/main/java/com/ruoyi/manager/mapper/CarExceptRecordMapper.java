@@ -2,6 +2,7 @@ package com.ruoyi.manager.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.manager.domain.CarExceptRecord;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -45,4 +46,5 @@ public interface CarExceptRecordMapper extends BaseMapper<CarExceptRecord> {
      */
     int deleteCarExceptRecordById(String id);
 
+    void updateStatusByExceptId(@Param("exceptIdList") List<String> exceptIdList, @Param("status") String status);
 }
