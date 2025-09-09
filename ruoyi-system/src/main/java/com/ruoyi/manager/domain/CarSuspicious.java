@@ -182,6 +182,11 @@ public class CarSuspicious extends BasePlusEntityNew implements Custom {
     @Excel(name = "备注")
     private String remark;
 
+
+    // 车牌号查询
+    @TableField(exist = false)
+    private String carNoQuery;
+
     // 时间查询
     @TableField(exist = false)
     private String applyTime1;
