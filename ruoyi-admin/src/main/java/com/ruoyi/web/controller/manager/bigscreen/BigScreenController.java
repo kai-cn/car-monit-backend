@@ -53,7 +53,7 @@ public class BigScreenController extends BaseController {
 
 
     /**
-     *
+     *  重点关注车辆统计
      */
     @ApiOperation("重点关注车辆统计")
     @GetMapping(value = "/carStatistics")
@@ -63,7 +63,7 @@ public class BigScreenController extends BaseController {
     }
 
     /**
-     * 地图
+     * 地图 ；车俩地图描点
      */
     @ApiOperation("车辆地图")
     @GetMapping(value = "/carLocation")

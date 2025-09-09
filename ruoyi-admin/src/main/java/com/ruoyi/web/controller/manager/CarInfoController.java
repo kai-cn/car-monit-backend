@@ -133,7 +133,6 @@ public class CarInfoController extends BaseController {
     /**
      * 新增车辆信息
      */
-    @PreAuthorize("@ss.hasPermi('manager:carinfo:add')")
     @Log(title = "车辆信息", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody CarInfo carInfo) {

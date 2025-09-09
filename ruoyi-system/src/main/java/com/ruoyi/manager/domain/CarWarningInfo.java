@@ -1,19 +1,19 @@
 package com.ruoyi.manager.domain;
 
-import java.math.BigDecimal;
-import java.util.Date;
-
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ruoyi.common.annotation.Excel;
+import com.ruoyi.common.core.domain.BasePlusEntityNew;
+import com.ruoyi.common.core.domain.Custom;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-import com.ruoyi.common.annotation.Excel;
-import com.ruoyi.common.core.domain.BasePlusEntity;
-import com.ruoyi.common.core.domain.Custom;
+
+import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * 预警车辆对象 car_warning_info
@@ -26,7 +26,7 @@ import com.ruoyi.common.core.domain.Custom;
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
 @ApiModel("车辆预警")
-public class CarWarningInfo extends BasePlusEntity implements Custom {
+public class CarWarningInfo extends BasePlusEntityNew implements Custom {
 
     /** 车辆id */
     @ApiModelProperty("车辆id")

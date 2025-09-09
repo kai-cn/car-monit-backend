@@ -3,8 +3,9 @@ package com.ruoyi.manager.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
-import com.ruoyi.manager.mapper.CarWarningInfoMapper;
+import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.manager.domain.CarWarningInfo;
+import com.ruoyi.manager.mapper.CarWarningInfoMapper;
 import com.ruoyi.manager.service.ICarWarningInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -57,13 +58,21 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
     @Override
     public AjaxResult saveCarWarningInfo(CarWarningInfo carWarningInfo)
     {
+        Long userId = 1L;
         if (CommonUtil.isNotBlank(carWarningInfo.getId()))
         {
+            carWarningInfo.setUpdateBy(userId); // 更新人
+            carWarningInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
             // 修改
             carWarningInfoMapper.updateById(carWarningInfo);
         }
         else
         {
+            carWarningInfo.setDelFlag("0");
+            carWarningInfo.setCreateBy(userId); // 创建人
+            carWarningInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
+            carWarningInfo.setUpdateBy(userId); // 更新人
+            carWarningInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
             // 新增 主键
             carWarningInfoMapper.insert(carWarningInfo);
         }

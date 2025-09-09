@@ -68,7 +68,6 @@ public class BasePlusEntityNew implements Serializable,CustomClass{
     /**
      * 租户
      */
-    @TableField(value = "tenant_id", fill = FieldFill.INSERT)
     private Long tenantId;
 
 }
