@@ -45,4 +45,12 @@ public interface CarSuspiciousCheckMapper extends BaseMapper<CarSuspiciousCheck>
      */
     int deleteCarSuspiciousCheckById(String id);
 
+    /**
+     * 删除可疑车辆人工核实
+     *
+     * @param fkId 可疑车辆人工核实ID
+     * @return 结果
+     */
+    int deleteCarSuspiciousCheckBySuspiciousId(String fkId);
+
 }

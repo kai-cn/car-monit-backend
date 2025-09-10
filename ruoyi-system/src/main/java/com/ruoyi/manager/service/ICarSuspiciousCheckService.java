@@ -45,5 +45,11 @@ public interface ICarSuspiciousCheckService extends IService<CarSuspiciousCheck>
      */
     AjaxResult deleteCarSuspiciousCheckByIds(String[] ids);
 
-    AjaxResult deleteCarSuspiciousCheckBySuspiciousId(String id);
+    /**
+     * 根据外键删除
+     * @param fkId
+     * @return
+     */
+    AjaxResult deleteCarSuspiciousCheckBySuspiciousId(String fkId);
+
 }

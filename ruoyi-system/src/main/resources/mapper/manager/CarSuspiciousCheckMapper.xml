@@ -96,4 +96,10 @@
             #{id}
         </foreach>
     </update>
+
+
+    <delete id="deleteCarSuspiciousCheckBySuspiciousId" parameterType="String">
+        delete from  car_suspicious_check  where car_id = #{fkId}
+    </delete>
+
 </mapper>

@@ -11,6 +11,7 @@ import com.ruoyi.manager.domain.CarExceptRecord;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.CarSuspicious;
 import com.ruoyi.manager.domain.CarSuspiciousCheck;
+import com.ruoyi.manager.mapper.CarInfoMapper;
 import com.ruoyi.manager.mapper.CarSuspiciousMapper;
 import com.ruoyi.manager.service.ICarExceptRecordService;
 import com.ruoyi.manager.service.ICarInfoService;
@@ -33,10 +34,13 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
     @Autowired
     private CarSuspiciousMapper carSuspiciousMapper;
+
     @Autowired
-    private ICarInfoService carInfoService;
+    private CarInfoMapper carInfoMapper;
+
     @Autowired
     private ICarSuspiciousCheckService carSuspiciousCheckService;
+
     @Autowired
     private ICarExceptRecordService carExceptRecordService;
 
@@ -53,13 +57,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             return new CarSuspicious();
         }
 
-        // 查询车辆信息
-        if(StrUtil.isNotEmpty(carSuspicious.getCarNo())){
-            LambdaQueryWrapper<CarInfo> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(CarInfo::getCarNo,carSuspicious.getCarNo());
-            List<CarInfo> list = this.carInfoService.list(queryWrapper);
-            carSuspicious.setCarInfo(CollectionUtil.isNotEmpty( list) ? list.get(0) : new CarInfo());
-        }
+
 
         // 人工核实详情
         LambdaQueryWrapper<CarSuspiciousCheck> queryWrapper = new LambdaQueryWrapper<>();
@@ -109,42 +107,6 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             // 新增 主键
             carSuspiciousMapper.insert(carSuspicious);
         }
-
-       /* // 删除人工核验详情
-        this.carSuspiciousCheckService.remove(Wrappers.<CarSuspiciousCheck>lambdaQuery()
-                .eq(CarSuspiciousCheck::getCarId,carSuspicious.getId()));
-
-        // 删除异常车辆信息
-        this.carExceptRecordService.remove(Wrappers.<CarExceptRecord>lambdaQuery()
-                .eq(CarExceptRecord::getCarId,carSuspicious.getId()));
-
-        // 确认逃费
-        if("1".equals(carSuspicious.getIsExcept())){
-            // 车辆信息
-            CarInfo one = this.carInfoService.getOne(Wrappers.<CarInfo>lambdaQuery()
-                    .eq(CarInfo::getCarNo,carSuspicious.getCarNo()));
-            if(null == one){
-                this.carInfoService.save(carInfo);
-            } else {
-                carInfo = one;
-            }
-
-            // 人工核实详情
-            CarSuspiciousCheck carSuspiciousCheck = carSuspicious.getCarSuspiciousCheck();
-            if(null != carSuspiciousCheck){
-                carSuspiciousCheck.setCarId(carSuspicious.getId());
-                carSuspiciousCheck.setAttachments(carSuspicious.getFileIds());
-                carSuspiciousCheck.setSuspicousFlag(carSuspicious.getIsExcept());
-
-                //车辆信息
-                carSuspiciousCheck.setCarId(carInfo.getId());
-                carSuspiciousCheck.setCarNo(carInfo.getCarNo());
-                this.carSuspiciousCheckService.save(carSuspiciousCheck);
-            }
-
-            CarExceptRecord carExceptRecord = getCarExceptRecord(carSuspicious, carInfo, carSuspiciousCheck);
-            this.carExceptRecordService.saveCarExceptRecord(carExceptRecord);
-        }*/
 
         return AjaxResult.success("操作成功！",carSuspicious.getId());
     }
@@ -208,8 +170,84 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         return AjaxResult.success(count);
     }
 
+    /**
+     * 大屏查询前10 可疑车俩
+     *
+     * @return 结果
+     */
     @Override
     public List<CarSuspicious> selectCarSuspiciousListLimit10() {
         return carSuspiciousMapper.selectCarSuspiciousListLimit10();
+    }
+
+    /**
+     * 车俩核实
+     *
+     * @param carSuspicious 可疑车辆
+     * @return 结果
+     */
+    @Override
+    public AjaxResult cherkCarSuspicious(CarSuspicious carSuspicious) {
+
+        String carId = CommonUtil.isNull(carSuspicious.getId());
+        if(CommonUtil.isBlank(carId)){
+            return  AjaxResult.error("可疑车俩不存在！");
+        }
+
+        // 查询可疑车俩
+        CarSuspicious rtnVo = carSuspiciousMapper.selectCarSuspiciousById(carId);
+        if (null != rtnVo && CommonUtil.isNotBlank(rtnVo.getId())) {
+        }else {
+            return  AjaxResult.error("可疑车俩不存在！");
+        }
+
+        // 删除人工核验详情
+        carSuspiciousCheckService.deleteCarSuspiciousCheckBySuspiciousId(carId);
+
+        // 删除异常车辆信息
+        carExceptRecordService.deleteCarExceptRecordByCarId(carId);
+
+
+        // 车辆信息
+        CarInfo carInfo =  carInfoMapper.selectCarInfoById(carId);
+
+        // 确认逃费
+        if("1".equals(carSuspicious.getIsExcept())){
+
+            // 有值
+            if (null != carInfo && CommonUtil.isNotBlank(carInfo.getId())) {
+                CarInfo addCarInfo = new CarInfo();
+                addCarInfo.setId(carId);
+
+            }else{
+                CarInfo addCarInfo = new CarInfo();
+                addCarInfo.setId(carId);
+                addCarInfo.setCarNo(carInfo.getCarNo());
+                addCarInfo.setCarType(carInfo.getCarType());
+                addCarInfo.setCarNum(carInfo.getCarNum());
+                addCarInfo.setCarVehicle(carInfo.getCarVehicle());
+                addCarInfo.setPlateColor(carInfo.getPlateColor());
+            }
+
+
+
+            // 人工核实详情
+            CarSuspiciousCheck carSuspiciousCheck = carSuspicious.getCarSuspiciousCheck();
+            if(null != carSuspiciousCheck){
+                carSuspiciousCheck.setCarId(carSuspicious.getId());
+                carSuspiciousCheck.setAttachments(carSuspicious.getFileIds());
+                carSuspiciousCheck.setSuspicousFlag(carSuspicious.getIsExcept());
+
+                //车辆信息
+                carSuspiciousCheck.setCarId(carInfo.getId());
+                carSuspiciousCheck.setCarNo(carInfo.getCarNo());
+                this.carSuspiciousCheckService.save(carSuspiciousCheck);
+            }
+
+            CarExceptRecord carExceptRecord = getCarExceptRecord(carSuspicious, carInfo, carSuspiciousCheck);
+            this.carExceptRecordService.saveCarExceptRecord(carExceptRecord);
+        }
+
+        return AjaxResult.success();
     }
 }

@@ -45,5 +45,19 @@ public interface ICarSuspiciousService extends IService<CarSuspicious> {
      */
     AjaxResult deleteCarSuspiciousByIds(String[] ids);
 
+
+    /**
+     * 大屏查询前10 可疑车俩
+     *
+     * @return 结果
+     */
     List<CarSuspicious> selectCarSuspiciousListLimit10();
+
+    /**
+     * 车俩核实
+     *
+     * @param carSuspicious 可疑车辆
+     * @return 结果
+     */
+    AjaxResult cherkCarSuspicious(CarSuspicious carSuspicious);
 }

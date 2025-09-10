@@ -46,5 +46,21 @@ public interface CarExceptRecordMapper extends BaseMapper<CarExceptRecord> {
      */
     int deleteCarExceptRecordById(String id);
 
+    /**
+     * 批量修改状态
+     *
+     * @return 结果
+     */
     void updateStatusByExceptId(@Param("exceptIdList") List<String> exceptIdList, @Param("status") String status);
+
+
+    /**
+     * 批量删除异常车辆流水：根据车俩删除异常流水
+     *
+     * @param fkId
+     * @return 结果
+     */
+    int deleteCarExceptRecordByCarId(String fkId);
+
+
 }

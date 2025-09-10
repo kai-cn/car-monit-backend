@@ -102,6 +102,17 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
         return AjaxResult.success(count);
     }
 
+    /**
+     * 批量删除异常车辆流水：根据车俩删除异常流水
+     *
+     * @param fkId
+     * @return 结果
+     */
+    public AjaxResult deleteCarExceptRecordByCarId(String fkId){
+        int count = carExceptRecordMapper.deleteCarExceptRecordByCarId(fkId);
+        return AjaxResult.success(count);
+    }
+
 
 
 }

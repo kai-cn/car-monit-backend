@@ -97,9 +97,16 @@ public class CarSuspiciousCheckServiceImpl extends ServiceImpl<CarSuspiciousChec
         return AjaxResult.success(count);
     }
 
+    /**
+     * 根据外键删除
+     *
+     * @param fkId
+     * @return
+     */
     @Transactional(rollbackFor = Exception.class)
-    public AjaxResult deleteCarSuspiciousCheckBySuspiciousId(String id){
-        return AjaxResult.success();
+    public AjaxResult deleteCarSuspiciousCheckBySuspiciousId(String fkId) {
+        int count = carSuspiciousCheckMapper.deleteCarSuspiciousCheckBySuspiciousId(fkId);
+        return AjaxResult.success(count);
     }
 
 
