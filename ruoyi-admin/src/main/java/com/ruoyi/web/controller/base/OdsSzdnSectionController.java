@@ -46,6 +46,18 @@ public class OdsSzdnSectionController extends BaseController {
         return getDataTable(list);
     }
 
+
+    /**
+     * 查询路段信息列表：选择弹窗
+     */
+    @GetMapping("/listAll")
+    public TableDataInfo listAll(OdsSzdnSection odsSzdnSection) {
+        startPage();
+        List<OdsSzdnSection> list = odsSzdnSectionService.selectOdsSzdnSectionList(odsSzdnSection);
+        return getDataTable(list);
+    }
+
+
     /**
      * 导出路段信息列表
      */

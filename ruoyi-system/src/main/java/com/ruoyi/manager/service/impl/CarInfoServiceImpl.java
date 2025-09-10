@@ -145,6 +145,9 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
         return AjaxResult.success();
     }
 
+    /**
+     * 地图 ；车俩地图描点
+     */
     @Override
     public List<CarLocationVO> carLocation(CarLocationParam carInfo) {
         List<CarLocationVO> carLocation = carInfoMapper.getCarLocation(carInfo);
@@ -161,13 +164,14 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
         return carLocation;
     }
 
+    /**
+     * 地图：重点车辆库统计 前10条
+     * @return
+     */
     @Override
     public List<CarInfoVO> selectCarVoList() {
         return carInfoMapper.selectCarVoList();
     }
 
-    @Override
-    public List<CarInfoVO> getCarAudit() {
-        return Collections.emptyList();
-    }
+
 }

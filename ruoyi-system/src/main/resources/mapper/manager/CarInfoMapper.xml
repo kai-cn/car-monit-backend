@@ -228,6 +228,7 @@
         <if test="gantryCode != null  and gantryCode != ''"> and t.gantry_code = #{gantryCode}</if>
         <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
         <if test="tollCode != null  and tollCode != ''"> and t.toll_code = #{tollCode}</if>
+        <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
     </select>
 
     <select id="selectCarVoList" resultType="com.ruoyi.manager.domain.vo.bigscreen.CarInfoVO">

@@ -50,5 +50,8 @@ public class CarLocationParam {
     @ApiModelProperty("编码")
     private String code;
 
+    @ApiModelProperty("车牌号")
+    private String carNoQuery;
+
 
 }

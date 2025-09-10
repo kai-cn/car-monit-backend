@@ -47,6 +47,17 @@ public class OdsSzdnGantryController extends BaseController {
     }
 
     /**
+     * 查询门架信息列表:选择门架弹窗
+     */
+    @GetMapping("/listAll")
+    public TableDataInfo listAll(OdsSzdnGantry odsSzdnGantry) {
+        startPage();
+        List<OdsSzdnGantry> list = odsSzdnGantryService.selectOdsSzdnGantryList(odsSzdnGantry);
+        return getDataTable(list);
+    }
+
+
+    /**
      * 导出门架信息列表
      */
     @PreAuthorize("@ss.hasPermi('base:gantry:export')")

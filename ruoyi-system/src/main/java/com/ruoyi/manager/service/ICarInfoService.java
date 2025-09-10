@@ -56,9 +56,16 @@ public interface ICarInfoService extends IService<CarInfo> {
      */
     AjaxResult doImport(List<CarInfo> list);
 
+    /**
+     * 地图 ；车俩地图描点
+     */
     List<CarLocationVO> carLocation(CarLocationParam carInfo);
 
+    /**
+     * 地图：重点车辆库统计 前10条
+     * @return
+     */
     List<CarInfoVO> selectCarVoList();
 
-    List<CarInfoVO> getCarAudit();
+
 }
