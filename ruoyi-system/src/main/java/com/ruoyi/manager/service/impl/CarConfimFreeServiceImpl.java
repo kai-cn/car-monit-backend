@@ -251,10 +251,10 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
         }
 
         List<String> exceptIdList = Arrays.asList(exceptIds.split(","));
-        List<CarConfimFree> list = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
+       /* List<CarConfimFree> list = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
         if (null != list && list.size() > 0) {
             return AjaxResult.error("请勿重复补缴！");
-        }
+        }*/
 
         CarExceptRecord CarExceptRecordRtn = carExceptRecordList.get(0);
 
