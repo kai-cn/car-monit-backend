@@ -3,7 +3,7 @@ package com.ruoyi.web.controller.manager.bigscreen;
 import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.*;
 import com.ruoyi.common.core.controller.BaseController;
-import com.ruoyi.common.core.domain.AjaxResultNew;
+import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.manager.domain.*;
@@ -55,19 +55,17 @@ public class BigScreenController extends BaseController {
     /**
      *  重点关注车辆统计
      */
-    @ApiOperation("重点关注车辆统计")
     @GetMapping(value = "/carStatistics")
-    public AjaxResultNew<List<CarStatisticsVO>> getCarStatistics() {
+    public AjaxResult getCarStatistics() {
         List<CarStatisticsVO> carStatisticsVO = carConfimFreeService.getCarStatistics();
-        return AjaxResultNew.success(carStatisticsVO);
+        return AjaxResult.success(carStatisticsVO);
     }
 
     /**
      * 地图 ；车俩地图描点
      */
-    @ApiOperation("车辆地图")
     @GetMapping(value = "/carLocation")
-    public AjaxResultNew<List<CarLocationVO>> getCarLocation(CarLocationParam param) {
+    public AjaxResult getCarLocation(CarLocationParam param) {
         String type = param.getType();
         if(StringUtils.isNotBlank(type)) {
             switch (type) {
@@ -83,12 +81,15 @@ public class BigScreenController extends BaseController {
             }
         }
         List<CarLocationVO> carLocationVOList = carInfoService.carLocation(param);
-        return AjaxResultNew.success(carLocationVOList);
+        return AjaxResult.success(carLocationVOList);
     }
 
-    @ApiOperation("路段列表")
+    /**
+     * 路段列表
+     * @return
+     */
     @GetMapping(value = "/sectionList")
-    public AjaxResultNew<List<SectionVO>> getSectionList() {
+    public AjaxResult getSectionList() {
         List<SectionVO> collect = odsSzdnSectionService.lambdaQuery().select(OdsSzdnSection::getSectionCode, OdsSzdnSection::getSectionName).list()
                 .stream().map(item -> {
                     SectionVO sectionVO = new SectionVO();
@@ -96,14 +97,19 @@ public class BigScreenController extends BaseController {
                     sectionVO.setSectionName(item.getSectionName());
                     return sectionVO;
                 }).collect(Collectors.toList());
-        return AjaxResultNew.success(collect);
+        return AjaxResult.success(collect);
     }
 
-    @ApiOperation("收费站门架服务区列表")
+    /**
+     * 收费站门架服务区列表
+     * @param sectionCode
+     * @param type
+     * @return
+     */
     @GetMapping(value = "/tollGantryFwqList")
-    public AjaxResultNew<List<TollGantryFwqVO>> getTollList(@RequestParam(name = "sectionCode", required = false) String sectionCode, @RequestParam String type) {
+    public AjaxResult getTollList(@RequestParam(name = "sectionCode", required = false) String sectionCode, @RequestParam String type) {
         if(StringUtils.isBlank(sectionCode)) {
-            return AjaxResultNew.success(new ArrayList<>());
+            return AjaxResult.success(new ArrayList<>());
         }
         List<TollGantryFwqVO> collect = new ArrayList<>();
         if ("1".equals(type)) {
@@ -134,26 +140,24 @@ public class BigScreenController extends BaseController {
                         return vo;
                     }).collect(Collectors.toList());
         }
-        return AjaxResultNew.success(collect);
+        return AjaxResult.success(collect);
     }
 
     /**
      * 重点车辆库统计
      */
-    @ApiOperation("重点车辆库统计")
     @GetMapping(value = "/carVoList")
-    public AjaxResultNew<List<CarInfoVO>> carVoList() {
+    public AjaxResult carVoList() {
         List<CarInfoVO> carVoList = carInfoService.selectCarVoList();
-        return AjaxResultNew.success(carVoList);
+        return AjaxResult.success(carVoList);
     }
 
 
     /**
      * 追缴统计
      */
-    @ApiOperation("追缴统计")
     @GetMapping(value = "/carAudit")
-    public AjaxResultNew<CarAuditVO> getCarAudit() {
+    public AjaxResult getCarAudit() {
         CarAuditVO vo = new CarAuditVO();
         BigDecimal totalAmount = carAduitFreeService.getCarAudit();
         BigDecimal finishedAmount = carConfimFreeService.getCarConfirm();
@@ -171,27 +175,25 @@ public class BigScreenController extends BaseController {
         if (auditCount != null && auditCount > 0) {
             vo.setFinishedCount(auditCount);
         }
-        return AjaxResultNew.success(vo);
+        return AjaxResult.success(vo);
     }
 
     /**
      * 车辆预警
      */
-    @ApiOperation("车辆预警")
     @GetMapping(value = "/carWarning")
-    public AjaxResultNew<List<CarWarningInfo>> getCarWarning() {
+    public AjaxResult getCarWarning() {
         List<CarWarningInfo> warningInfoList = carWarningInfoService.selectCarWarningInfoListLimit100();
-        return AjaxResultNew.success(warningInfoList);
+        return AjaxResult.success(warningInfoList);
     }
 
     /**
      * 异常数据
      */
-    @ApiOperation("异常数据")
     @GetMapping(value = "/exceptionCar")
-    public AjaxResultNew<List<CarSuspicious>> getExceptionCar() {
+    public AjaxResult getExceptionCar() {
         List<CarSuspicious> carSuspicious = carSuspiciousService.selectCarSuspiciousListLimit10();
-        return AjaxResultNew.success(carSuspicious);
+        return AjaxResult.success(carSuspicious);
     }
 
     /**
@@ -199,14 +201,14 @@ public class BigScreenController extends BaseController {
      */
     @ApiOperation("重点车辆通行前10")
     @GetMapping(value = "/topTen")
-    public AjaxResultNew<List<TopTenVO>> topTen() {
+    public AjaxResult topTen() {
         List<TopTenVO> topTenVO = snapshotFlowAddcodeService.getTopTen();
-        return AjaxResultNew.success(topTenVO);
+        return AjaxResult.success(topTenVO);
     }
 
     @ApiOperation("机构列表")
     @GetMapping(value = "/orgList")
-    public AjaxResultNew<List<OrgVO>> getOrgList() {
+    public AjaxResult getOrgList() {
         List<OrgVO> collect = baseOrgService.lambdaQuery().select(OdsYhglVBaseOrg::getOrgCode, OdsYhglVBaseOrg::getOrgName).list()
                 .stream().map(item -> {
                     OrgVO orgVO = new OrgVO();
@@ -214,7 +216,7 @@ public class BigScreenController extends BaseController {
                     orgVO.setOrgName(item.getOrgName());
                     return orgVO;
                 }).collect(Collectors.toList());
-        return AjaxResultNew.success(collect);
+        return AjaxResult.success(collect);
     }
 
     /**
@@ -222,13 +224,13 @@ public class BigScreenController extends BaseController {
      */
     @ApiOperation("堵漏增收统计")
     @GetMapping(value = "/incomeStatistic")
-    public AjaxResultNew<List<incomeStatisticVO>> incomeStatistic(IncomeStatisticParam param) {
+    public AjaxResult incomeStatistic(IncomeStatisticParam param) {
         if(StringUtils.isNotBlank(param.getYear()) && StringUtils.isNotBlank(param.getMonth())){
             String start = param.getYear() + "-" + param.getMonth() + "-01";
             param.setStartDate(start);
         }
         List<incomeStatisticVO> voList =  carAduitFreeService.incomeStatistic(param);
-        return AjaxResultNew.success(voList);
+        return AjaxResult.success(voList);
     }
 
     @GetMapping("/exceptRecordList")

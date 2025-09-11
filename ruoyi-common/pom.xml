@@ -211,12 +211,7 @@
             <version>1.6.0</version>
         </dependency>
 
-        <!-- Knife4j -->
-        <dependency>
-            <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-spring-boot-starter</artifactId>
-            <version>3.0.3</version> <!-- 请检查最新版本 -->
-        </dependency>
+
 
     </dependencies>
 

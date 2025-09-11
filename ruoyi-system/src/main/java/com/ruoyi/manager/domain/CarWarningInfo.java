@@ -6,8 +6,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BasePlusEntityNew;
 import com.ruoyi.common.core.domain.Custom;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -25,62 +23,50 @@ import java.util.Date;
 @TableName("car_warning_info")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-@ApiModel("车辆预警")
 public class CarWarningInfo extends BasePlusEntityNew implements Custom {
 
     /** 车辆id */
-    @ApiModelProperty("车辆id")
     @Excel(name = "车辆id")
     private String carId;
 
     /** 车牌号 */
-    @ApiModelProperty("车牌号")
     @Excel(name = "车牌号")
     private String carNo;
 
     /** 车型 */
-    @ApiModelProperty("车型")
     @Excel(name = "车型")
     private String carType;
 
     /** 车种 */
-    @ApiModelProperty("车种")
     @Excel(name = "车种")
     private String carVehicle;
 
     /** 轴数 */
-    @ApiModelProperty("轴数")
     @Excel(name = "轴数")
     private Long carNum;
 
     /** 入口站id */
-    @ApiModelProperty("入口站id")
     @Excel(name = "入口站id")
     private String inStationId;
 
     /** 入口站 */
-    @ApiModelProperty("入口站")
     @Excel(name = "入口站")
     private String inStation;
 
     /** 入口时间 */
-    @ApiModelProperty("入口时间")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "入口时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date inTime;
 
     /** 门架id */
-    @ApiModelProperty("门架id")
     @Excel(name = "门架id")
     private String gantryStationId;
 
     /** 门架名称 */
-    @ApiModelProperty("门架名称")
     @Excel(name = "门架名称")
     private String gantrytStation;
 
     /** 经过时间 */
-    @ApiModelProperty("经过时间")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "经过时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date gantryTime;
@@ -90,28 +76,23 @@ public class CarWarningInfo extends BasePlusEntityNew implements Custom {
     private String fileIds;
 
     /** 预计下一个通行时间 */
-    @ApiModelProperty("预计下一个通行时间")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "预计下一个通行时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date nextPassTime;
 
     /** 预计下一个通行类型 */
-    @ApiModelProperty("预计下一个通行类型")
     @Excel(name = "预计下一个通行类型")
     private String nextPassType;
 
     /** 预计下一个通行地址 */
-    @ApiModelProperty("预计下一个通行地址")
     @Excel(name = "预计下一个通行地址")
     private String nextPassAddress;
 
     /** 预计下一个通行经度 */
-    @ApiModelProperty("预计下一个通行经度")
     @Excel(name = "预计下一个通行经度")
     private String nextPassLongitude;
 
     /** 预计下一个通行维度 */
-    @ApiModelProperty("预计下一个通行维度")
     @Excel(name = "预计下一个通行维度")
     private String nextPassLatitude;
 

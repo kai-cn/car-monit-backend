@@ -1,6 +1,5 @@
 package com.ruoyi.manager.domain.vo.bigscreen;
 
-import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 /**
@@ -10,9 +9,13 @@ import lombok.Data;
  */
 @Data
 public class OrgVO {
-    @ApiModelProperty("管理中心编码")
+    /**
+     * 管理中心编码
+     */
     private String orgCode;
 
-    @ApiModelProperty("管理中心名称")
+    /**
+     * 管理中心名称
+     */
     private String orgName;
 }

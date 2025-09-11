@@ -47,11 +47,23 @@ public class CarInfoController extends BaseController {
     private ISysDictDataService sysDictDataService;
 
     /**
-     * 查询车辆信息列表
+     * 查询车辆信息列表：菜单
      */
     @PreAuthorize("@ss.hasPermi('manager:carinfo:list')")
     @GetMapping("/list")
     public TableDataInfo list(CarInfo carInfo) {
+        startPage();
+        // carInfo.setTenantId(SecurityUtils.getTenantId()); // 查询我自己单位的租户
+        List<CarInfo> list = carInfoService.selectCarInfoList(carInfo);
+        return getDataTable(list);
+    }
+
+
+    /**
+     * 查询车辆信息列表：弹出窗口选择
+     */
+    @GetMapping("/listAll")
+    public TableDataInfo listAll(CarInfo carInfo) {
         startPage();
         // carInfo.setTenantId(SecurityUtils.getTenantId()); // 查询我自己单位的租户
         List<CarInfo> list = carInfoService.selectCarInfoList(carInfo);

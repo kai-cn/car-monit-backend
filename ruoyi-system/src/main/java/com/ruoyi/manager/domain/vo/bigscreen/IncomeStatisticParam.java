@@ -1,6 +1,5 @@
 package com.ruoyi.manager.domain.vo.bigscreen;
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 
 /**

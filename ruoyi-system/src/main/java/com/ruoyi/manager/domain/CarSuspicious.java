@@ -6,12 +6,12 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BasePlusEntityNew;
 import com.ruoyi.common.core.domain.Custom;
-import io.swagger.annotations.ApiModel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 可疑车辆对象 car_suspicious
@@ -23,7 +23,6 @@ import java.util.Date;
 @TableName("car_suspicious")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-@ApiModel("可疑车辆")
 public class CarSuspicious extends BasePlusEntityNew implements Custom {
 
     /** 车牌颜色（字典：1白色2黑色） */
@@ -198,16 +197,11 @@ public class CarSuspicious extends BasePlusEntityNew implements Custom {
     @TableField(exist = false)
     private String createTimeStr;
 
-    /**
-     * 车辆信息
-     */
-    @TableField(exist = false)
-    private CarInfo carInfo;
 
     /**
      * 车辆核实信息
      */
     @TableField(exist = false)
-    private CarSuspiciousCheck carSuspiciousCheck;
+    private List<CarSuspiciousCheck> checkList;
 
 }

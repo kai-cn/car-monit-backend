@@ -1,7 +1,5 @@
 package com.ruoyi.manager.domain.vo.bigscreen;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -11,27 +9,42 @@ import java.math.BigDecimal;
  * @Date: 2025/08/28/15:00
  * @Description:
  */
-@ApiModel(description = "车辆位置Vo")
 @Data
 public class CarLocationVO {
 
-    @ApiModelProperty("主键id")
+    /**
+     * 主键id
+     */
     private String id;
 
-    @ApiModelProperty("车牌号")
+    /**
+     * 车牌号
+     */
     private String carNo;
 
-    @ApiModelProperty("车型")
+    /**
+     * 车型
+     */
     private String carType;
 
-    @ApiModelProperty("最后通行经度")
+    /**
+     * 最后通行经度
+     */
     private BigDecimal lon;
 
-    @ApiModelProperty("最后通行维度")
+    /**
+     * 最后通行维度
+     */
     private BigDecimal lat;
 
+    /**
+     * 最后通行经度
+     */
     private String lonStr;
 
+    /**
+     * 最后通行维度
+     */
     private String latStr;
 
 }

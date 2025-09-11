@@ -60,10 +60,10 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
 
         // 人工核实详情
-        LambdaQueryWrapper<CarSuspiciousCheck> queryWrapper = new LambdaQueryWrapper<>();
+     /*   LambdaQueryWrapper<CarSuspiciousCheck> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(CarSuspiciousCheck::getCarId,carSuspicious.getId());
         List<CarSuspiciousCheck> list = this.carSuspiciousCheckService.list();
-        carSuspicious.setCarSuspiciousCheck(CollectionUtil.isNotEmpty(list) ? list.get(0): new CarSuspiciousCheck());
+        carSuspicious.setCarSuspiciousCheck(CollectionUtil.isNotEmpty(list) ? list.get(0): new CarSuspiciousCheck());*/
 
         return carSuspicious;
     }
@@ -231,7 +231,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
 
 
-            // 人工核实详情
+           /* // 人工核实详情
             CarSuspiciousCheck carSuspiciousCheck = carSuspicious.getCarSuspiciousCheck();
             if(null != carSuspiciousCheck){
                 carSuspiciousCheck.setCarId(carSuspicious.getId());
@@ -245,7 +245,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             }
 
             CarExceptRecord carExceptRecord = getCarExceptRecord(carSuspicious, carInfo, carSuspiciousCheck);
-            this.carExceptRecordService.saveCarExceptRecord(carExceptRecord);
+            this.carExceptRecordService.saveCarExceptRecord(carExceptRecord);*/
         }
 
         return AjaxResult.success();
