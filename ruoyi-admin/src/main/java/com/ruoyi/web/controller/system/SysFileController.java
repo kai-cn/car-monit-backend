@@ -1,5 +1,7 @@
 package com.ruoyi.web.controller.system;
 
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.CharsetUtil;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -13,7 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
@@ -185,4 +189,36 @@ public class SysFileController extends BaseController {
     public AjaxResult updateCAFile(@RequestBody SysFile sysFile) {
         return sysFileService.updateCAFile(sysFile);
     }
+
+
+    /**
+     * 微信小程序文件上传接口 -- 需要用户登录
+     *
+     */
+    @PostMapping("/uploadFile")
+    public AjaxResult upload(HttpServletRequest request) {
+        MultipartHttpServletRequest req = (MultipartHttpServletRequest) request;
+        MultipartFile mufile = req.getFile("file");
+        MultipartFile[] files = {mufile};
+        // 只能上传图片
+        for (MultipartFile file : files) {
+            String original = CharsetUtil.convert(file.getOriginalFilename(), CharsetUtil.CHARSET_ISO_8859_1,
+                    CharsetUtil.CHARSET_UTF_8);
+            String ext = FileUtil.extName(original);
+            if (null != ext && !ext.equals("")) {
+                if (ext.indexOf("jpg") > -1 || ext.indexOf("jpeg") > -1 || ext.indexOf("png") > -1 || ext.indexOf("gif") > -1 ){
+                }else{
+                    return AjaxResult.error("上传失败,请上传照片格式的附件！");
+                }
+            }else {
+                return AjaxResult.error("上传失败,请上传照片格式的附件！");
+            }
+            long fileSize = file.getSize();
+            if (fileSize > 1024 * 1024 * 15) {
+                return AjaxResult.error("上传失败,你上传的附件大于15M！");
+            }
+        }
+        return sysFileService.uploadFiles(files);
+    }
+
 }

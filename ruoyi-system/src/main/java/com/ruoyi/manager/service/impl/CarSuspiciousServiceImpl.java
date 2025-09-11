@@ -1,8 +1,5 @@
 package com.ruoyi.manager.service.impl;
 
-import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
@@ -14,13 +11,13 @@ import com.ruoyi.manager.domain.CarSuspiciousCheck;
 import com.ruoyi.manager.mapper.CarInfoMapper;
 import com.ruoyi.manager.mapper.CarSuspiciousMapper;
 import com.ruoyi.manager.service.ICarExceptRecordService;
-import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarSuspiciousCheckService;
 import com.ruoyi.manager.service.ICarSuspiciousService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -52,7 +49,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
      */
     @Override
     public CarSuspicious selectCarSuspiciousById(String id) {
-        
+
         CarSuspicious carSuspicious = carSuspiciousMapper.selectCarSuspiciousById(id);
 
         if(null != carSuspicious){
@@ -87,6 +84,8 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
     @Override
     public AjaxResult saveCarSuspicious(CarSuspicious carSuspicious)
     {
+        carSuspicious.setCarNo(CommonUtil.isNull(carSuspicious.getCarNo()));
+
         Long userId = 1L;
         if (CommonUtil.isNotBlank(carSuspicious.getId()))
         {
@@ -101,6 +100,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             carSuspicious.setCreateTime(DateUtils.getTimestampNew()); // 创建时间
             carSuspicious.setUpdateBy(userId); // 更新人
             carSuspicious.setUpdateTime(DateUtils.getTimestampNew()); // 更新时间
+            carSuspicious.setIsExcept("1"); // 默认是可疑车俩
             // 新增 主键
             carSuspiciousMapper.insert(carSuspicious);
         }
@@ -108,37 +108,6 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         return AjaxResult.success("操作成功！",carSuspicious.getId());
     }
 
-    /**
-     * 构建异常车辆信息
-     * @param carSuspicious
-     * @param carInfo
-     * @param carSuspiciousCheck
-     * @return
-     */
-    private static CarExceptRecord getCarExceptRecord(CarSuspicious carSuspicious, CarInfo carInfo, CarSuspiciousCheck carSuspiciousCheck) {
-        CarExceptRecord carExceptRecord = new CarExceptRecord();
-       // carExceptRecord.setCarSuspiciousId(carSuspicious.getId());
-        carExceptRecord.setCarId(carInfo.getId());
-        carExceptRecord.setCarNo(carInfo.getCarNo());
-        carExceptRecord.setCarType(carInfo.getCarType());
-        carExceptRecord.setCarNum(carInfo.getCarNum());
-        carExceptRecord.setCarVehicle(carInfo.getCarVehicle());
-        carExceptRecord.setInStationId(carSuspicious.getInStationId());
-        carExceptRecord.setInStation(carSuspicious.getInStation());
-        carExceptRecord.setInTime(carSuspicious.getInTime());
-        carExceptRecord.setOutStationId(carSuspicious.getGantryStationId());
-        carExceptRecord.setOutStation(carSuspicious.getGantrytStation());
-        carExceptRecord.setOutTime(carSuspicious.getGantryTime());
-        carExceptRecord.setStatus("0");
-
-        if(null != carSuspiciousCheck){
-            carExceptRecord.setTotalAmount(carSuspiciousCheck.getTotalAmount());
-            carExceptRecord.setChargeAmount(carSuspiciousCheck.getChargeAmount());
-            carExceptRecord.setDifAmount(carSuspiciousCheck.getDifAmount());
-            carExceptRecord.setEscapedType(carSuspiciousCheck.getEscapedType());
-        }
-        return carExceptRecord;
-    }
 
     /**
      * 批量删除可疑车辆
@@ -194,8 +163,18 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         // 查询可疑车俩
         CarSuspicious rtnVo = carSuspiciousMapper.selectCarSuspiciousById(carId);
         if (null != rtnVo && CommonUtil.isNotBlank(rtnVo.getId())) {
-        }else {
-            return  AjaxResult.error("可疑车俩不存在！");
+        } else {
+            return AjaxResult.error("可疑车俩不存在！");
+        }
+        // 车辆信息：根据车牌号查询
+        String carNo = CommonUtil.isNull(rtnVo.getCarNo()); // 车牌号
+
+        List<CarSuspiciousCheck> checkList = carSuspicious.getCheckList();
+        if("1".equals(CommonUtil.isNull(carSuspicious.getIsExcept()))){
+            if (null != checkList && checkList.size() > 0) {
+            } else {
+                return AjaxResult.error("车辆逃费类型列表不能为空！");
+            }
         }
 
         // 删除人工核验详情
@@ -204,47 +183,89 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         // 删除异常车辆信息
         carExceptRecordService.deleteCarExceptRecordByCarId(carId);
 
-
-        // 车辆信息
-        CarInfo carInfo =  carInfoMapper.selectCarInfoById(carId);
-
         // 确认逃费
-        if("1".equals(carSuspicious.getIsExcept())){
+        if("1".equals(CommonUtil.isNull(carSuspicious.getIsExcept()))){
+            // 逃费类型
+            String escapedType = "";
+            for (CarSuspiciousCheck check : checkList) {
+                String addCheckType = CommonUtil.isNull(check.getEscapedType());
+                if (escapedType.indexOf(addCheckType) > -1) {
+                } else {
+                    escapedType += addCheckType + ",";
+                }
+            }
+            escapedType = CommonUtil.deleteEnd(escapedType);
+
+
+            // 查询车俩
+            CarInfo querybo = new CarInfo();
+            querybo.setCarNo(carNo);
+            List<CarInfo> carInfoList =  carInfoMapper.selectCarInfoList(querybo);
 
             // 有值
-            if (null != carInfo && CommonUtil.isNotBlank(carInfo.getId())) {
-                CarInfo addCarInfo = new CarInfo();
-                addCarInfo.setId(carId);
-
+            if (null != carInfoList && carInfoList.size() > 0) {
+                // CarInfo addCarInfo = carInfoList.get(0);
             }else{
                 CarInfo addCarInfo = new CarInfo();
                 addCarInfo.setId(carId);
-                addCarInfo.setCarNo(carInfo.getCarNo());
-                addCarInfo.setCarType(carInfo.getCarType());
-                addCarInfo.setCarNum(carInfo.getCarNum());
-                addCarInfo.setCarVehicle(carInfo.getCarVehicle());
-                addCarInfo.setPlateColor(carInfo.getPlateColor());
+                addCarInfo.setCarNo(carNo);
+                addCarInfo.setCarType(rtnVo.getCarType());
+                addCarInfo.setCarNum(rtnVo.getCarNum());
+                addCarInfo.setCarVehicle(rtnVo.getCarVehicle());
+                addCarInfo.setPlateColor(rtnVo.getPlateColor());
+                addCarInfo.setEscapedType(escapedType);
+                carInfoMapper.insert(addCarInfo);
             }
 
 
+            List<CarExceptRecord> exceptRecordList = new ArrayList<CarExceptRecord>();
 
-           /* // 人工核实详情
-            CarSuspiciousCheck carSuspiciousCheck = carSuspicious.getCarSuspiciousCheck();
-            if(null != carSuspiciousCheck){
-                carSuspiciousCheck.setCarId(carSuspicious.getId());
-                carSuspiciousCheck.setAttachments(carSuspicious.getFileIds());
-                carSuspiciousCheck.setSuspicousFlag(carSuspicious.getIsExcept());
+            // 人工核实详情
+            for (CarSuspiciousCheck check : checkList) {
+                check.setCarId(carId);
+                check.setCarNo(carNo);
+                check.setSuspicousFlag(carSuspicious.getIsExcept());
 
-                //车辆信息
-                carSuspiciousCheck.setCarId(carInfo.getId());
-                carSuspiciousCheck.setCarNo(carInfo.getCarNo());
-                this.carSuspiciousCheckService.save(carSuspiciousCheck);
+                // --------------异常流水
+                CarExceptRecord carExceptRecord = new CarExceptRecord();
+                carExceptRecord.setCarId(carId);
+                carExceptRecord.setCarNo(carNo);
+                carExceptRecord.setCarType(rtnVo.getCarType());
+                carExceptRecord.setCarVehicle(rtnVo.getCarVehicle());
+                carExceptRecord.setCarNum(rtnVo.getCarNum());
+                carExceptRecord.setInStationId(rtnVo.getInStationId());
+                carExceptRecord.setInStation(rtnVo.getInStation());
+                carExceptRecord.setInTime(rtnVo.getInTime());
+                carExceptRecord.setOutStationId(rtnVo.getGantryStationId());
+                carExceptRecord.setOutStation(rtnVo.getGantrytStation());
+                carExceptRecord.setOutTime(rtnVo.getGantryTime());
+                carExceptRecord.setStatus("0");
+
+                carExceptRecord.setTotalAmount(check.getTotalAmount());
+                carExceptRecord.setChargeAmount(check.getChargeAmount());
+                carExceptRecord.setDifAmount(check.getDifAmount());
+                carExceptRecord.setEscapedType(check.getEscapedType());
+                exceptRecordList.add(carExceptRecord);
+
             }
 
-            CarExceptRecord carExceptRecord = getCarExceptRecord(carSuspicious, carInfo, carSuspiciousCheck);
-            this.carExceptRecordService.saveCarExceptRecord(carExceptRecord);*/
+            if (null != checkList && checkList.size() > 0) {
+                carSuspiciousCheckService.saveBatch(checkList); // 插入核实
+                carExceptRecordService.saveBatch(exceptRecordList); // 插入异常车辆流水
+            }
+
         }
 
-        return AjaxResult.success();
+
+        // 修改状态已核实
+        CarSuspicious updatebo = new CarSuspicious();
+        updatebo.setId(carId);
+        updatebo.setCheckStatus("1");
+        updatebo.setIsExcept(carSuspicious.getIsExcept());
+        updatebo.setExceptRemark(carSuspicious.getExceptRemark());
+        updatebo.setExceptFileIds(carSuspicious.getExceptFileIds());
+        carSuspiciousMapper.updateById(updatebo);
+
+        return AjaxResult.success("操作成功！",carSuspicious.getId());
     }
 }
