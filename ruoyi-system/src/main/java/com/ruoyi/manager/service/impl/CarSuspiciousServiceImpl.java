@@ -52,18 +52,15 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
      */
     @Override
     public CarSuspicious selectCarSuspiciousById(String id) {
+        
         CarSuspicious carSuspicious = carSuspiciousMapper.selectCarSuspiciousById(id);
-        if(null == carSuspicious){
-            return new CarSuspicious();
+
+        if(null != carSuspicious){
+            CarSuspiciousCheck querybo = new CarSuspiciousCheck();
+            querybo.setCarId(id);
+            List<CarSuspiciousCheck> checkList =   carSuspiciousCheckService.selectCarSuspiciousCheckList(querybo);
+            carSuspicious.setCheckList(checkList);
         }
-
-
-
-        // 人工核实详情
-     /*   LambdaQueryWrapper<CarSuspiciousCheck> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(CarSuspiciousCheck::getCarId,carSuspicious.getId());
-        List<CarSuspiciousCheck> list = this.carSuspiciousCheckService.list();
-        carSuspicious.setCarSuspiciousCheck(CollectionUtil.isNotEmpty(list) ? list.get(0): new CarSuspiciousCheck());*/
 
         return carSuspicious;
     }

@@ -57,7 +57,7 @@ public class CarSuspicious extends BasePlusEntityNew implements Custom {
     @Excel(name = "入口站")
     private String inStation;
 
-    /** 入口时间 */
+    /** 通行时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "通行时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date inTime;
@@ -125,6 +125,14 @@ public class CarSuspicious extends BasePlusEntityNew implements Custom {
     @Excel(name = "是否为可疑车辆")
     private String isExcept;
 
+    /** 可疑原因 */
+    @Excel(name = "可疑原因")
+    private String exceptRemark;
+
+    /** 可疑材料 */
+    @Excel(name = "可疑材料")
+    private String exceptFileIds;
+
     /** 核实状态（0未核实1已核实） */
     @Excel(name = "核实状态", readConverterExp = "0=未核实1已核实")
     private String checkStatus;
@@ -144,6 +152,10 @@ public class CarSuspicious extends BasePlusEntityNew implements Custom {
     /** 白名单原因 */
     @Excel(name = "白名单原因")
     private String whiteRemark;
+
+    /** 白名单材料 */
+    @Excel(name = "白名单材料")
+    private String whiteFileIds;
 
     /** 所属路线编码 */
     @Excel(name = "所属路线编码")

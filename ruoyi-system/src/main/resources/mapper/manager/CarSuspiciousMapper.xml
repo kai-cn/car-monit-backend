@@ -28,11 +28,14 @@
         <result property="escapedTypeName"    column="escaped_type_name"    />
         <result property="escapedNum"    column="escaped_num"    />
         <result property="isExcept"    column="is_except"    />
+        <result property="exceptRemark"    column="except_remark"    />
+        <result property="exceptFileIds"    column="except_file_ids"    />
         <result property="checkStatus"    column="check_status"    />
         <result property="orgId"    column="org_id"    />
         <result property="orgName"    column="org_name"    />
         <result property="isWhite"    column="is_white"    />
         <result property="whiteRemark"    column="white_remark"    />
+        <result property="whiteFileIds"    column="white_file_ids"    />
         <result property="roadCode"    column="road_code"    />
         <result property="roadName"    column="road_name"    />
         <result property="sectionCode"    column="section_code"    />
@@ -78,11 +81,14 @@
         t.escaped_type_name,
         t.escaped_num,
         t.is_except,
+        t.except_remark,
+        t.except_file_ids,
         t.check_status,
         t.org_id,
         t.org_name,
         t.is_white,
         t.white_remark,
+        t.white_file_ids,
         t.road_code,
         t.road_name,
         t.section_code,
@@ -133,11 +139,14 @@
         <if test="escapedTypeName != null  and escapedTypeName != ''"> and t.escaped_type_name like concat('%', #{escapedTypeName}, '%')</if>
         <if test="escapedNum != null "> and t.escaped_num = #{escapedNum}</if>
         <if test="isExcept != null  and isExcept != ''"> and t.is_except = #{isExcept}</if>
+        <if test="exceptRemark != null  and exceptRemark != ''"> and t.except_remark = #{exceptRemark}</if>
+        <if test="exceptFileIds != null  and exceptFileIds != ''"> and t.except_file_ids = #{exceptFileIds}</if>
         <if test="checkStatus != null  and checkStatus != ''"> and t.check_status = #{checkStatus}</if>
         <if test="orgId != null  and orgId != ''"> and t.org_id = #{orgId}</if>
         <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
         <if test="isWhite != null  and isWhite != ''"> and t.is_white = #{isWhite}</if>
         <if test="whiteRemark != null  and whiteRemark != ''"> and t.white_remark = #{whiteRemark}</if>
+        <if test="whiteFileIds != null  and whiteFileIds != ''"> and t.white_file_ids = #{whiteFileIds}</if>
         <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
         <if test="roadName != null  and roadName != ''"> and t.road_name like concat('%', #{roadName}, '%')</if>
         <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
