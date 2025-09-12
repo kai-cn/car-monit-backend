@@ -2,6 +2,8 @@ package com.ruoyi.web.controller.manager;
 
 import java.util.Arrays;
 import java.util.List;
+
+import com.ruoyi.common.utils.CommonUtil;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,6 +47,21 @@ public class CarConfimFreeController extends BaseController {
         List<CarConfimFree> list = carConfimFreeService.selectCarConfimFreeList(carConfimFree);
         return getDataTable(list);
     }
+
+
+    /**
+     * 查询确认补缴列表:根据车牌号查询
+     */
+    @GetMapping("/listCarNo")
+    public TableDataInfo listCarNo(CarConfimFree carConfimFree) {
+        startPage();
+        if (CommonUtil.isBlank(carConfimFree.getCarNo())){
+            carConfimFree.setCarNo("-1");
+        }
+        List<CarConfimFree> list = carConfimFreeService.selectCarConfimFreeList(carConfimFree);
+        return getDataTable(list);
+    }
+
 
     /**
      * 导出确认补缴列表

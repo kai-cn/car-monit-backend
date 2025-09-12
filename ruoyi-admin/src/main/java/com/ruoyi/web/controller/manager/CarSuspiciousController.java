@@ -10,6 +10,8 @@ import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.manager.domain.CarSuspiciousCheck;
+import com.ruoyi.manager.service.ICarSuspiciousCheckService;
 import com.ruoyi.system.service.ISysDictDataService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -49,6 +51,10 @@ public class CarSuspiciousController extends BaseController {
     @Autowired
     private ISysDictDataService sysDictDataService;
 
+    @Autowired
+    private ICarSuspiciousCheckService carSuspiciousCheckService;
+
+
     /**
      * 查询可疑车辆列表：菜单列表
      */
@@ -75,6 +81,29 @@ public class CarSuspiciousController extends BaseController {
         List<CarSuspicious> list = carSuspiciousService.selectCarSuspiciousList(carSuspicious);
         return getDataTable(list);
     }
+
+
+    /**
+     * 查询可疑车辆列表：根据车牌号查询：查询证明材料
+     */
+    @GetMapping("/listFileCarNo")
+    public AjaxResult listFileCarNo(CarSuspicious carSuspicious) {
+        if (CommonUtil.isBlank(carSuspicious.getCarNo())){
+            carSuspicious.setCarNo("-1");
+        }
+        carSuspicious.setIsExcept("1");
+        carSuspicious.setCheckStatus("1"); // 是可疑车俩并且
+        List<CarSuspicious> list = carSuspiciousService.selectCarSuspiciousList(carSuspicious);
+        for (CarSuspicious vo :list){
+            CarSuspiciousCheck querybo = new CarSuspiciousCheck();
+            querybo.setCarId(vo.getId());
+            List<CarSuspiciousCheck> checkList =   carSuspiciousCheckService.selectCarSuspiciousCheckList(querybo);
+            vo.setCheckList(checkList);
+        }
+        return AjaxResult.success(list);
+    }
+
+
 
 
 
