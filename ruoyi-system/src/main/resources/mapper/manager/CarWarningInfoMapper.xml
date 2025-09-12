@@ -21,6 +21,10 @@
         <result property="nextPassAddress"    column="next_pass_address"    />
         <result property="nextPassLongitude"    column="next_pass_longitude"    />
         <result property="nextPassLatitude"    column="next_pass_latitude"    />
+        <result property="roadCode"    column="road_code"    />
+        <result property="roadName"    column="road_name"    />
+        <result property="sectionCode"    column="section_code"    />
+        <result property="sectionName"    column="section_name"    />
         <result property="backCol1"    column="back_col1"    />
         <result property="backCol2"    column="back_col2"    />
         <result property="status"    column="status"    />
@@ -54,6 +58,10 @@
         t.next_pass_address,
         t.next_pass_longitude,
         t.next_pass_latitude,
+        t.road_code,
+        t.road_name,
+        t.section_code,
+        t.section_name,
         t.back_col1,
         t.back_col2,
         t.status,
@@ -93,6 +101,10 @@
         <if test="nextPassAddress != null  and nextPassAddress != ''"> and t.next_pass_address = #{nextPassAddress}</if>
         <if test="nextPassLongitude != null  and nextPassLongitude != ''"> and t.next_pass_longitude = #{nextPassLongitude}</if>
         <if test="nextPassLatitude != null  and nextPassLatitude != ''"> and t.next_pass_latitude = #{nextPassLatitude}</if>
+        <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
+        <if test="roadName != null  and roadName != ''"> and t.road_name like concat('%', #{roadName}, '%')</if>
+        <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
+        <if test="sectionName != null  and sectionName != ''"> and t.section_name like concat('%', #{sectionName}, '%')</if>
         <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
         <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
         <if test="status != null  and status != ''"> and t.status = #{status}</if>
