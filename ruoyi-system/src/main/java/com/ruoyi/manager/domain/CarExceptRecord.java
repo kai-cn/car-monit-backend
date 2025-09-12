@@ -109,12 +109,20 @@ public class CarExceptRecord extends BasePlusEntity implements Custom {
     @Excel(name = "状态", readConverterExp = "0=未补交1全部补交")
     private String status;
 
-    // 时间查询
+    // 时间查询 :入口时间
     @TableField(exist = false)
     private String applyTime1;
 
     @TableField(exist = false)
     private String applyTime2;
+
+
+    // 时间查询：出口时间
+    @TableField(exist = false)
+    private String applyTime3;
+
+    @TableField(exist = false)
+    private String applyTime4;
 
     // 查询时间
     @TableField(exist = false)
