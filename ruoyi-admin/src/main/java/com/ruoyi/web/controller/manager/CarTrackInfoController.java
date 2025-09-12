@@ -49,15 +49,15 @@ public class CarTrackInfoController extends BaseController {
     }
 
     /**
-     * 通过车俩ID查询
+     * 通根据车牌号查询
      *
      * @param carTrackInfo
      * @return
      */
     @GetMapping("/listByCarId")
     public AjaxResult listByCarId(CarTrackInfo carTrackInfo) {
-        if (CommonUtil.isBlank(carTrackInfo.getCarId())) {
-            carTrackInfo.setCarId("-1");
+        if (CommonUtil.isBlank(carTrackInfo.getCarNo())) {
+            carTrackInfo.setCarNo("-1");
         }
         List<CarTrackInfo> list = carTrackInfoService.selectCarTrackInfoList(carTrackInfo);
         return AjaxResult.success(list);

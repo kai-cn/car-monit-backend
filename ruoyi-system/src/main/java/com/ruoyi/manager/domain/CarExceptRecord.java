@@ -146,4 +146,9 @@ public class CarExceptRecord extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private String carNoQuery;
 
+
+    // 录入单位以及用户
+    @TableField(exist = false)
+    private String createInfo;
+
 }

@@ -61,6 +61,23 @@ public class CarSuspiciousController extends BaseController {
         return getDataTable(list);
     }
 
+
+
+    /**
+     * 查询可疑车辆列表：根据车牌号查询
+     */
+    @GetMapping("/listCarNo")
+    public TableDataInfo listCarNo(CarSuspicious carSuspicious) {
+        startPage();
+        if (CommonUtil.isBlank(carSuspicious.getCarNo())){
+            carSuspicious.setCarNo("-1");
+        }
+        List<CarSuspicious> list = carSuspiciousService.selectCarSuspiciousList(carSuspicious);
+        return getDataTable(list);
+    }
+
+
+
     /**
      * 查询可疑车辆列表：异常流水弹窗
      */

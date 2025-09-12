@@ -60,6 +60,22 @@ public class CarExceptRecordController extends BaseController {
         return getDataTable(list);
     }
 
+
+    /**
+     * 根据车牌号查询: 根据车牌号查询
+     * @param carExceptRecord
+     * @return
+     */
+    @GetMapping("/listCarNo")
+    public TableDataInfo listCarNo(CarExceptRecord carExceptRecord) {
+        startPage();
+        if (CommonUtil.isBlank(carExceptRecord.getCarNo())){
+            carExceptRecord.setCarNo("-1");
+        }
+        List<CarExceptRecord> list = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);
+        return getDataTable(list);
+    }
+
     /**
      * 导出异常车辆流水列表
      */
