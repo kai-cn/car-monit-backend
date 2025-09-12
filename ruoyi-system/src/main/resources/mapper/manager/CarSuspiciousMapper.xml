@@ -178,7 +178,7 @@
         SELECT
         t.car_no,t.car_type, t.escaped_type, t.section_name
         FROM car_suspicious t
-        WHERE t.del_flag = '0'
+        WHERE t.del_flag = '0' and is_except = '1' and check_status = '1'
         order by t.create_time desc,t.id limit 10
     </select>
 

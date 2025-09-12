@@ -149,8 +149,8 @@
     </select>
 
     <select id="getTopTen" resultType="com.ruoyi.manager.domain.vo.bigscreen.TopTenVO">
-        select sectionname, count(distinct platenumber) carNum
-        from ods_rt_szdn_snapshot_flow_addcode group by sectionname order by carNum desc limit 10;
+        select section_name, count(distinct car_no) carNum
+        from car_warning_info group by section_name order by carNum desc limit 10;
     </select>
 
 
