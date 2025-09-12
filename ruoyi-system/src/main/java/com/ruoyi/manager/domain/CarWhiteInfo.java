@@ -1,5 +1,6 @@
 package com.ruoyi.manager.domain;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -59,5 +60,13 @@ public class CarWhiteInfo extends BasePlusEntity implements Custom {
     /** 备注 */
     @Excel(name = "备注")
     private String remark;
+
+    // 查询时间
+    @TableField(exist = false)
+    private String createTimeStr;
+
+    // 录入单位以及用户
+    @TableField(exist = false)
+    private String createInfo;
 
 }

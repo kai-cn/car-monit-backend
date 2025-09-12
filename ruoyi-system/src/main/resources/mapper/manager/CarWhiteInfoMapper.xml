@@ -50,8 +50,10 @@
 
     <select id="selectCarWhiteInfoList" parameterType="com.ruoyi.manager.domain.CarWhiteInfo" resultMap="CarWhiteInfoResult">
         SELECT
-        <include refid="selectCarWhiteInfoVo"/>
+        <include refid="selectCarWhiteInfoVo"/>,concat(sd.dept_name, ' ', su.nick_name) createInfo
         FROM car_white_info t
+        left join sys_user su on su.user_id = t.create_by
+        left join sys_dept sd on t.eps_id = sd.dept_id
         WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="plateColor != null  and plateColor != ''"> and t.plate_color = #{plateColor}</if>
