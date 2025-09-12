@@ -64,6 +64,7 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
         }
         else
         {
+            carExceptRecord.setStatus("0");
             // 新增 主键
             carExceptRecordMapper.insert(carExceptRecord);
         }

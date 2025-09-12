@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -101,6 +102,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             carSuspicious.setUpdateBy(userId); // 更新人
             carSuspicious.setUpdateTime(DateUtils.getTimestampNew()); // 更新时间
             carSuspicious.setIsExcept("1"); // 默认是可疑车俩
+            carSuspicious.setStatus("0"); // 是否可以核实标识
             // 新增 主键
             carSuspiciousMapper.insert(carSuspicious);
         }
@@ -166,6 +168,13 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         } else {
             return AjaxResult.error("可疑车俩不存在！");
         }
+
+        if (CommonUtil.isNull(rtnVo.getStatus()).equals("1")){
+            return AjaxResult.error("可疑车俩异常流水已追缴！");
+        }
+
+
+
         // 车辆信息：根据车牌号查询
         String carNo = CommonUtil.isNull(rtnVo.getCarNo()); // 车牌号
 
@@ -183,18 +192,23 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         // 删除异常车辆信息
         carExceptRecordService.deleteCarExceptRecordByCarId(carId);
 
+        // 逃费类型
+        String escapedType = "";
+        BigDecimal escapedAmount = BigDecimal.ZERO;
+        for (CarSuspiciousCheck check : checkList) {
+            String addCheckType = CommonUtil.isNull(check.getEscapedType());
+            if (escapedType.indexOf(addCheckType) > -1) {
+            } else {
+                escapedType += addCheckType + ",";
+            }
+            if (null != check.getDifAmount()){
+                escapedAmount = escapedAmount.add(check.getDifAmount());
+            }
+        }
+        escapedType = CommonUtil.deleteEnd(escapedType);
+
         // 确认逃费
         if("1".equals(CommonUtil.isNull(carSuspicious.getIsExcept()))){
-            // 逃费类型
-            String escapedType = "";
-            for (CarSuspiciousCheck check : checkList) {
-                String addCheckType = CommonUtil.isNull(check.getEscapedType());
-                if (escapedType.indexOf(addCheckType) > -1) {
-                } else {
-                    escapedType += addCheckType + ",";
-                }
-            }
-            escapedType = CommonUtil.deleteEnd(escapedType);
 
 
             // 查询车俩
@@ -214,6 +228,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                 addCarInfo.setCarVehicle(rtnVo.getCarVehicle());
                 addCarInfo.setPlateColor(rtnVo.getPlateColor());
                 addCarInfo.setEscapedType(escapedType);
+                addCarInfo.setEscapedAmount(escapedAmount);
                 carInfoMapper.insert(addCarInfo);
             }
 
@@ -233,6 +248,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                 carExceptRecord.setCarType(rtnVo.getCarType());
                 carExceptRecord.setCarVehicle(rtnVo.getCarVehicle());
                 carExceptRecord.setCarNum(rtnVo.getCarNum());
+                carExceptRecord.setPassType(rtnVo.getPassType());
                 carExceptRecord.setInStationId(rtnVo.getInStationId());
                 carExceptRecord.setInStation(rtnVo.getInStation());
                 carExceptRecord.setInTime(rtnVo.getInTime());
@@ -264,6 +280,12 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         updatebo.setIsExcept(carSuspicious.getIsExcept());
         updatebo.setExceptRemark(carSuspicious.getExceptRemark());
         updatebo.setExceptFileIds(carSuspicious.getExceptFileIds());
+        updatebo.setEscapedType(escapedType);
+        if("0".equals(CommonUtil.isNull(carSuspicious.getIsExcept()))){
+            updatebo.setExceptRemark("");
+            updatebo.setExceptFileIds("");
+            updatebo.setEscapedType("");
+        }
         carSuspiciousMapper.updateById(updatebo);
 
         return AjaxResult.success("操作成功！",carSuspicious.getId());
