@@ -112,10 +112,10 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
 
         String exceptIds = CommonUtil.deleteEnd(carConfimFree.getExceptIds());
         List<String> exceptIdList = Arrays.asList(exceptIds.split(","));
-        List<CarConfimFree> list = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
+       /* List<CarConfimFree> list = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
         if (null != list && list.size() > 0) {
             return AjaxResult.error("请勿重复补缴！");
-        }
+        }*/
 
         if (CommonUtil.isNotBlank(carConfimFree.getId())) {
             // 修改
@@ -142,18 +142,22 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
                 item.setUpdateTime(DateUtils.getTimestamp());
             });
             this.carAduitFreeService.saveBatch(carAduitFreeList);
+
+            // 将处理金额进行累加
+         /*   BigDecimal processingAmount = carAduitFreeList.stream()
+                    .map(CarAduitFree::getAmount)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // 更新补缴状态
+            int comparison = carConfimFree.getAmount().compareTo(processingAmount);
+            String status = comparison == 0 ? "2" : comparison > 0 ? "1" : "0";*/
+
+            this.carExceptRecordService.updateStatusByExceptId(exceptIdList, "1");
+
         }
 
-        // 将处理金额进行累加
-        BigDecimal processingAmount = carAduitFreeList.stream()
-                .map(CarAduitFree::getAmount)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 更新补缴状态
-        int comparison = carConfimFree.getAmount().compareTo(processingAmount);
-        String status = comparison == 0 ? "2" : comparison > 0 ? "1" : "0";
-        this.carExceptRecordService.updateStatusByExceptId(exceptIdList, status);
 
         return AjaxResult.success("操作成功！", carConfimFree.getId());
 

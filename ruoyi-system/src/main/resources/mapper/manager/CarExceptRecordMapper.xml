@@ -75,7 +75,7 @@
         WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="carId != null  and carId != ''"> and t.car_id = #{carId}</if>
-        <if test="carNo != null  and carNo != ''"> and t.car_no like concat('%', #{carNo}, '%')</if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
         <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
         <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
         <if test="carNum != null "> and t.car_num = #{carNum}</if>
@@ -105,6 +105,7 @@
         <if test="applyTime3 != null  and applyTime3 != ''">and t.out_time >= STR_TO_DATE(#{applyTime3},'%Y-%m-%d %H:%i:%s')</if>
         <if test="applyTime4 != null  and applyTime4 != ''">and t.out_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime4},'%Y-%m-%d %H:%i:%s')</if>
 
+        <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
 
         <if test="exceptIds != null  and exceptIds != ''"> and find_in_set(t.id,#{exceptIds}) > 0 </if>
         order by t.create_time desc,t.id
