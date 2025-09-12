@@ -8,8 +8,11 @@ import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.manager.domain.CarAduitFree;
 import com.ruoyi.manager.domain.CarConfimFree;
 import com.ruoyi.manager.domain.CarExceptRecord;
+import com.ruoyi.manager.domain.CarSuspicious;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 import com.ruoyi.manager.mapper.CarConfimFreeMapper;
+import com.ruoyi.manager.mapper.CarExceptRecordMapper;
+import com.ruoyi.manager.mapper.CarSuspiciousMapper;
 import com.ruoyi.manager.service.ICarAduitFreeService;
 import com.ruoyi.manager.service.ICarConfimFreeService;
 import com.ruoyi.manager.service.ICarExceptRecordService;
@@ -43,6 +46,10 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
 
     @Autowired
     private ICarExceptRecordService carExceptRecordService;
+
+    @Autowired
+    private CarSuspiciousMapper carSuspiciousMapper;
+
 
     /**
      * 查询确认补缴
@@ -111,11 +118,15 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
     public AjaxResult saveCarConfimFree(CarConfimFree carConfimFree) {
 
         String exceptIds = CommonUtil.deleteEnd(carConfimFree.getExceptIds());
+        if(CommonUtil.isBlank(exceptIds)){
+            return AjaxResult.error("请选择车辆异常流水！");
+        }
         List<String> exceptIdList = Arrays.asList(exceptIds.split(","));
-       /* List<CarConfimFree> list = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
-        if (null != list && list.size() > 0) {
+
+       /* List<CarConfimFree> carConfimFreelist = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
+        if (null != carConfimFreelist && carConfimFreelist.size() > 0) {
             return AjaxResult.error("请勿重复补缴！");
-        }*/
+        } */
 
         if (CommonUtil.isNotBlank(carConfimFree.getId())) {
             // 修改
@@ -153,16 +164,22 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             int comparison = carConfimFree.getAmount().compareTo(processingAmount);
             String status = comparison == 0 ? "2" : comparison > 0 ? "1" : "0";*/
 
-            this.carExceptRecordService.updateStatusByExceptId(exceptIdList, "1");
+            // 修改异常流水状态
+            carExceptRecordService.updateStatusByExceptId(exceptIdList, "1");
 
+            CarExceptRecord carExceptRecord = new CarExceptRecord();
+            carExceptRecord.setExceptIds(exceptIds);
+            List<CarExceptRecord> carExceptRecordList = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);
+            for (CarExceptRecord ex : carExceptRecordList){
+                if (CommonUtil.isNotBlank(ex.getCarId())){
+                    CarSuspicious exupdatebo = new CarSuspicious();
+                    exupdatebo.setId(ex.getCarId());
+                    exupdatebo.setStatus("1");
+                    carSuspiciousMapper.updateById(exupdatebo);
+                }
+            }
         }
-
-
-
         return AjaxResult.success("操作成功！", carConfimFree.getId());
-
-
-
     }
 
     /**
