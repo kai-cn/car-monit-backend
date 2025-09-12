@@ -282,7 +282,6 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         updatebo.setExceptFileIds(carSuspicious.getExceptFileIds());
         updatebo.setEscapedType(escapedType);
         if("0".equals(CommonUtil.isNull(carSuspicious.getIsExcept()))){
-            updatebo.setExceptRemark("");
             updatebo.setExceptFileIds("");
             updatebo.setEscapedType("");
         }
