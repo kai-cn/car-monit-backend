@@ -79,7 +79,6 @@ public class CarExceptRecordController extends BaseController {
     /**
      * 导出异常车辆流水列表
      */
-    @PreAuthorize("@ss.hasPermi('manager:exceptrecord:export')")
     @Log(title = "异常车辆流水", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
     public AjaxResult export(CarExceptRecord carExceptRecord, HttpServletResponse response) {
@@ -133,7 +132,6 @@ public class CarExceptRecordController extends BaseController {
     /**
      * 新增异常车辆流水
      */
-    @PreAuthorize("@ss.hasPermi('manager:exceptrecord:add')")
     @Log(title = "异常车辆流水", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody CarExceptRecord carExceptRecord) {
@@ -143,7 +141,6 @@ public class CarExceptRecordController extends BaseController {
     /**
      * 修改异常车辆流水
      */
-    @PreAuthorize("@ss.hasPermi('manager:exceptrecord:edit')")
     @Log(title = "异常车辆流水", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody CarExceptRecord carExceptRecord) {
@@ -153,7 +150,6 @@ public class CarExceptRecordController extends BaseController {
     /**
      * 删除异常车辆流水
      */
-    @PreAuthorize("@ss.hasPermi('manager:exceptrecord:remove')")
     @Log(title = "异常车辆流水", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids) {
