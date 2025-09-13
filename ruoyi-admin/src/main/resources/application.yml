@@ -172,4 +172,4 @@ forest:
   max-retry-interval: 1000
 
 vehicleMonitor:
-  baseUrl: http://127.0.0.1:9901
+  baseUrl: http://172.30.100.102:9901
