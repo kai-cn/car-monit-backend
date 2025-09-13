@@ -128,6 +128,19 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             return AjaxResult.error("请勿重复补缴！");
         } */
 
+        // 修改明细
+        BigDecimal processingAmount = BigDecimal.ZERO;
+        List<CarAduitFree> carAduitFreeList = carConfimFree.getCarAduitFreeList();
+        if (null != carAduitFreeList && carAduitFreeList.size() > 0) {
+            // 将处理金额进行累加
+            processingAmount = carAduitFreeList.stream()
+                    .map(CarAduitFree::getAmount)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            carConfimFree.setAduitAmount(processingAmount);
+        }
+
+
         if (CommonUtil.isNotBlank(carConfimFree.getId())) {
             // 修改
             carConfimFreeMapper.updateById(carConfimFree);
@@ -136,9 +149,9 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             carConfimFreeMapper.insert(carConfimFree);
         }
 
-        // 修改明细
-        List<CarAduitFree> carAduitFreeList = carConfimFree.getCarAduitFreeList();
+
         if (null != carAduitFreeList && carAduitFreeList.size() > 0) {
+
             // 先删除
             carAduitFreeService.deleteCarAduitFreeByConfirmId(carConfimFree.getId());
             // 后新增
@@ -154,19 +167,16 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             });
             this.carAduitFreeService.saveBatch(carAduitFreeList);
 
-            // 将处理金额进行累加
-         /*   BigDecimal processingAmount = carAduitFreeList.stream()
-                    .map(CarAduitFree::getAmount)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
 
             // 更新补缴状态
-            int comparison = carConfimFree.getAmount().compareTo(processingAmount);
+           /* int comparison = carConfimFree.getAmount().compareTo(processingAmount);
             String status = comparison == 0 ? "2" : comparison > 0 ? "1" : "0";*/
 
             // 修改异常流水状态
             carExceptRecordService.updateStatusByExceptId(exceptIdList, "1");
 
+            // 修改异常车俩核实状态
             CarExceptRecord carExceptRecord = new CarExceptRecord();
             carExceptRecord.setExceptIds(exceptIds);
             List<CarExceptRecord> carExceptRecordList = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);

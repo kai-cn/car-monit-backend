@@ -68,6 +68,10 @@ public class CarConfimFree extends BasePlusEntity implements Custom {
     @Excel(name = "拆分金额")
     private BigDecimal amount;
 
+    /** 处理金额 */
+    @Excel(name = "处理金额")
+    private BigDecimal aduitAmount;
+
     /** 异常流水ids */
     @Excel(name = "异常流水ids")
     private String exceptIds;
@@ -115,5 +119,12 @@ public class CarConfimFree extends BasePlusEntity implements Custom {
     @Excel(name = "差额")
     @TableField(exist = false)
     private BigDecimal difAmount;
+
+    // 时间查询 :入口时间
+    @TableField(exist = false)
+    private String applyTime1;
+
+    @TableField(exist = false)
+    private String applyTime2;
 
 }

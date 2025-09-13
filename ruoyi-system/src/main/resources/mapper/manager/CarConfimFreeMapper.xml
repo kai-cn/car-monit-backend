@@ -15,6 +15,7 @@
         <result property="userIds"    column="user_ids"    />
         <result property="userNames"    column="user_names"    />
         <result property="amount"    column="amount"    />
+        <result property="aduitAmount"    column="aduit_amount"    />
         <result property="exceptIds"    column="except_ids"    />
         <result property="backCol1"    column="back_col1"    />
         <result property="backCol2"    column="back_col2"    />
@@ -44,6 +45,7 @@
         t.user_ids,
         t.user_names,
         t.amount,
+        t.aduit_amount,
         t.except_ids,
         t.back_col1,
         t.back_col2,
@@ -87,6 +89,8 @@
         <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
         <if test="createBy != null "> and t.create_by = #{createBy}</if>
         <if test="exceptIds != null  and exceptIds != ''"> and find_in_set(t.id,#{exceptIds}) > 0 </if>
+        <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
         order by t.create_time desc,t.id
     </select>
 

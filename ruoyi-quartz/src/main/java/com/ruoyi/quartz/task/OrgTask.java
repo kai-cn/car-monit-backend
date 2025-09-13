@@ -36,7 +36,7 @@ public class OrgTask {
         }
 
         // 只查询江西省交通投资集团有限责任公司下的数据
-        List<SysDept> sysDeptList = list.stream().filter(v -> "000000110053".equals(v.getOrgLevelCode()) || v.getOrgLevelCode().contains("0000001100530008")).map(v -> {
+        List<SysDept> sysDeptList = list.stream().filter(v -> "00000011005399999999".equals(v.getOrgLevelCode()) || v.getOrgLevelCode().contains("0000001100530008")).map(v -> {
             SysDept sysDept = new SysDept();
             sysDept.setDeptId(Long.parseLong(v.getBigId()));
             sysDept.setParentId(v.getParentId());
