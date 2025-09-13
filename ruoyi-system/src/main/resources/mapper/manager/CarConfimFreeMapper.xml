@@ -76,7 +76,7 @@
         <if test="linkName != null  and linkName != ''"> and t.link_name like concat('%', #{linkName}, '%')</if>
         <if test="linkPhone != null  and linkPhone != ''"> and t.link_phone = #{linkPhone}</if>
         <if test="orgId != null  and orgId != ''"> and t.org_id = #{orgId}</if>
-        <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
+        <if test="orgName != null  and orgName != ''"> and sd.dept_name like concat('%', #{orgName}, '%')</if>
         <if test="userIds != null  and userIds != ''"> and t.user_ids = #{userIds}</if>
         <if test="userNames != null  and userNames != ''"> and t.user_names = #{userNames}</if>
         <if test="amount != null "> and t.amount = #{amount}</if>
@@ -89,6 +89,7 @@
         <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
         <if test="createBy != null "> and t.create_by = #{createBy}</if>
         <if test="exceptIds != null  and exceptIds != ''"> and find_in_set(t.id,#{exceptIds}) > 0 </if>
+        <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
         <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')</if>
         <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
         order by t.create_time desc,t.id

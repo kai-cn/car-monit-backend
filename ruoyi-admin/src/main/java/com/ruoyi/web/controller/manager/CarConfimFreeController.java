@@ -66,7 +66,6 @@ public class CarConfimFreeController extends BaseController {
     /**
      * 导出确认补缴列表
      */
-    @PreAuthorize("@ss.hasPermi('manager:confimfree:export')")
     @Log(title = "确认补缴", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
     public AjaxResult export(CarConfimFree carConfimFree) {
