@@ -64,4 +64,13 @@ public interface ICarConfimFreeService extends IService<CarConfimFree> {
      */
     AjaxResult selectCarConfimFreeByExceptIds(String exceptIds);
 
+
+    /**
+     * 查询确认补缴列表
+     *
+     * @param carConfimFree 确认补缴
+     * @return 确认补缴集合
+     */
+    CarConfimFree listCount(CarConfimFree carConfimFree);
+
 }

@@ -131,4 +131,12 @@ public class CarConfimFree extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private String carNoQuery;
 
+    // 异常流水次数
+    @TableField(exist = false)
+    private Integer confimFreeNum;
+
+    // 异常流水金额
+    @TableField(exist = false)
+    private BigDecimal confimFreeAmount;
+
 }

@@ -57,4 +57,13 @@ public interface CarConfimFreeMapper extends BaseMapper<CarConfimFree> {
     String selectOrgId(@Param("carId") String carId, @Param("id") String id);
 
     List<CarConfimFree> selectCarConfimFreeByExceptIds(List<String> exceptIds);
+
+
+    /**
+     * 查询确认补缴
+     *
+     * @param carConfimFree
+     * @return 确认补缴
+     */
+    CarConfimFree listCount(CarConfimFree carConfimFree);
 }

@@ -62,6 +62,18 @@ public class CarConfimFreeController extends BaseController {
         return getDataTable(list);
     }
 
+    /**
+     * 查询确认补缴列表:根据车牌号查询
+     */
+    @GetMapping("/listCount")
+    public AjaxResult listCount(CarConfimFree carConfimFree) {
+        if (CommonUtil.isBlank(carConfimFree.getCarNo())) {
+            carConfimFree.setCarNo("-1");
+        }
+        CarConfimFree rtn = carConfimFreeService.listCount(carConfimFree);
+        return AjaxResult.success(rtn);
+    }
+
 
     /**
      * 导出确认补缴列表

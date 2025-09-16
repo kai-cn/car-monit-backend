@@ -314,4 +314,14 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
 
         return AjaxResult.success(carConfimFree);
     }
+
+    /**
+     * 查询确认补缴列表
+     *
+     * @param carConfimFree 确认补缴
+     * @return 确认补缴集合
+     */
+    public CarConfimFree listCount(CarConfimFree carConfimFree){
+        return  carConfimFreeMapper.listCount(carConfimFree);
+    }
 }

@@ -143,4 +143,13 @@
             #{id}
         </foreach>
     </update>
+
+    <select id="listCount" parameterType="com.ruoyi.manager.domain.CarConfimFree" resultMap="CarConfimFreeResult">
+        select
+          t.car_no,count(1) confimFreeNum,round(ifnull(sum(t.aduit_amount),0),2) confimFreeAmount
+        from car_confim_free t
+        where t.del_flag = '0' and t.car_no = #{carNo}
+        group by t.car_no
+    </select>
+
 </mapper>
