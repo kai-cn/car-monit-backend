@@ -144,4 +144,14 @@
         delete from  car_except_record   where car_id = #{fkId}
     </delete>
 
+
+    <select id="exceptRecordCount" parameterType="com.ruoyi.manager.domain.CarExceptRecord" resultMap="CarExceptRecordResult">
+        select
+        t.car_no,count(1) exceptNum,round(sum(t.dif_amount),2) exceptAmount
+        from car_except_record t
+        where t.del_flag = '0' and t.car_no = #{carNo}
+        group by t.car_no
+    </select>
+
+
 </mapper>

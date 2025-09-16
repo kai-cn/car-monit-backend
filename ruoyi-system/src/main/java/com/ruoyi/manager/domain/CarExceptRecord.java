@@ -1,17 +1,17 @@
 package com.ruoyi.manager.domain;
 
-import java.math.BigDecimal;
-import java.util.Date;
-
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BasePlusEntity;
 import com.ruoyi.common.core.domain.Custom;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+
+import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * 异常车辆流水对象 car_except_record
@@ -150,5 +150,13 @@ public class CarExceptRecord extends BasePlusEntity implements Custom {
     // 录入单位以及用户
     @TableField(exist = false)
     private String createInfo;
+
+    // 异常流水次数
+    @TableField(exist = false)
+    private Integer exceptNum;
+
+    // 异常流水金额
+    @TableField(exist = false)
+    private BigDecimal exceptAmount;
 
 }

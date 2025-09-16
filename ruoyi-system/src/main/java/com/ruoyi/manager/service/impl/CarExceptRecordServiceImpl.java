@@ -114,6 +114,16 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
         return AjaxResult.success(count);
     }
 
+    /**
+     * 根据车牌号统计
+     *
+     * @param carExceptRecord  车牌号
+     * @return 异常车辆流水
+     */
+    public CarExceptRecord exceptRecordCount(CarExceptRecord carExceptRecord){
+        return carExceptRecordMapper.exceptRecordCount(carExceptRecord);
+    }
+
 
 
 }

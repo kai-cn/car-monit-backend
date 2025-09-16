@@ -62,5 +62,15 @@ public interface ICarExceptRecordService extends IService<CarExceptRecord> {
     AjaxResult deleteCarExceptRecordByCarId(String fkId);
 
 
+    /**
+     * 根据车牌号统计
+     *
+     * @param carExceptRecord  车牌号
+     * @return 异常车辆流水
+     */
+    CarExceptRecord exceptRecordCount(CarExceptRecord carExceptRecord);
+
+
+
 
 }

@@ -77,6 +77,19 @@ public class CarExceptRecordController extends BaseController {
     }
 
     /**
+     * 根据车牌号查询统计
+     */
+    @GetMapping(value = "/exceptRecordCount")
+    public AjaxResult exceptRecordCount(CarExceptRecord carExceptRecord) {
+        if (CommonUtil.isBlank(carExceptRecord.getCarNo())){
+            carExceptRecord.setCarNo("-1");
+        }
+        return AjaxResult.success(carExceptRecordService.exceptRecordCount(carExceptRecord));
+    }
+
+
+
+    /**
      * 导出异常车辆流水列表
      */
     @Log(title = "异常车辆流水", businessType = BusinessType.EXPORT)
