@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.OdsRtSzdnSnapshotFlowProvcaptureAddcodeMapper">
+
+    <resultMap type="com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowProvcaptureAddcode" id="OdsRtSzdnSnapshotFlowProvcaptureAddcodeResult">
+        <result property="bigId"    column="big_id"    />
+        <result property="deviceip"    column="deviceip"    />
+        <result property="tailcapturetimeunix"    column="tailcapturetimeunix"    />
+        <result property="tailcapturetime"    column="tailcapturetime"    />
+        <result property="extendattribute"    column="extendattribute"    />
+        <result property="smallsideimagewidth"    column="smallsideimagewidth"    />
+        <result property="axletype"    column="axletype"    />
+        <result property="smallsideimageheight"    column="smallsideimageheight"    />
+        <result property="platecolorcode"    column="platecolorcode"    />
+        <result property="platecolor"    column="platecolor"    />
+        <result property="cover"    column="cover"    />
+        <result property="averageauthoritative"    column="averageauthoritative"    />
+        <result property="headlanecode"    column="headlanecode"    />
+        <result property="specialvehicle"    column="specialvehicle"    />
+        <result property="carlength"    column="carlength"    />
+        <result property="resulttype"    column="resulttype"    />
+        <result property="carhight"    column="carhight"    />
+        <result property="carmodelscode"    column="carmodelscode"    />
+        <result property="carmodels"    column="carmodels"    />
+        <result property="laneposition"    column="laneposition"    />
+        <result property="firstauthoritative"    column="firstauthoritative"    />
+        <result property="tailplateimageheight"    column="tailplateimageheight"    />
+        <result property="axlecount"    column="axlecount"    />
+        <result property="plateimagewidth"    column="plateimagewidth"    />
+        <result property="specialclass"    column="specialclass"    />
+        <result property="tailplatenumber"    column="tailplatenumber"    />
+        <result property="tailimage"    column="tailimage"    />
+        <result property="sidecapturetimeunix"    column="sidecapturetimeunix"    />
+        <result property="sidecapturetime"    column="sidecapturetime"    />
+        <result property="sidelanecode"    column="sidelanecode"    />
+        <result property="wheelbase"    column="wheelbase"    />
+        <result property="attached"    column="attached"    />
+        <result property="wheelcount"    column="wheelcount"    />
+        <result property="guid"    column="guid"    />
+        <result property="sideimagewidth"    column="sideimagewidth"    />
+        <result property="plateimageheight"    column="plateimageheight"    />
+        <result property="datasource"    column="datasource"    />
+        <result property="carclass"    column="carclass"    />
+        <result property="gantryid"    column="gantryid"    />
+        <result property="smallsideimage"    column="smallsideimage"    />
+        <result property="headimageheight"    column="headimageheight"    />
+        <result property="sidescenetypecode"    column="sidescenetypecode"    />
+        <result property="sidescenetype"    column="sidescenetype"    />
+        <result property="tailimagewidth"    column="tailimagewidth"    />
+        <result property="envstate"    column="envstate"    />
+        <result property="headscenetypecode"    column="headscenetypecode"    />
+        <result property="headscenetype"    column="headscenetype"    />
+        <result property="sidedrivingdirectioncode"    column="sidedrivingdirectioncode"    />
+        <result property="sidedrivingdirection"    column="sidedrivingdirection"    />
+        <result property="sideimageheight"    column="sideimageheight"    />
+        <result property="speed"    column="speed"    />
+        <result property="tailplateimage"    column="tailplateimage"    />
+        <result property="headdrivingdirectioncode"    column="headdrivingdirectioncode"    />
+        <result property="headdrivingdirection"    column="headdrivingdirection"    />
+        <result property="cartype"    column="cartype"    />
+        <result property="plateimage"    column="plateimage"    />
+        <result property="changelane"    column="changelane"    />
+        <result property="sideimage"    column="sideimage"    />
+        <result property="tailplateposition"    column="tailplateposition"    />
+        <result property="headimagewidth"    column="headimagewidth"    />
+        <result property="headimage"    column="headimage"    />
+        <result property="carweight"    column="carweight"    />
+        <result property="tailimageheight"    column="tailimageheight"    />
+        <result property="devicecode"    column="devicecode"    />
+        <result property="platenumber"    column="platenumber"    />
+        <result property="tailplatecolorcode"    column="tailplatecolorcode"    />
+        <result property="tailplatecolor"    column="tailplatecolor"    />
+        <result property="uploadtimeunix"    column="uploadtimeunix"    />
+        <result property="uploadtime"    column="uploadtime"    />
+        <result property="impostoraxlecount"    column="impostoraxlecount"    />
+        <result property="taillanecode"    column="taillanecode"    />
+        <result property="siteid"    column="siteid"    />
+        <result property="headcapturetimeunix"    column="headcapturetimeunix"    />
+        <result property="headcapturetime"    column="headcapturetime"    />
+        <result property="plateposition"    column="plateposition"    />
+        <result property="tailplateimagewidth"    column="tailplateimagewidth"    />
+        <result property="loadtime"    column="loadtime"    />
+        <result property="gradelevel"    column="gradelevel"    />
+        <result property="datauuid"    column="datauuid"    />
+        <result property="reserve1"    column="reserve1"    />
+        <result property="reserve2"    column="reserve2"    />
+        <result property="reserve3"    column="reserve3"    />
+
+    </resultMap>
+
+    <sql id="selectOdsRtSzdnSnapshotFlowProvcaptureAddcodeVo">
+        t.big_id,
+        t.deviceip,
+        t.tailcapturetimeunix,
+        t.tailcapturetime,
+        t.extendattribute,
+        t.smallsideimagewidth,
+        t.axletype,
+        t.smallsideimageheight,
+        t.platecolorcode,
+        t.platecolor,
+        t.cover,
+        t.averageauthoritative,
+        t.headlanecode,
+        t.specialvehicle,
+        t.carlength,
+        t.resulttype,
+        t.carhight,
+        t.carmodelscode,
+        t.carmodels,
+        t.laneposition,
+        t.firstauthoritative,
+        t.tailplateimageheight,
+        t.axlecount,
+        t.plateimagewidth,
+        t.specialclass,
+        t.tailplatenumber,
+        t.tailimage,
+        t.sidecapturetimeunix,
+        t.sidecapturetime,
+        t.sidelanecode,
+        t.wheelbase,
+        t.attached,
+        t.wheelcount,
+        t.guid,
+        t.sideimagewidth,
+        t.plateimageheight,
+        t.datasource,
+        t.carclass,
+        t.gantryid,
+        t.smallsideimage,
+        t.headimageheight,
+        t.sidescenetypecode,
+        t.sidescenetype,
+        t.tailimagewidth,
+        t.envstate,
+        t.headscenetypecode,
+        t.headscenetype,
+        t.sidedrivingdirectioncode,
+        t.sidedrivingdirection,
+        t.sideimageheight,
+        t.speed,
+        t.tailplateimage,
+        t.headdrivingdirectioncode,
+        t.headdrivingdirection,
+        t.cartype,
+        t.plateimage,
+        t.changelane,
+        t.sideimage,
+        t.tailplateposition,
+        t.headimagewidth,
+        t.headimage,
+        t.carweight,
+        t.tailimageheight,
+        t.devicecode,
+        t.platenumber,
+        t.tailplatecolorcode,
+        t.tailplatecolor,
+        t.uploadtimeunix,
+        t.uploadtime,
+        t.impostoraxlecount,
+        t.taillanecode,
+        t.siteid,
+        t.headcapturetimeunix,
+        t.headcapturetime,
+        t.plateposition,
+        t.tailplateimagewidth,
+        t.loadtime,
+        t.gradelevel,
+        t.datauuid,
+        t.reserve1,
+        t.reserve2,
+        t.reserve3
+    </sql>
+
+
+    <select id="selectOdsRtSzdnSnapshotFlowProvcaptureAddcodeList" parameterType="com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowProvcaptureAddcode" resultMap="OdsRtSzdnSnapshotFlowProvcaptureAddcodeResult">
+        SELECT
+        <include refid="selectOdsRtSzdnSnapshotFlowProvcaptureAddcodeVo"/>
+        FROM ods_rt_szdn_snapshot_flow_provcapture_addcode t
+        WHERE 1 = 1
+        <if test="bigId != null "> and t.big_id = #{bigId}</if>
+        <if test="deviceip != null  and deviceip != ''"> and t.deviceip = #{deviceip}</if>
+        <if test="tailcapturetimeunix != null "> and t.tailcapturetimeunix = #{tailcapturetimeunix}</if>
+        <if test="tailcapturetime != null "> and t.tailcapturetime = #{tailcapturetime}</if>
+        <if test="extendattribute != null  and extendattribute != ''"> and t.extendattribute = #{extendattribute}</if>
+        <if test="smallsideimagewidth != null "> and t.smallsideimagewidth = #{smallsideimagewidth}</if>
+        <if test="axletype != null  and axletype != ''"> and t.axletype = #{axletype}</if>
+        <if test="smallsideimageheight != null "> and t.smallsideimageheight = #{smallsideimageheight}</if>
+        <if test="platecolorcode != null "> and t.platecolorcode = #{platecolorcode}</if>
+        <if test="platecolor != null  and platecolor != ''"> and t.platecolor = #{platecolor}</if>
+        <if test="cover != null  and cover != ''"> and t.cover = #{cover}</if>
+        <if test="averageauthoritative != null "> and t.averageauthoritative = #{averageauthoritative}</if>
+        <if test="headlanecode != null "> and t.headlanecode = #{headlanecode}</if>
+        <if test="specialvehicle != null "> and t.specialvehicle = #{specialvehicle}</if>
+        <if test="carlength != null "> and t.carlength = #{carlength}</if>
+        <if test="resulttype != null  and resulttype != ''"> and t.resulttype = #{resulttype}</if>
+        <if test="carhight != null "> and t.carhight = #{carhight}</if>
+        <if test="carmodelscode != null "> and t.carmodelscode = #{carmodelscode}</if>
+        <if test="carmodels != null  and carmodels != ''"> and t.carmodels = #{carmodels}</if>
+        <if test="laneposition != null  and laneposition != ''"> and t.laneposition = #{laneposition}</if>
+        <if test="firstauthoritative != null "> and t.firstauthoritative = #{firstauthoritative}</if>
+        <if test="tailplateimageheight != null "> and t.tailplateimageheight = #{tailplateimageheight}</if>
+        <if test="axlecount != null "> and t.axlecount = #{axlecount}</if>
+        <if test="plateimagewidth != null "> and t.plateimagewidth = #{plateimagewidth}</if>
+        <if test="specialclass != null  and specialclass != ''"> and t.specialclass = #{specialclass}</if>
+        <if test="tailplatenumber != null  and tailplatenumber != ''"> and t.tailplatenumber = #{tailplatenumber}</if>
+        <if test="tailimage != null  and tailimage != ''"> and t.tailimage = #{tailimage}</if>
+        <if test="sidecapturetimeunix != null "> and t.sidecapturetimeunix = #{sidecapturetimeunix}</if>
+        <if test="sidecapturetime != null "> and t.sidecapturetime = #{sidecapturetime}</if>
+        <if test="sidelanecode != null "> and t.sidelanecode = #{sidelanecode}</if>
+        <if test="wheelbase != null "> and t.wheelbase = #{wheelbase}</if>
+        <if test="attached != null  and attached != ''"> and t.attached = #{attached}</if>
+        <if test="wheelcount != null "> and t.wheelcount = #{wheelcount}</if>
+        <if test="guid != null  and guid != ''"> and t.guid = #{guid}</if>
+        <if test="sideimagewidth != null "> and t.sideimagewidth = #{sideimagewidth}</if>
+        <if test="plateimageheight != null "> and t.plateimageheight = #{plateimageheight}</if>
+        <if test="datasource != null  and datasource != ''"> and t.datasource = #{datasource}</if>
+        <if test="carclass != null  and carclass != ''"> and t.carclass = #{carclass}</if>
+        <if test="gantryid != null  and gantryid != ''"> and t.gantryid = #{gantryid}</if>
+        <if test="smallsideimage != null  and smallsideimage != ''"> and t.smallsideimage = #{smallsideimage}</if>
+        <if test="headimageheight != null "> and t.headimageheight = #{headimageheight}</if>
+        <if test="sidescenetypecode != null "> and t.sidescenetypecode = #{sidescenetypecode}</if>
+        <if test="sidescenetype != null  and sidescenetype != ''"> and t.sidescenetype = #{sidescenetype}</if>
+        <if test="tailimagewidth != null "> and t.tailimagewidth = #{tailimagewidth}</if>
+        <if test="envstate != null  and envstate != ''"> and t.envstate = #{envstate}</if>
+        <if test="headscenetypecode != null "> and t.headscenetypecode = #{headscenetypecode}</if>
+        <if test="headscenetype != null  and headscenetype != ''"> and t.headscenetype = #{headscenetype}</if>
+        <if test="sidedrivingdirectioncode != null "> and t.sidedrivingdirectioncode = #{sidedrivingdirectioncode}</if>
+        <if test="sidedrivingdirection != null  and sidedrivingdirection != ''"> and t.sidedrivingdirection = #{sidedrivingdirection}</if>
+        <if test="sideimageheight != null "> and t.sideimageheight = #{sideimageheight}</if>
+        <if test="speed != null  and speed != ''"> and t.speed = #{speed}</if>
+        <if test="tailplateimage != null  and tailplateimage != ''"> and t.tailplateimage = #{tailplateimage}</if>
+        <if test="headdrivingdirectioncode != null "> and t.headdrivingdirectioncode = #{headdrivingdirectioncode}</if>
+        <if test="headdrivingdirection != null  and headdrivingdirection != ''"> and t.headdrivingdirection = #{headdrivingdirection}</if>
+        <if test="cartype != null  and cartype != ''"> and t.cartype = #{cartype}</if>
+        <if test="plateimage != null  and plateimage != ''"> and t.plateimage = #{plateimage}</if>
+        <if test="changelane != null  and changelane != ''"> and t.changelane = #{changelane}</if>
+        <if test="sideimage != null  and sideimage != ''"> and t.sideimage = #{sideimage}</if>
+        <if test="tailplateposition != null  and tailplateposition != ''"> and t.tailplateposition = #{tailplateposition}</if>
+        <if test="headimagewidth != null "> and t.headimagewidth = #{headimagewidth}</if>
+        <if test="headimage != null  and headimage != ''"> and t.headimage = #{headimage}</if>
+        <if test="carweight != null "> and t.carweight = #{carweight}</if>
+        <if test="tailimageheight != null "> and t.tailimageheight = #{tailimageheight}</if>
+        <if test="devicecode != null  and devicecode != ''"> and t.devicecode = #{devicecode}</if>
+        <if test="platenumber != null  and platenumber != ''"> and t.platenumber = #{platenumber}</if>
+        <if test="tailplatecolorcode != null "> and t.tailplatecolorcode = #{tailplatecolorcode}</if>
+        <if test="tailplatecolor != null  and tailplatecolor != ''"> and t.tailplatecolor = #{tailplatecolor}</if>
+        <if test="uploadtimeunix != null "> and t.uploadtimeunix = #{uploadtimeunix}</if>
+        <if test="uploadtime != null "> and t.uploadtime = #{uploadtime}</if>
+        <if test="impostoraxlecount != null "> and t.impostoraxlecount = #{impostoraxlecount}</if>
+        <if test="taillanecode != null "> and t.taillanecode = #{taillanecode}</if>
+        <if test="siteid != null "> and t.siteid = #{siteid}</if>
+        <if test="headcapturetimeunix != null "> and t.headcapturetimeunix = #{headcapturetimeunix}</if>
+        <if test="headcapturetime != null "> and t.headcapturetime = #{headcapturetime}</if>
+        <if test="plateposition != null  and plateposition != ''"> and t.plateposition = #{plateposition}</if>
+        <if test="tailplateimagewidth != null "> and t.tailplateimagewidth = #{tailplateimagewidth}</if>
+        <if test="loadtime != null "> and t.loadtime = #{loadtime}</if>
+        <if test="gradelevel != null "> and t.gradelevel = #{gradelevel}</if>
+        <if test="datauuid != null  and datauuid != ''"> and t.datauuid = #{datauuid}</if>
+        <if test="reserve1 != null  and reserve1 != ''"> and t.reserve1 = #{reserve1}</if>
+        <if test="reserve2 != null  and reserve2 != ''"> and t.reserve2 = #{reserve2}</if>
+        <if test="reserve3 != null  and reserve3 != ''"> and t.reserve3 = #{reserve3}</if>
+        order by t.big_id
+    </select>
+
+    <select id="selectOdsRtSzdnSnapshotFlowProvcaptureAddcodeById" parameterType="Long" resultMap="OdsRtSzdnSnapshotFlowProvcaptureAddcodeResult">
+         select
+         <include refid="selectOdsRtSzdnSnapshotFlowProvcaptureAddcodeVo"/>
+         from ods_rt_szdn_snapshot_flow_provcapture_addcode t
+         where t.big_id = #{bigId}
+    </select>
+
+
+</mapper>

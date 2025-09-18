@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.ZdataTrailTracksMapper">
+
+    <resultMap type="com.ruoyi.base.domain.ZdataTrailTracks" id="ZdataTrailTracksResult">
+        <result property="uuid"    column="uuid"    />
+        <result property="type"    column="type"    />
+        <result property="pointCount"    column="point_count"    />
+        <result property="plateKey"    column="plate_key"    />
+        <result property="enterTime"    column="enter_time"    />
+        <result property="exitTime"    column="exit_time"    />
+        <result property="trailPoints"    column="trail_points"    />
+
+    </resultMap>
+
+    <sql id="selectZdataTrailTracksVo">
+        t.uuid,
+        t.type,
+        t.point_count,
+        t.plate_key,
+        t.enter_time,
+        t.exit_time,
+        t.trail_points,
+        t.create_time
+    </sql>
+
+
+    <select id="selectZdataTrailTracksList" parameterType="com.ruoyi.base.domain.ZdataTrailTracks" resultMap="ZdataTrailTracksResult">
+        SELECT
+        <include refid="selectZdataTrailTracksVo"/>
+        FROM zdata_trail_tracks t
+        WHERE 1 = 1
+        <if test="uuid != null  and uuid != ''"> and t.uuid = #{uuid}</if>
+        <if test="type != null "> and t.type = #{type}</if>
+        <if test="pointCount != null "> and t.point_count = #{pointCount}</if>
+        <if test="plateKey != null  and plateKey != ''"> and t.plate_key = #{plateKey}</if>
+        <if test="enterTime != null "> and t.enter_time = #{enterTime}</if>
+        <if test="exitTime != null "> and t.exit_time = #{exitTime}</if>
+        <if test="trailPoints != null  and trailPoints != ''"> and t.trail_points = #{trailPoints}</if>
+        order by t.big_id
+    </select>
+
+    <select id="selectZdataTrailTracksById" parameterType="String" resultMap="ZdataTrailTracksResult">
+         select
+         <include refid="selectZdataTrailTracksVo"/>
+         from zdata_trail_tracks t
+         where t.uuid = #{uuid}
+    </select>
+
+
+</mapper>

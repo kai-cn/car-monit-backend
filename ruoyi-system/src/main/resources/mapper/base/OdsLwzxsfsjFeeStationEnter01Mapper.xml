@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.OdsLwzxsfsjFeeStationEnter01Mapper">
+
+    <resultMap type="com.ruoyi.base.domain.OdsLwzxsfsjFeeStationEnter01" id="OdsLwzxsfsjFeeStationEnter01Result">
+        <result property="bigId"    column="big_id"    />
+        <result property="cardid"    column="cardid"    />
+        <result property="electricalpercentage"    column="electricalpercentage"    />
+        <result property="enaxlecount"    column="enaxlecount"    />
+        <result property="entime"    column="entime"    />
+        <result property="entolllanehex"    column="entolllanehex"    />
+        <result property="entolllaneid"    column="entolllaneid"    />
+        <result property="entollstationid"    column="entollstationid"    />
+        <result property="enweight"    column="enweight"    />
+        <result property="identifyvehicleid"    column="identifyvehicleid"    />
+        <result property="lanetype"    column="lanetype"    />
+        <result property="mediatype"    column="mediatype"    />
+        <result property="operid"    column="operid"    />
+        <result property="operationmedia"    column="operationmedia"    />
+        <result property="params"    column="params"    />
+        <result property="passid"    column="passid"    />
+        <result property="receivetime"    column="receivetime"    />
+        <result property="shift"    column="shift"    />
+        <result property="signstatus"    column="signstatus"    />
+        <result property="specialtype"    column="specialtype"    />
+        <result property="tac"    column="tac"    />
+        <result property="terminalno"    column="terminalno"    />
+        <result property="terminaltransno"    column="terminaltransno"    />
+        <result property="transfee"    column="transfee"    />
+        <result property="transtype"    column="transtype"    />
+        <result property="vcount"    column="vcount"    />
+        <result property="vehicleclass"    column="vehicleclass"    />
+        <result property="vehicleid"    column="vehicleid"    />
+        <result property="vehiclesign"    column="vehiclesign"    />
+        <result property="vehiclesignid"    column="vehiclesignid"    />
+        <result property="vehicletype"    column="vehicletype"    />
+        <result property="loadTime"    column="load_time"    />
+        <result property="gradeLevel"    column="grade_level"    />
+
+    </resultMap>
+
+    <sql id="selectOdsLwzxsfsjFeeStationEnter01Vo">
+        t.big_id,
+        t.cardid,
+        t.electricalpercentage,
+        t.enaxlecount,
+        t.entime,
+        t.entolllanehex,
+        t.entolllaneid,
+        t.entollstationid,
+        t.enweight,
+        t.id,
+        t.identifyvehicleid,
+        t.lanetype,
+        t.mediatype,
+        t.operid,
+        t.operationmedia,
+        t.params,
+        t.passid,
+        t.receivetime,
+        t.shift,
+        t.signstatus,
+        t.specialtype,
+        t.tac,
+        t.terminalno,
+        t.terminaltransno,
+        t.transfee,
+        t.transtype,
+        t.vcount,
+        t.vehicleclass,
+        t.vehicleid,
+        t.vehiclesign,
+        t.vehiclesignid,
+        t.vehicletype,
+        t.load_time,
+        t.grade_level
+    </sql>
+
+
+    <select id="selectOdsLwzxsfsjFeeStationEnter01List" parameterType="com.ruoyi.base.domain.OdsLwzxsfsjFeeStationEnter01" resultMap="OdsLwzxsfsjFeeStationEnter01Result">
+        SELECT
+        <include refid="selectOdsLwzxsfsjFeeStationEnter01Vo"/>
+        FROM ods_lwzxsfsj_fee_station_enter_01 t
+        WHERE 1 = 1
+        <if test="bigId != null "> and t.big_id = #{bigId}</if>
+        <if test="cardid != null  and cardid != ''"> and t.cardid = #{cardid}</if>
+        <if test="electricalpercentage != null "> and t.electricalpercentage = #{electricalpercentage}</if>
+        <if test="enaxlecount != null "> and t.enaxlecount = #{enaxlecount}</if>
+        <if test="entime != null "> and t.entime = #{entime}</if>
+        <if test="entolllanehex != null  and entolllanehex != ''"> and t.entolllanehex = #{entolllanehex}</if>
+        <if test="entolllaneid != null  and entolllaneid != ''"> and t.entolllaneid = #{entolllaneid}</if>
+        <if test="entollstationid != null  and entollstationid != ''"> and t.entollstationid = #{entollstationid}</if>
+        <if test="enweight != null "> and t.enweight = #{enweight}</if>
+        <if test="identifyvehicleid != null  and identifyvehicleid != ''"> and t.identifyvehicleid = #{identifyvehicleid}</if>
+        <if test="lanetype != null  and lanetype != ''"> and t.lanetype = #{lanetype}</if>
+        <if test="mediatype != null  and mediatype != ''"> and t.mediatype = #{mediatype}</if>
+        <if test="operid != null  and operid != ''"> and t.operid = #{operid}</if>
+        <if test="operationmedia != null  and operationmedia != ''"> and t.operationmedia = #{operationmedia}</if>
+        <if test="params != null  and params != ''"> and t.params = #{params}</if>
+        <if test="passid != null  and passid != ''"> and t.passid = #{passid}</if>
+        <if test="receivetime != null "> and t.receivetime = #{receivetime}</if>
+        <if test="shift != null  and shift != ''"> and t.shift = #{shift}</if>
+        <if test="signstatus != null  and signstatus != ''"> and t.signstatus = #{signstatus}</if>
+        <if test="specialtype != null  and specialtype != ''"> and t.specialtype = #{specialtype}</if>
+        <if test="tac != null  and tac != ''"> and t.tac = #{tac}</if>
+        <if test="terminalno != null  and terminalno != ''"> and t.terminalno = #{terminalno}</if>
+        <if test="terminaltransno != null  and terminaltransno != ''"> and t.terminaltransno = #{terminaltransno}</if>
+        <if test="transfee != null "> and t.transfee = #{transfee}</if>
+        <if test="transtype != null  and transtype != ''"> and t.transtype = #{transtype}</if>
+        <if test="vcount != null "> and t.vcount = #{vcount}</if>
+        <if test="vehicleclass != null  and vehicleclass != ''"> and t.vehicleclass = #{vehicleclass}</if>
+        <if test="vehicleid != null  and vehicleid != ''"> and t.vehicleid = #{vehicleid}</if>
+        <if test="vehiclesign != null  and vehiclesign != ''"> and t.vehiclesign = #{vehiclesign}</if>
+        <if test="vehiclesignid != null  and vehiclesignid != ''"> and t.vehiclesignid = #{vehiclesignid}</if>
+        <if test="vehicletype != null  and vehicletype != ''"> and t.vehicletype = #{vehicletype}</if>
+        <if test="loadTime != null "> and t.load_time = #{loadTime}</if>
+        <if test="gradeLevel != null  and gradeLevel != ''"> and t.grade_level = #{gradeLevel}</if>
+        order by t.big_id
+    </select>
+
+    <select id="selectOdsLwzxsfsjFeeStationEnter01ById" parameterType="Long" resultMap="OdsLwzxsfsjFeeStationEnter01Result">
+         select
+         <include refid="selectOdsLwzxsfsjFeeStationEnter01Vo"/>
+         from ods_lwzxsfsj_fee_station_enter_01 t
+         where t.big_id = #{bigId}
+    </select>
+
+
+</mapper>

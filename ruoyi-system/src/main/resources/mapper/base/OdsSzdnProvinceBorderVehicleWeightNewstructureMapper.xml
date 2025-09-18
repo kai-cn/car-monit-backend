@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.OdsSzdnProvinceBorderVehicleWeightNewstructureMapper">
+
+    <resultMap type="com.ruoyi.base.domain.OdsSzdnProvinceBorderVehicleWeightNewstructure" id="OdsSzdnProvinceBorderVehicleWeightNewstructureResult">
+        <result property="dataSource"    column="dataSource"    />
+        <result property="dataType"    column="dataType"    />
+        <result property="plateNo"    column="plateNo"    />
+        <result property="siteId"    column="siteId"    />
+        <result property="location"    column="location"    />
+        <result property="driveNo"    column="driveNo"    />
+        <result property="plateColor"    column="plateColor"    />
+        <result property="plateColorCode"    column="plateColorCode"    />
+        <result property="plateType"    column="plateType"    />
+        <result property="plateTypeCode"    column="plateTypeCode"    />
+        <result property="vehicleColor"    column="vehicleColor"    />
+        <result property="vehicleColorCode"    column="vehicleColorCode"    />
+        <result property="vehicleType"    column="vehicleType"    />
+        <result property="vehicleTypeCode"    column="vehicleTypeCode"    />
+        <result property="vehicleSpeed"    column="vehicleSpeed"    />
+        <result property="isOverweight"    column="isOverweight"    />
+        <result property="axleNum"    column="axleNum"    />
+        <result property="overWeight"    column="overWeight"    />
+        <result property="vehicleWeight"    column="vehicleWeight"    />
+        <result property="limitWeight"    column="limitWeight"    />
+        <result property="checkTimeUnix"    column="checkTimeUnix"    />
+        <result property="checkTime"    column="checkTime"    />
+        <result property="axleModel"    column="axleModel"    />
+        <result property="loadRate"    column="loadRate"    />
+        <result property="axleArray"    column="axleArray"    />
+        <result property="weighingImagesArry"    column="weighingImagesArry"    />
+        <result property="loadTime"    column="load_time"    />
+        <result property="gradeLevel"    column="grade_level"    />
+        <result property="datauuid"    column="datauuid"    />
+        <result property="reserve1"    column="reserve1"    />
+        <result property="reserve2"    column="reserve2"    />
+        <result property="reserve3"    column="reserve3"    />
+
+    </resultMap>
+
+    <sql id="selectOdsSzdnProvinceBorderVehicleWeightNewstructureVo">
+        t.dataSource,
+        t.dataType,
+        t.plateNo,
+        t.siteId,
+        t.location,
+        t.driveNo,
+        t.plateColor,
+        t.plateColorCode,
+        t.plateType,
+        t.plateTypeCode,
+        t.vehicleColor,
+        t.vehicleColorCode,
+        t.vehicleType,
+        t.vehicleTypeCode,
+        t.vehicleSpeed,
+        t.isOverweight,
+        t.axleNum,
+        t.overWeight,
+        t.vehicleWeight,
+        t.limitWeight,
+        t.checkTimeUnix,
+        t.checkTime,
+        t.axleModel,
+        t.loadRate,
+        t.axleArray,
+        t.weighingImagesArry,
+        t.load_time,
+        t.grade_level,
+        t.datauuid,
+        t.reserve1,
+        t.reserve2,
+        t.reserve3
+    </sql>
+
+
+    <select id="selectOdsSzdnProvinceBorderVehicleWeightNewstructureList" parameterType="com.ruoyi.base.domain.OdsSzdnProvinceBorderVehicleWeightNewstructure" resultMap="OdsSzdnProvinceBorderVehicleWeightNewstructureResult">
+        SELECT
+        <include refid="selectOdsSzdnProvinceBorderVehicleWeightNewstructureVo"/>
+        FROM ods_szdn_province_border_vehicle_weight_newstructure t
+        WHERE 1 = 1
+        <if test="dataSource != null  and dataSource != ''"> and t.dataSource = #{dataSource}</if>
+        <if test="dataType != null  and dataType != ''"> and t.dataType = #{dataType}</if>
+        <if test="plateNo != null  and plateNo != ''"> and t.plateNo = #{plateNo}</if>
+        <if test="siteId != null  and siteId != ''"> and t.siteId = #{siteId}</if>
+        <if test="location != null  and location != ''"> and t.location = #{location}</if>
+        <if test="driveNo != null "> and t.driveNo = #{driveNo}</if>
+        <if test="plateColor != null  and plateColor != ''"> and t.plateColor = #{plateColor}</if>
+        <if test="plateColorCode != null  and plateColorCode != ''"> and t.plateColorCode = #{plateColorCode}</if>
+        <if test="plateType != null  and plateType != ''"> and t.plateType = #{plateType}</if>
+        <if test="plateTypeCode != null  and plateTypeCode != ''"> and t.plateTypeCode = #{plateTypeCode}</if>
+        <if test="vehicleColor != null  and vehicleColor != ''"> and t.vehicleColor = #{vehicleColor}</if>
+        <if test="vehicleColorCode != null  and vehicleColorCode != ''"> and t.vehicleColorCode = #{vehicleColorCode}</if>
+        <if test="vehicleType != null  and vehicleType != ''"> and t.vehicleType = #{vehicleType}</if>
+        <if test="vehicleTypeCode != null  and vehicleTypeCode != ''"> and t.vehicleTypeCode = #{vehicleTypeCode}</if>
+        <if test="vehicleSpeed != null "> and t.vehicleSpeed = #{vehicleSpeed}</if>
+        <if test="isOverweight != null "> and t.isOverweight = #{isOverweight}</if>
+        <if test="axleNum != null "> and t.axleNum = #{axleNum}</if>
+        <if test="overWeight != null "> and t.overWeight = #{overWeight}</if>
+        <if test="vehicleWeight != null "> and t.vehicleWeight = #{vehicleWeight}</if>
+        <if test="limitWeight != null "> and t.limitWeight = #{limitWeight}</if>
+        <if test="checkTimeUnix != null "> and t.checkTimeUnix = #{checkTimeUnix}</if>
+        <if test="checkTime != null "> and t.checkTime = #{checkTime}</if>
+        <if test="axleModel != null "> and t.axleModel = #{axleModel}</if>
+        <if test="loadRate != null "> and t.loadRate = #{loadRate}</if>
+        <if test="axleArray != null  and axleArray != ''"> and t.axleArray = #{axleArray}</if>
+        <if test="weighingImagesArry != null  and weighingImagesArry != ''"> and t.weighingImagesArry = #{weighingImagesArry}</if>
+        <if test="loadTime != null "> and t.load_time = #{loadTime}</if>
+        <if test="gradeLevel != null "> and t.grade_level = #{gradeLevel}</if>
+        <if test="datauuid != null  and datauuid != ''"> and t.datauuid = #{datauuid}</if>
+        <if test="reserve1 != null  and reserve1 != ''"> and t.reserve1 = #{reserve1}</if>
+        <if test="reserve2 != null  and reserve2 != ''"> and t.reserve2 = #{reserve2}</if>
+        <if test="reserve3 != null  and reserve3 != ''"> and t.reserve3 = #{reserve3}</if>
+    </select>
+
+    <select id="selectOdsSzdnProvinceBorderVehicleWeightNewstructureById" parameterType="String" resultMap="OdsSzdnProvinceBorderVehicleWeightNewstructureResult">
+         select
+         <include refid="selectOdsSzdnProvinceBorderVehicleWeightNewstructureVo"/>
+         from ods_szdn_province_border_vehicle_weight_newstructure t
+         where t.dataSource = #{dataSource}
+    </select>
+
+
+</mapper>
