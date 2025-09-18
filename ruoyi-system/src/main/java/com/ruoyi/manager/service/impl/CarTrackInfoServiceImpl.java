@@ -144,6 +144,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             carVOList.add(tempVO);
         }
         CarParaVO carParaVO = new CarParaVO();
+        carParaVO.setCarlist(carVOList);
         // 调用接口
         JSONObject jsonObject = httpSysUtilApiService.syncTrack(carParaVO);
         Integer responseCode = jsonObject.getInteger(AjaxResult.CODE_TAG);
