@@ -68,4 +68,16 @@ public interface ICarInfoService extends IService<CarInfo> {
     List<CarInfoVO> selectCarVoList();
 
 
+    /**
+     * 跟新redis
+     */
+    void updateRedisCarList();
+
+
+    /**
+     * 从缓存拿到carlist
+     */
+    List<CarInfo> getCarInflList();
+
+
 }

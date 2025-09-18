@@ -264,6 +264,10 @@ public class Constants
     public static final String dept_duty_emp_role = "dept_duty_emp";
 
 
+    /**
+     * 重点车俩列表
+     */
+    public static final String car_list = "car_list";
 
 
 }

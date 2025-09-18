@@ -12,6 +12,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @date 2025-08-18
  */
 public interface ICarTrackInfoService extends IService<CarTrackInfo> {
+
     /**
      * 查询车辆行驶轨迹
      *
@@ -44,5 +45,13 @@ public interface ICarTrackInfoService extends IService<CarTrackInfo> {
      * @return 结果
      */
     AjaxResult deleteCarTrackInfoByIds(String[] ids);
+
+
+    /**
+     * 轨迹同步
+     *
+     * @return 结果
+     */
+    AjaxResult sync();
 
 }

@@ -113,4 +113,14 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
 
 
+    /**
+     * 轨迹同步
+     *
+     * @return 结果
+     */
+    public AjaxResult sync(){
+        return AjaxResult.success();
+    }
+
+
 }

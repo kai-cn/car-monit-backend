@@ -1,7 +1,9 @@
 package com.ruoyi.manager.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.manager.domain.CarExceptRecord;
@@ -41,6 +43,9 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
     @Autowired
     private ICarExceptRecordService carExceptRecordService;
+
+    @Autowired
+    private RedisCache redisCache;
 
     /**
      * 查询可疑车辆
@@ -286,6 +291,11 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             updatebo.setEscapedType("");
         }
         carSuspiciousMapper.updateById(updatebo);
+
+        // 跟新重点车俩库
+        CarInfo carInfoQuery = new CarInfo();
+        List<CarInfo> list = carInfoMapper.selectCarInfoList(carInfoQuery);
+        redisCache.setCacheObject(Constants.car_list, list);
 
         return AjaxResult.success("操作成功！",carSuspicious.getId());
     }
