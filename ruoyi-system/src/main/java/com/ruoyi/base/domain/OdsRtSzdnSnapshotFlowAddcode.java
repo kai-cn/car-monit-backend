@@ -191,6 +191,13 @@ public class OdsRtSzdnSnapshotFlowAddcode implements Custom {
     @Excel(name = "分类分级")
     private Integer gradelevel;
 
+    /** uuid */
+    @Excel(name = "uuid")
+    private String datauuid;
+
+    /** 备用字段 */
+    @Excel(name = "备用字段")
+    private String reserve3;
 
     // 临时生成ID
     @TableField(exist = false)
