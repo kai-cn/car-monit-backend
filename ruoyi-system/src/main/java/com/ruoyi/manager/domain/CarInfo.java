@@ -179,6 +179,14 @@ public class CarInfo extends BasePlusEntityInput implements Custom {
     @Excel(name = "预计下一个通行维度")
     private String nextPassLatitude;
 
+    /** 行驶轨迹id */
+    @Excel(name = "行驶轨迹id")
+    private String trackId;
+
+    /** 行驶轨迹josn */
+    @Excel(name = "行驶轨迹josn")
+    private String trackJosn;
+
     /** 管理中心id */
     @Excel(name = "管理中心id")
     private String orgId;

@@ -75,6 +75,14 @@ public class CarTrackInfo extends BasePlusEntity implements Custom {
     @Excel(name = "管理中心路段名称")
     private String roadSectionName;
 
+    /** 行驶轨迹id */
+    @Excel(name = "行驶轨迹id")
+    private String trackId;
+
+    /** 行驶轨迹josn */
+    @Excel(name = "行驶轨迹josn")
+    private String trackJosn;
+
     /** 备用字段1 */
     @Excel(name = "备用字段1")
     private String backCol1;

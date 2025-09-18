@@ -42,6 +42,8 @@
         <result property="nextPassAddress"    column="next_pass_address"    />
         <result property="nextPassLongitude"    column="next_pass_longitude"    />
         <result property="nextPassLatitude"    column="next_pass_latitude"    />
+        <result property="trackId"    column="track_id"    />
+        <result property="trackJosn"    column="track_josn"    />
         <result property="orgId"    column="org_id"    />
         <result property="orgCode"    column="org_code"    />
         <result property="orgName"    column="org_name"    />
@@ -108,6 +110,8 @@
         t.next_pass_address,
         t.next_pass_longitude,
         t.next_pass_latitude,
+        t.track_id,
+        t.track_josn,
         t.org_id,
         t.org_code,
         t.org_name,

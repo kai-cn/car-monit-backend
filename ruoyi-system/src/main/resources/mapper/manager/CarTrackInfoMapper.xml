@@ -16,6 +16,8 @@
         <result property="snapPic"    column="snap_pic"    />
         <result property="roadSectionId"    column="road_section_id"    />
         <result property="roadSectionName"    column="road_section_name"    />
+        <result property="trackId"    column="track_id"    />
+        <result property="trackJosn"    column="track_josn"    />
         <result property="backCol1"    column="back_col1"    />
         <result property="backCol2"    column="back_col2"    />
         <result property="remark"    column="remark"    />
@@ -45,6 +47,8 @@
         t.snap_pic,
         t.road_section_id,
         t.road_section_name,
+        t.track_id,
+        t.track_josn,
         t.back_col1,
         t.back_col2,
         t.remark,
