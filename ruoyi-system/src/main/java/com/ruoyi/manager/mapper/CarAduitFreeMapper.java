@@ -2,7 +2,8 @@ package com.ruoyi.manager.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.manager.domain.CarAduitFree;
-import com.ruoyi.manager.domain.vo.bigscreen.CarAuditVO;
+import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
+import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam;
 import com.ruoyi.manager.domain.vo.bigscreen.incomeStatisticVO;
 import org.springframework.stereotype.Repository;
@@ -64,4 +65,6 @@ public interface CarAduitFreeMapper extends BaseMapper<CarAduitFree> {
     List<incomeStatisticVO> incomeStatistic(IncomeStatisticParam param);
 
     Integer selectAuditCount();
+
+    List<PCIncomeStaticsVO> PCIncomeStatics(CarConfimFreeQueryRo queryRo);
 }

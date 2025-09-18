@@ -1,7 +1,15 @@
 package com.ruoyi.web.controller.manager;
 
-import java.util.Arrays;
+import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import cn.afterturn.easypoi.excel.ExcelExportUtil;
+import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
+import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +28,8 @@ import com.ruoyi.manager.domain.CarAduitFree;
 import com.ruoyi.manager.service.ICarAduitFreeService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * 补缴处理Controller
@@ -94,6 +104,37 @@ public class CarAduitFreeController extends BaseController {
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids) {
         return carAduitFreeService.deleteCarAduitFreeByIds(ids);
+    }
+
+    /**
+     * pc统计
+     */
+    @GetMapping(value = "/incomeStatics")
+    public TableDataInfo incomeStatics(CarConfimFreeQueryRo queryRo) {
+        startPage();
+        List<PCIncomeStaticsVO> list = carAduitFreeService.getPCIncomeStatics(queryRo);
+        return getDataTable(list);
+    }
+
+    @GetMapping(value = "/exportIncomeStatics")
+    public AjaxResult exportIncomeStatics(CarConfimFreeQueryRo queryRo, HttpServletResponse response) {
+        List<PCIncomeStaticsVO> list = carAduitFreeService.getPCIncomeStatics(queryRo);
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/incomeStatics.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

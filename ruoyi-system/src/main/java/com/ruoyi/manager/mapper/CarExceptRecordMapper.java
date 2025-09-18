@@ -2,6 +2,8 @@ package com.ruoyi.manager.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.manager.domain.CarExceptRecord;
+import com.ruoyi.manager.domain.vo.PCCarStatisticsDetailVO;
+import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
@@ -71,4 +73,7 @@ public interface CarExceptRecordMapper extends BaseMapper<CarExceptRecord> {
     CarExceptRecord exceptRecordCount(CarExceptRecord carExceptRecord);
 
 
+    List<CarStatisticsVO> buildPCCarStatisticsVO(@Param("ids") List<String> ids, @Param("escapedType") String escapedType);
+
+    List<PCCarStatisticsDetailVO> buildPCCarStatisticsVODetail(@Param("ids") List<String> ids, @Param("escapedType") String escapedType);
 }

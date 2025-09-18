@@ -3,6 +3,9 @@ package com.ruoyi.manager.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.manager.domain.vo.PCCarStatisticsDetailVO;
+import com.ruoyi.manager.domain.vo.PCCarStatisticsVO;
+import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 import com.ruoyi.manager.mapper.CarExceptRecordMapper;
 import com.ruoyi.manager.domain.CarExceptRecord;
 import com.ruoyi.manager.service.ICarExceptRecordService;
@@ -10,7 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 异常车辆流水Service业务层处理
@@ -124,6 +130,76 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
         return carExceptRecordMapper.exceptRecordCount(carExceptRecord);
     }
 
+    @Override
+    public PCCarStatisticsVO buildPCCarStatisticsVO(List<String> ids, String escapedType) {
+        PCCarStatisticsVO vo = new PCCarStatisticsVO();
+        List<CarStatisticsVO> carStatisticsVOList = carExceptRecordMapper.buildPCCarStatisticsVO(ids, escapedType);
+        Map<String, CarStatisticsVO> voMap = carStatisticsVOList.stream().collect(Collectors.toMap(CarStatisticsVO::getEscapedType, v -> v));
+        CarStatisticsVO vo1 = voMap.get("10");
+        CarStatisticsVO vo2 = voMap.get("20");
+        CarStatisticsVO vo3 = voMap.get("30");
+        CarStatisticsVO vo4 = voMap.get("40");
+        CarStatisticsVO vo5 = voMap.get("50");
+        Integer totalNum = 0;
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        if(vo1 != null) {
+            if(vo1.getNumber() != null) {
+                totalNum += vo1.getNumber();
+                vo.setEscapedType10Num(vo1.getNumber());
+            }
+            if(vo1.getEscapedAmount() != null) {
+                totalAmount = totalAmount.add(vo1.getEscapedAmount());
+                vo.setEscapedType10Amount(vo1.getEscapedAmount());
+            }
+        }
+        if(vo2 != null) {
+            if(vo2.getNumber() != null) {
+                totalNum += vo2.getNumber();
+                vo.setEscapedType20Num(vo2.getNumber());
+            }
+            if(vo2.getEscapedAmount() != null) {
+                totalAmount = totalAmount.add(vo2.getEscapedAmount());
+                vo.setEscapedType20Amount(vo2.getEscapedAmount());
+            }
+        }
+        if(vo3 != null) {
+            if(vo3.getNumber() != null) {
+                totalNum += vo3.getNumber();
+                vo.setEscapedType30Num(vo3.getNumber());
+            }
+            if(vo3.getEscapedAmount() != null) {
+                totalAmount = totalAmount.add(vo3.getEscapedAmount());
+                vo.setEscapedType30Amount(vo3.getEscapedAmount());
+            }
+        }
+        if(vo4 != null) {
+            if(vo4.getNumber() != null) {
+                totalNum += vo4.getNumber();
+                vo.setEscapedType40Num(vo4.getNumber());
+            }
+            if(vo4.getEscapedAmount() != null) {
+                totalAmount = totalAmount.add(vo4.getEscapedAmount());
+                vo.setEscapedType40Amount(vo4.getEscapedAmount());
+            }
+        }
+        if(vo5 != null) {
+            if(vo5.getNumber() != null) {
+                totalNum += vo5.getNumber();
+                vo.setEscapedType50Num(vo5.getNumber());
+            }
+            if(vo5.getEscapedAmount() != null) {
+                totalAmount = totalAmount.add(vo5.getEscapedAmount());
+                vo.setEscapedType50Amount(vo5.getEscapedAmount());
+            }
+        }
+        vo.setTotalNum(totalNum);
+        vo.setTotalAmount(totalAmount);
+        return vo;
+    }
 
-
+    @Override
+    public List<PCCarStatisticsDetailVO> buildPCCarStatisticsVODetail(List<String> ids, String escapedType) {
+        List<PCCarStatisticsDetailVO>  carStatisticsVOList =  carExceptRecordMapper.buildPCCarStatisticsVODetail(ids, escapedType);
+        return carStatisticsVOList;
+    }
 }

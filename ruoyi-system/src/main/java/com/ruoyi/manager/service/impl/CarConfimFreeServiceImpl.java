@@ -9,9 +9,11 @@ import com.ruoyi.manager.domain.CarAduitFree;
 import com.ruoyi.manager.domain.CarConfimFree;
 import com.ruoyi.manager.domain.CarExceptRecord;
 import com.ruoyi.manager.domain.CarSuspicious;
+import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
+import com.ruoyi.manager.domain.vo.PCCarStatisticsDetailVO;
+import com.ruoyi.manager.domain.vo.PCCarStatisticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 import com.ruoyi.manager.mapper.CarConfimFreeMapper;
-import com.ruoyi.manager.mapper.CarExceptRecordMapper;
 import com.ruoyi.manager.mapper.CarSuspiciousMapper;
 import com.ruoyi.manager.service.ICarAduitFreeService;
 import com.ruoyi.manager.service.ICarConfimFreeService;
@@ -140,7 +142,8 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             carConfimFree.setAduitAmount(processingAmount);
         }
 
-
+        String escapedTypes = carExceptRecordService.lambdaQuery().in(CarExceptRecord::getId, exceptIdList).list().stream().map(CarExceptRecord::getEscapedType).collect(Collectors.joining(","));
+        carConfimFree.setEscapedTypes(escapedTypes);
         if (CommonUtil.isNotBlank(carConfimFree.getId())) {
             // 修改
             carConfimFreeMapper.updateById(carConfimFree);
@@ -175,6 +178,14 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
 
             // 修改异常流水状态
             carExceptRecordService.updateStatusByExceptId(exceptIdList, "1");
+            /*//异常流水保存确认补缴id
+            List<CarExceptRecord> collect = exceptIdList.stream().map(item -> {
+                CarExceptRecord record = new CarExceptRecord();
+                record.setId(item);
+                record.setConfirmId(carConfimFree.getId());
+                return record;
+            }).collect(Collectors.toList());
+            carExceptRecordService.updateBatchById(collect);*/
 
             // 修改异常车俩核实状态
             CarExceptRecord carExceptRecord = new CarExceptRecord();
@@ -323,5 +334,46 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
      */
     public CarConfimFree listCount(CarConfimFree carConfimFree){
         return  carConfimFreeMapper.listCount(carConfimFree);
+    }
+
+    @Override
+    public List<PCCarStatisticsVO> getPCCarStatistics(CarConfimFreeQueryRo queryRo) {
+        List<CarConfimFree> confimFreeList =  baseMapper.getPCCarStatistics(queryRo);
+        Map<String, List<String>> map = new HashMap<>(confimFreeList.size());
+        if(!CollectionUtils.isEmpty(confimFreeList)) {
+//            List<String> exceptIdList = new ArrayList<>();
+            confimFreeList.forEach(item -> {
+                String exceptIds = CommonUtil.deleteEnd(item.getExceptIds()); // 去掉空格
+                String[] split = exceptIds.split(",");
+                List<String> list = Arrays.asList(split);
+//                exceptIdList.addAll(list);
+                map.put(item.getOrgName(), list);
+            });
+//            List<CarExceptRecord> exceptRecordList = carExceptRecordService.listByIds(exceptIdList);
+            /*Map<String, CarExceptRecord> linkedHashMap = new LinkedHashMap<>(exceptRecordList.size());
+            for (CarExceptRecord record : exceptRecordList) {
+                linkedHashMap.put(record.getId(), record);
+            }*/
+            List<PCCarStatisticsVO> res = new ArrayList<>();
+            for (CarConfimFree confimFree : confimFreeList) {
+                List<String> ids = map.get(confimFree.getOrgName());
+                PCCarStatisticsVO vo = carExceptRecordService.buildPCCarStatisticsVO(ids, queryRo.getEscapedType());
+                vo.setOrgName(confimFree.getOrgName());
+                List<PCCarStatisticsDetailVO> detailVOList = carExceptRecordService.buildPCCarStatisticsVODetail(ids, queryRo.getEscapedType());
+                detailVOList = detailVOList.stream().peek(detailVO -> {
+                    detailVO.setOrgName(confimFree.getOrgName());
+                }).collect(Collectors.toList());
+                vo.setDetailVOList(detailVOList);
+                res.add(vo);
+            }
+            return res;
+        }
+        return new ArrayList<>();
+    }
+
+    @Override
+    public List<CarConfimFree> selectConcernedList(CarConfimFree carConfimFree) {
+        List<CarConfimFree> confimFreeList =  baseMapper.selectConcernedList(carConfimFree);
+        return confimFreeList;
     }
 }

@@ -3,6 +3,8 @@ package com.ruoyi.manager.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
+import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam;
 import com.ruoyi.manager.domain.vo.bigscreen.incomeStatisticVO;
 import com.ruoyi.manager.mapper.CarAduitFreeMapper;
@@ -129,5 +131,10 @@ public class CarAduitFreeServiceImpl extends ServiceImpl<CarAduitFreeMapper, Car
     @Override
     public Integer selectAuditCount() {
         return carAduitFreeMapper.selectAuditCount();
+    }
+
+    @Override
+    public List<PCIncomeStaticsVO> getPCIncomeStatics(CarConfimFreeQueryRo queryRo) {
+        return carAduitFreeMapper.PCIncomeStatics(queryRo);
     }
 }

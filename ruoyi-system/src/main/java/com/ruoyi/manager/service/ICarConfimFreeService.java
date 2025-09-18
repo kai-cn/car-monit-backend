@@ -6,7 +6,8 @@ import com.ruoyi.manager.domain.CarConfimFree;
 import java.math.BigDecimal;
 import java.util.List;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.ruoyi.manager.domain.vo.bigscreen.CarAuditVO;
+import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
+import com.ruoyi.manager.domain.vo.PCCarStatisticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 
 /**
@@ -73,4 +74,7 @@ public interface ICarConfimFreeService extends IService<CarConfimFree> {
      */
     CarConfimFree listCount(CarConfimFree carConfimFree);
 
+    List<PCCarStatisticsVO> getPCCarStatistics(CarConfimFreeQueryRo queryRo);
+
+    List<CarConfimFree> selectConcernedList(CarConfimFree carConfimFree);
 }

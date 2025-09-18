@@ -4,6 +4,8 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarExceptRecord;
 import java.util.List;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.ruoyi.manager.domain.vo.PCCarStatisticsDetailVO;
+import com.ruoyi.manager.domain.vo.PCCarStatisticsVO;
 
 /**
  * 异常车辆流水Service接口
@@ -71,6 +73,8 @@ public interface ICarExceptRecordService extends IService<CarExceptRecord> {
     CarExceptRecord exceptRecordCount(CarExceptRecord carExceptRecord);
 
 
+    PCCarStatisticsVO buildPCCarStatisticsVO(List<String> ids, String escapedType);
 
 
+    List<PCCarStatisticsDetailVO> buildPCCarStatisticsVODetail(List<String> ids, String escapedType);
 }

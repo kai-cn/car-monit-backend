@@ -121,6 +121,30 @@
     </select>
 
 
+    <select id="buildPCCarStatisticsVO" resultType="com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO">
+        select escaped_type, sum(ifnull(dif_amount, 0)) escapedAmount, count(distinct car_id) number
+        from car_except_record
+        where del_flag = '0'
+        <if test="ids != null  and ids.size() > 0">
+            and id in <foreach collection="ids" open="(" close=")" separator="," item="item" > #{item} </foreach>
+        </if>
+        <if test="escapedType != null  and escapedType != ''"> and escaped_type = #{escapedType}</if>
+        group by escaped_type
+    </select>
+
+    <select id="buildPCCarStatisticsVODetail" resultType="com.ruoyi.manager.domain.vo.PCCarStatisticsDetailVO">
+        select c.plate_color, e.car_no, e.car_type, e.escaped_type, e.dif_amount escapedAmount, e.create_time
+        from car_except_record e
+        left join car_info c on e.car_no = c.car_no
+        <!--             left join car_confim_free cf on e.confirm_id = cf.id  -->
+        where e.del_flag = '0'
+        <if test="ids != null  and ids.size() > 0">
+            and e.id in <foreach collection="ids" open="(" close=")" separator="," item="item" > #{item} </foreach>
+        </if>
+        <if test="escapedType != null  and escapedType != ''"> and e.escaped_type = #{escapedType}</if>
+    </select>
+
+
     <update id="deleteCarExceptRecordById" parameterType="String">
         update car_except_record set del_flag = '1' where id = #{id}
     </update>

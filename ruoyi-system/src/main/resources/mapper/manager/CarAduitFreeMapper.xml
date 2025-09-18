@@ -37,7 +37,7 @@
         t.car_type,
         t.car_vehicle,
         t.org_id,
-        sd.dept_name org_name,
+        o.org_name,
         t.user_ids,
         t.user_names,
         t.amount,
@@ -60,16 +60,16 @@
         SELECT
         <include refid="selectCarAduitFreeVo"/>
         FROM car_aduit_free t
-        left join sys_dept sd on sd.dept_id = t.org_id
+        left join ods_yhgl_v_base_org o on o.big_id = t.org_id
         WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="confirmId != null  and confirmId != ''"> and t.confirm_id = #{confirmId}</if>
         <if test="carId != null  and carId != ''"> and t.car_id = #{carId}</if>
-        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no like concat('%', #{carNo}, '%')</if>
         <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
         <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
         <if test="orgId != null  and orgId != ''"> and t.org_id = #{orgId}</if>
-        <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
+        <if test="orgName != null  and orgName != ''"> and o.org_name like concat('%', #{orgName}, '%')</if>
         <if test="userIds != null  and userIds != ''"> and t.user_ids = #{userIds}</if>
         <if test="userNames != null  and userNames != ''"> and t.user_names = #{userNames}</if>
         <if test="amount != null "> and t.amount = #{amount}</if>
@@ -96,19 +96,31 @@
     </select>
 
     <select id="incomeStatistic" parameterType="com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam" resultType="com.ruoyi.manager.domain.vo.bigscreen.incomeStatisticVO">
-        select sum(amount) amount, count(distinct car_id) carNum, sd.dept_name org_name
+        select sum(ifnull(amount, 0)) amount, count(distinct car_id) carNum, o.org_name, a.org_id
         from car_aduit_free a
-        left join sys_dept sd on sd.dept_id = a.org_id
+        left join ods_yhgl_v_base_org o on o.big_id = a.org_id
         where a.del_flag = '0'
-        <if test="orgCode != null  and orgCode != ''"> and a.org_id = #{orgCode}</if>
+        <if test="orgCode != null  and orgCode != ''"> and o.org_code = #{orgCode}</if>
         <if test="startDate != null  and startDate != ''">and a.create_time >= STR_TO_DATE(#{startDate},'%Y-%m-%d') and a.create_time <![CDATA[<]]> LAST_DAY(#{startDate})</if>
         <if test="queryDateType != null  and queryDateType == '1'">and a.create_time BETWEEN CONCAT(YEAR(CURDATE()), '-01-01') AND CURDATE()</if>
         <if test="queryDateType != null  and queryDateType == '2'"> and a.create_time BETWEEN CONCAT(YEAR(CURDATE()), '-', LPAD(MONTH(CURDATE()), 2, '0'), '-01') AND CURDATE()</if>
-        group by a.org_id
+        group by a.org_id order by amount desc
     </select>
 
     <select id="selectAuditCount" resultType="java.lang.Integer">
         select count(distinct confirm_id) confirmCount from car_aduit_free where del_flag = '0';
+    </select>
+
+    <select id="PCIncomeStatics" parameterType="com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo"  resultType="com.ruoyi.manager.domain.vo.PCIncomeStaticsVO">
+        select sum(ifnull(amount, 0)) amount, count(distinct car_id) carNum, o.org_name, a.org_id
+        from car_aduit_free a
+        left join ods_yhgl_v_base_org o on o.big_id = a.org_id
+        where a.del_flag = '0'
+        <if test="orgId != null  and orgId != ''"> and a.org_id = #{orgId}</if>
+        <if test="orgName != null  and orgName != ''"> and o.org_name like concat('%',#{orgName},'%') </if>
+        <if test="applyTime1 != null  and applyTime1 != ''">and a.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+        group by a.org_id order by amount desc
     </select>
 
 

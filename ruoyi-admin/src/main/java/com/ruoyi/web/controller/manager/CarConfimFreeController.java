@@ -1,9 +1,17 @@
 package com.ruoyi.web.controller.manager;
 
-import java.util.Arrays;
+import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import cn.afterturn.easypoi.excel.ExcelExportUtil;
+import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
+import com.ruoyi.manager.domain.vo.PCCarStatisticsVO;
+import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +30,8 @@ import com.ruoyi.manager.domain.CarConfimFree;
 import com.ruoyi.manager.service.ICarConfimFreeService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * 确认补缴Controller
@@ -46,6 +56,38 @@ public class CarConfimFreeController extends BaseController {
         // carConfimFree.setTenantId(SecurityUtils.getTenantId()); // 查询我自己单位的租户
         List<CarConfimFree> list = carConfimFreeService.selectCarConfimFreeList(carConfimFree);
         return getDataTable(list);
+    }
+
+    /**
+     * 待关注车辆
+     */
+    @PreAuthorize("@ss.hasPermi('manager:confimfree:list')")
+    @GetMapping("/concernedList")
+    public TableDataInfo concernedList(CarConfimFree carConfimFree) {
+        startPage();
+        List<CarConfimFree> list = carConfimFreeService.selectConcernedList(carConfimFree);
+        return getDataTable(list);
+    }
+
+    @GetMapping(value = "/exportConcernedList")
+    public AjaxResult exportConcernedList(CarConfimFree carConfimFree, HttpServletResponse response) {
+        List<CarConfimFree> list = carConfimFreeService.selectConcernedList(carConfimFree);
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/concernedList.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 
@@ -128,6 +170,38 @@ public class CarConfimFreeController extends BaseController {
     @GetMapping(value = "/except/{exceptIds}")
     public AjaxResult getExceptIds(@PathVariable("exceptIds") String exceptIds) {
         return carConfimFreeService.selectCarConfimFreeByExceptIds(exceptIds);
+    }
+
+
+    /**
+     * pc统计
+     */
+    @GetMapping(value = "/carStatics")
+    public TableDataInfo getCarStatics(CarConfimFreeQueryRo queryRo) {
+        startPage();
+        List<PCCarStatisticsVO> list = carConfimFreeService.getPCCarStatistics(queryRo);
+        return getDataTable(list);
+    }
+
+    @GetMapping(value = "/exportCarStatics")
+    public AjaxResult exportCarStatics(CarConfimFreeQueryRo queryRo, HttpServletResponse response) {
+        List<PCCarStatisticsVO> list = carConfimFreeService.getPCCarStatistics(queryRo);
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/carStatistics.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

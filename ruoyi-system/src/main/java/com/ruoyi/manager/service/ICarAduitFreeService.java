@@ -6,6 +6,8 @@ import com.ruoyi.manager.domain.CarAduitFree;
 import java.math.BigDecimal;
 import java.util.List;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
+import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam;
 import com.ruoyi.manager.domain.vo.bigscreen.incomeStatisticVO;
 
@@ -65,5 +67,5 @@ public interface ICarAduitFreeService extends IService<CarAduitFree> {
 
     Integer selectAuditCount();
 
-
+    List<PCIncomeStaticsVO> getPCIncomeStatics(CarConfimFreeQueryRo queryRo);
 }

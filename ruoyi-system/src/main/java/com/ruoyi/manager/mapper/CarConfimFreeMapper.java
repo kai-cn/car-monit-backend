@@ -2,7 +2,7 @@ package com.ruoyi.manager.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.manager.domain.CarConfimFree;
-import com.ruoyi.manager.domain.vo.bigscreen.CarAuditVO;
+import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
@@ -66,4 +66,8 @@ public interface CarConfimFreeMapper extends BaseMapper<CarConfimFree> {
      * @return 确认补缴
      */
     CarConfimFree listCount(CarConfimFree carConfimFree);
+
+    List<CarConfimFree> getPCCarStatistics(CarConfimFreeQueryRo queryRo);
+
+    List<CarConfimFree> selectConcernedList(CarConfimFree carConfimFree);
 }

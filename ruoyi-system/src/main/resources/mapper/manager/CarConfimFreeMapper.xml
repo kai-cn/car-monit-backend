@@ -17,6 +17,7 @@
         <result property="amount"    column="amount"    />
         <result property="aduitAmount"    column="aduit_amount"    />
         <result property="exceptIds"    column="except_ids"    />
+        <result property="escapedTypes"    column="escaped_types"    />
         <result property="backCol1"    column="back_col1"    />
         <result property="backCol2"    column="back_col2"    />
         <result property="remark"    column="remark"    />
@@ -47,6 +48,7 @@
         t.amount,
         t.aduit_amount,
         t.except_ids,
+        t.escaped_types,
         t.back_col1,
         t.back_col2,
         t.remark,
@@ -81,6 +83,7 @@
         <if test="userNames != null  and userNames != ''"> and t.user_names = #{userNames}</if>
         <if test="amount != null "> and t.amount = #{amount}</if>
         <if test="exceptIds != null  and exceptIds != ''"> and t.except_ids = #{exceptIds}</if>
+        <if test="escapedTypes != null  and escapedTypes != ''"> and t.escaped_types = #{escapedTypes}</if>
         <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
         <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
         <if test="status != null  and status != ''"> and t.status = #{status}</if>
@@ -130,6 +133,37 @@
     <select id="selectOrgId" resultType="java.lang.String">
         select org_id
         from car_confim_free where car_id = #{carId} and find_in_set(except_ids, #{id}) > 0;
+    </select>
+
+    <select id="getPCCarStatistics" parameterType="com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo" resultType="com.ruoyi.manager.domain.CarConfimFree">
+        select o.org_name, group_concat(except_ids) except_ids
+        from car_confim_free c
+                 left join ods_yhgl_v_base_org o on c.org_id = o.big_id
+        where del_flag = '0'
+        <if test="orgId != null  and orgId != ''"> and c.org_id = #{orgId}</if>
+        <if test="escapedType != null  and escapedType != ''"> and find_in_set(#{escapedType}, c.escaped_types) > 0</if>
+        <if test="applyTime1 != null  and applyTime1 != ''">and c.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and c.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+        group by o.org_name
+
+    </select>
+
+    <select id="selectConcernedList" resultType="com.ruoyi.manager.domain.CarConfimFree">
+        select c.plate_color, c.car_no, c.car_type, c.car_vehicle, sum(ifnull(amount, 0)) amount,
+               sum(ifnull(aduit_amount, 0)) aduit_amount
+        from car_confim_free cf
+        left join car_info c on c.car_no = cf.car_no
+        where cf.del_flag = '0' and c.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="carId != null  and carId != ''"> and t.car_id = #{carId}</if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+        <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
+        <if test="orgId != null  and orgId != ''"> and t.org_id = #{orgId}</if>
+        <if test="orgName != null  and orgName != ''"> and sd.dept_name like concat('%', #{orgName}, '%')</if>
+        <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
+        <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
+        group by c.plate_color, c.car_no, c.car_type
     </select>
 
 
