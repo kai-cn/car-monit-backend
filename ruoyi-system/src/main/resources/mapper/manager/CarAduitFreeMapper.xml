@@ -37,7 +37,6 @@
         t.car_type,
         t.car_vehicle,
         t.org_id,
-        o.org_name,
         t.user_ids,
         t.user_names,
         t.amount,
@@ -58,7 +57,7 @@
 
     <select id="selectCarAduitFreeList" parameterType="com.ruoyi.manager.domain.CarAduitFree" resultMap="CarAduitFreeResult">
         SELECT
-        <include refid="selectCarAduitFreeVo"/>
+        <include refid="selectCarAduitFreeVo"/>,o.org_name
         FROM car_aduit_free t
         left join ods_yhgl_v_base_org o on o.big_id = t.org_id
         WHERE t.del_flag = '0'
@@ -85,9 +84,9 @@
 
     <select id="selectCarAduitFreeById" parameterType="String" resultMap="CarAduitFreeResult">
          select
-         <include refid="selectCarAduitFreeVo"/>
+         <include refid="selectCarAduitFreeVo"/>,o.org_name
          from car_aduit_free t
-         left join sys_dept sd on sd.dept_id = t.org_id
+         left join ods_yhgl_v_base_org o on o.big_id = t.org_id
          where t.id = #{id}
     </select>
 
