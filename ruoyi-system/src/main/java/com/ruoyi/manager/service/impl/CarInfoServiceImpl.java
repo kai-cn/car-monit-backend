@@ -195,7 +195,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
     /**
      * 从缓存拿到carlist
      */
-    public List<CarInfo> getCarInflList() {
+    public List<CarInfo> getRedisCarList() {
         List<CarInfo> list = null;
         Object obj = redisCache.getCacheObject(Constants.car_list);
         if (null != obj) {

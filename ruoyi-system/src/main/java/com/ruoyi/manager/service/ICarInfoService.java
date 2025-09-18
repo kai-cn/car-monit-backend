@@ -77,7 +77,7 @@ public interface ICarInfoService extends IService<CarInfo> {
     /**
      * 从缓存拿到carlist
      */
-    List<CarInfo> getCarInflList();
+    List<CarInfo> getRedisCarList();
 
 
 }

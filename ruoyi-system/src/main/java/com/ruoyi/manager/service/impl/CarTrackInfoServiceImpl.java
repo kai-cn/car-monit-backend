@@ -1,16 +1,26 @@
 package com.ruoyi.manager.service.impl;
 
+
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.base.service.forest.HttpSysUtilApiService;
+import com.ruoyi.common.constant.HttpStatus;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
-import com.ruoyi.manager.mapper.CarTrackInfoMapper;
+import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.CarTrackInfo;
+import com.ruoyi.manager.domain.vo.CarParaVO;
+import com.ruoyi.manager.domain.vo.CarVO;
+import com.ruoyi.manager.mapper.CarTrackInfoMapper;
+import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -24,6 +34,12 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
     @Autowired
     private CarTrackInfoMapper carTrackInfoMapper;
+
+    @Autowired
+    private ICarInfoService carInfoService;
+
+    @Resource
+    private HttpSysUtilApiService httpSysUtilApiService;
 
     /**
      * 查询车辆行驶轨迹
@@ -112,14 +128,31 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     }
 
 
-
     /**
      * 轨迹同步
      *
      * @return 结果
      */
-    public AjaxResult sync(){
-        return AjaxResult.success();
+    public AjaxResult sync() {
+        // 查询所有的车俩
+        List<CarInfo> carList = carInfoService.getRedisCarList();
+        List<CarVO> carVOList = new ArrayList<>();
+        for (CarInfo rtn : carList) {
+            CarVO tempVO = new CarVO();
+            tempVO.setCarId(rtn.getId());
+            tempVO.setCarNo(rtn.getCarNo());
+            carVOList.add(tempVO);
+        }
+        CarParaVO carParaVO = new CarParaVO();
+        // 调用接口
+        JSONObject jsonObject = httpSysUtilApiService.syncTrack(carParaVO);
+        Integer responseCode = jsonObject.getInteger(AjaxResult.CODE_TAG);
+        if (responseCode != HttpStatus.SUCCESS) {
+
+        }
+        return AjaxResult.success(jsonObject);
+
+
     }
 
 

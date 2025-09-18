@@ -18,5 +18,6 @@ public class TrackTask {
     @Transactional(rollbackFor = Exception.class)
     public void sync() {
         System.out.println("轨迹数据开始同步！");
+        carTrackInfoService.sync();
     }
 }
