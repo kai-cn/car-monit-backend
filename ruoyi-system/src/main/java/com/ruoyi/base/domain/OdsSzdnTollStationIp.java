@@ -1,6 +1,7 @@
 package com.ruoyi.base.domain;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ruoyi.common.core.domain.Custom;
@@ -32,6 +33,10 @@ public class OdsSzdnTollStationIp implements Custom {
     private String ip;
 
     private String brand;
+
+    // 收费站对象
+    @TableField(exist = false)
+    private OdsSzdnToll odsSzdnToll;
 
 
 }
