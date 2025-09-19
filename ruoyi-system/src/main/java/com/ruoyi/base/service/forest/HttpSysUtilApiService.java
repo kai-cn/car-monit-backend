@@ -18,6 +18,14 @@ public interface HttpSysUtilApiService {
     JSONObject syncTrack(@JSONBody CarParaVO carParaVO);
 
 
+    /**
+     * 同步可疑车俩
+     * @return
+     */
+    @Post("/syncSuspiciousCar")
+    JSONObject syncSuspiciousCar(@JSONBody CarParaVO carParaVO);
+
+
 
 
 }

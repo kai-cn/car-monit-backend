@@ -156,5 +156,16 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
     }
 
+    /**
+     * 可疑车俩
+     *
+     * @return 结果
+     */
+    public AjaxResult syncSuspiciousCar() {
+        CarParaVO carParaVO = new CarParaVO();
+        // 调用接口
+        JSONObject jsonObject = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
+        return AjaxResult.success(jsonObject);
+    }
 
 }
