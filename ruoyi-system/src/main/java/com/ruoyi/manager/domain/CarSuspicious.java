@@ -173,6 +173,10 @@ public class CarSuspicious extends BasePlusEntityNew implements Custom {
     @Excel(name = "所属路段名称")
     private String sectionName;
 
+    /** 行驶轨迹id */
+    @Excel(name = "行驶轨迹id")
+    private String trackId;
+
     /** 行驶轨迹josn */
     @Excel(name = "行驶轨迹josn")
     private String trackJosn;

@@ -40,6 +40,7 @@
         <result property="roadName"    column="road_name"    />
         <result property="sectionCode"    column="section_code"    />
         <result property="sectionName"    column="section_name"    />
+        <result property="trackId"    column="track_id"    />
         <result property="trackJosn"    column="track_josn"    />
         <result property="backCol1"    column="back_col1"    />
         <result property="backCol2"    column="back_col2"    />
@@ -93,6 +94,7 @@
         t.road_name,
         t.section_code,
         t.section_name,
+        t.track_id,
         t.track_josn,
         t.back_col1,
         t.back_col2,
