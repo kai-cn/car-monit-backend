@@ -1,13 +1,10 @@
 package com.ruoyi.web.controller.base;
 
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
 import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode;
 import com.ruoyi.base.service.forest.HttpOdsRtSzdnSnapshotFlowAddcodeService;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
-import com.ruoyi.common.exception.ServiceException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,12 +42,8 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
             odsRtSzdnSnapshotFlowAddcode.setPageSize(10);
         }
 
-        JSONObject jsonObject = httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodePage(odsRtSzdnSnapshotFlowAddcode);
-        if(null == jsonObject || 200 != jsonObject.getInt("code")){
-            logger.error("门架抓拍流水数据获取异常：" + jsonObject);
-            throw new ServiceException("获取数据异常,请联系管理员");
-        }
-        return JSONUtil.toBean(jsonObject, TableDataInfo.class);
+        return httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodePage(odsRtSzdnSnapshotFlowAddcode);
+
     }
 
 
