@@ -157,8 +157,12 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             List<TrailBo> josnList = entry.getValue();
             if (null != josnList && josnList.size() > 0) {
 
+                // 车的状态修改更新为 status 1  经纬度  josn字符串要更新
+
+                // 同事要跟新车俩预警
+
             }else{
-                // 跟新车俩-----------------------
+                // 跟新车俩-----------------------  车的状态修改status 0
 
             }
         }
