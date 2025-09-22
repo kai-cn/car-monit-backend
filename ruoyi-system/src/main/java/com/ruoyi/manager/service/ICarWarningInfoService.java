@@ -45,7 +45,11 @@ public interface ICarWarningInfoService extends IService<CarWarningInfo> {
      */
     AjaxResult deleteCarWarningInfoByIds(String[] ids);
 
+    /**
+     * 预警大屏 100
+     * @return
+     */
     List<CarWarningInfo> selectCarWarningInfoListLimit100();
 
-    AjaxResult historyTrack(CarWarningInfo carWarningInfo);
+
 }

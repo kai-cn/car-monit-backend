@@ -2,8 +2,12 @@ package com.ruoyi.web.controller.manager;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
+import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.manager.domain.vo.CarParaVO;
+import com.ruoyi.manager.domain.vo.TrailBo;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +27,8 @@ import com.ruoyi.manager.service.ICarTrackInfoService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
+import javax.annotation.Resource;
+
 /**
  * 车辆行驶轨迹Controller
  *
@@ -35,6 +41,9 @@ public class CarTrackInfoController extends BaseController {
 
     @Autowired
     private ICarTrackInfoService carTrackInfoService;
+
+    @Resource
+    private HttpSysUtilApiService httpSysUtilApiService;
 
     /**
      * 查询车辆行驶轨迹列表
@@ -59,8 +68,18 @@ public class CarTrackInfoController extends BaseController {
         if (CommonUtil.isBlank(carTrackInfo.getCarNo())) {
             carTrackInfo.setCarNo("-1");
         }
-        List<CarTrackInfo> list = carTrackInfoService.selectCarTrackInfoList(carTrackInfo);
-        return AjaxResult.success(list);
+        // ----------查询自己的表
+          /* List<CarTrackInfo> list = carTrackInfoService.selectCarTrackInfoList(carTrackInfo);
+        return AjaxResult.success(list);*/
+
+        // ---------- 查询接口
+        CarParaVO carParaVO = new CarParaVO();
+        carParaVO.setCarNo(carTrackInfo.getCarNo()); // 车牌号
+        carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
+        carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
+        Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.suspiciousCarQuery(carParaVO);
+        return AjaxResult.success(caMap);
+
     }
 
 

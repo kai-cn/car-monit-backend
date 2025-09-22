@@ -29,6 +29,11 @@ public interface HttpSysUtilApiService {
     Map<String, List<TrailBo>>  syncSuspiciousCar(@JSONBody CarParaVO carParaVO);
 
 
+    /**
+     * 车俩历史轨迹
+     * @param carParaVO
+     * @return
+     */
     @Post("/carTrackQuery")
     Map<String, List<TrailBo>>  suspiciousCarQuery(@JSONBody CarParaVO carParaVO);
 
