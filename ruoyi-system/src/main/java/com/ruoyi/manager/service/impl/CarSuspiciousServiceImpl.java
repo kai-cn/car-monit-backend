@@ -334,12 +334,17 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                 String carNo = entry.getKey();
                 List<TrailBo> trailBoList = entry.getValue();
                 for (TrailBo trailBo : trailBoList) {
-                    CarSuspicious suspicious = new CarSuspicious();
+                    CarSuspicious suspicious = new CarSuspicious();//生成可疑车辆
                     suspicious.setCarNo(carNo);
                     suspicious.setTrackId(trailBo.getPointUuid());
                     suspicious.setTrackJosn(JSON.toJSONString(trailBo));
                     if (trailBo.getGantryCaptureBO() != null) {
                         suspicious.setPlateColor(trailBo.getGantryCaptureBO().getPlatecolor());
+                        suspicious.setSectionCode(trailBo.getGantryCaptureBO().getSectioncode());
+                        suspicious.setSectionName(trailBo.getGantryCaptureBO().getSectionname());
+                        suspicious.setRoadCode(trailBo.getGantryCaptureBO().getRoadcode());
+                        suspicious.setRoadName(trailBo.getGantryCaptureBO().getRoadname());
+                        suspicious.setOrgName(trailBo.getGantryCaptureBO().getOrgname());
                     }
                     if (trailBo.getStationCapture() != null) {
                         suspicious.setCarType(trailBo.getStationCapture().getCartype());
