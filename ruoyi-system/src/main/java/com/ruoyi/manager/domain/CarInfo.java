@@ -6,12 +6,14 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BasePlusEntityInputNew;
 import com.ruoyi.common.core.domain.Custom;
+import com.ruoyi.manager.domain.vo.TrailBo;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 车辆信息对象 car_info
@@ -269,6 +271,10 @@ public class CarInfo extends BasePlusEntityInputNew implements Custom {
     // 录入单位以及用户
     @TableField(exist = false)
     private String createInfo;
+
+    // 车俩轨迹
+    @TableField(exist = false)
+    private List<TrailBo> carTrailList;
 
 
 }

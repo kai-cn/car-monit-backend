@@ -1,5 +1,7 @@
 package com.ruoyi.manager.service.impl;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -9,6 +11,7 @@ import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.manager.domain.CarInfo;
+import com.ruoyi.manager.domain.vo.TrailBo;
 import com.ruoyi.manager.domain.vo.bigscreen.CarInfoVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam;
 import com.ruoyi.manager.domain.vo.bigscreen.CarLocationVO;
@@ -48,7 +51,19 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
      */
     @Override
     public CarInfo selectCarInfoById(String id) {
-        return carInfoMapper.selectCarInfoById(id);
+        CarInfo car = carInfoMapper.selectCarInfoById(id);
+        if (null != car) {
+            List<TrailBo> carTrailList = new ArrayList<>();
+            if (CommonUtil.isNull(car.getStatus()).equals("1")) {
+                String trackJosn = car.getTrackJosn();
+                if (CommonUtil.isNotBlank(trackJosn)) {
+                    JSONArray array = JSON.parseArray(trackJosn);
+                    carTrailList = array.toList(TrailBo.class);
+                }
+            }
+            car.setCarTrailList(carTrailList);
+        }
+        return car;
     }
 
     /**
