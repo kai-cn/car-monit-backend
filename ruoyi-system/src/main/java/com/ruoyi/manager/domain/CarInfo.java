@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.annotation.Excel;
-import com.ruoyi.common.core.domain.BasePlusEntityInput;
+import com.ruoyi.common.core.domain.BasePlusEntityInputNew;
 import com.ruoyi.common.core.domain.Custom;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,7 +23,7 @@ import java.util.Date;
 @TableName("car_info")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-public class CarInfo extends BasePlusEntityInput implements Custom {
+public class CarInfo extends BasePlusEntityInputNew implements Custom {
 
     /** 车牌号 */
     @Excel(name = "车牌号")

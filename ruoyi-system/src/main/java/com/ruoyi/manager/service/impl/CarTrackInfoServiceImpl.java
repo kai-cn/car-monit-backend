@@ -1,6 +1,7 @@
 package com.ruoyi.manager.service.impl;
 
 
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -141,31 +143,60 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     public AjaxResult sync() {
         // 查询所有的车俩
         List<CarInfo> carList = carInfoService.getRedisCarList();
+
+        Map<String,String> carMap = new HashMap<>();
         List<CarVO> carVOList = new ArrayList<>();
         for (CarInfo rtn : carList) {
             CarVO tempVO = new CarVO();
             tempVO.setCarId(rtn.getId());
             tempVO.setCarNo(rtn.getCarNo());
             carVOList.add(tempVO);
+            carMap.put(rtn.getCarNo(),rtn.getId());
         }
         CarParaVO carParaVO = new CarParaVO();
         carParaVO.setCarlist(carVOList);
+
+        List<CarInfo> updatalist = new ArrayList<CarInfo>();
+
         // 调用接口
         Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncTrack(carParaVO);
         for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
             String carNo = entry.getKey();
-            List<TrailBo> josnList = entry.getValue();
-            if (null != josnList && josnList.size() > 0) {
+            if (carMap.containsKey(carNo)){
+                CarInfo car = new CarInfo();
+                car.setId(carMap.get(carNo));
+                List<TrailBo> josnList = entry.getValue();
+                if (null != josnList && josnList.size() > 0) {
+                    // 车的状态修改更新为 status 1  经纬度 last_pass_longitude  last_pass_latitude  josn字符串要更新 track_id track_josn
+                    // 同事要跟新车俩预警  car_warning_info
+                    car.setStatus("1");
+                    // 进度和维度
+                    TrailBo lastBo = josnList.get(josnList.size() - 1);
+                    if (null !=lastBo.getLon()){
+                        car.setLastPassLongitude(CommonUtil.isNull(lastBo.getLon()));
+                    }
 
-                // 车的状态修改更新为 status 1  经纬度 last_pass_longitude  last_pass_latitude  josn字符串要更新 track_id track_josn
-
-                // 同事要跟新车俩预警  car_warning_info
-
-            }else{
-                // 跟新车俩-----------------------  车的状态修改status 0
-
+                    if (null !=lastBo.getLat()){
+                        car.setLastPassLatitude(CommonUtil.isNull(lastBo.getLat()));
+                    }
+                    car.setTrackJosn(JSON.toJSON(josnList)+"");
+                }else{
+                    // 跟新车俩-----------------------  车的状态修改status 0
+                    car.setStatus("0");
+                    car.setTrackJosn(null);
+                }
+                updatalist.add(car);
             }
         }
+
+        // 修改
+        if (updatalist.size() > 0) {
+            carInfoService.updateBatchById(updatalist);
+        }
+
+        // 更新缓存
+        carInfoService.updateRedisCarList();
+
         return AjaxResult.success();
     }
 

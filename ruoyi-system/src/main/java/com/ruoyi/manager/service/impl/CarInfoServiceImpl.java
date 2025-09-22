@@ -5,6 +5,8 @@ import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.vo.bigscreen.CarInfoVO;
@@ -71,6 +73,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
     @Override
     public AjaxResult saveCarInfo(CarInfo carInfo)
     {
+        Long userId = SecurityUtils.getUserId();
         carInfo.setCarNo(CommonUtil.isNull(carInfo.getCarNo())); //去掉空格
         // 判断车牌号是否重复
         int countNum = carInfoMapper.isExitsCar(carInfo);
@@ -80,12 +83,19 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
 
         if (CommonUtil.isNotBlank(carInfo.getId()))
         {
+            carInfo.setUpdateBy(userId); // 更新人
+            carInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
             // 修改
             carInfoMapper.updateById(carInfo);
         }
         else
         {
             carInfo.setId(StringUtils.getUUID()); // 主键
+            carInfo.setDelFlag("0");
+            carInfo.setCreateBy(userId); // 创建人
+            carInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
+            carInfo.setUpdateBy(userId); // 更新人
+            carInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
             // 新增 主键
             carInfoMapper.insert(carInfo);
         }
@@ -130,13 +140,21 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
      */
     public AjaxResult doImport(List<CarInfo> list) {
         if (null != list && list.size() > 0) {
+            Long userId = SecurityUtils.getUserId();
             List<CarInfo> addlist = new ArrayList<CarInfo>();
             List<CarInfo> updatalist = new ArrayList<CarInfo>();
             for (CarInfo carInfo : list) {
                 if (CommonUtil.isNotBlank(carInfo.getId())){
+                    carInfo.setUpdateBy(userId); // 更新人
+                    carInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
                     updatalist.add(carInfo);
                 }else{
                     carInfo.setId(StringUtils.getUUID()); // 主键
+                    carInfo.setDelFlag("0");
+                    carInfo.setCreateBy(userId); // 创建人
+                    carInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
+                    carInfo.setUpdateBy(userId); // 更新人
+                    carInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
                     addlist.add(carInfo);
                 }
             }

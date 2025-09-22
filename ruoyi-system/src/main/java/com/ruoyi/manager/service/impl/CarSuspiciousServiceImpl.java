@@ -6,6 +6,8 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.manager.domain.CarExceptRecord;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.CarSuspicious;
@@ -226,7 +228,14 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                 // CarInfo addCarInfo = carInfoList.get(0);
             }else{
                 CarInfo addCarInfo = new CarInfo();
-                addCarInfo.setId(carId);
+                Long userId = SecurityUtils.getUserId();
+                addCarInfo.setId(StringUtils.getUUID()); // 主键
+                addCarInfo.setDelFlag("0");
+                addCarInfo.setCreateBy(userId); // 创建人
+                addCarInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
+                addCarInfo.setUpdateBy(userId); // 更新人
+                addCarInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
+
                 addCarInfo.setCarNo(carNo);
                 addCarInfo.setCarType(rtnVo.getCarType());
                 addCarInfo.setCarNum(rtnVo.getCarNum());
@@ -234,6 +243,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                 addCarInfo.setPlateColor(rtnVo.getPlateColor());
                 addCarInfo.setEscapedType(escapedType);
                 addCarInfo.setEscapedAmount(escapedAmount);
+
                 carInfoMapper.insert(addCarInfo);
             }
 
