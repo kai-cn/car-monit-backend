@@ -1,15 +1,8 @@
 package com.ruoyi.manager.service.impl;
 
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode;
-import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowProvcaptureAddcode;
-import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowStationcaptureAddcode;
-import com.ruoyi.base.domain.OdsSzdnProvinceBorderVehicleWeightNewstructure;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
-import com.ruoyi.common.constant.HttpStatus;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.manager.domain.CarInfo;
@@ -40,11 +33,7 @@ import java.util.Map;
 public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, CarTrackInfo> implements ICarTrackInfoService {
 
 
-    public static final String BORDER_WEIGHING_CAPTURE = "BorderWeighingCapture";
-    public static final String GANTRY_CAPTURE = "GantryCapture";
-    public static final String PROV_CAPTURE = "ProvCapture";
-    public static final String SERVICE_AREA_CAPTURE = "ServiceAreaCapture";
-    public static final String STATION_CAPTURE = "StationCapture";
+
 
 
     @Autowired
@@ -162,59 +151,18 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         CarParaVO carParaVO = new CarParaVO();
         carParaVO.setCarlist(carVOList);
         // 调用接口
-        JSONObject jsonObject = httpSysUtilApiService.syncTrack(carParaVO);
-        Integer responseCode = jsonObject.getInteger(AjaxResult.CODE_TAG);
-        if (responseCode == HttpStatus.SUCCESS) {
-            JSONObject dataJosn = jsonObject.getJSONObject("data");
-            if (null !=dataJosn){
-                Map<String, List<TrailBo>> mapCar = (Map) dataJosn;
-                for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
-                    String carNo = entry.getKey();
-                    List<TrailBo> josnList = entry.getValue();
-                    if (null != josnList && josnList.size() > 0) {
-                        //---------------有轨迹 ：根据车俩实时状态
-                        for (TrailBo trailBo : josnList) {
-                            String pointFlag = CommonUtil.isNull(trailBo.getPointFlag()); // 是否有值 O否 1是
-                            String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
-                            String ipType = CommonUtil.isNull(trailBo);
+        Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncTrack(carParaVO);
+        for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
+            String carNo = entry.getKey();
+            List<TrailBo> josnList = entry.getValue();
+            if (null != josnList && josnList.size() > 0) {
 
-                            //--------------------- 抓拍对象
-                            if (pointFlag.equals("1")){
-                                switch (stateType) {
-                                    case BORDER_WEIGHING_CAPTURE:
-                                        // 省界称重
-                                        OdsSzdnProvinceBorderVehicleWeightNewstructure  borderWeighingCaptureBO = trailBo.getBorderWeighingCaptureBO();
-                                        break;
-                                    case GANTRY_CAPTURE:
-                                        // 门架抓拍
+            }else{
+                // 跟新车俩-----------------------
 
-                                        break;
-                                    case PROV_CAPTURE:
-                                        // 省界抓拍
-
-                                        break;
-                                    case SERVICE_AREA_CAPTURE:
-                                        // 服务区抓拍
-                                        break;
-                                    case STATION_CAPTURE:
-                                        // 收费站抓拍
-
-                                        break;
-                                }
-
-                            }
-                        }
-                    }else{
-                        // 跟新车俩-----------------------
-                    }
-
-
-                }
             }
         }
-        return AjaxResult.success(jsonObject);
-
-
+        return AjaxResult.success();
     }
 
     /**
@@ -226,8 +174,8 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     public AjaxResult syncSuspiciousCar() {
         CarParaVO carParaVO = new CarParaVO();
         // 调用接口
-        JSONObject jsonObject = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
-        return AjaxResult.success(jsonObject);
+        Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
+        return AjaxResult.success();
     }
 
 }

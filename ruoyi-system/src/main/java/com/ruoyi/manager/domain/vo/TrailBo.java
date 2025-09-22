@@ -3,6 +3,8 @@ package com.ruoyi.manager.domain.vo;
 import com.ruoyi.base.domain.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class TrailBo {
 
@@ -60,5 +62,21 @@ public class TrailBo {
     OdsSzdnGantryIp  gantryIpBO; // 门架IP
 
     OdsSzdnTollStationIp  stationIpBO;  // 收费站ip
+
+
+    // 设备编码
+    private String devCode;
+
+    // 设备名称
+    private String devName;
+
+    // 抓拍图片
+    private String imagesArry;
+
+    /** 经度 */
+    private BigDecimal lon;
+
+    /** 维度 */
+    private BigDecimal lat;
 
 }

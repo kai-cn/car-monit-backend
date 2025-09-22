@@ -1,11 +1,14 @@
 package com.ruoyi.base.service.forest;
 
 
-import com.alibaba.fastjson2.JSONObject;
 import com.dtflys.forest.annotation.BaseRequest;
 import com.dtflys.forest.annotation.JSONBody;
 import com.dtflys.forest.annotation.Post;
 import com.ruoyi.manager.domain.vo.CarParaVO;
+import com.ruoyi.manager.domain.vo.TrailBo;
+
+import java.util.List;
+import java.util.Map;
 
 @BaseRequest(baseURL = "#{vehicleMonitor.baseUrl}/base/sysutil")
 public interface HttpSysUtilApiService {
@@ -15,7 +18,7 @@ public interface HttpSysUtilApiService {
      * @return
      */
     @Post("/syncTrack")
-    JSONObject syncTrack(@JSONBody CarParaVO carParaVO);
+    Map<String, List<TrailBo>> syncTrack(@JSONBody CarParaVO carParaVO);
 
 
     /**
@@ -23,7 +26,7 @@ public interface HttpSysUtilApiService {
      * @return
      */
     @Post("/syncSuspiciousCar")
-    JSONObject syncSuspiciousCar(@JSONBody CarParaVO carParaVO);
+    Map<String, List<TrailBo>> syncSuspiciousCar(@JSONBody CarParaVO carParaVO);
 
 
 

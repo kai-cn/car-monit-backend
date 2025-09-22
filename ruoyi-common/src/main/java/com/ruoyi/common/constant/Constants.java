@@ -269,5 +269,11 @@ public class Constants
      */
     public static final String car_list = "car_list";
 
+    public static final String BORDER_WEIGHING_CAPTURE = "BorderWeighingCapture";
+    public static final String GANTRY_CAPTURE = "GantryCapture";
+    public static final String PROV_CAPTURE = "ProvCapture";
+    public static final String SERVICE_AREA_CAPTURE = "ServiceAreaCapture";
+    public static final String STATION_CAPTURE = "StationCapture";
+
 
 }
