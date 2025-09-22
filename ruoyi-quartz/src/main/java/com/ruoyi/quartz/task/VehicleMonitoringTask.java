@@ -1,8 +1,5 @@
 package com.ruoyi.quartz.task;
 
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
 import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.*;
 import com.ruoyi.base.service.forest.HttpBaseInfoApiService;
@@ -42,24 +39,10 @@ public class VehicleMonitoringTask {
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncOrgInfo() {
-        JSONObject jsonObject = httpBaseInfoApiService.getOrgInfoList();
-        if (null == jsonObject || 200 != jsonObject.getInt("code")) {
-            log.error("机构接口返回数据异常:" + jsonObject);
-            return;
-        }
-
-        JSONArray jsonArray = (JSONArray) jsonObject.get("data");
-        if (jsonArray.isEmpty()) {
-            return;
-        }
-
-        List<OdsYhglVBaseOrg> list = JSONUtil.toList(jsonArray, OdsYhglVBaseOrg.class);
-
+        List<OdsYhglVBaseOrg> list = httpBaseInfoApiService.getOrgInfoList();
         this.odsYhglVBaseOrgService.truncateTable();
         this.odsYhglVBaseOrgService.saveBatch(list);
     }
-
-
 
 
     /**
@@ -67,19 +50,7 @@ public class VehicleMonitoringTask {
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncSectionInfo(){
-        JSONObject jsonObject = httpBaseInfoApiService.getSectionInfoList();
-        if (null == jsonObject || 200 != jsonObject.getInt("code")) {
-            log.error("路段接口返回数据异常:" + jsonObject);
-            return;
-        }
-
-        JSONArray jsonArray = (JSONArray) jsonObject.get("data");
-        if(jsonArray.isEmpty()){
-            return;
-        }
-
-        List<OdsSzdnSection> list = JSONUtil.toList(jsonArray, OdsSzdnSection.class);
-
+        List<OdsSzdnSection> list = httpBaseInfoApiService.getSectionInfoList();
         // 清空数据  mybatis-plus 安全机制 会对delete语句没有where条件的进行拦截
         // 抛出 Prohibition of full table deletion
         // 使用 注解 @Update  绕够MP的安全检测
@@ -97,19 +68,7 @@ public class VehicleMonitoringTask {
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncGantryInfo(){
-        JSONObject jsonObject = httpBaseInfoApiService.getGantryInfoList();
-        if (null == jsonObject || 200 != jsonObject.getInt("code")) {
-            log.error("门架接口返回数据异常:" + jsonObject);
-            return;
-        }
-
-        JSONArray jsonArray = (JSONArray) jsonObject.get("data");
-        if(jsonArray.isEmpty()){
-            return;
-        }
-
-        List<OdsSzdnGantry> list = JSONUtil.toList(jsonArray, OdsSzdnGantry.class);
-
+        List<OdsSzdnGantry> list = httpBaseInfoApiService.getGantryInfoList();
         this.odsSzdnGantryService.truncateTable();
         this.odsSzdnGantryService.saveBatch(list);
     }
@@ -120,19 +79,7 @@ public class VehicleMonitoringTask {
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncServiceAreaInfoInfo(){
-        JSONObject jsonObject = httpBaseInfoApiService.getServiceAreaInfoList();
-        if (null == jsonObject || 200 != jsonObject.getInt("code")) {
-            log.error("服务区接口返回数据异常:" + jsonObject);
-            return;
-        }
-
-        JSONArray jsonArray = (JSONArray) jsonObject.get("data");
-        if(jsonArray.isEmpty()){
-            return;
-        }
-
-        List<DwdLcztFwqjcxx> list = JSONUtil.toList(jsonArray, DwdLcztFwqjcxx.class);
-
+        List<DwdLcztFwqjcxx> list = httpBaseInfoApiService.getServiceAreaInfoList();
         this.dwdLcztFwqjcxxService.truncateTable();
         this.dwdLcztFwqjcxxService.saveBatch(list);
     }
@@ -142,19 +89,7 @@ public class VehicleMonitoringTask {
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncTollBoothInfoInfo(){
-        JSONObject jsonObject = httpBaseInfoApiService.getTollBoothInfoList();
-        if (null == jsonObject || 200 != jsonObject.getInt("code")) {
-            log.error("收费所接口返回数据异常:" + jsonObject);
-            return;
-        }
-
-        JSONArray jsonArray = (JSONArray) jsonObject.get("data");
-        if(jsonArray.isEmpty()){
-            return;
-        }
-
-        List<DwdLcztSfsjcxx> list = JSONUtil.toList(jsonArray, DwdLcztSfsjcxx.class);
-
+        List<DwdLcztSfsjcxx> list = httpBaseInfoApiService.getTollBoothInfoList();
         this.dwdLcztSfsjcxxService.truncateTable();
         this.dwdLcztSfsjcxxService.saveBatch(list);
     }
@@ -164,19 +99,7 @@ public class VehicleMonitoringTask {
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncSfzjcxxInfoInfo(){
-        JSONObject jsonObject = httpBaseInfoApiService.getSfzjcxxInfoList();
-        if (null == jsonObject || 200 != jsonObject.getInt("code")) {
-            log.error("收费所位置接口返回数据异常:" + jsonObject);
-            return;
-        }
-
-        JSONArray jsonArray = (JSONArray) jsonObject.get("data");
-        if(jsonArray.isEmpty()){
-            return;
-        }
-
-        List<DwdLcztSfzjcxx> list = JSONUtil.toList(jsonArray, DwdLcztSfzjcxx.class);
-
+        List<DwdLcztSfzjcxx> list = httpBaseInfoApiService.getSfzjcxxInfoList();
         this.dwdLcztSfzjcxxService.truncateTable();
         this.dwdLcztSfzjcxxService.saveBatch(list);
     }
@@ -186,19 +109,7 @@ public class VehicleMonitoringTask {
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncTollStationInfo(){
-        JSONObject jsonObject = httpBaseInfoApiService.getTollStationInfoList();
-        if (null == jsonObject || 200 != jsonObject.getInt("code")) {
-            log.error("收费站接口返回数据异常:" + jsonObject);
-            return;
-        }
-
-        JSONArray jsonArray = (JSONArray) jsonObject.get("data");
-        if(jsonArray.isEmpty()){
-            return;
-        }
-
-        List<OdsSzdnToll> list = JSONUtil.toList(jsonArray, OdsSzdnToll.class);
-
+        List<OdsSzdnToll> list = httpBaseInfoApiService.getTollStationInfoList();
         this.odsSzdnTollService.truncateTable();
         this.odsSzdnTollService.saveBatch(list);
     }

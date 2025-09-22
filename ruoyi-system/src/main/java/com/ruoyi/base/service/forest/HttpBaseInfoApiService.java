@@ -1,62 +1,64 @@
 package com.ruoyi.base.service.forest;
 
-import cn.hutool.json.JSONObject;
 import com.dtflys.forest.annotation.BaseRequest;
 import com.dtflys.forest.annotation.Get;
+import com.ruoyi.base.domain.*;
 
-@BaseRequest(baseURL = "#{vehicleMonitor.baseUrl}/base")
+import java.util.List;
+
+@BaseRequest(baseURL = "#{vehicleMonitor.baseUrl}")
 public interface HttpBaseInfoApiService {
 
     /**
      * 获取机构信息
      * @return
      */
-    @Get("/org/listAll")
-    JSONObject getOrgInfoList();
+    @Get("/base/org/listAll")
+    List<OdsYhglVBaseOrg> getOrgInfoList();
 
     /**
      * 获取路段信息
      * @return
      */
-    @Get("/section/listAll")
-    JSONObject getSectionInfoList();
+    @Get("/base/section/listAll")
+    List<OdsSzdnSection> getSectionInfoList();
 
 
     /**
      * 获取门架信息
      * @return
      */
-    @Get("/gantry/listAll")
-    JSONObject getGantryInfoList();
+    @Get("/base/gantry/listAll")
+    List<OdsSzdnGantry> getGantryInfoList();
 
 
     /**
      * 获取服务区基础信息
      * @return
      */
-    @Get("/fwqjcxx/listAll")
-    JSONObject getServiceAreaInfoList();
+    @Get("/base/fwqjcxx/listAll")
+    List<DwdLcztFwqjcxx> getServiceAreaInfoList();
 
     /**
      * 获取收费所信息
      * @return
      */
-    @Get("/sfsjcxx/listAll")
-    JSONObject getTollBoothInfoList();
+    @Get("/base/sfsjcxx/listAll")
+    List<DwdLcztSfsjcxx> getTollBoothInfoList();
 
     /**
      * 获取收费站基础信息位置
      * @return
      */
-    @Get(url = "/sfzjcxx/listAll")
-    JSONObject getSfzjcxxInfoList();
+    @Get(url = "/base/sfzjcxx/listAll")
+    List<DwdLcztSfzjcxx> getSfzjcxxInfoList();
 
     /**
      * 获取收费站信息
      * @return
      */
-    @Get("/toll/listAll")
-    JSONObject getTollStationInfoList();
+    @Get("/base/toll/listAll")
+    List<OdsSzdnToll> getTollStationInfoList();
 
 
 }
