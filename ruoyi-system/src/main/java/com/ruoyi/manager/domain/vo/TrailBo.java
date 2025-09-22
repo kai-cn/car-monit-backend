@@ -82,7 +82,7 @@ public class TrailBo {
     // 入栈口
     private String firtStationCode;
 
-    // 设备名称
+    // 入栈口名称
     private String firtStationName;
 
 }
