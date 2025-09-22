@@ -142,4 +142,8 @@ public class CarWarningInfo extends BasePlusEntityNew implements Custom {
     @Excel(name = "逃费金额", readConverterExp = "元=")
     private BigDecimal escapedAmount;
 
+    // 车牌号查询
+    @TableField(exist = false)
+    private String carNoQuery;
+
 }

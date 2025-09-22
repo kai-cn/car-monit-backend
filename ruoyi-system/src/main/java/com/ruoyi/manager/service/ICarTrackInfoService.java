@@ -54,11 +54,5 @@ public interface ICarTrackInfoService extends IService<CarTrackInfo> {
      */
     AjaxResult sync();
 
-    /**
-     * 可疑车俩
-     *
-     * @return 结果
-     */
-    AjaxResult syncSuspiciousCar();
 
 }

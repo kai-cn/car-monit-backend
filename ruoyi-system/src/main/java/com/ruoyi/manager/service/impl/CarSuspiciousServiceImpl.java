@@ -1,6 +1,8 @@
 package com.ruoyi.manager.service.impl;
 
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.redis.RedisCache;
@@ -12,6 +14,8 @@ import com.ruoyi.manager.domain.CarExceptRecord;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.CarSuspicious;
 import com.ruoyi.manager.domain.CarSuspiciousCheck;
+import com.ruoyi.manager.domain.vo.CarParaVO;
+import com.ruoyi.manager.domain.vo.TrailBo;
 import com.ruoyi.manager.mapper.CarInfoMapper;
 import com.ruoyi.manager.mapper.CarSuspiciousMapper;
 import com.ruoyi.manager.service.ICarExceptRecordService;
@@ -21,9 +25,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 可疑车辆Service业务层处理
@@ -48,6 +54,9 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
     @Autowired
     private RedisCache redisCache;
+
+    @Resource
+    private HttpSysUtilApiService httpSysUtilApiService;
 
     /**
      * 查询可疑车辆
@@ -308,5 +317,36 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         redisCache.setCacheObject(Constants.car_list, list);
 
         return AjaxResult.success("操作成功！",carSuspicious.getId());
+    }
+
+    /**
+     * 可疑车俩
+     *
+     * @return 结果
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public AjaxResult syncSuspiciousCar() {
+        CarParaVO carParaVO = new CarParaVO();
+        // 调用接口
+        Map<String, List<TrailBo>> map = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
+        if (map != null) {
+            for (Map.Entry<String, List<TrailBo>> entry : map.entrySet()) {
+                String carNo = entry.getKey();
+                List<TrailBo> trailBoList = entry.getValue();
+                for (TrailBo trailBo : trailBoList) {
+                    CarSuspicious suspicious = new CarSuspicious();
+                    suspicious.setCarNo(carNo);
+                    suspicious.setTrackId(trailBo.getPointUuid());
+                    suspicious.setTrackJosn(JSON.toJSONString(trailBo));
+                    if (trailBo.getGantryCaptureBO() != null) {
+                        suspicious.setPlateColor(trailBo.getGantryCaptureBO().getPlatecolor());
+                    }
+                    if (trailBo.getStationCapture() != null) {
+                        suspicious.setCarType(trailBo.getStationCapture().getCartype());
+                    }
+                }
+            }
+        }
+        return AjaxResult.success();
     }
 }

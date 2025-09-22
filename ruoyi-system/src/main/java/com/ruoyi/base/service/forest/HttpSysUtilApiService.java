@@ -26,7 +26,11 @@ public interface HttpSysUtilApiService {
      * @return
      */
     @Post("/syncSuspiciousCar")
-    Map<String, List<TrailBo>> syncSuspiciousCar(@JSONBody CarParaVO carParaVO);
+    Map<String, List<TrailBo>>  syncSuspiciousCar(@JSONBody CarParaVO carParaVO);
+
+
+    @Post("/carTrackQuery")
+    Map<String, List<TrailBo>>  suspiciousCarQuery(@JSONBody CarParaVO carParaVO);
 
 
 

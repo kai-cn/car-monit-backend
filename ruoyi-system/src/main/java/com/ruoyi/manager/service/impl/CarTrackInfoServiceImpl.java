@@ -200,17 +200,6 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         return AjaxResult.success();
     }
 
-    /**
-     * 可疑车俩
-     *
-     * @return 结果
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public AjaxResult syncSuspiciousCar() {
-        CarParaVO carParaVO = new CarParaVO();
-        // 调用接口
-        Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
-        return AjaxResult.success();
-    }
+
 
 }

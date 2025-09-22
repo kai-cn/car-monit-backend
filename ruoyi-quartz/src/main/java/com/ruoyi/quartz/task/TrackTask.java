@@ -1,5 +1,7 @@
 package com.ruoyi.quartz.task;
 
+import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.manager.service.ICarSuspiciousService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -17,6 +19,9 @@ public class TrackTask {
     @Autowired
     private ICarTrackInfoService carTrackInfoService;
 
+    @Autowired
+    private ICarSuspiciousService carSuspiciousService;
+
     /**
      * 车俩轨迹
      */
@@ -33,7 +38,7 @@ public class TrackTask {
     @Transactional(rollbackFor = Exception.class)
     public void syncSuspiciousCar() {
         System.out.println("可疑车俩数据开始同步！"+new Date());
-        carTrackInfoService.syncSuspiciousCar();
+        AjaxResult res = carSuspiciousService.syncSuspiciousCar();
         System.out.println("可疑车俩介绍同步！"+new Date());
     }
 

@@ -140,4 +140,9 @@ public class CarWarningInfoController extends BaseController {
         return carWarningInfoService.deleteCarWarningInfoByIds(ids);
     }
 
+    @PostMapping("historyTrack")
+    public AjaxResult historyTrack(@RequestBody CarWarningInfo carWarningInfo) {
+        return carWarningInfoService.historyTrack(carWarningInfo);
+    }
+
 }

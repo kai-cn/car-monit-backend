@@ -1,17 +1,22 @@
 package com.ruoyi.manager.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.manager.domain.CarWarningInfo;
+import com.ruoyi.manager.domain.vo.CarParaVO;
+import com.ruoyi.manager.domain.vo.TrailBo;
 import com.ruoyi.manager.mapper.CarWarningInfoMapper;
 import com.ruoyi.manager.service.ICarWarningInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 预警车辆Service业务层处理
@@ -24,6 +29,8 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
 
     @Autowired
     private CarWarningInfoMapper carWarningInfoMapper;
+    @Resource
+    private HttpSysUtilApiService sysUtilApiService;
 
     /**
      * 查询预警车辆
@@ -109,5 +116,24 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
     @Override
     public List<CarWarningInfo> selectCarWarningInfoListLimit100() {
         return carWarningInfoMapper.selectCarWarningInfoListLimit100();
+    }
+
+    @Override
+    public AjaxResult historyTrack(CarWarningInfo carWarningInfo) {
+        CarParaVO carParaVO = new CarParaVO();
+        carParaVO.setCarNo(carWarningInfo.getCarNo());
+        carParaVO.setApplyTime1(carWarningInfo.getApplyTime1());
+        carParaVO.setApplyTime2(carWarningInfo.getApplyTime2());
+        Map<String, List<TrailBo>> map = sysUtilApiService.suspiciousCarQuery(carParaVO);
+        if (map != null) {
+            for (Map.Entry<String, List<TrailBo>> entry : map.entrySet()) {
+                String carNo = entry.getKey();
+                List<TrailBo> trailBoList = entry.getValue();
+                for (TrailBo trailBo : trailBoList) {
+
+                }
+            }
+        }
+        return AjaxResult.success();
     }
 }
