@@ -14,8 +14,7 @@ import java.util.Map;
 public interface HttpSysUtilApiService {
 
     /**
-     * 同步轨迹
-     * @return
+     * 同步车俩实时轨迹
      */
     @Post("/syncTrack")
     Map<String, List<TrailBo>> syncTrack(@JSONBody CarParaVO carParaVO);
@@ -30,12 +29,21 @@ public interface HttpSysUtilApiService {
 
 
     /**
-     * 车俩历史轨迹
+     * 车俩历史轨迹 ：根据车牌号查询
      * @param carParaVO
      * @return
      */
-    @Post("/carTrackQuery")
-    Map<String, List<TrailBo>>  suspiciousCarQuery(@JSONBody CarParaVO carParaVO);
+    @Post("/carTrackQueryByCarNo")
+    Map<String, List<TrailBo>>  carTrackQueryByCarNo(@JSONBody CarParaVO carParaVO);
+
+
+    /**
+     * 车俩历史轨迹 ：根据时间查询
+     * @param carParaVO
+     * @return
+     */
+    @Post("/carTrackQueryByTime")
+    Map<String, List<TrailBo>>  carTrackQueryByTime(@JSONBody CarParaVO carParaVO);
 
 
 

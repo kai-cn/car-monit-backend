@@ -1,13 +1,17 @@
 package com.ruoyi.web.controller.manager;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.vo.CarParaVO;
+import com.ruoyi.manager.domain.vo.CarVO;
 import com.ruoyi.manager.domain.vo.TrailBo;
+import com.ruoyi.manager.service.ICarInfoService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,6 +49,9 @@ public class CarTrackInfoController extends BaseController {
     @Resource
     private HttpSysUtilApiService httpSysUtilApiService;
 
+    @Autowired
+    private ICarInfoService carInfoService;
+
     /**
      * 查询车辆行驶轨迹列表
      */
@@ -58,7 +65,7 @@ public class CarTrackInfoController extends BaseController {
     }
 
     /**
-     * 通根据车牌号查询
+     * 车俩历史轨迹 ：根据车牌号查询
      *
      * @param carTrackInfo
      * @return
@@ -77,7 +84,37 @@ public class CarTrackInfoController extends BaseController {
         carParaVO.setCarNo(carTrackInfo.getCarNo()); // 车牌号
         carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
         carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
-        Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.suspiciousCarQuery(carParaVO);
+        Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
+        return AjaxResult.success(caMap);
+
+    }
+
+
+    /**
+     * 车俩历史轨迹 ：根据时间查询
+     *
+     * @param carTrackInfo
+     * @return
+     */
+    @GetMapping("/listByCarByTime")
+    public AjaxResult listByCarByTime(CarTrackInfo carTrackInfo) {
+
+        // 查询所有的车俩
+        List<CarInfo> carList = carInfoService.getRedisCarList();
+        List<CarVO> carVOList = new ArrayList<>();
+        for (CarInfo rtn : carList) {
+            CarVO tempVO = new CarVO();
+            tempVO.setCarId(rtn.getId());
+            tempVO.setCarNo(rtn.getCarNo());
+            carVOList.add(tempVO);
+        }
+        // ---------- 查询接口
+        CarParaVO carParaVO = new CarParaVO();
+        carParaVO.setCarlist(carVOList);
+
+        carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
+        carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
+        Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByTime(carParaVO);
         return AjaxResult.success(caMap);
 
     }

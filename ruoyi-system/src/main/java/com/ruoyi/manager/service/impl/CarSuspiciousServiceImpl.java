@@ -329,11 +329,11 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         CarParaVO carParaVO = new CarParaVO();
         // 调用接口
         Map<String, List<TrailBo>> map = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
-        if (map != null) {
+        if (null != map) {
             for (Map.Entry<String, List<TrailBo>> entry : map.entrySet()) {
                 String carNo = entry.getKey();
                 List<TrailBo> trailBoList = entry.getValue();
-                for (TrailBo trailBo : trailBoList) {
+                /*for (TrailBo trailBo : trailBoList) {
                     CarSuspicious suspicious = new CarSuspicious();//生成可疑车辆
                     suspicious.setCarNo(carNo);
                     suspicious.setTrackId(trailBo.getPointUuid());
@@ -349,7 +349,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                     if (trailBo.getStationCapture() != null) {
                         suspicious.setCarType(trailBo.getStationCapture().getCartype());
                     }
-                }
+                }*/
             }
         }
         return AjaxResult.success();

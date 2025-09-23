@@ -61,5 +61,9 @@ public interface ICarSuspiciousService extends IService<CarSuspicious> {
      */
     AjaxResult cherkCarSuspicious(CarSuspicious carSuspicious);
 
+    /**
+     * 同步可疑车俩
+     * @return
+     */
     AjaxResult syncSuspiciousCar();
 }
