@@ -1,6 +1,7 @@
 package com.ruoyi.manager.service.impl;
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.constant.Constants;
@@ -16,6 +17,7 @@ import com.ruoyi.manager.domain.CarSuspicious;
 import com.ruoyi.manager.domain.CarSuspiciousCheck;
 import com.ruoyi.manager.domain.vo.CarParaVO;
 import com.ruoyi.manager.domain.vo.TrailBo;
+import com.ruoyi.manager.domain.vo.TrailInfo;
 import com.ruoyi.manager.mapper.CarInfoMapper;
 import com.ruoyi.manager.mapper.CarSuspiciousMapper;
 import com.ruoyi.manager.service.ICarExceptRecordService;
@@ -74,6 +76,27 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             querybo.setCarId(id);
             List<CarSuspiciousCheck> checkList =   carSuspiciousCheckService.selectCarSuspiciousCheckList(querybo);
             carSuspicious.setCheckList(checkList);
+
+
+            //---------------查询实时轨迹
+            List<TrailBo> carTrailList = new ArrayList<>();
+
+            String trackJosn = carSuspicious.getTrackJosn();
+            if (CommonUtil.isNotBlank(trackJosn)) {
+                JSONArray array = JSON.parseArray(trackJosn);
+                carTrailList = array.toList(TrailBo.class);
+            }
+
+
+            TrailInfo trailInfo = new TrailInfo();
+            trailInfo.setTrailUuid(carSuspicious.getCarNo());
+            trailInfo.setTrailList(carTrailList);
+
+            List<TrailInfo> trailList = new ArrayList<>();
+            trailList.add(trailInfo);
+            carSuspicious.setTrailList(trailList);
+
+
         }
 
         return carSuspicious;

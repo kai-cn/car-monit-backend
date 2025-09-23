@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BasePlusEntityNew;
 import com.ruoyi.common.core.domain.Custom;
+import com.ruoyi.manager.domain.vo.TrailInfo;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -219,5 +220,10 @@ public class CarSuspicious extends BasePlusEntityNew implements Custom {
      */
     @TableField(exist = false)
     private List<CarSuspiciousCheck> checkList;
+
+
+    // 车俩轨迹
+    @TableField(exist = false)
+    private List<TrailInfo> trailList;
 
 }

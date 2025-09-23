@@ -117,6 +117,7 @@ public class CarTrackInfoController extends BaseController {
         CarParaVO carParaVO = new CarParaVO();
         carParaVO.setCarlist(carVOList);
 
+        carParaVO.setCarNo(carTrackInfo.getCarNo()); // 车牌号
         carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
         carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
         Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByTime(carParaVO);
