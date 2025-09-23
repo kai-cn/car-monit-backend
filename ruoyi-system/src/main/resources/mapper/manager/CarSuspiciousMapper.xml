@@ -95,7 +95,6 @@
         t.section_code,
         t.section_name,
         t.track_id,
-        t.track_josn,
         t.back_col1,
         t.back_col2,
         t.remark,
@@ -171,7 +170,7 @@
 
     <select id="selectCarSuspiciousById" parameterType="String" resultMap="CarSuspiciousResult">
         select
-        <include refid="selectCarSuspiciousVo"/>
+        <include refid="selectCarSuspiciousVo"/>,t.track_josn
         from car_suspicious t
         where t.id = #{id}
     </select>

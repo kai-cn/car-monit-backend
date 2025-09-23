@@ -48,7 +48,6 @@
         t.road_section_id,
         t.road_section_name,
         t.track_id,
-        t.track_josn,
         t.back_col1,
         t.back_col2,
         t.remark,
@@ -98,7 +97,7 @@
 
     <select id="selectCarTrackInfoById" parameterType="String" resultMap="CarTrackInfoResult">
          select
-         <include refid="selectCarTrackInfoVo"/>
+         <include refid="selectCarTrackInfoVo"/>,t.track_josn
          from car_track_info t
          where t.id = #{id}
     </select>

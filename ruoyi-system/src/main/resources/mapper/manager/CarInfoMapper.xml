@@ -111,7 +111,6 @@
         t.next_pass_longitude,
         t.next_pass_latitude,
         t.track_id,
-        t.track_josn,
         t.org_id,
         t.org_code,
         t.org_name,
@@ -212,7 +211,7 @@
 
     <select id="selectCarInfoById" parameterType="String" resultMap="CarInfoResult">
         select
-        <include refid="selectCarInfoVo"/>
+        <include refid="selectCarInfoVo"/>,t.track_josn
         from car_info t
         where t.id = #{id}
     </select>
