@@ -112,7 +112,7 @@ public class CarWarningInfo extends BasePlusEntityNew implements Custom {
     @Excel(name = "所属路段名称")
     private String sectionName;
 
-    /** 备用字段1 */
+    /** 通行UUID */
     @Excel(name = "备用字段1")
     private String backCol1;
 

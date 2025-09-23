@@ -117,7 +117,7 @@
         <if test="applyTime2 != null  and applyTime2 != ''">and t.in_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
         <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
 
-        order by t.create_time desc,t.id
+        order by t.gantry_time desc,t.id
     </select>
 
     <select id="selectCarWarningInfoById" parameterType="String" resultMap="CarWarningInfoResult">

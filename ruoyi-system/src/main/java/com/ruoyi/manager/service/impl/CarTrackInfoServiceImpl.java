@@ -6,14 +6,17 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.CarTrackInfo;
+import com.ruoyi.manager.domain.CarWarningInfo;
 import com.ruoyi.manager.domain.vo.CarParaVO;
 import com.ruoyi.manager.domain.vo.CarVO;
 import com.ruoyi.manager.domain.vo.TrailBo;
 import com.ruoyi.manager.mapper.CarTrackInfoMapper;
 import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
+import com.ruoyi.manager.service.ICarWarningInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,9 +38,6 @@ import java.util.Map;
 public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, CarTrackInfo> implements ICarTrackInfoService {
 
 
-
-
-
     @Autowired
     private CarTrackInfoMapper carTrackInfoMapper;
 
@@ -46,6 +46,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
     @Resource
     private HttpSysUtilApiService httpSysUtilApiService;
+
+    @Autowired
+    private ICarWarningInfoService carWarningInfoService;
 
     /**
      * 查询车辆行驶轨迹
@@ -144,14 +147,14 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         // 查询所有的车俩
         List<CarInfo> carList = carInfoService.getRedisCarList();
 
-        Map<String,String> carMap = new HashMap<>();
+        Map<String,CarInfo> carMap = new HashMap<>();
         List<CarVO> carVOList = new ArrayList<>();
         for (CarInfo rtn : carList) {
             CarVO tempVO = new CarVO();
             tempVO.setCarId(rtn.getId());
             tempVO.setCarNo(rtn.getCarNo());
             carVOList.add(tempVO);
-            carMap.put(rtn.getCarNo(),rtn.getId());
+            carMap.put(rtn.getCarNo(),rtn);
         }
         CarParaVO carParaVO = new CarParaVO();
         carParaVO.setCarlist(carVOList);
@@ -160,11 +163,20 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
         // 调用接口
         Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncTrack(carParaVO);
+
+        // 新增的预警
+        List<CarWarningInfo> addCarWarningInfoList = new ArrayList<>();
+        // 删除的预警
+        List<String> delCarWarningInfoList = new ArrayList<>();
+
+        Long userId = 1L;
+
         for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
             String carNo = entry.getKey();
             if (carMap.containsKey(carNo)){
+                CarInfo vo = carMap.get(carNo);
                 CarInfo car = new CarInfo();
-                car.setId(carMap.get(carNo));
+                car.setId(vo.getId());
                 List<TrailBo> josnList = entry.getValue();
                 if (null != josnList && josnList.size() > 0) {
                     // 车的状态修改更新为 status 1  经纬度 last_pass_longitude  last_pass_latitude  josn字符串要更新 track_id track_josn
@@ -180,6 +192,54 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         car.setLastPassLatitude(CommonUtil.isNull(lastBo.getLat()));
                     }
                     car.setTrackJosn(JSON.toJSON(josnList)+"");
+
+                    for (TrailBo trailBo : josnList) {
+
+                        String pointUuid = CommonUtil.isNull(trailBo.getPointUuid());
+
+                        CarWarningInfo carWarningInfo = new CarWarningInfo();
+                        carWarningInfo.setCarId(vo.getId());
+                        carWarningInfo.setCarNo(vo.getCarNo());
+                        carWarningInfo.setCarType(vo.getCarType());
+                        carWarningInfo.setCarVehicle(vo.getCarVehicle());
+                        carWarningInfo.setCarNum(vo.getCarNum());
+                        // 入站
+                        carWarningInfo.setInStationId(trailBo.getFirtStationCode());
+                        carWarningInfo.setInStation(trailBo.getFirtStationName());
+                        if (CommonUtil.isNotBlank(trailBo.getFirtStationTime())){
+                            carWarningInfo.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getFirtStationTime()));
+                        }
+
+                        // 抓拍设备
+                        carWarningInfo.setGantryStationId(trailBo.getDevCode());
+                        carWarningInfo.setInStation(trailBo.getDevName());
+                        if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
+                            carWarningInfo.setGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                        }
+                        carWarningInfo.setFileIds(trailBo.getImagesArry());
+                        carWarningInfo.setBackCol1(pointUuid);
+
+                        // 预计下一个通行时间nextPassTime  预计下一个通行地址 nextPassAddress
+
+                        carWarningInfo.setDelFlag("0");
+                        carWarningInfo.setCreateBy(userId); // 创建人
+                        carWarningInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
+                        carWarningInfo.setUpdateBy(userId); // 更新人
+                        carWarningInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
+
+
+                        addCarWarningInfoList.add(carWarningInfo);
+
+                        if (CommonUtil.isNotBlank(pointUuid)){
+                            delCarWarningInfoList.add(pointUuid);
+                        }
+
+
+
+                    }
+
+
+
                 }else{
                     // 跟新车俩-----------------------  车的状态修改status 0
                     car.setStatus("0");
