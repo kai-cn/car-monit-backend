@@ -13,6 +13,7 @@ import com.ruoyi.manager.domain.CarTrackInfo;
 import com.ruoyi.manager.domain.vo.CarParaVO;
 import com.ruoyi.manager.domain.vo.CarVO;
 import com.ruoyi.manager.domain.vo.TrailBo;
+import com.ruoyi.manager.domain.vo.TrailInfo;
 import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,7 +77,20 @@ public class CarTrackInfoController extends BaseController {
         carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
         carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
         Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
-        return AjaxResult.success(caMap);
+
+        List<TrailInfo> trailList = new ArrayList<>();
+        for (Map.Entry<String, List<TrailBo>> entry : caMap.entrySet()) {
+            String carNo = entry.getKey();
+            List<TrailBo> josnList = entry.getValue();
+
+            TrailInfo trailInfo = new TrailInfo();
+            trailInfo.setTrailUuid(carNo);
+            trailInfo.setTrailList(josnList);
+
+            trailList.add(trailInfo);
+        }
+
+        return AjaxResult.success(trailList);
 
     }
 
@@ -106,7 +120,21 @@ public class CarTrackInfoController extends BaseController {
         carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
         carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
         Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByTime(carParaVO);
-        return AjaxResult.success(caMap);
+
+
+        List<TrailInfo> trailList = new ArrayList<>();
+        for (Map.Entry<String, List<TrailBo>> entry : caMap.entrySet()) {
+            String carNo = entry.getKey();
+            List<TrailBo> josnList = entry.getValue();
+
+            TrailInfo trailInfo = new TrailInfo();
+            trailInfo.setTrailUuid(carNo);
+            trailInfo.setTrailList(josnList);
+
+            trailList.add(trailInfo);
+        }
+
+        return AjaxResult.success(trailList);
 
     }
 

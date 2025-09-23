@@ -179,9 +179,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     if (null !=lastBo.getLat()){
                         car.setLastPassLatitude(CommonUtil.isNull(lastBo.getLat()));
                     }
-                    Map<String, List<TrailBo>> caMap = new HashMap<>();
-                    caMap.put(carNo,josnList);
-                    car.setTrackJosn(JSON.toJSON(caMap)+"");
+                    car.setTrackJosn(JSON.toJSON(josnList)+"");
                 }else{
                     // 跟新车俩-----------------------  车的状态修改status 0
                     car.setStatus("0");

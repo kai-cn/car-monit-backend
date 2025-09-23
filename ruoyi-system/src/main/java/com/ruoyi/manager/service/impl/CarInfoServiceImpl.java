@@ -1,6 +1,7 @@
 package com.ruoyi.manager.service.impl;
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -11,6 +12,7 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.vo.TrailBo;
+import com.ruoyi.manager.domain.vo.TrailInfo;
 import com.ruoyi.manager.domain.vo.bigscreen.CarInfoVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam;
 import com.ruoyi.manager.domain.vo.bigscreen.CarLocationVO;
@@ -24,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 车辆信息Service业务层处理
@@ -53,13 +54,23 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
     public CarInfo selectCarInfoById(String id) {
         CarInfo car = carInfoMapper.selectCarInfoById(id);
         if (null != car) {
+            //---------------查询实时轨迹
+            List<TrailBo> carTrailList = new ArrayList<>();
             if (CommonUtil.isNull(car.getStatus()).equals("1")) {
                 String trackJosn = car.getTrackJosn();
                 if (CommonUtil.isNotBlank(trackJosn)) {
-                    Map<String, List<TrailBo>> carTrailList = (Map) JSON.parse(trackJosn);
-                    car.setCarTrailList(carTrailList);
+                    JSONArray array = JSON.parseArray(trackJosn);
+                    carTrailList = array.toList(TrailBo.class);
                 }
             }
+            TrailInfo trailInfo = new TrailInfo();
+            trailInfo.setTrailUuid(car.getCarNo());
+            trailInfo.setTrailList(carTrailList);
+
+            List<TrailInfo> trailList = new ArrayList<>();
+            trailList.add(trailInfo);
+            car.setTrailList(trailList);
+
         }
         return car;
     }
