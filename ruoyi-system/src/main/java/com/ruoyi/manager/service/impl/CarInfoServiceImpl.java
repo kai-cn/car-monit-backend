@@ -1,7 +1,6 @@
 package com.ruoyi.manager.service.impl;
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -25,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 车辆信息Service业务层处理
@@ -53,15 +53,13 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
     public CarInfo selectCarInfoById(String id) {
         CarInfo car = carInfoMapper.selectCarInfoById(id);
         if (null != car) {
-            List<TrailBo> carTrailList = new ArrayList<>();
             if (CommonUtil.isNull(car.getStatus()).equals("1")) {
                 String trackJosn = car.getTrackJosn();
                 if (CommonUtil.isNotBlank(trackJosn)) {
-                    JSONArray array = JSON.parseArray(trackJosn);
-                    carTrailList = array.toList(TrailBo.class);
+                    Map<String, List<TrailBo>> carTrailList = (Map) JSON.parse(trackJosn);
+                    car.setCarTrailList(carTrailList);
                 }
             }
-            car.setCarTrailList(carTrailList);
         }
         return car;
     }
