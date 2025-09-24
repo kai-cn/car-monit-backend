@@ -42,7 +42,7 @@ public class CarWarningInfoController extends BaseController {
     /**
      * 查询预警车辆列表
      */
-    @PreAuthorize("@ss.hasPermi('manager:carwarning:list')")
+    // @PreAuthorize("@ss.hasPermi('manager:carwarning:list')")
     @GetMapping("/list")
     public TableDataInfo list(CarWarningInfo carWarningInfo) {
         startPage();
