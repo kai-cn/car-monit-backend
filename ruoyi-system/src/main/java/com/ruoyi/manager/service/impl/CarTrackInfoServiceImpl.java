@@ -180,6 +180,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                 List<TrailBo> josnList = entry.getValue();
                 if (null != josnList && josnList.size() > 0) {
                     // 车的状态修改更新为 status 1  经纬度 last_pass_longitude  last_pass_latitude  josn字符串要更新 track_id track_josn
+                    // 车的门架 路段 等数据--------------
                     // 同事要跟新车俩预警  car_warning_info
                     car.setStatus("1");
                     // 进度和维度

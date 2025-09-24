@@ -11,10 +11,7 @@ import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.manager.domain.CarExceptRecord;
-import com.ruoyi.manager.domain.CarInfo;
-import com.ruoyi.manager.domain.CarSuspicious;
-import com.ruoyi.manager.domain.CarSuspiciousCheck;
+import com.ruoyi.manager.domain.*;
 import com.ruoyi.manager.domain.vo.CarParaVO;
 import com.ruoyi.manager.domain.vo.TrailBo;
 import com.ruoyi.manager.domain.vo.TrailInfo;
@@ -23,6 +20,7 @@ import com.ruoyi.manager.mapper.CarSuspiciousMapper;
 import com.ruoyi.manager.service.ICarExceptRecordService;
 import com.ruoyi.manager.service.ICarSuspiciousCheckService;
 import com.ruoyi.manager.service.ICarSuspiciousService;
+import com.ruoyi.manager.service.ICarWhiteInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,6 +58,9 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
     @Resource
     private HttpSysUtilApiService httpSysUtilApiService;
+
+    @Autowired
+    private ICarWhiteInfoService carWhiteInfoService;
 
     /**
      * 查询可疑车辆
@@ -351,43 +353,130 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
     public AjaxResult syncSuspiciousCar() {
         Long userId = 1L;
         CarParaVO carParaVO = new CarParaVO();
+
+        //-------------------白名单的不生成相关数据------------
+        Map<String,CarWhiteInfo> carWhiteInfoMap = new HashMap<>();
+        List<CarWhiteInfo> carWhiteInfoList = carWhiteInfoService.getRedisCarList();
+        for (CarWhiteInfo carWhiteInfo:carWhiteInfoList){
+            carWhiteInfoMap.put(CommonUtil.isNull(carWhiteInfo.getCarNo()),carWhiteInfo);
+        }
+
         // 调用接口
         Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
+        List<CarSuspicious>  carSuspiciousList = new ArrayList<>();
         for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
             String trailUuid = CommonUtil.isNull(entry.getKey()); // 车牌 + @@ 轨迹UUID
             if (trailUuid.indexOf("@@") > -1) {
                 String[] trailStr = trailUuid.split("@@");
-                String carNo = trailStr[0];
-                List<TrailBo> josnList = entry.getValue();
-                if (null != josnList && josnList.size() > 0) {
-                    for (TrailBo trailBo : josnList) {
-                        CarSuspicious suspicious = new CarSuspicious();//生成可疑车辆
-                        suspicious.setCarNo(carNo);
+                String carNo = CommonUtil.isNull(trailStr[0]);
+
+                if (!carWhiteInfoMap.containsKey(carNo)){
+                    String trailUUid = "";
+                    if (trailStr.length > 1){
+                        trailUUid = trailStr[1];
+                    }
+                    List<TrailBo> josnList = entry.getValue();
+                    if (null != josnList && josnList.size() > 0) {
+                        // 生成可疑车辆
+                        CarSuspicious carSuspicious = new CarSuspicious();
+                        carSuspicious.setCarNo(carNo);
+                        carSuspicious.setTrackId(trailUUid);
+                        carSuspicious.setTrackJosn(JSON.toJSON(josnList)+"");
+
+                        List<TrailBo> gantryList = new ArrayList<TrailBo>(); // 门架
+                        List<TrailBo> stationList = new ArrayList<TrailBo>(); // 收费站
+
+                        for (TrailBo trailBo : josnList) {
+                            String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
+                            switch (stateType) {
+                                case Constants.BORDER_WEIGHING_CAPTURE:
+                                    // 省界称重
+                                    break;
+                                case Constants.GANTRY_CAPTURE:
+                                    // 门架抓拍
+                                    gantryList.add(trailBo);
+                                    break;
+                                case Constants.PROV_CAPTURE:
+
+                                    break;
+                                case Constants.SERVICE_AREA_CAPTURE:
+                                    // 服务区抓拍
+                                    break;
+                                case Constants.STATION_CAPTURE:
+                                    // 收费站抓拍
+                                    stationList.add(trailBo);
+                                    break;
+                            }
+                        }
+
+                        //  收费站---------------
+                        for (int i = 0; i < stationList.size(); i++) {
+                            TrailBo trailBo = stationList.get(i);
+                            if (i == 0) {
+                                // 第一个收费站
+                                carSuspicious.setInStationId(trailBo.getDevCode());
+                                carSuspicious.setInStation(trailBo.getDevName());
+                                if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
+                                    carSuspicious.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                                }
+                            } else {
+                                // 最后一个收费站
+                                if (i == stationList.size() - 1) {
+                                    carSuspicious.setOutStationId(trailBo.getDevCode());
+                                    carSuspicious.setOutStation(trailBo.getDevName());
+                                    if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
+                                        carSuspicious.setOutTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                                    }
+                                }
+                            }
+                        }
+
+
+                        //  门架 ---------------
+                        for (int i = 0; i < gantryList.size(); i++) {
+                            TrailBo trailBo = gantryList.get(i);
+                            if (i == 0) {
+                                // 第一个门架
+                                carSuspicious.setGantryStationId(trailBo.getDevCode());
+                                carSuspicious.setGantrytStation(trailBo.getDevName());
+                                if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
+                                    carSuspicious.setGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                                }
+                            } else {
+                                // 最后一个门架
+                                if (i == gantryList.size() - 1) {
+                                    carSuspicious.setOutGantryStationId(trailBo.getDevCode());
+                                    carSuspicious.setOutGantrytStation(trailBo.getDevName());
+                                    if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
+                                        carSuspicious.setOutGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                                    }
+                                }
+                            }
+                        }
+
+                        carSuspicious.setCreateBy(userId); // 创建人
+                        carSuspicious.setCreateTime(DateUtils.getTimestampNew()); // 创建时间
+                        carSuspicious.setUpdateBy(userId); // 更新人
+                        carSuspicious.setUpdateTime(DateUtils.getTimestampNew()); // 更新时间
+                        carSuspicious.setIsExcept("1"); // 默认是可疑车俩
+                        carSuspicious.setStatus("0"); // 是否可以核实标识
+
+                        carSuspicious.setEscapedType("20"); //屏蔽
+
+                        carSuspiciousList.add(carSuspicious);
 
                     }
 
 
                 }
+
+
             }
 
+        }
 
-                /*for (TrailBo trailBo : trailBoList) {
-                    CarSuspicious suspicious = new CarSuspicious();//生成可疑车辆
-                    suspicious.setCarNo(carNo);
-                    suspicious.setTrackId(trailBo.getPointUuid());
-                    suspicious.setTrackJosn(JSON.toJSONString(trailBo));
-                    if (trailBo.getGantryCaptureBO() != null) {
-                        suspicious.setPlateColor(trailBo.getGantryCaptureBO().getPlatecolor());
-                        suspicious.setSectionCode(trailBo.getGantryCaptureBO().getSectioncode());
-                        suspicious.setSectionName(trailBo.getGantryCaptureBO().getSectionname());
-                        suspicious.setRoadCode(trailBo.getGantryCaptureBO().getRoadcode());
-                        suspicious.setRoadName(trailBo.getGantryCaptureBO().getRoadname());
-                        suspicious.setOrgName(trailBo.getGantryCaptureBO().getOrgname());
-                    }
-                    if (trailBo.getStationCapture() != null) {
-                        suspicious.setCarType(trailBo.getStationCapture().getCartype());
-                    }
-                }*/
+        if (null !=carSuspiciousList && carSuspiciousList.size() > 0){
+            this.saveBatch(carSuspiciousList);
         }
         return AjaxResult.success();
     }
