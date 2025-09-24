@@ -194,6 +194,8 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     }
                     car.setTrackJosn(JSON.toJSON(josnList)+"");
 
+                    String devCodes = "";  // 设备所有的集合
+
                     for (TrailBo trailBo : josnList) {
 
                         String pointUuid = CommonUtil.isNull(trailBo.getPointUuid());
@@ -213,6 +215,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
                         // 抓拍设备
                         if (CommonUtil.isNotBlank(trailBo.getDevCode())){
+
+                            devCodes += trailBo.getDevCode()+",";
+
                             carWarningInfo.setGantryStationId(trailBo.getDevCode());
                             carWarningInfo.setGantrytStation(trailBo.getDevName());
                             if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
@@ -237,6 +242,8 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         }
 
                     }
+
+                    car.setGantryCode(CommonUtil.deleteEnd(devCodes));
 
 
                 }else{
