@@ -282,4 +282,10 @@ public class Constants
     public static final String white_car_list = "white_car_list";
 
 
+    /**
+     * 预警redos
+     */
+    public static final String car_warning_list = "car_warning_list";
+
+
 }

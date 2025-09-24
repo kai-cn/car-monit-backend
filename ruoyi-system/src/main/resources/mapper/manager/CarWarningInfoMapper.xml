@@ -133,7 +133,8 @@
         FROM car_warning_info t
         inner join car_info c on t.car_id = c.id
         WHERE t.del_flag = '0'
-        order by t.create_time desc,t.id limit 100
+        order by t.gantry_time desc,t.id
+        limit 100
     </select>
 
 

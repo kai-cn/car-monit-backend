@@ -18,7 +18,6 @@ import com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam;
 import com.ruoyi.manager.domain.vo.bigscreen.CarLocationVO;
 import com.ruoyi.manager.mapper.CarInfoMapper;
 import com.ruoyi.manager.service.ICarInfoService;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

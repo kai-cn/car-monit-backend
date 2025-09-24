@@ -269,8 +269,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
         if(addCarWarningInfoList.size() > 0){
             carWarningInfoService.saveBatch(addCarWarningInfoList);
-            // 更新缓存。。。。。。。。。。。。
         }
+        // 更新缓存。。。。。。。。。。。。
+        carWarningInfoService.updateRedisWarningList();
 
         return AjaxResult.success();
     }

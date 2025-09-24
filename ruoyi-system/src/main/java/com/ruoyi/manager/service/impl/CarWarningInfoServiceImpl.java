@@ -1,10 +1,13 @@
 package com.ruoyi.manager.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.manager.domain.CarWarningInfo;
+import com.ruoyi.manager.domain.CarWhiteInfo;
 import com.ruoyi.manager.mapper.CarWarningInfoMapper;
 import com.ruoyi.manager.service.ICarWarningInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +27,9 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
 
     @Autowired
     private CarWarningInfoMapper carWarningInfoMapper;
+
+    @Autowired
+    private RedisCache redisCache;
 
     /**
      * 查询预警车辆
@@ -108,8 +114,10 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
 
     @Override
     public List<CarWarningInfo> selectCarWarningInfoListLimit100() {
-        return carWarningInfoMapper.selectCarWarningInfoListLimit100();
+        return this.getRedisCarList();
     }
+
+
 
     /**
      * 批量删除预警车辆
@@ -122,6 +130,32 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
             carWarningInfoMapper.deleteCarWarningInfoByUUid(idList);
         }
         return AjaxResult.success();
+    }
+
+    /**
+     * 跟新缓存
+     */
+    public void updateRedisWarningList() {
+        CarWhiteInfo carWhiteInfo = new CarWhiteInfo();
+        List<CarWarningInfo> list = carWarningInfoMapper.selectCarWarningInfoListLimit100();
+        redisCache.setCacheObject(Constants.car_warning_list, list);
+    }
+
+
+    /**
+     * 从缓存拿到carlist
+     */
+    public List<CarWarningInfo> getRedisCarList() {
+        List<CarWarningInfo> list = null;
+        Object obj = redisCache.getCacheObject(Constants.car_warning_list);
+        if (null != obj) {
+            list = (List) obj;
+        } else {
+            CarWhiteInfo carWhiteInfo = new CarWhiteInfo();
+            list = carWarningInfoMapper.selectCarWarningInfoListLimit100();
+            redisCache.setCacheObject(Constants.car_warning_list, list);
+        }
+        return list;
     }
 
 

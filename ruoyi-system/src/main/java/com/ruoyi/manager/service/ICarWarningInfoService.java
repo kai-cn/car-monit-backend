@@ -1,9 +1,10 @@
 package com.ruoyi.manager.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarWarningInfo;
+
 import java.util.List;
-import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
  * 预警车辆Service接口
@@ -59,6 +60,18 @@ public interface ICarWarningInfoService extends IService<CarWarningInfo> {
      * @return 结果
      */
     AjaxResult deleteCarWarningInfoByUUid(List<String> idList);
+
+
+    /**
+     * 跟新redis
+     */
+    void updateRedisWarningList();
+
+
+    /**
+     * 从缓存拿到carlist
+     */
+    List<CarWarningInfo> getRedisCarList();
 
 
 }
