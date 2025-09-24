@@ -27,9 +27,9 @@ public class TrackTask {
      */
     @Transactional(rollbackFor = Exception.class)
     public void sync() {
-        System.out.println("轨迹数据开始同步！"+new Date());
+        System.out.println("车俩实时轨迹同步开始同步！"+new Date());
         carTrackInfoService.sync();
-        System.out.println("轨迹数据介绍同步！"+new Date());
+        System.out.println("车俩实时轨迹同步介绍同步！"+new Date());
     }
 
     /**
@@ -37,9 +37,9 @@ public class TrackTask {
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncSuspiciousCar() {
-        System.out.println("可疑车俩数据开始同步！"+new Date());
+        System.out.println("可疑车俩数据同步开始同步！"+new Date());
         AjaxResult res = carSuspiciousService.syncSuspiciousCar();
-        System.out.println("可疑车俩介绍同步！"+new Date());
+        System.out.println("可疑车俩数据同步介绍同步！"+new Date());
     }
 
 }

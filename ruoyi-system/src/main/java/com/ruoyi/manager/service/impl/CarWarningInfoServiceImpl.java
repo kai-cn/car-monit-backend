@@ -111,5 +111,18 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
         return carWarningInfoMapper.selectCarWarningInfoListLimit100();
     }
 
+    /**
+     * 批量删除预警车辆
+     *
+     * @param idList
+     * @return 结果
+     */
+    public AjaxResult deleteCarWarningInfoByUUid(List<String> idList){
+        if (null !=idList && idList.size() > 0){
+            carWarningInfoMapper.deleteCarWarningInfoByUUid(idList);
+        }
+        return AjaxResult.success();
+    }
+
 
 }

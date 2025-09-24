@@ -211,33 +211,31 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         }
 
                         // 抓拍设备
-                        carWarningInfo.setGantryStationId(trailBo.getDevCode());
-                        carWarningInfo.setInStation(trailBo.getDevName());
-                        if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
-                            carWarningInfo.setGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                        if (CommonUtil.isNotBlank(trailBo.getDevCode())){
+                            carWarningInfo.setGantryStationId(trailBo.getDevCode());
+                            carWarningInfo.setGantrytStation(trailBo.getDevName());
+                            if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
+                                carWarningInfo.setGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                            }
+                            carWarningInfo.setFileIds(trailBo.getImagesArry());
+                            carWarningInfo.setBackCol1(pointUuid);
+
+                            // 预计下一个通行时间nextPassTime  预计下一个通行地址 nextPassAddress
+
+                            carWarningInfo.setDelFlag("0");
+                            carWarningInfo.setCreateBy(userId); // 创建人
+                            carWarningInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
+                            carWarningInfo.setUpdateBy(userId); // 更新人
+                            carWarningInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
+
+                            addCarWarningInfoList.add(carWarningInfo);
+                            if (CommonUtil.isNotBlank(pointUuid)){
+                                delCarWarningInfoList.add(pointUuid);
+                            }
+
                         }
-                        carWarningInfo.setFileIds(trailBo.getImagesArry());
-                        carWarningInfo.setBackCol1(pointUuid);
-
-                        // 预计下一个通行时间nextPassTime  预计下一个通行地址 nextPassAddress
-
-                        carWarningInfo.setDelFlag("0");
-                        carWarningInfo.setCreateBy(userId); // 创建人
-                        carWarningInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
-                        carWarningInfo.setUpdateBy(userId); // 更新人
-                        carWarningInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
-
-
-                        addCarWarningInfoList.add(carWarningInfo);
-
-                        if (CommonUtil.isNotBlank(pointUuid)){
-                            delCarWarningInfoList.add(pointUuid);
-                        }
-
-
 
                     }
-
 
 
                 }else{
@@ -252,10 +250,19 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         // 修改
         if (updatalist.size() > 0) {
             carInfoService.updateBatchById(updatalist);
+            // 更新缓存
+            carInfoService.updateRedisCarList();
         }
 
-        // 更新缓存
-        carInfoService.updateRedisCarList();
+        // 生成车俩预警信息
+        if (delCarWarningInfoList.size() > 0) {
+            carWarningInfoService.deleteCarWarningInfoByUUid(delCarWarningInfoList);
+        }
+
+        if(addCarWarningInfoList.size() > 0){
+            carWarningInfoService.saveBatch(addCarWarningInfoList);
+            // 更新缓存。。。。。。。。。。。。
+        }
 
         return AjaxResult.success();
     }

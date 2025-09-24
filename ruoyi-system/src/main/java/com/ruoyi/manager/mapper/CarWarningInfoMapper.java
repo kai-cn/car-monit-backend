@@ -2,7 +2,9 @@ package com.ruoyi.manager.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.manager.domain.CarWarningInfo;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
 /**
@@ -44,6 +46,15 @@ public interface CarWarningInfoMapper extends BaseMapper<CarWarningInfo> {
      * @return 结果
      */
     int deleteCarWarningInfoById(String id);
+
+    /**
+     * 批量删除预警车辆
+     *
+     * @param idList
+     * @return 结果
+     */
+    int deleteCarWarningInfoByUUid(@Param("idList") List<String> idList);
+
 
     List<CarWarningInfo> selectCarWarningInfoListLimit100();
 }

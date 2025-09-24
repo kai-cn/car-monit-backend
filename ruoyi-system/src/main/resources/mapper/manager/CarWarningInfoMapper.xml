@@ -148,4 +148,14 @@
         </foreach>
     </update>
 
+
+    <delete id="deleteCarWarningInfoByUUid">
+        delete from car_warning_info where back_col1 in
+        <foreach item="id" collection="idList" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+
+
 </mapper>

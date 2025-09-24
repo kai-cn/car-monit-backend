@@ -52,4 +52,13 @@ public interface ICarWarningInfoService extends IService<CarWarningInfo> {
     List<CarWarningInfo> selectCarWarningInfoListLimit100();
 
 
+    /**
+     * 批量删除预警车辆
+     *
+     * @param idList
+     * @return 结果
+     */
+    AjaxResult deleteCarWarningInfoByUUid(List<String> idList);
+
+
 }
