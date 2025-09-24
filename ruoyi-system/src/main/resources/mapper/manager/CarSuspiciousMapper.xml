@@ -152,6 +152,7 @@
         <if test="roadName != null  and roadName != ''"> and t.road_name like concat('%', #{roadName}, '%')</if>
         <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
         <if test="sectionName != null  and sectionName != ''"> and t.section_name like concat('%', #{sectionName}, '%')</if>
+        <if test="trackId != null  and trackId != ''"> and t.track_id = #{trackId}</if>
         <if test="trackJosn != null  and trackJosn != ''"> and t.track_josn = #{trackJosn}</if>
         <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
         <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>

@@ -363,7 +363,9 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
         // 调用接口
         Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
-        List<CarSuspicious>  carSuspiciousList = new ArrayList<>();
+        List<CarSuspicious>  carSuspiciousListAdd = new ArrayList<>();
+        List<CarSuspicious>  carSuspiciousListUpdate = new ArrayList<>();
+
         for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
             String trailUuid = CommonUtil.isNull(entry.getKey()); // 车牌 + @@ 轨迹UUID
             if (trailUuid.indexOf("@@") > -1) {
@@ -376,9 +378,21 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                         trailUUid = trailStr[1];
                     }
                     List<TrailBo> josnList = entry.getValue();
-                    if (null != josnList && josnList.size() > 0) {
+                    if (null != josnList && josnList.size() > 0 && CommonUtil.isNotBlank(trailUUid)) {
+
                         // 生成可疑车辆
                         CarSuspicious carSuspicious = new CarSuspicious();
+
+                        CarSuspicious queryBo = new CarSuspicious();
+                        queryBo.setCarNo(carNo);
+                        queryBo.setTrackId(trailUUid);
+                        List<CarSuspicious> queryList = carSuspiciousMapper.selectCarSuspiciousList(queryBo);
+                        if (null != queryList && queryList.size() > 0) {
+                            carSuspicious.setId(queryList.get(0).getId());
+                        }
+
+
+
                         carSuspicious.setCarNo(carNo);
                         carSuspicious.setTrackId(trailUUid);
                         carSuspicious.setTrackJosn(JSON.toJSON(josnList)+"");
@@ -467,9 +481,14 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                         carSuspicious.setIsExcept("1"); // 默认是可疑车俩
                         carSuspicious.setStatus("0"); // 是否可以核实标识
 
-                        carSuspicious.setEscapedType("20"); //屏蔽
 
-                        carSuspiciousList.add(carSuspicious);
+
+                        if (CommonUtil.isBlank(carSuspicious.getId())){
+                            carSuspicious.setEscapedType("20"); //屏蔽
+                            carSuspiciousListAdd.add(carSuspicious);
+                        }else{
+                            carSuspiciousListUpdate.add(carSuspicious);
+                        }
 
                     }
 
@@ -481,9 +500,15 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
         }
 
-        if (null !=carSuspiciousList && carSuspiciousList.size() > 0){
-            this.saveBatch(carSuspiciousList);
+        if (null !=carSuspiciousListAdd && carSuspiciousListAdd.size() > 0){
+            this.saveBatch(carSuspiciousListAdd);
         }
+
+
+        if (null !=carSuspiciousListUpdate && carSuspiciousListUpdate.size() > 0){
+            this.updateBatchById(carSuspiciousListUpdate);
+        }
+
         return AjaxResult.success();
     }
 }
