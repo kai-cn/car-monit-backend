@@ -88,4 +88,20 @@ public class TrailBo {
     // 入栈口时间
     private String firtStationTime;
 
+
+    /** 车牌颜色（字典：1白色2黑色） */
+    private String plateColor;
+
+    /** 车型 */
+    private String carType;
+
+    /** 车牌号 */
+    private String carNo;
+
+    /** 车种 */
+    private String carVehicle;
+
+    /** 轴数 */
+    private Long carNum;
+
 }
