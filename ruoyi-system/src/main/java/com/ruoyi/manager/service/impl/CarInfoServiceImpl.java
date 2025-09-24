@@ -201,7 +201,68 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
      */
     @Override
     public List<CarLocationVO> carLocation(CarLocationParam carInfo) {
-        List<CarLocationVO> carLocation = carInfoMapper.getCarLocation(carInfo);
+        List<CarLocationVO>  carLocation = new ArrayList<>();
+        List<CarInfo> carInfoList = this.getRedisCarList();
+        for (CarInfo rtn : carInfoList) {
+            if (CommonUtil.isNull(rtn.getStatus()).equals("1")){
+                String devCodes = CommonUtil.isNull(rtn.getGantryCode());
+                boolean addFlag = true;
+                // 所属收费站编码
+                if (CommonUtil.isNotBlank(carInfo.getTollCode())){
+                    if (devCodes.indexOf(carInfo.getTollCode()) == -1){
+                        addFlag = false;
+                    }
+                }
+                // 门架编号
+                if (CommonUtil.isNotBlank(carInfo.getGantryCode())){
+                    if (devCodes.indexOf(carInfo.getGantryCode()) == -1){
+                        addFlag = false;
+                    }
+                }
+                // 服务区编码
+                if (CommonUtil.isNotBlank(carInfo.getFwqbm())){
+                    if (devCodes.indexOf(carInfo.getFwqbm()) == -1){
+                        addFlag = false;
+                    }
+                }
+                // 所属路线编码
+                if (CommonUtil.isNotBlank(carInfo.getRoadCode())){
+                    if (devCodes.indexOf(carInfo.getRoadCode()) == -1){
+                        addFlag = false;
+                    }
+                }
+                // 逃费类型
+                if (CommonUtil.isNotBlank(carInfo.getEscapedType())){
+                    if (CommonUtil.isNull(rtn.getEscapedType()).indexOf(carInfo.getEscapedType()) == -1){
+                        addFlag = false;
+                    }
+                }
+                // 车牌号
+                if (CommonUtil.isNotBlank(carInfo.getCarNoQuery())){
+                    if (CommonUtil.isNull(rtn.getCarNo()).indexOf(carInfo.getCarNoQuery()) == -1){
+                        addFlag = false;
+                    }
+                }
+                if (addFlag){
+                    CarLocationVO addvo = new CarLocationVO();
+                    addvo.setId(rtn.getId());
+                    addvo.setCarNo(rtn.getCarNo());
+                    addvo.setCarType(rtn.getCarType());
+                    addvo.setLonStr(rtn.getLastPassLongitude());
+                    addvo.setLatStr(rtn.getLastPassLatitude());
+                    if(CommonUtil.isNotBlank(addvo.getLonStr())) {
+                        addvo.setLon(new BigDecimal(addvo.getLonStr()));
+                    }
+                    if(CommonUtil.isNotBlank(addvo.getLatStr())) {
+                        addvo.setLat(new BigDecimal(addvo.getLatStr()));
+                    }
+                    addvo.setStatus(rtn.getStatus());
+                    carLocation.add(addvo);
+                }
+            }
+        }
+
+       /* List<CarLocationVO> carLocation = carInfoMapper.getCarLocation(carInfo);
         if(CollectionUtils.isNotEmpty(carLocation)) {
             for (CarLocationVO carLocationVO : carLocation) {
                 if(CommonUtil.isNotBlank(carLocationVO.getLonStr())) {
@@ -212,6 +273,9 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                 }
             }
         }
+
+        List<CarLocationVO> carLocation2 = carInfoMapper.getCarLocation(carInfo);
+        */
         return carLocation;
     }
 

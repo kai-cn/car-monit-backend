@@ -47,4 +47,9 @@ public class CarLocationVO {
      */
     private String latStr;
 
+    /**
+     * 车俩状态
+     */
+    private String status;
+
 }

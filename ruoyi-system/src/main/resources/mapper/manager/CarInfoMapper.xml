@@ -222,14 +222,15 @@
         t.car_no,
         t.car_type,
         t.last_pass_longitude as lonStr,
-        t.last_pass_latitude as latStr
+        t.last_pass_latitude as latStr,
+        t.status
         from car_info t
         WHERE t.del_flag = '0' and t.status = '1'
 
         <if test="fwqbm != null  and fwqbm != ''"> and t.gantry_code like concat('%', #{fwqbm}, '%')</if>
         <if test="gantryCode != null  and gantryCode != ''"> and t.gantry_code like concat('%', #{gantryCode}, '%')</if>
-        <if test="roadCode != null  and roadCode != ''"> and t.gantry_code like concat('%', #{roadCode}, '%')</if>
         <if test="tollCode != null  and tollCode != ''"> and t.gantry_code like concat('%', #{tollCode}, '%')</if>
+        <if test="roadCode != null  and roadCode != ''"> and t.gantry_code like concat('%', #{roadCode}, '%')</if>
         <if test="escapedType != null  and escapedType != ''"> and t.escaped_type like concat('%', #{escapedType}, '%')</if>
         <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
     </select>
