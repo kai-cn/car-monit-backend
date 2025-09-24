@@ -276,4 +276,10 @@ public class Constants
     public static final String STATION_CAPTURE = "StationCapture";
 
 
+    /**
+     * 白名单
+     */
+    public static final String white_car_list = "white_car_list";
+
+
 }

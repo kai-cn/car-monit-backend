@@ -1,10 +1,12 @@
 package com.ruoyi.manager.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
-import com.ruoyi.manager.mapper.CarWhiteInfoMapper;
 import com.ruoyi.manager.domain.CarWhiteInfo;
+import com.ruoyi.manager.mapper.CarWhiteInfoMapper;
 import com.ruoyi.manager.service.ICarWhiteInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,9 @@ public class CarWhiteInfoServiceImpl extends ServiceImpl<CarWhiteInfoMapper, Car
 
     @Autowired
     private CarWhiteInfoMapper carWhiteInfoMapper;
+
+    @Autowired
+    private RedisCache redisCache;
 
     /**
      * 查询车俩白名单
@@ -67,6 +72,7 @@ public class CarWhiteInfoServiceImpl extends ServiceImpl<CarWhiteInfoMapper, Car
             // 新增 主键
             carWhiteInfoMapper.insert(carWhiteInfo);
         }
+        this.updateRedisCarList();
         return AjaxResult.success("操作成功！",carWhiteInfo.getId());
     }
 
@@ -81,6 +87,7 @@ public class CarWhiteInfoServiceImpl extends ServiceImpl<CarWhiteInfoMapper, Car
     public AjaxResult deleteCarWhiteInfoByIds(String[] ids)
     {
         int count = carWhiteInfoMapper.deleteCarWhiteInfoByIds(ids);
+        this.updateRedisCarList();
         return AjaxResult.success(count);
     }
 
@@ -94,8 +101,36 @@ public class CarWhiteInfoServiceImpl extends ServiceImpl<CarWhiteInfoMapper, Car
     public AjaxResult deleteCarWhiteInfoById(String id)
     {
         int count = carWhiteInfoMapper.deleteCarWhiteInfoById(id);
+        this.updateRedisCarList();
         return AjaxResult.success(count);
     }
+
+    /**
+     * 跟新缓存
+     */
+    public void updateRedisCarList() {
+        CarWhiteInfo carWhiteInfo = new CarWhiteInfo();
+        List<CarWhiteInfo> list = carWhiteInfoMapper.selectCarWhiteInfoList(carWhiteInfo);
+        redisCache.setCacheObject(Constants.white_car_list, list);
+    }
+
+
+    /**
+     * 从缓存拿到carlist
+     */
+    public List<CarWhiteInfo> getRedisCarList() {
+        List<CarWhiteInfo> list = null;
+        Object obj = redisCache.getCacheObject(Constants.white_car_list);
+        if (null != obj) {
+            list = (List) obj;
+        } else {
+            CarWhiteInfo carWhiteInfo = new CarWhiteInfo();
+            list = carWhiteInfoMapper.selectCarWhiteInfoList(carWhiteInfo);
+            redisCache.setCacheObject(Constants.white_car_list, list);
+        }
+        return list;
+    }
+
 
 
 

@@ -1,9 +1,10 @@
 package com.ruoyi.manager.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarWhiteInfo;
+
 import java.util.List;
-import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
  * 车俩白名单Service接口
@@ -44,5 +45,17 @@ public interface ICarWhiteInfoService extends IService<CarWhiteInfo> {
      * @return 结果
      */
     AjaxResult deleteCarWhiteInfoByIds(String[] ids);
+
+
+    /**
+     * 跟新redis
+     */
+    void updateRedisCarList();
+
+
+    /**
+     * 从缓存拿到carlist
+     */
+    List<CarWhiteInfo> getRedisCarList();
 
 }
