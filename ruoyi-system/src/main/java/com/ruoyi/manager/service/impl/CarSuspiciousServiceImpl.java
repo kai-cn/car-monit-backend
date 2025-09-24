@@ -413,13 +413,12 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                         carSuspicious.setTrackJosn(JSON.toJSON(josnList)+"");
 
                         TrailBo firstBo = josnList.get(0);
-
+                        carSuspicious.setPlateColor(CommonUtil.isNull(plateColorMap.get(firstBo.getPlateColor()))); // 车牌颜色
+                        carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(firstBo.getCarType()))); // 车型
                         carSuspicious.setCarNum(firstBo.getCarNum()); // 轴数
-                        carSuspicious.setPlateColor(CommonUtil.isNull(plateColorMap.get(carSuspicious.getPlateColor()))); // 车牌颜色
-                        carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(carSuspicious.getCarType()))); // 车型
-                        carSuspicious.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(carSuspicious.getCarVehicle()))); // 车种
+                        carSuspicious.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(firstBo.getCarVehicle()))); // 车种
 
-
+                        
                         List<TrailBo> gantryList = new ArrayList<TrailBo>(); // 门架
                         List<TrailBo> stationList = new ArrayList<TrailBo>(); // 收费站
 
