@@ -349,13 +349,28 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
      */
     @Transactional(rollbackFor = Exception.class)
     public AjaxResult syncSuspiciousCar() {
+        Long userId = 1L;
         CarParaVO carParaVO = new CarParaVO();
         // 调用接口
-        Map<String, List<TrailBo>> map = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
-        if (null != map) {
-            for (Map.Entry<String, List<TrailBo>> entry : map.entrySet()) {
-                String carNo = entry.getKey();
-                List<TrailBo> trailBoList = entry.getValue();
+        Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
+        for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
+            String trailUuid = CommonUtil.isNull(entry.getKey()); // 车牌 + @@ 轨迹UUID
+            if (trailUuid.indexOf("@@") > -1) {
+                String[] trailStr = trailUuid.split("@@");
+                String carNo = trailStr[0];
+                List<TrailBo> josnList = entry.getValue();
+                if (null != josnList && josnList.size() > 0) {
+                    for (TrailBo trailBo : josnList) {
+                        CarSuspicious suspicious = new CarSuspicious();//生成可疑车辆
+                        suspicious.setCarNo(carNo);
+
+                    }
+
+
+                }
+            }
+
+
                 /*for (TrailBo trailBo : trailBoList) {
                     CarSuspicious suspicious = new CarSuspicious();//生成可疑车辆
                     suspicious.setCarNo(carNo);
@@ -373,7 +388,6 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                         suspicious.setCarType(trailBo.getStationCapture().getCartype());
                     }
                 }*/
-            }
         }
         return AjaxResult.success();
     }

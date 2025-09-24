@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,13 +86,12 @@ public class CarSuspiciousController extends BaseController {
         carSuspicious.setIsExcept("1");
         carSuspicious.setCheckStatus("1"); // 是可疑车俩并且
         List<CarSuspicious> list = carSuspiciousService.selectCarSuspiciousList(carSuspicious);
+        List<CarSuspicious> rtnList = new ArrayList<>();
         for (CarSuspicious vo :list){
-            CarSuspiciousCheck querybo = new CarSuspiciousCheck();
-            querybo.setCarId(vo.getId());
-            List<CarSuspiciousCheck> checkList =   carSuspiciousCheckService.selectCarSuspiciousCheckList(querybo);
-            vo.setCheckList(checkList);
+            CarSuspicious rtn = carSuspiciousService.selectCarSuspiciousById(vo.getId());
+            rtnList.add(rtn);
         }
-        return getDataTable(list);
+        return getDataTable(rtnList);
     }
 
 
