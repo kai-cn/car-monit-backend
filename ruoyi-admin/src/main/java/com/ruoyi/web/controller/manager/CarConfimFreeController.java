@@ -65,13 +65,13 @@ public class CarConfimFreeController extends BaseController {
     @GetMapping("/concernedList")
     public TableDataInfo concernedList(CarConfimFree carConfimFree) {
         startPage();
-        List<CarConfimFree> list = carConfimFreeService.selectConcernedList(carConfimFree);
+        List<CarConfimFree> list = carConfimFreeService.selectCarConfimFreeList(carConfimFree);
         return getDataTable(list);
     }
 
     @GetMapping(value = "/exportConcernedList")
     public AjaxResult exportConcernedList(CarConfimFree carConfimFree, HttpServletResponse response) {
-        List<CarConfimFree> list = carConfimFreeService.selectConcernedList(carConfimFree);
+        List<CarConfimFree> list = carConfimFreeService.selectCarConfimFreeList(carConfimFree);
         Map<String,Object> map = new HashMap<>();
         map.put("entitylist",list);
         try {
