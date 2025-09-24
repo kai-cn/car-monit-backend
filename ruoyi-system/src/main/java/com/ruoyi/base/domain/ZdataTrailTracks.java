@@ -66,5 +66,9 @@ public class ZdataTrailTracks implements Custom {
     @Excel(name = "轨迹点集合，推荐存 JSON 格式，包含坐标/时间/速度等信息")
     private String trailPoints;
 
+    /** 行驶轨迹josn */
+    @Excel(name = "行驶轨迹josn")
+    private String trackJosn;
+
 
 }

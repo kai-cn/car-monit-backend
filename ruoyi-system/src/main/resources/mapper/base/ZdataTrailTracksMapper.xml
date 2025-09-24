@@ -10,7 +10,7 @@
         <result property="enterTime"    column="enter_time"    />
         <result property="exitTime"    column="exit_time"    />
         <result property="trailPoints"    column="trail_points"    />
-
+        <result property="trackJosn"    column="track_josn"    />
     </resultMap>
 
     <sql id="selectZdataTrailTracksVo">
@@ -21,7 +21,8 @@
         t.enter_time,
         t.exit_time,
         t.trail_points,
-        t.create_time
+        t.create_time,
+        t.track_josn
     </sql>
 
 
@@ -37,7 +38,6 @@
         <if test="enterTime != null "> and t.enter_time = #{enterTime}</if>
         <if test="exitTime != null "> and t.exit_time = #{exitTime}</if>
         <if test="trailPoints != null  and trailPoints != ''"> and t.trail_points = #{trailPoints}</if>
-        order by t.big_id
     </select>
 
     <select id="selectZdataTrailTracksById" parameterType="String" resultMap="ZdataTrailTracksResult">

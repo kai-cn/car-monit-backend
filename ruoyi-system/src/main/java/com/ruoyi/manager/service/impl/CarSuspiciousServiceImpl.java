@@ -21,6 +21,7 @@ import com.ruoyi.manager.service.ICarExceptRecordService;
 import com.ruoyi.manager.service.ICarSuspiciousCheckService;
 import com.ruoyi.manager.service.ICarSuspiciousService;
 import com.ruoyi.manager.service.ICarWhiteInfoService;
+import com.ruoyi.system.service.ISysDictDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,6 +62,9 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
     @Autowired
     private ICarWhiteInfoService carWhiteInfoService;
+
+    @Autowired
+    private ISysDictDataService sysDictDataService;
 
     /**
      * 查询可疑车辆
@@ -366,6 +370,17 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         List<CarSuspicious>  carSuspiciousListAdd = new ArrayList<>();
         List<CarSuspicious>  carSuspiciousListUpdate = new ArrayList<>();
 
+
+        // 车牌颜色
+        Map<String,String> plateColorMap = sysDictDataService.selectDictDataLaleMap("plate_color");
+
+        // 车型
+        Map<String,String> carTypeMap = sysDictDataService.selectDictDataLaleMap("car_type");
+
+        // 车种
+        Map<String,String> carVehicleMap = sysDictDataService.selectDictDataLaleMap("car_vehicle");
+
+
         for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
             String trailUuid = CommonUtil.isNull(entry.getKey()); // 车牌 + @@ 轨迹UUID
             if (trailUuid.indexOf("@@") > -1) {
@@ -398,10 +413,12 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                         carSuspicious.setTrackJosn(JSON.toJSON(josnList)+"");
 
                         TrailBo firstBo = josnList.get(0);
-                        carSuspicious.setPlateColor(firstBo.getPlateColor()); // 车牌颜色
-                        carSuspicious.setCarType(firstBo.getCarType()); // 车型
+
                         carSuspicious.setCarNum(firstBo.getCarNum()); // 轴数
-                        carSuspicious.setCarVehicle(firstBo.getCarVehicle()); // 车种
+                        carSuspicious.setPlateColor(CommonUtil.isNull(plateColorMap.get(carSuspicious.getPlateColor()))); // 车牌颜色
+                        carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(carSuspicious.getCarType()))); // 车型
+                        carSuspicious.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(carSuspicious.getCarVehicle()))); // 车种
+
 
                         List<TrailBo> gantryList = new ArrayList<TrailBo>(); // 门架
                         List<TrailBo> stationList = new ArrayList<TrailBo>(); // 收费站
