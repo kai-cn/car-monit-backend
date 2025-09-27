@@ -2,6 +2,7 @@ package com.ruoyi.manager.service.impl;
 
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.ZdataTrailTracks;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
@@ -163,7 +164,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         List<CarInfo> updatalist = new ArrayList<CarInfo>();
 
         // 调用接口
-        Map<ZdataTrailTracks, List<TrailBo>> mapCar = httpSysUtilApiService.syncTrack(carParaVO);
+        Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncTrack(carParaVO);
 
         // 新增的预警
         List<CarWarningInfo> addCarWarningInfoList = new ArrayList<>();
@@ -172,9 +173,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
         Long userId = 1L;
 
-        for (Map.Entry<ZdataTrailTracks, List<TrailBo>> entry : mapCar.entrySet()) {
-
-            ZdataTrailTracks tracksBo = entry.getKey();
+        for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
+            String jsonObject = entry.getKey();
+            ZdataTrailTracks tracksBo = JSONObject.parseObject(jsonObject, ZdataTrailTracks.class);
             String carNo = CommonUtil.isNull(tracksBo.getPlateKey());
             if (carMap.containsKey(carNo)){
                 CarInfo vo = carMap.get(carNo);

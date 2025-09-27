@@ -2,6 +2,7 @@ package com.ruoyi.manager.service.impl;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.ZdataTrailTracks;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
@@ -367,7 +368,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         }
 
         // 调用接口
-        Map<ZdataTrailTracks, List<TrailBo>> mapCar = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
+        Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
         List<CarSuspicious>  carSuspiciousListAdd = new ArrayList<>();
         List<CarSuspicious>  carSuspiciousListUpdate = new ArrayList<>();
 
@@ -382,8 +383,9 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         Map<String,String> carVehicleMap = sysDictDataService.selectDictDataLaleMap("car_vehicle");
 
 
-        for (Map.Entry<ZdataTrailTracks, List<TrailBo>> entry : mapCar.entrySet()) {
-            ZdataTrailTracks tracksBo = entry.getKey();
+        for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
+            String jsonObject = entry.getKey();
+            ZdataTrailTracks tracksBo = JSONObject.parseObject(jsonObject, ZdataTrailTracks.class);
             String carNo = CommonUtil.isNull(tracksBo.getPlateKey()); // 车牌号
             String trailUUid = CommonUtil.isNull(tracksBo.getUuid()); // 轨迹单
             if (CommonUtil.isNotBlank(carNo) && CommonUtil.isNotBlank(trailUUid)) {

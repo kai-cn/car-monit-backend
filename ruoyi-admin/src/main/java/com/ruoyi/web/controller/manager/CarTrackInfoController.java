@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.manager;
 
+import com.alibaba.fastjson2.JSONObject;
 import com.ruoyi.base.domain.ZdataTrailTracks;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.annotation.Log;
@@ -77,11 +78,12 @@ public class CarTrackInfoController extends BaseController {
         carParaVO.setCarNo(carTrackInfo.getCarNo()); // 车牌号
         carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
         carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
-        Map<ZdataTrailTracks, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
+        Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
 
         List<TrailInfo> trailList = new ArrayList<>();
-        for (Map.Entry<ZdataTrailTracks, List<TrailBo>> entry : caMap.entrySet()) {
-            ZdataTrailTracks tracksBo = entry.getKey();
+        for (Map.Entry<String, List<TrailBo>> entry : caMap.entrySet()) {
+            String jsonObject = entry.getKey();
+            ZdataTrailTracks tracksBo = JSONObject.parseObject(jsonObject, ZdataTrailTracks.class);
             String carNo =CommonUtil.isNull(tracksBo.getPlateKey());
             List<TrailBo> josnList = entry.getValue();
 
@@ -123,12 +125,13 @@ public class CarTrackInfoController extends BaseController {
         carParaVO.setCarNo(carTrackInfo.getCarNo()); // 车牌号
         carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
         carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
-        Map<ZdataTrailTracks, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByTime(carParaVO);
+        Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByTime(carParaVO);
 
 
         List<TrailInfo> trailList = new ArrayList<>();
-        for (Map.Entry<ZdataTrailTracks, List<TrailBo>> entry : caMap.entrySet()) {
-            ZdataTrailTracks tracksBo = entry.getKey();
+        for (Map.Entry<String, List<TrailBo>> entry : caMap.entrySet()) {
+            String jsonObject = entry.getKey();
+            ZdataTrailTracks tracksBo = JSONObject.parseObject(jsonObject, ZdataTrailTracks.class);
             String carNo =CommonUtil.isNull(tracksBo.getPlateKey());
             List<TrailBo> josnList = entry.getValue();
 
