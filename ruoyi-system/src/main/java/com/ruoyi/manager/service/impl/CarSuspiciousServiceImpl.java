@@ -407,12 +407,25 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                         carSuspicious.setTrackId(trailUUid);
                         carSuspicious.setTrackJosn(JSON.toJSON(josnList)+"");
 
+
                         carSuspicious.setPlateColor(CommonUtil.isNull(plateColorMap.get(tracksBo.getPlateColor()))); // 车牌颜色
                         carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(tracksBo.getCarType()))); // 车型
                         carSuspicious.setCarNum(tracksBo.getCarNum()); // 轴数
                         carSuspicious.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(tracksBo.getCarVehicle()))); // 车种
 
                         //--------------设置默认值
+                        if (CommonUtil.isBlank(carSuspicious.getPlateColor())){
+                            carSuspicious.setPlateColor("0");
+                        }
+
+                        if (CommonUtil.isBlank(carSuspicious.getCarType())){
+                            carSuspicious.setCarType("0");
+                        }
+
+                        if (CommonUtil.isBlank(carSuspicious.getCarVehicle())){
+                            carSuspicious.setCarVehicle("0");
+                        }
+
 
                         
                         List<TrailBo> gantryList = new ArrayList<TrailBo>(); // 门架
