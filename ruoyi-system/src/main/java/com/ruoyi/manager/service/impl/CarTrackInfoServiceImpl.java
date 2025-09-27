@@ -3,6 +3,7 @@ package com.ruoyi.manager.service.impl;
 
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.base.domain.ZdataTrailTracks;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
@@ -162,7 +163,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         List<CarInfo> updatalist = new ArrayList<CarInfo>();
 
         // 调用接口
-        Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncTrack(carParaVO);
+        Map<ZdataTrailTracks, List<TrailBo>> mapCar = httpSysUtilApiService.syncTrack(carParaVO);
 
         // 新增的预警
         List<CarWarningInfo> addCarWarningInfoList = new ArrayList<>();
@@ -171,8 +172,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
         Long userId = 1L;
 
-        for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
-            String carNo = entry.getKey();
+        for (Map.Entry<ZdataTrailTracks, List<TrailBo>> entry : mapCar.entrySet()) {
+
+            ZdataTrailTracks tracksBo = entry.getKey();
+            String carNo = CommonUtil.isNull(tracksBo.getPlateKey());
             if (carMap.containsKey(carNo)){
                 CarInfo vo = carMap.get(carNo);
                 CarInfo car = new CarInfo();
@@ -207,10 +210,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         carWarningInfo.setCarVehicle(vo.getCarVehicle());
                         carWarningInfo.setCarNum(vo.getCarNum());
                         // 入站
-                        carWarningInfo.setInStationId(trailBo.getFirtStationCode());
-                        carWarningInfo.setInStation(trailBo.getFirtStationName());
-                        if (CommonUtil.isNotBlank(trailBo.getFirtStationTime())){
-                            carWarningInfo.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getFirtStationTime()));
+                        carWarningInfo.setInStationId(tracksBo.getFirtStationCode());
+                        carWarningInfo.setInStation(tracksBo.getFirtStationName());
+                        if (CommonUtil.isNotBlank(tracksBo.getFirtStationTime())){
+                            carWarningInfo.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,tracksBo.getFirtStationTime()));
                         }
 
                         // 抓拍设备

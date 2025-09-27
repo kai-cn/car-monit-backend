@@ -1,6 +1,7 @@
 package com.ruoyi.base.domain;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ruoyi.common.annotation.Excel;
@@ -69,6 +70,45 @@ public class ZdataTrailTracks implements Custom {
     /** 行驶轨迹josn */
     @Excel(name = "行驶轨迹josn")
     private String trackJosn;
+
+    // 入栈口
+    @TableField(exist = false)
+    private String firtStationCode;
+
+    // 入栈口名称
+    @TableField(exist = false)
+    private String firtStationName;
+
+    // 入栈口时间
+    @TableField(exist = false)
+    private String firtStationTime;
+
+
+    /** 车牌颜色（字典：1白色2黑色） */
+    @TableField(exist = false)
+    private String plateColor;
+
+    /** 车型 */
+    @TableField(exist = false)
+    private String carType;
+
+    /** 车牌号 */
+    @TableField(exist = false)
+    private String carNo;
+
+    /** 车种 */
+    @TableField(exist = false)
+    private String carVehicle;
+
+    /** 轴数 */
+    @TableField(exist = false)
+    private Long carNum;
+
+    /** 逃费类型 */
+    @TableField(exist = false)
+    private String escapedType;
+
+
 
 
 }

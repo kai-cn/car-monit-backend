@@ -4,6 +4,7 @@ package com.ruoyi.base.service.forest;
 import com.dtflys.forest.annotation.BaseRequest;
 import com.dtflys.forest.annotation.JSONBody;
 import com.dtflys.forest.annotation.Post;
+import com.ruoyi.base.domain.ZdataTrailTracks;
 import com.ruoyi.manager.domain.vo.CarParaVO;
 import com.ruoyi.manager.domain.vo.TrailBo;
 
@@ -17,7 +18,7 @@ public interface HttpSysUtilApiService {
      * 同步车俩实时轨迹
      */
     @Post("/syncTrack")
-    Map<String, List<TrailBo>> syncTrack(@JSONBody CarParaVO carParaVO);
+    Map<ZdataTrailTracks, List<TrailBo>> syncTrack(@JSONBody CarParaVO carParaVO);
 
 
     /**
@@ -25,7 +26,7 @@ public interface HttpSysUtilApiService {
      * @return
      */
     @Post("/syncSuspiciousCar")
-    Map<String, List<TrailBo>>  syncSuspiciousCar(@JSONBody CarParaVO carParaVO);
+    Map<ZdataTrailTracks, List<TrailBo>>  syncSuspiciousCar(@JSONBody CarParaVO carParaVO);
 
 
     /**
@@ -34,7 +35,7 @@ public interface HttpSysUtilApiService {
      * @return
      */
     @Post("/carTrackQueryByCarNo")
-    Map<String, List<TrailBo>>  carTrackQueryByCarNo(@JSONBody CarParaVO carParaVO);
+    Map<ZdataTrailTracks, List<TrailBo>>  carTrackQueryByCarNo(@JSONBody CarParaVO carParaVO);
 
 
     /**
@@ -43,7 +44,7 @@ public interface HttpSysUtilApiService {
      * @return
      */
     @Post("/carTrackQueryByTime")
-    Map<String, List<TrailBo>>  carTrackQueryByTime(@JSONBody CarParaVO carParaVO);
+    Map<ZdataTrailTracks, List<TrailBo>>  carTrackQueryByTime(@JSONBody CarParaVO carParaVO);
 
 
 

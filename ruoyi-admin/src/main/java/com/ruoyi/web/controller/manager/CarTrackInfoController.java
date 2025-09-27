@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.manager;
 
+import com.ruoyi.base.domain.ZdataTrailTracks;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -76,15 +77,17 @@ public class CarTrackInfoController extends BaseController {
         carParaVO.setCarNo(carTrackInfo.getCarNo()); // 车牌号
         carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
         carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
-        Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
+        Map<ZdataTrailTracks, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
 
         List<TrailInfo> trailList = new ArrayList<>();
-        for (Map.Entry<String, List<TrailBo>> entry : caMap.entrySet()) {
-            String carNo = entry.getKey();
+        for (Map.Entry<ZdataTrailTracks, List<TrailBo>> entry : caMap.entrySet()) {
+            ZdataTrailTracks tracksBo = entry.getKey();
+            String carNo =CommonUtil.isNull(tracksBo.getPlateKey());
             List<TrailBo> josnList = entry.getValue();
 
             TrailInfo trailInfo = new TrailInfo();
             trailInfo.setTrailUuid(carNo);
+            trailInfo.setTracks(tracksBo);
             trailInfo.setTrailList(josnList);
 
             trailList.add(trailInfo);
@@ -120,16 +123,18 @@ public class CarTrackInfoController extends BaseController {
         carParaVO.setCarNo(carTrackInfo.getCarNo()); // 车牌号
         carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
         carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
-        Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByTime(carParaVO);
+        Map<ZdataTrailTracks, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByTime(carParaVO);
 
 
         List<TrailInfo> trailList = new ArrayList<>();
-        for (Map.Entry<String, List<TrailBo>> entry : caMap.entrySet()) {
-            String carNo = entry.getKey();
+        for (Map.Entry<ZdataTrailTracks, List<TrailBo>> entry : caMap.entrySet()) {
+            ZdataTrailTracks tracksBo = entry.getKey();
+            String carNo =CommonUtil.isNull(tracksBo.getPlateKey());
             List<TrailBo> josnList = entry.getValue();
 
             TrailInfo trailInfo = new TrailInfo();
             trailInfo.setTrailUuid(carNo);
+            trailInfo.setTracks(tracksBo);
             trailInfo.setTrailList(josnList);
 
             trailList.add(trailInfo);

@@ -3,6 +3,7 @@ package com.ruoyi.manager.service.impl;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.base.domain.ZdataTrailTracks;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -333,10 +334,10 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         updatebo.setIsExcept(carSuspicious.getIsExcept());
         updatebo.setExceptRemark(carSuspicious.getExceptRemark());
         updatebo.setExceptFileIds(carSuspicious.getExceptFileIds());
-        updatebo.setEscapedType(escapedType);
+        // updatebo.setEscapedType(escapedType);
         if("0".equals(CommonUtil.isNull(carSuspicious.getIsExcept()))){
             updatebo.setExceptFileIds("");
-            updatebo.setEscapedType("");
+           //  updatebo.setEscapedType("");
         }
         carSuspiciousMapper.updateById(updatebo);
 
@@ -366,7 +367,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         }
 
         // 调用接口
-        Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
+        Map<ZdataTrailTracks, List<TrailBo>> mapCar = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
         List<CarSuspicious>  carSuspiciousListAdd = new ArrayList<>();
         List<CarSuspicious>  carSuspiciousListUpdate = new ArrayList<>();
 
@@ -381,19 +382,14 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         Map<String,String> carVehicleMap = sysDictDataService.selectDictDataLaleMap("car_vehicle");
 
 
-        for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
-            String trailUuid = CommonUtil.isNull(entry.getKey()); // 车牌 + @@ 轨迹UUID
-            if (trailUuid.indexOf("@@") > -1) {
-                String[] trailStr = trailUuid.split("@@");
-                String carNo = CommonUtil.isNull(trailStr[0]);
-
+        for (Map.Entry<ZdataTrailTracks, List<TrailBo>> entry : mapCar.entrySet()) {
+            ZdataTrailTracks tracksBo = entry.getKey();
+            String carNo = CommonUtil.isNull(tracksBo.getPlateKey()); // 车牌号
+            String trailUUid = CommonUtil.isNull(tracksBo.getUuid()); // 轨迹单
+            if (CommonUtil.isNotBlank(carNo) && CommonUtil.isNotBlank(trailUUid)) {
                 if (!carWhiteInfoMap.containsKey(carNo)){
-                    String trailUUid = "";
-                    if (trailStr.length > 1){
-                        trailUUid = trailStr[1];
-                    }
                     List<TrailBo> josnList = entry.getValue();
-                    if (null != josnList && josnList.size() > 0 && CommonUtil.isNotBlank(trailUUid)) {
+                    if (null != josnList && josnList.size() > 0) {
 
                         // 生成可疑车辆
                         CarSuspicious carSuspicious = new CarSuspicious();
@@ -407,16 +403,16 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                         }
 
 
-
                         carSuspicious.setCarNo(carNo);
                         carSuspicious.setTrackId(trailUUid);
                         carSuspicious.setTrackJosn(JSON.toJSON(josnList)+"");
 
-                        TrailBo firstBo = josnList.get(0);
-                        carSuspicious.setPlateColor(CommonUtil.isNull(plateColorMap.get(firstBo.getPlateColor()))); // 车牌颜色
-                        carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(firstBo.getCarType()))); // 车型
-                        carSuspicious.setCarNum(firstBo.getCarNum()); // 轴数
-                        carSuspicious.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(firstBo.getCarVehicle()))); // 车种
+                        carSuspicious.setPlateColor(CommonUtil.isNull(plateColorMap.get(tracksBo.getPlateColor()))); // 车牌颜色
+                        carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(tracksBo.getCarType()))); // 车型
+                        carSuspicious.setCarNum(tracksBo.getCarNum()); // 轴数
+                        carSuspicious.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(tracksBo.getCarVehicle()))); // 车种
+
+                        //--------------设置默认值
 
                         
                         List<TrailBo> gantryList = new ArrayList<TrailBo>(); // 门架
@@ -433,7 +429,6 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                                     gantryList.add(trailBo);
                                     break;
                                 case Constants.PROV_CAPTURE:
-
                                     break;
                                 case Constants.SERVICE_AREA_CAPTURE:
                                     // 服务区抓拍
@@ -500,20 +495,14 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
 
                         if (CommonUtil.isBlank(carSuspicious.getId())){
-                            carSuspicious.setEscapedType("20"); //屏蔽
+                            carSuspicious.setEscapedType(tracksBo.getEscapedType()); //屏蔽
                             carSuspiciousListAdd.add(carSuspicious);
                         }else{
                             carSuspiciousListUpdate.add(carSuspicious);
                         }
-
                     }
-
-
                 }
-
-
             }
-
         }
 
         if (null !=carSuspiciousListAdd && carSuspiciousListAdd.size() > 0){
