@@ -111,6 +111,7 @@ public class GeometryServiceImpl extends ServiceImpl<GeometryMapper, Geometry> i
      */
     public void updateRedisList() {
         Geometry ceometry = new Geometry();
+        ceometry.setLxfx("2");
         List<Geometry> list = geometryMapper.selectGeometryList(ceometry);
         redisCache.setCacheObject(Constants.lxbh_jwd, list);
     }
@@ -126,6 +127,7 @@ public class GeometryServiceImpl extends ServiceImpl<GeometryMapper, Geometry> i
             list = (List) obj;
         } else {
             Geometry ceometry = new Geometry();
+            ceometry.setLxfx("2");
             list = geometryMapper.selectGeometryList(ceometry);
             redisCache.setCacheObject(Constants.lxbh_jwd, list);
         }
