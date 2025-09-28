@@ -117,4 +117,12 @@ public class CarTrackInfo extends BasePlusEntity implements Custom {
     @Excel(name = "维度")
     private BigDecimal latitudeDec;
 
+    // 当前页面
+    @TableField(exist = false)
+    private Integer pageNum;
+
+    // 分页大小
+    @TableField(exist = false)
+    private Integer pageSize;
+
 }

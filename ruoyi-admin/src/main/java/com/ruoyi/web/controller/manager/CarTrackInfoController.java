@@ -71,7 +71,17 @@ public class CarTrackInfoController extends BaseController {
      * @return
      */
     @GetMapping("/listByCarId")
-    public AjaxResult listByCarId(CarTrackInfo carTrackInfo) {
+    public TableDataInfo listByCarId(CarTrackInfo carTrackInfo) {
+
+        // 当前页面
+        if (null == carTrackInfo.getPageNum()){
+            carTrackInfo.setPageNum(1);
+        }
+        // 分页大小
+        if (null == carTrackInfo.getPageSize()){
+            carTrackInfo.setPageSize(10);
+        }
+
         if (CommonUtil.isBlank(carTrackInfo.getCarNo())) {
             carTrackInfo.setCarNo("-1");
         }
@@ -84,6 +94,10 @@ public class CarTrackInfoController extends BaseController {
         carParaVO.setCarNo(carTrackInfo.getCarNo()); // 车牌号
         carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
         carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
+        carParaVO.setPageNum(carTrackInfo.getPageNum());
+        carParaVO.setPageSize(carTrackInfo.getPageSize());
+
+
         Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
 
         List<TrailInfo> trailList = new ArrayList<>();
@@ -109,7 +123,7 @@ public class CarTrackInfoController extends BaseController {
             trailList.add(trailInfo);
         }
 
-        return AjaxResult.success(trailList);
+        return getDataTable(trailList);
 
     }
 
@@ -121,7 +135,17 @@ public class CarTrackInfoController extends BaseController {
      * @return
      */
     @GetMapping("/listByCarByTime")
-    public AjaxResult listByCarByTime(CarTrackInfo carTrackInfo) {
+    public TableDataInfo listByCarByTime(CarTrackInfo carTrackInfo) {
+
+
+        // 当前页面
+        if (null == carTrackInfo.getPageNum()){
+            carTrackInfo.setPageNum(1);
+        }
+        // 分页大小
+        if (null == carTrackInfo.getPageSize()){
+            carTrackInfo.setPageSize(10);
+        }
 
         // 查询所有的车俩
         List<CarInfo> carList = carInfoService.getRedisCarList();
@@ -139,6 +163,8 @@ public class CarTrackInfoController extends BaseController {
         carParaVO.setCarNo(carTrackInfo.getCarNo()); // 车牌号
         carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
         carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
+        carParaVO.setPageNum(carTrackInfo.getPageNum());
+        carParaVO.setPageSize(carTrackInfo.getPageSize());
         Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByTime(carParaVO);
 
 
@@ -165,7 +191,8 @@ public class CarTrackInfoController extends BaseController {
             trailList.add(trailInfo);
         }
 
-        return AjaxResult.success(trailList);
+        return getDataTable(trailList);
+
 
     }
 

@@ -1,5 +1,6 @@
 package com.ruoyi.manager.domain.vo;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 
 import java.util.List;
@@ -18,5 +19,13 @@ public class CarParaVO {
     private String applyTime1;
 
     private String applyTime2;
+
+    // 当前页面
+    private Integer pageNum;
+
+    // 分页大小
+    private Integer pageSize;
+
+
 
 }
