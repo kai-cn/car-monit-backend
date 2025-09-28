@@ -50,12 +50,17 @@ public interface IGeometryService extends IService<Geometry> {
     /**
      * 跟新redis
      */
-    void updateRedisWarningList();
+    void updateRedisList();
 
 
     /**
      * 从缓存拿到carlist
      */
-    List<Geometry> getRedisCarList();
+    List<Geometry> getRedisList();
+
+    /**
+     * 根据路线code 查询
+     */
+    List<Geometry> getListByCode(List<String> roadCodeList);
 
 }

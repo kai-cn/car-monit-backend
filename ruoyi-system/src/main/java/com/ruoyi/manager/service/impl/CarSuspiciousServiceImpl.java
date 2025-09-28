@@ -4,7 +4,9 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.base.domain.Geometry;
 import com.ruoyi.base.domain.ZdataTrailTracks;
+import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -34,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 可疑车辆Service业务层处理
@@ -68,6 +71,9 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
     @Autowired
     private ISysDictDataService sysDictDataService;
 
+    @Autowired
+    private IGeometryService geometryService;
+
     /**
      * 查询可疑车辆
      *
@@ -88,17 +94,22 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
             //---------------查询实时轨迹
             List<TrailBo> carTrailList = new ArrayList<>();
-
+            List<Geometry> raodTrailList = new ArrayList<>();
             String trackJosn = carSuspicious.getTrackJosn();
             if (CommonUtil.isNotBlank(trackJosn)) {
                 JSONArray array = JSON.parseArray(trackJosn);
                 carTrailList = array.toList(TrailBo.class);
+
+                List<String> roadCodeList = carTrailList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
+                raodTrailList = geometryService.getListByCode(roadCodeList);
             }
 
 
             TrailInfo trailInfo = new TrailInfo();
             trailInfo.setTrailUuid(carSuspicious.getCarNo());
             trailInfo.setTrailList(carTrailList);
+            trailInfo.setRaodTrailList(raodTrailList);
+
 
             List<TrailInfo> trailList = new ArrayList<>();
             trailList.add(trailInfo);

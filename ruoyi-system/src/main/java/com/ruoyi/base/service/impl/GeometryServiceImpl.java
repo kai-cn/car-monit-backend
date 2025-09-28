@@ -7,11 +7,15 @@ import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.redis.RedisCache;
+import com.ruoyi.common.utils.CommonUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 车辆信息Service业务层处理
@@ -105,7 +109,7 @@ public class GeometryServiceImpl extends ServiceImpl<GeometryMapper, Geometry> i
     /**
      * 跟新缓存
      */
-    public void updateRedisWarningList() {
+    public void updateRedisList() {
         Geometry ceometry = new Geometry();
         List<Geometry> list = geometryMapper.selectGeometryList(ceometry);
         redisCache.setCacheObject(Constants.lxbh_jwd, list);
@@ -115,7 +119,7 @@ public class GeometryServiceImpl extends ServiceImpl<GeometryMapper, Geometry> i
     /**
      * 从缓存拿到carlist
      */
-    public List<Geometry> getRedisCarList() {
+    public List<Geometry> getRedisList() {
         List<Geometry> list = null;
         Object obj = redisCache.getCacheObject(Constants.lxbh_jwd);
         if (null != obj) {
@@ -126,6 +130,29 @@ public class GeometryServiceImpl extends ServiceImpl<GeometryMapper, Geometry> i
             redisCache.setCacheObject(Constants.lxbh_jwd, list);
         }
         return list;
+    }
+
+    /**
+     * 根据路线code 查询
+     */
+    public List<Geometry> getListByCode(List<String> roadCodeList) {
+        List<Geometry> rtnlist = new ArrayList<Geometry>();
+        if (null != roadCodeList && roadCodeList.size() > 0){
+            Map<String,Geometry> geometryMap = new HashMap<>();
+            List<Geometry> allList = this.getRedisList();
+            for (Geometry rtnVo :allList){
+                geometryMap.put(CommonUtil.isNull(rtnVo.getLxbh()),rtnVo);
+            }
+            for (String roadCode:roadCodeList){
+                roadCode = CommonUtil.isNull(roadCode);
+                if (CommonUtil.isNotBlank(roadCode)){
+                    if (geometryMap.containsKey(roadCode)){
+                        rtnlist.add(geometryMap.get(roadCode));
+                    }
+                }
+            }
+        }
+        return rtnlist;
     }
 
 

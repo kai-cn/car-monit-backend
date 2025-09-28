@@ -1,7 +1,9 @@
 package com.ruoyi.web.controller.manager;
 
 import com.alibaba.fastjson2.JSONObject;
+import com.ruoyi.base.domain.Geometry;
 import com.ruoyi.base.domain.ZdataTrailTracks;
+import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -26,6 +28,7 @@ import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 车辆行驶轨迹Controller
@@ -45,6 +48,9 @@ public class CarTrackInfoController extends BaseController {
 
     @Autowired
     private ICarInfoService carInfoService;
+
+    @Autowired
+    private IGeometryService geometryService;
 
     /**
      * 查询车辆行驶轨迹列表
@@ -87,10 +93,18 @@ public class CarTrackInfoController extends BaseController {
             String carNo =CommonUtil.isNull(tracksBo.getPlateKey());
             List<TrailBo> josnList = entry.getValue();
 
+            List<Geometry> raodTrailList = new ArrayList<>();
+            if (null !=josnList && josnList.size() > 0){
+                List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
+                raodTrailList = geometryService.getListByCode(roadCodeList);
+            }
+
+
             TrailInfo trailInfo = new TrailInfo();
             trailInfo.setTrailUuid(carNo);
             trailInfo.setTracks(tracksBo);
             trailInfo.setTrailList(josnList);
+            trailInfo.setRaodTrailList(raodTrailList);
 
             trailList.add(trailInfo);
         }
@@ -135,10 +149,18 @@ public class CarTrackInfoController extends BaseController {
             String carNo =CommonUtil.isNull(tracksBo.getPlateKey());
             List<TrailBo> josnList = entry.getValue();
 
+            List<Geometry> raodTrailList = new ArrayList<>();
+            if (null !=josnList && josnList.size() > 0){
+                List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
+                raodTrailList = geometryService.getListByCode(roadCodeList);
+            }
+
+
             TrailInfo trailInfo = new TrailInfo();
             trailInfo.setTrailUuid(carNo);
             trailInfo.setTracks(tracksBo);
             trailInfo.setTrailList(josnList);
+            trailInfo.setRaodTrailList(raodTrailList);
 
             trailList.add(trailInfo);
         }
