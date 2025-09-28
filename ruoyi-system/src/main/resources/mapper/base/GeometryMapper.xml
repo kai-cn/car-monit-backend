@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.GeometryMapper">
+
+    <resultMap type="com.ruoyi.base.domain.Geometry" id="GeometryResult">
+        <result property="id"    column="id"    />
+        <result property="lxbh"    column="lxbh"    />
+        <result property="lxfx"    column="lxfx"    />
+        <result property="qdzh"    column="qdzh"    />
+        <result property="zdzh"    column="zdzh"    />
+        <result property="paths"    column="paths"    />
+
+    </resultMap>
+
+    <sql id="selectGeometryVo">
+        t.id,
+        t.lxbh,
+        t.lxfx,
+        t.qdzh,
+        t.zdzh,
+        t.paths
+    </sql>
+
+
+    <select id="selectGeometryList" parameterType="com.ruoyi.base.domain.Geometry" resultMap="GeometryResult">
+        SELECT
+        <include refid="selectGeometryVo"/>
+        FROM geometry t
+        WHERE 1=1
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="lxbh != null  and lxbh != ''"> and t.lxbh = #{lxbh}</if>
+        <if test="lxfx != null  and lxfx != ''"> and t.lxfx = #{lxfx}</if>
+        <if test="qdzh != null "> and t.qdzh = #{qdzh}</if>
+        <if test="zdzh != null "> and t.zdzh = #{zdzh}</if>
+        <if test="paths != null  and paths != ''"> and t.paths = #{paths}</if>
+    </select>
+
+    <select id="selectGeometryById" parameterType="Integer" resultMap="GeometryResult">
+        select
+        <include refid="selectGeometryVo"/>
+        from geometry t
+        where t.id = #{id}
+    </select>
+
+
+    <update id="deleteGeometryById" parameterType="Integer">
+        update geometry set del_flag = '1' where id = #{id}
+    </update>
+
+    <update id="deleteGeometryByIds" parameterType="String">
+        update geometry set del_flag = '1' where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>
