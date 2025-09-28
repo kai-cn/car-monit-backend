@@ -1,11 +1,12 @@
 package com.ruoyi.base.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.ruoyi.common.core.domain.AjaxResult;
-import com.ruoyi.common.utils.CommonUtil;
-import com.ruoyi.base.mapper.GeometryMapper;
 import com.ruoyi.base.domain.Geometry;
+import com.ruoyi.base.mapper.GeometryMapper;
 import com.ruoyi.base.service.IGeometryService;
+import com.ruoyi.common.constant.Constants;
+import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.redis.RedisCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,9 @@ public class GeometryServiceImpl extends ServiceImpl<GeometryMapper, Geometry> i
 
     @Autowired
     private GeometryMapper geometryMapper;
+
+    @Autowired
+    private RedisCache redisCache;
 
     /**
      * 查询车辆信息
@@ -95,6 +99,33 @@ public class GeometryServiceImpl extends ServiceImpl<GeometryMapper, Geometry> i
     {
         int count = geometryMapper.deleteGeometryById(ID);
         return AjaxResult.success(count);
+    }
+
+
+    /**
+     * 跟新缓存
+     */
+    public void updateRedisWarningList() {
+        Geometry ceometry = new Geometry();
+        List<Geometry> list = geometryMapper.selectGeometryList(ceometry);
+        redisCache.setCacheObject(Constants.lxbh_jwd, list);
+    }
+
+
+    /**
+     * 从缓存拿到carlist
+     */
+    public List<Geometry> getRedisCarList() {
+        List<Geometry> list = null;
+        Object obj = redisCache.getCacheObject(Constants.lxbh_jwd);
+        if (null != obj) {
+            list = (List) obj;
+        } else {
+            Geometry ceometry = new Geometry();
+            list = geometryMapper.selectGeometryList(ceometry);
+            redisCache.setCacheObject(Constants.lxbh_jwd, list);
+        }
+        return list;
     }
 
 

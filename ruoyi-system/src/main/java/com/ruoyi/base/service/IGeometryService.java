@@ -1,9 +1,10 @@
 package com.ruoyi.base.service;
 
-import com.ruoyi.common.core.domain.AjaxResult;
-import com.ruoyi.base.domain.Geometry;
-import java.util.List;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.ruoyi.base.domain.Geometry;
+import com.ruoyi.common.core.domain.AjaxResult;
+
+import java.util.List;
 
 /**
  * 车辆信息Service接口
@@ -44,5 +45,17 @@ public interface IGeometryService extends IService<Geometry> {
      * @return 结果
      */
     AjaxResult deleteGeometryByIds(Integer[] IDs);
+
+
+    /**
+     * 跟新redis
+     */
+    void updateRedisWarningList();
+
+
+    /**
+     * 从缓存拿到carlist
+     */
+    List<Geometry> getRedisCarList();
 
 }

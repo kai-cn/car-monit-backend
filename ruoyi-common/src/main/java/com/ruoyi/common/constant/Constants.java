@@ -288,4 +288,10 @@ public class Constants
     public static final String car_warning_list = "car_warning_list";
 
 
+    /**
+     * 路线经纬度
+     */
+    public static final String lxbh_jwd = "lxbh_jwd";
+
+
 }

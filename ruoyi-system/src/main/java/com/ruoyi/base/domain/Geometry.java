@@ -18,7 +18,7 @@ import com.ruoyi.common.core.domain.Custom;
 @TableName("geometry")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-public class Geometry  implements Custom {
+public class Geometry implements Custom {
 
     /** 主键 */
     private Integer id;
@@ -27,7 +27,7 @@ public class Geometry  implements Custom {
     @Excel(name = "路线编号")
     private String lxbh;
 
-    /** 路线方向 */
+    /** 路线方向 1上行 2下行*/
     @Excel(name = "路线方向")
     private String lxfx;
 
