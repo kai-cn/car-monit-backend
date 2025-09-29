@@ -1,5 +1,6 @@
 package com.ruoyi.base.service.impl;
 
+import com.alibaba.fastjson2.JSONArray;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.Geometry;
 import com.ruoyi.base.mapper.GeometryMapper;
@@ -12,10 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 车辆信息Service业务层处理
@@ -75,6 +73,7 @@ public class GeometryServiceImpl extends ServiceImpl<GeometryMapper, Geometry> i
             // 新增 主键
             geometryMapper.insert(geometry);
         }
+        this.updateRedisList();
         return AjaxResult.success("操作成功！",geometry.getId());
     }
 
@@ -112,8 +111,37 @@ public class GeometryServiceImpl extends ServiceImpl<GeometryMapper, Geometry> i
     public void updateRedisList() {
         Geometry ceometry = new Geometry();
         ceometry.setLxfx("2");
-        List<Geometry> list = geometryMapper.selectGeometryList(ceometry);
-        redisCache.setCacheObject(Constants.lxbh_jwd, list);
+        List<Geometry> querylist = geometryMapper.selectGeometryList(ceometry);
+        // ------------
+        Map<String, JSONArray> map = new HashMap<>();
+        for (Geometry rtnVo : querylist) {
+            String lxbh = CommonUtil.isNull(rtnVo.getLxbh()); // 路线编号
+            String paths = CommonUtil.isNull(rtnVo.getPaths());
+            if (CommonUtil.isNotBlank(lxbh) && CommonUtil.isNotBlank(paths)) {
+                JSONArray jsonArray = JSONArray.parse(paths);
+                if (null !=jsonArray && jsonArray.size() > 0){
+                    if (map.containsKey(lxbh)) {
+                        JSONArray jsonArrayOld = map.get(lxbh);
+                        for (Object objJson : jsonArray) {
+                            if (null !=objJson){
+                                JSONArray jsonObject = (JSONArray) objJson;
+                                jsonArrayOld.add(jsonObject);
+                            }
+                        }
+                    } else {
+                        map.put(lxbh, jsonArray);
+                    }
+                }
+            }
+        }
+
+        for (Map.Entry<String, JSONArray> entry : map.entrySet()) {
+            String lxbxKey = entry.getKey();
+            JSONArray JSONArrayValue = entry.getValue();
+            redisCache.setCacheObject(Constants.lxbh_jdwd + lxbxKey, JSONArrayValue.toJSONString(JSONArrayValue));
+        }
+
+
     }
 
 
@@ -121,17 +149,14 @@ public class GeometryServiceImpl extends ServiceImpl<GeometryMapper, Geometry> i
      * 从缓存拿到carlist
      */
     public List<Geometry> getRedisList() {
-        List<Geometry> list = null;
-        Object obj = redisCache.getCacheObject(Constants.lxbh_jwd);
-        if (null != obj) {
-            list = (List) obj;
-        } else {
-            Geometry ceometry = new Geometry();
-            ceometry.setLxfx("2");
-            list = geometryMapper.selectGeometryList(ceometry);
-            redisCache.setCacheObject(Constants.lxbh_jwd, list);
+        Collection<String> keys = redisCache.keys(Constants.lxbh_jdwd + "*");
+        Iterator<String> it = keys.iterator();
+        if (it.hasNext()) {
+            // 没有就新增
+        }else{
+            this.updateRedisList();
         }
-        return list;
+        return  null;
     }
 
     /**
@@ -139,19 +164,16 @@ public class GeometryServiceImpl extends ServiceImpl<GeometryMapper, Geometry> i
      */
     public List<Geometry> getListByCode(List<String> roadCodeList) {
         List<Geometry> rtnlist = new ArrayList<Geometry>();
-        if (null != roadCodeList && roadCodeList.size() > 0){
-            Map<String,Geometry> geometryMap = new HashMap<>();
-            List<Geometry> allList = this.getRedisList();
-            for (Geometry rtnVo :allList){
-                geometryMap.put(CommonUtil.isNull(rtnVo.getLxbh()),rtnVo);
-            }
-            for (String roadCode:roadCodeList){
-                roadCode = CommonUtil.isNull(roadCode);
-                if (CommonUtil.isNotBlank(roadCode)){
-                    if (geometryMap.containsKey(roadCode)){
-                        rtnlist.add(geometryMap.get(roadCode));
-                    }
-                }
+        for (String roadCode:roadCodeList){
+            roadCode = CommonUtil.isNull(roadCode);
+            if (CommonUtil.isNotBlank(roadCode)){
+                 String points = redisCache.getCacheObject(Constants.lxbh_jdwd + roadCode);
+                 if (CommonUtil.isNotBlank(points)){
+                     Geometry addBo  = new Geometry();
+                     addBo.setLxbh(roadCode);
+                     addBo.setPaths(points);
+                     rtnlist.add(addBo);
+                 }
             }
         }
         return rtnlist;

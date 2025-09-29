@@ -291,7 +291,7 @@ public class Constants
     /**
      * 路线经纬度
      */
-    public static final String lxbh_jwd = "lxbh_jwd";
+    public static final String lxbh_jdwd = "lxbh_jdwd:";
 
 
 }

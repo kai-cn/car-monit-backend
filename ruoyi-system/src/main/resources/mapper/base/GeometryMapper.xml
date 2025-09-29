@@ -33,6 +33,7 @@
         <if test="qdzh != null "> and t.qdzh = #{qdzh}</if>
         <if test="zdzh != null "> and t.zdzh = #{zdzh}</if>
         <if test="paths != null  and paths != ''"> and t.paths = #{paths}</if>
+         order by lxbh,t.qdzh
     </select>
 
     <select id="selectGeometryById" parameterType="Integer" resultMap="GeometryResult">
