@@ -10,6 +10,8 @@
         <result property="enterTime"    column="enter_time"    />
         <result property="exitTime"    column="exit_time"    />
         <result property="trailPoints"    column="trail_points"    />
+        <result property="enterLocationcode"    column="enter_locationcode"    />
+        <result property="exitLocationcode"    column="exit_locationcode"    />
         <result property="trackJosn"    column="track_josn"    />
     </resultMap>
 
@@ -22,6 +24,8 @@
         t.exit_time,
         t.trail_points,
         t.create_time,
+        t.enter_locationcode,
+        t.exit_locationcode,
         t.track_josn
     </sql>
 
