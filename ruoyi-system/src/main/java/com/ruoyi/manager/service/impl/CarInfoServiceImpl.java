@@ -194,7 +194,13 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
 
             // 新增
             if (addlist.size() > 0) {
-                this.saveBatch(addlist);
+                for (CarInfo addbo:addlist){
+                    // 新增 主键
+                    addbo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
+                    carInfoMapper.insert(addbo);
+                }
+                // ------------创建的时间一样
+               //  this.saveBatch(addlist);
             }
             // 修改
             if (updatalist.size() > 0) {
