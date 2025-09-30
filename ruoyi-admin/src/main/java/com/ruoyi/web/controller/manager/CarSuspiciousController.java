@@ -136,6 +136,7 @@ public class CarSuspiciousController extends BaseController {
             dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
             dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
             dp.setIsExcept(CommonUtil.isNull(isExceptMap.get(dp.getIsExcept())));
+            dp.setCheckStatus(CommonUtil.isNull(isExceptMap.get(dp.getCheckStatus())));
         });
 
         Map<String,Object> map = new HashMap<>();

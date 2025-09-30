@@ -63,15 +63,20 @@ public class CarWarningInfoController extends BaseController {
         Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
         // 车种
         Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle");
-
+        // 逃费类型
+        Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataMap("escaped_type");
 
 
         list.stream().forEach(dp -> {
             if (null != dp.getGantryTime()){
                 dp.setGantryTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getGantryTime()));
             }
+            if (null != dp.getCreateTime()){
+                dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
+            }
             dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
             dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
+            dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
         });
 
         Map<String,Object> map = new HashMap<>();

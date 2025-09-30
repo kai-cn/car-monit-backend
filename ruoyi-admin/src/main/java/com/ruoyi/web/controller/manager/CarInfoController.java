@@ -91,6 +91,9 @@ public class CarInfoController extends BaseController {
         // 逃费类型
         Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataMap("escaped_type");
 
+        // 车辆实时状态
+        Map<String,String> statusMap = sysDictDataService.selectDictDataMap("car_run_status");
+
 
         list.stream().forEach(dp -> {
             if (null != dp.getCreateTime()){
@@ -99,6 +102,7 @@ public class CarInfoController extends BaseController {
             dp.setPlateColor(CommonUtil.isNull(plateColorMap.get(dp.getPlateColor())));
             dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
             dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
+            dp.setStatus(CommonUtil.isNull(statusMap.get(dp.getStatus())));
 
 
             // 需要循环 : 逃费类型

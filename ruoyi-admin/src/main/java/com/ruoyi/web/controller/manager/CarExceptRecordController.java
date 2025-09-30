@@ -105,6 +105,9 @@ public class CarExceptRecordController extends BaseController {
         // 逃费类型
         Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataMap("escaped_type");
 
+        // 补缴状态
+        Map<String,String> statusMap = sysDictDataService.selectDictDataMap("supplementary_status");
+
 
 
         list.stream().forEach(dp -> {
@@ -114,6 +117,7 @@ public class CarExceptRecordController extends BaseController {
             dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
             dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
             dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
+            dp.setStatus(CommonUtil.isNull(statusMap.get(dp.getStatus())));
         });
 
         Map<String,Object> map = new HashMap<>();

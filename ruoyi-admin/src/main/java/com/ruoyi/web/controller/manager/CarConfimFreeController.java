@@ -10,7 +10,7 @@ import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
 import com.ruoyi.manager.domain.vo.PCCarStatisticsVO;
-import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;
+import com.ruoyi.system.service.ISysDictDataService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,6 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.manager.domain.CarConfimFree;
 import com.ruoyi.manager.service.ICarConfimFreeService;
-import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
 import javax.servlet.http.HttpServletResponse;
@@ -45,6 +44,8 @@ public class CarConfimFreeController extends BaseController {
 
     @Autowired
     private ICarConfimFreeService carConfimFreeService;
+    @Autowired
+    private ISysDictDataService sysDictDataService;
 
     /**
      * 查询确认补缴列表
@@ -122,10 +123,35 @@ public class CarConfimFreeController extends BaseController {
      */
     @Log(title = "确认补缴", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
-    public AjaxResult export(CarConfimFree carConfimFree) {
+    public AjaxResult export(CarConfimFree carConfimFree, HttpServletResponse response) {
         List<CarConfimFree> list = carConfimFreeService.selectCarConfimFreeList(carConfimFree);
-        ExcelUtil<CarConfimFree> util = new ExcelUtil<CarConfimFree>(CarConfimFree.class);
-        return util.exportExcel(list, "确认补缴数据");
+        // 车型
+        Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
+        // 车种
+        Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle");
+
+
+        list.stream().forEach(dp -> {
+            dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
+            dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
+        });
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/carConfirm.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
