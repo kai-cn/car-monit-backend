@@ -565,6 +565,22 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     @Excel(name = "分类分级")
     private Long gradeLevel;
 
+    /** 本次交易读取的EF04加密摘要验证结果 */
+    @Excel(name = "本次交易读取的EF04加密摘要验证结果")
+    private String readcipherverify;
+
+    /** 本次交易生成的EF04加密摘要 */
+    @Excel(name = "本次交易生成的EF04加密摘要")
+    private String tradewritecipher;
+
+    /** 本次交易读取的EF04加密摘要 */
+    @Excel(name = "本次交易读取的EF04加密摘要")
+    private String tradereadcipher;
+
+    /** cid */
+    @Excel(name = "cid")
+    private String cid;
+
 
     // 当前页面
     @TableField(exist = false)

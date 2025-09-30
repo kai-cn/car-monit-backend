@@ -278,6 +278,10 @@ public class OdsLwzxsfsjFeeStationExit01 implements Custom {
     @Excel(name = "加载时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date loadTime;
 
+    /** 车牌识别流水号 */
+    @Excel(name = "车牌识别流水号")
+    private String vehiclesignid;
+
     /** 车辆状态标识 */
     @Excel(name = "车辆状态标识")
     private String vehiclesign;
@@ -286,9 +290,9 @@ public class OdsLwzxsfsjFeeStationExit01 implements Custom {
     @Excel(name = "分类分级")
     private String gradeLevel;
 
-    /** 车牌识别流水号 */
-    @Excel(name = "车牌识别流水号")
-    private String vehiclesignid;
+    /** cid */
+    @Excel(name = "cid")
+    private String cid;
 
     // 当前页面
     @TableField(exist = false)
