@@ -282,6 +282,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                 Long userId = SecurityUtils.getUserId();
                 addCarInfo.setId(StringUtils.getUUID()); // 主键
                 addCarInfo.setDelFlag("0");
+                addCarInfo.setEpsId(SecurityUtils.getEpsId());
                 addCarInfo.setCreateBy(userId); // 创建人
                 addCarInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
                 addCarInfo.setUpdateBy(userId); // 更新人

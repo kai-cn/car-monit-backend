@@ -126,6 +126,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
             carInfo.setId(StringUtils.getUUID()); // 主键
             carInfo.setDelFlag("0");
             carInfo.setCreateBy(userId); // 创建人
+            carInfo.setEpsId(SecurityUtils.getEpsId());
             carInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
             carInfo.setUpdateBy(userId); // 更新人
             carInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
@@ -185,6 +186,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                     carInfo.setId(StringUtils.getUUID()); // 主键
                     carInfo.setDelFlag("0");
                     carInfo.setCreateBy(userId); // 创建人
+                    carInfo.setEpsId(SecurityUtils.getEpsId());
                     carInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
                     carInfo.setUpdateBy(userId); // 更新人
                     carInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
