@@ -6,6 +6,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.ZdataTrailTracks;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
+import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
@@ -183,71 +184,124 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                 car.setId(vo.getId());
                 List<TrailBo> josnList = entry.getValue();
                 if (null != josnList && josnList.size() > 0) {
-                    // 车的状态修改更新为 status 1  经纬度 last_pass_longitude  last_pass_latitude  josn字符串要更新 track_id track_josn
-                    // 车的门架 路段 等数据--------------
-                    // 同事要跟新车俩预警  car_warning_info
-                    car.setStatus("1");
-                    // 进度和维度
-                    TrailBo lastBo = josnList.get(josnList.size() - 1);
-                    if (null !=lastBo.getLon()){
-                        car.setLastPassLongitude(CommonUtil.isNull(lastBo.getLon()));
-                    }
 
-                    if (null !=lastBo.getLat()){
-                        car.setLastPassLatitude(CommonUtil.isNull(lastBo.getLat()));
-                    }
-                    car.setTrackJosn(JSON.toJSON(josnList)+"");
-
-                    String devCodes = "";  // 设备所有的集合
-
+                    List<TrailBo> stationList = new ArrayList<TrailBo>(); // 收费站
+                    // 在线增加判断是否有出的话 true=进入，false=驶出 directionIn
                     for (TrailBo trailBo : josnList) {
-
-                        String pointUuid = CommonUtil.isNull(trailBo.getPointUuid());
-
-                        CarWarningInfo carWarningInfo = new CarWarningInfo();
-                        carWarningInfo.setCarId(vo.getId());
-                        carWarningInfo.setCarNo(vo.getCarNo());
-                        carWarningInfo.setCarType(vo.getCarType());
-                        carWarningInfo.setCarVehicle(vo.getCarVehicle());
-                        carWarningInfo.setCarNum(vo.getCarNum());
-                        // 入站
-                        carWarningInfo.setInStationId(tracksBo.getFirtStationCode());
-                        carWarningInfo.setInStation(tracksBo.getFirtStationName());
-                        if (CommonUtil.isNotBlank(tracksBo.getFirtStationTime())){
-                            carWarningInfo.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,tracksBo.getFirtStationTime()));
+                        String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
+                        switch (stateType) {
+                            case Constants.BORDER_WEIGHING_CAPTURE:
+                                // 省界称重
+                                break;
+                            case Constants.GANTRY_CAPTURE:
+                                break;
+                            case Constants.PROV_CAPTURE:
+                                break;
+                            case Constants.SERVICE_AREA_CAPTURE:
+                                // 服务区抓拍
+                                break;
+                            case Constants.STATION_CAPTURE:
+                                // 收费站抓拍
+                                stationList.add(trailBo);
+                                break;
                         }
-
-                        // 抓拍设备
-                        if (CommonUtil.isNotBlank(trailBo.getDevCode())){
-
-                            devCodes += trailBo.getDevCode()+",";
-
-                            carWarningInfo.setGantryStationId(trailBo.getDevCode());
-                            carWarningInfo.setGantrytStation(trailBo.getDevName());
-                            if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
-                                carWarningInfo.setGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
-                            }
-                            carWarningInfo.setFileIds(trailBo.getImagesArry());
-                            carWarningInfo.setBackCol1(pointUuid);
-
-                            // 预计下一个通行时间nextPassTime  预计下一个通行地址 nextPassAddress
-
-                            carWarningInfo.setDelFlag("0");
-                            carWarningInfo.setCreateBy(userId); // 创建人
-                            carWarningInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
-                            carWarningInfo.setUpdateBy(userId); // 更新人
-                            carWarningInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
-
-                            addCarWarningInfoList.add(carWarningInfo);
-                            if (CommonUtil.isNotBlank(pointUuid)){
-                                delCarWarningInfoList.add(pointUuid);
-                            }
-
-                        }
-
                     }
 
-                    car.setGantryCode(CommonUtil.deleteEnd(devCodes));
+                    //  收费站---------------
+                    Boolean inFlag = false;
+                    Boolean outFlag = false;
+                    for (int i = 0; i < stationList.size(); i++) {
+                        TrailBo trailBo = stationList.get(i);
+                        Boolean directionIn = trailBo.getDirectionIn();
+                        if (null != directionIn && directionIn){
+                            inFlag = true;
+                        }
+                        // 最后一个收费站
+                        if (i == stationList.size() - 1) {
+                            if (null != directionIn && !directionIn){
+                                // 是使出
+                                outFlag = true;
+                            }
+
+                        }
+                    }
+
+                    if (inFlag && outFlag){
+                        // 跟新车俩-----------------------  车的状态修改status 0
+                        car.setStatus("0");
+                        car.setTrackJosn(null);
+                    }else{
+
+                        // 车的状态修改更新为 status 1  经纬度 last_pass_longitude  last_pass_latitude  josn字符串要更新 track_id track_josn
+                        // 车的门架 路段 等数据--------------
+                        // 同事要跟新车俩预警  car_warning_info
+                        car.setStatus("1");
+                        // 进度和维度
+                        TrailBo lastBo = josnList.get(josnList.size() - 1);
+                        if (null !=lastBo.getLon()){
+                            car.setLastPassLongitude(CommonUtil.isNull(lastBo.getLon()));
+                        }
+
+                        if (null !=lastBo.getLat()){
+                            car.setLastPassLatitude(CommonUtil.isNull(lastBo.getLat()));
+                        }
+                        car.setTrackJosn(JSON.toJSON(josnList)+"");
+
+                        String devCodes = "";  // 设备所有的集合
+
+                        for (TrailBo trailBo : josnList) {
+                            String pointUuid = CommonUtil.isNull(trailBo.getPointUuid());
+
+                            CarWarningInfo carWarningInfo = new CarWarningInfo();
+                            carWarningInfo.setCarId(vo.getId());
+                            carWarningInfo.setCarNo(vo.getCarNo());
+                            carWarningInfo.setCarType(vo.getCarType());
+                            carWarningInfo.setCarVehicle(vo.getCarVehicle());
+                            carWarningInfo.setCarNum(vo.getCarNum());
+                            // 入站
+                            carWarningInfo.setInStationId(tracksBo.getFirtStationCode());
+                            carWarningInfo.setInStation(tracksBo.getFirtStationName());
+                            if (CommonUtil.isNotBlank(tracksBo.getFirtStationTime())){
+                                carWarningInfo.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,tracksBo.getFirtStationTime()));
+                            }
+
+                            // 抓拍设备
+                            if (CommonUtil.isNotBlank(trailBo.getDevCode())){
+
+                                devCodes += trailBo.getDevCode()+",";
+
+                                carWarningInfo.setGantryStationId(trailBo.getDevCode());
+                                carWarningInfo.setGantrytStation(trailBo.getDevName());
+                                if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
+                                    carWarningInfo.setGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                                }
+                                carWarningInfo.setFileIds(CommonUtil.isNull(trailBo.getImagesArry()));
+                                carWarningInfo.setBackCol1(pointUuid);
+
+                                // 预计下一个通行时间nextPassTime  预计下一个通行地址 nextPassAddress
+
+                                carWarningInfo.setDelFlag("0");
+                                carWarningInfo.setCreateBy(userId); // 创建人
+                                carWarningInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
+                                carWarningInfo.setUpdateBy(userId); // 更新人
+                                carWarningInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
+
+                                addCarWarningInfoList.add(carWarningInfo);
+                                if (CommonUtil.isNotBlank(pointUuid)){
+                                    delCarWarningInfoList.add(pointUuid);
+                                }
+
+                            }
+
+                        }
+                        car.setGantryCode(CommonUtil.deleteEnd(devCodes));
+                    }
+
+
+
+
+
+
 
 
                 }else{

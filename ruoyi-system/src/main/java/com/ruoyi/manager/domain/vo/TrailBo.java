@@ -35,6 +35,11 @@ public class TrailBo {
 
     OdsRtSzdnSnapshotFlowStationcaptureAddcode  stationCapture;  // 收费站抓拍
 
+    OdsLwzxsfsjFeeRecords01  feeRecord; // 卡口流水
+
+    OdsLwzxsfsjFeeStationEnter01  feeStationEnter; // 收费站入口流水
+
+    OdsLwzxsfsjFeeStationExit01  feeStationExit; // 收费站出口流水
 
 
     // 抓拍流水发生时间:用于轨迹拼接、排序和时序分析

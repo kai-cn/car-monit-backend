@@ -275,6 +275,10 @@ public class Constants
     public static final String SERVICE_AREA_CAPTURE = "ServiceAreaCapture";
     public static final String STATION_CAPTURE = "StationCapture";
 
+    public static final String FeeRecord = "FeeRecord";
+    public static final String FeeStationEnter = "FeeStationEnter";
+    public static final String FeeStationExit = "FeeStationExit";
+
 
     /**
      * 白名单

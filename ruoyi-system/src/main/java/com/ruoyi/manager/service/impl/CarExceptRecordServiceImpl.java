@@ -87,7 +87,11 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
     @Override
     public AjaxResult deleteCarExceptRecordByIds(String[] ids)
     {
+        // 判断是否有补缴记录----------------
+
         int count = carExceptRecordMapper.deleteCarExceptRecordByIds(ids);
+
+
         return AjaxResult.success(count);
     }
 
