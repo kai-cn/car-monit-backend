@@ -114,7 +114,7 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
 
     @Override
     public List<CarWarningInfo> selectCarWarningInfoListLimit100() {
-        return this.getRedisCarList();
+        return this.getRedisCarWarningList();
     }
 
 
@@ -145,7 +145,7 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
     /**
      * 从缓存拿到carlist
      */
-    public List<CarWarningInfo> getRedisCarList() {
+    public List<CarWarningInfo> getRedisCarWarningList() {
         List<CarWarningInfo> list = null;
         Object obj = redisCache.getCacheObject(Constants.car_warning_list);
         if (null != obj) {

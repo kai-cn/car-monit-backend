@@ -71,7 +71,7 @@ public interface ICarWarningInfoService extends IService<CarWarningInfo> {
     /**
      * 从缓存拿到carlist
      */
-    List<CarWarningInfo> getRedisCarList();
+    List<CarWarningInfo> getRedisCarWarningList();
 
 
 }
