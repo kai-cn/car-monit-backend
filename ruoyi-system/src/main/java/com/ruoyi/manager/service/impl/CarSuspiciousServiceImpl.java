@@ -374,7 +374,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
         //-------------------白名单的不生成相关数据------------
         Map<String,CarWhiteInfo> carWhiteInfoMap = new HashMap<>();
-        List<CarWhiteInfo> carWhiteInfoList = carWhiteInfoService.getRedisCarList();
+        List<CarWhiteInfo> carWhiteInfoList = carWhiteInfoService.getRedisCarWhiteList();
         for (CarWhiteInfo carWhiteInfo:carWhiteInfoList){
             carWhiteInfoMap.put(CommonUtil.isNull(carWhiteInfo.getCarNo()),carWhiteInfo);
         }

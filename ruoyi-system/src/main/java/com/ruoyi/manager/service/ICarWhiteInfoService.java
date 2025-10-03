@@ -50,12 +50,12 @@ public interface ICarWhiteInfoService extends IService<CarWhiteInfo> {
     /**
      * 跟新redis
      */
-    void updateRedisCarList();
+    void updateRedisCarWhiteList();
 
 
     /**
      * 从缓存拿到carlist
      */
-    List<CarWhiteInfo> getRedisCarList();
+    List<CarWhiteInfo> getRedisCarWhiteList();
 
 }

@@ -72,7 +72,7 @@ public class CarWhiteInfoServiceImpl extends ServiceImpl<CarWhiteInfoMapper, Car
             // 新增 主键
             carWhiteInfoMapper.insert(carWhiteInfo);
         }
-        this.updateRedisCarList();
+        this.updateRedisCarWhiteList();
         return AjaxResult.success("操作成功！",carWhiteInfo.getId());
     }
 
@@ -87,7 +87,7 @@ public class CarWhiteInfoServiceImpl extends ServiceImpl<CarWhiteInfoMapper, Car
     public AjaxResult deleteCarWhiteInfoByIds(String[] ids)
     {
         int count = carWhiteInfoMapper.deleteCarWhiteInfoByIds(ids);
-        this.updateRedisCarList();
+        this.updateRedisCarWhiteList();
         return AjaxResult.success(count);
     }
 
@@ -101,14 +101,14 @@ public class CarWhiteInfoServiceImpl extends ServiceImpl<CarWhiteInfoMapper, Car
     public AjaxResult deleteCarWhiteInfoById(String id)
     {
         int count = carWhiteInfoMapper.deleteCarWhiteInfoById(id);
-        this.updateRedisCarList();
+        this.updateRedisCarWhiteList();
         return AjaxResult.success(count);
     }
 
     /**
      * 跟新缓存
      */
-    public void updateRedisCarList() {
+    public void updateRedisCarWhiteList() {
         CarWhiteInfo carWhiteInfo = new CarWhiteInfo();
         List<CarWhiteInfo> list = carWhiteInfoMapper.selectCarWhiteInfoList(carWhiteInfo);
         redisCache.setCacheObject(Constants.white_car_list, list);
@@ -118,7 +118,7 @@ public class CarWhiteInfoServiceImpl extends ServiceImpl<CarWhiteInfoMapper, Car
     /**
      * 从缓存拿到carlist
      */
-    public List<CarWhiteInfo> getRedisCarList() {
+    public List<CarWhiteInfo> getRedisCarWhiteList() {
         List<CarWhiteInfo> list = null;
         Object obj = redisCache.getCacheObject(Constants.white_car_list);
         if (null != obj) {
