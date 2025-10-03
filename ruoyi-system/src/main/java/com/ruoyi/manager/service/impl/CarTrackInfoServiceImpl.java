@@ -226,7 +226,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         }
                     }
 
-                    if (inFlag && outFlag){
+                    if (inFlag && outFlag && false){
                         // 跟新车俩-----------------------  车的状态修改status 0
                         car.setStatus("0");
                         car.setTrackJosn(null);
