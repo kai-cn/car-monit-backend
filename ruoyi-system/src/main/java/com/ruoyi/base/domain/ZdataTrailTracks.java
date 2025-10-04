@@ -120,6 +120,11 @@ public class ZdataTrailTracks implements Custom {
     private String escapedType;
 
 
+    /** 逃费类型：原因 */
+    @TableField(exist = false)
+    private String escapedTypeRemark;
+
+
 
 
 }

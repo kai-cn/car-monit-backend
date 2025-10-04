@@ -519,6 +519,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
                         if (CommonUtil.isBlank(carSuspicious.getId())){
                             carSuspicious.setEscapedType(tracksBo.getEscapedType()); //屏蔽
+                            carSuspicious.setRemark(tracksBo.getEscapedTypeRemark());
                             carSuspiciousListAdd.add(carSuspicious);
                         }else{
                             carSuspiciousListUpdate.add(carSuspicious);
