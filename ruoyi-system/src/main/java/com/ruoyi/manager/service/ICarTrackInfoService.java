@@ -52,7 +52,7 @@ public interface ICarTrackInfoService extends IService<CarTrackInfo> {
      *
      * @return 结果
      */
-    AjaxResult sync();
+    AjaxResult syncCurrentTrack();
 
 
 }

@@ -3,6 +3,7 @@ package com.ruoyi.quartz.task;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.service.ICarSuspiciousService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import java.util.Date;
  *
  * @author ruoyi
  */
+@Slf4j
 @Component("trackTask")
 public class TrackTask {
     @Autowired
@@ -23,23 +25,35 @@ public class TrackTask {
     private ICarSuspiciousService carSuspiciousService;
 
     /**
-     * 车俩轨迹
+     * 车俩实时轨迹同步
      */
     @Transactional(rollbackFor = Exception.class)
-    public void sync() {
-        System.out.println("车俩实时轨迹同步开始同步！"+new Date());
-        carTrackInfoService.sync();
-        System.out.println("车俩实时轨迹同步介绍同步！"+new Date());
+    public void syncCurrentTrack() {
+        log.info("车俩实时轨迹同步开始同步！"+new Date());
+        carTrackInfoService.syncCurrentTrack();
+        log.info("车俩实时轨迹同步结束同步！"+new Date());
     }
+
+    /**
+     * 车俩历史轨迹同步
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void syncHistoryTrack() {
+        log.info("车俩历史轨迹同步开始同步！"+new Date());
+
+        log.info("车俩历史轨迹同步结束同步！"+new Date());
+    }
+
+
 
     /**
      * 可疑车俩
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncSuspiciousCar() {
-        System.out.println("可疑车俩数据同步开始同步！"+new Date());
+        log.info("可疑车俩数据同步开始同步！"+new Date());
         AjaxResult res = carSuspiciousService.syncSuspiciousCar();
-        System.out.println("可疑车俩数据同步介绍同步！"+new Date());
+        log.info("可疑车俩数据同步结束同步！"+new Date());
     }
 
 }

@@ -150,7 +150,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
      * @return 结果
      */
     @Transactional(rollbackFor = Exception.class)
-    public AjaxResult sync() {
+    public AjaxResult syncCurrentTrack() {
         // 查询所有的车俩
         List<CarInfo> carList = carInfoService.getRedisCarList();
 
