@@ -1,7 +1,5 @@
-package com.ruoyi.manager.domain.vo;
+package com.ruoyi.base.domain;
 
-import com.ruoyi.base.domain.Geometry;
-import com.ruoyi.base.domain.ZdataTrailTracks;
 import lombok.Data;
 
 import java.util.List;

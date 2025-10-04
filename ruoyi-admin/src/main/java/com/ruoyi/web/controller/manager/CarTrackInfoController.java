@@ -1,8 +1,7 @@
 package com.ruoyi.web.controller.manager;
 
 import com.alibaba.fastjson2.JSONObject;
-import com.ruoyi.base.domain.Geometry;
-import com.ruoyi.base.domain.ZdataTrailTracks;
+import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.annotation.Log;
@@ -14,10 +13,6 @@ import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.CarTrackInfo;
-import com.ruoyi.manager.domain.vo.CarParaVO;
-import com.ruoyi.manager.domain.vo.CarVO;
-import com.ruoyi.manager.domain.vo.TrailBo;
-import com.ruoyi.manager.domain.vo.TrailInfo;
 import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
 import org.springframework.beans.factory.annotation.Autowired;

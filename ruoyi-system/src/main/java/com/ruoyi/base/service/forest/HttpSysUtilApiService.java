@@ -4,8 +4,8 @@ package com.ruoyi.base.service.forest;
 import com.dtflys.forest.annotation.BaseRequest;
 import com.dtflys.forest.annotation.JSONBody;
 import com.dtflys.forest.annotation.Post;
-import com.ruoyi.manager.domain.vo.CarParaVO;
-import com.ruoyi.manager.domain.vo.TrailBo;
+import com.ruoyi.base.domain.CarParaVO;
+import com.ruoyi.base.domain.TrailBo;
 
 import java.util.List;
 import java.util.Map;
