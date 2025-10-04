@@ -21,6 +21,7 @@ import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
 import com.ruoyi.manager.service.ICarWarningInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +53,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
     @Autowired
     private ICarWarningInfoService carWarningInfoService;
+
+    @Value("${isLocalhost}")
+    private String isLocalhost;
 
     /**
      * 查询车辆行驶轨迹
@@ -174,6 +178,13 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
         Long userId = 1L;
 
+        // System.out.println("获取的配置信息：--本地配置："+isLocalhost);
+        Boolean isZxFlag = true; // 是否执行
+        if (CommonUtil.isNull(isLocalhost).equals("local")){
+            isZxFlag = false;  // 本地不执行
+        }
+
+
         for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
             String jsonObject = entry.getKey();
             ZdataTrailTracks tracksBo = JSONObject.parseObject(jsonObject, ZdataTrailTracks.class);
@@ -207,6 +218,8 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         }
                     }
 
+
+
                     //  收费站---------------
                     Boolean inFlag = false;
                     Boolean outFlag = false;
@@ -226,7 +239,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         }
                     }
 
-                    if (inFlag && outFlag && false){
+
+
+
+                    if (inFlag && outFlag && isZxFlag){
                         // 跟新车俩-----------------------  车的状态修改status 0
                         car.setStatus("0");
                         car.setTrackJosn(null);
