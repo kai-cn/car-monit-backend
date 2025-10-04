@@ -25,7 +25,8 @@ public class TrackTask {
     private ICarSuspiciousService carSuspiciousService;
 
     /**
-     * 车俩实时轨迹同步
+     * 每三分钟执行一次
+     * 车俩实时轨迹同步:0 0/3 * * * ?
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncCurrentTrack() {
@@ -34,20 +35,11 @@ public class TrackTask {
         log.info("车俩实时轨迹同步结束同步！"+new Date());
     }
 
-    /**
-     * 车俩历史轨迹同步
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public void syncHistoryTrack() {
-        log.info("车俩历史轨迹同步开始同步！"+new Date());
-
-        log.info("车俩历史轨迹同步结束同步！"+new Date());
-    }
-
 
 
     /**
-     * 可疑车俩
+     * 每天凌晨3点
+     * 可疑车俩:0 0 3 * * ?
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncSuspiciousCar() {
@@ -56,4 +48,15 @@ public class TrackTask {
         log.info("可疑车俩数据同步结束同步！"+new Date());
     }
 
+
+    /**
+     * 每天凌晨4点
+     * 车俩历史轨迹同步:0 0 4 * * ?
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void syncHistoryTrack() {
+        log.info("车俩历史轨迹同步开始同步！"+new Date());
+
+        log.info("车俩历史轨迹同步结束同步！"+new Date());
+    }
 }
