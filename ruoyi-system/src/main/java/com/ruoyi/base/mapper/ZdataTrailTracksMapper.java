@@ -1,6 +1,7 @@
 package com.ruoyi.base.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.ruoyi.base.domain.CarParaVO;
 import com.ruoyi.base.domain.ZdataTrailTracks;
 import org.springframework.stereotype.Repository;
 
@@ -29,6 +30,12 @@ public interface ZdataTrailTracksMapper extends BaseMapper<ZdataTrailTracks> {
      * @return 轨迹数据集合
      */
     List<ZdataTrailTracks> selectZdataTrailTracksList(ZdataTrailTracks zdataTrailTracks);
+
+
+    /**
+     * 轨迹查询
+     */
+    List<ZdataTrailTracks> getHistoryTrail(CarParaVO carParaVO);
 
 
 }

@@ -5,6 +5,7 @@ import com.ruoyi.base.domain.Geometry;
 import com.ruoyi.base.domain.TrailBo;
 import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.base.service.IGeometryService;
+import com.ruoyi.base.service.IZdataTrailTracksService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -47,6 +48,10 @@ public class CarTrackInfoController extends BaseController {
     @Autowired
     private IGeometryService geometryService;
 
+
+    @Autowired
+    private IZdataTrailTracksService zdataTrailTracksService;
+
     /**
      * 查询车辆行驶轨迹列表
      */
@@ -68,21 +73,11 @@ public class CarTrackInfoController extends BaseController {
     @GetMapping("/listByCarId")
     public TableDataInfo listByCarId(CarTrackInfo carTrackInfo) {
 
-        // 当前页面
-        if (null == carTrackInfo.getPageNum()){
-            carTrackInfo.setPageNum(1);
-        }
-        // 分页大小
-        if (null == carTrackInfo.getPageSize()){
-            carTrackInfo.setPageSize(10);
-        }
+        startPage();
 
         if (CommonUtil.isBlank(carTrackInfo.getCarNo())) {
             carTrackInfo.setCarNo("-1");
         }
-        // ----------查询自己的表
-          /* List<CarTrackInfo> list = carTrackInfoService.selectCarTrackInfoList(carTrackInfo);
-        return AjaxResult.success(list);*/
 
         // ---------- 查询接口
         CarParaVO carParaVO = new CarParaVO();
@@ -92,12 +87,9 @@ public class CarTrackInfoController extends BaseController {
         carParaVO.setPageNum(carTrackInfo.getPageNum());
         carParaVO.setPageSize(carTrackInfo.getPageSize());
 
-        TableDataInfo tableDataInfo = httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
-
-        List<TrailInfo> trailList = (List<TrailInfo>) tableDataInfo.getRows();
+        List<TrailInfo> trailList = zdataTrailTracksService.carTrackQuery(carParaVO);
         for (TrailInfo rtn:trailList){
             List<TrailBo> josnList = rtn.getTrailList();
-
             List<Geometry> raodTrailList = new ArrayList<>();
             if (null !=josnList && josnList.size() > 0){
                 List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
@@ -106,7 +98,7 @@ public class CarTrackInfoController extends BaseController {
             rtn.setRaodTrailList(raodTrailList);
         }
 
-        return tableDataInfo;
+        return getDataTable(trailList);
     }
 
 
@@ -119,18 +111,7 @@ public class CarTrackInfoController extends BaseController {
     @GetMapping("/listByCarByTime")
     public TableDataInfo listByCarByTime(CarTrackInfo carTrackInfo) {
 
-        // 当前页面
-        if (null == carTrackInfo.getPageNum()){
-            carTrackInfo.setPageNum(1);
-        }
-        // 分页大小
-        if (null == carTrackInfo.getPageSize()){
-            carTrackInfo.setPageSize(10);
-        }
-
-        // ----------查询自己的表
-          /* List<CarTrackInfo> list = carTrackInfoService.selectCarTrackInfoList(carTrackInfo);
-        return AjaxResult.success(list);*/
+        startPage();
 
         // ---------- 查询接口
         CarParaVO carParaVO = new CarParaVO();
@@ -140,12 +121,9 @@ public class CarTrackInfoController extends BaseController {
         carParaVO.setPageNum(carTrackInfo.getPageNum());
         carParaVO.setPageSize(carTrackInfo.getPageSize());
 
-        TableDataInfo tableDataInfo = httpSysUtilApiService.carTrackQueryByTime(carParaVO);
-
-        List<TrailInfo> trailList = (List<TrailInfo>) tableDataInfo.getRows();
+        List<TrailInfo> trailList = zdataTrailTracksService.carTrackQuery(carParaVO);
         for (TrailInfo rtn:trailList){
             List<TrailBo> josnList = rtn.getTrailList();
-
             List<Geometry> raodTrailList = new ArrayList<>();
             if (null !=josnList && josnList.size() > 0){
                 List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
@@ -154,7 +132,7 @@ public class CarTrackInfoController extends BaseController {
             rtn.setRaodTrailList(raodTrailList);
         }
 
-        return tableDataInfo;
+        return getDataTable(trailList);
 
 
     }

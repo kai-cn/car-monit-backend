@@ -1,12 +1,18 @@
 package com.ruoyi.base.service.impl;
 
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.base.domain.CarParaVO;
+import com.ruoyi.base.domain.TrailBo;
+import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.base.domain.ZdataTrailTracks;
 import com.ruoyi.base.mapper.ZdataTrailTracksMapper;
 import com.ruoyi.base.service.IZdataTrailTracksService;
+import com.ruoyi.common.utils.CommonUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -43,6 +49,32 @@ public class ZdataTrailTracksServiceImpl extends ServiceImpl<ZdataTrailTracksMap
         return zdataTrailTracksMapper.selectZdataTrailTracksList(zdataTrailTracks);
     }
 
-
+    /**
+     * 查询车俩历史记录
+     * @param carParaVO
+     * @return
+     */
+    @Override
+    public List<TrailInfo> carTrackQuery(CarParaVO carParaVO) {
+        List<ZdataTrailTracks> carlist = zdataTrailTracksMapper.getHistoryTrail(carParaVO);
+        List<TrailInfo> rtnList = new ArrayList<>();
+        if (null != carlist && carlist.size() > 0) {
+            for (ZdataTrailTracks tracksBo : carlist) {
+                String keyValue = tracksBo.getTrailPoints(); // 行驶轨迹
+                List<TrailBo> josnList = new ArrayList<TrailBo>();
+                if (CommonUtil.isNotBlank(keyValue)) {
+                    josnList = JSON.parseArray(keyValue, TrailBo.class);
+                    tracksBo.setTrailPoints("");  // 行驶轨迹
+                    String carNo =CommonUtil.isNull(tracksBo.getPlateKey());
+                    TrailInfo trailInfo = new TrailInfo();
+                    trailInfo.setTrailUuid(carNo);
+                    trailInfo.setTracks(tracksBo);
+                    trailInfo.setTrailList(josnList);
+                    rtnList.add(trailInfo);
+                }
+            }
+        }
+        return rtnList;
+    }
 
 }

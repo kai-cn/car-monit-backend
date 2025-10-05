@@ -25,22 +25,22 @@ public interface HttpSysUtilApiService {
     Map<String, List<TrailBo>>  syncSuspiciousCar(@JSONBody CarParaVO carParaVO);*/
 
 
-    /**
+  /*  *//**
      * 车俩历史轨迹 ：根据车牌号查询
      * @param carParaVO
      * @return
-     */
+     *//*
     @Get("/carTrackQueryByCarNo")
     TableDataInfo carTrackQueryByCarNo(@JSONBody CarParaVO carParaVO);
 
 
-    /**
+    *//**
      * 车俩历史轨迹 ：根据时间查询
      * @param carParaVO
      * @return
-     */
+     *//*
     @Get("/carTrackQueryByTime")
-    TableDataInfo  carTrackQueryByTime(@JSONBody CarParaVO carParaVO);
+    TableDataInfo  carTrackQueryByTime(@JSONBody CarParaVO carParaVO);*/
 
 
 

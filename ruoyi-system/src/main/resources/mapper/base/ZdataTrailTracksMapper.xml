@@ -42,6 +42,7 @@
         <if test="enterTime != null "> and t.enter_time = #{enterTime}</if>
         <if test="exitTime != null "> and t.exit_time = #{exitTime}</if>
         <if test="trailPoints != null  and trailPoints != ''"> and t.trail_points = #{trailPoints}</if>
+
     </select>
 
     <select id="selectZdataTrailTracksById" parameterType="String" resultMap="ZdataTrailTracksResult">
@@ -50,6 +51,27 @@
          from zdata_trail_tracks t
          where t.uuid = #{uuid}
     </select>
+
+
+    <select id="getHistoryTrail" parameterType="com.ruoyi.base.domain.CarParaVO" resultType="com.ruoyi.base.domain.ZdataTrailTracks">
+        select k.* from
+        (select t.uuid,t.point_count,t.plate_key,t.trail_points,t.enter_time,t.exit_time,t.enter_locationcode,t.exit_locationcode,t.track_josn,
+        ROW_NUMBER() OVER (PARTITION BY t.uuid ORDER BY t.point_count desc )  rid
+        from jl_data01.zdata_trail_tracks t
+        <where>
+            <if test="carNo != null  and carNo != ''"> and t.plate_key = #{carNo} </if>
+            <if test="applyTime1 != null  and applyTime1 != ''">and t.enter_time >= to_timestamp(#{applyTime1},'yyyy-mm-dd HH24:MI:SS')</if>
+            <if test="applyTime2 != null  and applyTime2 != ''">and t.enter_time <![CDATA[<=]]> to_timestamp(#{applyTime2},'yyyy-mm-dd HH24:MI:SS') </if>
+            <if test="carNoList != null and carNoList.size() > 0">
+                and  t.plate_key in
+                <foreach collection="carNoList" open="(" separator="," close=")" item="item">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        ) k where k.rid = 1
+    </select>
+
 
 
 </mapper>
