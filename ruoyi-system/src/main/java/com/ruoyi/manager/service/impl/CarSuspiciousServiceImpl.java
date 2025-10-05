@@ -385,10 +385,15 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         String formattedDate = sdf.format(now);
 
         Collection<String> keys = redisCache.keys(Constants.car_uspicious + formattedDate + "*");
-        for (String key : keys) {
-            TrailInfo trailInfo = redisCache.getCacheObject(key);
-            mapCar.put(trailInfo.getTracks(), trailInfo.getTrailList());
+
+        if (null != keys && keys.size() > 0){
+            for (String key : keys) {
+                TrailInfo trailInfo = redisCache.getCacheObject(key);
+                mapCar.put(trailInfo.getTracks(), trailInfo.getTrailList());
+            }
         }
+
+
 
 
 
@@ -558,8 +563,10 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             this.updateBatchById(carSuspiciousListUpdate);
         }
 
-        // 删除redis
-        redisCache.deleteObject(keys);
+        if (null != keys && keys.size() > 0){
+            // 删除redis
+            redisCache.deleteObject(keys);
+        }
 
         return AjaxResult.success();
     }

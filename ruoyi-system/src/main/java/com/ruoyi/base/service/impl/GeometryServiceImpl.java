@@ -150,8 +150,7 @@ public class GeometryServiceImpl extends ServiceImpl<GeometryMapper, Geometry> i
      */
     public List<Geometry> getRedisList() {
         Collection<String> keys = redisCache.keys(Constants.lxbh_jdwd + "*");
-        Iterator<String> it = keys.iterator();
-        if (it.hasNext()) {
+        if (null!= keys && keys.size() > 0) {
             // 没有就新增
         }else{
             this.updateRedisList();
