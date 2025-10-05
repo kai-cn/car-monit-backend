@@ -269,6 +269,13 @@ public class Constants
      */
     public static final String car_list = "car_list";
 
+    /**
+     * 重点车俩列表：简称
+     */
+    public static final String car_list_jc = "car_list_jc";
+
+
+
     public static final String BORDER_WEIGHING_CAPTURE = "BorderWeighingCapture";
     public static final String GANTRY_CAPTURE = "GantryCapture";
     public static final String PROV_CAPTURE = "ProvCapture";
@@ -296,6 +303,36 @@ public class Constants
      * 路线经纬度
      */
     public static final String lxbh_jdwd = "lxbh_jdwd:";
+
+
+    /**
+     * 收费站ip redis
+     */
+    public static final String station_ip = "station_ip";
+
+
+    /**g
+     * 门架ip redis
+     */
+    public static final String gantry_ip = "gantry_ip";
+
+    /**
+     * 可疑车辆
+     */
+    public static final String car_uspicious = "car_uspicious";
+
+
+    /**
+     * 车辆历史轨迹
+     */
+    public static final String car_history_trail = "car_history_trail:";
+
+
+    /**
+     * 车辆当前轨迹
+     */
+    public static final String car_curent_trail = "car_curent_trail:";
+
 
 
 }

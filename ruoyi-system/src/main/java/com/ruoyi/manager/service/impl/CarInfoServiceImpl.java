@@ -3,6 +3,7 @@ package com.ruoyi.manager.service.impl;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.base.domain.CarVO;
 import com.ruoyi.base.domain.Geometry;
 import com.ruoyi.base.domain.TrailBo;
 import com.ruoyi.base.domain.TrailInfo;
@@ -311,6 +312,16 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
     public void updateRedisCarList() {
         CarInfo carInfoQuery = new CarInfo();
         List<CarInfo> list = carInfoMapper.selectCarInfoList(carInfoQuery);
+
+        List<CarVO> carVOList = new ArrayList<>();
+        for (CarInfo rtn : list) {
+            CarVO tempVO = new CarVO();
+            tempVO.setCarId(rtn.getId());
+            tempVO.setCarNo(rtn.getCarNo());
+            carVOList.add(tempVO);
+            redisCache.setCacheObject(Constants.car_list_jc, list);
+        }
+
         redisCache.setCacheObject(Constants.car_list, list);
     }
 

@@ -1,5 +1,6 @@
 package com.ruoyi.quartz.task;
 
+import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.service.ICarSuspiciousService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
@@ -24,6 +25,10 @@ public class TrackTask {
     @Autowired
     private ICarSuspiciousService carSuspiciousService;
 
+
+    @Autowired
+    private IGeometryService geometryService;
+
     /**
      * 每三分钟执行一次
      * 车俩实时轨迹同步:0 0/3 * * * ?
@@ -38,25 +43,25 @@ public class TrackTask {
 
 
     /**
-     * 每天凌晨3点
-     * 可疑车俩:0 0 3 * * ?
+     * 每天凌晨5点
+     * 可疑车俩:0 0 5 * * ?
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncSuspiciousCar() {
         log.info("可疑车俩数据同步开始同步！"+new Date());
-        AjaxResult res = carSuspiciousService.syncSuspiciousCar();
+        carSuspiciousService.syncSuspiciousCar();
+        geometryService.updateRedisList();
         log.info("可疑车俩数据同步结束同步！"+new Date());
     }
 
 
     /**
-     * 每天凌晨4点
-     * 车俩历史轨迹同步:0 0 4 * * ?
+     * 每天凌晨6点
+     * 车俩历史轨迹同步:0 0 6 * * ?
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncHistoryTrack() {
         log.info("车俩历史轨迹同步开始同步！"+new Date());
-
         log.info("车俩历史轨迹同步结束同步！"+new Date());
     }
 }
