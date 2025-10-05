@@ -28,10 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -375,8 +373,29 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             carWhiteInfoMap.put(CommonUtil.isNull(carWhiteInfo.getCarNo()),carWhiteInfo);
         }
 
-        // 调用接口
-        Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
+        // 调用接口 (从redis拿)
+        // Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
+
+        // 从redis拿
+        Map<ZdataTrailTracks, List<TrailBo>> mapCar = new HashMap<>();
+
+
+        Date now = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        String formattedDate = sdf.format(now);
+
+        Collection<String> keys = redisCache.keys(Constants.car_uspicious + formattedDate + "*");
+        for (String key : keys) {
+            TrailInfo trailInfo = redisCache.getCacheObject(key);
+            mapCar.put(trailInfo.getTracks(), trailInfo.getTrailList());
+        }
+
+
+
+
+
+
+
         List<CarSuspicious>  carSuspiciousListAdd = new ArrayList<>();
         List<CarSuspicious>  carSuspiciousListUpdate = new ArrayList<>();
 
@@ -391,9 +410,10 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         Map<String,String> carVehicleMap = sysDictDataService.selectDictDataLaleMap("car_vehicle");
 
 
-        for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
-            String jsonObject = entry.getKey();
-            ZdataTrailTracks tracksBo = JSONObject.parseObject(jsonObject, ZdataTrailTracks.class);
+        for (Map.Entry<ZdataTrailTracks, List<TrailBo>> entry : mapCar.entrySet()) {
+          /*  String jsonObject = entry.getKey();
+            ZdataTrailTracks tracksBo = JSONObject.parseObject(jsonObject, ZdataTrailTracks.class);*/
+            ZdataTrailTracks tracksBo = entry.getKey();;
             String carNo = CommonUtil.isNull(tracksBo.getPlateKey()); // 车牌号
             String trailUUid = CommonUtil.isNull(tracksBo.getUuid()); // 轨迹单
             if (CommonUtil.isNotBlank(carNo) && CommonUtil.isNotBlank(trailUUid)) {
@@ -537,6 +557,9 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         if (null !=carSuspiciousListUpdate && carSuspiciousListUpdate.size() > 0){
             this.updateBatchById(carSuspiciousListUpdate);
         }
+
+        // 删除redis
+        redisCache.deleteObject(keys);
 
         return AjaxResult.success();
     }
