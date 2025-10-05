@@ -42,7 +42,10 @@
         <if test="enterTime != null "> and t.enter_time = #{enterTime}</if>
         <if test="exitTime != null "> and t.exit_time = #{exitTime}</if>
         <if test="trailPoints != null  and trailPoints != ''"> and t.trail_points = #{trailPoints}</if>
-
+        <if test="carNo != null  and carNo != ''"> and t.plate_key = #{carNo} </if>
+        <if test="applyTime1 != null  and applyTime1 != ''">and t.enter_time >= to_timestamp(#{applyTime1},'yyyy-mm-dd HH24:MI:SS')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and t.enter_time <![CDATA[<=]]> to_timestamp(#{applyTime2},'yyyy-mm-dd HH24:MI:SS') </if>
+       order by t.enter_time desc
     </select>
 
     <select id="selectZdataTrailTracksById" parameterType="String" resultMap="ZdataTrailTracksResult">

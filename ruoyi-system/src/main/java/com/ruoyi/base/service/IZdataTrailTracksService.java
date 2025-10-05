@@ -35,7 +35,7 @@ public interface IZdataTrailTracksService extends IService<ZdataTrailTracks> {
      * @param zdataTrailTracks
      * @return
      */
-    List<TrailInfo> carTrackQuery(ZdataTrailTracks zdataTrailTracks);
+    List<ZdataTrailTracks> carTrackQuery(ZdataTrailTracks zdataTrailTracks);
 
 
 

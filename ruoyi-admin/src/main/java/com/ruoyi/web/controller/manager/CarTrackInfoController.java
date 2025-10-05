@@ -1,5 +1,7 @@
 package com.ruoyi.web.controller.manager;
 
+import com.alibaba.fastjson2.JSON;
+import com.github.pagehelper.PageInfo;
 import com.ruoyi.base.domain.Geometry;
 import com.ruoyi.base.domain.TrailBo;
 import com.ruoyi.base.domain.TrailInfo;
@@ -8,6 +10,7 @@ import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.IZdataTrailTracksService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.annotation.Log;
+import com.ruoyi.common.constant.HttpStatus;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -76,18 +79,42 @@ public class CarTrackInfoController extends BaseController {
         if (CommonUtil.isBlank(zdataTrailTracks.getCarNo())) {
             zdataTrailTracks.setCarNo("-1");
         }
-        List<TrailInfo> trailList = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
-        for (TrailInfo rtn:trailList){
-            List<TrailBo> josnList = rtn.getTrailList();
-            List<Geometry> raodTrailList = new ArrayList<>();
-            if (null !=josnList && josnList.size() > 0){
-                List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
-                raodTrailList = geometryService.getListByCode(roadCodeList);
+        List<ZdataTrailTracks> carlist = zdataTrailTracksService.selectZdataTrailTracksList(zdataTrailTracks);
+
+        List<TrailInfo> rtnList = new ArrayList<>();
+        if (null != carlist && carlist.size() > 0) {
+            for (ZdataTrailTracks tracksBo : carlist) {
+                String keyValue = tracksBo.getTrailPoints(); // 行驶轨迹
+                List<TrailBo> josnList = new ArrayList<TrailBo>();
+                if (CommonUtil.isNotBlank(keyValue)) {
+                    josnList = JSON.parseArray(keyValue, TrailBo.class);
+                    tracksBo.setTrailPoints("");  // 行驶轨迹
+                    String carNo =CommonUtil.isNull(tracksBo.getPlateKey());
+                    TrailInfo trailInfo = new TrailInfo();
+                    trailInfo.setTrailUuid(carNo);
+                    trailInfo.setTracks(tracksBo);
+                    trailInfo.setTrailList(josnList);
+
+                    List<Geometry> raodTrailList = new ArrayList<>();
+                    if (null !=josnList && josnList.size() > 0){
+                        List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
+                        raodTrailList = geometryService.getListByCode(roadCodeList);
+                    }
+                    trailInfo.setRaodTrailList(raodTrailList);
+
+                    rtnList.add(trailInfo);
+                }
             }
-            rtn.setRaodTrailList(raodTrailList);
         }
 
-        return getDataTable(trailList);
+        TableDataInfo rspData = new TableDataInfo();
+        rspData.setCode(HttpStatus.SUCCESS);
+        rspData.setMsg("查询成功");
+        rspData.setRows(rtnList);
+        rspData.setTotal(new PageInfo(carlist).getTotal());
+        return rspData;
+
+
     }
 
 
@@ -100,17 +127,39 @@ public class CarTrackInfoController extends BaseController {
     @GetMapping("/listByCarByTime")
     public TableDataInfo listByCarByTime(ZdataTrailTracks zdataTrailTracks) {
         startPage();
-        List<TrailInfo> trailList = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
-        for (TrailInfo rtn:trailList){
-            List<TrailBo> josnList = rtn.getTrailList();
-            List<Geometry> raodTrailList = new ArrayList<>();
-            if (null !=josnList && josnList.size() > 0){
-                List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
-                raodTrailList = geometryService.getListByCode(roadCodeList);
+        List<ZdataTrailTracks> carlist = zdataTrailTracksService.selectZdataTrailTracksList(zdataTrailTracks);
+        List<TrailInfo> rtnList = new ArrayList<>();
+        if (null != carlist && carlist.size() > 0) {
+            for (ZdataTrailTracks tracksBo : carlist) {
+                String keyValue = tracksBo.getTrailPoints(); // 行驶轨迹
+                List<TrailBo> josnList = new ArrayList<TrailBo>();
+                if (CommonUtil.isNotBlank(keyValue)) {
+                    josnList = JSON.parseArray(keyValue, TrailBo.class);
+                    tracksBo.setTrailPoints("");  // 行驶轨迹
+                    String carNo =CommonUtil.isNull(tracksBo.getPlateKey());
+                    TrailInfo trailInfo = new TrailInfo();
+                    trailInfo.setTrailUuid(carNo);
+                    trailInfo.setTracks(tracksBo);
+                    trailInfo.setTrailList(josnList);
+
+                    List<Geometry> raodTrailList = new ArrayList<>();
+                    if (null !=josnList && josnList.size() > 0){
+                        List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
+                        raodTrailList = geometryService.getListByCode(roadCodeList);
+                    }
+                    trailInfo.setRaodTrailList(raodTrailList);
+
+                    rtnList.add(trailInfo);
+                }
             }
-            rtn.setRaodTrailList(raodTrailList);
         }
-        return getDataTable(trailList);
+
+        TableDataInfo rspData = new TableDataInfo();
+        rspData.setCode(HttpStatus.SUCCESS);
+        rspData.setMsg("查询成功");
+        rspData.setRows(rtnList);
+        rspData.setTotal(new PageInfo(carlist).getTotal());
+        return rspData;
     }
 
 
