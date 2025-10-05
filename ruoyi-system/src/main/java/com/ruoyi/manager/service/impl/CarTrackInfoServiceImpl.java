@@ -228,7 +228,6 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         car.setStatus("0");
                         car.setTrackJosn(null);
                     }else{
-
                         // 车的状态修改更新为 status 1  经纬度 last_pass_longitude  last_pass_latitude  josn字符串要更新 track_id track_josn
                         // 车的门架 路段 等数据--------------
                         // 同事要跟新车俩预警  car_warning_info
