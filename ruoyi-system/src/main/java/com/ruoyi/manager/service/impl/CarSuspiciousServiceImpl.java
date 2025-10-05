@@ -378,14 +378,11 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
         // 从redis拿
         Map<ZdataTrailTracks, List<TrailBo>> mapCar = new HashMap<>();
-
-
         Date now = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         String formattedDate = sdf.format(now);
 
         Collection<String> keys = redisCache.keys(Constants.car_uspicious + formattedDate + "*");
-
         if (null != keys && keys.size() > 0){
             for (String key : keys) {
                 TrailInfo trailInfo = redisCache.getCacheObject(key);
@@ -393,17 +390,9 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             }
         }
 
-
-
-
-
-
-
-
-
+        // 轨迹新增或者修改
         List<CarSuspicious>  carSuspiciousListAdd = new ArrayList<>();
         List<CarSuspicious>  carSuspiciousListUpdate = new ArrayList<>();
-
 
         // 车牌颜色
         Map<String,String> plateColorMap = sysDictDataService.selectDictDataLaleMap("plate_color");
