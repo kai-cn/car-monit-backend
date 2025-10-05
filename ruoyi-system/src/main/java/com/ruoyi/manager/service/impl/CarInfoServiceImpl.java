@@ -319,9 +319,8 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
             tempVO.setCarId(rtn.getId());
             tempVO.setCarNo(rtn.getCarNo());
             carVOList.add(tempVO);
-            redisCache.setCacheObject(Constants.car_list_jc, list);
         }
-
+        redisCache.setCacheObject(Constants.car_list_jc, carVOList);
         redisCache.setCacheObject(Constants.car_list, list);
     }
 
