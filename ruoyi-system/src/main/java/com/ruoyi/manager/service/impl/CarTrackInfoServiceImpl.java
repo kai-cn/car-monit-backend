@@ -4,13 +4,11 @@ package com.ruoyi.manager.service.impl;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.ruoyi.base.domain.CarParaVO;
-import com.ruoyi.base.domain.CarVO;
-import com.ruoyi.base.domain.TrailBo;
-import com.ruoyi.base.domain.ZdataTrailTracks;
+import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.manager.domain.CarInfo;
@@ -56,6 +54,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
     @Value("${isLocalhost}")
     private String isLocalhost;
+
+    @Autowired
+    private RedisCache redisCache;
 
     /**
      * 查询车辆行驶轨迹
@@ -154,22 +155,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         // 查询所有的车俩
         List<CarInfo> carList = carInfoService.getRedisCarList();
 
-        Map<String,CarInfo> carMap = new HashMap<>();
-        List<CarVO> carVOList = new ArrayList<>();
-        for (CarInfo rtn : carList) {
-            CarVO tempVO = new CarVO();
-            tempVO.setCarId(rtn.getId());
-            tempVO.setCarNo(rtn.getCarNo());
-            carVOList.add(tempVO);
-            carMap.put(rtn.getCarNo(),rtn);
-        }
-        CarParaVO carParaVO = new CarParaVO();
-        carParaVO.setCarlist(carVOList);
-
         List<CarInfo> updatalist = new ArrayList<CarInfo>();
-
-        // 调用接口
-        Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncTrack(carParaVO);
 
         // 新增的预警
         List<CarWarningInfo> addCarWarningInfoList = new ArrayList<>();
@@ -184,18 +170,18 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             isZxFlag = false;  // 本地不执行
         }
 
+        for (CarInfo vo : carList) {
+            String carNo = CommonUtil.isNull(vo.getCarNo());
+            String key = Constants.car_curent_trail + carNo;
+            TrailInfo trailInfo = redisCache.getCacheObject(key);
 
-        for (Map.Entry<String, List<TrailBo>> entry : mapCar.entrySet()) {
-            String jsonObject = entry.getKey();
-            ZdataTrailTracks tracksBo = JSONObject.parseObject(jsonObject, ZdataTrailTracks.class);
-            String carNo = CommonUtil.isNull(tracksBo.getPlateKey());
-            if (carMap.containsKey(carNo)){
-                CarInfo vo = carMap.get(carNo);
-                CarInfo car = new CarInfo();
-                car.setId(vo.getId());
-                List<TrailBo> josnList = entry.getValue();
+            CarInfo car = new CarInfo();
+            car.setId(vo.getId());
+
+            if (null != trailInfo){
+                ZdataTrailTracks tracksBo = trailInfo.getTracks();
+                List<TrailBo> josnList = trailInfo.getTrailList();
                 if (null != josnList && josnList.size() > 0) {
-
                     List<TrailBo> stationList = new ArrayList<TrailBo>(); // 收费站
                     // 在线增加判断是否有出的话 true=进入，false=驶出 directionIn
                     for (TrailBo trailBo : josnList) {
@@ -218,8 +204,6 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         }
                     }
 
-
-
                     //  收费站---------------
                     Boolean inFlag = false;
                     Boolean outFlag = false;
@@ -238,9 +222,6 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
                         }
                     }
-
-
-
 
                     if (inFlag && outFlag && isZxFlag){
                         // 跟新车俩-----------------------  车的状态修改status 0
@@ -312,19 +293,16 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         }
                         car.setGantryCode(CommonUtil.deleteEnd(devCodes));
                     }
-
-
-
-
-
-
-
-
                 }else{
                     // 跟新车俩-----------------------  车的状态修改status 0
                     car.setStatus("0");
                     car.setTrackJosn(null);
                 }
+                updatalist.add(car);
+            }else{
+                // 跟新车俩-----------------------  车的状态修改status 0
+                car.setStatus("0");
+                car.setTrackJosn(null);
                 updatalist.add(car);
             }
         }
