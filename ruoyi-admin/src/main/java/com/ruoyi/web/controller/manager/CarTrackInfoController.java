@@ -1,7 +1,9 @@
 package com.ruoyi.web.controller.manager;
 
-import com.alibaba.fastjson2.JSONObject;
-import com.ruoyi.base.domain.*;
+import com.ruoyi.base.domain.CarParaVO;
+import com.ruoyi.base.domain.Geometry;
+import com.ruoyi.base.domain.TrailBo;
+import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.annotation.Log;
@@ -11,7 +13,6 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.poi.ExcelUtil;
-import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.CarTrackInfo;
 import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
@@ -22,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -92,34 +92,21 @@ public class CarTrackInfoController extends BaseController {
         carParaVO.setPageNum(carTrackInfo.getPageNum());
         carParaVO.setPageSize(carTrackInfo.getPageSize());
 
+        TableDataInfo tableDataInfo = httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
 
-        Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
-
-        List<TrailInfo> trailList = new ArrayList<>();
-        for (Map.Entry<String, List<TrailBo>> entry : caMap.entrySet()) {
-            String jsonObject = entry.getKey();
-            ZdataTrailTracks tracksBo = JSONObject.parseObject(jsonObject, ZdataTrailTracks.class);
-            String carNo =CommonUtil.isNull(tracksBo.getPlateKey());
-            List<TrailBo> josnList = entry.getValue();
+        List<TrailInfo> trailList = (List<TrailInfo>) tableDataInfo.getRows();
+        for (TrailInfo rtn:trailList){
+            List<TrailBo> josnList = rtn.getTrailList();
 
             List<Geometry> raodTrailList = new ArrayList<>();
             if (null !=josnList && josnList.size() > 0){
                 List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
                 raodTrailList = geometryService.getListByCode(roadCodeList);
             }
-
-
-            TrailInfo trailInfo = new TrailInfo();
-            trailInfo.setTrailUuid(carNo);
-            trailInfo.setTracks(tracksBo);
-            trailInfo.setTrailList(josnList);
-            trailInfo.setRaodTrailList(raodTrailList);
-
-            trailList.add(trailInfo);
+            rtn.setRaodTrailList(raodTrailList);
         }
 
-        return getDataTable(trailList);
-
+        return tableDataInfo;
     }
 
 
@@ -132,7 +119,6 @@ public class CarTrackInfoController extends BaseController {
     @GetMapping("/listByCarByTime")
     public TableDataInfo listByCarByTime(CarTrackInfo carTrackInfo) {
 
-
         // 当前页面
         if (null == carTrackInfo.getPageNum()){
             carTrackInfo.setPageNum(1);
@@ -142,51 +128,33 @@ public class CarTrackInfoController extends BaseController {
             carTrackInfo.setPageSize(10);
         }
 
-        // 查询所有的车俩
-        List<CarInfo> carList = carInfoService.getRedisCarList();
-        List<CarVO> carVOList = new ArrayList<>();
-        for (CarInfo rtn : carList) {
-            CarVO tempVO = new CarVO();
-            tempVO.setCarId(rtn.getId());
-            tempVO.setCarNo(rtn.getCarNo());
-            carVOList.add(tempVO);
-        }
+        // ----------查询自己的表
+          /* List<CarTrackInfo> list = carTrackInfoService.selectCarTrackInfoList(carTrackInfo);
+        return AjaxResult.success(list);*/
+
         // ---------- 查询接口
         CarParaVO carParaVO = new CarParaVO();
-        carParaVO.setCarlist(carVOList);
-
         carParaVO.setCarNo(carTrackInfo.getCarNo()); // 车牌号
         carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
         carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
         carParaVO.setPageNum(carTrackInfo.getPageNum());
         carParaVO.setPageSize(carTrackInfo.getPageSize());
-        Map<String, List<TrailBo>> caMap =  httpSysUtilApiService.carTrackQueryByTime(carParaVO);
 
+        TableDataInfo tableDataInfo = httpSysUtilApiService.carTrackQueryByTime(carParaVO);
 
-        List<TrailInfo> trailList = new ArrayList<>();
-        for (Map.Entry<String, List<TrailBo>> entry : caMap.entrySet()) {
-            String jsonObject = entry.getKey();
-            ZdataTrailTracks tracksBo = JSONObject.parseObject(jsonObject, ZdataTrailTracks.class);
-            String carNo =CommonUtil.isNull(tracksBo.getPlateKey());
-            List<TrailBo> josnList = entry.getValue();
+        List<TrailInfo> trailList = (List<TrailInfo>) tableDataInfo.getRows();
+        for (TrailInfo rtn:trailList){
+            List<TrailBo> josnList = rtn.getTrailList();
 
             List<Geometry> raodTrailList = new ArrayList<>();
             if (null !=josnList && josnList.size() > 0){
                 List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
                 raodTrailList = geometryService.getListByCode(roadCodeList);
             }
-
-
-            TrailInfo trailInfo = new TrailInfo();
-            trailInfo.setTrailUuid(carNo);
-            trailInfo.setTracks(tracksBo);
-            trailInfo.setTrailList(josnList);
-            trailInfo.setRaodTrailList(raodTrailList);
-
-            trailList.add(trailInfo);
+            rtn.setRaodTrailList(raodTrailList);
         }
 
-        return getDataTable(trailList);
+        return tableDataInfo;
 
 
     }
