@@ -79,7 +79,7 @@ public class CarTrackInfoController extends BaseController {
         if (CommonUtil.isBlank(zdataTrailTracks.getCarNo())) {
             zdataTrailTracks.setCarNo("-1");
         }
-        List<ZdataTrailTracks> carlist = zdataTrailTracksService.selectZdataTrailTracksList(zdataTrailTracks);
+        List<ZdataTrailTracks> carlist = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
 
         List<TrailInfo> rtnList = new ArrayList<>();
         if (null != carlist && carlist.size() > 0) {
@@ -127,7 +127,7 @@ public class CarTrackInfoController extends BaseController {
     @GetMapping("/listByCarByTime")
     public TableDataInfo listByCarByTime(ZdataTrailTracks zdataTrailTracks) {
         startPage();
-        List<ZdataTrailTracks> carlist = zdataTrailTracksService.selectZdataTrailTracksList(zdataTrailTracks);
+        List<ZdataTrailTracks> carlist = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
         List<TrailInfo> rtnList = new ArrayList<>();
         if (null != carlist && carlist.size() > 0) {
             for (ZdataTrailTracks tracksBo : carlist) {

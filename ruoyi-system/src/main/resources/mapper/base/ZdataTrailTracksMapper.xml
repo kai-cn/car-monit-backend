@@ -43,8 +43,8 @@
         <if test="exitTime != null "> and t.exit_time = #{exitTime}</if>
         <if test="trailPoints != null  and trailPoints != ''"> and t.trail_points = #{trailPoints}</if>
         <if test="carNo != null  and carNo != ''"> and t.plate_key = #{carNo} </if>
-        <if test="applyTime1 != null  and applyTime1 != ''">and t.enter_time >= to_timestamp(#{applyTime1},'yyyy-mm-dd HH24:MI:SS')</if>
-        <if test="applyTime2 != null  and applyTime2 != ''">and t.enter_time <![CDATA[<=]]> to_timestamp(#{applyTime2},'yyyy-mm-dd HH24:MI:SS') </if>
+        <if test="applyTime1 != null  and applyTime1 != ''">and t.enter_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and t.enter_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
        order by t.enter_time desc
     </select>
 
@@ -63,8 +63,8 @@
         from zdata_trail_tracks t
         <where>
             <if test="carNo != null  and carNo != ''"> and t.plate_key = #{carNo} </if>
-            <if test="applyTime1 != null  and applyTime1 != ''">and t.enter_time >= to_timestamp(#{applyTime1},'yyyy-mm-dd HH24:MI:SS')</if>
-            <if test="applyTime2 != null  and applyTime2 != ''">and t.enter_time <![CDATA[<=]]> to_timestamp(#{applyTime2},'yyyy-mm-dd HH24:MI:SS') </if>
+            <if test="applyTime1 != null  and applyTime1 != ''">and t.enter_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+            <if test="applyTime2 != null  and applyTime2 != ''">and t.enter_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
         </where>
         ) k where k.rid = 1
     </select>
