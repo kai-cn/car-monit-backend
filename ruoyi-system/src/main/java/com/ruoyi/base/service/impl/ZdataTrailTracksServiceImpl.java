@@ -2,7 +2,6 @@ package com.ruoyi.base.service.impl;
 
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.ruoyi.base.domain.CarParaVO;
 import com.ruoyi.base.domain.TrailBo;
 import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.base.domain.ZdataTrailTracks;
@@ -51,12 +50,12 @@ public class ZdataTrailTracksServiceImpl extends ServiceImpl<ZdataTrailTracksMap
 
     /**
      * 查询车俩历史记录
-     * @param carParaVO
+     * @param zdataTrailTracks
      * @return
      */
     @Override
-    public List<TrailInfo> carTrackQuery(CarParaVO carParaVO) {
-        List<ZdataTrailTracks> carlist = zdataTrailTracksMapper.getHistoryTrail(carParaVO);
+    public List<TrailInfo> carTrackQuery(ZdataTrailTracks zdataTrailTracks) {
+        List<ZdataTrailTracks> carlist = zdataTrailTracksMapper.getHistoryTrail(zdataTrailTracks);
         List<TrailInfo> rtnList = new ArrayList<>();
         if (null != carlist && carlist.size() > 0) {
             for (ZdataTrailTracks tracksBo : carlist) {

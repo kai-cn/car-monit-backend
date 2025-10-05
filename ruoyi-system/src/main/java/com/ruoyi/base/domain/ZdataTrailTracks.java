@@ -125,6 +125,13 @@ public class ZdataTrailTracks implements Custom {
     private String escapedTypeRemark;
 
 
+    /** 申请时间1 */
+    @TableField(exist = false)
+    private String applyTime1;
+
+    /** 申请时间2 */
+    @TableField(exist = false)
+    private String applyTime2;
 
 
 }

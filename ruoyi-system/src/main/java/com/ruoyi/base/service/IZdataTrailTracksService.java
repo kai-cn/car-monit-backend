@@ -1,7 +1,6 @@
 package com.ruoyi.base.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.ruoyi.base.domain.CarParaVO;
 import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.base.domain.ZdataTrailTracks;
 
@@ -33,10 +32,10 @@ public interface IZdataTrailTracksService extends IService<ZdataTrailTracks> {
 
     /**
      * 轨迹查询
-     * @param carParaVO
+     * @param zdataTrailTracks
      * @return
      */
-    List<TrailInfo> carTrackQuery(CarParaVO carParaVO);
+    List<TrailInfo> carTrackQuery(ZdataTrailTracks zdataTrailTracks);
 
 
 

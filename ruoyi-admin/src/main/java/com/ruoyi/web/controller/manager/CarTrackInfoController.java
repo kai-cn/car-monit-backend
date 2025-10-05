@@ -1,9 +1,9 @@
 package com.ruoyi.web.controller.manager;
 
-import com.ruoyi.base.domain.CarParaVO;
 import com.ruoyi.base.domain.Geometry;
 import com.ruoyi.base.domain.TrailBo;
 import com.ruoyi.base.domain.TrailInfo;
+import com.ruoyi.base.domain.ZdataTrailTracks;
 import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.IZdataTrailTracksService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
@@ -67,27 +67,16 @@ public class CarTrackInfoController extends BaseController {
     /**
      * 车俩历史轨迹 ：根据车牌号查询
      *
-     * @param carTrackInfo
+     * @param zdataTrailTracks
      * @return
      */
     @GetMapping("/listByCarId")
-    public TableDataInfo listByCarId(CarTrackInfo carTrackInfo) {
-
+    public TableDataInfo listByCarId(ZdataTrailTracks zdataTrailTracks) {
         startPage();
-
-        if (CommonUtil.isBlank(carTrackInfo.getCarNo())) {
-            carTrackInfo.setCarNo("-1");
+        if (CommonUtil.isBlank(zdataTrailTracks.getCarNo())) {
+            zdataTrailTracks.setCarNo("-1");
         }
-
-        // ---------- 查询接口
-        CarParaVO carParaVO = new CarParaVO();
-        carParaVO.setCarNo(carTrackInfo.getCarNo()); // 车牌号
-        carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
-        carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
-        carParaVO.setPageNum(carTrackInfo.getPageNum());
-        carParaVO.setPageSize(carTrackInfo.getPageSize());
-
-        List<TrailInfo> trailList = zdataTrailTracksService.carTrackQuery(carParaVO);
+        List<TrailInfo> trailList = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
         for (TrailInfo rtn:trailList){
             List<TrailBo> josnList = rtn.getTrailList();
             List<Geometry> raodTrailList = new ArrayList<>();
@@ -105,23 +94,13 @@ public class CarTrackInfoController extends BaseController {
     /**
      * 车俩历史轨迹 ：根据时间查询
      *
-     * @param carTrackInfo
+     * @param zdataTrailTracks
      * @return
      */
     @GetMapping("/listByCarByTime")
-    public TableDataInfo listByCarByTime(CarTrackInfo carTrackInfo) {
-
+    public TableDataInfo listByCarByTime(ZdataTrailTracks zdataTrailTracks) {
         startPage();
-
-        // ---------- 查询接口
-        CarParaVO carParaVO = new CarParaVO();
-        carParaVO.setCarNo(carTrackInfo.getCarNo()); // 车牌号
-        carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
-        carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
-        carParaVO.setPageNum(carTrackInfo.getPageNum());
-        carParaVO.setPageSize(carTrackInfo.getPageSize());
-
-        List<TrailInfo> trailList = zdataTrailTracksService.carTrackQuery(carParaVO);
+        List<TrailInfo> trailList = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
         for (TrailInfo rtn:trailList){
             List<TrailBo> josnList = rtn.getTrailList();
             List<Geometry> raodTrailList = new ArrayList<>();
@@ -131,10 +110,7 @@ public class CarTrackInfoController extends BaseController {
             }
             rtn.setRaodTrailList(raodTrailList);
         }
-
         return getDataTable(trailList);
-
-
     }
 
 
