@@ -1,7 +1,6 @@
 package com.ruoyi.manager.service.impl;
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.CarVO;
 import com.ruoyi.base.domain.Geometry;
@@ -66,8 +65,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
             if (CommonUtil.isNull(car.getStatus()).equals("1")) {
                 String trackJosn = car.getTrackJosn();
                 if (CommonUtil.isNotBlank(trackJosn)) {
-                    JSONArray array = JSON.parseArray(trackJosn);
-                    carTrailList = array.toList(TrailBo.class);
+                    carTrailList = JSON.parseArray(trackJosn, TrailBo.class);
                     List<String> roadCodeList = carTrailList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
                     raodTrailList = geometryService.getListByCode(roadCodeList);
                 }
