@@ -15,10 +15,7 @@ import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.manager.domain.*;
 import com.ruoyi.manager.mapper.CarInfoMapper;
 import com.ruoyi.manager.mapper.CarSuspiciousMapper;
-import com.ruoyi.manager.service.ICarExceptRecordService;
-import com.ruoyi.manager.service.ICarSuspiciousCheckService;
-import com.ruoyi.manager.service.ICarSuspiciousService;
-import com.ruoyi.manager.service.ICarWhiteInfoService;
+import com.ruoyi.manager.service.*;
 import com.ruoyi.system.service.ISysDictDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -65,6 +62,9 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
     @Autowired
     private IGeometryService geometryService;
+
+    @Autowired
+    private ICarInfoService carInfoService;
 
     /**
      * 查询可疑车辆
@@ -340,7 +340,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         updatebo.setExceptFileIds(carSuspicious.getExceptFileIds());
 
         updatebo.setPlateColor(carSuspicious.getPlateColor());
-        updatebo.setCarNo(CommonUtil.isNull(carSuspicious.getCarNo()));
+        updatebo.setCarNo(carNo);
         updatebo.setCarType(carSuspicious.getCarType());
         updatebo.setCarVehicle(carSuspicious.getCarVehicle());
         updatebo.setCarNum(carSuspicious.getCarNum());
@@ -354,9 +354,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         carSuspiciousMapper.updateById(updatebo);
 
         // 跟新重点车俩库
-        CarInfo carInfoQuery = new CarInfo();
-        List<CarInfo> list = carInfoMapper.selectCarInfoList(carInfoQuery);
-        redisCache.setCacheObject(Constants.car_list, list);
+        carInfoService.updateRedisCarList();
 
         return AjaxResult.success("操作成功！",carSuspicious.getId());
     }
