@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -99,9 +100,11 @@ public class CarTrackInfoController extends BaseController {
         TableDataInfo tableDataInfo = httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
 
         List<TrailInfo> trailList = new ArrayList<>();
-        if(null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0){
+        if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
             String trackJosn =JSON.toJSONString(tableDataInfo.getRows());
-            trailList = JSON.parseArray(trackJosn, TrailInfo.class); ;
+            trailList = JSON.parseArray(trackJosn, TrailInfo.class);
+            trailList = trailList.stream().sorted(Comparator.comparing(TrailInfo::getEnterTime).reversed())
+                    .collect(Collectors.toList());
             for (TrailInfo rtn:trailList){
                 List<TrailBo> josnList = rtn.getTrailList();
 
@@ -192,9 +195,11 @@ public class CarTrackInfoController extends BaseController {
         TableDataInfo tableDataInfo = httpSysUtilApiService.carTrackQueryByTime(carParaVO);
 
         List<TrailInfo> trailList = new ArrayList<>();
-        if(null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0){
+        if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
             String trackJosn =JSON.toJSONString(tableDataInfo.getRows());
-            trailList = JSON.parseArray(trackJosn, TrailInfo.class); ;
+            trailList = JSON.parseArray(trackJosn, TrailInfo.class);
+            trailList = trailList.stream().sorted(Comparator.comparing(TrailInfo::getEnterTime).reversed())
+                    .collect(Collectors.toList());
             for (TrailInfo rtn:trailList){
                 List<TrailBo> josnList = rtn.getTrailList();
 
