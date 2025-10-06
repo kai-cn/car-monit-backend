@@ -4,6 +4,7 @@ package com.ruoyi.base.service.forest;
 import com.dtflys.forest.annotation.BaseRequest;
 import com.dtflys.forest.annotation.Get;
 import com.dtflys.forest.annotation.JSONBody;
+import com.dtflys.forest.annotation.Query;
 import com.ruoyi.base.domain.CarParaVO;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -31,7 +32,7 @@ public interface HttpSysUtilApiService {
      * @return
      */
     @Get("/carTrackQueryByCarNo")
-    TableDataInfo carTrackQueryByCarNo(@JSONBody CarParaVO carParaVO);
+    TableDataInfo carTrackQueryByCarNo(@Query CarParaVO carParaVO);
 
 
     /**
@@ -40,7 +41,7 @@ public interface HttpSysUtilApiService {
      * @return
      */
     @Get("/carTrackQueryByTime")
-    TableDataInfo  carTrackQueryByTime(@JSONBody CarParaVO carParaVO);
+    TableDataInfo carTrackQueryByTime(@Query CarParaVO carParaVO);
 
 
 
