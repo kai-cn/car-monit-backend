@@ -61,11 +61,10 @@
         (select t.uuid,t.point_count,t.plate_key,t.trail_points,t.enter_time,t.exit_time,t.enter_locationcode,t.exit_locationcode,t.track_josn,
         ROW_NUMBER() OVER (PARTITION BY t.uuid ORDER BY t.point_count desc )  rid
         from zdata_trail_tracks t
-        <where>
-            <if test="carNo != null  and carNo != ''"> and t.plate_key = #{carNo} </if>
-            <if test="applyTime1 != null  and applyTime1 != ''">and t.enter_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
-            <if test="applyTime2 != null  and applyTime2 != ''">and t.enter_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
-        </where>
+        where exists (select  1 from car_info car where car.del_flag = '0' and car.car_no = t.plate_key )
+        <if test="carNo != null  and carNo != ''"> and t.plate_key = #{carNo} </if>
+        <if test="applyTime1 != null  and applyTime1 != ''">and t.enter_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and t.enter_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
         ) k where k.rid = 1
     </select>
 
