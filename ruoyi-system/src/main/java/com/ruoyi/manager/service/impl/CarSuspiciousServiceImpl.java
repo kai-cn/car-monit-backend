@@ -224,7 +224,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
 
         // 车辆信息：根据车牌号查询
-        String carNo = CommonUtil.isNull(rtnVo.getCarNo()); // 车牌号
+        String carNo = CommonUtil.isNull(carSuspicious.getCarNo()); // 车牌号
 
         List<CarSuspiciousCheck> checkList = carSuspicious.getCheckList();
         if("1".equals(CommonUtil.isNull(carSuspicious.getIsExcept()))){
@@ -279,11 +279,11 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                 addCarInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
 
                 addCarInfo.setCarNo(carNo);
-                addCarInfo.setCarType(rtnVo.getCarType());
-                addCarInfo.setCarNum(rtnVo.getCarNum());
-                addCarInfo.setCarVehicle(rtnVo.getCarVehicle());
-                addCarInfo.setPlateColor(rtnVo.getPlateColor());
-                addCarInfo.setEscapedType(escapedType);
+                addCarInfo.setCarType(carSuspicious.getCarType());
+                addCarInfo.setCarNum(carSuspicious.getCarNum());
+                addCarInfo.setCarVehicle(carSuspicious.getCarVehicle());
+                addCarInfo.setPlateColor(carSuspicious.getPlateColor());
+                addCarInfo.setEscapedType(carSuspicious.getEscapedType());
                 addCarInfo.setEscapedAmount(escapedAmount);
 
                 carInfoMapper.insert(addCarInfo);
@@ -302,9 +302,10 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                 CarExceptRecord carExceptRecord = new CarExceptRecord();
                 carExceptRecord.setCarId(carId);
                 carExceptRecord.setCarNo(carNo);
-                carExceptRecord.setCarType(rtnVo.getCarType());
-                carExceptRecord.setCarVehicle(rtnVo.getCarVehicle());
-                carExceptRecord.setCarNum(rtnVo.getCarNum());
+                carExceptRecord.setCarType(carSuspicious.getCarType());
+                carExceptRecord.setCarVehicle(carSuspicious.getCarVehicle());
+                carExceptRecord.setCarNum(carSuspicious.getCarNum());
+
                 carExceptRecord.setPassType(rtnVo.getPassType());
                 carExceptRecord.setInStationId(rtnVo.getInStationId());
                 carExceptRecord.setInStation(rtnVo.getInStation());
@@ -337,10 +338,18 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         updatebo.setIsExcept(carSuspicious.getIsExcept());
         updatebo.setExceptRemark(carSuspicious.getExceptRemark());
         updatebo.setExceptFileIds(carSuspicious.getExceptFileIds());
-        // updatebo.setEscapedType(escapedType);
+
+        updatebo.setPlateColor(carSuspicious.getPlateColor());
+        updatebo.setCarNo(CommonUtil.isNull(carSuspicious.getCarNo()));
+        updatebo.setCarType(carSuspicious.getCarType());
+        updatebo.setCarVehicle(carSuspicious.getCarVehicle());
+        updatebo.setCarNum(carSuspicious.getCarNum());
+        updatebo.setEscapedType(carSuspicious.getEscapedType());
+        updatebo.setRemark(carSuspicious.getRemark());
+
+        // 车辆相关信息
         if("0".equals(CommonUtil.isNull(carSuspicious.getIsExcept()))){
             updatebo.setExceptFileIds("");
-           //  updatebo.setEscapedType("");
         }
         carSuspiciousMapper.updateById(updatebo);
 
