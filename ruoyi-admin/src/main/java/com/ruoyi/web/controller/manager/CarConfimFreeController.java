@@ -59,38 +59,6 @@ public class CarConfimFreeController extends BaseController {
         return getDataTable(list);
     }
 
-    /**
-     * 待关注车辆
-     */
-    @PreAuthorize("@ss.hasPermi('manager:confimfree:list')")
-    @GetMapping("/concernedList")
-    public TableDataInfo concernedList(CarConfimFree carConfimFree) {
-        startPage();
-        List<CarConfimFree> list = carConfimFreeService.selectCarConfimFreeList(carConfimFree);
-        return getDataTable(list);
-    }
-
-    @GetMapping(value = "/exportConcernedList")
-    public AjaxResult exportConcernedList(CarConfimFree carConfimFree, HttpServletResponse response) {
-        List<CarConfimFree> list = carConfimFreeService.selectCarConfimFreeList(carConfimFree);
-        Map<String,Object> map = new HashMap<>();
-        map.put("entitylist",list);
-        try {
-            String url = "templates/export/concernedList.xlsx";
-            TemplateExportParams params = new TemplateExportParams(url);
-            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
-            response.setContentType("application/octet-stream;charset=UTF-8");
-            response.setHeader("Content-Disposition", "attachment");
-            OutputStream outs = response.getOutputStream();
-            workbook.write(outs);
-            outs.flush();
-            outs.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
 
     /**
      * 查询确认补缴列表:根据车牌号查询
@@ -198,6 +166,52 @@ public class CarConfimFreeController extends BaseController {
         return carConfimFreeService.selectCarConfimFreeByExceptIds(exceptIds);
     }
 
+    /**
+     * 待关注车辆
+     */
+    @PreAuthorize("@ss.hasPermi('manager:confimfree:list')")
+    @GetMapping("/concernedList")
+    public TableDataInfo concernedList(CarConfimFree carConfimFree) {
+        startPage();
+        List<CarConfimFree> list = carConfimFreeService.selectConcernedList(carConfimFree);
+        return getDataTable(list);
+    }
+
+    /**
+     * 待关注车辆导出
+     */
+    @GetMapping(value = "/exportConcernedList")
+    public AjaxResult exportConcernedList(CarConfimFree carConfimFree, HttpServletResponse response) {
+        List<CarConfimFree> list = carConfimFreeService.selectConcernedList(carConfimFree);
+        // 车型
+        Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
+        // 车种
+        Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle");
+
+
+        list.stream().forEach(dp -> {
+            dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
+            dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
+        });
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/carConfirm.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 
     /**
      * pc统计
@@ -209,6 +223,9 @@ public class CarConfimFreeController extends BaseController {
         return getDataTable(list);
     }
 
+    /**
+     * pc统计导出
+     */
     @GetMapping(value = "/exportCarStatics")
     public AjaxResult exportCarStatics(CarConfimFreeQueryRo queryRo, HttpServletResponse response) {
         List<PCCarStatisticsVO> list = carConfimFreeService.getPCCarStatistics(queryRo);

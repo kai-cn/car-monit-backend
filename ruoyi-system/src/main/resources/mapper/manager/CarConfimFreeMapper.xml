@@ -149,21 +149,45 @@
     </select>
 
     <select id="selectConcernedList" resultType="com.ruoyi.manager.domain.CarConfimFree">
-        select c.plate_color, c.car_no, c.car_type, c.car_vehicle, sum(ifnull(amount, 0)) amount,
-               sum(ifnull(aduit_amount, 0)) aduit_amount
-        from car_confim_free cf
-        left join car_info c on c.car_no = cf.car_no
-        where cf.del_flag = '0' and c.del_flag = '0'
+        SELECT
+        t.car_no,
+        t.car_type,
+        t.car_vehicle,
+        t.link_name,
+        t.link_phone,
+        t.org_id,
+        sd.dept_name org_name,
+        round(ifnull(sum(t.amount),0),2) amount,
+        round(ifnull(sum(t.aduit_amount),0),2) aduit_amount
+        FROM car_confim_free t
+        left join sys_dept sd on sd.dept_id = t.org_id
+        WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="carId != null  and carId != ''"> and t.car_id = #{carId}</if>
         <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
         <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
+        <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
+        <if test="linkName != null  and linkName != ''"> and t.link_name like concat('%', #{linkName}, '%')</if>
+        <if test="linkPhone != null  and linkPhone != ''"> and t.link_phone = #{linkPhone}</if>
         <if test="orgId != null  and orgId != ''"> and t.org_id = #{orgId}</if>
         <if test="orgName != null  and orgName != ''"> and sd.dept_name like concat('%', #{orgName}, '%')</if>
+        <if test="userIds != null  and userIds != ''"> and t.user_ids = #{userIds}</if>
+        <if test="userNames != null  and userNames != ''"> and t.user_names = #{userNames}</if>
+        <if test="amount != null "> and t.amount = #{amount}</if>
+        <if test="exceptIds != null  and exceptIds != ''"> and t.except_ids = #{exceptIds}</if>
+        <if test="escapedTypes != null  and escapedTypes != ''"> and t.escaped_types = #{escapedTypes}</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        <if test="exceptIds != null  and exceptIds != ''"> and find_in_set(t.id,#{exceptIds}) > 0 </if>
         <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
         <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')</if>
         <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
-        group by c.plate_color, c.car_no, c.car_type
+        group by  t.car_no,  t.car_type, t.car_vehicle,t.link_name, t.link_phone, t.org_id
     </select>
 
 
