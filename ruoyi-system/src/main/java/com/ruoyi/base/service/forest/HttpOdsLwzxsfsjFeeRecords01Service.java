@@ -15,5 +15,5 @@ public interface HttpOdsLwzxsfsjFeeRecords01Service {
     TableDataInfo getOdsLwzxsfsjFeeRecords01Page(@Query OdsLwzxsfsjFeeRecords01 odsLwzxsfsjFeeRecords01);
 
     @Get("/base/feerecords/{bigId}")
-    JSONObject selectOdsLwzxsfsjFeeRecords01ById(@Var("bigId") String bigId);
+    OdsLwzxsfsjFeeRecords01 selectOdsLwzxsfsjFeeRecords01ById(@Var("bigId") String bigId);
 }
