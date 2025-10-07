@@ -121,7 +121,7 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     private String enlanetype;
 
     /** 进站时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "进站时间", width = 30, dateFormat = "yyyy-MM-dd  HH:mm:ss")
     private Date entime;
 
@@ -222,7 +222,7 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     private String lastgantryhex;
 
     /** 通过上一个门架的时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "通过上一个门架的时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date lastgantrytime;
 
@@ -275,7 +275,7 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     private String obulastgantryhex;
 
     /** OBU中通过上一个门架时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "OBU中通过上一个门架时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date obulastgantrytime;
 
@@ -424,7 +424,7 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     private String readciphertextverify;
 
     /** 接收时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "接收时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date receivetime;
 
@@ -433,22 +433,22 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     private String servicetype;
 
     /** 门架后台入库时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "门架后台入库时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date stationdbtime;
 
     /** 门架后台处理时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "门架后台处理时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date stationdealtime;
 
     /** 门架后台匹配时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "门架后台匹配时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date stationmatchtime;
 
     /** 门架后台去重时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "门架后台去重时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date stationvalidtime;
 
@@ -505,7 +505,7 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     private String transno;
 
     /** 计费交易时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "计费交易时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date transtime;
 
@@ -558,7 +558,7 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     private String verifycode;
 
     /** 加载时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "加载时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date loadTime;
 
