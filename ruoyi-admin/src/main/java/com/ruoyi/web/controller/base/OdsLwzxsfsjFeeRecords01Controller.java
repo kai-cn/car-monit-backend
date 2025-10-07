@@ -44,12 +44,7 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
             odsLwzxsfsjFeeRecords01.setPageSize(10);
         }
 
-        JSONObject jsonObject = odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01Page(odsLwzxsfsjFeeRecords01);
-        if(null == jsonObject || 200 != jsonObject.getInt("code")){
-            logger.error("交易流水数据获取异常：" + jsonObject);
-            throw new ServiceException("获取数据异常,请联系管理员");
-        }
-        return JSONUtil.toBean(jsonObject, TableDataInfo.class);
+        return odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01Page(odsLwzxsfsjFeeRecords01);
     }
 
     /**

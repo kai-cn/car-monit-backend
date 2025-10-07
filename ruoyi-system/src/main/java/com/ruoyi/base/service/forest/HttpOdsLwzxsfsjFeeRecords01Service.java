@@ -6,13 +6,14 @@ import com.dtflys.forest.annotation.Get;
 import com.dtflys.forest.annotation.Query;
 import com.dtflys.forest.annotation.Var;
 import com.ruoyi.base.domain.OdsLwzxsfsjFeeRecords01;
+import com.ruoyi.common.core.page.TableDataInfo;
 
-@BaseRequest(baseURL = "#{vehicleMonitor.baseUrl}/base")
+@BaseRequest(baseURL = "#{vehicleMonitor.baseUrl}")
 public interface HttpOdsLwzxsfsjFeeRecords01Service {
 
-    @Get("/feerecords/list")
-    JSONObject getOdsLwzxsfsjFeeRecords01Page(@Query OdsLwzxsfsjFeeRecords01 odsLwzxsfsjFeeRecords01);
+    @Get("/base/feerecords/list")
+    TableDataInfo getOdsLwzxsfsjFeeRecords01Page(@Query OdsLwzxsfsjFeeRecords01 odsLwzxsfsjFeeRecords01);
 
-    @Get("/feerecords/{bigId}")
+    @Get("/base/feerecords/{bigId}")
     JSONObject selectOdsLwzxsfsjFeeRecords01ById(@Var("bigId") String bigId);
 }
