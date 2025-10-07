@@ -425,112 +425,117 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                         queryBo.setCarNo(carNo);
                         queryBo.setTrackId(trailUUid);
                         List<CarSuspicious> queryList = carSuspiciousMapper.selectCarSuspiciousList(queryBo);
+
+                        String checkStatus = "0";
                         if (null != queryList && queryList.size() > 0) {
                             carSuspicious.setId(queryList.get(0).getId());
+                            checkStatus = CommonUtil.isNull(queryList.get(0).getCheckStatus());
                         }
 
-
-                        carSuspicious.setCarNo(carNo);
                         carSuspicious.setTrackId(trailUUid);
                         carSuspicious.setTrackJosn(JSON.toJSON(josnList)+"");
 
+                        if (checkStatus.equals("1")){
+                            // 是否核实
+                        }else{
+                            carSuspicious.setCarNo(carNo);
+                            carSuspicious.setPlateColor(CommonUtil.isNull(plateColorMap.get(tracksBo.getPlateColor()))); // 车牌颜色
+                            carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(tracksBo.getCarType()))); // 车型
+                            carSuspicious.setCarNum(tracksBo.getCarNum()); // 轴数
+                            carSuspicious.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(tracksBo.getCarVehicle()))); // 车种
 
-                        carSuspicious.setPlateColor(CommonUtil.isNull(plateColorMap.get(tracksBo.getPlateColor()))); // 车牌颜色
-                        carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(tracksBo.getCarType()))); // 车型
-                        carSuspicious.setCarNum(tracksBo.getCarNum()); // 轴数
-                        carSuspicious.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(tracksBo.getCarVehicle()))); // 车种
-
-                        //--------------设置默认值
-                        if (CommonUtil.isBlank(carSuspicious.getPlateColor())){
-                            carSuspicious.setPlateColor("0");
-                        }
-
-                        if (CommonUtil.isBlank(carSuspicious.getCarType())){
-                            carSuspicious.setCarType("0");
-                        }
-
-                        if (CommonUtil.isBlank(carSuspicious.getCarVehicle())){
-                            carSuspicious.setCarVehicle("0");
-                        }
-
-
-                        
-                        List<TrailBo> gantryList = new ArrayList<TrailBo>(); // 门架
-                        List<TrailBo> stationList = new ArrayList<TrailBo>(); // 收费站
-
-                        for (TrailBo trailBo : josnList) {
-                            String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
-                            switch (stateType) {
-                                case Constants.BORDER_WEIGHING_CAPTURE:
-                                    // 省界称重
-                                    break;
-                                case Constants.GANTRY_CAPTURE:
-                                    // 门架抓拍
-                                    gantryList.add(trailBo);
-                                    break;
-                                case Constants.PROV_CAPTURE:
-                                    break;
-                                case Constants.SERVICE_AREA_CAPTURE:
-                                    // 服务区抓拍
-                                    break;
-                                case Constants.STATION_CAPTURE:
-                                    // 收费站抓拍
-                                    stationList.add(trailBo);
-                                    break;
+                            //--------------设置默认值
+                            if (CommonUtil.isBlank(carSuspicious.getPlateColor())){
+                                carSuspicious.setPlateColor("0");
                             }
-                        }
 
-                        //  收费站---------------
-                        for (int i = 0; i < stationList.size(); i++) {
-                            TrailBo trailBo = stationList.get(i);
-                            if (i == 0) {
-                                // 第一个收费站
-                                carSuspicious.setInStationId(trailBo.getDevCode());
-                                carSuspicious.setInStation(trailBo.getDevName());
-                                if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
-                                    carSuspicious.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                            if (CommonUtil.isBlank(carSuspicious.getCarType())){
+                                carSuspicious.setCarType("0");
+                            }
+
+                            if (CommonUtil.isBlank(carSuspicious.getCarVehicle())){
+                                carSuspicious.setCarVehicle("0");
+                            }
+
+
+
+                            List<TrailBo> gantryList = new ArrayList<TrailBo>(); // 门架
+                            List<TrailBo> stationList = new ArrayList<TrailBo>(); // 收费站
+
+                            for (TrailBo trailBo : josnList) {
+                                String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
+                                switch (stateType) {
+                                    case Constants.BORDER_WEIGHING_CAPTURE:
+                                        // 省界称重
+                                        break;
+                                    case Constants.GANTRY_CAPTURE:
+                                        // 门架抓拍
+                                        gantryList.add(trailBo);
+                                        break;
+                                    case Constants.PROV_CAPTURE:
+                                        break;
+                                    case Constants.SERVICE_AREA_CAPTURE:
+                                        // 服务区抓拍
+                                        break;
+                                    case Constants.STATION_CAPTURE:
+                                        // 收费站抓拍
+                                        stationList.add(trailBo);
+                                        break;
                                 }
-                            } else {
-                                // 最后一个收费站
-                                if (i == stationList.size() - 1) {
-                                    carSuspicious.setOutStationId(trailBo.getDevCode());
-                                    carSuspicious.setOutStation(trailBo.getDevName());
+                            }
+
+                            //  收费站---------------
+                            for (int i = 0; i < stationList.size(); i++) {
+                                TrailBo trailBo = stationList.get(i);
+                                if (i == 0) {
+                                    // 第一个收费站
+                                    carSuspicious.setInStationId(trailBo.getDevCode());
+                                    carSuspicious.setInStation(trailBo.getDevName());
                                     if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
-                                        carSuspicious.setOutTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                                        carSuspicious.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                                    }
+                                } else {
+                                    // 最后一个收费站
+                                    if (i == stationList.size() - 1) {
+                                        carSuspicious.setOutStationId(trailBo.getDevCode());
+                                        carSuspicious.setOutStation(trailBo.getDevName());
+                                        if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
+                                            carSuspicious.setOutTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                                        }
                                     }
                                 }
                             }
-                        }
 
 
-                        //  门架 ---------------
-                        for (int i = 0; i < gantryList.size(); i++) {
-                            TrailBo trailBo = gantryList.get(i);
-                            if (i == 0) {
-                                // 第一个门架
-                                carSuspicious.setGantryStationId(trailBo.getDevCode());
-                                carSuspicious.setGantrytStation(trailBo.getDevName());
-                                if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
-                                    carSuspicious.setGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
-                                }
-                            } else {
-                                // 最后一个门架
-                                if (i == gantryList.size() - 1) {
-                                    carSuspicious.setOutGantryStationId(trailBo.getDevCode());
-                                    carSuspicious.setOutGantrytStation(trailBo.getDevName());
+                            //  门架 ---------------
+                            for (int i = 0; i < gantryList.size(); i++) {
+                                TrailBo trailBo = gantryList.get(i);
+                                if (i == 0) {
+                                    // 第一个门架
+                                    carSuspicious.setGantryStationId(trailBo.getDevCode());
+                                    carSuspicious.setGantrytStation(trailBo.getDevName());
                                     if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
-                                        carSuspicious.setOutGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                                        carSuspicious.setGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                                    }
+                                } else {
+                                    // 最后一个门架
+                                    if (i == gantryList.size() - 1) {
+                                        carSuspicious.setOutGantryStationId(trailBo.getDevCode());
+                                        carSuspicious.setOutGantrytStation(trailBo.getDevName());
+                                        if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
+                                            carSuspicious.setOutGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        carSuspicious.setCreateBy(userId); // 创建人
-                        carSuspicious.setCreateTime(DateUtils.getTimestampNew()); // 创建时间
-                        carSuspicious.setUpdateBy(userId); // 更新人
-                        carSuspicious.setUpdateTime(DateUtils.getTimestampNew()); // 更新时间
-                        carSuspicious.setIsExcept("1"); // 默认是可疑车俩
-                        carSuspicious.setStatus("0"); // 是否可以核实标识
+                            carSuspicious.setCreateBy(userId); // 创建人
+                            carSuspicious.setCreateTime(DateUtils.getTimestampNew()); // 创建时间
+                            carSuspicious.setUpdateBy(userId); // 更新人
+                            carSuspicious.setUpdateTime(DateUtils.getTimestampNew()); // 更新时间
+                            carSuspicious.setIsExcept("1"); // 默认是可疑车俩
+                            carSuspicious.setStatus("0"); // 是否可以核实标识
+                        }
 
 
 
