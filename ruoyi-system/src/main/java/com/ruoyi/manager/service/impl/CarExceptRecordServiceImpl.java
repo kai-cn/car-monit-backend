@@ -3,9 +3,11 @@ package com.ruoyi.manager.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.manager.domain.CarConfimFree;
 import com.ruoyi.manager.domain.vo.PCCarStatisticsDetailVO;
 import com.ruoyi.manager.domain.vo.PCCarStatisticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
+import com.ruoyi.manager.mapper.CarConfimFreeMapper;
 import com.ruoyi.manager.mapper.CarExceptRecordMapper;
 import com.ruoyi.manager.domain.CarExceptRecord;
 import com.ruoyi.manager.service.ICarExceptRecordService;
@@ -14,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,6 +33,9 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
 
     @Autowired
     private CarExceptRecordMapper carExceptRecordMapper;
+
+    @Autowired
+    private CarConfimFreeMapper carConfimFreeMapper;
 
     /**
      * 查询异常车辆流水
@@ -88,9 +95,18 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
     public AjaxResult deleteCarExceptRecordByIds(String[] ids)
     {
         // 判断是否有补缴记录----------------
-
-        int count = carExceptRecordMapper.deleteCarExceptRecordByIds(ids);
-
+        int count = 0;
+        if (null != ids && ids.length > 0) {
+            List<String> exceptIdList = new ArrayList<>();
+            for (String str : ids) {
+                exceptIdList.add(str);
+            }
+            List<CarConfimFree> carConfimFreelist = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
+            if (null != carConfimFreelist && carConfimFreelist.size() > 0) {
+                return AjaxResult.error("删除失败，车辆异常流水已补缴！");
+            }
+            count = carExceptRecordMapper.deleteCarExceptRecordByIds(ids);
+        }
 
         return AjaxResult.success(count);
     }
