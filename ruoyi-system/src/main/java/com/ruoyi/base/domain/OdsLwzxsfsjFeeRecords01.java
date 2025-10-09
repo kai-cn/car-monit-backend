@@ -594,4 +594,7 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     @TableField(exist = false)
     private Integer pageSize;
 
+    @TableField(exist = false)
+    private String plateColor;
+
 }
