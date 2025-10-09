@@ -597,4 +597,8 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     @TableField(exist = false)
     private String plateColor;
 
+    /** 门架名称 */
+    @TableField(exist = false)
+    private String gantryName;
+
 }
