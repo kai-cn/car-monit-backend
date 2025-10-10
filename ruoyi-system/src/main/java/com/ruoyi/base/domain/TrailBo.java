@@ -95,4 +95,10 @@ public class TrailBo {
     /** 桩号 */
     private String pileno;
 
+    // 上一个抓拍时间
+    private String preCaptureTime;
+
+    // 数量
+    private Integer countNum;
+
 }

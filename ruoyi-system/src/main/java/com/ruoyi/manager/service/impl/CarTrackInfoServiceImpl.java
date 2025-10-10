@@ -24,10 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 车辆行驶轨迹Service业务层处理
@@ -295,12 +294,21 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                         carWarningInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
                                         carWarningInfo.setUpdateBy(userId); // 更新人
                                         carWarningInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
-
-                                        addCarWarningInfoList.add(carWarningInfo);
-                                        if (CommonUtil.isNotBlank(pointUuid)){
-                                            delCarWarningInfoList.add(pointUuid);
-                                        }
                                         carWarningInfo.setRoadCode(trailBo.getRoadCode()); // 路线
+
+                                        if (CommonUtil.isNotBlank(pointUuid)){
+                                           //  delCarWarningInfoList.add(pointUuid);
+                                            CarWarningInfo queryWarningInfo = new CarWarningInfo();
+                                            queryWarningInfo.setBackCol1(pointUuid);
+                                            List<CarWarningInfo> queryWarninglist = carWarningInfoService.selectCarWarningInfoList(queryWarningInfo);
+                                            if (null !=queryWarninglist && queryWarninglist.size() > 0){
+
+                                            }else{
+                                                addCarWarningInfoList.add(carWarningInfo);
+                                            }
+                                        }else{
+                                            addCarWarningInfoList.add(carWarningInfo);
+                                        }
 
                                     }
                                 }
@@ -333,11 +341,95 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         }
 
         // 生成车俩预警信息
-        if (delCarWarningInfoList.size() > 0) {
+       /*  if (delCarWarningInfoList.size() > 0) {
             carWarningInfoService.deleteCarWarningInfoByUUid(delCarWarningInfoList);
-        }
+        }*/
 
-        if(addCarWarningInfoList.size() > 0){
+        if (addCarWarningInfoList.size() > 0) {
+            // 预计下一个通行时间nextPassTime  预计下一个通行地址 nextPassAddress
+            for (int zz = 0; zz < addCarWarningInfoList.size(); zz++) {
+                if (zz == addCarWarningInfoList.size() - 1) {
+                    CarWarningInfo addbo = addCarWarningInfoList.get(zz);
+                    String pointUuid = CommonUtil.isNull(addbo.getBackCol1());
+                    String carNo = CommonUtil.isNull(addbo.getCarNo());
+                    String nextKey = Constants.car_history_trail + carNo;
+                    // 当前进入门架的时间-----------------------
+                    String gantryStationId = CommonUtil.isNull(addbo.getGantryStationId());
+                    Date gantryTime = addbo.getGantryTime();
+                    List<TrailInfo> trailInfoList = redisCache.getCacheObject(nextKey);
+                    List<TrailBo> nextBoList = new ArrayList<>();
+                    if (null != trailInfoList && trailInfoList.size() > 0) {
+                        // 找到下一个位置
+                        for (TrailInfo trailInfo : trailInfoList) {
+                            ZdataTrailTracks tracksBo = trailInfo.getTracks();
+                            List<TrailBo> trailList = trailInfo.getTrailList();
+                            if (!CommonUtil.isNull(tracksBo.getUuid()).equals(pointUuid)) {
+                                // 循环轨迹
+                                if (null != trailList && trailList.size() > 0) {
+                                    for (int yy = 0; yy < trailList.size(); yy++) {
+                                        TrailBo trailBo = trailList.get(yy);
+                                        String curDevCode = CommonUtil.isNull(trailBo.getDevCode());
+                                        String curCaptureTime = trailBo.getCaptureTime();
+                                        if (gantryStationId.equals(curDevCode)) {
+                                            // 判断有下一个:不是最后一个
+                                            if (yy != trailList.size() - 1) {
+                                                TrailBo nextTrailBo = trailList.get(yy + 1);
+                                                nextTrailBo.setPreCaptureTime(curCaptureTime);
+                                                nextBoList.add(nextTrailBo);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (nextBoList.size() > 0) {
+                        // 找到最后一条记录
+                        Map<String, Integer> countMap = new HashMap<>();
+                        for (TrailBo nextbo : nextBoList) {
+                            String curDevCode = CommonUtil.isNull(nextbo.getDevCode());
+                            if (countMap.containsKey(curDevCode)) {
+                                countMap.put(curDevCode, countMap.get(curDevCode) + 1);
+                            } else {
+                                countMap.put(curDevCode, 1);
+                            }
+                        }
+
+                        for (TrailBo nextbo : nextBoList) {
+                            String curDevCode = CommonUtil.isNull(nextbo.getDevCode());
+                            if (countMap.containsKey(curDevCode)) {
+                                nextbo.setCountNum(countMap.get(curDevCode));
+                            } else {
+                                nextbo.setCountNum(0);
+                            }
+                        }
+
+                        // 按照先countNum排序 然后按照抓拍时间
+                        nextBoList = nextBoList.stream().sorted(
+                                Comparator.comparing(TrailBo::getCountNum).reversed().thenComparing(TrailBo::getCaptureTime).reversed()
+                        ).collect(Collectors.toList());
+
+                        TrailBo lastTrailBo = nextBoList.get(0);
+
+                        addbo.setNextPassAddress(lastTrailBo.getDevName());
+
+                        String curCaptureTime = lastTrailBo.getCaptureTime();
+                        String preCaptureTime = lastTrailBo.getPreCaptureTime();
+
+                        if (null != gantryTime && CommonUtil.isNotBlank(curCaptureTime) && CommonUtil.isNotBlank(preCaptureTime)) {
+                            Date date1 = DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS, curCaptureTime);
+                            Date date2 = DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS, preCaptureTime);
+                            long difTime = gantryTime.getTime() + date1.getTime() - date2.getTime();
+                            Date dateLast = new Date(difTime);
+                            /* SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");*/
+                            addbo.setNextPassTime(dateLast);
+
+
+                        }
+                    }
+                }
+            }
+
             carWarningInfoService.saveBatch(addCarWarningInfoList);
         }
         // 更新缓存。。。。。。。。。。。。
