@@ -356,6 +356,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     // 当前进入门架的时间-----------------------
                     String gantryStationId = CommonUtil.isNull(addbo.getGantryStationId());
                     Date gantryTime = addbo.getGantryTime();
+
                     List<TrailInfo> trailInfoList = redisCache.getCacheObject(nextKey);
                     List<TrailBo> nextBoList = new ArrayList<>();
                     if (null != trailInfoList && trailInfoList.size() > 0) {
