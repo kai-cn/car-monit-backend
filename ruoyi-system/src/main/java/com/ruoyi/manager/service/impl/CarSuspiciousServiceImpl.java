@@ -418,6 +418,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                     List<TrailBo> josnList = entry.getValue();
                     if (null != josnList && josnList.size() > 0) {
 
+                        String devCodes = "";  // 设备所有的集合
                         // 生成可疑车辆
                         CarSuspicious carSuspicious = new CarSuspicious();
 
@@ -463,6 +464,14 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                             List<TrailBo> stationList = new ArrayList<TrailBo>(); // 收费站
 
                             for (TrailBo trailBo : josnList) {
+                                // 抓拍设备
+                                if (CommonUtil.isNotBlank(trailBo.getDevCode())){
+                                    devCodes += trailBo.getDevCode()+",";
+                                }
+                                // 路段
+                                if (CommonUtil.isNotBlank(trailBo.getRoadCode())){
+                                    devCodes += trailBo.getRoadCode()+",";
+                                }
                                 String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
                                 switch (stateType) {
                                     case Constants.BORDER_WEIGHING_CAPTURE:
@@ -528,6 +537,8 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                                     }
                                 }
                             }
+
+                            carSuspicious.setTrackNames(CommonUtil.deleteEnd(devCodes));
 
                             carSuspicious.setCreateBy(userId); // 创建人
                             carSuspicious.setCreateTime(DateUtils.getTimestampNew()); // 创建时间

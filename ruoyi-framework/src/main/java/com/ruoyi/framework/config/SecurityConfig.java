@@ -119,6 +119,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter
                 .antMatchers("/common/download/resource**").authenticated()
                 .antMatchers("/system/file/view/**").anonymous()
                 .antMatchers("/system/notice/view/**").anonymous()
+              /*  .antMatchers("/manager/busstest/syncCurrentTrack").permitAll()
+                .antMatchers("/manager/busstest/syncSuspiciousCar").permitAll()*/
                 // 除上面外的所有请求全部需要鉴权认证
                 .anyRequest().authenticated()
                 .and()
