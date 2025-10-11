@@ -137,6 +137,8 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
      */
     public void updateRedisWarningList() {
         CarWhiteInfo carWhiteInfo = new CarWhiteInfo();
+        // 查询在线的
+
         List<CarWarningInfo> list = carWarningInfoMapper.selectCarWarningInfoListLimit100();
         redisCache.setCacheObject(Constants.car_warning_list, list);
     }

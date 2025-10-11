@@ -139,7 +139,7 @@
         SELECT
         <include refid="selectCarWarningInfoVo"/>, c.escaped_type escapedType, c.escaped_amount escapedAmount
         FROM car_warning_info t
-        inner join car_info c on t.car_id = c.id
+        inner join car_info c on c.del_flag = '0' and  t.car_id = c.id and c.status = '1'
         WHERE t.del_flag = '0'
         order by t.gantry_time desc,t.id
         limit 100
@@ -159,7 +159,7 @@
 
 
     <delete id="deleteCarWarningInfoByUUid">
-        delete from car_warning_info where back_col1 in
+        delete from car_warning_info where track_id in
         <foreach item="id" collection="idList" open="(" separator="," close=")">
             #{id}
         </foreach>

@@ -177,8 +177,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             car.setId(vo.getId());
 
             if (null != trailInfo){
-                ZdataTrailTracks tracksBo = trailInfo.getTracks();
-                List<TrailBo> josnList = trailInfo.getTrailList();
+                ZdataTrailTracks tracksBo = trailInfo.getTracks(); // 轨迹对象
+                String pointUuid = CommonUtil.isNull(tracksBo.getUuid()); // 当前轨迹点
+                List<TrailBo> josnList = trailInfo.getTrailList(); // 轨迹李四
                 if (null != josnList && josnList.size() > 0) {
                     List<TrailBo> stationList = new ArrayList<TrailBo>(); // 收费站
                     boolean trailExits = false;  // 轨迹点是否存在
@@ -236,84 +237,95 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                             // 车的状态修改更新为 status 1  经纬度 last_pass_longitude  last_pass_latitude  josn字符串要更新 track_id track_josn
                             // 车的门架 路段 等数据--------------
                             // 同事要跟新车俩预警  car_warning_info
-                            car.setStatus("1");
                             // 进度和维度
-                            TrailBo lastBo = josnList.get(josnList.size() - 1);
-                            if (null !=lastBo.getLon()){
-                                car.setLastPassLongitude(CommonUtil.isNull(lastBo.getLon()));
-                            }
-
-                            if (null !=lastBo.getLat()){
-                                car.setLastPassLatitude(CommonUtil.isNull(lastBo.getLat()));
-                            }
-                            car.setTrackJosn(JSON.toJSON(josnList)+"");
+                            TrailBo lastBo = null;
 
                             String devCodes = "";  // 设备所有的集合
-
                             for (TrailBo trailBo : josnList) {
-                                String pointUuid = CommonUtil.isNull(trailBo.getPointUuid());
 
                                 String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
+                                // 抓拍设备
+                                if (CommonUtil.isNotBlank(trailBo.getDevCode())){
+                                    devCodes += trailBo.getDevCode()+",";
+                                }
+                                // 路段
+                                if (CommonUtil.isNotBlank(trailBo.getRoadCode())){
+                                    devCodes += trailBo.getRoadCode()+",";
+                                }
                                 if (stateType.equals(Constants.BORDER_WEIGHING_CAPTURE)
                                         || stateType.equals(Constants.GANTRY_CAPTURE)
                                         || stateType.equals(Constants.PROV_CAPTURE)
                                         || stateType.equals(Constants.SERVICE_AREA_CAPTURE)
                                         || stateType.equals(Constants.STATION_CAPTURE)
-
                                 ){
-                                    CarWarningInfo carWarningInfo = new CarWarningInfo();
-                                    carWarningInfo.setCarId(vo.getId());
-                                    carWarningInfo.setCarNo(vo.getCarNo());
-                                    carWarningInfo.setCarType(vo.getCarType());
-                                    carWarningInfo.setCarVehicle(vo.getCarVehicle());
-                                    carWarningInfo.setCarNum(vo.getCarNum());
-                                    // 入站
-                                    carWarningInfo.setInStationId(tracksBo.getFirtStationCode());
-                                    carWarningInfo.setInStation(tracksBo.getFirtStationName());
-                                    if (CommonUtil.isNotBlank(tracksBo.getFirtStationTime())){
-                                        carWarningInfo.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,tracksBo.getFirtStationTime()));
-                                    }
-
-                                    // 抓拍设备
-                                    if (CommonUtil.isNotBlank(trailBo.getDevCode())){
-
-                                        devCodes += trailBo.getDevCode()+",";
-
-                                        carWarningInfo.setGantryStationId(trailBo.getDevCode());
-                                        carWarningInfo.setGantrytStation(trailBo.getDevName());
-                                        if (CommonUtil.isNotBlank(trailBo.getCaptureTime())){
-                                            carWarningInfo.setGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,trailBo.getCaptureTime()));
-                                        }
-                                        carWarningInfo.setFileIds(CommonUtil.isNull(trailBo.getImagesArry()));
-                                        carWarningInfo.setBackCol1(pointUuid);
-
-                                        // 预计下一个通行时间nextPassTime  预计下一个通行地址 nextPassAddress
-
-                                        carWarningInfo.setDelFlag("0");
-                                        carWarningInfo.setCreateBy(userId); // 创建人
-                                        carWarningInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
-                                        carWarningInfo.setUpdateBy(userId); // 更新人
-                                        carWarningInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
-                                        carWarningInfo.setRoadCode(trailBo.getRoadCode()); // 路线
-
-                                        if (CommonUtil.isNotBlank(pointUuid)){
-                                           //  delCarWarningInfoList.add(pointUuid);
-                                            CarWarningInfo queryWarningInfo = new CarWarningInfo();
-                                            queryWarningInfo.setBackCol1(pointUuid);
-                                            List<CarWarningInfo> queryWarninglist = carWarningInfoService.selectCarWarningInfoList(queryWarningInfo);
-                                            if (null !=queryWarninglist && queryWarninglist.size() > 0){
-
-                                            }else{
-                                                addCarWarningInfoList.add(carWarningInfo);
-                                            }
-                                        }else{
-                                            addCarWarningInfoList.add(carWarningInfo);
-                                        }
-
+                                    if (null != trailBo.getLon() && null != trailBo.getLat() && CommonUtil.isNotBlank(trailBo.getDevCode())) {
+                                        lastBo = trailBo;
                                     }
                                 }
                             }
-                            car.setGantryCode(CommonUtil.deleteEnd(devCodes));
+
+                            if (null != lastBo){
+                                car.setStatus("1");
+                                if (null != lastBo.getLon()) {
+                                    car.setLastPassLongitude(CommonUtil.isNull(lastBo.getLon()));
+                                }
+
+                                if (null != lastBo.getLat()) {
+                                    car.setLastPassLatitude(CommonUtil.isNull(lastBo.getLat()));
+                                }
+                                car.setTrackJosn(JSON.toJSON(josnList) + "");
+                                car.setGantryCode(CommonUtil.deleteEnd(devCodes));
+
+                                // 预警信息
+                                CarWarningInfo carWarningInfo = new CarWarningInfo();
+                                carWarningInfo.setCarId(vo.getId());
+                                carWarningInfo.setCarNo(vo.getCarNo());
+                                carWarningInfo.setCarType(vo.getCarType());
+                                carWarningInfo.setCarVehicle(vo.getCarVehicle());
+                                carWarningInfo.setCarNum(vo.getCarNum());
+
+                                carWarningInfo.setTrackId(pointUuid);
+                                carWarningInfo.setTrackJosn(JSON.toJSON(josnList) + "");
+                                carWarningInfo.setTrackNames(CommonUtil.deleteEnd(devCodes));
+
+                                // 入站
+                                carWarningInfo.setInStationId(tracksBo.getFirtStationCode());
+                                carWarningInfo.setInStation(tracksBo.getFirtStationName());
+                                if (CommonUtil.isNotBlank(tracksBo.getFirtStationTime())){
+                                    carWarningInfo.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,tracksBo.getFirtStationTime()));
+                                }
+
+
+                                // 抓拍设备
+                                if (CommonUtil.isNotBlank(lastBo.getDevCode())){
+
+                                    carWarningInfo.setGantryStationId(lastBo.getDevCode());
+                                    carWarningInfo.setGantrytStation(lastBo.getDevName());
+                                    if (CommonUtil.isNotBlank(lastBo.getCaptureTime())){
+                                        carWarningInfo.setGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,lastBo.getCaptureTime()));
+                                    }
+                                    carWarningInfo.setFileIds(CommonUtil.isNull(lastBo.getImagesArry()));
+
+                                    // 预计下一个通行时间nextPassTime  预计下一个通行地址 nextPassAddress
+
+                                    carWarningInfo.setDelFlag("0");
+                                    carWarningInfo.setCreateBy(userId); // 创建人
+                                    carWarningInfo.setCreateTime(DateUtils.getTimestamp()); // 创建时间
+                                    carWarningInfo.setUpdateBy(userId); // 更新人
+                                    carWarningInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
+                                    carWarningInfo.setRoadCode(lastBo.getRoadCode()); // 路线
+
+                                    if (CommonUtil.isNotBlank(pointUuid)){
+                                        delCarWarningInfoList.add(pointUuid);
+                                    }else{
+                                        addCarWarningInfoList.add(carWarningInfo);
+                                    }
+                                }
+                            }else{
+                                // 跟新车俩-----------------------  车的状态修改status 0
+                                car.setStatus("0");
+                                car.setTrackJosn(null);
+                            }
                         }else{
                             // 跟新车俩-----------------------  车的状态修改status 0
                             car.setStatus("0");
@@ -341,98 +353,93 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         }
 
         // 生成车俩预警信息
-       /*  if (delCarWarningInfoList.size() > 0) {
+        if (delCarWarningInfoList.size() > 0) {
             carWarningInfoService.deleteCarWarningInfoByUUid(delCarWarningInfoList);
-        }*/
+        }
 
         if (addCarWarningInfoList.size() > 0) {
             // 预计下一个通行时间nextPassTime  预计下一个通行地址 nextPassAddress
             for (int zz = 0; zz < addCarWarningInfoList.size(); zz++) {
-                if (zz == addCarWarningInfoList.size() - 1) {
-                    CarWarningInfo addbo = addCarWarningInfoList.get(zz);
-                    String pointUuid = CommonUtil.isNull(addbo.getBackCol1());
-                    String carNo = CommonUtil.isNull(addbo.getCarNo());
-                    String nextKey = Constants.car_history_trail + carNo;
-                    // 当前进入门架的时间-----------------------
-                    String gantryStationId = CommonUtil.isNull(addbo.getGantryStationId());
-                    Date gantryTime = addbo.getGantryTime();
+                CarWarningInfo addbo = addCarWarningInfoList.get(zz);
 
-                    List<TrailInfo> trailInfoList = redisCache.getCacheObject(nextKey);
-                    List<TrailBo> nextBoList = new ArrayList<>();
-                    if (null != trailInfoList && trailInfoList.size() > 0) {
-                        // 找到下一个位置
-                        for (TrailInfo trailInfo : trailInfoList) {
-                            ZdataTrailTracks tracksBo = trailInfo.getTracks();
-                            List<TrailBo> trailList = trailInfo.getTrailList();
-                            if (!CommonUtil.isNull(tracksBo.getUuid()).equals(pointUuid)) {
-                                // 循环轨迹
-                                if (null != trailList && trailList.size() > 0) {
-                                    for (int yy = 0; yy < trailList.size(); yy++) {
-                                        TrailBo trailBo = trailList.get(yy);
-                                        String curDevCode = CommonUtil.isNull(trailBo.getDevCode());
-                                        String curCaptureTime = trailBo.getCaptureTime();
-                                        if (gantryStationId.equals(curDevCode)) {
-                                            // 判断有下一个:不是最后一个
-                                            if (yy != trailList.size() - 1) {
-                                                TrailBo nextTrailBo = trailList.get(yy + 1);
-                                                nextTrailBo.setPreCaptureTime(curCaptureTime);
-                                                nextBoList.add(nextTrailBo);
-                                            }
-                                        }
+                String carNo = CommonUtil.isNull(addbo.getCarNo());
+                String nextKey = Constants.car_history_trail + carNo;
+                // 当前进入门架的时间-----------------------
+                String gantryStationId = CommonUtil.isNull(addbo.getGantryStationId());
+                Date gantryTime = addbo.getGantryTime();
+
+                List<TrailInfo> trailInfoList = redisCache.getCacheObject(nextKey);
+                List<TrailBo> nextBoList = new ArrayList<>();
+                if (null != trailInfoList && trailInfoList.size() > 0) {
+                    // 找到下一个位置
+                    for (TrailInfo trailInfo : trailInfoList) {
+                        // ZdataTrailTracks tracksBo = trailInfo.getTracks();
+                        List<TrailBo> trailList = trailInfo.getTrailList();
+                        // 循环轨迹
+                        if (null != trailList && trailList.size() > 0) {
+                            for (int yy = 0; yy < trailList.size(); yy++) {
+                                TrailBo trailBo = trailList.get(yy);
+                                String curDevCode = CommonUtil.isNull(trailBo.getDevCode());
+                                String curCaptureTime = trailBo.getCaptureTime();
+                                if (gantryStationId.equals(curDevCode)) {
+                                    // 判断有下一个:不是最后一个
+                                    if (yy != trailList.size() - 1) {
+                                        TrailBo nextTrailBo = trailList.get(yy + 1);
+                                        nextTrailBo.setPreCaptureTime(curCaptureTime);
+                                        nextBoList.add(nextTrailBo);
                                     }
                                 }
                             }
                         }
                     }
-                    if (nextBoList.size() > 0) {
-                        // 找到最后一条记录
-                        Map<String, Integer> countMap = new HashMap<>();
-                        for (TrailBo nextbo : nextBoList) {
-                            String curDevCode = CommonUtil.isNull(nextbo.getDevCode());
-                            if (countMap.containsKey(curDevCode)) {
-                                countMap.put(curDevCode, countMap.get(curDevCode) + 1);
-                            } else {
-                                countMap.put(curDevCode, 1);
-                            }
-                        }
-
-                        for (TrailBo nextbo : nextBoList) {
-                            String curDevCode = CommonUtil.isNull(nextbo.getDevCode());
-                            if (countMap.containsKey(curDevCode)) {
-                                nextbo.setCountNum(countMap.get(curDevCode));
-                            } else {
-                                nextbo.setCountNum(0);
-                            }
-                        }
-
-                        // 按照先countNum排序 然后按照抓拍时间
-                        nextBoList = nextBoList.stream().sorted(
-                                Comparator.comparing(TrailBo::getCountNum).reversed().thenComparing(TrailBo::getCaptureTime).reversed()
-                        ).collect(Collectors.toList());
-
-                        TrailBo lastTrailBo = nextBoList.get(0);
-
-                        addbo.setNextPassAddress(lastTrailBo.getDevName());
-
-                        String curCaptureTime = lastTrailBo.getCaptureTime();
-                        String preCaptureTime = lastTrailBo.getPreCaptureTime();
-
-                        if (null != gantryTime && CommonUtil.isNotBlank(curCaptureTime) && CommonUtil.isNotBlank(preCaptureTime)) {
-                            Date date1 = DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS, curCaptureTime);
-                            Date date2 = DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS, preCaptureTime);
-                            long difTime = gantryTime.getTime() + date1.getTime() - date2.getTime();
-                            Date dateLast = new Date(difTime);
-                            /* SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");*/
-                            addbo.setNextPassTime(dateLast);
-
-
+                }
+                if (nextBoList.size() > 0) {
+                    // 找到最后一条记录
+                    Map<String, Integer> countMap = new HashMap<>();
+                    for (TrailBo nextbo : nextBoList) {
+                        String curDevCode = CommonUtil.isNull(nextbo.getDevCode());
+                        if (countMap.containsKey(curDevCode)) {
+                            countMap.put(curDevCode, countMap.get(curDevCode) + 1);
+                        } else {
+                            countMap.put(curDevCode, 1);
                         }
                     }
-                }
-            }
 
+                    for (TrailBo nextbo : nextBoList) {
+                        String curDevCode = CommonUtil.isNull(nextbo.getDevCode());
+                        if (countMap.containsKey(curDevCode)) {
+                            nextbo.setCountNum(countMap.get(curDevCode));
+                        } else {
+                            nextbo.setCountNum(0);
+                        }
+                    }
+
+                    // 按照先countNum排序 然后按照抓拍时间
+                    nextBoList = nextBoList.stream().sorted(
+                            Comparator.comparing(TrailBo::getCountNum).reversed().thenComparing(TrailBo::getCaptureTime).reversed()
+                    ).collect(Collectors.toList());
+
+                    TrailBo lastTrailBo = nextBoList.get(0);
+
+                    addbo.setNextPassAddress(lastTrailBo.getDevName());
+
+                    String curCaptureTime = lastTrailBo.getCaptureTime();
+                    String preCaptureTime = lastTrailBo.getPreCaptureTime();
+
+                    if (null != gantryTime && CommonUtil.isNotBlank(curCaptureTime) && CommonUtil.isNotBlank(preCaptureTime)) {
+                        Date date1 = DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS, curCaptureTime);
+                        Date date2 = DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS, preCaptureTime);
+                        long difTime = gantryTime.getTime() + date1.getTime() - date2.getTime();
+                        Date dateLast = new Date(difTime);
+                        /* SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");*/
+                        addbo.setNextPassTime(dateLast);
+                    }
+                }
+
+            }
             carWarningInfoService.saveBatch(addCarWarningInfoList);
         }
+
         // 更新缓存。。。。。。。。。。。。
         carWarningInfoService.updateRedisWarningList();
 
