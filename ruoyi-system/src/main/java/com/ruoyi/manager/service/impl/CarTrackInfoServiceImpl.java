@@ -317,9 +317,8 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
                                     if (CommonUtil.isNotBlank(pointUuid)){
                                         delCarWarningInfoList.add(pointUuid);
-                                    }else{
-                                        addCarWarningInfoList.add(carWarningInfo);
                                     }
+                                    addCarWarningInfoList.add(carWarningInfo);
                                 }
                             }else{
                                 // 跟新车俩-----------------------  车的状态修改status 0
