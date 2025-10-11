@@ -90,7 +90,7 @@ public class TrailBo {
     private String sectionCode;
 
     /** 方向（0: 上行，1: 下行） */
-    private Integer direction;
+    private String direction;
 
     /** 桩号 */
     private String pileno;
