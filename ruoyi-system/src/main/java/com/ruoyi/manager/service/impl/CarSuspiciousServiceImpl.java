@@ -538,7 +538,6 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                                 }
                             }
 
-                            carSuspicious.setTrackNames(CommonUtil.deleteEnd(devCodes));
 
                             carSuspicious.setCreateBy(userId); // 创建人
                             carSuspicious.setCreateTime(DateUtils.getTimestampNew()); // 创建时间
@@ -549,7 +548,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                         }
 
 
-
+                        carSuspicious.setTrackNames(CommonUtil.deleteEnd(devCodes));
                         if (CommonUtil.isBlank(carSuspicious.getId())){
                             carSuspicious.setEscapedType(tracksBo.getEscapedType()); //屏蔽
                             carSuspicious.setRemark(tracksBo.getEscapedTypeRemark());
