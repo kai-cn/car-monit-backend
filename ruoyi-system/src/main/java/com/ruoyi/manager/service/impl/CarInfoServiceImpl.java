@@ -20,6 +20,7 @@ import com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam;
 import com.ruoyi.manager.domain.vo.bigscreen.CarLocationVO;
 import com.ruoyi.manager.mapper.CarInfoMapper;
 import com.ruoyi.manager.service.ICarInfoService;
+import com.ruoyi.manager.service.ICarTrackInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +50,10 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
     @Autowired
     private IGeometryService geometryService;
 
+    @Autowired
+    private ICarTrackInfoService carTrackInfoService;
+
+
     /**
      * 查询车辆信息
      *
@@ -66,8 +71,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                 String trackJosn = car.getTrackJosn();
                 if (CommonUtil.isNotBlank(trackJosn)) {
                     carTrailList = JSON.parseArray(trackJosn, TrailBo.class);
-                    List<String> roadCodeList = carTrailList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
-                    raodTrailList = geometryService.getListByCode(roadCodeList);
+                    raodTrailList = carTrackInfoService.getCarGeometry(carTrailList);;
                 }
             }
             TrailInfo trailInfo = new TrailInfo();

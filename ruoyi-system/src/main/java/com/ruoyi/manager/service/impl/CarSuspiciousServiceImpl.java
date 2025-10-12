@@ -66,6 +66,10 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
     @Autowired
     private ICarInfoService carInfoService;
 
+    @Autowired
+    private ICarTrackInfoService carTrackInfoService;
+
+
     /**
      * 查询可疑车辆
      *
@@ -90,8 +94,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             String trackJosn = carSuspicious.getTrackJosn();
             if (CommonUtil.isNotBlank(trackJosn)) {
                 carTrailList = JSON.parseArray(trackJosn, TrailBo.class);
-                List<String> roadCodeList = carTrailList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
-                raodTrailList = geometryService.getListByCode(roadCodeList);
+                raodTrailList = carTrackInfoService.getCarGeometry(carTrailList);
             }
 
 

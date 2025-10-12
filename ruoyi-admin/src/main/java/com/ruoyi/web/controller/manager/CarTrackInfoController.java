@@ -107,13 +107,11 @@ public class CarTrackInfoController extends BaseController {
             trailList = JSON.parseArray(trackJosn, TrailInfo.class);
             trailList = trailList.stream().sorted(Comparator.comparing(TrailInfo::getEnterTime).reversed())
                     .collect(Collectors.toList());
-            for (TrailInfo rtn:trailList){
+            for (TrailInfo rtn : trailList) {
                 List<TrailBo> josnList = rtn.getTrailList();
-
                 List<Geometry> raodTrailList = new ArrayList<>();
-                if (null !=josnList && josnList.size() > 0){
-                    List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
-                    raodTrailList = geometryService.getListByCode(roadCodeList);
+                if (null != josnList && josnList.size() > 0) {
+                    raodTrailList = carTrackInfoService.getCarGeometry(josnList);
                 }
                 rtn.setRaodTrailList(raodTrailList);
             }
@@ -202,11 +200,10 @@ public class CarTrackInfoController extends BaseController {
             trailList = JSON.parseArray(trackJosn, TrailInfo.class);
             trailList = trailList.stream().sorted(Comparator.comparing(TrailInfo::getEnterTime).reversed())
                     .collect(Collectors.toList());
-            for (TrailInfo rtn:trailList){
+            for (TrailInfo rtn : trailList) {
                 List<TrailBo> josnList = rtn.getTrailList();
-
                 List<Geometry> raodTrailList = new ArrayList<>();
-                if (null !=josnList && !josnList.isEmpty()){
+                if (null != josnList && josnList.size() > 0) {
                     raodTrailList = carTrackInfoService.getCarGeometry(josnList);
                 }
                 rtn.setRaodTrailList(raodTrailList);
