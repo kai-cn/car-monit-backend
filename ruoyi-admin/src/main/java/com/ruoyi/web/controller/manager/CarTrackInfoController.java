@@ -18,6 +18,7 @@ import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.manager.domain.CarTrackInfo;
 import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
  * @author ruoyi
  * @date 2025-08-18
  */
+@Slf4j
 @RestController
 @RequestMapping("/manager/cartrackinfo")
 public class CarTrackInfoController extends BaseController {
@@ -204,9 +206,8 @@ public class CarTrackInfoController extends BaseController {
                 List<TrailBo> josnList = rtn.getTrailList();
 
                 List<Geometry> raodTrailList = new ArrayList<>();
-                if (null !=josnList && josnList.size() > 0){
-                    List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
-                    raodTrailList = geometryService.getListByCode(roadCodeList);
+                if (null !=josnList && !josnList.isEmpty()){
+                    raodTrailList = carTrackInfoService.getCarGeometry(josnList);
                 }
                 rtn.setRaodTrailList(raodTrailList);
             }

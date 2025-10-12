@@ -1,9 +1,17 @@
 package com.ruoyi.manager.service.impl;
 
 
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson2.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.ruoyi.base.domain.*;
+import com.ruoyi.base.domain.Geometry;
+import com.ruoyi.base.domain.TrailBo;
+import com.ruoyi.base.domain.TrailInfo;
+import com.ruoyi.base.domain.ZdataTrailTracks;
+import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -17,6 +25,7 @@ import com.ruoyi.manager.mapper.CarTrackInfoMapper;
 import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
 import com.ruoyi.manager.service.ICarWarningInfoService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -24,8 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +43,7 @@ import java.util.stream.Collectors;
  * @author ruoyi
  * @date 2025-08-18
  */
+@Slf4j
 @Service
 public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, CarTrackInfo> implements ICarTrackInfoService {
 
@@ -49,6 +59,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
     @Autowired
     private ICarWarningInfoService carWarningInfoService;
+
+    @Autowired
+    private IGeometryService geometryService;
 
     @Value("${isLocalhost}")
     private String isLocalhost;
@@ -148,6 +161,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
      *
      * @return 结果
      */
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public AjaxResult syncCurrentTrack() {
         // 查询所有的车俩
@@ -458,6 +472,85 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         return AjaxResult.success();
     }
 
+    @Override
+    public List<Geometry> getCarGeometry(List<TrailBo> josnList) {
+        List<Geometry> raodTrailList = new ArrayList<>();
+        LinkedHashMap<String, List<TrailBo>> collect =
+                josnList.stream().filter(o -> StrUtil.isNotEmpty(o.getPileno()))
+                        .peek(o -> {
+                            String pileno = o.getPileno();
+                            pileno = pileno.replace("+", ".").replace("ZK", "").replace("YK", "").replace("K", "");
+                            log.info("原始桩号{}变化后桩号{}", o.getPileno(), pileno);
+                            o.setPileno(pileno);
+                        })
+                        .collect(Collectors.groupingBy(TrailBo::getRoadCode, LinkedHashMap::new, Collectors.toList()));
+        AtomicInteger index = new AtomicInteger(0);
+        collect.forEach((k, v) -> {
+            LambdaQueryWrapper<Geometry> l = new LambdaQueryWrapper<>();
+            Optional<Integer> min = v.stream().map(o -> new BigDecimal(o.getPileno()).intValue()).min(Integer::compare);
+            Optional<Integer> max = v.stream().map(o -> new BigDecimal(o.getPileno()).intValue()).max(Integer::compare);
+            if(min.isPresent()) {
+                log.info("路线{}起始桩号{}终点桩号{}", k, min.get(), max.get());
+                l.eq(Geometry::getLxbh, k).eq(Geometry::getLxfx, "1");
+                if(min.get().equals(max.get()))
+                {
+                    l.eq(Geometry::getQdzh, min.get());
+                }
+                else {
+                    l.lt(Geometry::getQdzh, max.get()).ge(Geometry::getQdzh, min.get());
+                }
+
+                List<Geometry> list = geometryService.list(l);
+                Geometry geometry = new Geometry();
+                JSONArray paths = new JSONArray();
+                geometry.setLxbh(k);
+                geometry.setQdzh(min.get());
+                geometry.setZdzh(max.get()+1);
+                List<TrailBo> station = v.stream().filter(o -> "StationCapture".equals(o.getStateType())).filter(o -> null != o.getLon() && null != o.getLat()).collect(Collectors.toList());
+                // 起点收费站
+                JSONArray stationPaths = new JSONArray();
+                // 终点收费站
+                JSONArray stationPaths2 = new JSONArray();
+                if(!station.isEmpty()) {
+                    TrailBo trailBo = station.get(0);
+                    stationPaths.add(trailBo.getLon());
+                    stationPaths.add(trailBo.getLat());
+                    if(station.size() > 1)
+                    {
+                        trailBo = station.get(station.size() - 1);
+                        stationPaths2.add(trailBo.getLon());
+                        stationPaths2.add(trailBo.getLat());
+                    }
+                }
+                int i = index.getAndIncrement();
+                if(0 == i && !stationPaths.isEmpty())
+                {
+                    paths.add(stationPaths);
+                }
+
+                list.forEach(o -> {
+                    JSONArray objects = JSONUtil.parseArray(o.getPaths());
+                    paths.addAll(objects);
+                });
+                /*
+                 * 判断一条路线有多个收费站时候，该条路线最后一个收费站是终点收费站；
+                 * 多条路线则终点收费站是改路线的第一个收费站
+                 */
+                if(i == 0 && station.size() > 1)
+                {
+                    paths.add(stationPaths2);
+                }
+                else if(0 != i && !stationPaths.isEmpty())
+                {
+                    paths.add(stationPaths);
+                }
+                geometry.setPaths(paths.toString());
+                raodTrailList.add(geometry);
+
+            }
+        });
+        return raodTrailList;
+    }
 
 
 }

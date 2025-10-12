@@ -1,9 +1,12 @@
 package com.ruoyi.manager.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.ruoyi.base.domain.Geometry;
+import com.ruoyi.base.domain.TrailBo;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarTrackInfo;
+
 import java.util.List;
-import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
  * 车辆行驶轨迹Service接口
@@ -54,5 +57,10 @@ public interface ICarTrackInfoService extends IService<CarTrackInfo> {
      */
     AjaxResult syncCurrentTrack();
 
-
+    /**
+     * 根据桩号转换轨迹经纬度
+     * @param josnList
+     * @return
+     */
+    List<Geometry> getCarGeometry(List<TrailBo> josnList);
 }
