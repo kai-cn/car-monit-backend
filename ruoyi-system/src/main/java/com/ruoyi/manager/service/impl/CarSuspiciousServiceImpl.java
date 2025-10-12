@@ -469,12 +469,20 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                                 if (CommonUtil.isNotBlank(trailBo.getDevCode())) {
                                     devCodes += stateType + ":" + trailBo.getDevCode() + ",";
                                 }
-                                // 路段
+                                // 路线
                                 if (CommonUtil.isNotBlank(trailBo.getRoadCode())) {
                                     String roadKey = "roadCode:" + trailBo.getRoadCode();
                                     if (devCodes.indexOf(roadKey) > -1) {
                                     } else {
                                         devCodes += roadKey + ",";
+                                    }
+                                }
+                                // 路段
+                                if (CommonUtil.isNotBlank(trailBo.getSectionCode())) {
+                                    String sectionKey = "sectionCode:" + trailBo.getSectionCode();
+                                    if (devCodes.indexOf(sectionKey) > -1) {
+                                    } else {
+                                        devCodes += sectionKey + ",";
                                     }
                                 }
                                 switch (stateType) {

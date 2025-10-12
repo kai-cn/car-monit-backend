@@ -247,6 +247,14 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                         addFlag = false;
                     }
                 }
+
+                // 所属路段编码
+                if (CommonUtil.isNotBlank(carInfo.getSectionCode())){
+                    if (devCodes.indexOf(carInfo.getSectionCode()) == -1){
+                        addFlag = false;
+                    }
+                }
+
                 // 逃费类型
                 if (CommonUtil.isNotBlank(carInfo.getEscapedType())){
                     if (CommonUtil.isNull(rtn.getEscapedType()).indexOf(carInfo.getEscapedType()) == -1){
