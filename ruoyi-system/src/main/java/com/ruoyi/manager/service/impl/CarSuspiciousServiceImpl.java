@@ -466,14 +466,14 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                             for (TrailBo trailBo : josnList) {
                                 String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
                                 // 抓拍设备
-                                if (CommonUtil.isNotBlank(trailBo.getDevCode())){
-                                    devCodes += "stateType:"+trailBo.getDevCode()+",";
+                                if (CommonUtil.isNotBlank(trailBo.getDevCode())) {
+                                    devCodes += stateType + ":" + trailBo.getDevCode() + ",";
                                 }
                                 // 路段
                                 if (CommonUtil.isNotBlank(trailBo.getRoadCode())) {
                                     String roadKey = "roadCode:" + trailBo.getRoadCode();
-                                    if (devCodes.indexOf(roadKey) > -1){
-                                    }else{
+                                    if (devCodes.indexOf(roadKey) > -1) {
+                                    } else {
                                         devCodes += roadKey + ",";
                                     }
                                 }
@@ -542,7 +542,6 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                                 }
                             }
 
-
                             carSuspicious.setCreateBy(userId); // 创建人
                             carSuspicious.setCreateTime(DateUtils.getTimestampNew()); // 创建时间
                             carSuspicious.setUpdateBy(userId); // 更新人
@@ -554,11 +553,16 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
                         carSuspicious.setTrackNames(CommonUtil.deleteEnd(devCodes));
                         if (CommonUtil.isBlank(carSuspicious.getId())){
+                            // 新增-----------
                             carSuspicious.setEscapedType(tracksBo.getEscapedType()); //屏蔽
                             carSuspicious.setRemark(tracksBo.getEscapedTypeRemark());
                             carSuspiciousListAdd.add(carSuspicious);
                         }else{
-                            carSuspiciousListUpdate.add(carSuspicious);
+                            // 没有核实
+                            if (!checkStatus.equals("1")){
+                                carSuspicious.setRemark(tracksBo.getEscapedTypeRemark());
+                                carSuspiciousListUpdate.add(carSuspicious);
+                            }
                         }
                     }
                 }
