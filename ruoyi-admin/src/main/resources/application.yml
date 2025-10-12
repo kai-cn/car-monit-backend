@@ -170,6 +170,12 @@ forest:
   retryer: com.dtflys.forest.retryer.BackOffRetryer
   retry-count: 2
   max-retry-interval: 1000
+  variables:
+    hendaUrl: http://36.200.20.14:7890/8809/geoserver-pg/rest
+
+hengda:
+  appid: YHZS
+  secret: b48381c4b98311ea90b100155d14fa3b
 
 vehicleMonitor:
   baseUrl: http://127.0.0.1:9901
