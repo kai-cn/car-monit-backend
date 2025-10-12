@@ -464,15 +464,19 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                             List<TrailBo> stationList = new ArrayList<TrailBo>(); // 收费站
 
                             for (TrailBo trailBo : josnList) {
+                                String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
                                 // 抓拍设备
                                 if (CommonUtil.isNotBlank(trailBo.getDevCode())){
-                                    devCodes += trailBo.getDevCode()+",";
+                                    devCodes += "stateType:"+trailBo.getDevCode()+",";
                                 }
                                 // 路段
-                                if (CommonUtil.isNotBlank(trailBo.getRoadCode())){
-                                    devCodes += trailBo.getRoadCode()+",";
+                                if (CommonUtil.isNotBlank(trailBo.getRoadCode())) {
+                                    String roadKey = "roadCode:" + trailBo.getRoadCode();
+                                    if (devCodes.indexOf(roadKey) > -1){
+                                    }else{
+                                        devCodes += roadKey + ",";
+                                    }
                                 }
-                                String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
                                 switch (stateType) {
                                     case Constants.BORDER_WEIGHING_CAPTURE:
                                         // 省界称重
