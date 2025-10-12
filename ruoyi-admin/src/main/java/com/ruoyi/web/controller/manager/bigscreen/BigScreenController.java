@@ -182,8 +182,22 @@ public class BigScreenController extends BaseController {
      * 车辆预警
      */
     @GetMapping(value = "/carWarning")
-    public AjaxResult getCarWarning() {
-        List<CarWarningInfo> warningInfoList = carWarningInfoService.selectCarWarningInfoListLimit100();
+    public AjaxResult getCarWarning(CarLocationParam param) {
+        String type = param.getType();
+        if(StringUtils.isNotBlank(type)) {
+            switch (type) {
+                case "1":
+                    param.setTollCode(param.getCode());
+                    break;
+                case "2":
+                    param.setGantryCode(param.getCode());
+                    break;
+                case "3":
+                    param.setFwqbm(param.getCode());
+                    break;
+            }
+        }
+        List<CarWarningInfo> warningInfoList = carWarningInfoService.selectCarWarningInfoListLimit100(param);
         return AjaxResult.success(warningInfoList);
     }
 

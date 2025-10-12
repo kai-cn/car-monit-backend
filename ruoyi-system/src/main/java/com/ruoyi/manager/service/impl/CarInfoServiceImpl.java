@@ -220,7 +220,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
      * 地图 ；车俩地图描点
      */
     @Override
-    public List<CarLocationVO> carLocation(CarLocationParam carInfo) {
+    public List<CarLocationVO> carLocation(CarLocationParam param) {
         List<CarLocationVO>  carLocation = new ArrayList<>();
         List<CarInfo> carInfoList = this.getRedisCarList();
         for (CarInfo rtn : carInfoList) {
@@ -228,46 +228,46 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                 String devCodes = CommonUtil.isNull(rtn.getGantryCode());
                 boolean addFlag = true;
                 // 所属收费站编码
-                if (CommonUtil.isNotBlank(carInfo.getTollCode())){
-                    if (devCodes.indexOf(carInfo.getTollCode()) == -1){
+                if (CommonUtil.isNotBlank(param.getTollCode())){
+                    if (devCodes.indexOf(param.getTollCode()) == -1){
                         addFlag = false;
                     }
                 }
                 // 门架编号
-                if (CommonUtil.isNotBlank(carInfo.getGantryCode())){
-                    if (devCodes.indexOf(carInfo.getGantryCode()) == -1){
+                if (CommonUtil.isNotBlank(param.getGantryCode())){
+                    if (devCodes.indexOf(param.getGantryCode()) == -1){
                         addFlag = false;
                     }
                 }
                 // 服务区编码
-                if (CommonUtil.isNotBlank(carInfo.getFwqbm())){
-                    if (devCodes.indexOf(carInfo.getFwqbm()) == -1){
+                if (CommonUtil.isNotBlank(param.getFwqbm())){
+                    if (devCodes.indexOf(param.getFwqbm()) == -1){
                         addFlag = false;
                     }
                 }
                 // 所属路线编码
-                if (CommonUtil.isNotBlank(carInfo.getRoadCode())){
-                    if (devCodes.indexOf(carInfo.getRoadCode()) == -1){
+                if (CommonUtil.isNotBlank(param.getRoadCode())){
+                    if (devCodes.indexOf(param.getRoadCode()) == -1){
                         addFlag = false;
                     }
                 }
 
                 // 所属路段编码
-                if (CommonUtil.isNotBlank(carInfo.getSectionCode())){
-                    if (devCodes.indexOf(carInfo.getSectionCode()) == -1){
+                if (CommonUtil.isNotBlank(param.getSectionCode())){
+                    if (devCodes.indexOf(param.getSectionCode()) == -1){
                         addFlag = false;
                     }
                 }
 
                 // 逃费类型
-                if (CommonUtil.isNotBlank(carInfo.getEscapedType())){
-                    if (CommonUtil.isNull(rtn.getEscapedType()).indexOf(carInfo.getEscapedType()) == -1){
+                if (CommonUtil.isNotBlank(param.getEscapedType())){
+                    if (CommonUtil.isNull(rtn.getEscapedType()).indexOf(param.getEscapedType()) == -1){
                         addFlag = false;
                     }
                 }
                 // 车牌号
-                if (CommonUtil.isNotBlank(carInfo.getCarNoQuery())){
-                    if (CommonUtil.isNull(rtn.getCarNo()).indexOf(carInfo.getCarNoQuery()) == -1){
+                if (CommonUtil.isNotBlank(param.getCarNoQuery())){
+                    if (CommonUtil.isNull(rtn.getCarNo()).indexOf(param.getCarNoQuery()) == -1){
                         addFlag = false;
                     }
                 }

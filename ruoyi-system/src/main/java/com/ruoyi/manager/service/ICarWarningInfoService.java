@@ -3,6 +3,7 @@ package com.ruoyi.manager.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarWarningInfo;
+import com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam;
 
 import java.util.List;
 
@@ -50,7 +51,7 @@ public interface ICarWarningInfoService extends IService<CarWarningInfo> {
      * 预警大屏 100
      * @return
      */
-    List<CarWarningInfo> selectCarWarningInfoListLimit100();
+    List<CarWarningInfo> selectCarWarningInfoListLimit100(CarLocationParam param);
 
 
     /**

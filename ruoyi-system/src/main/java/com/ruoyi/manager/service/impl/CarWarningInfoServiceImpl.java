@@ -8,12 +8,14 @@ import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.manager.domain.CarWarningInfo;
 import com.ruoyi.manager.domain.CarWhiteInfo;
+import com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam;
 import com.ruoyi.manager.mapper.CarWarningInfoMapper;
 import com.ruoyi.manager.service.ICarWarningInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -112,10 +114,7 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
         return AjaxResult.success(count);
     }
 
-    @Override
-    public List<CarWarningInfo> selectCarWarningInfoListLimit100() {
-        return this.getRedisCarWarningList();
-    }
+
 
 
 
@@ -138,7 +137,6 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
     public void updateRedisWarningList() {
         CarWhiteInfo carWhiteInfo = new CarWhiteInfo();
         // 查询在线的
-
         List<CarWarningInfo> list = carWarningInfoMapper.selectCarWarningInfoListLimit100();
         redisCache.setCacheObject(Constants.car_warning_list, list);
     }
@@ -153,11 +151,70 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
         if (null != obj) {
             list = (List) obj;
         } else {
-            CarWhiteInfo carWhiteInfo = new CarWhiteInfo();
+            // 查询在线的
             list = carWarningInfoMapper.selectCarWarningInfoListLimit100();
             redisCache.setCacheObject(Constants.car_warning_list, list);
         }
         return list;
+    }
+
+    @Override
+    public List<CarWarningInfo> selectCarWarningInfoListLimit100(CarLocationParam param) {
+        List<CarWarningInfo> rtnlist = new ArrayList<>();
+
+        List<CarWarningInfo> list = this.getRedisCarWarningList();
+        for (CarWarningInfo rtn : list) {
+            String devCodes = CommonUtil.isNull(rtn.getTrackNames());
+            boolean addFlag = true;
+            // 所属收费站编码
+            if (CommonUtil.isNotBlank(param.getTollCode())){
+                if (devCodes.indexOf(param.getTollCode()) == -1){
+                    addFlag = false;
+                }
+            }
+            // 门架编号
+            if (CommonUtil.isNotBlank(param.getGantryCode())){
+                if (devCodes.indexOf(param.getGantryCode()) == -1){
+                    addFlag = false;
+                }
+            }
+            // 服务区编码
+            if (CommonUtil.isNotBlank(param.getFwqbm())){
+                if (devCodes.indexOf(param.getFwqbm()) == -1){
+                    addFlag = false;
+                }
+            }
+            // 所属路线编码
+            if (CommonUtil.isNotBlank(param.getRoadCode())){
+                if (devCodes.indexOf(param.getRoadCode()) == -1){
+                    addFlag = false;
+                }
+            }
+
+            // 所属路段编码
+            if (CommonUtil.isNotBlank(param.getSectionCode())){
+                if (devCodes.indexOf(param.getSectionCode()) == -1){
+                    addFlag = false;
+                }
+            }
+
+            // 逃费类型
+            if (CommonUtil.isNotBlank(param.getEscapedType())){
+                if (CommonUtil.isNull(rtn.getEscapedType()).indexOf(param.getEscapedType()) == -1){
+                    addFlag = false;
+                }
+            }
+            // 车牌号
+            if (CommonUtil.isNotBlank(param.getCarNoQuery())){
+                if (CommonUtil.isNull(rtn.getCarNo()).indexOf(param.getCarNoQuery()) == -1){
+                    addFlag = false;
+                }
+            }
+            if (addFlag){
+                rtnlist.add(rtn);
+            }
+        }
+        return rtnlist;
     }
 
 
