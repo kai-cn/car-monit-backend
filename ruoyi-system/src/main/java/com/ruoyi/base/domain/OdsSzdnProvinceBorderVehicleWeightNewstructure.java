@@ -1,5 +1,7 @@
 package com.ruoyi.base.domain;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.annotation.Excel;
@@ -195,6 +197,7 @@ public class OdsSzdnProvinceBorderVehicleWeightNewstructure implements Custom {
     /**
      * datauuid
      */
+    @TableId(value = "datauuid", type = IdType.ASSIGN_UUID)
     @Excel(name = "datauuid")
     private String datauuid;
 
