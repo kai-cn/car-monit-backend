@@ -33,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -345,6 +346,11 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                     if (CommonUtil.isNotBlank(pointUuid)){
                                         delCarWarningInfoList.add(pointUuid);
                                     }
+
+                                    SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+                                    String formattedDate = sdf.format(new Date());
+                                    carWarningInfo.setBackCol1(formattedDate);
+
                                     addCarWarningInfoList.add(carWarningInfo);
                                 }
                             }else{

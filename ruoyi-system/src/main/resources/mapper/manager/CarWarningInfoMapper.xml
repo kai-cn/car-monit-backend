@@ -135,14 +135,13 @@
          where t.id = #{id}
     </select>
 
-    <select id="selectCarWarningInfoListLimit100" resultType="com.ruoyi.manager.domain.CarWarningInfo">
+    <select id="selectCarWarningInfoListLimit100" parameterType="com.ruoyi.manager.domain.CarWarningInfo" resultMap="CarWarningInfoResult">
         SELECT
         <include refid="selectCarWarningInfoVo"/>, c.escaped_type escapedType, c.escaped_amount escapedAmount
         FROM car_warning_info t
         inner join car_info c on c.del_flag = '0' and  t.car_id = c.id and c.status = '1'
-        WHERE t.del_flag = '0'
+        WHERE t.del_flag = '0' and  t.back_col1 = #{trackId}
         order by t.gantry_time desc,t.id
-        limit 100
     </select>
 
 

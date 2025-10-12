@@ -15,7 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -137,8 +139,13 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
     public void updateRedisWarningList() {
         CarWhiteInfo carWhiteInfo = new CarWhiteInfo();
         // 查询在线的
-        List<CarWarningInfo> list = carWarningInfoMapper.selectCarWarningInfoListLimit100();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        String formattedDate = sdf.format(new Date());
+        CarWarningInfo carWarningInfo = new CarWarningInfo();
+        carWarningInfo.setTrackId(formattedDate);
+        List<CarWarningInfo> list = carWarningInfoMapper.selectCarWarningInfoListLimit100(carWarningInfo);
         redisCache.setCacheObject(Constants.car_warning_list, list);
+
     }
 
 
@@ -152,7 +159,11 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
             list = (List) obj;
         } else {
             // 查询在线的
-            list = carWarningInfoMapper.selectCarWarningInfoListLimit100();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+            String formattedDate = sdf.format(new Date());
+            CarWarningInfo carWarningInfo = new CarWarningInfo();
+            carWarningInfo.setTrackId(formattedDate);
+            list = carWarningInfoMapper.selectCarWarningInfoListLimit100(carWarningInfo);
             redisCache.setCacheObject(Constants.car_warning_list, list);
         }
         return list;
