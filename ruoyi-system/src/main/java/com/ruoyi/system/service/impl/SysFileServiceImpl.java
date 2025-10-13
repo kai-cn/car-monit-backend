@@ -10,15 +10,14 @@ import com.ruoyi.common.config.OssProperties;
 import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
-import com.ruoyi.common.utils.DateUtils;
-import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.common.utils.SnowflakeIdWorker;
-import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.utils.*;
 import com.ruoyi.common.utils.http.OssTemplate;
 import com.ruoyi.common.utils.sign.Base64;
 import com.ruoyi.system.domain.SysFile;
+import com.ruoyi.system.domain.ro.UploadByUrlRo;
 import com.ruoyi.system.mapper.SysFileMapper;
 import com.ruoyi.system.service.ISysFileService;
+import com.ruoyi.system.service.forest.FileApi;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -27,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.charset.Charset;
@@ -53,6 +53,9 @@ public class SysFileServiceImpl implements ISysFileService {
 
     @Autowired
     private SnowflakeIdWorker idWorker;
+
+    @Resource
+    private FileApi fileApi;
 
 
     /**
@@ -188,6 +191,40 @@ public class SysFileServiceImpl implements ISysFileService {
     public AjaxResult uploadFiles(MultipartFile[] files) {
         List<Map> resultMaps = new ArrayList<>();
         for (MultipartFile file : files) {
+            String fileName = IdUtil.simpleUUID() + StrUtil.DOT + FileUtil.extName(file.getOriginalFilename());
+            Map<String, String> resultMap = new HashMap<>(4);
+            resultMap.put("bucketName" , ossProperties.getBucketName());
+            resultMap.put("fileName" , fileName);
+            resultMap.put("url" , String.format("/system/file/%s/%s" , ossProperties.getBucketName(), fileName));
+
+            try {
+                // 文件管理数据记录,收集管理追踪文件
+                Long fileId = fileLog(file, fileName);
+                resultMap.put("id" , String.valueOf(fileId));
+                if (!fileId.equals(-1L)) {
+                    ossTemplate.putObject(ossProperties.getBucketName(), fileName, file.getInputStream());
+                }
+            } catch (Exception e) {
+//                log.error("上传失败", e);
+                return AjaxResult.error(e.getLocalizedMessage());
+            }
+            resultMaps.add(resultMap);
+        }
+        return AjaxResult.success(resultMaps);
+    }
+
+    /**
+     * 上传文件
+     *
+     * @param roList 文件名, url
+     * @return
+     */
+    @Override
+    public AjaxResult uploadByUrl(List<UploadByUrlRo> roList) {
+        List<Map> resultMaps = new ArrayList<>();
+        for (UploadByUrlRo ro : roList) {
+            byte[] bytes = fileApi.downloadImageToByteArray(ro.getUrl());
+            MultipartFile file = MultipartFileUtil.convertByteToMultipartFile(bytes, ro.getFileName());
             String fileName = IdUtil.simpleUUID() + StrUtil.DOT + FileUtil.extName(file.getOriginalFilename());
             Map<String, String> resultMap = new HashMap<>(4);
             resultMap.put("bucketName" , ossProperties.getBucketName());
@@ -867,6 +904,24 @@ public class SysFileServiceImpl implements ISysFileService {
         if(sysFile != null){
             try {
                 return ossTemplate.getObjectInfo(sysFile.getBucketName(), sysFile.getFileName());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public byte[] getByteObject(Long sysFileId) {
+        SysFile sysFile = this.selectSysFileById(sysFileId);
+        if(sysFile != null){
+            try {
+                S3Object s3Object = ossTemplate.getObjectInfo(sysFile.getBucketName(), sysFile.getFileName());
+                S3ObjectInputStream inputStream = s3Object.getObjectContent();
+                byte[] bytes = new byte[(int) s3Object.getObjectMetadata().getContentLength()];
+                inputStream.read(bytes);
+                inputStream.close();
+                return bytes;
             } catch (Exception e) {
                 e.printStackTrace();
             }
