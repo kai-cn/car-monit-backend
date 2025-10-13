@@ -17,28 +17,20 @@ public class CarLocationParam {
     private String orgCode;
 
     /**
-     * 门架编号
-     */
-    private String gantryCode;
-
-    /**
      * 所属路线编码
      */
     private String roadCode;
-
-//    @ApiModelProperty("所属路线名称")
-//    private String roadName;
-//
-//    @ApiModelProperty("所属收费站名称")
-//    private String tollName;
-
-//    @ApiModelProperty("路段id")
-//    private String roadSectionId;
 
     /**
      * 所属路段编码
      */
     private String sectionCode;
+
+    /**
+     * 门架编号
+     */
+    private String gantryCode;
+
 
     /**
      * 所属收费站编码
