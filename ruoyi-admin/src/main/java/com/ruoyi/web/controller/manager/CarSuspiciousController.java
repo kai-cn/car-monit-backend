@@ -67,6 +67,11 @@ public class CarSuspiciousController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo list(CarSuspicious carSuspicious) {
         startPage();
+
+        if (CommonUtil.isNotBlank(carSuspicious.getCode())){
+            carSuspicious.setTrackNames(carSuspicious.getCode()); // 查询范围
+        }
+
         // carSuspicious.setTenantId(SecurityUtils.getTenantId()); // 查询我自己单位的租户
         List<CarSuspicious> list = carSuspiciousService.selectCarSuspiciousList(carSuspicious);
         return getDataTable(list);
