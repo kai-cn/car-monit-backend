@@ -82,7 +82,6 @@
         <if test="userIds != null  and userIds != ''"> and t.user_ids = #{userIds}</if>
         <if test="userNames != null  and userNames != ''"> and t.user_names = #{userNames}</if>
         <if test="amount != null "> and t.amount = #{amount}</if>
-        <if test="exceptIds != null  and exceptIds != ''"> and t.except_ids = #{exceptIds}</if>
         <if test="escapedTypes != null  and escapedTypes != ''"> and t.escaped_types = #{escapedTypes}</if>
         <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
         <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
@@ -158,7 +157,8 @@
         t.org_id,
         sd.dept_name org_name,
         round(ifnull(sum(t.amount),0),2) amount,
-        round(ifnull(sum(t.aduit_amount),0),2) aduit_amount
+        round(ifnull(sum(t.aduit_amount),0),2) aduit_amount,
+        GROUP_CONCAT(t.except_ids SEPARATOR ', ') except_ids
         FROM car_confim_free t
         left join sys_dept sd on sd.dept_id = t.org_id
         WHERE t.del_flag = '0'
@@ -174,7 +174,6 @@
         <if test="userIds != null  and userIds != ''"> and t.user_ids = #{userIds}</if>
         <if test="userNames != null  and userNames != ''"> and t.user_names = #{userNames}</if>
         <if test="amount != null "> and t.amount = #{amount}</if>
-        <if test="exceptIds != null  and exceptIds != ''"> and t.except_ids = #{exceptIds}</if>
         <if test="escapedTypes != null  and escapedTypes != ''"> and t.escaped_types = #{escapedTypes}</if>
         <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
         <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
