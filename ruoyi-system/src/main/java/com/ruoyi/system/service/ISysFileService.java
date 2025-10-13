@@ -4,6 +4,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3Object;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.system.domain.SysFile;
+import com.ruoyi.system.domain.ro.UploadByUrlRo;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -13,7 +14,7 @@ import java.util.List;
 
 /**
  * 参数配置 服务层
- * 
+ *
  * @author ruoyi
  */
 public interface ISysFileService
@@ -68,6 +69,8 @@ public interface ISysFileService
     AjaxResult uploadFile(MultipartFile file);
 
     AjaxResult uploadFiles(MultipartFile[] files);
+
+    AjaxResult uploadByUrl(List<UploadByUrlRo> roList);
 
     AjaxResult uploadFilesUser(MultipartFile[] files,String userId);//直接传用户ID
 
@@ -146,4 +149,11 @@ public interface ISysFileService
      * @return
      */
     S3Object getFileObject(Long sysFileId);
+
+    /**
+     * 获取byte数组
+     * @param sysFileId id
+     * @return
+     */
+    byte[] getByteObject(Long sysFileId);
 }
