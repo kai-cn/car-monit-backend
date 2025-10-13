@@ -9,6 +9,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.system.domain.SysFile;
 import com.ruoyi.system.domain.ro.UploadByUrlRo;
+import com.ruoyi.system.domain.ro.UploadRo;
 import com.ruoyi.system.service.ISysFileService;
 import com.ruoyi.web.util.Base64DecodeMultipartFile;
 import com.ruoyi.web.util.CommonUtil;
@@ -79,13 +80,13 @@ public class SysFileController extends BaseController {
     /**
      * url上传文件 文件名采用uuid,避免原始文件名中带"-"符号导致下载的时候解析出现异常
      *
-     * @param roList 文件名, url
+     * @param uploadRo 文件名, url
      * @return R(/ admin / bucketName / filename)
      */
     @PostMapping("/uploadByUrl")
     @Log(title = "文件", businessType = BusinessType.INSERT)
-    public AjaxResult uploadByUrl(@RequestBody List<UploadByUrlRo> roList) {
-        return sysFileService.uploadByUrl(roList);
+    public AjaxResult uploadByUrl(@RequestBody UploadRo uploadRo) {
+        return sysFileService.uploadByUrl(uploadRo.getList());
     }
 
     /**
