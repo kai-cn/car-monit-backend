@@ -106,7 +106,7 @@
         <if test="nextPassAddress != null  and nextPassAddress != ''"> and t.next_pass_address = #{nextPassAddress}</if>
         <if test="nextPassLongitude != null  and nextPassLongitude != ''"> and t.next_pass_longitude = #{nextPassLongitude}</if>
         <if test="nextPassLatitude != null  and nextPassLatitude != ''"> and t.next_pass_latitude = #{nextPassLatitude}</if>
-        <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
+        <if test="roadCode != null  and roadCode != ''"> and t.track_names like concat('%', #{roadCode}, '%')</if>
         <if test="roadName != null  and roadName != ''"> and t.road_name like concat('%', #{roadName}, '%')</if>
         <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
         <if test="sectionName != null  and sectionName != ''"> and t.section_name like concat('%', #{sectionName}, '%')</if>
@@ -124,6 +124,16 @@
         <if test="applyTime1 != null  and applyTime1 != ''">and t.in_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')</if>
         <if test="applyTime2 != null  and applyTime2 != ''">and t.in_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
         <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
+
+        <!--当前在线轨迹-->
+        <if test="flag != null and flag == 'curDate' ">
+            and c.status = '1' and and t.back_col1 = #{flagTime}
+        </if>
+
+        <!--历史轨迹-->
+        <if test="flag != null and flag == 'histhory' ">
+            and t.back_col1 != #{flagTime}
+        </if>
 
         order by t.gantry_time desc,t.id
     </select>

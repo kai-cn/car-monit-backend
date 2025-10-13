@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +48,27 @@ public class CarWarningInfoController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo list(CarWarningInfo carWarningInfo) {
         startPage();
-        // carWarningInfo.setTenantId(SecurityUtils.getTenantId()); // 查询我自己单位的租户
+
+        String flag = "";
+        if (CommonUtil.isNotBlank(carWarningInfo.getQueryRante())){
+            flag = carWarningInfo.getQueryRante();
+        }
+        if (CommonUtil.isBlank(flag)){
+            flag = "curDate"; // 默认查询当天并且车辆为
+        }
+        carWarningInfo.setFlag(flag);
+
+        // 设置时间
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        String formattedDate = sdf.format(new Date());
+        if (flag.equals("curDate")){
+            carWarningInfo.setFlagTime(formattedDate);
+        }else  if (flag.equals("histhory")){
+            carWarningInfo.setFlagTime(formattedDate);
+        }
+
+
+        carWarningInfo.setTrackNames(carWarningInfo.getCode()); // 查询范围
         List<CarWarningInfo> list = carWarningInfoService.selectCarWarningInfoList(carWarningInfo);
         return getDataTable(list);
     }
