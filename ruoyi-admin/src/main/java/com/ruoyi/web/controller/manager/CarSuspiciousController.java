@@ -1,7 +1,9 @@
 package com.ruoyi.web.controller.manager;
 
+import cn.afterturn.easypoi.entity.ImageEntity;
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import cn.afterturn.easypoi.word.WordExportUtil;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -9,12 +11,18 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.CarSuspicious;
 import com.ruoyi.manager.domain.CarSuspiciousCheck;
+import com.ruoyi.manager.domain.ro.ExportAbnormalPassageRo;
+import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarSuspiciousCheckService;
 import com.ruoyi.manager.service.ICarSuspiciousService;
+import com.ruoyi.system.domain.SysFile;
 import com.ruoyi.system.service.ISysDictDataService;
+import com.ruoyi.system.service.ISysFileService;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -44,6 +52,12 @@ public class CarSuspiciousController extends BaseController {
 
     @Autowired
     private ICarSuspiciousCheckService carSuspiciousCheckService;
+
+    @Autowired
+    private ICarInfoService carInfoService;
+
+    @Autowired
+    private ISysFileService sysFileService;
 
 
     /**
@@ -94,7 +108,101 @@ public class CarSuspiciousController extends BaseController {
         return getDataTable(rtnList);
     }
 
+    /**
+     * 导出通行异常
+     */
+    @GetMapping("/exportAbnormalPassage")
+    public void exportAbnormalPassage(ExportAbnormalPassageRo ro, HttpServletResponse response) {
+        CarInfo carInfo = carInfoService.getById(ro.getCarInfoId());
+        CarSuspicious carSuspicious = carSuspiciousService.getById(ro.getCarSuspiciousId());
+        // 车牌颜色
+        Map<String,String> plateColorMap = sysDictDataService.selectDictDataMap("plate_color");
+        // 车型
+        Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
+        // 车种
+        Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle");
+        // 逃费类型
+        Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataMap("escaped_type");
+        // 车辆实时状态
+        Map<String,String> statusMap = sysDictDataService.selectDictDataMap("car_run_status");
 
+
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("plateColor", CommonUtil.isNull(plateColorMap.get(carInfo.getPlateColor())));
+        map.put("carNo", CommonUtil.isNull(carInfo.getCarNo()));
+        map.put("carType", CommonUtil.isNull(carTypeMap.get(carInfo.getCarType())));
+        map.put("carVehicle", CommonUtil.isNull(carVehicleMap.get(carInfo.getCarVehicle())));
+        map.put("carNum", CommonUtil.isNull(carInfo.getCarNum()));
+        // 需要循环 : 逃费类型
+        String bussName = "";
+        String bussType = CommonUtil.deleteEnd(carInfo.getEscapedType());
+        if (CommonUtil.isNotBlank(bussType)) {
+            String[] bussTypeStr = bussType.split(",");
+            for (int i = 0; i < bussTypeStr.length; i++) {
+                if (escapedTypeMap.containsKey(bussTypeStr[i])) {
+                    bussName = bussName + escapedTypeMap.get(bussTypeStr[i]) + ",";
+                }
+            }
+        }
+        map.put("escapedType", CommonUtil.deleteEnd(bussName));
+        map.put("status", CommonUtil.isNull(statusMap.get(carInfo.getStatus())));
+        map.put("remark", CommonUtil.isNull(carInfo.getRemark()));
+        if (CommonUtil.isNotBlank(carInfo.getFileIds())){
+            String[] fileIdArr = carInfo.getFileIds().split(",");
+            for (int i = 1; i <= fileIdArr.length; i++) {
+                byte[] byteObject = sysFileService.getByteObject(Long.parseLong(fileIdArr[i-1]));
+                ImageEntity image = new ImageEntity(byteObject, 100, 100);
+                //表格外添加简单图片
+                image.setType(ImageEntity.Data);
+                map.put("carImg" + i, image);
+            }
+        }
+
+        map.put("inStation", CommonUtil.isNull(carSuspicious.getInStation()));
+        map.put("inTime", CommonUtil.isNull(carSuspicious.getInTime()));
+        map.put("outstation", CommonUtil.isNull(carSuspicious.getOutStation()));
+        map.put("outTime", CommonUtil.isNull(carSuspicious.getOutTime()));
+        map.put("gantrytStation", CommonUtil.isNull(carSuspicious.getGantrytStation()));
+        map.put("gantryTime", CommonUtil.isNull(carSuspicious.getGantryTime()));
+        map.put("outGantrytStation", CommonUtil.isNull(carSuspicious.getOutGantrytStation()));
+        map.put("outGantryTime", CommonUtil.isNull(carSuspicious.getOutGantryTime()));
+        map.put("isExcept", CommonUtil.isNull(carSuspicious.getIsExcept()));
+        map.put("exceptRemark", CommonUtil.isNull(carSuspicious.getExceptRemark()));
+        if (CommonUtil.isNotBlank(carSuspicious.getExceptFileIds())){
+            String[] fileIdArr = carSuspicious.getExceptFileIds().split(",");
+            for (int i = 1; i <= fileIdArr.length; i++) {
+                byte[] byteObject = sysFileService.getByteObject(Long.parseLong(fileIdArr[i-1]));
+                ImageEntity image = new ImageEntity(byteObject, 100, 100);
+                //表格外添加简单图片
+                image.setType(ImageEntity.Data);
+                map.put("susImg" + i, image);
+            }
+        }
+        if (carSuspicious.getCheckList() == null){
+            map.put("checkList", new ArrayList<>());
+        }else {
+            List<CarSuspiciousCheck> checkList = carSuspicious.getCheckList();
+            for (int i = 1; i <= checkList.size(); i++) {
+                CarSuspiciousCheck carSuspiciousCheck = checkList.get(i - 1);
+                carSuspiciousCheck.setSort(i);
+                carSuspiciousCheck.setEscapedType(escapedTypeMap.get(carSuspiciousCheck.getEscapedType()));
+            }
+            map.put("checkList", checkList);
+        }
+        try {
+            String url = "templates/export/carSuspicious.docx";
+            XWPFDocument workbook = WordExportUtil.exportWord07(url, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 
 

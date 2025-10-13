@@ -917,11 +917,27 @@ public class SysFileServiceImpl implements ISysFileService {
         if(sysFile != null){
             try {
                 S3Object s3Object = ossTemplate.getObjectInfo(sysFile.getBucketName(), sysFile.getFileName());
-                S3ObjectInputStream inputStream = s3Object.getObjectContent();
-                byte[] bytes = new byte[(int) s3Object.getObjectMetadata().getContentLength()];
-                inputStream.read(bytes);
+                InputStream inputStream = s3Object.getObjectContent();
+
+                // 创建一个ByteArrayOutputStream
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+                // 创建一个缓冲区
+                byte[] buffer = new byte[1024];
+                int length;
+
+                // 从InputStream读取数据，并写入到ByteArrayOutputStream
+                while ((length = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, length);
+                }
+
+                // 将ByteArrayOutputStream转换为字节数组
+                byte[] finalBytes = outputStream.toByteArray();
+
+
                 inputStream.close();
-                return bytes;
+                outputStream.close();
+                return finalBytes;
             } catch (Exception e) {
                 e.printStackTrace();
             }
