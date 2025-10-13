@@ -342,6 +342,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                     carWarningInfo.setUpdateBy(userId); // 更新人
                                     carWarningInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
                                     carWarningInfo.setRoadCode(lastBo.getRoadCode()); // 路线
+                                    carWarningInfo.setSectionCode(lastBo.getSectionCode());
 
                                     if (CommonUtil.isNotBlank(pointUuid)){
                                         delCarWarningInfoList.add(pointUuid);

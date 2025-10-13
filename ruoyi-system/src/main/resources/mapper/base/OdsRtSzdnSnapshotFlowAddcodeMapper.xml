@@ -154,8 +154,12 @@
     </select>
 
     <select id="getTopTen" resultType="com.ruoyi.manager.domain.vo.bigscreen.TopTenVO">
-        select section_name, count(distinct car_no) carNum
-        from car_warning_info group by section_name order by carNum desc limit 10;
+        select t1.section_name, count(1) carNum
+        from car_warning_info t,ods_szdn_section t1
+			where t.del_flag = '0' and t.section_code = t1.section_code
+				group by section_name
+        order by carNum desc
+        limit 10
     </select>
 
 
