@@ -258,12 +258,13 @@ public class CarInfoController extends BaseController {
 
                 // 车种
                 String carVehicle =  CommonUtil.isNull(addbo.getCarVehicle());
-                if (carVehicleMap.containsKey(carVehicle)) {
-                    addbo.setCarType(CommonUtil.isNull(carVehicleMap.get(carVehicle)));
-                } else {
-                    errorList.add(importUtil.getErrorBO(i + 1, "车种", carVehicle + " 车种不存在,请在字典菜单维护！"));
+                if (CommonUtil.isNotBlank(carVehicle)){
+                    if (carVehicleMap.containsKey(carVehicle)) {
+                        addbo.setCarType(CommonUtil.isNull(carVehicleMap.get(carVehicle)));
+                    } else {
+                        errorList.add(importUtil.getErrorBO(i + 1, "车种", carVehicle + " 车种不存在,请在字典菜单维护！"));
+                    }
                 }
-
 
                 // 逃费类型
                 String escapedType = CommonUtil.deleteEnd(addbo.getEscapedType());
@@ -319,7 +320,7 @@ public class CarInfoController extends BaseController {
     public List<ImportEntity> initList() {
         List<ImportEntity> boList = new ArrayList<ImportEntity>();
         // 校验规则 1 必填 2小数 3整数 4日期 5身份证 6年月 多个逗号分隔例如：1,2
-        boList.add(new ImportEntity("车牌颜色","plateColor",""));
+        boList.add(new ImportEntity("车牌颜色","plateColor","1"));
         boList.add(new ImportEntity("车牌号","carNo","1"));
         boList.add(new ImportEntity("车型","carType",""));
         boList.add(new ImportEntity("车种","carVehicle",""));
