@@ -81,6 +81,9 @@ public class CarWarningInfoController extends BaseController {
     @GetMapping("/export")
     public AjaxResult export(CarWarningInfo carWarningInfo, HttpServletResponse response) {
 
+        // 车牌颜色
+        Map<String,String> plateColorMap = sysDictDataService.selectDictDataMap("plate_color");
+
         // 车型
         Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
         // 车种
@@ -123,6 +126,8 @@ public class CarWarningInfoController extends BaseController {
             if (null != dp.getInTime()){
                 dp.setInTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getInTime()));
             }
+
+            dp.setPlateColor(CommonUtil.isNull(plateColorMap.get(dp.getPlateColor())));
 
             dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
             dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
