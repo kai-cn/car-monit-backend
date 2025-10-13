@@ -210,5 +210,12 @@ public class CarWarningInfo extends BasePlusEntityNew implements Custom {
     private String code;
 
 
+    /**
+     * 车牌颜色
+     */
+    @TableField(exist = false)
+    private String plateColor;
+
+
 
 }

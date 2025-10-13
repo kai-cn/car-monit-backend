@@ -84,9 +84,9 @@
 
     <select id="selectCarWarningInfoList" parameterType="com.ruoyi.manager.domain.CarWarningInfo" resultMap="CarWarningInfoResult">
         SELECT
-        <include refid="selectCarWarningInfoVo"/>, c.escaped_type escapedType, c.escaped_amount escapedAmount
+        <include refid="selectCarWarningInfoVo"/>, c.escaped_type escapedType, c.escaped_amount escapedAmount,c.plate_color plateColor
         FROM car_warning_info t
-        inner join car_info c on t.car_id = c.id
+        left join car_info c on t.car_id = c.id
         WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="carId != null  and carId != ''"> and t.car_id = #{carId}</if>
@@ -108,7 +108,7 @@
         <if test="nextPassLatitude != null  and nextPassLatitude != ''"> and t.next_pass_latitude = #{nextPassLatitude}</if>
         <if test="roadCode != null  and roadCode != ''"> and t.track_names like concat('%', #{roadCode}, '%')</if>
         <if test="roadName != null  and roadName != ''"> and t.road_name like concat('%', #{roadName}, '%')</if>
-        <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
+        <if test="sectionCode != null  and sectionCode != ''"> and t.track_names like concat('%', #{sectionCode}, '%') </if>
         <if test="sectionName != null  and sectionName != ''"> and t.section_name like concat('%', #{sectionName}, '%')</if>
         <if test="trackId != null  and trackId != ''"> and t.track_id = #{trackId}</if>
         <if test="trackJosn != null  and trackJosn != ''"> and t.track_josn = #{trackJosn}</if>
@@ -135,13 +135,17 @@
             and t.back_col1 != #{flagTime}
         </if>
 
+        <if test="escapedType != null  and escapedType != ''"> and c.escaped_type like concat('%', #{escapedType}, '%') </if>
+        <if test="plateColor != null  and plateColor != ''"> and c.plate_color = #{plateColor}</if>
+
         order by t.gantry_time desc,t.id
     </select>
 
     <select id="selectCarWarningInfoById" parameterType="String" resultMap="CarWarningInfoResult">
          select
-         <include refid="selectCarWarningInfoVo"/>,t.track_josn
+         <include refid="selectCarWarningInfoVo"/>,t.track_josn, c.escaped_type escapedType, c.escaped_amount escapedAmount,c.plate_color plateColor
          from car_warning_info t
+         left join car_info c on t.car_id = c.id
          where t.id = #{id}
     </select>
 
