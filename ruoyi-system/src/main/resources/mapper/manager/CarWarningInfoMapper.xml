@@ -127,7 +127,7 @@
 
         <!--当前在线轨迹-->
         <if test="flag != null and flag == 'curDate' ">
-            and c.status = '1' and and t.back_col1 = #{flagTime}
+            and c.status = '1' and t.back_col1 = #{flagTime}
         </if>
 
         <!--历史轨迹-->
