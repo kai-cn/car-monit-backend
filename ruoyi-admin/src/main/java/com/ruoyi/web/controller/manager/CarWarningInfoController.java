@@ -80,13 +80,36 @@ public class CarWarningInfoController extends BaseController {
     @Log(title = "预警车辆", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
     public AjaxResult export(CarWarningInfo carWarningInfo, HttpServletResponse response) {
-        List<CarWarningInfo> list = carWarningInfoService.selectCarWarningInfoList(carWarningInfo);
+
         // 车型
         Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
         // 车种
         Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle");
         // 逃费类型
         Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataMap("escaped_type");
+
+        String flag = "";
+        if (CommonUtil.isNotBlank(carWarningInfo.getQueryRante())){
+            flag = carWarningInfo.getQueryRante();
+        }
+        if (CommonUtil.isBlank(flag)){
+            flag = "curDate"; // 默认查询当天并且车辆为
+        }
+        carWarningInfo.setFlag(flag);
+
+        // 设置时间
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        String formattedDate = sdf.format(new Date());
+        if (flag.equals("curDate")){
+            carWarningInfo.setFlagTime(formattedDate);
+        }else  if (flag.equals("histhory")){
+            carWarningInfo.setFlagTime(formattedDate);
+        }
+
+
+        carWarningInfo.setTrackNames(carWarningInfo.getCode()); // 查询范围
+
+        List<CarWarningInfo> list = carWarningInfoService.selectCarWarningInfoList(carWarningInfo);
 
 
         list.stream().forEach(dp -> {
@@ -96,9 +119,27 @@ public class CarWarningInfoController extends BaseController {
             if (null != dp.getCreateTime()){
                 dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
             }
+
+            if (null != dp.getInTime()){
+                dp.setInTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getInTime()));
+            }
+
             dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
             dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
-            dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
+
+            // 需要循环 : 逃费类型
+            String bussName = "";
+            String bussType = CommonUtil.deleteEnd(dp.getEscapedType());
+            if (CommonUtil.isNotBlank(bussType)) {
+                String[] bussTypeStr = bussType.split(",");
+                for (int i = 0; i < bussTypeStr.length; i++) {
+                    if (escapedTypeMap.containsKey(bussTypeStr[i])) {
+                        bussName = bussName + escapedTypeMap.get(bussTypeStr[i]) + ",";
+                    }
+                }
+            }
+            dp.setEscapedType(CommonUtil.deleteEnd(bussName));
+
         });
 
         Map<String,Object> map = new HashMap<>();

@@ -164,6 +164,11 @@ public class CarWarningInfo extends BasePlusEntityNew implements Custom {
     private String createTimeStr;
 
 
+    // 入口时间
+    @TableField(exist = false)
+    private String inTimeStr;
+
+
     // 标识
     @TableField(exist = false)
     private String flag;
