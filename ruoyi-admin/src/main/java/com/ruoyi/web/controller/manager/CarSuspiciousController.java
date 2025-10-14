@@ -12,10 +12,8 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.file.ImageUtils;
-import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.CarSuspicious;
 import com.ruoyi.manager.domain.CarSuspiciousCheck;
-import com.ruoyi.manager.domain.ro.ExportAbnormalPassageRo;
 import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarSuspiciousCheckService;
 import com.ruoyi.manager.service.ICarSuspiciousService;
@@ -30,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -107,8 +106,35 @@ public class CarSuspiciousController extends BaseController {
         carSuspicious.setCheckStatus("1"); // 是可疑车俩并且
         List<CarSuspicious> list = carSuspiciousService.selectCarSuspiciousList(carSuspicious);
         List<CarSuspicious> rtnList = new ArrayList<>();
+        // 逃费类型
+        Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataMap("escaped_type");
         for (CarSuspicious vo :list){
             CarSuspicious rtn = carSuspiciousService.selectCarSuspiciousById(vo.getId());
+            if (rtn.getCheckList() != null){
+                BigDecimal chargeAmount = new BigDecimal("0");
+                BigDecimal totalAmount = new BigDecimal("0");
+                BigDecimal difAmount = new BigDecimal("0");
+                for (CarSuspiciousCheck check : rtn.getCheckList()) {
+                    chargeAmount = chargeAmount.add(check.getChargeAmount());
+                    totalAmount = totalAmount.add(check.getTotalAmount());
+                    difAmount = difAmount.add(check.getDifAmount());
+                }
+                rtn.setChargeAmount(chargeAmount.toString());
+                rtn.setTotalAmount(totalAmount.toString());
+                rtn.setDifAmount(difAmount.toString());
+                // 需要循环 : 逃费类型
+                String bussName = "";
+                String bussType = CommonUtil.deleteEnd(rtn.getEscapedType());
+                if (CommonUtil.isNotBlank(bussType)) {
+                    String[] bussTypeStr = bussType.split(",");
+                    for (int i = 0; i < bussTypeStr.length; i++) {
+                        if (escapedTypeMap.containsKey(bussTypeStr[i])) {
+                            bussName = bussName + escapedTypeMap.get(bussTypeStr[i]) + ",";
+                        }
+                    }
+                    rtn.setEscapedTypeName(bussName);
+                }
+            }
             rtnList.add(rtn);
         }
         return getDataTable(rtnList);
@@ -118,20 +144,11 @@ public class CarSuspiciousController extends BaseController {
      * 导出通行异常
      */
     @GetMapping("/exportAbnormalPassage")
-    public void exportAbnormalPassage(ExportAbnormalPassageRo ro, HttpServletResponse response) {
-        CarSuspicious carSuspicious = carSuspiciousService.getById(ro.getCarSuspiciousId());
-        CarInfo carInfo;
-        if (CommonUtil.isBlank(ro.getCarInfoId())){
-            CarInfo queryCarInfo = new CarInfo();
-            queryCarInfo.setCarNo(carSuspicious.getCarNo());
-            List<CarInfo> carInfoList = carInfoService.selectCarInfoList(queryCarInfo);
-            carInfo = carInfoList.get(0);
-        }else {
-            carInfo = carInfoService.getById(ro.getCarInfoId());
-        }
+    public void exportAbnormalPassage(String carSuspiciousId, HttpServletResponse response) {
+        CarSuspicious carSuspicious = carSuspiciousService.getById(carSuspiciousId);
 
         CarSuspiciousCheck querybo = new CarSuspiciousCheck();
-        querybo.setCarId(ro.getCarSuspiciousId());
+        querybo.setCarId(carSuspiciousId);
         List<CarSuspiciousCheck> checkList = carSuspiciousCheckService.selectCarSuspiciousCheckList(querybo);
 
         // 车牌颜色
@@ -142,21 +159,28 @@ public class CarSuspiciousController extends BaseController {
         Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle");
         // 逃费类型
         Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataMap("escaped_type");
-        // 车辆实时状态
-        Map<String,String> statusMap = sysDictDataService.selectDictDataMap("car_run_status");
 
 
 
         Map<String,Object> map = new HashMap<>();
-        map.put("plateColor", carInfo.getPlateColor() == null ? "" : CommonUtil.isNull(plateColorMap.get(carInfo.getPlateColor())));
-        map.put("carNo", CommonUtil.isNull(carInfo.getCarNo()));
-        map.put("carType", carInfo.getCarType() == null ? "" : CommonUtil.isNull(carTypeMap.get(carInfo.getCarType())));
-        String carVehicle = carInfo.getCarVehicle() == null ? "" : carVehicleMap.get(carInfo.getCarVehicle());
-        map.put("carVehicle", carVehicle == null ? carInfo.getCarVehicle() : carVehicle);
-        map.put("carNum", CommonUtil.isNull(carInfo.getCarNum()));
+        map.put("plateColor", carSuspicious.getPlateColor() == null ? "" : CommonUtil.isNull(plateColorMap.get(carSuspicious.getPlateColor())));
+        map.put("carNo", CommonUtil.isNull(carSuspicious.getCarNo()));
+        map.put("carType", carSuspicious.getCarType() == null ? "" : CommonUtil.isNull(carTypeMap.get(carSuspicious.getCarType())));
+        String carVehicle = carSuspicious.getCarVehicle() == null ? "" : carVehicleMap.get(carSuspicious.getCarVehicle());
+        map.put("carVehicle", carVehicle == null ? carSuspicious.getCarVehicle() : carVehicle);
+        map.put("carNum", CommonUtil.isNull(carSuspicious.getCarNum()));
+        map.put("inStation", CommonUtil.isNull(carSuspicious.getInStation()));
+        map.put("inTime", CommonUtil.isNull(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, carSuspicious.getInTime())));
+        map.put("outstation", CommonUtil.isNull(carSuspicious.getOutStation()));
+        map.put("outTime", CommonUtil.isNull(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, carSuspicious.getOutTime())));
+        map.put("gantrytStation", CommonUtil.isNull(carSuspicious.getGantrytStation()));
+        map.put("gantryTime", CommonUtil.isNull(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, carSuspicious.getGantryTime())));
+        map.put("outGantrytStation", CommonUtil.isNull(carSuspicious.getOutGantrytStation()));
+        map.put("outGantryTime", CommonUtil.isNull(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, carSuspicious.getOutGantryTime())));
+
         // 需要循环 : 逃费类型
         String bussName = "";
-        String bussType = CommonUtil.deleteEnd(carInfo.getEscapedType());
+        String bussType = CommonUtil.deleteEnd(carSuspicious.getEscapedType());
         if (CommonUtil.isNotBlank(bussType)) {
             String[] bussTypeStr = bussType.split(",");
             for (int i = 0; i < bussTypeStr.length; i++) {
@@ -166,31 +190,24 @@ public class CarSuspiciousController extends BaseController {
             }
         }
         map.put("escapedType", CommonUtil.deleteEnd(bussName));
-        map.put("status", carInfo.getStatus() == null ? "" : CommonUtil.isNull(statusMap.get(carInfo.getStatus())));
-        map.put("remark", CommonUtil.isNull(carInfo.getRemark()));
-        if (CommonUtil.isNotBlank(carInfo.getFileIds())){
-            List<SysFile> sysFiles = sysFileService.selectSysFileByIds(carInfo.getFileIds());
-            int i = 1;
-            for (SysFile sysFile : sysFiles) {
-                if (ImageUtils.isImage(sysFile.getType())){
-                    byte[] byteObject = sysFileService.getByteObject(sysFile.getId());
-                    ImageEntity image = new ImageEntity(byteObject, 100, 100);
-                    //表格外添加简单图片
-                    image.setType(ImageEntity.Data);
-                    map.put("carImg" + i, image);
-                    i++;
-                }
+        if (checkList == null){
+            map.put("chargeAmount", "");
+            map.put("totalAmount", "");
+            map.put("difAmount", "");
+        }else {
+            BigDecimal chargeAmount = new BigDecimal("0");
+            BigDecimal totalAmount = new BigDecimal("0");
+            BigDecimal difAmount = new BigDecimal("0");
+            for (CarSuspiciousCheck check : checkList) {
+                chargeAmount = chargeAmount.add(check.getChargeAmount());
+                totalAmount = totalAmount.add(check.getTotalAmount());
+                difAmount = difAmount.add(check.getDifAmount());
             }
+            map.put("chargeAmount", chargeAmount.toString());
+            map.put("totalAmount", totalAmount.toString());
+            map.put("difAmount", difAmount.toString());
         }
 
-        map.put("inStation", CommonUtil.isNull(carSuspicious.getInStation()));
-        map.put("inTime", CommonUtil.isNull(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, carSuspicious.getInTime())));
-        map.put("outstation", CommonUtil.isNull(carSuspicious.getOutStation()));
-        map.put("outTime", CommonUtil.isNull(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, carSuspicious.getOutTime())));
-        map.put("gantrytStation", CommonUtil.isNull(carSuspicious.getGantrytStation()));
-        map.put("gantryTime", CommonUtil.isNull(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, carSuspicious.getGantryTime())));
-        map.put("outGantrytStation", CommonUtil.isNull(carSuspicious.getOutGantrytStation()));
-        map.put("outGantryTime", CommonUtil.isNull(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, carSuspicious.getOutGantryTime())));
         map.put("isExcept", "0".equals(carSuspicious.getIsExcept()) ? "无逃费" : "1".equals(carSuspicious.getIsExcept()) ? "确认逃费" : "");
         map.put("exceptRemark", CommonUtil.isNull(carSuspicious.getExceptRemark()));
         if (CommonUtil.isNotBlank(carSuspicious.getExceptFileIds())){
@@ -199,23 +216,13 @@ public class CarSuspiciousController extends BaseController {
             for (SysFile sysFile : sysFiles) {
                 if (ImageUtils.isImage(sysFile.getType())){
                     byte[] byteObject = sysFileService.getByteObject(sysFile.getId());
-                    ImageEntity image = new ImageEntity(byteObject, 100, 100);
+                    ImageEntity image = new ImageEntity(byteObject, 250, 250);
                     //表格外添加简单图片
                     image.setType(ImageEntity.Data);
                     map.put("susImg" + i, image);
                     i++;
                 }
             }
-        }
-        if (checkList == null){
-            map.put("checkList", new ArrayList<>());
-        }else {
-            for (int i = 1; i <= checkList.size(); i++) {
-                CarSuspiciousCheck carSuspiciousCheck = checkList.get(i - 1);
-                carSuspiciousCheck.setSort(i);
-                carSuspiciousCheck.setEscapedType(escapedTypeMap.get(carSuspiciousCheck.getEscapedType()));
-            }
-            map.put("checkList", checkList);
         }
         try {
             String url = "templates/export/carSuspicious.docx";
