@@ -262,4 +262,22 @@ public class CarSuspicious extends BasePlusEntityNew implements Custom {
     @TableField(exist = false)
     private String code;
 
+    /**
+     * 收费金额
+     */
+    @TableField(exist = false)
+    private String chargeAmount;
+
+    /**
+     * 应缴金额
+     */
+    @TableField(exist = false)
+    private String totalAmount;
+
+    /**
+     * 差额
+     */
+    @TableField(exist = false)
+    private String difAmount;
+
 }
