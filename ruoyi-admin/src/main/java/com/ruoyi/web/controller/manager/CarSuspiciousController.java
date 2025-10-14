@@ -119,8 +119,17 @@ public class CarSuspiciousController extends BaseController {
      */
     @GetMapping("/exportAbnormalPassage")
     public void exportAbnormalPassage(ExportAbnormalPassageRo ro, HttpServletResponse response) {
-        CarInfo carInfo = carInfoService.getById(ro.getCarInfoId());
         CarSuspicious carSuspicious = carSuspiciousService.getById(ro.getCarSuspiciousId());
+        CarInfo carInfo;
+        if (CommonUtil.isBlank(ro.getCarInfoId())){
+            CarInfo queryCarInfo = new CarInfo();
+            queryCarInfo.setCarNo(carSuspicious.getCarNo());
+            List<CarInfo> carInfoList = carInfoService.selectCarInfoList(queryCarInfo);
+            carInfo = carInfoList.get(0);
+        }else {
+            carInfo = carInfoService.getById(ro.getCarInfoId());
+        }
+
         CarSuspiciousCheck querybo = new CarSuspiciousCheck();
         querybo.setCarId(ro.getCarSuspiciousId());
         List<CarSuspiciousCheck> checkList = carSuspiciousCheckService.selectCarSuspiciousCheckList(querybo);
