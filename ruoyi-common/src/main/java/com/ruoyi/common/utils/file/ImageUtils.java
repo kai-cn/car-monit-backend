@@ -20,6 +20,11 @@ import com.ruoyi.common.utils.StringUtils;
  */
 public class ImageUtils
 {
+    public static final String[] IMAGE_EXTENSION = {
+            // 图片
+            "bmp", "gif", "jpg", "jpeg", "png", "webp", "svg"
+            };
+
     private static final Logger log = LoggerFactory.getLogger(ImageUtils.class);
 
     public static byte[] getImage(String imagePath)
@@ -57,7 +62,7 @@ public class ImageUtils
 
     /**
      * 读取文件为字节数据
-     * 
+     *
      * @param url 地址
      * @return 字节数据
      */
@@ -94,5 +99,16 @@ public class ImageUtils
         {
             IOUtils.closeQuietly(in);
         }
+    }
+
+    public static boolean isImage(String extension){
+        for (String str : IMAGE_EXTENSION)
+        {
+            if (str.equalsIgnoreCase(extension))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }
