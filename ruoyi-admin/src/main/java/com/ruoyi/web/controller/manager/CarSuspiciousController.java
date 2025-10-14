@@ -11,6 +11,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.file.ImageUtils;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.CarSuspicious;
 import com.ruoyi.manager.domain.CarSuspiciousCheck;
@@ -115,6 +116,10 @@ public class CarSuspiciousController extends BaseController {
     public void exportAbnormalPassage(ExportAbnormalPassageRo ro, HttpServletResponse response) {
         CarInfo carInfo = carInfoService.getById(ro.getCarInfoId());
         CarSuspicious carSuspicious = carSuspiciousService.getById(ro.getCarSuspiciousId());
+        CarSuspiciousCheck querybo = new CarSuspiciousCheck();
+        querybo.setCarId(ro.getCarSuspiciousId());
+        List<CarSuspiciousCheck> checkList = carSuspiciousCheckService.selectCarSuspiciousCheckList(querybo);
+
         // 车牌颜色
         Map<String,String> plateColorMap = sysDictDataService.selectDictDataMap("plate_color");
         // 车型
@@ -129,10 +134,11 @@ public class CarSuspiciousController extends BaseController {
 
 
         Map<String,Object> map = new HashMap<>();
-        map.put("plateColor", CommonUtil.isNull(plateColorMap.get(carInfo.getPlateColor())));
+        map.put("plateColor", carInfo.getPlateColor() == null ? "" : CommonUtil.isNull(plateColorMap.get(carInfo.getPlateColor())));
         map.put("carNo", CommonUtil.isNull(carInfo.getCarNo()));
-        map.put("carType", CommonUtil.isNull(carTypeMap.get(carInfo.getCarType())));
-        map.put("carVehicle", CommonUtil.isNull(carVehicleMap.get(carInfo.getCarVehicle())));
+        map.put("carType", carInfo.getCarType() == null ? "" : CommonUtil.isNull(carTypeMap.get(carInfo.getCarType())));
+        String carVehicle = carInfo.getCarVehicle() == null ? "" : carVehicleMap.get(carInfo.getCarVehicle());
+        map.put("carVehicle", carVehicle == null ? carInfo.getCarVehicle() : carVehicle);
         map.put("carNum", CommonUtil.isNull(carInfo.getCarNum()));
         // 需要循环 : 逃费类型
         String bussName = "";
@@ -146,43 +152,50 @@ public class CarSuspiciousController extends BaseController {
             }
         }
         map.put("escapedType", CommonUtil.deleteEnd(bussName));
-        map.put("status", CommonUtil.isNull(statusMap.get(carInfo.getStatus())));
+        map.put("status", carInfo.getStatus() == null ? "" : CommonUtil.isNull(statusMap.get(carInfo.getStatus())));
         map.put("remark", CommonUtil.isNull(carInfo.getRemark()));
         if (CommonUtil.isNotBlank(carInfo.getFileIds())){
-            String[] fileIdArr = carInfo.getFileIds().split(",");
-            for (int i = 1; i <= fileIdArr.length; i++) {
-                byte[] byteObject = sysFileService.getByteObject(Long.parseLong(fileIdArr[i-1]));
-                ImageEntity image = new ImageEntity(byteObject, 100, 100);
-                //表格外添加简单图片
-                image.setType(ImageEntity.Data);
-                map.put("carImg" + i, image);
+            List<SysFile> sysFiles = sysFileService.selectSysFileByIds(carInfo.getFileIds());
+            int i = 1;
+            for (SysFile sysFile : sysFiles) {
+                if (ImageUtils.isImage(sysFile.getType())){
+                    byte[] byteObject = sysFileService.getByteObject(sysFile.getId());
+                    ImageEntity image = new ImageEntity(byteObject, 100, 100);
+                    //表格外添加简单图片
+                    image.setType(ImageEntity.Data);
+                    map.put("carImg" + i, image);
+                    i++;
+                }
             }
         }
 
         map.put("inStation", CommonUtil.isNull(carSuspicious.getInStation()));
-        map.put("inTime", CommonUtil.isNull(carSuspicious.getInTime()));
+        map.put("inTime", CommonUtil.isNull(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, carSuspicious.getInTime())));
         map.put("outstation", CommonUtil.isNull(carSuspicious.getOutStation()));
-        map.put("outTime", CommonUtil.isNull(carSuspicious.getOutTime()));
+        map.put("outTime", CommonUtil.isNull(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, carSuspicious.getOutTime())));
         map.put("gantrytStation", CommonUtil.isNull(carSuspicious.getGantrytStation()));
-        map.put("gantryTime", CommonUtil.isNull(carSuspicious.getGantryTime()));
+        map.put("gantryTime", CommonUtil.isNull(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, carSuspicious.getGantryTime())));
         map.put("outGantrytStation", CommonUtil.isNull(carSuspicious.getOutGantrytStation()));
-        map.put("outGantryTime", CommonUtil.isNull(carSuspicious.getOutGantryTime()));
-        map.put("isExcept", CommonUtil.isNull(carSuspicious.getIsExcept()));
+        map.put("outGantryTime", CommonUtil.isNull(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, carSuspicious.getOutGantryTime())));
+        map.put("isExcept", "0".equals(carSuspicious.getIsExcept()) ? "无逃费" : "1".equals(carSuspicious.getIsExcept()) ? "确认逃费" : "");
         map.put("exceptRemark", CommonUtil.isNull(carSuspicious.getExceptRemark()));
         if (CommonUtil.isNotBlank(carSuspicious.getExceptFileIds())){
-            String[] fileIdArr = carSuspicious.getExceptFileIds().split(",");
-            for (int i = 1; i <= fileIdArr.length; i++) {
-                byte[] byteObject = sysFileService.getByteObject(Long.parseLong(fileIdArr[i-1]));
-                ImageEntity image = new ImageEntity(byteObject, 100, 100);
-                //表格外添加简单图片
-                image.setType(ImageEntity.Data);
-                map.put("susImg" + i, image);
+            List<SysFile> sysFiles = sysFileService.selectSysFileByIds(carSuspicious.getExceptFileIds());
+            int i = 1;
+            for (SysFile sysFile : sysFiles) {
+                if (ImageUtils.isImage(sysFile.getType())){
+                    byte[] byteObject = sysFileService.getByteObject(sysFile.getId());
+                    ImageEntity image = new ImageEntity(byteObject, 100, 100);
+                    //表格外添加简单图片
+                    image.setType(ImageEntity.Data);
+                    map.put("susImg" + i, image);
+                    i++;
+                }
             }
         }
-        if (carSuspicious.getCheckList() == null){
+        if (checkList == null){
             map.put("checkList", new ArrayList<>());
         }else {
-            List<CarSuspiciousCheck> checkList = carSuspicious.getCheckList();
             for (int i = 1; i <= checkList.size(); i++) {
                 CarSuspiciousCheck carSuspiciousCheck = checkList.get(i - 1);
                 carSuspiciousCheck.setSort(i);
