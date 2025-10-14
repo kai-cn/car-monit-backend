@@ -67,8 +67,10 @@ public class CarWarningInfoController extends BaseController {
             carWarningInfo.setFlagTime(formattedDate);
         }
 
+        if (CommonUtil.isNotBlank(carWarningInfo.getCode())){
+            carWarningInfo.setTrackNames(carWarningInfo.getCode()); // 查询范围
+        }
 
-        carWarningInfo.setTrackNames(carWarningInfo.getCode()); // 查询范围
         List<CarWarningInfo> list = carWarningInfoService.selectCarWarningInfoList(carWarningInfo);
         return getDataTable(list);
     }
