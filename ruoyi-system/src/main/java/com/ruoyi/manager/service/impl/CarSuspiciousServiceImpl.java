@@ -341,6 +341,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         updatebo.setIsExcept(carSuspicious.getIsExcept());
         updatebo.setExceptRemark(carSuspicious.getExceptRemark());
         updatebo.setExceptFileIds(carSuspicious.getExceptFileIds());
+        updatebo.setPassType(carSuspicious.getPassType());
 
         updatebo.setPlateColor(carSuspicious.getPlateColor());
         updatebo.setCarNo(carNo);
