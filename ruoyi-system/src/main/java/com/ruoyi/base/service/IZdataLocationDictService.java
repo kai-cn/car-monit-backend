@@ -18,7 +18,7 @@ public interface IZdataLocationDictService extends IService<ZdataLocationDict> {
      * @param id 车辆位置ID
      * @return 车辆位置
      */
-    ZdataLocationDict selectZdataLocationDictById(String id);
+    ZdataLocationDict selectZdataLocationDictById(Long id);
 
     /**
      * 查询车辆位置列表

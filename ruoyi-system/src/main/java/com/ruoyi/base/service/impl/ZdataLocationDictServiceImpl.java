@@ -31,7 +31,7 @@ public class ZdataLocationDictServiceImpl extends ServiceImpl<ZdataLocationDictM
      * @return 车辆位置
      */
     @Override
-    public ZdataLocationDict selectZdataLocationDictById(String id) {
+    public ZdataLocationDict selectZdataLocationDictById(Long id) {
         return zdataLocationDictMapper.selectZdataLocationDictById(id);
     }
 

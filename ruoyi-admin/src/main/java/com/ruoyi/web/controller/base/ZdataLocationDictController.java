@@ -51,7 +51,7 @@ public class ZdataLocationDictController extends BaseController {
      * 获取车辆位置详细信息
      */
     @GetMapping(value = "/{id}")
-    public AjaxResult getInfo(@PathVariable("id") String id) {
+    public AjaxResult getInfo(@PathVariable("id") Long id) {
         return AjaxResult.success(zdataLocationDictService.selectZdataLocationDictById(id));
     }
 

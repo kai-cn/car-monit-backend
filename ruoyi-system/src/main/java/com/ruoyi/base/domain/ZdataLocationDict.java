@@ -20,10 +20,10 @@ import com.ruoyi.common.core.domain.Custom;
 @TableName("zdata_location_dict")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-public class ZdataLocationDict   implements Custom {
+public class ZdataLocationDict  implements Custom {
 
     /** 主键 */
-    private String id;
+    private Long id;
 
     /** 类型 */
     @Excel(name = "类型")
