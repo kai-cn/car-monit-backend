@@ -180,6 +180,10 @@ public class ZdataTrailTracks implements Custom {
     @TableField(exist = false)
     private String escapedType;
 
+    /** 通行标识 */
+    @TableField(exist = false)
+    private String passType;
+
 
     /** 逃费类型：原因 */
     @TableField(exist = false)
