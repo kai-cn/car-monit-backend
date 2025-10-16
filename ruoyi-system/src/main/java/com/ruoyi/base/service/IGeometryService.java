@@ -63,4 +63,9 @@ public interface IGeometryService extends IService<Geometry> {
      */
     List<Geometry> getListByCode(List<String> roadCodeList);
 
+    /**
+     * 查询未同步的路线
+     * @return
+     */
+    List<Geometry> syncAllGeometry();
 }

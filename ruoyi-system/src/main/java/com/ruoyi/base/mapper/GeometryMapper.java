@@ -45,4 +45,9 @@ public interface GeometryMapper extends BaseMapper<Geometry> {
      */
     int deleteGeometryById(Integer ID);
 
+    /**
+     * 查询未同步的路线
+     * @return
+     */
+    List<Geometry> syncAllGeometry();
 }
