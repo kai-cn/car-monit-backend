@@ -475,6 +475,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                                 carSuspicious.setCarVehicle("0");
                             }
 
+                            // -------------需要转换----------------
 
 
                             List<TrailBo> gantryList = new ArrayList<TrailBo>(); // 门架
