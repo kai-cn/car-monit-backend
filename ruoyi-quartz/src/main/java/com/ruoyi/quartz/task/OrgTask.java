@@ -29,7 +29,7 @@ public class OrgTask {
     @Transactional(rollbackFor = Exception.class)
     public void syncOrgInfo() {
         // 查询同步的组织数据
-        OdsYhglVBaseOrg orgbo = new OdsYhglVBaseOrg();
+       /* OdsYhglVBaseOrg orgbo = new OdsYhglVBaseOrg();
         List<OdsYhglVBaseOrg> list = odsYhglVBaseOrgService.selectOdsYhglVBaseOrgList(orgbo);
         if(CollectionUtil.isEmpty(list)){
             return ;
@@ -57,6 +57,6 @@ public class OrgTask {
             return sysDept;
 
         }).collect(Collectors.toList());
-        this.sysDeptService.saveAll(sysDeptList);
+        this.sysDeptService.saveAll(sysDeptList);*/
     }
 }
