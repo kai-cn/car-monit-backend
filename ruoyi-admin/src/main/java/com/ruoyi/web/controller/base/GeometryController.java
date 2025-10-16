@@ -108,8 +108,9 @@ public class GeometryController extends BaseController {
                         doubleList = new ArrayList<>();
                         qdzh ++;
                         i = 0;
+                    }else {
+                        i++;
                     }
-                    i++;
                 }
             });
         }
