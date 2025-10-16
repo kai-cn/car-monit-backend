@@ -178,6 +178,13 @@ public class GeometryServiceImpl extends ServiceImpl<GeometryMapper, Geometry> i
         return rtnlist;
     }
 
-
-
+    /**
+     * 查询未同步的路线
+     *
+     * @return
+     */
+    @Override
+    public List<Geometry> syncAllGeometry() {
+        return geometryMapper.syncAllGeometry();
+    }
 }
