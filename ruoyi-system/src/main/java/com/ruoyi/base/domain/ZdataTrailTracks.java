@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -78,9 +79,69 @@ public class ZdataTrailTracks implements Custom {
     @Excel(name = "离开位置code")
     private String exitLocationcode;
 
-    /** 行驶轨迹josn */
-    @Excel(name = "行驶轨迹josn")
+    /** 集合详情 */
+    @Excel(name = "集合详情")
     private String trackJosn;
+
+    /** 入口车轴数 */
+    @Excel(name = "入口车轴数")
+    private Long enaxlecount;
+
+    /** 入口车道编号 */
+    @Excel(name = "入口车道编号")
+    private String entolllaneid;
+
+    /** 入口收费站编号 */
+    @Excel(name = "入口收费站编号")
+    private String entollstationid;
+
+    /** 入口收费站名称 */
+    @Excel(name = "入口收费站名称")
+    private String entollstationname;
+
+    /** 入口车型分类（收费车型） */
+    @Excel(name = "入口车型分类", readConverterExp = "收=费车型")
+    private String envehicleclass;
+
+    /** 入口车辆编号 */
+    @Excel(name = "入口车辆编号")
+    private String envehicleid;
+
+    /** 入口车辆类型代码 */
+    @Excel(name = "入口车辆类型代码")
+    private String envehicletype;
+
+    /** 入口称重（kg） */
+    @Excel(name = "入口称重", readConverterExp = "k=g")
+    private BigDecimal enweight;
+
+    /** 出口车道编号 */
+    @Excel(name = "出口车道编号")
+    private String extolllaneid;
+
+    /** 出口收费站编号 */
+    @Excel(name = "出口收费站编号")
+    private String extollstationid;
+
+    /** 出口收费站名称 */
+    @Excel(name = "出口收费站名称")
+    private String extollstationname;
+
+    /** 出口车型分类 */
+    @Excel(name = "出口车型分类")
+    private String exvehicleclass;
+
+    /** 出口车辆编号 */
+    @Excel(name = "出口车辆编号")
+    private String exvehicleid;
+
+    /** 出口车辆类型代码 */
+    @Excel(name = "出口车辆类型代码")
+    private String exvehicletype;
+
+    /** 出口称重（kg） */
+    @Excel(name = "出口称重", readConverterExp = "k=g")
+    private BigDecimal exweight;
 
     // 入栈口
     @TableField(exist = false)
@@ -123,7 +184,6 @@ public class ZdataTrailTracks implements Custom {
     /** 逃费类型：原因 */
     @TableField(exist = false)
     private String escapedTypeRemark;
-
 
     /** 申请时间1 */
     @TableField(exist = false)
