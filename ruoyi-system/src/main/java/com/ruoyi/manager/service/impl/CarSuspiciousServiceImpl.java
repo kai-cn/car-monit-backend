@@ -25,7 +25,6 @@ import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 可疑车辆Service业务层处理
@@ -445,8 +444,22 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                         }else{
                             carSuspicious.setCarNo(carNo);
                             carSuspicious.setPlateColor(CommonUtil.isNull(plateColorMap.get(tracksBo.getPlateColor()))); // 车牌颜色
-                            carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(tracksBo.getCarType()))); // 车型
-                            carSuspicious.setCarNum(tracksBo.getCarNum()); // 轴数
+
+                            // 车型
+                            if (CommonUtil.isNotBlank(tracksBo.getEnvehicletype())){
+                                carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(tracksBo.getEnvehicletype())));
+                            }else{
+                                carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(tracksBo.getCarType())));
+                            }
+
+                            // 入口车轴数
+                            if (null != tracksBo.getEnaxlecount()) {
+                                carSuspicious.setCarNum(Long.parseLong(tracksBo.getEnaxlecount() + "")); // 轴数
+                            }else{
+                                carSuspicious.setCarNum(tracksBo.getCarNum()); // 轴数
+                            }
+                            carSuspicious.setPassType(tracksBo.getPassType()); // 通行标识
+
                             carSuspicious.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(tracksBo.getCarVehicle()))); // 车种
 
                             //--------------设置默认值
@@ -531,6 +544,26 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                                 }
                             }
 
+                            // 入口收费站编号
+                            if (CommonUtil.isNotBlank(tracksBo.getEntollstationid())){
+                                // 第一个收费站
+                                carSuspicious.setInStationId(tracksBo.getEntollstationid());
+                                carSuspicious.setInStation(tracksBo.getEntollstationname());
+                                if (null != tracksBo.getEnterTime()){
+                                    carSuspicious.setInTime(tracksBo.getEnterTime());
+                                }
+                            }
+
+                            // 出口收费站
+                            if (CommonUtil.isNotBlank(tracksBo.getExtollstationid())){
+                                // 最后一个收费站
+                                carSuspicious.setOutStationId(tracksBo.getExtollstationid());
+                                carSuspicious.setOutStation(tracksBo.getExtollstationname());
+                                if (null != tracksBo.getExitTime()){
+                                    carSuspicious.setOutTime(tracksBo.getExitTime());
+                                }
+                            }
+
 
                             //  门架 ---------------
                             for (int i = 0; i < gantryList.size(); i++) {
@@ -560,18 +593,15 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                             carSuspicious.setUpdateTime(DateUtils.getTimestampNew()); // 更新时间
                             carSuspicious.setIsExcept("1"); // 默认是可疑车俩
                             carSuspicious.setStatus("0"); // 是否可以核实标识
-                        }
 
-
-                        carSuspicious.setTrackNames(CommonUtil.deleteEnd(devCodes));
-                        if (CommonUtil.isBlank(carSuspicious.getId())){
-                            // 新增-----------
-                            carSuspicious.setEscapedType(tracksBo.getEscapedType()); //屏蔽
-                            carSuspicious.setRemark(tracksBo.getEscapedTypeRemark());
-                            carSuspiciousListAdd.add(carSuspicious);
-                        }else{
-                            // 没有核实
-                            if (!checkStatus.equals("1")){
+                            carSuspicious.setTrackNames(CommonUtil.deleteEnd(devCodes));
+                            if (CommonUtil.isBlank(carSuspicious.getId())){
+                                // 新增-----------
+                                carSuspicious.setEscapedType(tracksBo.getEscapedType()); //屏蔽
+                                carSuspicious.setRemark(tracksBo.getEscapedTypeRemark());
+                                carSuspiciousListAdd.add(carSuspicious);
+                            }else{
+                                // 没有核实
                                 carSuspicious.setRemark(tracksBo.getEscapedTypeRemark());
                                 carSuspiciousListUpdate.add(carSuspicious);
                             }
