@@ -154,10 +154,10 @@
     </select>
 
     <select id="getTopTen" resultType="com.ruoyi.manager.domain.vo.bigscreen.TopTenVO">
-        select t1.section_name, count(1) carNum
+        select t1.road_code roadCode,t1.section_name sectionName, count(1) carNum
         from car_warning_info t,ods_szdn_section t1
 			where t.del_flag = '0' and t.section_code = t1.section_code
-				group by section_name
+				group by t1.road_code,t1.section_name
         order by carNum desc
         limit 10
     </select>
