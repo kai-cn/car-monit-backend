@@ -8,6 +8,7 @@ import java.util.List;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
 import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;
+import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam;
 import com.ruoyi.manager.domain.vo.bigscreen.incomeStatisticVO;
 
@@ -61,7 +62,7 @@ public interface ICarAduitFreeService extends IService<CarAduitFree> {
     AjaxResult deleteCarAduitFreeByConfirmId(String fkId);
 
 
-    BigDecimal getCarAudit(IncomeStatisticParam param);
+    CarStatisticsVO getCarAudit(IncomeStatisticParam param);
 
     List<incomeStatisticVO> incomeStatistic(IncomeStatisticParam param);
 

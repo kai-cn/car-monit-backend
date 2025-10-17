@@ -53,7 +53,7 @@ public interface ICarConfimFreeService extends IService<CarConfimFree> {
 
     List<CarStatisticsVO> getCarStatistics(IncomeStatisticParam param);
 
-    BigDecimal getCarConfirm(IncomeStatisticParam param);
+    CarStatisticsVO getCarConfirm(IncomeStatisticParam param);
 
     String selectOrgId(String carId, String id);
 

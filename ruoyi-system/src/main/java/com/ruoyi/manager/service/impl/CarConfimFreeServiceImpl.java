@@ -253,7 +253,7 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
     }
 
     @Override
-    public BigDecimal getCarConfirm(IncomeStatisticParam param) {
+    public CarStatisticsVO getCarConfirm(IncomeStatisticParam param) {
         return carConfimFreeMapper.getCarConfirm(param);
     }
 

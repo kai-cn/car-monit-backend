@@ -170,26 +170,22 @@ public class BigScreenController extends BaseController {
     @GetMapping(value = "/carAudit")
     public AjaxResult getCarAudit(IncomeStatisticParam param) {
         CarAuditVO vo = new CarAuditVO();
-        BigDecimal totalAmount = carAduitFreeService.getCarAudit(param);
-        BigDecimal finishedAmount = carConfimFreeService.getCarConfirm(param);
-        if (totalAmount != null) {
-            vo.setTotalAmount(totalAmount);
-        }
-        if (finishedAmount != null) {
-            vo.setFinishedAmount(finishedAmount);
+
+        CarStatisticsVO vo1 = carAduitFreeService.getCarAudit(param); // 逃费费用:异常流水
+        if (null != vo1){
+            vo.setTotalAmount(vo1.getEscapedAmount());
+            vo.setTotalCount(vo1.getNumber());
         }
 
-        // 拯救时间范围
-        CarConfimFree carConfimFree = new CarConfimFree();
-        carConfimFree.setApplyTime3(param.getApplyTime1());
-        carConfimFree.setApplyTime4(param.getApplyTime2());
-        int confirmCount = carConfimFreeService.selectCarConfimFreeList(carConfimFree).size();
-        vo.setTotalCount(confirmCount);
 
-        Integer auditCount = carAduitFreeService.selectAuditCount(param);
-        if (auditCount != null && auditCount > 0) {
-            vo.setFinishedCount(auditCount);
+        CarStatisticsVO vo2 = carConfimFreeService.getCarConfirm(param); //确认追缴
+
+        if (null != vo2){
+            vo.setFinishedAmount(vo2.getEscapedAmount());
+            vo.setFinishedCount(vo2.getNumber());
         }
+
+
         return AjaxResult.success(vo);
     }
 

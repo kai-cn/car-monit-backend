@@ -53,7 +53,7 @@ public interface CarConfimFreeMapper extends BaseMapper<CarConfimFree> {
 
     List<CarStatisticsVO> getCarStatistics(IncomeStatisticParam param);
 
-    BigDecimal getCarConfirm(IncomeStatisticParam param);
+    CarStatisticsVO getCarConfirm(IncomeStatisticParam param);
 
     String selectOrgId(@Param("carId") String carId, @Param("id") String id);
 
