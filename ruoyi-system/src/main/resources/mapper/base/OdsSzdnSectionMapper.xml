@@ -53,7 +53,7 @@
         <if test="orgCategory != null  and orgCategory != ''"> and t.org_category = #{orgCategory}</if>
         <if test="mileage != null "> and t.mileage = #{mileage}</if>
         <if test="openDate != null "> and t.open_date = #{openDate}</if>
-        order by t.section_name
+        order by t.road_code,t.section_code
     </select>
 
     <select id="selectOdsSzdnSectionById" parameterType="String" resultMap="OdsSzdnSectionResult">
@@ -78,7 +78,7 @@
 
     <select id="selectOdsSzdnSectionListNew" parameterType="com.ruoyi.base.domain.OdsSzdnSection" resultMap="OdsSzdnSectionResult">
         SELECT
-        distinct t.section_code, t.section_name
+        distinct t.section_code, concat(t.road_code, '', t.section_name) section_name
         FROM ods_szdn_section t
         WHERE 1=1
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
@@ -94,7 +94,7 @@
         <if test="orgCategory != null  and orgCategory != ''"> and t.org_category = #{orgCategory}</if>
         <if test="mileage != null "> and t.mileage = #{mileage}</if>
         <if test="openDate != null "> and t.open_date = #{openDate}</if>
-        order by t.section_name
+        order by t.road_code,t.section_code
     </select>
 
 
