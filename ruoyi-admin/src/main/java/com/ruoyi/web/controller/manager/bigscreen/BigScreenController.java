@@ -129,7 +129,9 @@ public class BigScreenController extends BaseController {
                         return vo;
                     }).collect(Collectors.toList());
         } else if ("2".equals(type)) {
-            collect = gantryService.lambdaQuery().select(OdsSzdnGantry::getGantryCode, OdsSzdnGantry::getGantryName).eq(OdsSzdnGantry::getSectionCode, sectionCode).list()
+            OdsSzdnGantry odsSzdnGantry = new OdsSzdnGantry();
+            odsSzdnGantry.setSectionCodeList(sectionCodeList);
+            collect = gantryService.selectOdsSzdnGantryListNew(odsSzdnGantry)
                     .stream().map(item -> {
                         TollGantryFwqVO vo = new TollGantryFwqVO();
                         vo.setType("2");
@@ -138,7 +140,9 @@ public class BigScreenController extends BaseController {
                         return vo;
                     }).collect(Collectors.toList());
         } else if ("3".equals(type)) {
-            collect = fwqjcxxService.lambdaQuery().select(DwdLcztFwqjcxx::getFwqbm, DwdLcztFwqjcxx::getFwqmc).eq(DwdLcztFwqjcxx::getSsldbh, sectionCode).list()
+            DwdLcztFwqjcxx dwdLcztFwqjcxx = new DwdLcztFwqjcxx();
+            dwdLcztFwqjcxx.setSectionCodeList(sectionCodeList);
+            collect = fwqjcxxService.selectDwdLcztFwqjcxxListNew(dwdLcztFwqjcxx)
                     .stream().map(item -> {
                         TollGantryFwqVO vo = new TollGantryFwqVO();
                         vo.setType("3");

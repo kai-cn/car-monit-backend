@@ -1,6 +1,7 @@
 package com.ruoyi.base.domain;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -9,6 +10,8 @@ import lombok.experimental.Accessors;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BasePlusEntity;
 import com.ruoyi.common.core.domain.Custom;
+
+import java.util.List;
 
 /**
  * 服务区基础信息对象 dwd_lczt_fwqjcxx
@@ -153,6 +156,13 @@ public class DwdLcztFwqjcxx implements Custom {
     /** 全字段MD5 */
     @Excel(name = "全字段MD5")
     private String allColPk;
+
+
+    /**
+     * 路线数组
+     */
+    @TableField(exist = false)
+    List<String> sectionCodeList;
 
 
 }

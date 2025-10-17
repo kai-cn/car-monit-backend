@@ -80,7 +80,7 @@
         <if test="belongGroup != null  and belongGroup != ''"> and t.belong_group = #{belongGroup}</if>
         <if test="gantryCodeMerge != null  and gantryCodeMerge != ''"> and t.gantry_code_merge = #{gantryCodeMerge}</if>
         <if test="gantryNameAlias != null  and gantryNameAlias != ''"> and t.gantry_name_alias = #{gantryNameAlias}</if>
-        order by t.id
+        order by t.gantry_name
     </select>
 
     <select id="selectOdsSzdnGantryById" parameterType="String" resultMap="OdsSzdnGantryResult">
@@ -101,5 +101,41 @@
             #{id}
         </foreach>
     </update>
+
+    <select id="selectOdsSzdnGantryListNew" parameterType="com.ruoyi.base.domain.OdsSzdnGantry" resultMap="OdsSzdnGantryResult">
+        SELECT
+        distinct t.gantry_code, t.gantry_name
+        FROM ods_szdn_gantry t
+        WHERE 1=1
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="gantryCode != null  and gantryCode != ''"> and t.gantry_code = #{gantryCode}</if>
+        <if test="gantryName != null  and gantryName != ''"> and t.gantry_name like concat('%', #{gantryName}, '%')</if>
+        <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
+        <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
+        <if test="tollCode != null  and tollCode != ''"> and t.toll_code = #{tollCode}</if>
+        <if test="orgCode != null  and orgCode != ''"> and t.org_code = #{orgCode}</if>
+        <if test="hexCode != null  and hexCode != ''"> and t.hex_code = #{hexCode}</if>
+        <if test="direction != null  and direction != ''"> and t.direction = #{direction}</if>
+        <if test="pileNo != null  and pileNo != ''"> and t.pile_no like concat('%', #{pileNo}, '%')</if>
+        <if test="lon != null  and lon != ''"> and t.lon = #{lon}</if>
+        <if test="lat != null  and lat != ''"> and t.lat = #{lat}</if>
+        <if test="isVirtual != null  and isVirtual != ''"> and t.is_virtual = #{isVirtual}</if>
+        <if test="mileage != null  and mileage != ''"> and t.mileage = #{mileage}</if>
+        <if test="boundaryGantryType != null  and boundaryGantryType != ''"> and t.boundary_gantry_type = #{boundaryGantryType}</if>
+        <if test="gantryType != null  and gantryType != ''"> and t.gantry_type = #{gantryType}</if>
+        <if test="cityCode != null  and cityCode != ''"> and t.city_code = #{cityCode}</if>
+        <if test="districtName != null  and districtName != ''"> and t.district_name like concat('%', #{districtName}, '%')</if>
+        <if test="belongGroup != null  and belongGroup != ''"> and t.belong_group = #{belongGroup}</if>
+        <if test="gantryCodeMerge != null  and gantryCodeMerge != ''"> and t.gantry_code_merge = #{gantryCodeMerge}</if>
+        <if test="gantryNameAlias != null  and gantryNameAlias != ''"> and t.gantry_name_alias = #{gantryNameAlias}</if>
+        <if test="sectionCodeList != null and sectionCodeList.size() > 0">
+            and t.section_code in
+            <foreach collection="sectionCodeList" open="(" separator="," close=")" item="item">
+                #{item}
+            </foreach>
+        </if>
+        order by t.gantry_name
+    </select>
+
 
 </mapper>

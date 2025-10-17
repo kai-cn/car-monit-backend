@@ -103,5 +103,16 @@ public class OdsSzdnGantryServiceImpl extends ServiceImpl<OdsSzdnGantryMapper, O
     }
 
 
+    /**
+     * 查询门架信息列表
+     *
+     * @param odsSzdnGantry 门架信息
+     * @return 门架信息集合
+     */
+    public List<OdsSzdnGantry> selectOdsSzdnGantryListNew(OdsSzdnGantry odsSzdnGantry){
+        return odsSzdnGantryMapper.selectOdsSzdnGantryListNew(odsSzdnGantry);
+    }
+
+
 
 }

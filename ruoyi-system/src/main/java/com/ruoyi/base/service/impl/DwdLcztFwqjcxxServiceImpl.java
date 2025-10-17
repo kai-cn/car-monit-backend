@@ -103,5 +103,16 @@ public class DwdLcztFwqjcxxServiceImpl extends ServiceImpl<DwdLcztFwqjcxxMapper,
     }
 
 
+    /**
+     * 查询服务区基础信息列表
+     *
+     * @param dwdLcztFwqjcxx 服务区基础信息
+     * @return 服务区基础信息集合
+     */
+    public List<DwdLcztFwqjcxx> selectDwdLcztFwqjcxxListNew(DwdLcztFwqjcxx dwdLcztFwqjcxx){
+        return dwdLcztFwqjcxxMapper.selectDwdLcztFwqjcxxListNew(dwdLcztFwqjcxx);
+    }
+
+
 
 }

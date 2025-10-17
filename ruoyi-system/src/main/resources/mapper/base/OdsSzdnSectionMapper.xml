@@ -53,7 +53,7 @@
         <if test="orgCategory != null  and orgCategory != ''"> and t.org_category = #{orgCategory}</if>
         <if test="mileage != null "> and t.mileage = #{mileage}</if>
         <if test="openDate != null "> and t.open_date = #{openDate}</if>
-        order by t.section_code
+        order by t.section_name
     </select>
 
     <select id="selectOdsSzdnSectionById" parameterType="String" resultMap="OdsSzdnSectionResult">
@@ -94,7 +94,7 @@
         <if test="orgCategory != null  and orgCategory != ''"> and t.org_category = #{orgCategory}</if>
         <if test="mileage != null "> and t.mileage = #{mileage}</if>
         <if test="openDate != null "> and t.open_date = #{openDate}</if>
-        order by t.section_code
+        order by t.section_name
     </select>
 
 

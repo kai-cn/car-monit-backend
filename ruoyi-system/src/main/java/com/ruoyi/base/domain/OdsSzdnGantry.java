@@ -1,6 +1,7 @@
 package com.ruoyi.base.domain;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -9,6 +10,8 @@ import lombok.experimental.Accessors;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BasePlusEntity;
 import com.ruoyi.common.core.domain.Custom;
+
+import java.util.List;
 
 /**
  * 门架信息对象 ods_szdn_gantry
@@ -108,5 +111,11 @@ public class OdsSzdnGantry implements Custom {
     /** 备注 */
     @Excel(name = "备注")
     private String remark;
+
+    /**
+     * 路线数组
+     */
+    @TableField(exist = false)
+    List<String> sectionCodeList;
 
 }
