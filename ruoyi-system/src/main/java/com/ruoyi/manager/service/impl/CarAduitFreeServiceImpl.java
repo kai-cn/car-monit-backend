@@ -5,6 +5,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
 import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;
+import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam;
 import com.ruoyi.manager.domain.vo.bigscreen.incomeStatisticVO;
 import com.ruoyi.manager.mapper.CarAduitFreeMapper;
@@ -119,7 +120,7 @@ public class CarAduitFreeServiceImpl extends ServiceImpl<CarAduitFreeMapper, Car
 
 
     @Override
-    public BigDecimal getCarAudit(IncomeStatisticParam param) {
+    public CarStatisticsVO getCarAudit(IncomeStatisticParam param) {
         return carAduitFreeMapper.getCarAudit(param);
     }
 
