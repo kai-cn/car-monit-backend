@@ -135,32 +135,35 @@
     </select>
 
     <select id="getPCCarStatistics" parameterType="com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo" resultType="com.ruoyi.manager.domain.CarConfimFree">
-        select o.org_name, group_concat(except_ids) except_ids
+        select d.dept_name orgName, group_concat(except_ids) except_ids
         from car_confim_free c
-                 left join ods_yhgl_v_base_org o on c.org_id = o.big_id
-        where del_flag = '0'
+                 left join sys_dept d on c.org_id = d.dept_id and d.del_flag = '0'
+        where c.del_flag = '0'
         <if test="orgId != null  and orgId != ''"> and c.org_id = #{orgId}</if>
         <if test="escapedType != null  and escapedType != ''"> and find_in_set(#{escapedType}, c.escaped_types) > 0</if>
         <if test="applyTime1 != null  and applyTime1 != ''">and c.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
         <if test="applyTime2 != null  and applyTime2 != ''">and c.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
-        group by o.org_name
+        group by d.dept_name
 
     </select>
 
     <select id="selectConcernedList" resultType="com.ruoyi.manager.domain.CarConfimFree">
-        SELECT
-        t.car_no,
+        select  t.car_no,
         t.car_type,
         t.car_vehicle,
         t.link_name,
         t.link_phone,
         t.org_id,
         sd.dept_name org_name,
-        round(ifnull(sum(t.amount),0),2) amount,
-        round(ifnull(sum(t.aduit_amount),0),2) aduit_amount,
-        GROUP_CONCAT(t.except_ids SEPARATOR ', ') except_ids
-        FROM car_confim_free t
-        left join sys_dept sd on sd.dept_id = t.org_id
+        k.total_amount amount,
+        k.dif_amount aduit_amount,
+        k.except_ids
+        from car_info t JOIN
+        (select t1.car_no,sum(t1.total_amount) total_amount,sum(t1.charge_amount) charge_amount,sum(t1.dif_amount) dif_amount,
+        sum(case when t1.status = '0' then 1 else 0 end) except_num, GROUP_CONCAT(t1.id SEPARATOR ',') except_ids
+        from  car_except_record t1 where t1.del_flag = '0'
+        group by t1.car_no) k on k.except_num = 0 and t.car_no = k.car_no
+        left join sys_dept sd on sd.dept_id = t.org_id and sd.del_flag = '0'
         WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="carId != null  and carId != ''"> and t.car_id = #{carId}</if>
@@ -186,7 +189,6 @@
         <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
         <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')</if>
         <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
-        group by  t.car_no,  t.car_type, t.car_vehicle,t.link_name, t.link_phone, t.org_id
     </select>
 
 

@@ -11,8 +11,11 @@ import lombok.Data;
 @Data
 public class IncomeStatisticParam {
     String orgCode;
-    String queryDateType;
+    String queryDateType;//1查询所，2查询站
     String year;
     String month;
     String startDate;
+    // 时间查询
+    private String applyTime1;
+    private String applyTime2;
 }

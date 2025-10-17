@@ -77,4 +77,6 @@ public interface ICarExceptRecordService extends IService<CarExceptRecord> {
 
 
     List<PCCarStatisticsDetailVO> buildPCCarStatisticsVODetail(List<String> ids, String escapedType);
+
+    String getConfirmId(String id);
 }

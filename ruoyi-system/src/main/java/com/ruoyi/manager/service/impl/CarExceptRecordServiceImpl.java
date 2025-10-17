@@ -11,15 +11,13 @@ import com.ruoyi.manager.mapper.CarConfimFreeMapper;
 import com.ruoyi.manager.mapper.CarExceptRecordMapper;
 import com.ruoyi.manager.domain.CarExceptRecord;
 import com.ruoyi.manager.service.ICarExceptRecordService;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -221,5 +219,14 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
     public List<PCCarStatisticsDetailVO> buildPCCarStatisticsVODetail(List<String> ids, String escapedType) {
         List<PCCarStatisticsDetailVO>  carStatisticsVOList =  carExceptRecordMapper.buildPCCarStatisticsVODetail(ids, escapedType);
         return carStatisticsVOList;
+    }
+
+    @Override
+    public String getConfirmId(String id) {
+        List<CarConfimFree> carConfimFreeList = carConfimFreeMapper.selectCarConfimFreeByExceptIds(Collections.singletonList(id));
+        if(CollectionUtils.isNotEmpty(carConfimFreeList)){
+            return carConfimFreeList.get(0).getId();
+        }
+        return "";
     }
 }
