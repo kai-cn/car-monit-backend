@@ -48,4 +48,13 @@ public interface OdsSzdnTollMapper extends BaseMapper<OdsSzdnToll> {
 
     @Update("TRUNCATE TABLE ods_szdn_toll")
     void truncateTable();
+
+
+    /**
+     * 查询收费站基础信息列表
+     *
+     * @param odsSzdnToll 收费站基础信息
+     * @return 收费站基础信息集合
+     */
+    List<OdsSzdnToll> selectOdsSzdnTollListNew(OdsSzdnToll odsSzdnToll);
 }

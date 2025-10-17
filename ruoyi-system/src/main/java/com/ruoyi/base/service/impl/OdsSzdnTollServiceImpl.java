@@ -102,6 +102,14 @@ public class OdsSzdnTollServiceImpl extends ServiceImpl<OdsSzdnTollMapper, OdsSz
         return AjaxResult.success(count);
     }
 
-
+    /**
+     * 查询收费站基础信息列表
+     *
+     * @param odsSzdnToll 收费站基础信息
+     * @return 收费站基础信息集合
+     */
+    public List<OdsSzdnToll> selectOdsSzdnTollListNew(OdsSzdnToll odsSzdnToll){
+        return odsSzdnTollMapper.selectOdsSzdnTollListNew(odsSzdnToll);
+    }
 
 }

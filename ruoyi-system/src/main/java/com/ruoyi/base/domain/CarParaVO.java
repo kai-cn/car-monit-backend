@@ -47,6 +47,8 @@ public class CarParaVO {
     private Integer endTime;
 
 
+    // 标识位
+    private String flag;
 
 
 
