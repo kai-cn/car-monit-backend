@@ -230,12 +230,12 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
     }
 
     @Override
-    public List<CarStatisticsVO> getCarStatistics() {
+    public List<CarStatisticsVO> getCarStatistics(IncomeStatisticParam param) {
         // 逃费类型
         SysDictData sysDictData = new SysDictData();
         sysDictData.setDictType("escaped_type");
         List<SysDictData> dictDataList = sysDictDataService.selectDictDataList(sysDictData);
-        List<CarStatisticsVO> list = carConfimFreeMapper.getCarStatistics();
+        List<CarStatisticsVO> list = carConfimFreeMapper.getCarStatistics(param);
         Map<String, CarStatisticsVO> voMap = list.stream().collect(Collectors.toMap(CarStatisticsVO::getEscapedType, v -> v));
         List<CarStatisticsVO> res = new ArrayList<>();
         dictDataList.forEach((item) -> {
