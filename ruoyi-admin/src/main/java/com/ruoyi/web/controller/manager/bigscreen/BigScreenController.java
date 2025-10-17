@@ -5,6 +5,7 @@ import com.ruoyi.base.service.*;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.manager.domain.*;
 import com.ruoyi.manager.domain.vo.bigscreen.*;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -90,7 +92,7 @@ public class BigScreenController extends BaseController {
      */
     @GetMapping(value = "/sectionList")
     public AjaxResult getSectionList() {
-        List<SectionVO> collect = odsSzdnSectionService.lambdaQuery().select(OdsSzdnSection::getSectionCode, OdsSzdnSection::getSectionName).list()
+        List<SectionVO> collect = odsSzdnSectionService.selectOdsSzdnSectionListNew(new OdsSzdnSection())
                 .stream().map(item -> {
                     SectionVO sectionVO = new SectionVO();
                     sectionVO.setSectionCode(item.getSectionCode());
@@ -108,12 +110,17 @@ public class BigScreenController extends BaseController {
      */
     @GetMapping(value = "/tollGantryFwqList")
     public AjaxResult getTollList(@RequestParam(name = "sectionCode", required = false) String sectionCode, @RequestParam String type) {
-        if(StringUtils.isBlank(sectionCode)) {
+        if(CommonUtil.isBlank(sectionCode)) {
             return AjaxResult.success(new ArrayList<>());
         }
+        sectionCode = CommonUtil.deleteEnd(sectionCode);
+        String[] split = sectionCode.split(",");
+        List<String> sectionCodeList = Arrays.stream(split).collect(Collectors.toList());
         List<TollGantryFwqVO> collect = new ArrayList<>();
         if ("1".equals(type)) {
-            collect = tollService.lambdaQuery().select(OdsSzdnToll::getTollCode, OdsSzdnToll::getTollName).eq(OdsSzdnToll::getSectionCode, sectionCode).list()
+            OdsSzdnToll odsSzdnToll = new OdsSzdnToll();
+            odsSzdnToll.setSectionCodeList(sectionCodeList);
+            collect = tollService.selectOdsSzdnTollListNew(odsSzdnToll)
                     .stream().map(item -> {
                         TollGantryFwqVO vo = new TollGantryFwqVO();
                         vo.setType("1");

@@ -47,4 +47,13 @@ public interface IOdsSzdnTollService extends IService<OdsSzdnToll> {
 
     void truncateTable();
 
+
+    /**
+     * 查询收费站基础信息列表
+     *
+     * @param odsSzdnToll 收费站基础信息
+     * @return 收费站基础信息集合
+     */
+    List<OdsSzdnToll> selectOdsSzdnTollListNew(OdsSzdnToll odsSzdnToll);
+
 }

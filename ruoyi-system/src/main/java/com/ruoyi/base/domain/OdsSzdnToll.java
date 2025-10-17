@@ -1,8 +1,10 @@
 package com.ruoyi.base.domain;
 
 import java.util.Date;
+import java.util.List;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -120,6 +122,12 @@ public class OdsSzdnToll implements Custom {
     /** 流水是否接入 */
     @Excel(name = "流水是否接入")
     private String isAccess;
+
+    /**
+     * 路线数组
+     */
+    @TableField(exist = false)
+    List<String> sectionCodeList;
 
 
 }

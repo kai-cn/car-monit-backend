@@ -50,4 +50,13 @@ public interface IOdsSzdnSectionService extends IService<OdsSzdnSection> {
      */
     void truncateTable();
 
+
+    /**
+     * 查询路段信息列表
+     *
+     * @param odsSzdnSection 路段信息
+     * @return 路段信息集合
+     */
+    List<OdsSzdnSection> selectOdsSzdnSectionListNew(OdsSzdnSection odsSzdnSection);
+
 }
