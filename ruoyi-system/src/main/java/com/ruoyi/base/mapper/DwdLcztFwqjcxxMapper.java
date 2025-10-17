@@ -51,4 +51,13 @@ public interface DwdLcztFwqjcxxMapper extends BaseMapper<DwdLcztFwqjcxx> {
     @Update("TRUNCATE TABLE dwd_lczt_fwqjcxx")
     void truncateTable();
 
+
+    /**
+     * 查询服务区基础信息列表
+     *
+     * @param dwdLcztFwqjcxx 服务区基础信息
+     * @return 服务区基础信息集合
+     */
+    List<DwdLcztFwqjcxx> selectDwdLcztFwqjcxxListNew(DwdLcztFwqjcxx dwdLcztFwqjcxx);
+
 }

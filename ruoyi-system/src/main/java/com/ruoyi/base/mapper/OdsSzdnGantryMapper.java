@@ -48,4 +48,13 @@ public interface OdsSzdnGantryMapper extends BaseMapper<OdsSzdnGantry> {
 
     @Update("TRUNCATE TABLE ods_szdn_gantry")
     void truncateTable();
+
+
+    /**
+     * 查询门架信息列表
+     *
+     * @param odsSzdnGantry 门架信息
+     * @return 门架信息集合
+     */
+    List<OdsSzdnGantry> selectOdsSzdnGantryListNew(OdsSzdnGantry odsSzdnGantry);
 }
