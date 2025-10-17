@@ -168,21 +168,25 @@ public class BigScreenController extends BaseController {
      * 追缴统计
      */
     @GetMapping(value = "/carAudit")
-    public AjaxResult getCarAudit() {
+    public AjaxResult getCarAudit(IncomeStatisticParam param) {
         CarAuditVO vo = new CarAuditVO();
-        BigDecimal totalAmount = carAduitFreeService.getCarAudit();
-        BigDecimal finishedAmount = carConfimFreeService.getCarConfirm();
+        BigDecimal totalAmount = carAduitFreeService.getCarAudit(param);
+        BigDecimal finishedAmount = carConfimFreeService.getCarConfirm(param);
         if (totalAmount != null) {
             vo.setTotalAmount(totalAmount);
         }
         if (finishedAmount != null) {
             vo.setFinishedAmount(finishedAmount);
         }
-        Long confirmCount = carConfimFreeService.lambdaQuery().eq(CarConfimFree::getDelFlag, "0").count();
-        Integer auditCount = carAduitFreeService.selectAuditCount();
-        if (confirmCount != null && confirmCount > 0) {
-            vo.setTotalCount(Math.toIntExact(confirmCount));
-        }
+
+        // 拯救时间范围
+        CarConfimFree carConfimFree = new CarConfimFree();
+        carConfimFree.setApplyTime3(param.getApplyTime1());
+        carConfimFree.setApplyTime4(param.getApplyTime2());
+        int confirmCount = carConfimFreeService.selectCarConfimFreeList(carConfimFree).size();
+        vo.setTotalCount(confirmCount);
+
+        Integer auditCount = carAduitFreeService.selectAuditCount(param);
         if (auditCount != null && auditCount > 0) {
             vo.setFinishedCount(auditCount);
         }
@@ -250,9 +254,10 @@ public class BigScreenController extends BaseController {
     @ApiOperation("堵漏增收统计")
     @GetMapping(value = "/incomeStatistic")
     public AjaxResult incomeStatistic(IncomeStatisticParam param) {
-        if(StringUtils.isNotBlank(param.getYear()) && StringUtils.isNotBlank(param.getMonth())){
-            String start = param.getYear() + "-" + param.getMonth() + "-01";
-            param.setStartDate(start);
+
+        // 默认为所
+        if (CommonUtil.isBlank(param.getQueryDateType())){
+            param.setQueryDateType("suo");
         }
         List<incomeStatisticVO> voList =  carAduitFreeService.incomeStatistic(param);
         return AjaxResult.success(voList);

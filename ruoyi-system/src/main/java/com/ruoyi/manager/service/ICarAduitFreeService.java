@@ -61,11 +61,11 @@ public interface ICarAduitFreeService extends IService<CarAduitFree> {
     AjaxResult deleteCarAduitFreeByConfirmId(String fkId);
 
 
-    BigDecimal getCarAudit();
+    BigDecimal getCarAudit(IncomeStatisticParam param);
 
     List<incomeStatisticVO> incomeStatistic(IncomeStatisticParam param);
 
-    Integer selectAuditCount();
+    Integer selectAuditCount(IncomeStatisticParam param);
 
     List<PCIncomeStaticsVO> getPCIncomeStatics(CarConfimFreeQueryRo queryRo);
 }

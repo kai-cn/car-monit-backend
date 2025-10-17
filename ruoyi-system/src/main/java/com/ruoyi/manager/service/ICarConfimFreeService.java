@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
 import com.ruoyi.manager.domain.vo.PCCarStatisticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
+import com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam;
 
 /**
  * 确认补缴Service接口
@@ -52,7 +53,7 @@ public interface ICarConfimFreeService extends IService<CarConfimFree> {
 
     List<CarStatisticsVO> getCarStatistics();
 
-    BigDecimal getCarConfirm();
+    BigDecimal getCarConfirm(IncomeStatisticParam param);
 
     String selectOrgId(String carId, String id);
 

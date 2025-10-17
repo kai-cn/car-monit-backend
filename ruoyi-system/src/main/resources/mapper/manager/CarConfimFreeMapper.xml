@@ -94,6 +94,10 @@
         <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
         <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')</if>
         <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
+
+        <if test="applyTime3 != null  and applyTime3 != ''">and t.create_time >= STR_TO_DATE(#{applyTime3},'%Y-%m-%d')</if>
+        <if test="applyTime4 != null  and applyTime4 != ''">and t.create_time<![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime4},'%Y-%m-%d'), interval 1 day) </if>
+
         order by t.create_time desc,t.id
     </select>
 
@@ -112,9 +116,11 @@
         group by escaped_type;
     </select>
 
-    <select id="getCarConfirm" resultType="java.math.BigDecimal">
+    <select id="getCarConfirm" resultType="java.math.BigDecimal" parameterType="com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam">
         select sum(ifnull(amount, 0)) finishedAmount
-        from car_confim_free f where f.del_flag = '0'
+        from car_confim_free a where a.del_flag = '0'
+        <if test="applyTime1 != null  and applyTime1 != ''">and a.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
     </select>
 
 
