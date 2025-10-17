@@ -131,6 +131,14 @@ public class CarConfimFree extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private String applyTime2;
 
+
+    // 时间查询 :入口时间
+    @TableField(exist = false)
+    private String applyTime3;
+
+    @TableField(exist = false)
+    private String applyTime4;
+
     // 车牌号查询
     @TableField(exist = false)
     private String carNoQuery;

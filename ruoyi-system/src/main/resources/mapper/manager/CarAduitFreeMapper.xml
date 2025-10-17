@@ -90,8 +90,10 @@
          where t.id = #{id}
     </select>
 
-    <select id="getCarAudit" resultType="java.math.BigDecimal">
-        select sum(ifnull(amount, 0)) totalAmount from car_aduit_free where del_flag = '0';
+    <select id="getCarAudit" resultType="java.math.BigDecimal" parameterType="com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam">
+        select sum(ifnull(amount, 0)) totalAmount from car_aduit_free a where a.del_flag = '0'
+        <if test="applyTime1 != null  and applyTime1 != ''">and a.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
     </select>
 
     <select id="incomeStatistic" parameterType="com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam" resultType="com.ruoyi.manager.domain.vo.bigscreen.incomeStatisticVO">
@@ -101,15 +103,17 @@
         where a.del_flag = '0'
         <!--<if test="orgCode != null  and orgCode != ''"> and d.org_code = #{orgCode}</if>-->
         <if test="startDate != null  and startDate != ''">and a.create_time >= STR_TO_DATE(#{startDate},'%Y-%m-%d') and a.create_time <![CDATA[<]]> LAST_DAY(#{startDate})</if>
-        <if test="queryDateType != null  and queryDateType == '1'">and d.tree_leavel = 1</if>
-        <if test="queryDateType != null  and queryDateType == '2'">and d.tree_leavel = 2</if>
+        <if test="queryDateType != null  and queryDateType == 'suo'">and d.tree_leavel = 2</if>
+        <if test="queryDateType != null  and queryDateType == 'zhan'">and d.tree_leavel = 3</if>
         <if test="applyTime1 != null  and applyTime1 != ''">and a.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
         <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
         group by a.org_id order by amount desc
     </select>
 
-    <select id="selectAuditCount" resultType="java.lang.Integer">
-        select count(distinct confirm_id) confirmCount from car_aduit_free where del_flag = '0';
+    <select id="selectAuditCount" resultType="java.lang.Integer" parameterType="com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam">
+        select count(distinct confirm_id) confirmCount from car_aduit_free a where a.del_flag = '0'
+        <if test="applyTime1 != null  and applyTime1 != ''">and a.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
     </select>
 
     <select id="PCIncomeStatics" parameterType="com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo"  resultType="com.ruoyi.manager.domain.vo.PCIncomeStaticsVO">

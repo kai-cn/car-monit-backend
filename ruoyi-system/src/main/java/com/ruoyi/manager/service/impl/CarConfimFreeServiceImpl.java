@@ -13,6 +13,7 @@ import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
 import com.ruoyi.manager.domain.vo.PCCarStatisticsDetailVO;
 import com.ruoyi.manager.domain.vo.PCCarStatisticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
+import com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam;
 import com.ruoyi.manager.mapper.CarConfimFreeMapper;
 import com.ruoyi.manager.mapper.CarSuspiciousMapper;
 import com.ruoyi.manager.service.ICarAduitFreeService;
@@ -252,8 +253,8 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
     }
 
     @Override
-    public BigDecimal getCarConfirm() {
-        return carConfimFreeMapper.getCarConfirm();
+    public BigDecimal getCarConfirm(IncomeStatisticParam param) {
+        return carConfimFreeMapper.getCarConfirm(param);
     }
 
     @Override

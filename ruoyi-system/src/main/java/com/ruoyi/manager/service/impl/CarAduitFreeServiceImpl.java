@@ -119,8 +119,8 @@ public class CarAduitFreeServiceImpl extends ServiceImpl<CarAduitFreeMapper, Car
 
 
     @Override
-    public BigDecimal getCarAudit() {
-        return carAduitFreeMapper.getCarAudit();
+    public BigDecimal getCarAudit(IncomeStatisticParam param) {
+        return carAduitFreeMapper.getCarAudit(param);
     }
 
     @Override
@@ -129,8 +129,8 @@ public class CarAduitFreeServiceImpl extends ServiceImpl<CarAduitFreeMapper, Car
     }
 
     @Override
-    public Integer selectAuditCount() {
-        return carAduitFreeMapper.selectAuditCount();
+    public Integer selectAuditCount(IncomeStatisticParam param) {
+        return carAduitFreeMapper.selectAuditCount(param);
     }
 
     @Override
