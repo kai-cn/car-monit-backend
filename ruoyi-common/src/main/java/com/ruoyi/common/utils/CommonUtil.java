@@ -196,4 +196,33 @@ public class CommonUtil {
 		}
 	}
 
+	/**
+	 * 多元素包含
+	 *
+	 * @param paraStr 参数
+	 * @param sqlStr  数据库元素
+	 * @return
+	 */
+	public static boolean isExitsStr(String sqlStr, String paraStr) {
+		boolean exflag = false;
+		paraStr = deleteEnd(paraStr);
+		sqlStr = isNull(sqlStr);
+		if (CommonUtil.isNotBlank(paraStr)) {
+			String[] paraBos = paraStr.split(",");
+			boolean tempFlag = false;
+			for (String para : paraBos) {
+				if (tempFlag) {
+				} else {
+					if (sqlStr.indexOf(para) > -1) {
+						tempFlag = true;
+					}
+				}
+			}
+			exflag = tempFlag;
+		} else {
+			exflag = true;
+		}
+		return exflag;
+	}
+
 }

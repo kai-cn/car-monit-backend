@@ -177,50 +177,48 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
         for (CarWarningInfo rtn : list) {
             String devCodes = CommonUtil.isNull(rtn.getTrackNames());
             boolean addFlag = true;
-            // 所属收费站编码
-            if (CommonUtil.isNotBlank(param.getTollCode())){
-                if (devCodes.indexOf(param.getTollCode()) == -1){
-                    addFlag = false;
-                }
-            }
-            // 门架编号
-            if (CommonUtil.isNotBlank(param.getGantryCode())){
-                if (devCodes.indexOf(param.getGantryCode()) == -1){
-                    addFlag = false;
-                }
-            }
-            // 服务区编码
-            if (CommonUtil.isNotBlank(param.getFwqbm())){
-                if (devCodes.indexOf(param.getFwqbm()) == -1){
-                    addFlag = false;
-                }
-            }
             // 所属路线编码
-            if (CommonUtil.isNotBlank(param.getRoadCode())){
-                if (devCodes.indexOf(param.getRoadCode()) == -1){
-                    addFlag = false;
-                }
+            addFlag = CommonUtil.isExitsStr(devCodes,param.getRoadCode());
+            if(!addFlag){
+                continue;
             }
 
             // 所属路段编码
-            if (CommonUtil.isNotBlank(param.getSectionCode())){
-                if (devCodes.indexOf(param.getSectionCode()) == -1){
-                    addFlag = false;
-                }
+            addFlag = CommonUtil.isExitsStr(devCodes,param.getSectionCode());
+            if(!addFlag){
+                continue;
+            }
+
+            // 所属收费站编码
+            addFlag = CommonUtil.isExitsStr(devCodes,param.getTollCode());
+            if(!addFlag){
+                continue;
+            }
+            // 门架编号
+            addFlag = CommonUtil.isExitsStr(devCodes,param.getGantryCode());
+            if(!addFlag){
+                continue;
+            }
+
+            // 服务区编码
+            addFlag = CommonUtil.isExitsStr(devCodes,param.getFwqbm());
+            if(!addFlag){
+                continue;
             }
 
             // 逃费类型
-            if (CommonUtil.isNotBlank(param.getEscapedType())){
-                if (CommonUtil.isNull(rtn.getEscapedType()).indexOf(param.getEscapedType()) == -1){
-                    addFlag = false;
-                }
+            addFlag = CommonUtil.isExitsStr(rtn.getEscapedType(),param.getEscapedType());
+            if(!addFlag){
+                continue;
             }
+
             // 车牌号
-            if (CommonUtil.isNotBlank(param.getCarNoQuery())){
-                if (CommonUtil.isNull(rtn.getCarNo()).indexOf(param.getCarNoQuery()) == -1){
-                    addFlag = false;
-                }
+            addFlag = CommonUtil.isExitsStr(rtn.getCarNo(),param.getCarNoQuery());
+            if(!addFlag){
+                continue;
             }
+
+
             if (addFlag){
                 rtnlist.add(rtn);
             }
