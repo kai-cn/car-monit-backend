@@ -9,6 +9,12 @@ import lombok.Data;
  */
 @Data
 public class TopTenVO {
+
+    /**
+     * 路线
+     */
+    private String roadCode;
+
     /**
      * 路段名称
      */
