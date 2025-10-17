@@ -51,7 +51,7 @@ public interface CarConfimFreeMapper extends BaseMapper<CarConfimFree> {
      */
     int deleteCarConfimFreeById(String id);
 
-    List<CarStatisticsVO> getCarStatistics();
+    List<CarStatisticsVO> getCarStatistics(IncomeStatisticParam param);
 
     BigDecimal getCarConfirm(IncomeStatisticParam param);
 

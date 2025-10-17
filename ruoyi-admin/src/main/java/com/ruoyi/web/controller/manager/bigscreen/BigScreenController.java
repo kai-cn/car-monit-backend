@@ -58,8 +58,8 @@ public class BigScreenController extends BaseController {
      *  重点关注车辆统计
      */
     @GetMapping(value = "/carStatistics")
-    public AjaxResult getCarStatistics() {
-        List<CarStatisticsVO> carStatisticsVO = carConfimFreeService.getCarStatistics();
+    public AjaxResult getCarStatistics(IncomeStatisticParam param) {
+        List<CarStatisticsVO> carStatisticsVO = carConfimFreeService.getCarStatistics(param);
         return AjaxResult.success(carStatisticsVO);
     }
 

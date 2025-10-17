@@ -109,11 +109,13 @@
          where t.id = #{id}
     </select>
 
-    <select id="getCarStatistics" resultType="com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO">
-        select escaped_type, sum(ifnull(dif_amount, 0)) escapedAmount, count(distinct car_id) number
-        from car_except_record
-        where del_flag = '0'
-        group by escaped_type;
+    <select id="getCarStatistics" resultType="com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO" parameterType="com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam">
+        select a.escaped_type, sum(ifnull(a.dif_amount, 0)) escapedAmount, count(distinct a.car_id) number
+        from car_except_record a
+        where a.del_flag = '0'
+        <if test="applyTime1 != null  and applyTime1 != ''">and a.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+        group by a.escaped_type
     </select>
 
     <select id="getCarConfirm" resultType="java.math.BigDecimal" parameterType="com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam">

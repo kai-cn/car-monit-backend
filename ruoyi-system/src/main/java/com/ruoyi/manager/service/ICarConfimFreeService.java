@@ -51,7 +51,7 @@ public interface ICarConfimFreeService extends IService<CarConfimFree> {
      */
     AjaxResult deleteCarConfimFreeByIds(String[] ids);
 
-    List<CarStatisticsVO> getCarStatistics();
+    List<CarStatisticsVO> getCarStatistics(IncomeStatisticParam param);
 
     BigDecimal getCarConfirm(IncomeStatisticParam param);
 
