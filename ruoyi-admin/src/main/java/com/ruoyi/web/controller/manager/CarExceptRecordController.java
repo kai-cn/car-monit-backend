@@ -189,4 +189,14 @@ public class CarExceptRecordController extends BaseController {
         return carExceptRecordService.deleteCarExceptRecordByIds(ids);
     }
 
+    /**
+     * 获取confirmId
+     */
+    @GetMapping(value = "/getConfirmId/{id}")
+    public AjaxResult getConfirmId(@PathVariable("id") String id) {
+        AjaxResult success = AjaxResult.success();
+        success.put("data", carExceptRecordService.getConfirmId(id));
+        return success;
+    }
+
 }
