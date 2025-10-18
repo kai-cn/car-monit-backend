@@ -159,8 +159,7 @@
         select  t.car_no,
         t.car_type,
         t.car_vehicle,
-        t.link_name,
-        t.link_phone,
+        t.escaped_type,
         t.org_id,
         sd.dept_name org_name,
         k.total_amount amount,
@@ -171,7 +170,7 @@
         sum(case when t1.status = '0' then 1 else 0 end) except_num, GROUP_CONCAT(t1.id SEPARATOR ',') except_ids
         from  car_except_record t1 where t1.del_flag = '0'
         group by t1.car_no) k on k.except_num = 0 and t.car_no = k.car_no
-        left join sys_dept sd on sd.dept_id = t.org_id and sd.del_flag = '0'
+        left join sys_dept sd on sd.dept_id = t.eps_id and sd.del_flag = '0'
         WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="carId != null  and carId != ''"> and t.car_id = #{carId}</if>
