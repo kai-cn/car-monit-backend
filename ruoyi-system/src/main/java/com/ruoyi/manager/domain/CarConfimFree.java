@@ -151,4 +151,7 @@ public class CarConfimFree extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private BigDecimal confimFreeAmount;
 
+    @TableField(exist = false)
+    private String escapedType;
+
 }
