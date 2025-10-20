@@ -154,4 +154,11 @@ public class CarConfimFree extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private String escapedType;
 
+    /**
+     * 补缴方式
+     */
+    @TableField(exist = false)
+    private String comfimFreeType;
+
+
 }
