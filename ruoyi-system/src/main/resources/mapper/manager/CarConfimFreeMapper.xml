@@ -132,7 +132,7 @@
         FROM car_confim_free t
         left join sys_dept sd on sd.dept_id = t.org_id
         WHERE t.del_flag = '0' and
-        <foreach collection="list" item="id" separator=" OR ">
+        <foreach collection="list" item="id" open="(" separator=" OR " close=")">
             find_in_set(#{id}, t.except_ids) > 0
         </foreach>
     </select>
