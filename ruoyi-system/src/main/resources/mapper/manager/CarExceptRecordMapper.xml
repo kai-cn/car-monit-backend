@@ -179,4 +179,16 @@
     </select>
 
 
+    <!-- 判断区间是否重复 -->
+    <select id="isExitsTime" parameterType="com.ruoyi.manager.domain.CarExceptRecord" resultType="java.lang.Integer">
+        select count(1) from car_except_record t
+        where t.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id != #{id}</if>
+        <if test="inTime != null ">and t.out_time >=  #{inTime} </if>
+        <if test="outTime != null ">and t.in_time <![CDATA[<=]]> #{outTime} </if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+    </select>
+
+
+
 </mapper>
