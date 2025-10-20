@@ -6,6 +6,7 @@ import com.ruoyi.manager.domain.vo.PCCarStatisticsDetailVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
 /**
@@ -76,4 +77,12 @@ public interface CarExceptRecordMapper extends BaseMapper<CarExceptRecord> {
     List<CarStatisticsVO> buildPCCarStatisticsVO(@Param("ids") List<String> ids, @Param("escapedType") String escapedType);
 
     List<PCCarStatisticsDetailVO> buildPCCarStatisticsVODetail(@Param("ids") List<String> ids, @Param("escapedType") String escapedType);
+
+    /**
+     * 时间区间是否重复
+     *
+     * @param carExceptRecord 流程节点
+     * @return 结果
+     */
+    public int isExitsTime(CarExceptRecord carExceptRecord);
 }

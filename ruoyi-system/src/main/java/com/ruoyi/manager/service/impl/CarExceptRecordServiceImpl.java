@@ -68,6 +68,14 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
     @Override
     public AjaxResult saveCarExceptRecord(CarExceptRecord carExceptRecord)
     {
+        // 判断区间是否重复
+        if (null != carExceptRecord.getInTime() && (null != carExceptRecord.getOutTime())) {
+            int countTimeNum = carExceptRecordMapper.isExitsTime(carExceptRecord);
+            if (countTimeNum > 0){
+                return  AjaxResult.error("录入区间时间重复！");
+            }
+        }
+
         if (CommonUtil.isNotBlank(carExceptRecord.getId()))
         {
             // 修改
@@ -79,6 +87,11 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
             // 新增 主键
             carExceptRecordMapper.insert(carExceptRecord);
         }
+
+
+
+
+
         return AjaxResult.success("操作成功！",carExceptRecord.getId());
     }
 
