@@ -135,6 +135,7 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
 
         // 修改明细
         BigDecimal processingAmount = BigDecimal.ZERO;
+        String escapedTypes = "";
         List<CarAduitFree> carAduitFreeList = carConfimFree.getCarAduitFreeList();
         if (null != carAduitFreeList && carAduitFreeList.size() > 0) {
             // 将处理金额进行累加
@@ -143,52 +144,30 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
                     .filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             carConfimFree.setAduitAmount(processingAmount);
+
+            escapedTypes = carExceptRecordService.lambdaQuery().in(CarExceptRecord::getId, exceptIdList).list().stream().map(CarExceptRecord::getEscapedType).collect(Collectors.joining(","));
+            carConfimFree.setEscapedTypes(escapedTypes);
+
         }
 
-        String escapedTypes = carExceptRecordService.lambdaQuery().in(CarExceptRecord::getId, exceptIdList).list().stream().map(CarExceptRecord::getEscapedType).collect(Collectors.joining(","));
-        carConfimFree.setEscapedTypes(escapedTypes);
+        String comfimFreeType = CommonUtil.isNull(carConfimFree.getComfimFreeType());
         if (CommonUtil.isNotBlank(carConfimFree.getId())) {
             // 修改
             carConfimFreeMapper.updateById(carConfimFree);
         } else {
+            carConfimFree.setStatus("0");
+            if (comfimFreeType.equals("waibu")){
+                carConfimFree.setStatus("1");
+            }
             // 新增 主键
             carConfimFreeMapper.insert(carConfimFree);
         }
 
 
-        if (null != carAduitFreeList && carAduitFreeList.size() > 0) {
-
-            // 先删除
-            carAduitFreeService.deleteCarAduitFreeByConfirmId(carConfimFree.getId());
-            // 后新增
-            carAduitFreeList.forEach(item -> {
-                item.setConfirmId(carConfimFree.getId());
-                item.setCarId(carConfimFree.getCarNo());
-                item.setCarType(carConfimFree.getCarType());
-                item.setCarVehicle(carConfimFree.getCarVehicle());
-                item.setCarNo(carConfimFree.getCarNo());
-                item.setDelFlag("0");
-                item.setCreateTime(DateUtils.getTimestamp());
-                item.setUpdateTime(DateUtils.getTimestamp());
-            });
-            this.carAduitFreeService.saveBatch(carAduitFreeList);
-
-
-
-            // 更新补缴状态
-           /* int comparison = carConfimFree.getAmount().compareTo(processingAmount);
-            String status = comparison == 0 ? "2" : comparison > 0 ? "1" : "0";*/
-
+        if (comfimFreeType.equals("waibu")){
+            //  外部补缴------------------------
             // 修改异常流水状态
             carExceptRecordService.updateStatusByExceptId(exceptIdList, "1");
-            /*//异常流水保存确认补缴id
-            List<CarExceptRecord> collect = exceptIdList.stream().map(item -> {
-                CarExceptRecord record = new CarExceptRecord();
-                record.setId(item);
-                record.setConfirmId(carConfimFree.getId());
-                return record;
-            }).collect(Collectors.toList());
-            carExceptRecordService.updateBatchById(collect);*/
 
             // 修改异常车俩核实状态
             CarExceptRecord carExceptRecord = new CarExceptRecord();
@@ -202,7 +181,47 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
                     carSuspiciousMapper.updateById(exupdatebo);
                 }
             }
+        }else{
+            // 内部补缴------------------------
+            if (null != carAduitFreeList && carAduitFreeList.size() > 0) {
+                // 先删除
+                carAduitFreeService.deleteCarAduitFreeByConfirmId(carConfimFree.getId());
+                // 后新增
+                carAduitFreeList.forEach(item -> {
+                    item.setConfirmId(carConfimFree.getId());
+                    item.setCarId(carConfimFree.getCarNo());
+                    item.setCarType(carConfimFree.getCarType());
+                    item.setCarVehicle(carConfimFree.getCarVehicle());
+                    item.setCarNo(carConfimFree.getCarNo());
+                    item.setDelFlag("0");
+                    item.setCreateTime(DateUtils.getTimestamp());
+                    item.setUpdateTime(DateUtils.getTimestamp());
+                });
+                this.carAduitFreeService.saveBatch(carAduitFreeList);
+
+                // 更新补缴状态
+               /* int comparison = carConfimFree.getAmount().compareTo(processingAmount);
+                String status = comparison == 0 ? "2" : comparison > 0 ? "1" : "0";*/
+
+                // 修改异常流水状态
+                carExceptRecordService.updateStatusByExceptId(exceptIdList, "1");
+
+
+                // 修改异常车俩核实状态
+                CarExceptRecord carExceptRecord = new CarExceptRecord();
+                carExceptRecord.setExceptIds(exceptIds);
+                List<CarExceptRecord> carExceptRecordList = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);
+                for (CarExceptRecord ex : carExceptRecordList){
+                    if (CommonUtil.isNotBlank(ex.getCarId())){
+                        CarSuspicious exupdatebo = new CarSuspicious();
+                        exupdatebo.setId(ex.getCarId());
+                        exupdatebo.setStatus("1");
+                        carSuspiciousMapper.updateById(exupdatebo);
+                    }
+                }
+            }
         }
+
         return AjaxResult.success("操作成功！", carConfimFree.getId());
     }
 
