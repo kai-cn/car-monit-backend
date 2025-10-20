@@ -126,10 +126,10 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
         }
         List<String> exceptIdList = Arrays.asList(exceptIds.split(","));
 
-       /* List<CarConfimFree> carConfimFreelist = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
+        List<CarConfimFree> carConfimFreelist = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
         if (null != carConfimFreelist && carConfimFreelist.size() > 0) {
-            return AjaxResult.error("请勿重复补缴！");
-        } */
+            return AjaxResult.error("车辆补缴单已追缴，请勿重复补缴！");
+        }
 
         // 修改明细
         BigDecimal processingAmount = BigDecimal.ZERO;
@@ -213,7 +213,27 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
     @Transactional(rollbackFor = Exception.class)
     @Override
     public AjaxResult deleteCarConfimFreeByIds(String[] ids) {
-        int count = carConfimFreeMapper.deleteCarConfimFreeByIds(ids);
+        // 通过ids 查询
+        int count = 0;
+        if (null != ids && ids.length > 0) {
+
+            String exceptIds = "";
+            for (String id : ids) {
+                CarConfimFree carConfimFree = carConfimFreeMapper.selectCarConfimFreeById(id);
+                if (null != carConfimFree && CommonUtil.isNotBlank(carConfimFree.getExceptIds())) {
+                    exceptIds += CommonUtil.deleteEnd(carConfimFree.getExceptIds())+",";
+                }
+            }
+            exceptIds = CommonUtil.deleteEnd(exceptIds);
+            if (CommonUtil.isNotBlank(exceptIds)) {
+                List<String> exceptIdList = Arrays.asList(exceptIds.split(","));
+                // 修改异常流水状态
+                carExceptRecordService.updateStatusByExceptId(exceptIdList, "0");
+            }
+            // 删除流水
+            count = carConfimFreeMapper.deleteCarConfimFreeByIds(ids);
+        }
+
         return AjaxResult.success(count);
     }
 
@@ -294,10 +314,10 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
         }
 
         List<String> exceptIdList = Arrays.asList(exceptIds.split(","));
-       /* List<CarConfimFree> list = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
+        List<CarConfimFree> list = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
         if (null != list && list.size() > 0) {
-            return AjaxResult.error("请勿重复补缴！");
-        }*/
+            return AjaxResult.error("车辆补缴单已追缴，请勿重复补缴！");
+        }
 
         CarExceptRecord CarExceptRecordRtn = carExceptRecordList.get(0);
 
