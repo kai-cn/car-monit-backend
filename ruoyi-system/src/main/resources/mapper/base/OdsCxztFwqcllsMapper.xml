@@ -50,7 +50,7 @@
         SELECT
         <include refid="selectOdsCxztFwqcllsVo"/>
         FROM ods_cxzt_fwqclls t
-        WHERE t.del_flag = '0'
+        WHERE 1=1
         <if test="bigId != null "> and t.big_id = #{bigId}</if>
         <if test="datauuid != null  and datauuid != ''"> and t.datauuid = #{datauuid}</if>
         <if test="targetpicurl != null  and targetpicurl != ''"> and t.targetpicurl = #{targetpicurl}</if>

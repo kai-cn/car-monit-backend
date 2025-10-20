@@ -21,12 +21,8 @@ import com.ruoyi.common.core.domain.Custom;
 @EqualsAndHashCode(callSuper = false)
 public class OdsCxztFwqclls implements Custom {
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
     private Long bigId;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
     private String datauuid;
 
     /** 抓拍照片url */
