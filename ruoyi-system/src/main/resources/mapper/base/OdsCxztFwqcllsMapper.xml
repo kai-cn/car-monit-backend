@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.OdsCxztFwqcllsMapper">
+
+    <resultMap type="com.ruoyi.base.domain.OdsCxztFwqclls" id="OdsCxztFwqcllsResult">
+        <result property="bigId"    column="big_id"    />
+        <result property="datauuid"    column="datauuid"    />
+        <result property="targetpicurl"    column="targetpicurl"    />
+        <result property="vehiclebrand"    column="vehiclebrand"    />
+        <result property="platepicurl"    column="platepicurl"    />
+        <result property="rollvehiclestype"    column="rollvehiclestype"    />
+        <result property="plateno"    column="plateno"    />
+        <result property="directionname"    column="directionname"    />
+        <result property="platetype"    column="platetype"    />
+        <result property="dangmark"    column="dangmark"    />
+        <result property="crosstime"    column="crosstime"    />
+        <result property="axles"    column="axles"    />
+        <result property="devicename"    column="devicename"    />
+        <result property="ipaddress"    column="ipaddress"    />
+        <result property="servicename"    column="servicename"    />
+        <result property="vehicletype"    column="vehicletype"    />
+        <result property="loadTime"    column="load_time"    />
+        <result property="gradeLevel"    column="grade_level"    />
+
+    </resultMap>
+
+    <sql id="selectOdsCxztFwqcllsVo">
+        t.big_id,
+        t.datauuid,
+        t.targetpicurl,
+        t.vehiclebrand,
+        t.platepicurl,
+        t.rollvehiclestype,
+        t.plateno,
+        t.directionname,
+        t.platetype,
+        t.dangmark,
+        t.crosstime,
+        t.axles,
+        t.devicename,
+        t.ipaddress,
+        t.servicename,
+        t.vehicletype,
+        t.load_time,
+        t.grade_level
+    </sql>
+
+
+    <select id="selectOdsCxztFwqcllsList" parameterType="com.ruoyi.base.domain.OdsCxztFwqclls" resultMap="OdsCxztFwqcllsResult">
+        SELECT
+        <include refid="selectOdsCxztFwqcllsVo"/>
+        FROM ods_cxzt_fwqclls t
+        WHERE t.del_flag = '0'
+        <if test="bigId != null "> and t.big_id = #{bigId}</if>
+        <if test="datauuid != null  and datauuid != ''"> and t.datauuid = #{datauuid}</if>
+        <if test="targetpicurl != null  and targetpicurl != ''"> and t.targetpicurl = #{targetpicurl}</if>
+        <if test="vehiclebrand != null  and vehiclebrand != ''"> and t.vehiclebrand = #{vehiclebrand}</if>
+        <if test="platepicurl != null  and platepicurl != ''"> and t.platepicurl = #{platepicurl}</if>
+        <if test="rollvehiclestype != null  and rollvehiclestype != ''"> and t.rollvehiclestype = #{rollvehiclestype}</if>
+        <if test="plateno != null  and plateno != ''"> and t.plateno = #{plateno}</if>
+        <if test="directionname != null  and directionname != ''"> and t.directionname like concat('%', #{directionname}, '%')</if>
+        <if test="platetype != null  and platetype != ''"> and t.platetype = #{platetype}</if>
+        <if test="dangmark != null  and dangmark != ''"> and t.dangmark = #{dangmark}</if>
+        <if test="crosstime != null "> and t.crosstime = #{crosstime}</if>
+        <if test="axles != null  and axles != ''"> and t.axles = #{axles}</if>
+        <if test="devicename != null  and devicename != ''"> and t.devicename like concat('%', #{devicename}, '%')</if>
+        <if test="ipaddress != null  and ipaddress != ''"> and t.ipaddress = #{ipaddress}</if>
+        <if test="servicename != null  and servicename != ''"> and t.servicename like concat('%', #{servicename}, '%')</if>
+        <if test="vehicletype != null  and vehicletype != ''"> and t.vehicletype = #{vehicletype}</if>
+        <if test="loadTime != null  and loadTime != ''"> and t.load_time = #{loadTime}</if>
+        <if test="gradeLevel != null  and gradeLevel != ''"> and t.grade_level = #{gradeLevel}</if>
+    </select>
+
+    <select id="selectOdsCxztFwqcllsById" parameterType="Long" resultMap="OdsCxztFwqcllsResult">
+         select
+         <include refid="selectOdsCxztFwqcllsVo"/>
+         from ods_cxzt_fwqclls t
+         where t.big_id = #{bigId}
+    </select>
+
+
+</mapper>
