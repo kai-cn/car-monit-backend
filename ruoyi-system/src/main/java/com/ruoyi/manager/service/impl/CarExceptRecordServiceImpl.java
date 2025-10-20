@@ -227,6 +227,6 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
         if(CollectionUtils.isNotEmpty(carConfimFreeList)){
             return carConfimFreeList.get(0).getId();
         }
-        return "";
+        return "-1";
     }
 }
