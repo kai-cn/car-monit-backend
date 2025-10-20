@@ -101,7 +101,7 @@
         <if test="queryDateType != null  and queryDateType == 'suo'"> from car_confim_free a </if>
         <if test="queryDateType != null  and queryDateType == 'zhan'"> from car_aduit_free a </if>
         left join sys_dept d on d.dept_id = a.org_id and d.del_flag = '0'
-        where a.del_flag = '0'
+        where a.del_flag = '0' and a.status = '0'
         <!--<if test="orgCode != null  and orgCode != ''"> and d.org_code = #{orgCode}</if>-->
         <if test="startDate != null  and startDate != ''">and a.create_time >= STR_TO_DATE(#{startDate},'%Y-%m-%d') and a.create_time <![CDATA[<]]> LAST_DAY(#{startDate})</if>
         <if test="queryDateType != null  and queryDateType == 'suo'">and d.tree_leavel = 2</if>
