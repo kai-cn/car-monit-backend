@@ -443,13 +443,15 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                             // 是否核实
                         }else{
                             carSuspicious.setCarNo(carNo);
-                            carSuspicious.setPlateColor(CommonUtil.isNull(plateColorMap.get(tracksBo.getPlateColor()))); // 车牌颜色
+                            carSuspicious.setPlateColor(CommonUtil.isNull(plateColorMap.get(tracksBo.getPlateColor()))); // 来源于收费站抓拍对象 platecolor 中文
+
+                            // ------------------标记需要转换
 
                             // 车型
                             if (CommonUtil.isNotBlank(tracksBo.getEnvehicletype())){
-                                carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(tracksBo.getEnvehicletype())));
+                                carSuspicious.setCarType(tracksBo.getEnvehicletype()); // 对应的是car_type_old 来源于 zdata_trail_fitting envehicletype
                             }else{
-                                carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(tracksBo.getCarType())));
+                                carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(tracksBo.getCarType()))); // 来源于 来源于收费站抓拍对象 cartype 中文
                             }
 
                             // 入口车轴数
@@ -460,7 +462,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                             }
                             carSuspicious.setPassType(tracksBo.getPassType()); // 通行标识
 
-                            carSuspicious.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(tracksBo.getCarVehicle()))); // 车种
+                            carSuspicious.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(tracksBo.getCarVehicle()))); // 车种：来源于收费站抓拍对象 platetype 中文
 
                             //--------------设置默认值
                             if (CommonUtil.isBlank(carSuspicious.getPlateColor())){
@@ -468,11 +470,11 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                             }
 
                             if (CommonUtil.isBlank(carSuspicious.getCarType())){
-                                carSuspicious.setCarType("0");
+                                carSuspicious.setCarType("99");
                             }
 
                             if (CommonUtil.isBlank(carSuspicious.getCarVehicle())){
-                                carSuspicious.setCarVehicle("0");
+                                carSuspicious.setCarVehicle("99");
                             }
 
                             // -------------需要转换----------------
