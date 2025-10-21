@@ -54,4 +54,8 @@ public class ZdataTrailTracksServiceImpl extends ServiceImpl<ZdataTrailTracksMap
         return list;
     }
 
+    @Override
+    public int removeRealData(List<String> carNoList) {
+       return zdataTrailTracksMapper.removeRealData(carNoList);
+    }
 }

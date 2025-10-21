@@ -12,6 +12,7 @@ import com.ruoyi.base.domain.TrailBo;
 import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.base.domain.ZdataTrailTracks;
 import com.ruoyi.base.service.IGeometryService;
+import com.ruoyi.base.service.IZdataTrailTracksService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -69,6 +70,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
     @Autowired
     private RedisCache redisCache;
+
+    @Autowired
+    private IZdataTrailTracksService trailTracksService;
 
     /**
      * 查询车辆行驶轨迹
@@ -491,13 +495,12 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
 
     /**
-     * 轨迹同步：李四轨迹
+     * 轨迹同步：历史轨迹
      *
      * @return 结果
      */
     @Transactional(rollbackFor = Exception.class)
-    public AjaxResult syncHistoryTrack(){
-
+    public AjaxResult syncHistoryTrack() {
         // 查询所有的车俩
         List<CarInfo> carList = carInfoService.getRedisCarList();
         for (CarInfo vo : carList) {
@@ -506,18 +509,18 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             List<TrailInfo> trailInfoList = redisCache.getCacheObject(key);
             if (null != trailInfoList && trailInfoList.size() > 0) {
                 // 找到下一个位置
+                List<ZdataTrailTracks> list = new ArrayList<>();
                 for (TrailInfo trailInfo : trailInfoList) {
                     ZdataTrailTracks tracksBo = trailInfo.getTracks();
-                    String uuid = CommonUtil.isNull(tracksBo.getUuid());
                     List<TrailBo> trailList = trailInfo.getTrailList(); // trailPoints
-                    String trackJosn = JSON.toJSONString(trailList);
-
-
+                    String trackJson = JSON.toJSONString(trailList);
+                    tracksBo.setTrackJosn(trackJson);
+                    list.add(tracksBo);
                 }
+                trailTracksService.removeRealData(new ArrayList<>());
+                trailTracksService.saveBatch(list);
             }
         }
-
-
         return AjaxResult.success();
     }
 

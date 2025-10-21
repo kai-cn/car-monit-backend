@@ -408,6 +408,8 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
         // 车种
         Map<String,String> carVehicleMap = sysDictDataService.selectDictDataLaleMap("car_vehicle");
+        //车牌对应的车种
+        Map<String,String> plateChangeMap = sysDictDataService.selectDictDataLaleMap("plate_change");
 
 
         for (Map.Entry<ZdataTrailTracks, List<TrailBo>> entry : mapCar.entrySet()) {
@@ -462,7 +464,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                             }
                             carSuspicious.setPassType(tracksBo.getPassType()); // 通行标识
 
-                            carSuspicious.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(tracksBo.getCarVehicle()))); // 车种：来源于收费站抓拍对象 platetype 中文
+                            carSuspicious.setCarVehicle(CommonUtil.isNull(plateChangeMap.get(tracksBo.getCarVehicle()))); // 车种：来源于收费站抓拍对象 platetype 中文
 
                             //--------------设置默认值
                             if (CommonUtil.isBlank(carSuspicious.getPlateColor())){
