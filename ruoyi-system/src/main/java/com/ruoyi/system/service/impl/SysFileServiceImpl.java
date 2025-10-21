@@ -223,26 +223,29 @@ public class SysFileServiceImpl implements ISysFileService {
     public AjaxResult uploadByUrl(List<UploadByUrlRo> roList) {
         List<Map> resultMaps = new ArrayList<>();
         for (UploadByUrlRo ro : roList) {
-            byte[] bytes = fileApi.downloadImageToByteArray(ro.getUrl());
-            MultipartFile file = MultipartFileUtil.convertByteToMultipartFile(bytes, ro.getFileName());
-            String fileName = IdUtil.simpleUUID() + StrUtil.DOT + FileUtil.extName(file.getOriginalFilename());
-            Map<String, String> resultMap = new HashMap<>(4);
-            resultMap.put("bucketName" , ossProperties.getBucketName());
-            resultMap.put("fileName" , fileName);
-            resultMap.put("url" , String.format("/system/file/%s/%s" , ossProperties.getBucketName(), fileName));
+            if (CommonUtil.isNotBlank(ro.getUrl())){
+                try {
+                    byte[] bytes = fileApi.downloadImageToByteArray(ro.getUrl());
+                    MultipartFile file = MultipartFileUtil.convertByteToMultipartFile(bytes, ro.getFileName());
+                    String fileName = IdUtil.simpleUUID() + StrUtil.DOT + FileUtil.extName(file.getOriginalFilename());
+                    Map<String, String> resultMap = new HashMap<>(4);
+                    resultMap.put("bucketName" , ossProperties.getBucketName());
+                    resultMap.put("fileName" , fileName);
+                    resultMap.put("url" , String.format("/system/file/%s/%s" , ossProperties.getBucketName(), fileName));
 
-            try {
-                // 文件管理数据记录,收集管理追踪文件
-                Long fileId = fileLog(file, fileName);
-                resultMap.put("id" , String.valueOf(fileId));
-                if (!fileId.equals(-1L)) {
-                    ossTemplate.putObject(ossProperties.getBucketName(), fileName, file.getInputStream());
+                    // 文件管理数据记录,收集管理追踪文件
+                    Long fileId = fileLog(file, fileName);
+                    resultMap.put("id" , String.valueOf(fileId));
+                    if (!fileId.equals(-1L)) {
+                        ossTemplate.putObject(ossProperties.getBucketName(), fileName, file.getInputStream());
+                    }
+                    resultMaps.add(resultMap);
+                } catch (Exception e) {
+                    log.error("上传失败", e);
+                  //   return AjaxResult.error(e.getLocalizedMessage());
                 }
-            } catch (Exception e) {
-//                log.error("上传失败", e);
-                return AjaxResult.error(e.getLocalizedMessage());
+
             }
-            resultMaps.add(resultMap);
         }
         return AjaxResult.success(resultMaps);
     }

@@ -51,11 +51,19 @@ public interface ICarTrackInfoService extends IService<CarTrackInfo> {
 
 
     /**
-     * 轨迹同步
+     * 轨迹同步：当前轨迹
      *
      * @return 结果
      */
     AjaxResult syncCurrentTrack();
+
+
+    /**
+     * 轨迹同步：李四轨迹
+     *
+     * @return 结果
+     */
+    AjaxResult syncHistoryTrack();
 
     /**
      * 根据桩号转换轨迹经纬度

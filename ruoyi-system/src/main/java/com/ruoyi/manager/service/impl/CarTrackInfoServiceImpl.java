@@ -489,6 +489,40 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         return AjaxResult.success();
     }
 
+
+    /**
+     * 轨迹同步：李四轨迹
+     *
+     * @return 结果
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public AjaxResult syncHistoryTrack(){
+
+        // 查询所有的车俩
+        List<CarInfo> carList = carInfoService.getRedisCarList();
+        for (CarInfo vo : carList) {
+            String carNo = CommonUtil.isNull(vo.getCarNo());
+            String key = Constants.car_history_trail + carNo;
+            List<TrailInfo> trailInfoList = redisCache.getCacheObject(key);
+            if (null != trailInfoList && trailInfoList.size() > 0) {
+                // 找到下一个位置
+                for (TrailInfo trailInfo : trailInfoList) {
+                    ZdataTrailTracks tracksBo = trailInfo.getTracks();
+                    String uuid = CommonUtil.isNull(tracksBo.getUuid());
+                    List<TrailBo> trailList = trailInfo.getTrailList(); // trailPoints
+                    String trackJosn = JSON.toJSONString(trailList);
+
+
+                }
+            }
+        }
+
+
+        return AjaxResult.success();
+    }
+
+
+
     @Override
     public List<Geometry> getCarGeometry(List<TrailBo> josnList) {
         List<Geometry> raodTrailList = new ArrayList<>();
