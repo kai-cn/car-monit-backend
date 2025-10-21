@@ -1,7 +1,6 @@
 package com.ruoyi.base.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.base.domain.ZdataTrailTracks;
 
 import java.util.List;
@@ -38,5 +37,5 @@ public interface IZdataTrailTracksService extends IService<ZdataTrailTracks> {
     List<ZdataTrailTracks> carTrackQuery(ZdataTrailTracks zdataTrailTracks);
 
 
-
+    int removeRealData(List<String> carNo);
 }

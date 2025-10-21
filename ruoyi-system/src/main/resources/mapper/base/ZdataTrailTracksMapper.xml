@@ -99,5 +99,17 @@
     </select>
 
 
+    <delete id="removeRealData">
+        delete from zdata_trail_tracks t
+        <where>
+            <if test="carNoList != null and carNoList.size() > 0">
+                plate_key in
+                <foreach item="carNo" collection="carNoList" open="(" separator="," close=")">
+                    #{carNo}
+                </foreach>
+            </if>
+        </where>
+    </delete>
+
 
 </mapper>
