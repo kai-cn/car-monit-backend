@@ -167,9 +167,11 @@
         k.except_ids
         from car_info t JOIN
         (select t1.car_no,sum(t1.total_amount) total_amount,sum(t1.charge_amount) charge_amount,sum(t1.dif_amount) dif_amount,
-        sum(case when t1.status = '0' then 1 else 0 end) except_num, GROUP_CONCAT(t1.id SEPARATOR ',') except_ids
+        sum(case when t1.status = '0' then 1 else 0 end) except_num,
+        count(1) count_num,
+        GROUP_CONCAT(t1.id SEPARATOR ',') except_ids
         from  car_except_record t1 where t1.del_flag = '0'
-        group by t1.car_no) k on k.except_num > 0 and t.car_no = k.car_no
+        group by t1.car_no) k on k.count_num > 0 and k.except_num = 0 and t.car_no = k.car_no
         left join sys_dept sd on sd.dept_id = t.eps_id and sd.del_flag = '0'
         WHERE t.del_flag = '0'
         <if test="id != null  and id != ''"> and t.id = #{id}</if>

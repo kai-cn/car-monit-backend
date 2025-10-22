@@ -145,6 +145,15 @@
         left join sys_user su on su.user_id = t.create_by
         left join sys_dept sd on t.eps_id = sd.dept_id
         WHERE t.del_flag = '0'
+        and not exists (
+            select 1 from
+            (select t1.car_no,
+            sum(case when t1.status = '0' then 1 else 0 end) except_num,
+            count(1) count_num
+            from  car_except_record t1 where t1.del_flag = '0'
+            group by t1.car_no
+            ) k  where t.car_no = k.car_no and k.count_num > 0 and k.except_num = 0
+        )
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
         <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
