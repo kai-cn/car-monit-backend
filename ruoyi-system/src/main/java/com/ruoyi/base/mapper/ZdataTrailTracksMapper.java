@@ -38,6 +38,12 @@ public interface ZdataTrailTracksMapper extends BaseMapper<ZdataTrailTracks> {
     List<ZdataTrailTracks> getHistoryTrail(ZdataTrailTracks zdataTrailTracks);
 
 
+    /**
+     * 轨迹查询
+     */
+    List<ZdataTrailTracks> getCyly(ZdataTrailTracks zdataTrailTracks);
+
+
 
     int removeRealData(@Param("carNoList") List<String> carNoList);
 }
