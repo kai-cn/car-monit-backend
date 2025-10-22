@@ -1,14 +1,13 @@
 package com.ruoyi.web.controller.manager;
 
 import com.alibaba.fastjson2.JSON;
-import com.ruoyi.base.domain.CarParaVO;
-import com.ruoyi.base.domain.Geometry;
-import com.ruoyi.base.domain.TrailBo;
-import com.ruoyi.base.domain.TrailInfo;
+import com.github.pagehelper.PageInfo;
+import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.IZdataTrailTracksService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.annotation.Log;
+import com.ruoyi.common.constant.HttpStatus;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -75,11 +74,11 @@ public class CarTrackInfoController extends BaseController {
      * @return
      */
     @GetMapping("/listByCarId")
-    public TableDataInfo listByCarId(CarTrackInfo carTrackInfo) {
+    public TableDataInfo listByCarId(ZdataTrailTracks zdataTrailTracks) {
 
 
         // 当前页面
-        if (null == carTrackInfo.getPageNum()){
+      /*  if (null == carTrackInfo.getPageNum()){
             carTrackInfo.setPageNum(1);
         }
         // 分页大小
@@ -118,33 +117,34 @@ public class CarTrackInfoController extends BaseController {
         }
         tableDataInfo.setRows(trailList);
         return tableDataInfo;
+        */
 
         // ----------------------- 查询自己表结构
 
-       /* startPage();
         if (CommonUtil.isBlank(zdataTrailTracks.getCarNo())) {
             zdataTrailTracks.setCarNo("-1");
         }
+        startPage();
         List<ZdataTrailTracks> carlist = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
-
         List<TrailInfo> rtnList = new ArrayList<>();
         if (null != carlist && carlist.size() > 0) {
             for (ZdataTrailTracks tracksBo : carlist) {
-                String keyValue = tracksBo.getTrailPoints(); // 行驶轨迹
+                String keyValue = tracksBo.getTrackJosn(); // 行驶轨迹
                 List<TrailBo> josnList = new ArrayList<TrailBo>();
                 if (CommonUtil.isNotBlank(keyValue)) {
                     josnList = JSON.parseArray(keyValue, TrailBo.class);
                     tracksBo.setTrailPoints("");  // 行驶轨迹
-                    String carNo =CommonUtil.isNull(tracksBo.getPlateKey());
+                    tracksBo.setTrackJosn("");
+
+                    String carNo = CommonUtil.isNull(tracksBo.getPlateKey());
                     TrailInfo trailInfo = new TrailInfo();
                     trailInfo.setTrailUuid(carNo);
                     trailInfo.setTracks(tracksBo);
                     trailInfo.setTrailList(josnList);
 
                     List<Geometry> raodTrailList = new ArrayList<>();
-                    if (null !=josnList && josnList.size() > 0){
-                        List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
-                        raodTrailList = geometryService.getListByCode(roadCodeList);
+                    if (null != josnList && josnList.size() > 0) {
+                        raodTrailList = carTrackInfoService.getCarGeometry(josnList);
                     }
                     trailInfo.setRaodTrailList(raodTrailList);
 
@@ -158,7 +158,7 @@ public class CarTrackInfoController extends BaseController {
         rspData.setMsg("查询成功");
         rspData.setRows(rtnList);
         rspData.setTotal(new PageInfo(carlist).getTotal());
-        return rspData;*/
+        return rspData;
 
 
     }
@@ -167,22 +167,20 @@ public class CarTrackInfoController extends BaseController {
     /**
      * 车俩历史轨迹 ：根据时间查询
      *
-     * @param
+     * @param zdataTrailTracks carTrackInfo
      * @return
      */
     @GetMapping("/listByCarByTime")
-    public TableDataInfo listByCarByTime(CarTrackInfo carTrackInfo) {
+    public TableDataInfo listByCarByTime(ZdataTrailTracks zdataTrailTracks) {
 
         // 当前页面
-        if (null == carTrackInfo.getPageNum()){
+       /* if (null == carTrackInfo.getPageNum()){
             carTrackInfo.setPageNum(1);
         }
         // 分页大小
         if (null == carTrackInfo.getPageSize()){
             carTrackInfo.setPageSize(10);
         }
-
-
 
         // ----------------------- 查询接口
         CarParaVO carParaVO = new CarParaVO();
@@ -210,30 +208,31 @@ public class CarTrackInfoController extends BaseController {
             }
         }
         tableDataInfo.setRows(trailList);
-        return tableDataInfo;
+        return tableDataInfo;*/
 
 
         // ----------------------- 查询自己表结构
-       /* startPage();
+        startPage();
         List<ZdataTrailTracks> carlist = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
         List<TrailInfo> rtnList = new ArrayList<>();
         if (null != carlist && carlist.size() > 0) {
             for (ZdataTrailTracks tracksBo : carlist) {
-                String keyValue = tracksBo.getTrailPoints(); // 行驶轨迹
+                String keyValue = tracksBo.getTrackJosn(); // 行驶轨迹
                 List<TrailBo> josnList = new ArrayList<TrailBo>();
                 if (CommonUtil.isNotBlank(keyValue)) {
                     josnList = JSON.parseArray(keyValue, TrailBo.class);
                     tracksBo.setTrailPoints("");  // 行驶轨迹
-                    String carNo =CommonUtil.isNull(tracksBo.getPlateKey());
+                    tracksBo.setTrackJosn("");
+
+                    String carNo = CommonUtil.isNull(tracksBo.getPlateKey());
                     TrailInfo trailInfo = new TrailInfo();
                     trailInfo.setTrailUuid(carNo);
                     trailInfo.setTracks(tracksBo);
                     trailInfo.setTrailList(josnList);
 
                     List<Geometry> raodTrailList = new ArrayList<>();
-                    if (null !=josnList && josnList.size() > 0){
-                        List<String> roadCodeList = josnList.stream().map(TrailBo::getRoadCode).distinct().collect(Collectors.toList());
-                        raodTrailList = geometryService.getListByCode(roadCodeList);
+                    if (null != josnList && josnList.size() > 0) {
+                        raodTrailList = carTrackInfoService.getCarGeometry(josnList);
                     }
                     trailInfo.setRaodTrailList(raodTrailList);
 
@@ -247,7 +246,7 @@ public class CarTrackInfoController extends BaseController {
         rspData.setMsg("查询成功");
         rspData.setRows(rtnList);
         rspData.setTotal(new PageInfo(carlist).getTotal());
-        return rspData;*/
+        return rspData;
     }
 
 
