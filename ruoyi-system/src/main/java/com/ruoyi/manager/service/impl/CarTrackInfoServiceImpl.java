@@ -501,6 +501,12 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
      */
     @Transactional(rollbackFor = Exception.class)
     public AjaxResult syncHistoryTrack() {
+
+
+        List<String> carNoList = new ArrayList<>();
+        // 找到下一个位置
+        List<ZdataTrailTracks> addlist = new ArrayList<>();
+
         // 查询所有的车俩
         List<CarInfo> carList = carInfoService.getRedisCarList();
         for (CarInfo vo : carList) {
@@ -508,18 +514,25 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             String key = Constants.car_history_trail + carNo;
             List<TrailInfo> trailInfoList = redisCache.getCacheObject(key);
             if (null != trailInfoList && trailInfoList.size() > 0) {
-                // 找到下一个位置
-                List<ZdataTrailTracks> list = new ArrayList<>();
                 for (TrailInfo trailInfo : trailInfoList) {
                     ZdataTrailTracks tracksBo = trailInfo.getTracks();
                     List<TrailBo> trailList = trailInfo.getTrailList(); // trailPoints
-                    String trackJson = JSON.toJSONString(trailList);
-                    tracksBo.setTrackJosn(trackJson);
-                    list.add(tracksBo);
+                    tracksBo.setPlateKey(carNo);
+                    tracksBo.setPointCount(0L);
+                    if (null !=trailList){
+                        tracksBo.setTrackJosn(JSON.toJSONString(trailList));
+                        tracksBo.setPointCount(Long.parseLong(trailList.size()+""));
+                    }
+                    carNoList.add(carNo);
+                    addlist.add(tracksBo);
                 }
-                trailTracksService.removeRealData(new ArrayList<>());
-                trailTracksService.saveBatch(list);
             }
+        }
+        if (carNoList.size() > 0){
+            trailTracksService.removeRealData(carNoList);
+        }
+        if (addlist.size()>0){
+            trailTracksService.saveBatch(addlist);
         }
         return AjaxResult.success();
     }
