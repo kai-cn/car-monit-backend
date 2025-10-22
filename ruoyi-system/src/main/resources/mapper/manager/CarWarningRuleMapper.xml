@@ -62,7 +62,7 @@
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="ruleName != null  and ruleName != ''"> and t.rule_name like concat('%', #{ruleName}, '%')</if>
         <if test="noticeRangeId != null  and noticeRangeId != ''"> and t.notice_range_id = #{noticeRangeId}</if>
-        <if test="noticeRangeAnme != null  and noticeRangeAnme != ''"> and t.notice_range_anme = #{noticeRangeAnme}</if>
+        <if test="noticeRangeAnme != null  and noticeRangeAnme != ''"> and t.notice_range_anme like concat('%', #{noticeRangeAnme}, '%')</if>
         <if test="notice != null  and notice != ''"> and t.notice = #{notice}</if>
         <if test="noticeType != null  and noticeType != ''"> and t.notice_type = #{noticeType}</if>
         <if test="noticeUserId != null  and noticeUserId != ''"> and t.notice_user_id = #{noticeUserId}</if>
