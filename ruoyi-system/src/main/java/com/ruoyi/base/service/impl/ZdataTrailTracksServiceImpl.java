@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.ZdataTrailTracks;
 import com.ruoyi.base.mapper.ZdataTrailTracksMapper;
 import com.ruoyi.base.service.IZdataTrailTracksService;
+import com.ruoyi.common.utils.CommonUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -50,7 +52,26 @@ public class ZdataTrailTracksServiceImpl extends ServiceImpl<ZdataTrailTracksMap
      */
     @Override
     public List<ZdataTrailTracks> carTrackQuery(ZdataTrailTracks zdataTrailTracks) {
-        List<ZdataTrailTracks> list = zdataTrailTracksMapper.getHistoryTrail(zdataTrailTracks);
+        List<ZdataTrailTracks> list = new ArrayList<>();
+
+        String isCylx = CommonUtil.isNull(zdataTrailTracks.getIsCylx()); // 是否常用路线
+        if (isCylx.equals("1")){
+            List<ZdataTrailTracks> cylist =  zdataTrailTracksMapper.getCyly(zdataTrailTracks);
+            if (null !=cylist && cylist.size() > 0){
+                zdataTrailTracks.setEntollstationid(cylist.get(0).getEntollstationid());
+                list = zdataTrailTracksMapper.getHistoryTrail(zdataTrailTracks);
+                if (null != list && list.size() > 0){
+                    List<ZdataTrailTracks> rtnlist = new ArrayList<>();
+                    rtnlist.add(list.get(0));
+                    return rtnlist;
+                }
+            }
+        }else{
+            // 查询常用路线
+            list = zdataTrailTracksMapper.getHistoryTrail(zdataTrailTracks);
+        }
+
+
         return list;
     }
 

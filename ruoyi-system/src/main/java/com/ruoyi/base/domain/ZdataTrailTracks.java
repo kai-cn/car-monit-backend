@@ -197,5 +197,9 @@ public class ZdataTrailTracks implements Custom {
     @TableField(exist = false)
     private String applyTime2;
 
+    /** 是否常用路线 */
+    @TableField(exist = false)
+    private String isCylx;
+
 
 }

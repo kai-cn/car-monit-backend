@@ -118,7 +118,21 @@
         <if test="carNo != null  and carNo != ''"> and t.plate_key = #{carNo} </if>
         <if test="applyTime1 != null  and applyTime1 != ''">and t.enter_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
         <if test="applyTime2 != null  and applyTime2 != ''">and t.enter_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+        <if test="entollstationid != null  and entollstationid != ''"> and t.entollstationid = #{entollstationid} </if>
         order by t.enter_time desc
+    </select>
+
+
+    <select id="getCyly" parameterType="com.ruoyi.base.domain.ZdataTrailTracks" resultMap="ZdataTrailTracksResult">
+       select k.*
+        from
+        (select t.plate_key,t.entollstationid,count(1) conut_num
+        from zdata_trail_tracks t where 1=1
+        <if test="carNo != null  and carNo != ''"> and t.plate_key = #{carNo} </if>
+        <if test="applyTime1 != null  and applyTime1 != ''">and t.enter_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and t.enter_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+        group by t.plate_key,t.entollstationid) k
+        order by k.conut_num desc
     </select>
 
 
