@@ -37,7 +37,6 @@ public class ZdataLocationDictController extends BaseController {
     /**
      * 查询车辆位置列表
      */
-    @PreAuthorize("@ss.hasPermi('base:location:list')")
     @GetMapping("/list")
     public TableDataInfo list(ZdataLocationDict zdataLocationDict) {
         startPage();

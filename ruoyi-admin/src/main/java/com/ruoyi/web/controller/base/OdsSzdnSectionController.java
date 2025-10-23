@@ -37,7 +37,6 @@ public class OdsSzdnSectionController extends BaseController {
     /**
      * 查询路段信息列表
      */
-    @PreAuthorize("@ss.hasPermi('base:section:list')")
     @GetMapping("/list")
     public TableDataInfo list(OdsSzdnSection odsSzdnSection) {
         startPage();

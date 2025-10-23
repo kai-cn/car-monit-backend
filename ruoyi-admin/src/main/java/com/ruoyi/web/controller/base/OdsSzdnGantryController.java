@@ -37,7 +37,6 @@ public class OdsSzdnGantryController extends BaseController {
     /**
      * 查询门架信息列表
      */
-    @PreAuthorize("@ss.hasPermi('base:gantry:list')")
     @GetMapping("/list")
     public TableDataInfo list(OdsSzdnGantry odsSzdnGantry) {
         startPage();

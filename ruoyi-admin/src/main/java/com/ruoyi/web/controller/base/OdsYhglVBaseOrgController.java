@@ -37,7 +37,6 @@ public class OdsYhglVBaseOrgController extends BaseController {
     /**
      * 查询机构信息列表
      */
-    @PreAuthorize("@ss.hasPermi('base:org:list')")
     @GetMapping("/list")
     public TableDataInfo list(OdsYhglVBaseOrg odsYhglVBaseOrg) {
         startPage();

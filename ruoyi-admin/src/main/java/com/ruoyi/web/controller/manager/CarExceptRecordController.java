@@ -51,7 +51,6 @@ public class CarExceptRecordController extends BaseController {
     /**
      * 查询异常车辆流水列表
      */
-    @PreAuthorize("@ss.hasPermi('manager:exceptrecord:list')")
     @GetMapping("/list")
     public TableDataInfo list(CarExceptRecord carExceptRecord) {
         startPage();
