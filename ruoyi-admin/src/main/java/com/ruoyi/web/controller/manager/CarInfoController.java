@@ -175,7 +175,6 @@ public class CarInfoController extends BaseController {
         return carInfoService.deleteCarInfoByIds(ids);
     }
 
-    @PreAuthorize("@ss.hasPermi('manager:carinfo:add')")
     @Log(title = "车辆信息", businessType = BusinessType.IMPORT)
     @PostMapping("/import")
     public AjaxResult doImport(@RequestParam("file") MultipartFile file) throws Exception {

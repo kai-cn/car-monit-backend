@@ -50,7 +50,7 @@ public class TrackTask {
     public void syncSuspiciousCar() {
         log.info("可疑车俩数据同步开始同步！"+new Date());
         carSuspiciousService.syncSuspiciousCar();
-        geometryService.getRedisList(); // 跟新缓存数据
+        // geometryService.getRedisList(); // 跟新缓存数据
         log.info("可疑车俩数据同步结束同步！"+new Date());
     }
 

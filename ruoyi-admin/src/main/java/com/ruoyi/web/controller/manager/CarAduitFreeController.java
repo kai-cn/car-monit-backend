@@ -47,7 +47,6 @@ public class CarAduitFreeController extends BaseController {
     /**
      * 查询补缴处理列表
      */
-    @PreAuthorize("@ss.hasPermi('manager:aduitfree:list')")
     @GetMapping("/list")
     public TableDataInfo list(CarAduitFree carAduitFree) {
         startPage();
@@ -59,7 +58,6 @@ public class CarAduitFreeController extends BaseController {
     /**
      * 导出补缴处理列表
      */
-    @PreAuthorize("@ss.hasPermi('manager:aduitfree:export')")
     @Log(title = "补缴处理", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
     public AjaxResult export(CarAduitFree carAduitFree) {
@@ -79,7 +77,6 @@ public class CarAduitFreeController extends BaseController {
     /**
      * 新增补缴处理
      */
-    @PreAuthorize("@ss.hasPermi('manager:aduitfree:add')")
     @Log(title = "补缴处理", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody CarAduitFree carAduitFree) {
@@ -89,7 +86,6 @@ public class CarAduitFreeController extends BaseController {
     /**
      * 修改补缴处理
      */
-    @PreAuthorize("@ss.hasPermi('manager:aduitfree:edit')")
     @Log(title = "补缴处理", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody CarAduitFree carAduitFree) {
@@ -99,7 +95,6 @@ public class CarAduitFreeController extends BaseController {
     /**
      * 删除补缴处理
      */
-    @PreAuthorize("@ss.hasPermi('manager:aduitfree:remove')")
     @Log(title = "补缴处理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids) {

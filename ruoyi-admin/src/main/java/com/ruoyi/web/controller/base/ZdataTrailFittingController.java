@@ -37,7 +37,6 @@ public class ZdataTrailFittingController extends BaseController {
     /**
      * 查询车辆出入口拟合轨迹列表
      */
-    @PreAuthorize("@ss.hasPermi('base:fitting:list')")
     @GetMapping("/list")
     public TableDataInfo list(ZdataTrailFitting zdataTrailFitting) {
         startPage();

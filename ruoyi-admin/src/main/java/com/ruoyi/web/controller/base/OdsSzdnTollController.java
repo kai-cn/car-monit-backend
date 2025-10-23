@@ -37,7 +37,6 @@ public class OdsSzdnTollController extends BaseController {
     /**
      * 查询收费站基础信息列表：菜单列表界面
      */
-    @PreAuthorize("@ss.hasPermi('base:toll:list')")
     @GetMapping("/list")
     public TableDataInfo list(OdsSzdnToll odsSzdnToll) {
         startPage();

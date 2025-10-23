@@ -37,7 +37,6 @@ public class DwdLcztSfsjcxxController extends BaseController {
     /**
      * 查询收费所基础信息列表
      */
-    @PreAuthorize("@ss.hasPermi('base:sfsjcxx:list')")
     @GetMapping("/list")
     public TableDataInfo list(DwdLcztSfsjcxx dwdLcztSfsjcxx) {
         startPage();

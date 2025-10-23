@@ -50,7 +50,6 @@ public class CarConfimFreeController extends BaseController {
     /**
      * 查询确认补缴列表
      */
-    @PreAuthorize("@ss.hasPermi('manager:confimfree:list')")
     @GetMapping("/list")
     public TableDataInfo list(CarConfimFree carConfimFree) {
         startPage();
@@ -169,7 +168,6 @@ public class CarConfimFreeController extends BaseController {
     /**
      * 待关注车辆
      */
-    @PreAuthorize("@ss.hasPermi('manager:confimfree:list')")
     @GetMapping("/concernedList")
     public TableDataInfo concernedList(CarConfimFree carConfimFree) {
         startPage();
