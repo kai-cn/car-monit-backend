@@ -3,6 +3,7 @@ package com.ruoyi.manager.domain;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ruoyi.base.domain.TrailBo;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BasePlusEntityNew;
 import com.ruoyi.common.core.domain.Custom;
@@ -12,6 +13,7 @@ import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 预警车辆对象 car_warning_info
@@ -220,6 +222,14 @@ public class CarWarningInfo extends BasePlusEntityNew implements Custom {
      */
     @TableField(exist = false)
     private String plateColor;
+
+
+
+    /**
+     * 服务器
+     */
+    @TableField(exist = false)
+    private List<TrailBo> trailFwqList;
 
 
 

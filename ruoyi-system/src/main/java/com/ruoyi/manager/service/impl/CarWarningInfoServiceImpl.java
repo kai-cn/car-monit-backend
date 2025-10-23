@@ -1,6 +1,8 @@
 package com.ruoyi.manager.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.base.domain.TrailBo;
+import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.redis.RedisCache;
@@ -43,7 +45,40 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
      */
     @Override
     public CarWarningInfo selectCarWarningInfoById(String id) {
-        return carWarningInfoMapper.selectCarWarningInfoById(id);
+        CarWarningInfo rtn = carWarningInfoMapper.selectCarWarningInfoById(id);
+        if (rtn !=null){
+           String carNo = CommonUtil.isNull(rtn.getCarNo());
+            String nextKey = Constants.car_history_trail + carNo;
+            // 当前进入门架的时间-----------------------
+            String gantryStationId = CommonUtil.isNull(rtn.getGantryStationId());
+
+
+            List<TrailInfo> trailInfoList = redisCache.getCacheObject(nextKey);
+            List<TrailBo> nextBoList = new ArrayList<>();
+            if (null != trailInfoList && trailInfoList.size() > 0) {
+                List<List<TrailBo>> cylylist = new ArrayList<>();
+                // 找到下一个位置
+                for (TrailInfo trailInfo : trailInfoList) {
+                    List<TrailBo> trailList = trailInfo.getTrailList();
+                    // 循环轨迹
+                    if (null != trailList && trailList.size() > 0) {
+                        for (int yy = 0; yy < trailList.size(); yy++) {
+                            TrailBo trailBo = trailList.get(yy);
+                            String curDevCode = CommonUtil.isNull(trailBo.getDevCode());
+                            if (gantryStationId.equals(curDevCode)) {
+                                cylylist.add(trailList);
+                            }
+                        }
+                    }
+                }
+
+                // 循环cylylist
+
+
+            }
+
+        }
+        return rtn;
     }
 
     /**
