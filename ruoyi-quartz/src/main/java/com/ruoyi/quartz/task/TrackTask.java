@@ -65,4 +65,16 @@ public class TrackTask {
         carTrackInfoService.syncHistoryTrack();
         log.info("车俩历史轨迹同步结束同步！"+new Date());
     }
+
+
+    /**
+     * 每10分钟执行一次
+     * 车俩历史轨迹同步:0 0/10 * * * ?
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void syncHistoryTrackNoCar() {
+        log.info("车俩历史轨迹同步开始同步！"+new Date());
+        carTrackInfoService.syncHistoryTrackNoCar();
+        log.info("车俩历史轨迹同步结束同步！"+new Date());
+    }
 }

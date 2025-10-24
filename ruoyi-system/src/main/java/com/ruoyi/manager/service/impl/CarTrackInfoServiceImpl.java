@@ -501,14 +501,31 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
      */
     @Transactional(rollbackFor = Exception.class)
     public AjaxResult syncHistoryTrack() {
+        // 查询所有的车俩
+        List<CarInfo> carList = carInfoService.getRedisCarList();
+        this.saveTrailTracksHistory(carList);
+        return AjaxResult.success();
+    }
 
+    /**
+     * 轨迹同步：历史轨迹
+     *
+     * @return 结果
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public AjaxResult syncHistoryTrackNoCar() {
+        // 查询所有的车俩
+        CarInfo carInfo = new CarInfo();
+        carInfo.setFlag("noTrack");
+        List<CarInfo> carList = carInfoService.selectCarInfoList(carInfo);
+        this.saveTrailTracksHistory(carList);
+        return AjaxResult.success();
+    }
 
+    private void saveTrailTracksHistory(List<CarInfo> carList){
         List<String> carNoList = new ArrayList<>();
         // 找到下一个位置
         List<ZdataTrailTracks> addlist = new ArrayList<>();
-
-        // 查询所有的车俩
-        List<CarInfo> carList = carInfoService.getRedisCarList();
         for (CarInfo vo : carList) {
             String carNo = CommonUtil.isNull(vo.getCarNo());
             String key = Constants.car_history_trail + carNo;
@@ -534,7 +551,6 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         if (addlist.size()>0){
             trailTracksService.saveBatch(addlist);
         }
-        return AjaxResult.success();
     }
 
 

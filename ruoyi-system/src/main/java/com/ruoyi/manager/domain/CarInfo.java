@@ -277,4 +277,9 @@ public class CarInfo extends BasePlusEntityInputNew implements Custom {
     private List<TrailInfo> trailList;
 
 
+    // 标识
+    @TableField(exist = false)
+    private String flag;
+
+
 }
