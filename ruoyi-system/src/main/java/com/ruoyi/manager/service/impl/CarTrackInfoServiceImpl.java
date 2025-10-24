@@ -305,7 +305,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                 if (null != lastBo.getLat()) {
                                     car.setLastPassLatitude(CommonUtil.isNull(lastBo.getLat()));
                                 }
-                                car.setTrackJosn(JSON.toJSON(josnList) + "");
+                                car.setTrackJosn(JSON.toJSON(trailInfo) + "");
                                 car.setGantryCode(CommonUtil.deleteEnd(devCodes));
 
                                 // 预警信息
