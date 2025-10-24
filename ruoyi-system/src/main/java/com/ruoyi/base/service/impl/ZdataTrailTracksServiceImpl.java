@@ -8,6 +8,7 @@ import com.ruoyi.common.utils.CommonUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,6 +70,25 @@ public class ZdataTrailTracksServiceImpl extends ServiceImpl<ZdataTrailTracksMap
         }else{
             // 查询常用路线
             list = zdataTrailTracksMapper.getHistoryTrail(zdataTrailTracks);
+        }
+
+        for (ZdataTrailTracks rtn : list) {
+            if (CommonUtil.isNotBlank(rtn.getStartLon())){
+                rtn.setStartLonDec(new BigDecimal(rtn.getStartLon()));
+            }
+
+            if (CommonUtil.isNotBlank(rtn.getStratLat())){
+                rtn.setStratLatDec(new BigDecimal(rtn.getStratLat()));
+            }
+
+            if (CommonUtil.isNotBlank(rtn.getEndLon())){
+                rtn.setEndLonDec(new BigDecimal(rtn.getEndLon()));
+            }
+
+            if (CommonUtil.isNotBlank(rtn.getEndLat())){
+                rtn.setEndLatDec(new BigDecimal(rtn.getEndLat()));
+            }
+
         }
 
 

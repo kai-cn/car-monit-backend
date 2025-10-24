@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 车辆信息Service业务层处理
@@ -71,7 +70,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                 String trackJosn = car.getTrackJosn();
                 if (CommonUtil.isNotBlank(trackJosn)) {
                     carTrailList = JSON.parseArray(trackJosn, TrailBo.class);
-                    raodTrailList = carTrackInfoService.getCarGeometry(carTrailList);;
+                    raodTrailList = carTrackInfoService.getCarGeometry(carTrailList);
                 }
             }
             TrailInfo trailInfo = new TrailInfo();
