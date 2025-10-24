@@ -73,6 +73,13 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
                 }
 
                 // 循环cylylist
+                for (List<TrailBo> list : cylylist) {
+                    for (TrailBo trailBo : list) {
+                        if("ServiceAreaCapture".equals(trailBo.getStateType())){
+
+                        }
+                    }
+                }
 
 
             }
