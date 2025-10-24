@@ -28,6 +28,10 @@
         <result property="exvehicleid"    column="exvehicleid"    />
         <result property="exvehicletype"    column="exvehicletype"    />
         <result property="exweight"    column="exweight"    />
+        <result property="startLon"    column="start_lon"    />
+        <result property="stratLat"    column="strat_lat"    />
+        <result property="endLon"    column="end_lon"    />
+        <result property="endLat"    column="end_lat"    />
     </resultMap>
 
     <sql id="selectZdataTrailTracksVo">
@@ -56,7 +60,11 @@
         t.exvehicleclass,
         t.exvehicleid,
         t.exvehicletype,
-        t.exweight
+        t.exweight,
+        t.start_lon,
+        t.strat_lat,
+        t.end_lon,
+        t.end_lat
     </sql>
 
 
@@ -112,7 +120,11 @@
             t.exvehicleclass,
             t.exvehicleid,
             t.exvehicletype,
-            t.exweight
+            t.exweight,
+            t.start_lon,
+            t.strat_lat,
+            t.end_lon,
+            t.end_lat
         from zdata_trail_tracks t
         where 1=1
         <if test="carNo != null  and carNo != ''"> and t.plate_key = #{carNo} </if>

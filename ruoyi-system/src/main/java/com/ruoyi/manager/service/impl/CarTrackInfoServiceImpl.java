@@ -317,7 +317,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                 carWarningInfo.setCarNum(vo.getCarNum());
 
                                 carWarningInfo.setTrackId(pointUuid);
-                                carWarningInfo.setTrackJosn(JSON.toJSON(josnList) + "");
+                                carWarningInfo.setTrackJosn(JSON.toJSON(trailInfo) + "");
                                 carWarningInfo.setTrackNames(CommonUtil.deleteEnd(devCodes));
 
 
