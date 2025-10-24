@@ -88,16 +88,35 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
 
             //---------------查询实时轨迹
+            TrailInfo trailInfo = new TrailInfo();
+
             List<TrailBo> carTrailList = new ArrayList<>();
             List<Geometry> raodTrailList = new ArrayList<>();
             String trackJosn = carSuspicious.getTrackJosn();
             if (CommonUtil.isNotBlank(trackJosn)) {
-                carTrailList = JSON.parseArray(trackJosn, TrailBo.class);
-                raodTrailList = carTrackInfoService.getCarGeometry(carTrailList);
+                trailInfo = JSON.parseObject(trackJosn, TrailInfo.class);
+                carTrailList = trailInfo.getTrailList();
+                if (null != carTrailList && carTrailList.size() > 0){
+                    raodTrailList = carTrackInfoService.getCarGeometry(carTrailList);
+                }
+                // 轨迹值还原
+                ZdataTrailTracks tracks = trailInfo.getTracks();
+                if (null !=tracks){
+                    if (CommonUtil.isNotBlank(tracks.getStartLon())){
+                        tracks.setStartLonDec(new BigDecimal(tracks.getStartLon()));
+                    }
+                    if (CommonUtil.isNotBlank(tracks.getStratLat())){
+                        tracks.setStratLatDec(new BigDecimal(tracks.getStratLat()));
+                    }
+                    if (CommonUtil.isNotBlank(tracks.getEndLon())){
+                        tracks.setEndLonDec(new BigDecimal(tracks.getEndLon()));
+                    }
+                    if (CommonUtil.isNotBlank(tracks.getEndLat())){
+                        tracks.setEndLatDec(new BigDecimal(tracks.getEndLat()));
+                    }
+                }
             }
 
-
-            TrailInfo trailInfo = new TrailInfo();
             trailInfo.setTrailUuid(carSuspicious.getCarNo());
             trailInfo.setTrailList(carTrailList);
             trailInfo.setRaodTrailList(raodTrailList);
@@ -383,7 +402,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         // Map<String, List<TrailBo>> mapCar = httpSysUtilApiService.syncSuspiciousCar(carParaVO);
 
         // 从redis拿
-        Map<ZdataTrailTracks, List<TrailBo>> mapCar = new HashMap<>();
+        List<TrailInfo> trailInfoList = new ArrayList<>();
         Date now = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         String formattedDate = sdf.format(now);
@@ -392,8 +411,15 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         if (null != keys && keys.size() > 0){
             for (String key : keys) {
                 TrailInfo trailInfo = redisCache.getCacheObject(key);
-                mapCar.put(trailInfo.getTracks(), trailInfo.getTrailList());
+                trailInfoList.add(trailInfo);
             }
+        }
+
+        // 查询所有的车俩
+        Map<String,CarInfo> carInfoMap = new HashMap<>();
+        List<CarInfo> carList = carInfoService.getRedisCarList();
+        for (CarInfo vo : carList) {
+            carInfoMap.put(CommonUtil.isNull(vo.getCarNo()),vo);
         }
 
         // 轨迹新增或者修改
@@ -404,23 +430,23 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         Map<String,String> plateColorMap = sysDictDataService.selectDictDataLaleMap("plate_color");
 
         // 车型
-        Map<String,String> carTypeMap = sysDictDataService.selectDictDataLaleMap("car_type");
+        Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type_old");
 
         // 车种
-        Map<String,String> carVehicleMap = sysDictDataService.selectDictDataLaleMap("car_vehicle");
+       //  Map<String,String> carVehicleMap = sysDictDataService.selectDictDataLaleMap("car_vehicle");
+
         //车牌对应的车种
-        Map<String,String> plateChangeMap = sysDictDataService.selectDictDataLaleMap("plate_change");
+        // Map<String,String> plateChangeMap = sysDictDataService.selectDictDataLaleMap("plate_change");
 
+        for (TrailInfo trailInfo:trailInfoList) {
 
-        for (Map.Entry<ZdataTrailTracks, List<TrailBo>> entry : mapCar.entrySet()) {
-          /*  String jsonObject = entry.getKey();
-            ZdataTrailTracks tracksBo = JSONObject.parseObject(jsonObject, ZdataTrailTracks.class);*/
-            ZdataTrailTracks tracksBo = entry.getKey();;
+            ZdataTrailTracks tracksBo = trailInfo.getTracks();
             String carNo = CommonUtil.isNull(tracksBo.getPlateKey()); // 车牌号
             String trailUUid = CommonUtil.isNull(tracksBo.getUuid()); // 轨迹单
             if (CommonUtil.isNotBlank(carNo) && CommonUtil.isNotBlank(trailUUid)) {
                 if (!carWhiteInfoMap.containsKey(carNo)){
-                    List<TrailBo> josnList = entry.getValue();
+                    List<TrailBo> josnList = trailInfo.getTrailList();
+
                     if (null != josnList && josnList.size() > 0) {
 
                         String devCodes = "";  // 设备所有的集合
@@ -439,7 +465,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                         }
 
                         carSuspicious.setTrackId(trailUUid);
-                        carSuspicious.setTrackJosn(JSON.toJSON(josnList)+"");
+                        carSuspicious.setTrackJosn(JSON.toJSON(trailInfo)+"");
 
                         if (checkStatus.equals("1")){
                             // 是否核实
@@ -448,23 +474,69 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                             carSuspicious.setPlateColor(CommonUtil.isNull(plateColorMap.get(tracksBo.getPlateColor()))); // 来源于收费站抓拍对象 platecolor 中文
 
                             // ------------------标记需要转换
+                            if (carInfoMap.containsKey(carNo)){
+                                CarInfo carInfo = carInfoMap.get(carNo);
+                                carSuspicious.setPlateColor(CommonUtil.isNull(carInfo.getPlateColor()));
+                                carSuspicious.setCarType(CommonUtil.isNull(carInfo.getCarType()));
+                                carSuspicious.setCarVehicle(CommonUtil.isNull(carInfo.getCarVehicle()));
 
-                            // 车型
-                            if (CommonUtil.isNotBlank(tracksBo.getEnvehicletype())){
-                                carSuspicious.setCarType(tracksBo.getEnvehicletype()); // 对应的是car_type_old 来源于 zdata_trail_fitting envehicletype
                             }else{
-                                carSuspicious.setCarType(CommonUtil.isNull(carTypeMap.get(tracksBo.getCarType()))); // 来源于 来源于收费站抓拍对象 cartype 中文
+                                // 车型
+                                if (CommonUtil.isNotBlank(tracksBo.getEnvehicletype())){
+
+                                    String carType = "";
+                                    String carVehicle = "";
+                                    String carTypeName = CommonUtil.isNull(carTypeMap.get(tracksBo.getEnvehicletype()));
+                                    if (carTypeName.equals("六型货车")){
+                                        carType = "10"; // 货六
+                                        carVehicle = "2";
+                                    } else if (carTypeName.equals("五型货车")){
+                                        carType = "9"; // 货五
+                                        carVehicle = "2";
+                                    } else if (carTypeName.equals("四型货车")){
+                                        carType = "8"; // 货五
+                                        carVehicle = "2";
+                                    } else if (carTypeName.equals("三型货车")){
+                                        carType = "7"; // 货五
+                                        carVehicle = "2";
+                                    }else if (carTypeName.equals("二型货车")){
+                                        carType = "6"; // 货五
+                                        carVehicle = "2";
+                                    } else if (carTypeName.equals("小货车")){
+                                        carType = "5"; // 货五
+                                        carVehicle = "2";
+                                    } else if (carTypeName.equals("客车")){
+                                        carType = "1"; // 货一
+                                        carVehicle = "1";
+                                    } else if (carTypeName.equals("一型客车")){
+                                        carType = "1"; //
+                                        carVehicle = "1";
+                                    }else if (carTypeName.equals("二型客车")){
+                                        carType = "2"; //
+                                        carVehicle = "1";
+                                    } else if (carTypeName.equals("三型客车")){
+                                        carType = "3"; //
+                                        carVehicle = "1";
+                                    }else if (carTypeName.equals("四型客车")){
+                                        carType = "4"; //
+                                        carVehicle = "1";
+                                    }
+
+                                    carSuspicious.setCarType(carType); // 对应的是car_type_old 来源于 zdata_trail_fitting envehicletype
+                                    carSuspicious.setCarVehicle(carVehicle);
+                                }
                             }
+
 
                             // 入口车轴数
                             if (null != tracksBo.getEnaxlecount()) {
                                 carSuspicious.setCarNum(Long.parseLong(tracksBo.getEnaxlecount() + "")); // 轴数
-                            }else{
+                            } else {
                                 carSuspicious.setCarNum(tracksBo.getCarNum()); // 轴数
                             }
                             carSuspicious.setPassType(tracksBo.getPassType()); // 通行标识
 
-                            carSuspicious.setCarVehicle(CommonUtil.isNull(plateChangeMap.get(tracksBo.getCarVehicle()))); // 车种：来源于收费站抓拍对象 platetype 中文
+
 
                             //--------------设置默认值
                             if (CommonUtil.isBlank(carSuspicious.getPlateColor())){
