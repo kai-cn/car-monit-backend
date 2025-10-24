@@ -2,10 +2,7 @@ package com.ruoyi.manager.service.impl;
 
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.ruoyi.base.domain.CarVO;
-import com.ruoyi.base.domain.Geometry;
-import com.ruoyi.base.domain.TrailBo;
-import com.ruoyi.base.domain.TrailInfo;
+import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -64,16 +61,37 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
         CarInfo car = carInfoMapper.selectCarInfoById(id);
         if (null != car) {
             //---------------查询实时轨迹
+            TrailInfo trailInfo = new TrailInfo();
+
             List<TrailBo> carTrailList = new ArrayList<>();
             List<Geometry> raodTrailList = new ArrayList<>();
             if (CommonUtil.isNull(car.getStatus()).equals("1")) {
                 String trackJosn = car.getTrackJosn();
                 if (CommonUtil.isNotBlank(trackJosn)) {
-                    carTrailList = JSON.parseArray(trackJosn, TrailBo.class);
-                    raodTrailList = carTrackInfoService.getCarGeometry(carTrailList);
+                    trailInfo = JSON.parseObject(trackJosn, TrailInfo.class);
+                    carTrailList = trailInfo.getTrailList();
+                    if (null != carTrailList && carTrailList.size() > 0){
+                        raodTrailList = carTrackInfoService.getCarGeometry(carTrailList);
+                    }
+                    // 轨迹值还原
+                    ZdataTrailTracks tracks = trailInfo.getTracks();
+                    if (null !=tracks){
+                        if (CommonUtil.isNotBlank(tracks.getStartLon())){
+                            tracks.setStartLonDec(new BigDecimal(tracks.getStartLon()));
+                        }
+                        if (CommonUtil.isNotBlank(tracks.getStratLat())){
+                            tracks.setStratLatDec(new BigDecimal(tracks.getStratLat()));
+                        }
+                        if (CommonUtil.isNotBlank(tracks.getEndLon())){
+                            tracks.setEndLonDec(new BigDecimal(tracks.getEndLon()));
+                        }
+                        if (CommonUtil.isNotBlank(tracks.getEndLat())){
+                            tracks.setEndLatDec(new BigDecimal(tracks.getEndLat()));
+                        }
+                    }
                 }
             }
-            TrailInfo trailInfo = new TrailInfo();
+
             trailInfo.setTrailUuid(car.getCarNo());
             trailInfo.setTrailList(carTrailList);
             trailInfo.setRaodTrailList(raodTrailList);
