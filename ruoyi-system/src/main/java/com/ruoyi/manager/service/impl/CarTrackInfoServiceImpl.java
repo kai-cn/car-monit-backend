@@ -7,10 +7,7 @@ import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.ruoyi.base.domain.Geometry;
-import com.ruoyi.base.domain.TrailBo;
-import com.ruoyi.base.domain.TrailInfo;
-import com.ruoyi.base.domain.ZdataTrailTracks;
+import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.IZdataTrailTracksService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
@@ -635,5 +632,83 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         return raodTrailList;
     }
 
+    /**
+     * 根据桩号转换轨迹经纬度
+     * @param josnList
+     * @return
+     */
+    public  TrailDevCountBO getTrailDevBO(List<TrailBo> josnList){
+
+        TrailDevCountBO trailDevCountBO = new TrailDevCountBO();
+        Integer exceptNum = 0;
+        List<TrailDevBO> TrailDevList = new ArrayList<>();
+
+        Map<String,List<TrailBo>> map = new HashMap<>();
+
+        List<TrailBo> rtnList = new ArrayList<>();
+
+        for (TrailBo trailBo : josnList) {
+            String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
+            String devName = CommonUtil.isNull(trailBo.getDevName());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
+            if (stateType.equals(Constants.GANTRY_CAPTURE) || stateType.equals(Constants.FeeRecord)) {
+                // 门架抓拍  门架流水
+                if (CommonUtil.isNotBlank(devName)) {
+                    List<TrailBo> templist = new ArrayList<>();
+                    if (map.containsKey(devName)) {
+                        templist = map.get(devName); // 重复的对象合并
+                    }else{
+                        rtnList.add(trailBo); // 去掉重复的
+                    }
+                    templist.add(trailBo);
+                    map.put(devName, templist);
+                } else {
+                    rtnList.add(trailBo);
+                }
+            }else{
+                rtnList.add(trailBo);
+            }
+        }
+
+        for (TrailBo trailBo : rtnList) {
+            TrailDevBO trailDevBO = new TrailDevBO();
+            String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
+            String devName = CommonUtil.isNull(trailBo.getDevName());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
+            trailDevBO.setStatus("0");  // 默认为正常
+            List<TrailBo> trailList = new ArrayList<>();
+
+            if (stateType.equals(Constants.GANTRY_CAPTURE) || stateType.equals(Constants.FeeRecord)) {
+                if(map.containsKey(devName)){
+                    trailList = map.get(devName);
+                    // 判断异常数量
+                    int conutGantryCapture = 0;
+                    int conutFeeRecord = 0;
+                    for (TrailBo rtnTrailBo : trailList) {
+                        String stateTypeDif = CommonUtil.isNull(rtnTrailBo.getStateType());
+                        if (stateTypeDif.equals(Constants.GANTRY_CAPTURE)) {
+                            // 门架抓拍
+                            conutGantryCapture++;
+                        } else if (stateTypeDif.equals(Constants.FeeRecord)) {
+                            // 卡口流水
+                            conutFeeRecord++;
+                        }
+                    }
+                    if (conutGantryCapture > conutFeeRecord) {
+                        trailDevBO.setStatus("1");  // 异常数据
+                        exceptNum++;
+                    }
+                }else{
+                    trailList.add(trailBo);
+                }
+            }else{
+                trailList.add(trailBo);
+            }
+            trailDevBO.setDevName(devName);
+            trailDevBO.setTrailList(trailList);
+            TrailDevList.add(trailDevBO);
+        }
+        trailDevCountBO.setExceptNum(exceptNum);
+        trailDevCountBO.setTrailDevList(TrailDevList);
+        return trailDevCountBO;
+    }
 
 }
