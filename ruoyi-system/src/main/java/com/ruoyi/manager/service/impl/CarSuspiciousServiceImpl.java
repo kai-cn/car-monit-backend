@@ -97,7 +97,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                 trailInfo = JSON.parseObject(trackJosn, TrailInfo.class);
                 carTrailList = trailInfo.getTrailList();
                 if (null != carTrailList && carTrailList.size() > 0){
-                    raodTrailList = carTrackInfoService.getCarGeometry(carTrailList);
+                    raodTrailList = carTrackInfoService.getCarGeometry(trailInfo.getTracks(),carTrailList);
                 }
                 // 轨迹值还原
                 ZdataTrailTracks tracks = trailInfo.getTracks();
