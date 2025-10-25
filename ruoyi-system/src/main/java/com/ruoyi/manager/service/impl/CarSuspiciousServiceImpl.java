@@ -99,22 +99,6 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                 if (null != carTrailList && carTrailList.size() > 0){
                     raodTrailList = carTrackInfoService.getCarGeometry(trailInfo.getTracks(),carTrailList);
                 }
-                // 轨迹值还原
-                ZdataTrailTracks tracks = trailInfo.getTracks();
-                if (null !=tracks){
-                    if (CommonUtil.isNotBlank(tracks.getStartLon())){
-                        tracks.setStartLonDec(new BigDecimal(tracks.getStartLon()));
-                    }
-                    if (CommonUtil.isNotBlank(tracks.getStratLat())){
-                        tracks.setStratLatDec(new BigDecimal(tracks.getStratLat()));
-                    }
-                    if (CommonUtil.isNotBlank(tracks.getEndLon())){
-                        tracks.setEndLonDec(new BigDecimal(tracks.getEndLon()));
-                    }
-                    if (CommonUtil.isNotBlank(tracks.getEndLat())){
-                        tracks.setEndLatDec(new BigDecimal(tracks.getEndLat()));
-                    }
-                }
             }
 
             trailInfo.setTrailUuid(carSuspicious.getCarNo());

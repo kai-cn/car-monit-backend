@@ -101,4 +101,7 @@ public class TrailBo {
     // 数量
     private Integer countNum;
 
+    /** 桩号 */
+    private BigDecimal pilenoDec;
+
 }

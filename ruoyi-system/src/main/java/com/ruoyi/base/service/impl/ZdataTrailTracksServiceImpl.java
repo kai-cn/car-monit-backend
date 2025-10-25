@@ -72,26 +72,6 @@ public class ZdataTrailTracksServiceImpl extends ServiceImpl<ZdataTrailTracksMap
             list = zdataTrailTracksMapper.getHistoryTrail(zdataTrailTracks);
         }
 
-        for (ZdataTrailTracks rtn : list) {
-            if (CommonUtil.isNotBlank(rtn.getStartLon())){
-                rtn.setStartLonDec(new BigDecimal(rtn.getStartLon()));
-            }
-
-            if (CommonUtil.isNotBlank(rtn.getStratLat())){
-                rtn.setStratLatDec(new BigDecimal(rtn.getStratLat()));
-            }
-
-            if (CommonUtil.isNotBlank(rtn.getEndLon())){
-                rtn.setEndLonDec(new BigDecimal(rtn.getEndLon()));
-            }
-
-            if (CommonUtil.isNotBlank(rtn.getEndLat())){
-                rtn.setEndLatDec(new BigDecimal(rtn.getEndLat()));
-            }
-
-        }
-
-
         return list;
     }
 
