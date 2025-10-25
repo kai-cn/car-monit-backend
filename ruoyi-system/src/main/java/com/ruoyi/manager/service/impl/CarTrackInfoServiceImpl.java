@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -555,80 +556,71 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     @Override
     public List<Geometry> getCarGeometry(ZdataTrailTracks tracksBo,List<TrailBo> josnList) {
         List<Geometry> raodTrailList = new ArrayList<>();
-        LinkedHashMap<String, List<TrailBo>> collect =
-                josnList.stream().filter(o -> StrUtil.isNotEmpty(o.getPileno()))
-                        .peek(o -> {
-                            String pileno = o.getPileno();
-                            pileno = pileno.replace("+", ".").replace("ZK", "").replace("YK", "").replace("K", "");
-                            log.info("原始桩号{}变化后桩号{}", o.getPileno(), pileno);
-                            o.setPileno(pileno);
-                        })
-                        .collect(Collectors.groupingBy(TrailBo::getRoadCode, LinkedHashMap::new, Collectors.toList()));
-        AtomicInteger index = new AtomicInteger(0);
-        collect.forEach((k, v) -> {
-            LambdaQueryWrapper<Geometry> l = new LambdaQueryWrapper<>();
-            Optional<Integer> min = v.stream().map(o -> new BigDecimal(o.getPileno()).intValue()).min(Integer::compare);
-            Optional<Integer> max = v.stream().map(o -> new BigDecimal(o.getPileno()).intValue()).max(Integer::compare);
-            if(min.isPresent()) {
-                log.info("路线{}起始桩号{}终点桩号{}", k, min.get(), max.get());
-                l.eq(Geometry::getLxbh, k).eq(Geometry::getLxfx, "1");
-                if(min.get().equals(max.get()))
-                {
-                    l.eq(Geometry::getQdzh, min.get());
-                }
-                else {
-                    l.lt(Geometry::getQdzh, max.get()).ge(Geometry::getQdzh, min.get());
-                }
 
-                List<Geometry> list = geometryService.list(l);
-                Geometry geometry = new Geometry();
-                JSONArray paths = new JSONArray();
-                geometry.setLxbh(k);
-                geometry.setQdzh(min.get());
-                geometry.setZdzh(max.get()+1);
-                List<TrailBo> station = v.stream().filter(o -> "StationCapture".equals(o.getStateType())).filter(o -> null != o.getLon() && null != o.getLat()).collect(Collectors.toList());
-               /* // 起点收费站
-                JSONArray stationPaths = new JSONArray();
-                // 终点收费站
-                JSONArray stationPaths2 = new JSONArray();
-                if(!station.isEmpty()) {
-                    TrailBo trailBo = station.get(0);
-                    stationPaths.add(trailBo.getLon());
-                    stationPaths.add(trailBo.getLat());
-                    if(station.size() > 1)
-                    {
-                        trailBo = station.get(station.size() - 1);
-                        stationPaths2.add(trailBo.getLon());
-                        stationPaths2.add(trailBo.getLat());
-                    }
+        // 去掉重复的桩号
+        Map<String,List<TrailBo>> map = new HashMap<>();
+        List<TrailBo> rtnList = new ArrayList<>();
+        for (TrailBo trailBo : josnList) {
+            String roadCode =  CommonUtil.isNull(trailBo.getRoadCode()); // 路线编号
+            String pileno = CommonUtil.isNull(trailBo.getPileno()); // 桩号
+            if (CommonUtil.isNotBlank(roadCode) && CommonUtil.isNotBlank(pileno)){
+                String changPileno = pileno.replace("+", ".").replace("ZK", "").replace("YK", "").replace("K", "");
+                log.info("原始桩号{}变化后桩号{}",pileno, changPileno);
+                trailBo.setPilenoDec(new BigDecimal(changPileno));
+                List<TrailBo> roadCodeList = new ArrayList<>();
+                if (map.containsKey(roadCode)){
+                    roadCodeList = map.get(roadCode);
                 }
-                int i = index.getAndIncrement();
-                if(0 == i && !stationPaths.isEmpty())
-                {
-                    paths.add(stationPaths);
-                }*/
-
-                list.forEach(o -> {
-                    JSONArray objects = JSONUtil.parseArray(o.getPaths());
-                    paths.addAll(objects);
-                });
-                /*
-                 * 判断一条路线有多个收费站时候，该条路线最后一个收费站是终点收费站；
-                 * 多条路线则终点收费站是改路线的第一个收费站
-                 */
-                /*if(i == 0 && station.size() > 1)
-                {
-                    paths.add(stationPaths2);
-                }
-                else if(0 != i && !stationPaths.isEmpty())
-                {
-                    paths.add(stationPaths);
-                }*/
-                geometry.setPaths(paths.toString());
-                raodTrailList.add(geometry);
-
+                roadCodeList.add(trailBo);
+                map.put(roadCode,roadCodeList);
             }
-        });
+        }
+
+        // 循环Map
+        for (Map.Entry<String, List<TrailBo>> entry : map.entrySet()) {
+            String roadCode = entry.getKey();  // 路线
+            List<TrailBo> trailBoList = entry.getValue(); // 轨迹点
+
+            if(null !=trailBoList && trailBoList.size() >0){
+                // 按照桩号排序----------
+                trailBoList =  trailBoList.stream().sorted(Comparator.comparing(TrailBo::getPilenoDec))
+                        .collect(Collectors.toList());
+
+                Geometry geometryQuery = new Geometry();
+
+                //--------------起点
+                BigDecimal bigDecimalFirst = trailBoList.get(0).getPilenoDec();
+                Integer qdzh = bigDecimalFirst.setScale(4, RoundingMode.HALF_UP).intValue(); // 舍入到最接近的整数
+                geometryQuery.setLxbh(roadCode);
+                geometryQuery.setLxfx("1"); // 上行
+                geometryQuery.setQdzh(qdzh);
+
+                if (trailBoList.size() > 1){
+
+                    // ------------终点
+                    BigDecimal bigDecimalEnd = trailBoList.get(trailBoList.size() -1).getPilenoDec();
+                    Integer zdzh = bigDecimalEnd.setScale(4, RoundingMode.HALF_UP).intValue() + 1; // 舍入到最接近的整数
+                    geometryQuery.setZdzh(zdzh);
+                }
+                log.info("路线{}起点桩号{}终点桩号{}",geometryQuery.getLxbh(), geometryQuery.getQdzh(),geometryQuery.getZdzh());
+                List<Geometry> querylist = geometryService.selectGeometryList(geometryQuery);
+
+                if (null !=querylist && querylist.size() > 0){
+                    // 把路线所有的轨迹点拼接出来
+                    Geometry rtnGeometry = new Geometry();
+                    rtnGeometry.setLxbh(roadCode);
+                    JSONArray pathsJSONArray = new JSONArray();
+                    for (Geometry queryGeometry : querylist) {
+                        String paths =  queryGeometry.getPaths();
+                        if (CommonUtil.isNotBlank(paths)){
+                            JSONArray objects = JSONUtil.parseArray(paths);
+                            pathsJSONArray.addAll(objects);
+                        }
+                    }
+                    rtnGeometry.setPaths(pathsJSONArray.toString());
+                }
+            }
+        }
         return raodTrailList;
     }
 
