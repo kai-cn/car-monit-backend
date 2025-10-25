@@ -555,11 +555,11 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
     @Override
     public List<Geometry> getCarGeometry(ZdataTrailTracks tracksBo,List<TrailBo> josnList) {
-        List<Geometry> raodTrailList = new ArrayList<>();
 
+        List<Geometry> raodTrailList = new ArrayList<>();
         // 去掉重复的桩号
         Map<String,List<TrailBo>> map = new HashMap<>();
-        List<TrailBo> rtnList = new ArrayList<>();
+
         for (TrailBo trailBo : josnList) {
             String roadCode =  CommonUtil.isNull(trailBo.getRoadCode()); // 路线编号
             String pileno = CommonUtil.isNull(trailBo.getPileno()); // 桩号
@@ -576,6 +576,8 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             }
         }
 
+        Map<String, List<Geometry>> roadMap = geometryService.getRedisList();
+
         // 循环Map
         for (Map.Entry<String, List<TrailBo>> entry : map.entrySet()) {
             String roadCode = entry.getKey();  // 路线
@@ -590,27 +592,70 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
                 //--------------起点
                 BigDecimal bigDecimalFirst = trailBoList.get(0).getPilenoDec();
-                Integer qdzh = bigDecimalFirst.setScale(4, RoundingMode.HALF_UP).intValue(); // 舍入到最接近的整数
-                geometryQuery.setLxbh(roadCode);
-                geometryQuery.setLxfx("1"); // 上行
-                geometryQuery.setQdzh(qdzh);
-
+                int sq = bigDecimalFirst.setScale(4, RoundingMode.HALF_UP).intValue(); // 舍入到最接近的整数
+                int sz = 0;
                 if (trailBoList.size() > 1){
-
                     // ------------终点
                     BigDecimal bigDecimalEnd = trailBoList.get(trailBoList.size() -1).getPilenoDec();
-                    Integer zdzh = bigDecimalEnd.setScale(4, RoundingMode.HALF_UP).intValue() + 1; // 舍入到最接近的整数
-                    geometryQuery.setZdzh(zdzh);
+                    sz = bigDecimalEnd.setScale(4, RoundingMode.HALF_UP).intValue() + 1; // 舍入到最接近的整数
                 }
-                log.info("路线{}起点桩号{}终点桩号{}",geometryQuery.getLxbh(), geometryQuery.getQdzh(),geometryQuery.getZdzh());
-                List<Geometry> querylist = geometryService.selectGeometryList(geometryQuery);
 
-                if (null !=querylist && querylist.size() > 0){
+                log.info("路线{}起点桩号{}终点桩号{}",geometryQuery.getLxbh(), geometryQuery.getQdzh(),geometryQuery.getZdzh());
+                // https://blog.csdn.net/wangwuyilove/article/details/42875475
+                // ”用qd表示，“终点”用zd表示，输起用“sq”表示，“输终”用sz表示。
+                // 首先第一种情况他的sql我们经常写，qd<=sq && zd >= sz
+                // 第二种情况那其实就是数据库记录的起点数值在输入数值的中间，也就是 qd > sq && qd < sz
+                // 第三种情况和第二种类似，就是 zd > sq && zd < sz
+                // 第四种情况就是输入的数值包含了数据库记录的区间数值，也就是 qd >= sq && zd <= sz
+
+                List<Geometry> addlist = new ArrayList<>(); // 重缓存种查询到符合的值
+
+
+                List<Geometry> filtlist = roadMap.get(roadCode);
+                if (null != filtlist && filtlist.size() > 0) {
+                    // 如果有数据
+                    for (Geometry filtbo : filtlist) {
+                        int qd = 0;
+                        int zd = 0;
+                        if (null != filtbo.getQdzh()) {
+                            qd = filtbo.getQdzh();
+                        }
+
+                        if (null != filtbo.getZdzh()) {
+                            zd = filtbo.getZdzh();
+                        }
+
+                        int countNum = 0;
+                        if (qd <= sq && zd >= sz) {
+                            countNum++;
+                        }
+
+                        if (qd > sq && qd < sz) {
+                            countNum++;
+                        }
+
+                        if (zd > sq && zd < sz) {
+                            countNum++;
+                        }
+
+                        if (qd >= sq && zd <= sz) {
+                            countNum++;
+                        }
+
+                        if (countNum > 0){
+                            addlist.add(filtbo);
+                        }
+                    }
+                }
+
+
+
+                if (null !=addlist && addlist.size() > 0){
                     // 把路线所有的轨迹点拼接出来
                     Geometry rtnGeometry = new Geometry();
                     rtnGeometry.setLxbh(roadCode);
                     JSONArray pathsJSONArray = new JSONArray();
-                    for (Geometry queryGeometry : querylist) {
+                    for (Geometry queryGeometry : addlist) {
                         String paths =  queryGeometry.getPaths();
                         if (CommonUtil.isNotBlank(paths)){
                             JSONArray objects = JSONUtil.parseArray(paths);
