@@ -144,7 +144,7 @@ public class CarTrackInfoController extends BaseController {
 
                     List<Geometry> raodTrailList = new ArrayList<>();
                     if (null != josnList && josnList.size() > 0) {
-                        raodTrailList = carTrackInfoService.getCarGeometry(josnList);
+                        raodTrailList = carTrackInfoService.getCarGeometry(tracksBo,josnList);
                     }
                     trailInfo.setRaodTrailList(raodTrailList);
 
@@ -232,7 +232,7 @@ public class CarTrackInfoController extends BaseController {
 
                     List<Geometry> raodTrailList = new ArrayList<>();
                     if (null != josnList && josnList.size() > 0) {
-                        raodTrailList = carTrackInfoService.getCarGeometry(josnList);
+                        raodTrailList = carTrackInfoService.getCarGeometry(tracksBo,josnList);
                     }
                     trailInfo.setRaodTrailList(raodTrailList);
 

@@ -556,7 +556,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
 
     @Override
-    public List<Geometry> getCarGeometry(List<TrailBo> josnList) {
+    public List<Geometry> getCarGeometry(ZdataTrailTracks tracksBo,List<TrailBo> josnList) {
         List<Geometry> raodTrailList = new ArrayList<>();
         LinkedHashMap<String, List<TrailBo>> collect =
                 josnList.stream().filter(o -> StrUtil.isNotEmpty(o.getPileno()))
@@ -590,7 +590,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                 geometry.setQdzh(min.get());
                 geometry.setZdzh(max.get()+1);
                 List<TrailBo> station = v.stream().filter(o -> "StationCapture".equals(o.getStateType())).filter(o -> null != o.getLon() && null != o.getLat()).collect(Collectors.toList());
-                // 起点收费站
+               /* // 起点收费站
                 JSONArray stationPaths = new JSONArray();
                 // 终点收费站
                 JSONArray stationPaths2 = new JSONArray();
@@ -609,7 +609,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                 if(0 == i && !stationPaths.isEmpty())
                 {
                     paths.add(stationPaths);
-                }
+                }*/
 
                 list.forEach(o -> {
                     JSONArray objects = JSONUtil.parseArray(o.getPaths());
@@ -619,14 +619,14 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                  * 判断一条路线有多个收费站时候，该条路线最后一个收费站是终点收费站；
                  * 多条路线则终点收费站是改路线的第一个收费站
                  */
-                if(i == 0 && station.size() > 1)
+                /*if(i == 0 && station.size() > 1)
                 {
                     paths.add(stationPaths2);
                 }
                 else if(0 != i && !stationPaths.isEmpty())
                 {
                     paths.add(stationPaths);
-                }
+                }*/
                 geometry.setPaths(paths.toString());
                 raodTrailList.add(geometry);
 
