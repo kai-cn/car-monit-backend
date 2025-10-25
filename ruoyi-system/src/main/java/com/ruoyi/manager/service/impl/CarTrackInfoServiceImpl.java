@@ -565,7 +565,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             String pileno = CommonUtil.isNull(trailBo.getPileno()); // 桩号
             if (CommonUtil.isNotBlank(roadCode) && CommonUtil.isNotBlank(pileno)){
                 String changPileno = pileno.replace("+", ".").replace("ZK", "").replace("YK", "").replace("K", "");
-                log.info("原始桩号{}变化后桩号{}",pileno, changPileno);
+                // log.info("原始桩号{}变化后桩号{}",pileno, changPileno);
                 trailBo.setPilenoDec(new BigDecimal(changPileno));
                 List<TrailBo> roadCodeList = new ArrayList<>();
                 if (map.containsKey(roadCode)){
@@ -600,7 +600,8 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     sz = bigDecimalEnd.setScale(4, RoundingMode.HALF_UP).intValue() + 1; // 舍入到最接近的整数
                 }
 
-                log.info("路线{}起点桩号{}终点桩号{}",geometryQuery.getLxbh(), geometryQuery.getQdzh(),geometryQuery.getZdzh());
+                // log.info("路线{}起点桩号{}终点桩号{}",geometryQuery.getLxbh(), geometryQuery.getQdzh(),geometryQuery.getZdzh());
+
                 // https://blog.csdn.net/wangwuyilove/article/details/42875475
                 // ”用qd表示，“终点”用zd表示，输起用“sq”表示，“输终”用sz表示。
                 // 首先第一种情况他的sql我们经常写，qd<=sq && zd >= sz
@@ -663,6 +664,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         }
                     }
                     rtnGeometry.setPaths(pathsJSONArray.toString());
+                    raodTrailList.add(rtnGeometry);
                 }
             }
         }
