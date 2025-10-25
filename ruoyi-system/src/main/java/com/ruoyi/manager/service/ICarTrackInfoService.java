@@ -3,6 +3,7 @@ package com.ruoyi.manager.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyi.base.domain.Geometry;
 import com.ruoyi.base.domain.TrailBo;
+import com.ruoyi.base.domain.TrailDevCountBO;
 import com.ruoyi.base.domain.ZdataTrailTracks;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarTrackInfo;
@@ -80,4 +81,13 @@ public interface ICarTrackInfoService extends IService<CarTrackInfo> {
      * @return
      */
     List<Geometry> getCarGeometry(ZdataTrailTracks tracksBo,List<TrailBo> josnList);
+
+
+    /**
+     * 根据桩号转换轨迹经纬度
+     * @param josnList
+     * @return
+     */
+    TrailDevCountBO getTrailDevBO(List<TrailBo> josnList);
+
 }

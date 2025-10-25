@@ -120,6 +120,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             trailInfo.setTrailUuid(carSuspicious.getCarNo());
             trailInfo.setTrailList(carTrailList);
             trailInfo.setRaodTrailList(raodTrailList);
+            trailInfo.setTrailDevCountBO(carTrackInfoService.getTrailDevBO(carTrailList));
 
 
             List<TrailInfo> trailList = new ArrayList<>();

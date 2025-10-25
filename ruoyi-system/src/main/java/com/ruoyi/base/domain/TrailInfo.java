@@ -30,4 +30,9 @@ public class TrailInfo {
      */
     private List<Geometry> raodTrailList;
 
+    /**
+     * 设备集合
+     */
+    private TrailDevCountBO trailDevCountBO;
+
 }
