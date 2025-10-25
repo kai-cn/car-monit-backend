@@ -5,6 +5,7 @@ import com.ruoyi.base.domain.Geometry;
 import com.ruoyi.common.core.domain.AjaxResult;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 车辆信息Service接口
@@ -50,13 +51,13 @@ public interface IGeometryService extends IService<Geometry> {
     /**
      * 跟新redis
      */
-    void updateRedisList();
+    List<Geometry> updateRedisList();
 
 
     /**
      * 从缓存拿到carlist
      */
-    List<Geometry> getRedisList();
+    Map<String, List<Geometry>> getRedisList();
 
     /**
      * 根据路线code 查询
