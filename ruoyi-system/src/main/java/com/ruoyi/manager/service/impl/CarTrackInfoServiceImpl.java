@@ -606,6 +606,8 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     // ------------终点
                     BigDecimal bigDecimalEnd = trailBoList.get(trailBoList.size() -1).getPilenoDec();
                     sz = bigDecimalEnd.setScale(4, RoundingMode.HALF_UP).intValue() + 1; // 舍入到最接近的整数
+                }else {
+                    sz = sq;
                 }
 
                 // log.info("路线{}起点桩号{}终点桩号{}",geometryQuery.getLxbh(), geometryQuery.getQdzh(),geometryQuery.getZdzh());
