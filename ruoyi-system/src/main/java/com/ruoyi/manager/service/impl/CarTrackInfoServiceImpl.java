@@ -660,11 +660,6 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
 
                 if (null !=addlist && addlist.size() > 0){
-
-                    if(reserver == 1)
-                    {
-                        Collections.reverse(addlist);
-                    }
                     // 把路线所有的轨迹点拼接出来
                     Geometry rtnGeometry = new Geometry();
                     rtnGeometry.setLxbh(roadCode);
@@ -676,7 +671,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                             pathsJSONArray.addAll(objects);
                         }
                     }
-
+                    if(reserver == 1)
+                    {
+                        Collections.reverse(pathsJSONArray);
+                    }
                     rtnGeometry.setPaths(pathsJSONArray.toString());
                     raodTrailList.add(rtnGeometry);
                 }
