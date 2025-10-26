@@ -138,6 +138,21 @@
         <if test="escapedType != null  and escapedType != ''"> and c.escaped_type like concat('%', #{escapedType}, '%') </if>
         <if test="plateColor != null  and plateColor != ''"> and c.plate_color = #{plateColor}</if>
 
+        <if test="sectionCodeList != null and sectionCodeList.size() > 0">
+            and
+            <foreach collection="sectionCodeList" open="(" separator="or" close=")" item="item">
+                t.track_names like concat('%', #{item}, '%')
+            </foreach>
+        </if>
+
+        <if test="codeList != null and codeList.size() > 0">
+            and
+            <foreach collection="codeList" open="(" separator="or" close=")" item="item">
+                t.track_names like concat('%', #{item}, '%')
+            </foreach>
+        </if>
+
+
         order by t.gantry_time desc,t.id
     </select>
 

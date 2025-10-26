@@ -20,10 +20,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 预警车辆Controller
@@ -67,8 +65,19 @@ public class CarWarningInfoController extends BaseController {
             carWarningInfo.setFlagTime(formattedDate);
         }
 
-        if (CommonUtil.isNotBlank(carWarningInfo.getCode())){
-            carWarningInfo.setTrackNames(carWarningInfo.getCode()); // 查询范围
+
+        String sectionCode = CommonUtil.deleteEnd(carWarningInfo.getSectionCode());
+        if (CommonUtil.isNotBlank(sectionCode)){
+            // 路段
+            carWarningInfo.setSectionCodeList(Arrays.stream(sectionCode.split(",")).collect(Collectors.toList()));
+            carWarningInfo.setSectionCode(""); // 查询范围
+        }
+
+        String code = CommonUtil.deleteEnd(carWarningInfo.getCode());
+        if (CommonUtil.isNotBlank(code)){
+            // 服务区 收费站
+            carWarningInfo.setCodeList(Arrays.stream(code.split(",")).collect(Collectors.toList()));
+            carWarningInfo.setCode(""); // 查询范围
         }
 
         List<CarWarningInfo> list = carWarningInfoService.selectCarWarningInfoList(carWarningInfo);

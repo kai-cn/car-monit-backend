@@ -62,8 +62,9 @@ public class TrackTask {
     public void syncHistoryTrack() {
         log.info("车俩历史轨迹同步开始同步！"+new Date());
         carTrackInfoService.syncHistoryTrack();
+        geometryService.updateRedisList(); // 跟新缓存数据
         log.info("车俩历史轨迹同步结束同步！"+new Date());
-        geometryService.getRedisList(); // 跟新缓存数据
+
     }
 
 
