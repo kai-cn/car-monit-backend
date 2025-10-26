@@ -583,7 +583,15 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             String roadCode = entry.getKey();  // 路线
             List<TrailBo> trailBoList = entry.getValue(); // 轨迹点
 
+            int reserver = 0;
             if(null !=trailBoList && trailBoList.size() >0){
+                BigDecimal pilenoDec1 = trailBoList.get(0).getPilenoDec();
+                BigDecimal pilenoDec2 = trailBoList.get(trailBoList.size() - 1).getPilenoDec();
+                if(pilenoDec1.compareTo(pilenoDec2) > 0)
+                {
+                    reserver = 1;
+                }
+
                 // 按照桩号排序----------
                 trailBoList =  trailBoList.stream().sorted(Comparator.comparing(TrailBo::getPilenoDec))
                         .collect(Collectors.toList());
@@ -652,6 +660,11 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
 
                 if (null !=addlist && addlist.size() > 0){
+
+                    if(reserver == 1)
+                    {
+                        Collections.reverse(addlist);
+                    }
                     // 把路线所有的轨迹点拼接出来
                     Geometry rtnGeometry = new Geometry();
                     rtnGeometry.setLxbh(roadCode);
@@ -663,6 +676,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                             pathsJSONArray.addAll(objects);
                         }
                     }
+
                     rtnGeometry.setPaths(pathsJSONArray.toString());
                     raodTrailList.add(rtnGeometry);
                 }
