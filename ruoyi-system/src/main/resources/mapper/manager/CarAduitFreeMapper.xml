@@ -98,8 +98,10 @@
 
     <select id="incomeStatistic" parameterType="com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam" resultType="com.ruoyi.manager.domain.vo.bigscreen.incomeStatisticVO">
         select sum(ifnull(amount, 0)) amount, count(distinct car_no) carNum, d.dept_name orgName, a.org_id
-        <if test="queryDateType != null  and queryDateType == 'suo'"> from car_confim_free a </if>
-        <if test="queryDateType != null  and queryDateType == 'zhan'"> from car_aduit_free a </if>
+        from (
+          select t.car_no,t.amount,t.org_id,t.create_time,t.del_flag,t.status from car_confim_free t where t.del_flag = '0'
+        UNION all
+          select t.car_no,t.amount,t.org_id,t.create_time,t.del_flag,t.status from car_aduit_free t where t.del_flag = '0') a
         left join sys_dept d on d.dept_id = a.org_id and d.del_flag = '0'
         where a.del_flag = '0'
         <if test="queryDateType != null  and queryDateType == 'suo'"> and a.status = '0' </if>
