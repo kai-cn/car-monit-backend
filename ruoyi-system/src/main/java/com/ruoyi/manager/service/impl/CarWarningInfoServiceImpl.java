@@ -14,6 +14,7 @@ import com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam;
 import com.ruoyi.manager.mapper.CarWarningInfoMapper;
 import com.ruoyi.manager.service.ICarWarningInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,9 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
     @Autowired
     private RedisCache redisCache;
 
+    @Value("${isLocalhost}")
+    private String isLocalhost;
+
     /**
      * 查询预警车辆
      *
@@ -54,7 +58,7 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
 
 
             List<TrailInfo> trailInfoList = redisCache.getCacheObject(nextKey);
-            List<TrailBo> nextBoList = new ArrayList<>();
+            List<TrailBo> trailFwqList = new ArrayList<>();
             if (null != trailInfoList && trailInfoList.size() > 0) {
                 List<List<TrailBo>> cylylist = new ArrayList<>();
                 // 找到下一个位置
@@ -74,16 +78,18 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
 
                 // 循环cylylist
                 for (List<TrailBo> list : cylylist) {
+                    String indexType = Constants.SERVICE_AREA_CAPTURE;
+                    if (CommonUtil.isNull(isLocalhost).equals("local")){
+                        indexType = Constants.STATION_CAPTURE;
+                    }
                     for (TrailBo trailBo : list) {
-                        if("ServiceAreaCapture".equals(trailBo.getStateType())){
-
+                        if(indexType.equals(CommonUtil.isNull(trailBo.getStateType()))){
+                            trailFwqList.add(trailBo);
                         }
                     }
                 }
-
-
             }
-
+            rtn.setTrailFwqList(trailFwqList);
         }
         return rtn;
     }
