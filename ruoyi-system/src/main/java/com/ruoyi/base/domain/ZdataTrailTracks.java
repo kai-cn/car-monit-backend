@@ -223,25 +223,25 @@ public class ZdataTrailTracks implements Custom {
     private String flag;
 
 
-    /** 入口收费站经度 *//*
+    /** 入口收费站经度 */
     @Excel(name = "入口收费站经度")
     @TableField(exist = false)
     private BigDecimal startLonDec;
 
-    *//** 入口收费站维度 *//*
+    //** 入口收费站维度 *//*
     @Excel(name = "入口收费站维度")
     @TableField(exist = false)
     private BigDecimal stratLatDec;
 
-    *//** 出口收费站经度 *//*
+    //** 出口收费站经度 *//*
     @Excel(name = "出口收费站经度")
     @TableField(exist = false)
     private BigDecimal endLonDec;
 
-    *//** 出口收费站维度 *//*
+    //** 出口收费站维度 *//*
     @Excel(name = "出口收费站维度")
     @TableField(exist = false)
-    private BigDecimal endLatDec;*/
+    private BigDecimal endLatDec;
 
 
 }
