@@ -156,16 +156,20 @@
     </select>
 
     <select id="selectConcernedList" resultType="com.ruoyi.manager.domain.CarConfimFree">
-        select  t.car_no,
+        select
+        t.id,
+        t.car_no,
         t.car_type,
         t.car_vehicle,
         t.escaped_type,
         t.org_id,
         sd.dept_name org_name,
-        k.total_amount amount,
-        k.dif_amount aduit_amount,
+        k.total_amount totalAmount,
+        k.charge_amount chargeAmount,
+        k.dif_amount difAmount,
         k.except_ids
-        from car_info t JOIN
+        from car_info t
+        JOIN
         (select t1.car_no,sum(t1.total_amount) total_amount,sum(t1.charge_amount) charge_amount,sum(t1.dif_amount) dif_amount,
         sum(case when t1.status = '0' then 1 else 0 end) except_num,
         count(1) count_num,
