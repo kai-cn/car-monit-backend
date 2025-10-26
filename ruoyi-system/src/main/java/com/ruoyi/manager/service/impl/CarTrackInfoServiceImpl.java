@@ -558,7 +558,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
         List<Geometry> raodTrailList = new ArrayList<>();
         // 去掉重复的桩号
-        Map<String,List<TrailBo>> map = new HashMap<>();
+        LinkedHashMap<String,List<TrailBo>> map = new LinkedHashMap<>(2);
 
         for (TrailBo trailBo : josnList) {
             String roadCode =  CommonUtil.isNull(trailBo.getRoadCode()); // 路线编号
