@@ -223,6 +223,7 @@ public class SysFileServiceImpl implements ISysFileService {
     public AjaxResult uploadByUrl(List<UploadByUrlRo> roList) {
         List<Map> resultMaps = new ArrayList<>();
         for (UploadByUrlRo ro : roList) {
+            ro.setFileName(CommonUtil.isNull(ro.getFileName())+".jpg");
             if (CommonUtil.isNotBlank(ro.getUrl())){
                 try {
                     byte[] bytes = fileApi.downloadImageToByteArray(ro.getUrl());
