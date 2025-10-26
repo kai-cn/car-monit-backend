@@ -231,6 +231,18 @@ public class CarWarningInfo extends BasePlusEntityNew implements Custom {
     @TableField(exist = false)
     private List<TrailBo> trailFwqList;
 
+    /**
+     * 路段集合
+     */
+    @TableField(exist = false)
+    List<String> sectionCodeList;
+
+    /**
+     * 对象集合
+     */
+    @TableField(exist = false)
+    List<String> codeList;
+
 
 
 }
