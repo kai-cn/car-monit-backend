@@ -104,4 +104,7 @@ public class TrailBo {
     /** 桩号 */
     private BigDecimal pilenoDec;
 
+    /** 是否查询：1查询 */
+    private String isQuery;
+
 }
