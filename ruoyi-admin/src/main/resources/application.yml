@@ -180,3 +180,5 @@ hengda:
 vehicleMonitor:
   baseUrl: http://127.0.0.1:9901
 isLocalhost: local # 是否本地 prod生成
+
+tx-service-url: https://apis.map.qq.com
