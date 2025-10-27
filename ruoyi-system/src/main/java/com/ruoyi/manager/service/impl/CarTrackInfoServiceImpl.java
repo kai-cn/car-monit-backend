@@ -686,11 +686,17 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                 null == tracksBo.getEndLonDec() || null == tracksBo.getEndLatDec()) {
             return Collections.emptyList();
         } else {
+            String lxbh = "";
             StringBuilder wayPoints = new StringBuilder();
             for (TrailBo trailBo : josnList) {
                 if (null != trailBo.getLon() && null != trailBo.getLat()) {
                     double lon = trailBo.getLon().doubleValue();
                     double lat = trailBo.getLat().doubleValue();
+                    String roadCode = trailBo.getRoadCode();
+                    if(lxbh == "" && roadCode != "")
+                    {
+                        lxbh = roadCode;
+                    }
 
                     double[] doubles = GpsUtil.gps84_To_Gcj02(lat, lon);
                     if(wayPoints.length() > 0)
@@ -704,6 +710,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     lonLatPathsUtils.calcLonAndLatPaths(tracksBo.getStartLonDec().toPlainString(), tracksBo.getStratLatDec().toPlainString(),
                         tracksBo.getEndLonDec().toPlainString(), tracksBo.getEndLatDec().toPlainString(), "", wayPoints.toString());
             Geometry rtnGeometry = new Geometry();
+            rtnGeometry.setLxbh(lxbh);
             rtnGeometry.setPaths(paths);
             List<Geometry> rtn = new ArrayList<>();
             rtn.add(rtnGeometry);
