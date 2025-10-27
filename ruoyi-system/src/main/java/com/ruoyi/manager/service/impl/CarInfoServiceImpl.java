@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.IGeometryService;
+import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.redis.RedisCache;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,11 +45,12 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
     @Autowired
     private CarInfoMapper carInfoMapper;
 
-    @Autowired
-    private IGeometryService geometryService;
 
     @Autowired
     private ICarTrackInfoService carTrackInfoService;
+
+    @Resource
+    private HttpSysUtilApiService httpSysUtilApiService;
 
 
     /**
@@ -69,23 +72,11 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                 String trackJosn = car.getTrackJosn();
                 if (CommonUtil.isNotBlank(trackJosn)) {
                     trailInfo = JSON.parseObject(trackJosn, TrailInfo.class);
-                    carTrailList = trailInfo.getTrailList();
+                    // 转换查询
+                    trailInfo = httpSysUtilApiService.changeTrailInfo(trailInfo);
                     // 轨迹值还原
                     ZdataTrailTracks tracks = trailInfo.getTracks();
-                    if (null !=tracks){
-                        if (CommonUtil.isNotBlank(tracks.getStartLon())){
-                            tracks.setStartLonDec(new BigDecimal(tracks.getStartLon()));
-                        }
-                        if (CommonUtil.isNotBlank(tracks.getStratLat())){
-                            tracks.setStratLatDec(new BigDecimal(tracks.getStratLat()));
-                        }
-                        if (CommonUtil.isNotBlank(tracks.getEndLon())){
-                            tracks.setEndLonDec(new BigDecimal(tracks.getEndLon()));
-                        }
-                        if (CommonUtil.isNotBlank(tracks.getEndLat())){
-                            tracks.setEndLatDec(new BigDecimal(tracks.getEndLat()));
-                        }
-                    }
+                    carTrailList = trailInfo.getTrailList();
                     if (null != carTrailList && carTrailList.size() > 0){
                         raodTrailList = carTrackInfoService.getCarGeometry(tracks,carTrailList);
                     }

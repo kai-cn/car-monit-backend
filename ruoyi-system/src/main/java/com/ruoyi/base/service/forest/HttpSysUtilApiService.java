@@ -1,11 +1,9 @@
 package com.ruoyi.base.service.forest;
 
 
-import com.dtflys.forest.annotation.BaseRequest;
-import com.dtflys.forest.annotation.Get;
-import com.dtflys.forest.annotation.JSONBody;
-import com.dtflys.forest.annotation.Query;
+import com.dtflys.forest.annotation.*;
 import com.ruoyi.base.domain.CarParaVO;
+import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.common.core.page.TableDataInfo;
 
 @BaseRequest(baseURL = "#{vehicleMonitor.baseUrl}/base/sysutil")
@@ -42,6 +40,16 @@ public interface HttpSysUtilApiService {
      */
     @Get("/carTrackQueryByTime")
     TableDataInfo carTrackQueryByTime(@Query CarParaVO carParaVO);
+
+
+    /**
+     * 数据转换------------------
+     *
+     * @param trailInfo
+     * @return
+     */
+    @Post("/changeTrailInfo")
+    TrailInfo changeTrailInfo(@JSONBody TrailInfo trailInfo);
 
 
 
