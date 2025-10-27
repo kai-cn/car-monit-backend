@@ -82,8 +82,8 @@ public class LonLatPathsUtils {
             for (int i = 0; i < arr.length; i += 2) {
                 double[] gps = GpsUtil.gcj02_To_Gps84(arr[i], arr[i + 1]);
                 // 保留后6位
-                gps[0] = BigDecimal.valueOf(gps[0]).setScale(6, BigDecimal.ROUND_HALF_UP).doubleValue();
-                gps[1] = BigDecimal.valueOf(gps[1]).setScale(6, BigDecimal.ROUND_HALF_UP).doubleValue();
+                gps[0] = BigDecimal.valueOf(gps[0]).setScale(6, RoundingMode.HALF_UP).doubleValue();
+                gps[1] = BigDecimal.valueOf(gps[1]).setScale(6, RoundingMode.HALF_UP).doubleValue();
                 double[] gpsG = new double[2];
                 gpsG[0] = gps[1];
                 gpsG[1] = gps[0];
@@ -106,14 +106,6 @@ public class LonLatPathsUtils {
         }
         sb.append("&key=").append(key).append("&sig=").append(sig);
         return restTemplate.getForObject(sb.toString(), JSONObject.class);
-    }
-
-    protected final String urlEncode(String s) {
-        try {
-            return URLEncoder.encode(s, "utf-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**
@@ -151,7 +143,7 @@ public class LonLatPathsUtils {
         }
         sb.append(secret);
         try {
-            return MD5(sb.toString());
+            return md5(sb.toString());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -163,7 +155,7 @@ public class LonLatPathsUtils {
      * @return
      * @throws Exception
      */
-    private String MD5(String param) throws Exception {
+    private String md5(String param) throws Exception {
         MessageDigest md = MessageDigest.getInstance("MD5");
         byte[] array = md.digest(param.getBytes(StandardCharsets.UTF_8));
         StringBuilder sb = new StringBuilder();
