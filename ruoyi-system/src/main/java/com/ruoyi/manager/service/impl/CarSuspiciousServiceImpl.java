@@ -95,23 +95,11 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             String trackJosn = carSuspicious.getTrackJosn();
             if (CommonUtil.isNotBlank(trackJosn)) {
                 trailInfo = JSON.parseObject(trackJosn, TrailInfo.class);
-                carTrailList = trailInfo.getTrailList();
+                // 转换查询
+                trailInfo = httpSysUtilApiService.changeTrailInfo(trailInfo);
                 // 轨迹值还原
                 ZdataTrailTracks tracks = trailInfo.getTracks();
-                if (null !=tracks){
-                    if (CommonUtil.isNotBlank(tracks.getStartLon())){
-                        tracks.setStartLonDec(new BigDecimal(tracks.getStartLon()));
-                    }
-                    if (CommonUtil.isNotBlank(tracks.getStratLat())){
-                        tracks.setStratLatDec(new BigDecimal(tracks.getStratLat()));
-                    }
-                    if (CommonUtil.isNotBlank(tracks.getEndLon())){
-                        tracks.setEndLonDec(new BigDecimal(tracks.getEndLon()));
-                    }
-                    if (CommonUtil.isNotBlank(tracks.getEndLat())){
-                        tracks.setEndLatDec(new BigDecimal(tracks.getEndLat()));
-                    }
-                }
+                carTrailList = trailInfo.getTrailList();
                 if (null != carTrailList && carTrailList.size() > 0){
                     raodTrailList = carTrackInfoService.getCarGeometry(tracks,carTrailList);
                 }
