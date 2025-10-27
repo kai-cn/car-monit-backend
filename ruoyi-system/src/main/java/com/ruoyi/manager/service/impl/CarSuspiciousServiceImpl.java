@@ -101,7 +101,8 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                 ZdataTrailTracks tracks = trailInfo.getTracks();
                 carTrailList = trailInfo.getTrailList();
                 if (null != carTrailList && carTrailList.size() > 0){
-                    raodTrailList = carTrackInfoService.getCarGeometry(tracks,carTrailList);
+                    // raodTrailList = carTrackInfoService.getCarGeometry(tracks,carTrailList);
+                    raodTrailList = carTrackInfoService.getCarGeometryByPlan(tracks, carTrailList);
                 }
 
             }
