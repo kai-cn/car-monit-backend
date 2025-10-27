@@ -140,6 +140,8 @@ public class CarTrackInfoController extends BaseController {
                     trailInfo.setTracks(tracksBo);
                     trailInfo.setTrailList(josnList);
                     trailInfo.setTrailUuid(carNo);
+                    List<Geometry> raodTrailList = new ArrayList<>();
+                    trailInfo.setRaodTrailList(raodTrailList);
                     rtnList.add(trailInfo);
                 }
             }
@@ -220,6 +222,8 @@ public class CarTrackInfoController extends BaseController {
                     trailInfo.setTracks(tracksBo);
                     trailInfo.setTrailList(josnList);
                     trailInfo.setTrailUuid(carNo);
+                    List<Geometry> raodTrailList = new ArrayList<>();
+                    trailInfo.setRaodTrailList(raodTrailList);
                     rtnList.add(trailInfo);
                 }
             }
