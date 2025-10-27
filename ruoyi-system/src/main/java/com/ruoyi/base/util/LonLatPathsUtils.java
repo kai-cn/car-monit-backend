@@ -84,7 +84,10 @@ public class LonLatPathsUtils {
                 // 保留后6位
                 gps[0] = BigDecimal.valueOf(gps[0]).setScale(6, BigDecimal.ROUND_HALF_UP).doubleValue();
                 gps[1] = BigDecimal.valueOf(gps[1]).setScale(6, BigDecimal.ROUND_HALF_UP).doubleValue();
-                rtn.add(gps);
+                double[] gpsG = new double[2];
+                gpsG[0] = gps[1];
+                gpsG[1] = gps[0];
+                rtn.add(gpsG);
             }
             return rtn.toString();
         } catch (Exception e) {
