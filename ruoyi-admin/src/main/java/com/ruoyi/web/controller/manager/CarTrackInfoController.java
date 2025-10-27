@@ -23,6 +23,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -266,16 +267,20 @@ public class CarTrackInfoController extends BaseController {
     @Log(title = "车辆行驶轨迹", businessType = BusinessType.UPDATE)
     @PutMapping("/changeTrailInfo")
     public AjaxResult changeTrailInfo(@RequestBody TrailInfo trailInfo) {
-        if (null !=trailInfo){
-            ZdataTrailTracks tracksBo = trailInfo.getTracks();
+        if (null != trailInfo) {
+            ZdataTrailTracks tracks = trailInfo.getTracks();
             List<TrailBo> josnList = trailInfo.getTrailList();
-            if (null != tracksBo && null != josnList && josnList.size() > 0) {
+            if (null != tracks && null != josnList && josnList.size() > 0) {
                 // 转换查询
-                trailInfo = httpSysUtilApiService.changeTrailInfo(trailInfo);
+                TrailInfo rtn = httpSysUtilApiService.changeTrailInfo(trailInfo);
 
+                // 获取抓拍对象
+                trailInfo.setTrailList(rtn.getTrailList());
+                josnList = trailInfo.getTrailList(); // 新的数据--------------
                 List<Geometry> raodTrailList = new ArrayList<>();
                 if (null != josnList && josnList.size() > 0) {
-                    raodTrailList = carTrackInfoService.getCarGeometry(tracksBo,josnList);
+                    // raodTrailList = carTrackInfoService.getCarGeometry(tracks, josnList);
+                    raodTrailList = carTrackInfoService.getCarGeometryByPlan(tracks, josnList);
                 }
                 trailInfo.setRaodTrailList(raodTrailList);
                 trailInfo.setTrailDevCountBO(carTrackInfoService.getTrailDevBO(josnList));
