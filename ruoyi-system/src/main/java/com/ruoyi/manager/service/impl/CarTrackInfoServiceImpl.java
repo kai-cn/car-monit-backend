@@ -712,6 +712,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     lonLatPathsUtils.calcLonAndLatPaths(tracksBo.getStartLonDec().toPlainString(), tracksBo.getStratLatDec().toPlainString(),
                         tracksBo.getEndLonDec().toPlainString(), tracksBo.getEndLatDec().toPlainString(), "", wayPoints.toString());
             Geometry rtnGeometry = new Geometry();
+            if(null == paths)
+            {
+                return this.getCarGeometry(tracksBo,josnList);
+            }
             rtnGeometry.setLxbh(lxbh);
             rtnGeometry.setPaths(paths);
             List<Geometry> rtn = new ArrayList<>();
