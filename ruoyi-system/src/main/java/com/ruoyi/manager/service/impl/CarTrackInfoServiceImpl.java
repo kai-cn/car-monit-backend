@@ -683,9 +683,11 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     @Override
     public List<Geometry> getCarGeometryByPlan(ZdataTrailTracks tracksBo, List<TrailBo> josnList) {
         if (null == tracksBo.getStartLonDec() || null == tracksBo.getStratLatDec() ||
-                null == tracksBo.getEndLonDec() || null == tracksBo.getEndLatDec()) {
-            return Collections.emptyList();
-        } else {
+                null == tracksBo.getEndLonDec() || null == tracksBo.getEndLatDec())
+        {
+            return this.getCarGeometry(tracksBo,josnList);
+        }
+        else {
             String lxbh = "";
             StringBuilder wayPoints = new StringBuilder();
             for (TrailBo trailBo : josnList) {
@@ -693,7 +695,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     double lon = trailBo.getLon().doubleValue();
                     double lat = trailBo.getLat().doubleValue();
                     String roadCode = trailBo.getRoadCode();
-                    if(lxbh == "" && roadCode != "")
+                    if("".equals(lxbh) && !"".equals(roadCode))
                     {
                         lxbh = roadCode;
                     }
