@@ -140,8 +140,20 @@ public class CarTrackInfoController extends BaseController {
                     trailInfo.setTracks(tracksBo);
                     trailInfo.setTrailList(josnList);
                     trailInfo.setTrailUuid(carNo);
+
+                    // 路线
                     List<Geometry> raodTrailList = new ArrayList<>();
                     trailInfo.setRaodTrailList(raodTrailList);
+
+                    // 集合列表
+                    TrailDevCountBO trailDevCountBO = new TrailDevCountBO();
+                    Integer exceptNum = 0;
+                    List<TrailDevBO> TrailDevList = new ArrayList<>();
+                    trailDevCountBO.setExceptNum(exceptNum);
+                    trailDevCountBO.setTrailDevList(TrailDevList);
+                    trailInfo.setTrailDevCountBO(trailDevCountBO);
+
+
                     rtnList.add(trailInfo);
                 }
             }
@@ -222,8 +234,19 @@ public class CarTrackInfoController extends BaseController {
                     trailInfo.setTracks(tracksBo);
                     trailInfo.setTrailList(josnList);
                     trailInfo.setTrailUuid(carNo);
+
+                    // 路线
                     List<Geometry> raodTrailList = new ArrayList<>();
                     trailInfo.setRaodTrailList(raodTrailList);
+
+                    // 集合列表
+                    TrailDevCountBO trailDevCountBO = new TrailDevCountBO();
+                    Integer exceptNum = 0;
+                    List<TrailDevBO> TrailDevList = new ArrayList<>();
+                    trailDevCountBO.setExceptNum(exceptNum);
+                    trailDevCountBO.setTrailDevList(TrailDevList);
+                    trailInfo.setTrailDevCountBO(trailDevCountBO);
+
                     rtnList.add(trailInfo);
                 }
             }
@@ -241,7 +264,7 @@ public class CarTrackInfoController extends BaseController {
      * 修改车辆行驶轨迹
      */
     @Log(title = "车辆行驶轨迹", businessType = BusinessType.UPDATE)
-    @PutMapping("changeTrailInfo")
+    @PutMapping("/changeTrailInfo")
     public AjaxResult changeTrailInfo(@RequestBody TrailInfo trailInfo) {
         if (null !=trailInfo){
             ZdataTrailTracks tracksBo = trailInfo.getTracks();
