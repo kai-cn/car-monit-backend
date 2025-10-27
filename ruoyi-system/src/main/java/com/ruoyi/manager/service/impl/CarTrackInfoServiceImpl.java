@@ -1,16 +1,16 @@
 package com.ruoyi.manager.service.impl;
 
 
-import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson2.JSON;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.IZdataTrailTracksService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
+import com.ruoyi.base.util.GpsUtil;
+import com.ruoyi.base.util.LonLatPathsUtils;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.redis.RedisCache;
@@ -34,7 +34,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -72,6 +71,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     @Autowired
     private IZdataTrailTracksService trailTracksService;
 
+    @Resource
+    private LonLatPathsUtils lonLatPathsUtils;
+
     /**
      * 查询车辆行驶轨迹
      *
@@ -95,11 +97,11 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         if (null != list && list.size() > 0) {
             for (CarTrackInfo rtn : list) {
 
-                if (CommonUtil.isNotBlank(rtn.getLongitude())){
+                if (CommonUtil.isNotBlank(rtn.getLongitude())) {
                     rtn.setLongitudeDec(new BigDecimal(rtn.getLongitude()));
                 }
 
-                if (CommonUtil.isNotBlank(rtn.getLatitude())){
+                if (CommonUtil.isNotBlank(rtn.getLatitude())) {
                     rtn.setLatitudeDec(new BigDecimal(rtn.getLatitude()));
                 }
             }
@@ -116,19 +118,15 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public AjaxResult saveCarTrackInfo(CarTrackInfo carTrackInfo)
-    {
-        if (CommonUtil.isNotBlank(carTrackInfo.getId()))
-        {
+    public AjaxResult saveCarTrackInfo(CarTrackInfo carTrackInfo) {
+        if (CommonUtil.isNotBlank(carTrackInfo.getId())) {
             // 修改
             carTrackInfoMapper.updateById(carTrackInfo);
-        }
-        else
-        {
+        } else {
             // 新增 主键
             carTrackInfoMapper.insert(carTrackInfo);
         }
-        return AjaxResult.success("操作成功！",carTrackInfo.getId());
+        return AjaxResult.success("操作成功！", carTrackInfo.getId());
     }
 
     /**
@@ -139,8 +137,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public AjaxResult deleteCarTrackInfoByIds(String[] ids)
-    {
+    public AjaxResult deleteCarTrackInfoByIds(String[] ids) {
         int count = carTrackInfoMapper.deleteCarTrackInfoByIds(ids);
         return AjaxResult.success(count);
     }
@@ -152,8 +149,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
      * @return 结果
      */
     @Transactional(rollbackFor = Exception.class)
-    public AjaxResult deleteCarTrackInfoById(String id)
-    {
+    public AjaxResult deleteCarTrackInfoById(String id) {
         int count = carTrackInfoMapper.deleteCarTrackInfoById(id);
         return AjaxResult.success(count);
     }
@@ -181,7 +177,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
         // System.out.println("获取的配置信息：--本地配置："+isLocalhost);
         Boolean isZxFlag = true; // 是否执行
-        if (CommonUtil.isNull(isLocalhost).equals("local")){
+        if (CommonUtil.isNull(isLocalhost).equals("local")) {
             isZxFlag = false;  // 本地不执行
         }
 
@@ -193,7 +189,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             CarInfo car = new CarInfo();
             car.setId(vo.getId());
 
-            if (null != trailInfo){
+            if (null != trailInfo) {
                 ZdataTrailTracks tracksBo = trailInfo.getTracks(); // 轨迹对象
                 String pointUuid = CommonUtil.isNull(tracksBo.getUuid()); // 当前轨迹点
                 List<TrailBo> josnList = trailInfo.getTrailList(); // 轨迹李四
@@ -232,12 +228,12 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     for (int i = 0; i < stationList.size(); i++) {
                         TrailBo trailBo = stationList.get(i);
                         Boolean directionIn = trailBo.getDirectionIn();
-                        if (null != directionIn && directionIn){
+                        if (null != directionIn && directionIn) {
                             inFlag = true;
                         }
                         // 最后一个收费站
                         if (i == stationList.size() - 1) {
-                            if (null != directionIn && !directionIn){
+                            if (null != directionIn && !directionIn) {
                                 // 是使出
                                 outFlag = true;
                             }
@@ -245,12 +241,12 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         }
                     }
 
-                    if (inFlag && outFlag && isZxFlag){
+                    if (inFlag && outFlag && isZxFlag) {
                         // 跟新车俩-----------------------  车的状态修改status 0
                         car.setStatus("0");
                         car.setTrackJosn(null);
-                    }else{
-                        if (trailExits){
+                    } else {
+                        if (trailExits) {
                             // 车的状态修改更新为 status 1  经纬度 last_pass_longitude  last_pass_latitude  josn字符串要更新 track_id track_josn
                             // 车的门架 路段 等数据--------------
                             // 同事要跟新车俩预警  car_warning_info
@@ -295,7 +291,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                 }
                             }
 
-                            if (null != lastBo){
+                            if (null != lastBo) {
                                 car.setStatus("1");
                                 if (null != lastBo.getLon()) {
                                     car.setLastPassLongitude(CommonUtil.isNull(lastBo.getLon()));
@@ -328,22 +324,22 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                     if (null != tracksBo.getEnterTime()) {
                                         carWarningInfo.setInTime(tracksBo.getEnterTime());
                                     }
-                                }else{
+                                } else {
                                     // 入站
                                     carWarningInfo.setInStationId(tracksBo.getFirtStationCode());
                                     carWarningInfo.setInStation(tracksBo.getFirtStationName());
-                                    if (CommonUtil.isNotBlank(tracksBo.getFirtStationTime())){
-                                        carWarningInfo.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,tracksBo.getFirtStationTime()));
+                                    if (CommonUtil.isNotBlank(tracksBo.getFirtStationTime())) {
+                                        carWarningInfo.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS, tracksBo.getFirtStationTime()));
                                     }
                                 }
 
                                 // 抓拍设备
-                                if (CommonUtil.isNotBlank(lastBo.getDevCode())){
+                                if (CommonUtil.isNotBlank(lastBo.getDevCode())) {
 
                                     carWarningInfo.setGantryStationId(lastBo.getDevCode());
                                     carWarningInfo.setGantrytStation(lastBo.getDevName());
-                                    if (CommonUtil.isNotBlank(lastBo.getCaptureTime())){
-                                        carWarningInfo.setGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,lastBo.getCaptureTime()));
+                                    if (CommonUtil.isNotBlank(lastBo.getCaptureTime())) {
+                                        carWarningInfo.setGantryTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS, lastBo.getCaptureTime()));
                                     }
                                     carWarningInfo.setFileIds(CommonUtil.isNull(lastBo.getImagesArry()));
 
@@ -357,7 +353,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                     carWarningInfo.setRoadCode(lastBo.getRoadCode()); // 路线
                                     carWarningInfo.setSectionCode(lastBo.getSectionCode());
 
-                                    if (CommonUtil.isNotBlank(pointUuid)){
+                                    if (CommonUtil.isNotBlank(pointUuid)) {
                                         delCarWarningInfoList.add(pointUuid);
                                     }
 
@@ -367,23 +363,23 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
                                     addCarWarningInfoList.add(carWarningInfo);
                                 }
-                            }else{
+                            } else {
                                 // 跟新车俩-----------------------  车的状态修改status 0
                                 car.setStatus("0");
                                 car.setTrackJosn(null);
                             }
-                        }else{
+                        } else {
                             // 跟新车俩-----------------------  车的状态修改status 0
                             car.setStatus("0");
                             car.setTrackJosn(null);
                         }
                     }
-                }else{
+                } else {
                     // 跟新车俩-----------------------  车的状态修改status 0
                     car.setStatus("0");
                     car.setTrackJosn(null);
                 }
-            }else{
+            } else {
                 // 跟新车俩-----------------------  车的状态修改status 0
                 car.setStatus("0");
                 car.setTrackJosn(null);
@@ -498,6 +494,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
      *
      * @return 结果
      */
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public AjaxResult syncHistoryTrack() {
         // 查询所有的车俩
@@ -511,6 +508,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
      *
      * @return 结果
      */
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public AjaxResult syncHistoryTrackNoCar() {
         // 查询所有的车俩
@@ -521,7 +519,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         return AjaxResult.success();
     }
 
-    private void saveTrailTracksHistory(List<CarInfo> carList){
+    private void saveTrailTracksHistory(List<CarInfo> carList) {
         List<String> carNoList = new ArrayList<>();
         // 找到下一个位置
         List<ZdataTrailTracks> addlist = new ArrayList<>();
@@ -535,45 +533,44 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     List<TrailBo> trailList = trailInfo.getTrailList(); // trailPoints
                     tracksBo.setPlateKey(carNo);
                     tracksBo.setPointCount(0L);
-                    if (null !=trailList){
+                    if (null != trailList) {
                         tracksBo.setTrackJosn(JSON.toJSONString(trailList));
-                        tracksBo.setPointCount(Long.parseLong(trailList.size()+""));
+                        tracksBo.setPointCount(Long.parseLong(trailList.size() + ""));
                     }
                     carNoList.add(carNo);
                     addlist.add(tracksBo);
                 }
             }
         }
-        if (carNoList.size() > 0){
+        if (carNoList.size() > 0) {
             trailTracksService.removeRealData(carNoList);
         }
-        if (addlist.size()>0){
+        if (addlist.size() > 0) {
             trailTracksService.saveBatch(addlist);
         }
     }
 
 
-
     @Override
-    public List<Geometry> getCarGeometry(ZdataTrailTracks tracksBo,List<TrailBo> josnList) {
+    public List<Geometry> getCarGeometry(ZdataTrailTracks tracksBo, List<TrailBo> josnList) {
 
         List<Geometry> raodTrailList = new ArrayList<>();
         // 去掉重复的桩号
-        LinkedHashMap<String,List<TrailBo>> map = new LinkedHashMap<>(2);
+        LinkedHashMap<String, List<TrailBo>> map = new LinkedHashMap<>(2);
 
         for (TrailBo trailBo : josnList) {
-            String roadCode =  CommonUtil.isNull(trailBo.getRoadCode()); // 路线编号
+            String roadCode = CommonUtil.isNull(trailBo.getRoadCode()); // 路线编号
             String pileno = CommonUtil.isNull(trailBo.getPileno()); // 桩号
-            if (CommonUtil.isNotBlank(roadCode) && CommonUtil.isNotBlank(pileno)){
+            if (CommonUtil.isNotBlank(roadCode) && CommonUtil.isNotBlank(pileno)) {
                 String changPileno = pileno.replace("+", ".").replace("ZK", "").replace("YK", "").replace("K", "");
                 // log.info("原始桩号{}变化后桩号{}",pileno, changPileno);
                 trailBo.setPilenoDec(new BigDecimal(changPileno));
                 List<TrailBo> roadCodeList = new ArrayList<>();
-                if (map.containsKey(roadCode)){
+                if (map.containsKey(roadCode)) {
                     roadCodeList = map.get(roadCode);
                 }
                 roadCodeList.add(trailBo);
-                map.put(roadCode,roadCodeList);
+                map.put(roadCode, roadCodeList);
             }
         }
 
@@ -585,16 +582,15 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             List<TrailBo> trailBoList = entry.getValue(); // 轨迹点
 
             int reserver = 0;
-            if(null !=trailBoList && trailBoList.size() >0){
+            if (null != trailBoList && trailBoList.size() > 0) {
                 BigDecimal pilenoDec1 = trailBoList.get(0).getPilenoDec();
                 BigDecimal pilenoDec2 = trailBoList.get(trailBoList.size() - 1).getPilenoDec();
-                if(pilenoDec1.compareTo(pilenoDec2) > 0)
-                {
+                if (pilenoDec1.compareTo(pilenoDec2) > 0) {
                     reserver = 1;
                 }
 
                 // 按照桩号排序----------
-                trailBoList =  trailBoList.stream().sorted(Comparator.comparing(TrailBo::getPilenoDec))
+                trailBoList = trailBoList.stream().sorted(Comparator.comparing(TrailBo::getPilenoDec))
                         .collect(Collectors.toList());
 
                 Geometry geometryQuery = new Geometry();
@@ -603,11 +599,11 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                 BigDecimal bigDecimalFirst = trailBoList.get(0).getPilenoDec();
                 int sq = bigDecimalFirst.setScale(4, RoundingMode.HALF_UP).intValue(); // 舍入到最接近的整数
                 int sz = 0;
-                if (trailBoList.size() > 1){
+                if (trailBoList.size() > 1) {
                     // ------------终点
-                    BigDecimal bigDecimalEnd = trailBoList.get(trailBoList.size() -1).getPilenoDec();
+                    BigDecimal bigDecimalEnd = trailBoList.get(trailBoList.size() - 1).getPilenoDec();
                     sz = bigDecimalEnd.setScale(4, RoundingMode.HALF_UP).intValue() + 1; // 舍入到最接近的整数
-                }else {
+                } else {
                     sz = sq;
                 }
 
@@ -654,28 +650,26 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                             countNum++;
                         }
 
-                        if (countNum > 0){
+                        if (countNum > 0) {
                             addlist.add(filtbo);
                         }
                     }
                 }
 
 
-
-                if (null !=addlist && addlist.size() > 0){
+                if (null != addlist && addlist.size() > 0) {
                     // 把路线所有的轨迹点拼接出来
                     Geometry rtnGeometry = new Geometry();
                     rtnGeometry.setLxbh(roadCode);
                     JSONArray pathsJSONArray = new JSONArray();
                     for (Geometry queryGeometry : addlist) {
-                        String paths =  queryGeometry.getPaths();
-                        if (CommonUtil.isNotBlank(paths)){
+                        String paths = queryGeometry.getPaths();
+                        if (CommonUtil.isNotBlank(paths)) {
                             JSONArray objects = JSONUtil.parseArray(paths);
                             pathsJSONArray.addAll(objects);
                         }
                     }
-                    if(reserver == 1)
-                    {
+                    if (reserver == 1) {
                         Collections.reverse(pathsJSONArray);
                     }
                     rtnGeometry.setPaths(pathsJSONArray.toString());
@@ -686,18 +680,51 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         return raodTrailList;
     }
 
+    @Override
+    public List<Geometry> getCarGeometryByPlan(ZdataTrailTracks tracksBo, List<TrailBo> josnList) {
+        if (null == tracksBo.getStartLonDec() || null == tracksBo.getStratLatDec() ||
+                null == tracksBo.getEndLonDec() || null == tracksBo.getEndLatDec()) {
+            return Collections.emptyList();
+        } else {
+            StringBuilder wayPoints = new StringBuilder();
+            for (TrailBo trailBo : josnList) {
+                if (null != trailBo.getLon() && null != trailBo.getLat()) {
+                    double lon = trailBo.getLon().doubleValue();
+                    double lat = trailBo.getLat().doubleValue();
+
+                    double[] doubles = GpsUtil.gps84_To_Gcj02(lat, lon);
+                    if(wayPoints.length() > 0)
+                    {
+                        wayPoints.append(";");
+                    }
+                    wayPoints.append(doubles[0]).append(",").append(doubles[1]);
+                }
+            }
+            String paths =
+                    lonLatPathsUtils.calcLonAndLatPaths(tracksBo.getStartLonDec().toPlainString(), tracksBo.getStratLatDec().toPlainString(),
+                        tracksBo.getEndLonDec().toPlainString(), tracksBo.getEndLatDec().toPlainString(), "", wayPoints.toString());
+            Geometry rtnGeometry = new Geometry();
+            rtnGeometry.setPaths(paths);
+            List<Geometry> rtn = new ArrayList<>();
+            rtn.add(rtnGeometry);
+            return rtn;
+        }
+    }
+
     /**
      * 根据桩号转换轨迹经纬度
+     *
      * @param josnList
      * @return
      */
-    public  TrailDevCountBO getTrailDevBO(List<TrailBo> josnList){
+    @Override
+    public TrailDevCountBO getTrailDevBO(List<TrailBo> josnList) {
 
         TrailDevCountBO trailDevCountBO = new TrailDevCountBO();
         Integer exceptNum = 0;
         List<TrailDevBO> TrailDevList = new ArrayList<>();
 
-        Map<String,List<TrailBo>> map = new HashMap<>();
+        Map<String, List<TrailBo>> map = new HashMap<>();
 
         List<TrailBo> rtnList = new ArrayList<>();
 
@@ -710,7 +737,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     List<TrailBo> templist = new ArrayList<>();
                     if (map.containsKey(devName)) {
                         templist = map.get(devName); // 重复的对象合并
-                    }else{
+                    } else {
                         rtnList.add(trailBo); // 去掉重复的
                     }
                     templist.add(trailBo);
@@ -718,7 +745,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                 } else {
                     rtnList.add(trailBo);
                 }
-            }else{
+            } else {
                 rtnList.add(trailBo);
             }
         }
@@ -731,7 +758,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             List<TrailBo> trailList = new ArrayList<>();
 
             if (stateType.equals(Constants.GANTRY_CAPTURE) || stateType.equals(Constants.FeeRecord)) {
-                if(map.containsKey(devName)){
+                if (map.containsKey(devName)) {
                     trailList = map.get(devName);
                     // 判断异常数量
                     int conutGantryCapture = 0;
@@ -750,10 +777,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         trailDevBO.setStatus("1");  // 异常数据
                         exceptNum++;
                     }
-                }else{
+                } else {
                     trailList.add(trailBo);
                 }
-            }else{
+            } else {
                 trailList.add(trailBo);
             }
             trailDevBO.setDevName(devName);

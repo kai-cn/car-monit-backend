@@ -82,6 +82,8 @@ public interface ICarTrackInfoService extends IService<CarTrackInfo> {
      */
     List<Geometry> getCarGeometry(ZdataTrailTracks tracksBo,List<TrailBo> josnList);
 
+    List<Geometry> getCarGeometryByPlan(ZdataTrailTracks tracksBo,List<TrailBo> josnList);
+
 
     /**
      * 根据桩号转换轨迹经纬度
