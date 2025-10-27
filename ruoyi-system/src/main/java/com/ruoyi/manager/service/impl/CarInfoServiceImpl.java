@@ -70,9 +70,6 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                 if (CommonUtil.isNotBlank(trackJosn)) {
                     trailInfo = JSON.parseObject(trackJosn, TrailInfo.class);
                     carTrailList = trailInfo.getTrailList();
-                    if (null != carTrailList && carTrailList.size() > 0){
-                        raodTrailList = carTrackInfoService.getCarGeometry(trailInfo.getTracks(),carTrailList);
-                    }
                     // 轨迹值还原
                     ZdataTrailTracks tracks = trailInfo.getTracks();
                     if (null !=tracks){
@@ -89,6 +86,10 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                             tracks.setEndLatDec(new BigDecimal(tracks.getEndLat()));
                         }
                     }
+                    if (null != carTrailList && carTrailList.size() > 0){
+                        raodTrailList = carTrackInfoService.getCarGeometry(tracks,carTrailList);
+                    }
+
                 }
             }
 
