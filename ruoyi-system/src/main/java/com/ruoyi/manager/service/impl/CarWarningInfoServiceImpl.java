@@ -19,9 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * 预警车辆Service业务层处理
@@ -77,14 +75,23 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
                 }
 
                 // 循环cylylist
+                Map<String,String> nameMap = new HashMap<>();
                 for (List<TrailBo> list : cylylist) {
                     String indexType = Constants.SERVICE_AREA_CAPTURE;
                     if (CommonUtil.isNull(isLocalhost).equals("local")){
                         indexType = Constants.STATION_CAPTURE;
                     }
+                    // 需要去掉重复的数据
                     for (TrailBo trailBo : list) {
                         if(indexType.equals(CommonUtil.isNull(trailBo.getStateType()))){
-                            trailFwqList.add(trailBo);
+                            String devName = CommonUtil.isNull(trailBo.getDevName());
+                            if (!devName.equals("")){
+                                if (nameMap.containsKey(devName)){
+                                }else{
+                                    trailFwqList.add(trailBo);
+                                    nameMap.put(devName,devName);
+                                }
+                            }
                         }
                     }
                 }

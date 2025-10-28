@@ -74,8 +74,8 @@ public class TrackTask {
      */
     @Transactional(rollbackFor = Exception.class)
     public void syncHistoryTrackNoCar() {
-        log.info("车俩历史轨迹同步开始同步！"+new Date());
+       /* log.info("车俩历史轨迹同步开始同步！"+new Date());
         carTrackInfoService.syncHistoryTrackNoCar();
-        log.info("车俩历史轨迹同步结束同步！"+new Date());
+        log.info("车俩历史轨迹同步结束同步！"+new Date());*/
     }
 }
