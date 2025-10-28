@@ -326,7 +326,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
 
                                 // 入口收费站编号
-                                if (CommonUtil.isNotBlank(tracksBo.getEntollstationid())) {
+                               /* if (CommonUtil.isNotBlank(tracksBo.getEntollstationid())) {
                                     // 第一个收费站
                                     carWarningInfo.setInStationId(tracksBo.getEntollstationid());
                                     carWarningInfo.setInStation(tracksBo.getEntollstationname());
@@ -334,12 +334,13 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                         carWarningInfo.setInTime(tracksBo.getEnterTime());
                                     }
                                 }else{
-                                    // 入站
-                                    carWarningInfo.setInStationId(tracksBo.getFirtStationCode());
-                                    carWarningInfo.setInStation(tracksBo.getFirtStationName());
-                                    if (CommonUtil.isNotBlank(tracksBo.getFirtStationTime())){
-                                        carWarningInfo.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,tracksBo.getFirtStationTime()));
-                                    }
+
+                                }*/
+                                // 入站
+                                carWarningInfo.setInStationId(tracksBo.getFirtStationCode());
+                                carWarningInfo.setInStation(tracksBo.getFirtStationName());
+                                if (CommonUtil.isNotBlank(tracksBo.getFirtStationTime())){
+                                    carWarningInfo.setInTime(DateUtils.dateTime(DateUtils.YYYY_MM_DD_HH_MM_SS,tracksBo.getFirtStationTime()));
                                 }
 
                                 // 抓拍设备
