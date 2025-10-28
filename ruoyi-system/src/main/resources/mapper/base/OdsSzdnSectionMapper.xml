@@ -94,7 +94,6 @@
         <if test="orgCategory != null  and orgCategory != ''"> and t.org_category = #{orgCategory}</if>
         <if test="mileage != null "> and t.mileage = #{mileage}</if>
         <if test="openDate != null "> and t.open_date = #{openDate}</if>
-        order by t.road_code,concat(t.road_code, '', t.section_name)
     </select>
 
 
