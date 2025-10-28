@@ -7,6 +7,7 @@ import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.IZdataTrailTracksService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.annotation.Log;
+import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.constant.HttpStatus;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -46,15 +47,13 @@ public class CarTrackInfoController extends BaseController {
     @Resource
     private HttpSysUtilApiService httpSysUtilApiService;
 
-    @Autowired
-    private ICarInfoService carInfoService;
 
-    @Autowired
-    private IGeometryService geometryService;
 
 
     @Autowired
     private IZdataTrailTracksService zdataTrailTracksService;
+
+
 
     /**
      * 查询车辆行驶轨迹列表
@@ -113,10 +112,12 @@ public class CarTrackInfoController extends BaseController {
         */
 
         // ----------------------- 查询自己表结构
-
+        zdataTrailTracks.setCarNo(CommonUtil.isNull(zdataTrailTracks.getCarNo()));
         if (CommonUtil.isBlank(zdataTrailTracks.getCarNo())) {
             zdataTrailTracks.setCarNo("-1");
         }
+
+
         startPage();
         List<ZdataTrailTracks> carlist = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
 
@@ -171,7 +172,25 @@ public class CarTrackInfoController extends BaseController {
                 trailList = JSON.parseArray(trackJosn, TrailInfo.class);
                 trailList = trailList.stream().sorted(Comparator.comparing(TrailInfo::getEnterTime).reversed())
                         .collect(Collectors.toList());
+
+                List<String> carNoList = new ArrayList<>();
+                // 找到下一个位置
+                List<ZdataTrailTracks> addlist = new ArrayList<>();
+                carNoList.add(zdataTrailTracks.getCarNo());
                 for (TrailInfo trailInfo : trailList) {
+
+                    //  ------------------新增
+                    ZdataTrailTracks tracksBo = trailInfo.getTracks();
+                    String carNo = CommonUtil.isNull(tracksBo.getPlateKey());
+                    List<TrailBo> josnList = trailInfo.getTrailList(); // trailPoints
+                    tracksBo.setPlateKey(carNo);
+                    tracksBo.setPointCount(0L);
+                    if (null != josnList) {
+                        tracksBo.setTrackJosn(JSON.toJSONString(josnList));
+                        tracksBo.setPointCount(Long.parseLong(josnList.size() + ""));
+                    }
+                    addlist.add(tracksBo);
+
 
                     // 路线
                     List<Geometry> raodTrailList = new ArrayList<>();
@@ -188,10 +207,17 @@ public class CarTrackInfoController extends BaseController {
                     rtnList.add(trailInfo);
 
                 }
+
+                if (carNoList.size() > 0){
+                    zdataTrailTracksService.removeRealData(carNoList);
+                }
+                if (addlist.size() > 0) {
+                    zdataTrailTracksService.saveBatch(addlist);
+                }
+
+
                 totalNum = tableDataInfo.getTotal();
             }
-
-
         }
 
         TableDataInfo rspData = new TableDataInfo();
