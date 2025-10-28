@@ -136,8 +136,8 @@ public class CarTrackInfoController extends BaseController {
             if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
                 String trackJosn =JSON.toJSONString(tableDataInfo.getRows());
                 trailList = JSON.parseArray(trackJosn, TrailInfo.class);
-                trailList = trailList.stream().sorted(Comparator.comparing(TrailInfo::getEnterTime).reversed())
-                        .collect(Collectors.toList());
+               /* trailList = trailList.stream().sorted(Comparator.comparing(TrailInfo::getEnterTime).reversed())
+                        .collect(Collectors.toList());*/
 
                 // 车辆的轨迹
                 String historyKey = Constants.car_history_trail + zdataTrailTracks.getCarNo();

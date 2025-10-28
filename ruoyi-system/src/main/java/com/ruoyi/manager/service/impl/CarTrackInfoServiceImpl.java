@@ -460,11 +460,11 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         } else {
                             nextbo.setCountNum(0);
                         }
+
                     }
 
                     // 按照先countNum排序 然后按照抓拍时间
-                    nextBoList = nextBoList.stream().sorted(
-                            Comparator.comparing(TrailBo::getCountNum).reversed().thenComparing(TrailBo::getCaptureTime).reversed()
+                    nextBoList = nextBoList.stream().sorted(Comparator.comparing(TrailBo::getCountNum).reversed()
                     ).collect(Collectors.toList());
 
                     TrailBo lastTrailBo = nextBoList.get(0);
