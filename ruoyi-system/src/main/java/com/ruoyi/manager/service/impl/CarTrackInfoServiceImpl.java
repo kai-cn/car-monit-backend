@@ -323,7 +323,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                 car.setGantryCode(CommonUtil.deleteEnd(devCodes));
 
                                 /*if (lastMjBo !=null){
-                                    
+
                                 }*/
 
                                 // 预警信息
