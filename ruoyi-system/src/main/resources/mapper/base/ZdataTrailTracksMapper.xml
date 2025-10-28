@@ -142,18 +142,31 @@
 
 
     <select id="getCyly" parameterType="com.ruoyi.base.domain.ZdataTrailTracks" resultMap="ZdataTrailTracksResult">
-        SELECT *
-            FROM (SELECT uuid,
-            ROW_NUMBER() OVER (
-            PARTITION BY t.plate_key, t.entollstationid, t.extollstationid
-            ORDER BY t.enter_time DESC
-            ) as rn
-            FROM zdata_trail_tracks t where 1=1
-        <if test="carNo != null  and carNo != ''"> and t.plate_key = #{carNo} </if>
-        <if test="applyTime1 != null  and applyTime1 != ''">and t.enter_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
-        <if test="applyTime2 != null  and applyTime2 != ''">and t.enter_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
-        ) ranked
-        WHERE rn <![CDATA[<=]]> 3
+        SELECT
+        uuid
+        FROM (SELECT
+        t.uuid,
+        ROW_NUMBER() OVER (
+        PARTITION BY t.plate_key, t.entollstationid, t.extollstationid
+        ORDER BY t.enter_time DESC
+        ) as rn
+        FROM zdata_trail_tracks t
+        INNER JOIN (SELECT
+            plate_key,
+            entollstationid,
+            extollstationid,
+            COUNT(*) as usage_count
+            FROM zdata_trail_tracks t
+            WHERE  1=1
+            <if test="carNo != null  and carNo != ''"> and t.plate_key = #{carNo} </if>
+            <if test="applyTime1 != null  and applyTime1 != ''">and t.enter_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+            <if test="applyTime2 != null  and applyTime2 != ''">and t.enter_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+            GROUP BY plate_key, entollstationid, extollstationid
+            ORDER BY usage_count DESC
+            LIMIT 3) gc ON t.plate_key = gc.plate_key
+                        AND t.entollstationid = gc.entollstationid
+                        AND t.extollstationid = gc.extollstationid) a
+        WHERE rn = 1
     </select>
 
 
