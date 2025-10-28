@@ -12,6 +12,7 @@ import com.ruoyi.common.constant.HttpStatus;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.poi.ExcelUtil;
@@ -48,7 +49,8 @@ public class CarTrackInfoController extends BaseController {
     private HttpSysUtilApiService httpSysUtilApiService;
 
 
-
+    @Autowired
+    private RedisCache redisCache;
 
     @Autowired
     private IZdataTrailTracksService zdataTrailTracksService;
@@ -137,6 +139,10 @@ public class CarTrackInfoController extends BaseController {
                 trailList = trailList.stream().sorted(Comparator.comparing(TrailInfo::getEnterTime).reversed())
                         .collect(Collectors.toList());
 
+                // 车辆的轨迹
+                String historyKey = Constants.car_history_trail + zdataTrailTracks.getCarNo();
+                redisCache.setCacheObject(historyKey, trailList);
+
                 List<String> carNoList = new ArrayList<>();
                 // 找到下一个位置
                 List<ZdataTrailTracks> addlist = new ArrayList<>();
@@ -147,6 +153,8 @@ public class CarTrackInfoController extends BaseController {
                     ZdataTrailTracks tracksBo = trailInfo.getTracks();
                     String carNo = CommonUtil.isNull(tracksBo.getPlateKey());
                     List<TrailBo> josnList = trailInfo.getTrailList(); // trailPoints
+
+
                     tracksBo.setPlateKey(carNo);
                     tracksBo.setPointCount(0L);
                     if (null != josnList) {
