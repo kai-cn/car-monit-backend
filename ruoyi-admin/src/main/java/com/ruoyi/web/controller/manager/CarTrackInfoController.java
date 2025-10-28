@@ -91,15 +91,7 @@ public class CarTrackInfoController extends BaseController {
             carTrackInfo.setCarNo("-1");
         }
 
-        // ----------------------- 查询接口
-        CarParaVO carParaVO = new CarParaVO();
-        carParaVO.setCarNo(carTrackInfo.getCarNo()); // 车牌号
-        carParaVO.setApplyTime1(carTrackInfo.getApplyTime1());
-        carParaVO.setApplyTime2(carTrackInfo.getApplyTime2());
-        carParaVO.setPageNum(carTrackInfo.getPageNum());
-        carParaVO.setPageSize(carTrackInfo.getPageSize());
 
-        TableDataInfo tableDataInfo = httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
 
         List<TrailInfo> trailList = new ArrayList<>();
         if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
@@ -127,6 +119,10 @@ public class CarTrackInfoController extends BaseController {
         }
         startPage();
         List<ZdataTrailTracks> carlist = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
+
+        // 如果查询数据为空
+        long totalNum = new PageInfo(carlist).getTotal();
+
         List<TrailInfo> rtnList = new ArrayList<>();
         if (null != carlist && carlist.size() > 0) {
             for (ZdataTrailTracks tracksBo : carlist) {
@@ -158,13 +154,51 @@ public class CarTrackInfoController extends BaseController {
                     rtnList.add(trailInfo);
                 }
             }
+        }else{
+            // ----------------------- 查询接口
+            CarParaVO carParaVO = new CarParaVO();
+            carParaVO.setCarNo(zdataTrailTracks.getCarNo()); // 车牌号
+           /* carParaVO.setApplyTime1(zdataTrailTracks.getApplyTime1());
+            carParaVO.setApplyTime2(zdataTrailTracks.getApplyTime2());*/
+            carParaVO.setPageNum(1);
+            carParaVO.setPageSize(20);
+
+            TableDataInfo tableDataInfo = httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
+
+            List<TrailInfo> trailList = new ArrayList<>();
+            if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
+                String trackJosn =JSON.toJSONString(tableDataInfo.getRows());
+                trailList = JSON.parseArray(trackJosn, TrailInfo.class);
+                trailList = trailList.stream().sorted(Comparator.comparing(TrailInfo::getEnterTime).reversed())
+                        .collect(Collectors.toList());
+                for (TrailInfo trailInfo : trailList) {
+
+                    // 路线
+                    List<Geometry> raodTrailList = new ArrayList<>();
+                    trailInfo.setRaodTrailList(raodTrailList);
+
+                    // 集合列表
+                    TrailDevCountBO trailDevCountBO = new TrailDevCountBO();
+                    Integer exceptNum = 0;
+                    List<TrailDevBO> TrailDevList = new ArrayList<>();
+                    trailDevCountBO.setExceptNum(exceptNum);
+                    trailDevCountBO.setTrailDevList(TrailDevList);
+                    trailInfo.setTrailDevCountBO(trailDevCountBO);
+
+                    rtnList.add(trailInfo);
+
+                }
+                totalNum = tableDataInfo.getTotal();
+            }
+
+
         }
 
         TableDataInfo rspData = new TableDataInfo();
         rspData.setCode(HttpStatus.SUCCESS);
         rspData.setMsg("查询成功");
         rspData.setRows(rtnList);
-        rspData.setTotal(new PageInfo(carlist).getTotal());
+        rspData.setTotal(totalNum);
         return rspData;
 
 
