@@ -262,6 +262,8 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                             // 进度和维度
                             TrailBo lastBo = null;
 
+                            TrailBo lastMjBo = null;
+
                             String devCodes = "";  // 设备所有的集合
                             for (TrailBo trailBo : josnList) {
 
@@ -287,9 +289,22 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                     }
                                 }
 
+                              /*  if (stateType.equals(Constants.BORDER_WEIGHING_CAPTURE)
+                                        || stateType.equals(Constants.GANTRY_CAPTURE)
+                                        || stateType.equals(Constants.PROV_CAPTURE)
+                                        || stateType.equals(Constants.SERVICE_AREA_CAPTURE)
+                                        || stateType.equals(Constants.STATION_CAPTURE)
+                                ){
+
+                                }*/
+                                if (null != trailBo.getLon() && null != trailBo.getLat() && CommonUtil.isNotBlank(trailBo.getDevCode())) {
+                                    lastBo = trailBo;
+                                }
+
+
                                 if (stateType.equals(Constants.GANTRY_CAPTURE)){
                                     if (null != trailBo.getLon() && null != trailBo.getLat() && CommonUtil.isNotBlank(trailBo.getDevCode())) {
-                                        lastBo = trailBo;
+                                        lastMjBo = trailBo;
                                     }
                                 }
 
@@ -306,6 +321,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                 }
                                 car.setTrackJosn(JSON.toJSON(trailInfo) + "");
                                 car.setGantryCode(CommonUtil.deleteEnd(devCodes));
+
+                                /*if (lastMjBo !=null){
+                                    
+                                }*/
 
                                 // 预警信息
                                 CarWarningInfo carWarningInfo = new CarWarningInfo();
