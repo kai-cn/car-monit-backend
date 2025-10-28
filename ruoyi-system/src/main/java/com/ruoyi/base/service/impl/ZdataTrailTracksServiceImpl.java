@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 轨迹数据Service业务层处理
@@ -58,13 +59,11 @@ public class ZdataTrailTracksServiceImpl extends ServiceImpl<ZdataTrailTracksMap
         String isCylx = CommonUtil.isNull(zdataTrailTracks.getIsCylx()); // 是否常用路线
         if (isCylx.equals("1")){
             List<ZdataTrailTracks> cylist =  zdataTrailTracksMapper.getCyly(zdataTrailTracks);
-            if (null !=cylist && cylist.size() > 0){
-                zdataTrailTracks.setEntollstationid(cylist.get(0).getEntollstationid());
+            if (null !=cylist && cylist.size() > 0) {
+                zdataTrailTracks.setUuidList(cylist.stream().map(ZdataTrailTracks::getUuid).collect(Collectors.toList()));
                 list = zdataTrailTracksMapper.getHistoryTrail(zdataTrailTracks);
                 if (null != list && list.size() > 0){
-                    List<ZdataTrailTracks> rtnlist = new ArrayList<>();
-                    rtnlist.add(list.get(0));
-                    return rtnlist;
+                    return new ArrayList<>(list);
                 }
             }
         }else{

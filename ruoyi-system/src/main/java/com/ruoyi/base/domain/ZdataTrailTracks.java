@@ -13,6 +13,7 @@ import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 轨迹数据对象 zdata_trail_tracks
@@ -243,5 +244,7 @@ public class ZdataTrailTracks implements Custom {
     @TableField(exist = false)
     private BigDecimal endLatDec;
 
+    @TableField(exist = false)
+    private List<String> uuidList;
 
 }
