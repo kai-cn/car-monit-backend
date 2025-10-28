@@ -785,6 +785,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         if (null == tracksBo.getStartLonDec() || null == tracksBo.getStratLatDec() ||
                 null == tracksBo.getEndLonDec() || null == tracksBo.getEndLatDec())
         {
+            log.info("起始和终点位置不存在-----------");
             return this.getCarGeometry(tracksBo,josnList);
         }
         else {
@@ -813,6 +814,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             Geometry rtnGeometry = new Geometry();
             if(null == paths)
             {
+                log.info("调用API找不到位置不存在-----------");
                 return this.getCarGeometry(tracksBo,josnList);
             }
             rtnGeometry.setLxbh(lxbh);
