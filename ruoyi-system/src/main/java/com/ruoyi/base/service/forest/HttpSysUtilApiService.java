@@ -42,14 +42,14 @@ public interface HttpSysUtilApiService {
     TableDataInfo carTrackQueryByTime(@Query CarParaVO carParaVO);
 
 
-    /**
+  /*  *//**
      * 数据转换------------------
      *
      * @param trailInfo
      * @return
-     */
+     *//*
     @Post("/changeTrailInfo")
-    TrailInfo changeTrailInfo(@JSONBody TrailInfo trailInfo);
+    TrailInfo changeTrailInfo(@JSONBody TrailInfo trailInfo);*/
 
 
 
