@@ -304,10 +304,10 @@ public class CarTrackInfoController extends BaseController {
             List<TrailBo> josnList = trailInfo.getTrailList();
             if (null != tracks && null != josnList && josnList.size() > 0) {
                 // 转换查询
-                TrailInfo rtn = httpSysUtilApiService.changeTrailInfo(trailInfo);
+               //  TrailInfo rtn = httpSysUtilApiService.changeTrailInfo(trailInfo);
 
                 // 获取抓拍对象
-                trailInfo.setTrailList(rtn.getTrailList());
+                trailInfo.setTrailList(josnList);
                 josnList = trailInfo.getTrailList(); // 新的数据--------------
                 List<Geometry> raodTrailList = new ArrayList<>();
                 if (null != josnList && josnList.size() > 0) {

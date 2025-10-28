@@ -73,7 +73,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                 if (CommonUtil.isNotBlank(trackJosn)) {
                     trailInfo = JSON.parseObject(trackJosn, TrailInfo.class);
                     // 转换查询
-                    trailInfo = httpSysUtilApiService.changeTrailInfo(trailInfo);
+                    // trailInfo = httpSysUtilApiService.changeTrailInfo(trailInfo);
                     // 轨迹值还原
                     ZdataTrailTracks tracks = trailInfo.getTracks();
                     carTrailList = trailInfo.getTrailList();
