@@ -8,6 +8,7 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.common.utils.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,6 +36,10 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
     @PreAuthorize("@ss.hasPermi('base:feerecords:list')")
     @GetMapping("/list")
     public TableDataInfo list(OdsLwzxsfsjFeeRecords01 odsLwzxsfsjFeeRecords01) {
+        String vehicleplate = odsLwzxsfsjFeeRecords01.getVehicleplate();
+        if(StringUtils.isBlank(vehicleplate)) {
+            return new TableDataInfo();
+        }
         // 当前页面
         if (null == odsLwzxsfsjFeeRecords01.getPageNum()){
             odsLwzxsfsjFeeRecords01.setPageNum(1);

@@ -5,6 +5,7 @@ import com.ruoyi.base.service.forest.HttpOdsRtSzdnSnapshotFlowAddcodeService;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.utils.StringUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,7 +33,10 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
     @PreAuthorize("@ss.hasPermi('base:snapshotflow:list')")
     @GetMapping("/list")
     public TableDataInfo list(OdsRtSzdnSnapshotFlowAddcode odsRtSzdnSnapshotFlowAddcode) {
-
+        String platenumber = odsRtSzdnSnapshotFlowAddcode.getPlatenumber();
+        if(StringUtils.isBlank(platenumber)) {
+            return new TableDataInfo();
+        }
         // 当前页面
         if (null == odsRtSzdnSnapshotFlowAddcode.getPageNum()){
             odsRtSzdnSnapshotFlowAddcode.setPageNum(1);
