@@ -324,7 +324,7 @@ public class CarTrackInfoController extends BaseController {
 
 
     @GetMapping(value = "/carSnapShot")
-    public AjaxResult carSnapShot(@RequestBody TrailBo trailBo) {
+    public AjaxResult carSnapShot(TrailBo trailBo) {
         if(null != trailBo) {
             String stateType = CommonUtil.isNull(trailBo.getStateType());
             String pointUuid = trailBo.getPointUuid();
