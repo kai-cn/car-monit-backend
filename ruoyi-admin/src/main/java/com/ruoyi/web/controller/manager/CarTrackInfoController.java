@@ -20,6 +20,7 @@ import com.ruoyi.manager.domain.CarTrackInfo;
 import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -322,6 +323,18 @@ public class CarTrackInfoController extends BaseController {
     }
 
 
+    @GetMapping(value = "/carSnapShot")
+    public AjaxResult carSnapShot(@RequestBody TrailBo trailBo) {
+        if(null != trailBo) {
+            String stateType = CommonUtil.isNull(trailBo.getStateType());
+            String pointUuid = trailBo.getPointUuid();
+            if(StringUtils.isNoneBlank(stateType, pointUuid)) {
+                TrailBo bo = httpSysUtilApiService.getByTrailBo(trailBo);
+                return AjaxResult.success(bo);
+            }
+        }
+        return AjaxResult.success();
+    }
 
     /**
      * 导出车辆行驶轨迹列表

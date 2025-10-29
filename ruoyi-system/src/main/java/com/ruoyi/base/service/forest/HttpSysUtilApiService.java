@@ -3,6 +3,7 @@ package com.ruoyi.base.service.forest;
 
 import com.dtflys.forest.annotation.*;
 import com.ruoyi.base.domain.CarParaVO;
+import com.ruoyi.base.domain.TrailBo;
 import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -45,13 +46,14 @@ public interface HttpSysUtilApiService {
   /*  *//**
      * 数据转换------------------
      *
-     * @param trailInfo
+     * @param
      * @return
      *//*
     @Post("/changeTrailInfo")
     TrailInfo changeTrailInfo(@JSONBody TrailInfo trailInfo);*/
 
-
+    @Get("/getByTrailBo")
+    TrailBo getByTrailBo(@Query TrailBo trailBo);
 
 
 }
