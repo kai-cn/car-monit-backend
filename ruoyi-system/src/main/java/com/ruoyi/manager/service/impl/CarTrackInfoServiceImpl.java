@@ -801,6 +801,11 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             return this.getCarGeometry(tracksBo,josnList);
         }
         else {
+
+            String key = Constants.car_lxgh + CommonUtil.isNull(tracksBo.getPlateKey()) + CommonUtil.isNull(tracksBo.getStartLonDec())
+                    + CommonUtil.isNull(tracksBo.getStratLatDec())  + CommonUtil.isNull(tracksBo.getEndLonDec()) + CommonUtil.isNull(tracksBo.getEndLatDec())
+                    +josnList.size();
+
             String lxbh = "";
             StringBuilder wayPoints = new StringBuilder();
             for (TrailBo trailBo : josnList) {
@@ -821,13 +826,25 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     wayPoints.append(doubles[0]).append(",").append(doubles[1]);
                 }
             }
-            String paths = lonLatPathsUtils.calcLonAndLatPaths(tracksBo.getStartLonDec().toPlainString(), tracksBo.getStratLatDec().toPlainString(),
-                            tracksBo.getEndLonDec().toPlainString(), tracksBo.getEndLatDec().toPlainString(), "", wayPoints.toString());
+            String paths = "";
+
+            Object obj = redisCache.getCacheObject(key);
+            if (null != obj) {
+                paths = CommonUtil.isNull(obj);
+            }else{
+                paths = lonLatPathsUtils.calcLonAndLatPaths(tracksBo.getStartLonDec().toPlainString(), tracksBo.getStratLatDec().toPlainString(),
+                        tracksBo.getEndLonDec().toPlainString(), tracksBo.getEndLatDec().toPlainString(), "", wayPoints.toString());
+            }
+
+
+
             Geometry rtnGeometry = new Geometry();
             if(null == paths)
             {
                 log.info("调用API找不到位置不存在-----------");
                 return this.getCarGeometry(tracksBo,josnList);
+            }else{
+                redisCache.setCacheObject(key,paths);
             }
             rtnGeometry.setLxbh(lxbh);
             rtnGeometry.setPaths(paths);
