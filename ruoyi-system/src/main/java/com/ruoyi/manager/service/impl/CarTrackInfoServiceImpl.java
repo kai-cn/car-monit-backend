@@ -834,6 +834,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             }else{
                 paths = lonLatPathsUtils.calcLonAndLatPaths(tracksBo.getStartLonDec().toPlainString(), tracksBo.getStratLatDec().toPlainString(),
                         tracksBo.getEndLonDec().toPlainString(), tracksBo.getEndLatDec().toPlainString(), "", wayPoints.toString());
+                if(null != paths){
+                    redisCache.setCacheObject(key,paths);
+                }
             }
 
 
@@ -843,8 +846,6 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             {
                 log.info("调用API找不到位置不存在-----------");
                 return this.getCarGeometry(tracksBo,josnList);
-            }else{
-                redisCache.setCacheObject(key,paths);
             }
             rtnGeometry.setLxbh(lxbh);
             rtnGeometry.setPaths(paths);
