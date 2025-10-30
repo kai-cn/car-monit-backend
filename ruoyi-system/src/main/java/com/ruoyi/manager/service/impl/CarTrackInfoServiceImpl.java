@@ -390,6 +390,12 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                     SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
                                     String formattedDate = sdf.format(new Date());
                                     carWarningInfo.setBackCol1(formattedDate);
+                                    if (pointUuid.indexOf("@@") > -1){
+                                        String[] pointUuidStr = pointUuid.split("@@");
+                                        if (pointUuidStr.length > 1){
+                                            carWarningInfo.setBackCol1(pointUuidStr[1]);
+                                        }
+                                    }
 
                                     addCarWarningInfoList.add(carWarningInfo);
                                 }
