@@ -65,7 +65,15 @@ public class ZdataTrailTracksServiceImpl extends ServiceImpl<ZdataTrailTracksMap
                 Map<String, Integer> map = cylist.stream().collect(Collectors.toMap(ZdataTrailTracks::getUuid, ZdataTrailTracks::getPassCount));
                 list = zdataTrailTracksMapper.getHistoryTrail(zdataTrailTracks);
                 if (null != list && list.size() > 0){
-                    return list.stream().peek(item -> item.setPlateKey(item.getPlateKey() + "(通行" + map.get(item.getUuid()) +"次)")).collect(Collectors.toList());
+                    for (ZdataTrailTracks rtn : list) {
+                        String uuId = rtn.getUuid();
+                        if (null !=map){
+                            if (map.containsKey(uuId)){
+                                rtn.setPlateKey(rtn.getPlateKey() + "(通行" + map.get(uuId) +"次)");
+                            }
+                        }
+                    }
+                    // return list.stream().peek(item -> item.setPlateKey(item.getPlateKey() + "(通行" + map.get(item.getUuid()) +"次)")).collect(Collectors.toList());
                 }
             }
         }else{
