@@ -316,7 +316,7 @@ public class CarTrackInfoController extends BaseController {
                     raodTrailList = carTrackInfoService.getCarGeometryByPlan(tracks, josnList);
                 }
                 trailInfo.setRaodTrailList(raodTrailList);
-                trailInfo.setTrailDevCountBO(carTrackInfoService.getTrailDevBO(josnList));
+                trailInfo.setTrailDevCountBO(carTrackInfoService.getTrailDevBO(tracks,josnList));
             }
         }
         return AjaxResult.success(trailInfo);
