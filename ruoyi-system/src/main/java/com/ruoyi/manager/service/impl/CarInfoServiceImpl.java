@@ -137,6 +137,11 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
         }
         else
         {
+            // 逃费金额
+            if (null == carInfo.getEscapedAmount()){
+                carInfo.setEscapedAmount(BigDecimal.ZERO);
+            }
+
             carInfo.setId(StringUtils.getUUID()); // 主键
             carInfo.setDelFlag("0");
             carInfo.setCreateBy(userId); // 创建人
@@ -197,6 +202,12 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                     carInfo.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
                     updatalist.add(carInfo);
                 }else{
+
+                    // 逃费金额
+                    if (null == carInfo.getEscapedAmount()){
+                        carInfo.setEscapedAmount(BigDecimal.ZERO);
+                    }
+
                     carInfo.setId(StringUtils.getUUID()); // 主键
                     carInfo.setDelFlag("0");
                     carInfo.setCreateBy(userId); // 创建人
