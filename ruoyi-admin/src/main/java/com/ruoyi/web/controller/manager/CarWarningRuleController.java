@@ -67,9 +67,12 @@ public class CarWarningRuleController extends BaseController {
     @GetMapping("/export")
     public AjaxResult export(CarWarningRule carWarningRule, HttpServletResponse response) {
         List<CarWarningRule> list = carWarningRuleService.selectCarWarningRuleList(carWarningRule);
+        // 逃费类型
+        Map<String,String> noticeTypeMap = sysDictDataService.selectDictDataMap("notice_type");
         list.stream().forEach(dp -> {
             if (null != dp.getCreateTime()){
                 dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
+                dp.setNoticeType(noticeTypeMap.get(dp.getNoticeType()));
             }
         });
 
