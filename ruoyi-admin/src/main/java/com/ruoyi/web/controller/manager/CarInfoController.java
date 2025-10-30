@@ -241,19 +241,24 @@ public class CarInfoController extends BaseController {
 
                 // 车牌颜色
                 String plateColor =  CommonUtil.isNull(addbo.getPlateColor());
-                if (plateColorMap.containsKey(plateColor)) {
-                    addbo.setPlateColor(CommonUtil.isNull(plateColorMap.get(plateColor)));
-                } else {
-                    errorList.add(importUtil.getErrorBO(i + 1, "车牌颜色", plateColor + " 车牌颜色不存在,请在字典菜单维护！"));
+                if (CommonUtil.isNotBlank(plateColor)){
+                    if (plateColorMap.containsKey(plateColor)) {
+                        addbo.setPlateColor(CommonUtil.isNull(plateColorMap.get(plateColor)));
+                    } else {
+                        errorList.add(importUtil.getErrorBO(i + 1, "车牌颜色", plateColor + " 车牌颜色不存在,请在字典菜单维护！"));
+                    }
                 }
 
                 // 车型
                 String carType =  CommonUtil.isNull(addbo.getCarType());
-                if (carTypeMap.containsKey(carType)) {
-                    addbo.setCarType(CommonUtil.isNull(carTypeMap.get(carType)));
-                } else {
-                    errorList.add(importUtil.getErrorBO(i + 1, "车型", carType + " 车型不存在,请在字典菜单维护！"));
+                if (CommonUtil.isNotBlank(carType)){
+                    if (carTypeMap.containsKey(carType)) {
+                        addbo.setCarType(CommonUtil.isNull(carTypeMap.get(carType)));
+                    } else {
+                        errorList.add(importUtil.getErrorBO(i + 1, "车型", carType + " 车型不存在,请在字典菜单维护！"));
+                    }
                 }
+
 
                 // 车种
                 String carVehicle =  CommonUtil.isNull(addbo.getCarVehicle());
