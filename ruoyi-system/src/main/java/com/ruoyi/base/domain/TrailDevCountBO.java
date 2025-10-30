@@ -18,4 +18,8 @@ public class TrailDevCountBO {
      */
     private List<TrailBo> trailList;
 
+
+    // 路线提醒
+    private String  exceptMsg;
+
 }

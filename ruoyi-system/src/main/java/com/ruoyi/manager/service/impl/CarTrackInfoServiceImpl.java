@@ -1,11 +1,9 @@
 package com.ruoyi.manager.service.impl;
 
 
-import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson2.JSON;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.IGeometryService;
@@ -36,7 +34,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -713,12 +710,12 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
      * @return
      */
     @Override
-    public TrailDevCountBO getTrailDevBO(List<TrailBo> josnList){
+    public TrailDevCountBO getTrailDevBO(ZdataTrailTracks tracks,List<TrailBo> josnList){
 
         TrailDevCountBO trailDevCountBO = new TrailDevCountBO();
         Integer exceptNum = 0;
         List<TrailDevBO> TrailDevList = new ArrayList<>();
-
+        String  exceptMsg = "";
         Map<String,List<TrailBo>> map = new HashMap<>();
 
         List<TrailBo> rtnList = new ArrayList<>();
@@ -785,6 +782,14 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         trailDevCountBO.setExceptNum(exceptNum);
         trailDevCountBO.setTrailDevList(TrailDevList);
         trailDevCountBO.setTrailList(josnList);
+
+        if (null == tracks.getStartLonDec() || null == tracks.getStratLatDec() ||
+                null == tracks.getEndLonDec() || null == tracks.getEndLatDec()) {
+            log.info("起始和终点位置不存在-----------");
+            exceptMsg = "起始和终点位置不存在-----------";
+        }
+        trailDevCountBO.setExceptMsg(exceptMsg);
+
         return trailDevCountBO;
     }
 

@@ -95,6 +95,6 @@ public interface ICarTrackInfoService extends IService<CarTrackInfo> {
      * @param josnList
      * @return
      */
-    TrailDevCountBO getTrailDevBO(List<TrailBo> josnList);
+    TrailDevCountBO getTrailDevBO(ZdataTrailTracks tracks,List<TrailBo> josnList);
 
 }
