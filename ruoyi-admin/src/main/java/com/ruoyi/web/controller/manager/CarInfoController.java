@@ -325,7 +325,7 @@ public class CarInfoController extends BaseController {
         boList.add(new ImportEntity("车种","carVehicle",""));
         boList.add(new ImportEntity("轴数","carNum","3"));
         boList.add(new ImportEntity("逃费类型","escapedType","1"));
-        boList.add(new ImportEntity("逃费金额（元）","escapedAmount","1,2"));
+        boList.add(new ImportEntity("逃费金额（元）","escapedAmount","2"));
         boList.add(new ImportEntity("备注","remark",""));
         return boList;
     }
