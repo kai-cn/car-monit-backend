@@ -185,11 +185,25 @@ public class CarConfimFreeController extends BaseController {
         Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
         // 车种
         Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle");
+        // 逃费类型
+        Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataMap("escaped_type");
 
 
         list.stream().forEach(dp -> {
             dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
             dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
+            // 需要循环 : 逃费类型
+            String bussName = "";
+            String bussType = CommonUtil.deleteEnd(dp.getEscapedType());
+            if (CommonUtil.isNotBlank(bussType)) {
+                String[] bussTypeStr = bussType.split(",");
+                for (int i = 0; i < bussTypeStr.length; i++) {
+                    if (escapedTypeMap.containsKey(bussTypeStr[i])) {
+                        bussName = bussName + escapedTypeMap.get(bussTypeStr[i]) + ",";
+                    }
+                }
+            }
+            dp.setEscapedType(CommonUtil.deleteEnd(bussName));
         });
 
         Map<String,Object> map = new HashMap<>();
