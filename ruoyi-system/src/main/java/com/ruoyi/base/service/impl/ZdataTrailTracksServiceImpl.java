@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -61,9 +62,10 @@ public class ZdataTrailTracksServiceImpl extends ServiceImpl<ZdataTrailTracksMap
             List<ZdataTrailTracks> cylist =  zdataTrailTracksMapper.getCyly(zdataTrailTracks);
             if (null !=cylist && cylist.size() > 0) {
                 zdataTrailTracks.setUuidList(cylist.stream().map(ZdataTrailTracks::getUuid).collect(Collectors.toList()));
+                Map<String, Integer> map = cylist.stream().collect(Collectors.toMap(ZdataTrailTracks::getUuid, ZdataTrailTracks::getPassCount));
                 list = zdataTrailTracksMapper.getHistoryTrail(zdataTrailTracks);
                 if (null != list && list.size() > 0){
-                    return new ArrayList<>(list);
+                    return list.stream().peek(item -> item.setPlateKey(item.getPlateKey() + "(通行" + map.get(item.getUuid()) +"次)")).collect(Collectors.toList());
                 }
             }
         }else{

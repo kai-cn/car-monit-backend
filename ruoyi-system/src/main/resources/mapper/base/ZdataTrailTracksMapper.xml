@@ -143,9 +143,10 @@
 
     <select id="getCyly" parameterType="com.ruoyi.base.domain.ZdataTrailTracks" resultMap="ZdataTrailTracksResult">
         SELECT
-        uuid
+        uuid, passCount
         FROM (SELECT
         t.uuid,
+        gc.passCount,
         ROW_NUMBER() OVER (
         PARTITION BY t.plate_key, t.entollstationid, t.extollstationid
         ORDER BY t.enter_time DESC
@@ -155,18 +156,19 @@
             plate_key,
             entollstationid,
             extollstationid,
-            COUNT(*) as usage_count
+            COUNT(*) as passCount
             FROM zdata_trail_tracks t
             WHERE  1=1
             <if test="carNo != null  and carNo != ''"> and t.plate_key = #{carNo} </if>
             <if test="applyTime1 != null  and applyTime1 != ''">and t.enter_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
             <if test="applyTime2 != null  and applyTime2 != ''">and t.enter_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
             GROUP BY plate_key, entollstationid, extollstationid
-            ORDER BY usage_count DESC
+            ORDER BY passCount DESC
             LIMIT 3) gc ON t.plate_key = gc.plate_key
                         AND t.entollstationid = gc.entollstationid
                         AND t.extollstationid = gc.extollstationid) a
         WHERE rn = 1
+        order by passCount desc
     </select>
 
 
