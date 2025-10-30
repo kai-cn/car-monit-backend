@@ -13,4 +13,9 @@ public class TrailDevCountBO {
     // 设备集合
     private List<TrailDevBO> TrailDevList;
 
+    /**
+     * 轨迹详情
+     */
+    private List<TrailBo> trailList;
+
 }

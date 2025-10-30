@@ -784,6 +784,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         }
         trailDevCountBO.setExceptNum(exceptNum);
         trailDevCountBO.setTrailDevList(TrailDevList);
+        trailDevCountBO.setTrailList(josnList);
         return trailDevCountBO;
     }
 
