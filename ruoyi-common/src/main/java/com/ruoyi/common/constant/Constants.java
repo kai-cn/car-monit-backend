@@ -334,5 +334,11 @@ public class Constants
     public static final String car_curent_trail = "car_curent_trail:";
 
 
+    /**
+     * 车辆路线规划
+     */
+    public static final String car_lxgh = "car_lxgh:";
+
+
 
 }
