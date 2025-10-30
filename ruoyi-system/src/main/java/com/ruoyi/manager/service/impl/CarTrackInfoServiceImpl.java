@@ -207,10 +207,11 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                 List<TrailBo> josnList = trailInfo.getTrailList(); // 轨迹李四
                 if (null != josnList && josnList.size() > 0) {
                     List<TrailBo> stationList = new ArrayList<TrailBo>(); // 收费站
-                    TrailBo firstStation = new TrailBo(); // 第一个收费站
+                    TrailBo firstStation = new TrailBo(); // 第一个收费站或者门架-------------
 
                     boolean trailExits = false;  // 轨迹点是否存在
                     // 在线增加判断是否有出的话 true=进入，false=驶出 directionIn
+                    int fristCountNum = 0;
                     for (TrailBo trailBo : josnList) {
                         if (null != trailBo.getLon() && null != trailBo.getLat()) {
                             trailExits = true;
@@ -219,18 +220,30 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                         switch (stateType) {
                             case Constants.BORDER_WEIGHING_CAPTURE:
                                 // 省界称重
+                                if (fristCountNum ==0){
+                                    firstStation = trailBo;
+                                    fristCountNum++;
+                                }
                                 break;
                             case Constants.GANTRY_CAPTURE:
                                 // 门架抓拍
                                 break;
                             case Constants.PROV_CAPTURE:
                                 // 省界抓拍
+                                if (fristCountNum ==0){
+                                    firstStation = trailBo;
+                                    fristCountNum++;
+                                }
                                 break;
                             case Constants.SERVICE_AREA_CAPTURE:
                                 // 服务区抓拍
                                 break;
                             case Constants.STATION_CAPTURE:
                                 // 收费站抓拍
+                                if (fristCountNum ==0){
+                                    firstStation = trailBo;
+                                    fristCountNum++;
+                                }
                                 stationList.add(trailBo);
                                 break;
                         }
@@ -240,10 +253,6 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     Boolean inFlag = false;
                     Boolean outFlag = false;
                     for (int i = 0; i < stationList.size(); i++) {
-                        if (i ==0){
-                            firstStation = stationList.get(0);
-                        }
-
                         TrailBo trailBo = stationList.get(i);
                         Boolean directionIn = trailBo.getDirectionIn();
                         if (null != directionIn && directionIn){
