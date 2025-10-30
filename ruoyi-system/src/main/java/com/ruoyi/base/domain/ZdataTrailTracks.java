@@ -247,4 +247,7 @@ public class ZdataTrailTracks implements Custom {
     @TableField(exist = false)
     private List<String> uuidList;
 
+    @TableField(exist = false)
+    private Integer passCount;
+
 }
