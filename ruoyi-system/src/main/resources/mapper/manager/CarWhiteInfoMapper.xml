@@ -58,6 +58,7 @@
         <if test="id != null  and id != ''"> and t.id = #{id}</if>
         <if test="plateColor != null  and plateColor != ''"> and t.plate_color = #{plateColor}</if>
         <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+        <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
         <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
         <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
         <if test="carNum != null "> and t.car_num = #{carNum}</if>
