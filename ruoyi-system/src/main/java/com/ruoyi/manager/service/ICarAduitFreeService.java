@@ -69,4 +69,6 @@ public interface ICarAduitFreeService extends IService<CarAduitFree> {
     Integer selectAuditCount(IncomeStatisticParam param);
 
     List<PCIncomeStaticsVO> getPCIncomeStatics(CarConfimFreeQueryRo queryRo);
+
+    List<CarAduitFree> incomeDetailList(CarAduitFree carAduitFree);
 }
