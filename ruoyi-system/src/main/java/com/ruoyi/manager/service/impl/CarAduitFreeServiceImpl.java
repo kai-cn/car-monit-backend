@@ -138,4 +138,9 @@ public class CarAduitFreeServiceImpl extends ServiceImpl<CarAduitFreeMapper, Car
     public List<PCIncomeStaticsVO> getPCIncomeStatics(CarConfimFreeQueryRo queryRo) {
         return carAduitFreeMapper.PCIncomeStatics(queryRo);
     }
+
+    @Override
+    public List<CarAduitFree> incomeDetailList(CarAduitFree carAduitFree) {
+        return carAduitFreeMapper.incomeDetailList(carAduitFree);
+    }
 }

@@ -68,4 +68,6 @@ public interface CarAduitFreeMapper extends BaseMapper<CarAduitFree> {
     Integer selectAuditCount(IncomeStatisticParam param);
 
     List<PCIncomeStaticsVO> PCIncomeStatics(CarConfimFreeQueryRo queryRo);
+
+    List<CarAduitFree> incomeDetailList(CarAduitFree carAduitFree);
 }

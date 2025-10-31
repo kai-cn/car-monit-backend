@@ -55,6 +55,14 @@ public class CarAduitFreeController extends BaseController {
         return getDataTable(list);
     }
 
+    @GetMapping("/incomeDetailList")
+    public TableDataInfo incomeDetailList(CarAduitFree carAduitFree) {
+        startPage();
+        // carAduitFree.setTenantId(SecurityUtils.getTenantId()); // 查询我自己单位的租户
+        List<CarAduitFree> list = carAduitFreeService.incomeDetailList(carAduitFree);
+        return getDataTable(list);
+    }
+
     /**
      * 导出补缴处理列表
      */
