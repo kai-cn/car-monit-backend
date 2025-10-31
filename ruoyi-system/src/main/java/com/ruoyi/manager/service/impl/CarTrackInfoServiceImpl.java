@@ -806,7 +806,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
 
         if (CommonUtil.isNotBlank(tips) ){
-            exceptMsg = "由于无法获取轨迹"+tips+"，系统路线图采用已有的轨迹点进行轨迹绘制，可能会导致部分路线丢失。";
+            exceptMsg = "由于无法获取轨迹"+tips+"，系统路线规划采用已有的轨迹点进行轨迹绘制，可能会导致部分路线丢失。";
         }
 
 
