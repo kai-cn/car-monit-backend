@@ -82,14 +82,13 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                         raodTrailList = carTrackInfoService.getCarGeometryByPlan(tracks, carTrailList);
                     }
 
+                    trailInfo.setTrailUuid(car.getCarNo());
+                    trailInfo.setTrailList(carTrailList);
+                    trailInfo.setRaodTrailList(raodTrailList);
+                    trailInfo.setTrailDevCountBO(carTrackInfoService.getTrailDevBO(trailInfo.getTracks(),carTrailList));
+
                 }
             }
-
-            trailInfo.setTrailUuid(car.getCarNo());
-            trailInfo.setTrailList(carTrailList);
-            trailInfo.setRaodTrailList(raodTrailList);
-            trailInfo.setTrailDevCountBO(carTrackInfoService.getTrailDevBO(trailInfo.getTracks(),carTrailList));
-
             List<TrailInfo> trailList = new ArrayList<>();
             trailList.add(trailInfo);
             car.setTrailList(trailList);
