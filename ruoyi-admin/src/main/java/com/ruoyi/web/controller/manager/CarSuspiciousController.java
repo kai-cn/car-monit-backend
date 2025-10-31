@@ -341,7 +341,7 @@ public class CarSuspiciousController extends BaseController {
     /**
      * 可疑车辆核实
      */
-    @PreAuthorize("@ss.hasPermi('manager:suspicious:check')")
+//    @PreAuthorize("@ss.hasPermi('manager:suspicious:check')")
     @Log(title = "可疑车辆", businessType = BusinessType.UPDATE)
     @PutMapping("/check")
     public AjaxResult check(@RequestBody CarSuspicious carSuspicious) {
