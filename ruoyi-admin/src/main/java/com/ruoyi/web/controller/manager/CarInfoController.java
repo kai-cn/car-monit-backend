@@ -326,7 +326,7 @@ public class CarInfoController extends BaseController {
         // 校验规则 1 必填 2小数 3整数 4日期 5身份证 6年月 多个逗号分隔例如：1,2
         boList.add(new ImportEntity("车牌颜色","plateColor","1"));
         boList.add(new ImportEntity("车牌号","carNo","1"));
-        boList.add(new ImportEntity("车型","carType",""));
+        boList.add(new ImportEntity("车型","carType","1"));
         boList.add(new ImportEntity("车种","carVehicle",""));
         boList.add(new ImportEntity("轴数","carNum","3"));
         boList.add(new ImportEntity("逃费类型","escapedType","1"));
