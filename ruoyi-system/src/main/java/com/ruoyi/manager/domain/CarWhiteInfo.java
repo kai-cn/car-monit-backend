@@ -69,4 +69,8 @@ public class CarWhiteInfo extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private String createInfo;
 
+    // 车牌号查询
+    @TableField(exist = false)
+    private String carNoQuery;
+
 }
