@@ -575,6 +575,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     @Override
     public List<Geometry> getCarGeometry(ZdataTrailTracks tracksBo,List<TrailBo> josnList) {
 
+        if (null == tracksBo){
+            tracksBo = new ZdataTrailTracks();
+        }
+
         List<Geometry> raodTrailList = new ArrayList<>();
         // 去掉重复的桩号
         LinkedHashMap<String,List<TrailBo>> map = new LinkedHashMap<>(2);
@@ -712,12 +716,16 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     @Override
     public TrailDevCountBO getTrailDevBO(ZdataTrailTracks tracks,List<TrailBo> josnList){
 
+        if (null == tracks){
+            tracks = new ZdataTrailTracks();
+        }
+
         TrailDevCountBO trailDevCountBO = new TrailDevCountBO();
         Integer exceptNum = 0;
         List<TrailDevBO> TrailDevList = new ArrayList<>();
         String  exceptMsg = "";
-        Map<String,List<TrailBo>> map = new HashMap<>();
 
+        Map<String,List<TrailBo>> map = new HashMap<>();
         List<TrailBo> rtnList = new ArrayList<>();
 
         for (TrailBo trailBo : josnList) {
@@ -783,11 +791,25 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         trailDevCountBO.setTrailDevList(TrailDevList);
         trailDevCountBO.setTrailList(josnList);
 
-        if (null == tracks.getStartLonDec() || null == tracks.getStratLatDec() ||
-                null == tracks.getEndLonDec() || null == tracks.getEndLatDec()) {
-            log.info("起始和终点位置不存在-----------");
-            exceptMsg = "起始和终点位置不存在-----------";
+        String tips = "";
+        if (null == tracks.getStartLonDec() || null == tracks.getStratLatDec()) {
+            tips = "起始位置";
         }
+
+        if (null == tracks.getEndLonDec() || null == tracks.getEndLatDec()) {
+            if (tips.equals("")) {
+                tips = "终点位置";
+            } else {
+                tips = tips + "和终点位置";
+            }
+        }
+
+
+        if (CommonUtil.isNotBlank(tips) ){
+            exceptMsg = "由于无法获取轨迹"+tips+"，系统路线图采用已有的轨迹点进行轨迹绘制，可能会导致部分路线丢失。";
+        }
+
+
         trailDevCountBO.setExceptMsg(exceptMsg);
 
         return trailDevCountBO;
@@ -800,6 +822,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
      */
     @Override
     public List<Geometry> getCarGeometryByPlan(ZdataTrailTracks tracksBo, List<TrailBo> josnList) {
+        if (null == tracksBo){
+            tracksBo = new ZdataTrailTracks();
+        }
+
         if (null == tracksBo.getStartLonDec() || null == tracksBo.getStratLatDec() ||
                 null == tracksBo.getEndLonDec() || null == tracksBo.getEndLatDec())
         {
