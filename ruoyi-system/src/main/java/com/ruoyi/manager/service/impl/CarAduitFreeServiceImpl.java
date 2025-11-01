@@ -3,6 +3,7 @@ package com.ruoyi.manager.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.manager.domain.CarConfimFree;
 import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
 import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
@@ -140,7 +141,7 @@ public class CarAduitFreeServiceImpl extends ServiceImpl<CarAduitFreeMapper, Car
     }
 
     @Override
-    public List<CarAduitFree> incomeDetailList(CarAduitFree carAduitFree) {
-        return carAduitFreeMapper.incomeDetailList(carAduitFree);
+    public List<CarConfimFree> incomeDetailList(CarConfimFree confimFree) {
+        return carAduitFreeMapper.incomeDetailList(confimFree);
     }
 }

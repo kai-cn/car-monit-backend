@@ -7,6 +7,7 @@ import java.util.Map;
 
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import com.ruoyi.manager.domain.CarConfimFree;
 import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
 import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -56,10 +57,10 @@ public class CarAduitFreeController extends BaseController {
     }
 
     @GetMapping("/incomeDetailList")
-    public TableDataInfo incomeDetailList(CarAduitFree carAduitFree) {
+    public TableDataInfo incomeDetailList(CarConfimFree carConfimFree) {
         startPage();
         // carAduitFree.setTenantId(SecurityUtils.getTenantId()); // 查询我自己单位的租户
-        List<CarAduitFree> list = carAduitFreeService.incomeDetailList(carAduitFree);
+        List<CarConfimFree> list = carAduitFreeService.incomeDetailList(carConfimFree);
         return getDataTable(list);
     }
 
