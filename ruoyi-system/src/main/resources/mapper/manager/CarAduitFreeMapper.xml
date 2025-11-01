@@ -136,7 +136,7 @@
                 <if test="applyTime1 != null  and applyTime1 != ''">and c.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
                 <if test="applyTime2 != null  and applyTime2 != ''">and c.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
                                                ) t
-        group by t.org_id order by amount desc
+        group by t.org_id, t.orgName  order by amount desc
     </select>
 
     <select id="incomeDetailList" parameterType="com.ruoyi.manager.domain.CarConfimFree" resultType="com.ruoyi.manager.domain.CarConfimFree">
