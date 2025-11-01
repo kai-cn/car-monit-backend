@@ -161,6 +161,7 @@
        <if test="carNo != null  and carNo != ''"> and t.car_no like concat('%', #{carNo}, '%')</if>
        <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
        <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
+        <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
     </select>
 
 
