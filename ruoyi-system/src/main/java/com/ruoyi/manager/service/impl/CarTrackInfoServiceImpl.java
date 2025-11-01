@@ -316,10 +316,11 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                 }
 
 
-                                if (stateType.equals(Constants.GANTRY_CAPTURE)){
-                                    if (null != trailBo.getLon() && null != trailBo.getLat() && CommonUtil.isNotBlank(trailBo.getDevCode())) {
-                                        lastMjBo = trailBo;
-                                    }
+                               /* if (stateType.equals(Constants.GANTRY_CAPTURE)){
+                                }*/
+
+                                if (null != trailBo.getLon() && null != trailBo.getLat() && CommonUtil.isNotBlank(trailBo.getDevCode())) {
+                                    lastMjBo = trailBo;
                                 }
 
                             }
