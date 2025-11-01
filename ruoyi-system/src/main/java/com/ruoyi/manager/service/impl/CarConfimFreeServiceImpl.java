@@ -244,6 +244,9 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
                 if (null != carConfimFree && CommonUtil.isNotBlank(carConfimFree.getExceptIds())) {
                     exceptIds += CommonUtil.deleteEnd(carConfimFree.getExceptIds())+",";
                 }
+
+                // 删除明细-----------
+                carAduitFreeService.deleteCarAduitFreeByConfirmId(id);
             }
             exceptIds = CommonUtil.deleteEnd(exceptIds);
             if (CommonUtil.isNotBlank(exceptIds)) {
