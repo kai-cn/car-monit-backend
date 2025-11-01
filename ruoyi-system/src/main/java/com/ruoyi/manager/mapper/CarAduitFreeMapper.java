@@ -2,6 +2,7 @@ package com.ruoyi.manager.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.manager.domain.CarAduitFree;
+import com.ruoyi.manager.domain.CarConfimFree;
 import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
 import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
@@ -69,5 +70,5 @@ public interface CarAduitFreeMapper extends BaseMapper<CarAduitFree> {
 
     List<PCIncomeStaticsVO> PCIncomeStatics(CarConfimFreeQueryRo queryRo);
 
-    List<CarAduitFree> incomeDetailList(CarAduitFree carAduitFree);
+    List<CarConfimFree> incomeDetailList(CarConfimFree carConfimFree);
 }
