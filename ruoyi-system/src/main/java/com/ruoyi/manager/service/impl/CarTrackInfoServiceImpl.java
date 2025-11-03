@@ -209,9 +209,16 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     boolean trailExits = false;  // 轨迹点是否存在
                     // 在线增加判断是否有出的话 true=进入，false=驶出 directionIn
                     int fristCountNum = 0;
+                    String captureTimeLast = "";  // 最后抓拍时间
+                    boolean isExitFlag = true; // 是否离开
                     for (TrailBo trailBo : josnList) {
                         if (null != trailBo.getLon() && null != trailBo.getLat()) {
                             trailExits = true;
+                        }
+
+                        String captureTime = CommonUtil.isNull(trailBo.getCaptureTime());
+                        if (CommonUtil.isNotBlank(captureTime)){
+                            captureTimeLast = captureTime;
                         }
                         String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
                         switch (stateType) {
@@ -247,7 +254,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     }
 
                     //  收费站---------------
-                    Boolean inFlag = false;
+                   /* Boolean inFlag = false;
                     Boolean outFlag = false;
                     for (int i = 0; i < stationList.size(); i++) {
                         TrailBo trailBo = stationList.get(i);
@@ -263,9 +270,28 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                             }
 
                         }
+                    }*/
+
+                    //  判断在线最后一个节点时间
+                    try {
+                        SimpleDateFormat format2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                        long threeMinutesInMillis = 60 * 60 * 1000; // 60分钟转换为毫秒
+                        if (CommonUtil.isNotBlank(captureTimeLast)){
+                            Date captureTimeDate1 = format2.parse(captureTimeLast);
+                            Date curDate = new Date();
+                            long diff = Math.abs(curDate.getTime() - captureTimeDate1.getTime());
+                            if (diff < threeMinutesInMillis) {
+                                isExitFlag = false;
+                            }
+                        }
+
+                    } catch (Exception e) {
+
+                        log.info("日期解析失败------------" + e.toString());
                     }
 
-                    if (inFlag && outFlag && isZxFlag){
+
+                    if (isExitFlag && isZxFlag){
                         // 跟新车俩-----------------------  车的状态修改status 0
                         car.setStatus("0");
                         car.setTrackJosn(null);
