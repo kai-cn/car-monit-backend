@@ -5,7 +5,7 @@ import io.jsonwebtoken.Claims;
 
 /**
  * 通用常量信息
- * 
+ *
  * @author ruoyi
  */
 public class Constants
@@ -291,6 +291,8 @@ public class Constants
      * 白名单
      */
     public static final String white_car_list = "white_car_list";
+
+    public static final String CAR_WARNING_RULE = "car_warning_rule:";
 
 
     /**
