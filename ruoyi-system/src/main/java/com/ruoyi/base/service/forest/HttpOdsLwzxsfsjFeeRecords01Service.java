@@ -8,11 +8,16 @@ import com.dtflys.forest.annotation.Var;
 import com.ruoyi.base.domain.OdsLwzxsfsjFeeRecords01;
 import com.ruoyi.common.core.page.TableDataInfo;
 
+import java.util.List;
+
 @BaseRequest(baseURL = "#{vehicleMonitor.baseUrl}")
 public interface HttpOdsLwzxsfsjFeeRecords01Service {
 
     @Get("/base/feerecords/list")
     TableDataInfo getOdsLwzxsfsjFeeRecords01Page(@Query OdsLwzxsfsjFeeRecords01 odsLwzxsfsjFeeRecords01);
+
+    @Get("/base/feerecords/listToExport")
+    List<OdsLwzxsfsjFeeRecords01> getOdsLwzxsfsjFeeRecords01ListToExport(@Query OdsLwzxsfsjFeeRecords01 odsLwzxsfsjFeeRecords01);
 
     @Get("/base/feerecords/{bigId}")
     OdsLwzxsfsjFeeRecords01 selectOdsLwzxsfsjFeeRecords01ById(@Var("bigId") String bigId);

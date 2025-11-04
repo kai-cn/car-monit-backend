@@ -1,14 +1,15 @@
 package com.ruoyi.web.controller.base;
 
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
+import cn.afterturn.easypoi.excel.ExcelExportUtil;
+import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.ruoyi.base.domain.OdsLwzxsfsjFeeRecords01;
 import com.ruoyi.base.service.forest.HttpOdsLwzxsfsjFeeRecords01Service;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
-import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +17,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 基础-收费流水Controller
@@ -50,6 +56,40 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
         }
 
         return odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01Page(odsLwzxsfsjFeeRecords01);
+    }
+
+
+    @PreAuthorize("@ss.hasPermi('base:feerecords:list')")
+    @GetMapping("/export")
+    public AjaxResult export(OdsLwzxsfsjFeeRecords01 odsLwzxsfsjFeeRecords01, HttpServletResponse response) {
+        String vehicleplate = odsLwzxsfsjFeeRecords01.getVehicleplate();
+        if(StringUtils.isBlank(vehicleplate)) {
+            return null;
+        }
+        List<OdsLwzxsfsjFeeRecords01> list = odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01ListToExport(odsLwzxsfsjFeeRecords01);
+        for (OdsLwzxsfsjFeeRecords01 feeRecords : list) {
+            // 时间格式化
+            if (null != feeRecords.getReceivetime()) {
+                feeRecords.setReceivetimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getReceivetime()));
+                feeRecords.setLastgantrytimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getLastgantrytime()));
+            }
+        }
+        Map<String,Object> map = new HashMap<String,Object>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/feeRecords.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**

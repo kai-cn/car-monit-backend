@@ -222,5 +222,8 @@ public class OdsRtSzdnSnapshotFlowAddcode implements Custom {
     @TableField(exist = false)
     private Integer pageSize;
 
+    @TableField(exist = false)
+    private String directionStr;
+
 
 }
