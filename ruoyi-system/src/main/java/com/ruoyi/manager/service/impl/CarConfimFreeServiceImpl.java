@@ -133,6 +133,24 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             }
         }
 
+        // 修改异常车俩核实状态
+        CarExceptRecord carExceptRecord = new CarExceptRecord();
+        carExceptRecord.setExceptIds(exceptIds);
+        List<CarExceptRecord> carExceptRecordList = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);
+
+        BigDecimal difAmount = BigDecimal.ZERO;
+        for (CarExceptRecord record : carExceptRecordList) {
+            if (null != record.getDifAmount()){
+                difAmount = difAmount.add(record.getDifAmount());
+            }
+        }
+        // 判断大于0
+        if (difAmount.compareTo(BigDecimal.ZERO) != 0) {
+            difAmount = difAmount.setScale(2, RoundingMode.HALF_UP);
+        }
+
+
+
         // 修改明细
         BigDecimal processingAmount = BigDecimal.ZERO;
         String escapedTypes = "";
@@ -145,10 +163,32 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             carConfimFree.setAduitAmount(processingAmount);
 
-            escapedTypes = carExceptRecordService.lambdaQuery().in(CarExceptRecord::getId, exceptIdList).list().stream().map(CarExceptRecord::getEscapedType).collect(Collectors.joining(","));
+            escapedTypes = carExceptRecordList.stream().map(CarExceptRecord::getEscapedType).collect(Collectors.joining(","));
             carConfimFree.setEscapedTypes(escapedTypes);
 
         }
+
+
+        // 判断金额是否一致
+        BigDecimal amount =  BigDecimal.ZERO;
+        BigDecimal aduitAmount =  BigDecimal.ZERO;
+
+        if (null != carConfimFree.getAmount()) {
+            amount = carConfimFree.getAmount();
+        }
+
+        if (null != carConfimFree.getAduitAmount()) {
+            aduitAmount = carConfimFree.getAduitAmount();
+        }
+
+        BigDecimal yzNum = (amount.add(aduitAmount)).setScale(2, RoundingMode.HALF_UP);
+        if (yzNum.compareTo(difAmount) == 0) {
+        }else{
+            return AjaxResult.error("拆分金额和处理金额合计不等于逃费金额！");
+        }
+
+
+
 
         String comfimFreeType = CommonUtil.isNull(carConfimFree.getComfimFreeType());
         if (CommonUtil.isNotBlank(carConfimFree.getId())) {
@@ -169,10 +209,7 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             // 修改异常流水状态
             carExceptRecordService.updateStatusByExceptId(exceptIdList, "1");
 
-            // 修改异常车俩核实状态
-            CarExceptRecord carExceptRecord = new CarExceptRecord();
-            carExceptRecord.setExceptIds(exceptIds);
-            List<CarExceptRecord> carExceptRecordList = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);
+
             for (CarExceptRecord ex : carExceptRecordList){
                 if (CommonUtil.isNotBlank(ex.getCarId())){
                     CarSuspicious exupdatebo = new CarSuspicious();
@@ -206,11 +243,6 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
                 // 修改异常流水状态
                 carExceptRecordService.updateStatusByExceptId(exceptIdList, "1");
 
-
-                // 修改异常车俩核实状态
-                CarExceptRecord carExceptRecord = new CarExceptRecord();
-                carExceptRecord.setExceptIds(exceptIds);
-                List<CarExceptRecord> carExceptRecordList = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);
                 for (CarExceptRecord ex : carExceptRecordList){
                     if (CommonUtil.isNotBlank(ex.getCarId())){
                         CarSuspicious exupdatebo = new CarSuspicious();
