@@ -1,7 +1,15 @@
 package com.ruoyi.web.controller.base;
 
-import java.util.Arrays;
-import java.util.List;
+import java.io.OutputStream;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import cn.afterturn.easypoi.excel.ExcelExportUtil;
+import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import com.ruoyi.base.domain.OdsSzdnSection;
+import com.ruoyi.common.constant.Constants;
+import com.ruoyi.common.core.redis.RedisCache;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,8 +26,9 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.base.domain.OdsSzdnGantry;
 import com.ruoyi.base.service.IOdsSzdnGantryService;
-import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * 门架信息Controller
@@ -33,6 +42,8 @@ public class OdsSzdnGantryController extends BaseController {
 
     @Autowired
     private IOdsSzdnGantryService odsSzdnGantryService;
+    @Autowired
+    private RedisCache redisCache;
 
     /**
      * 查询门架信息列表
@@ -62,10 +73,42 @@ public class OdsSzdnGantryController extends BaseController {
     @PreAuthorize("@ss.hasPermi('base:gantry:export')")
     @Log(title = "门架信息", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
-    public AjaxResult export(OdsSzdnGantry odsSzdnGantry) {
-        List<OdsSzdnGantry> list = odsSzdnGantryService.selectOdsSzdnGantryList(odsSzdnGantry);
-        ExcelUtil<OdsSzdnGantry> util = new ExcelUtil<OdsSzdnGantry>(OdsSzdnGantry.class);
-        return util.exportExcel(list, "门架信息数据");
+    public AjaxResult export(OdsSzdnGantry odsSzdnGantry, HttpServletResponse response) {
+        List<OdsSzdnGantry> list = new ArrayList<>();
+        List obj = redisCache.getCacheObject(Constants.gantry_list);
+        if (null != obj) {
+            list = (List<OdsSzdnGantry>) obj;
+        }
+        if(!list.isEmpty()) {
+            List<OdsSzdnSection> sectionList = redisCache.getCacheList(Constants.SECTION_LIST);
+            if(sectionList != null && !sectionList.isEmpty()) {
+                Map<String, String> roadMap = sectionList.stream().collect(Collectors.toMap(OdsSzdnSection::getRoadCode, OdsSzdnSection::getRoadName, (k1, k2) -> k1));
+                Map<String, String> sectionMap = sectionList.stream().collect(Collectors.toMap(OdsSzdnSection::getSectionCode, OdsSzdnSection::getSectionName, (k1, k2) -> k1));
+                for (OdsSzdnGantry gantry : list) {
+                    gantry.setRoadName(roadMap.getOrDefault(gantry.getRoadCode(), ""));
+                    gantry.setSectionName(sectionMap.getOrDefault(gantry.getSectionCode(), ""));
+                    gantry.setIsData("1".equals(gantry.getIsData()) ? "是" : "否");
+                }
+                list = list.stream().sorted(Comparator.comparing(OdsSzdnGantry::getRoadCode).thenComparing(OdsSzdnGantry::getSectionCode)
+                        .thenComparing(OdsSzdnGantry::getGantryCode)).collect(Collectors.toList());
+                Map<String,Object> map = new HashMap<>();
+                map.put("entitylist", list);
+                try {
+                    String url = "templates/export/gantry.xlsx";
+                    TemplateExportParams params = new TemplateExportParams(url);
+                    Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+                    response.setContentType("application/octet-stream;charset=UTF-8");
+                    response.setHeader("Content-Disposition", "attachment");
+                    OutputStream outs = response.getOutputStream();
+                    workbook.write(outs);
+                    outs.flush();
+                    outs.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
     }
 
     /**

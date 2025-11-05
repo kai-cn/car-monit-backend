@@ -342,5 +342,13 @@ public class Constants
     public static final String car_lxgh = "car_lxgh:";
 
 
+    public static final String SECTION_LIST = "section_list";
+
+    /**
+     * 门架对象redis
+     */
+    public static final String gantry_list = "gantry_list";
+
+
 
 }

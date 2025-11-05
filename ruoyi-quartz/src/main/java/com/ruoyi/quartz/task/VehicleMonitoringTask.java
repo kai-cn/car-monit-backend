@@ -3,6 +3,8 @@ package com.ruoyi.quartz.task;
 import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.*;
 import com.ruoyi.base.service.forest.HttpBaseInfoApiService;
+import com.ruoyi.common.constant.Constants;
+import com.ruoyi.common.core.redis.RedisCache;
 import lombok.extern.log4j.Log4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -32,6 +34,8 @@ public class VehicleMonitoringTask {
     private IDwdLcztFwqjcxxService dwdLcztFwqjcxxService;
     @Autowired
     private IDwdLcztSfsjcxxService dwdLcztSfsjcxxService;
+    @Autowired
+    private RedisCache redisCache;
 
 
     /**
@@ -57,9 +61,8 @@ public class VehicleMonitoringTask {
         this.odsSzdnSectionService.truncateTable();
         // 全量新增数据
         this.odsSzdnSectionService.saveBatch(list);
+        redisCache.setCacheList(Constants.SECTION_LIST, list);
     }
-
-
 
 
 
