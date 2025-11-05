@@ -2,12 +2,14 @@ package com.ruoyi.web.controller.base;
 
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode;
 import com.ruoyi.base.service.forest.HttpOdsRtSzdnSnapshotFlowAddcodeService;
+import com.ruoyi.common.constant.HttpStatus;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
-import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.system.service.ISysDictDataService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,10 +48,7 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
     @PreAuthorize("@ss.hasPermi('base:snapshotflow:list')")
     @GetMapping("/list")
     public TableDataInfo list(OdsRtSzdnSnapshotFlowAddcode odsRtSzdnSnapshotFlowAddcode) {
-        String platenumber = odsRtSzdnSnapshotFlowAddcode.getPlatenumber();
-        if(StringUtils.isBlank(platenumber)) {
-            return new TableDataInfo();
-        }
+
         // 当前页面
         if (null == odsRtSzdnSnapshotFlowAddcode.getPageNum()){
             odsRtSzdnSnapshotFlowAddcode.setPageNum(1);
@@ -59,7 +58,26 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
             odsRtSzdnSnapshotFlowAddcode.setPageSize(10);
         }
 
-        return httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodePage(odsRtSzdnSnapshotFlowAddcode);
+        TableDataInfo rspData = new TableDataInfo();
+        List<OdsRtSzdnSnapshotFlowAddcode> list = new ArrayList<>();
+        long total = 0L;
+
+        String platenumber = odsRtSzdnSnapshotFlowAddcode.getPlatenumber();
+        if(CommonUtil.isNotBlank(platenumber)) {
+            TableDataInfo tableDataInfo =  httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodePage(odsRtSzdnSnapshotFlowAddcode);
+            if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
+                String trackJosn = JSON.toJSONString(tableDataInfo.getRows());
+                list = JSON.parseArray(trackJosn, OdsRtSzdnSnapshotFlowAddcode.class);
+                total = tableDataInfo.getTotal();
+            }
+        }
+
+        rspData.setCode(HttpStatus.SUCCESS);
+        rspData.setMsg("查询成功");
+        rspData.setRows(list);
+        rspData.setTotal(total);
+        return rspData;
+
 
     }
 
@@ -77,9 +95,10 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
             odsRtSzdnSnapshotFlowAddcode.setPageSize(10);
         }
 
-        String platenumber = odsRtSzdnSnapshotFlowAddcode.getPlatenumber();
         List<OdsRtSzdnSnapshotFlowAddcode> list = new ArrayList<>();
-        if(StringUtils.isNotBlank(platenumber)) {
+
+        String platenumber = odsRtSzdnSnapshotFlowAddcode.getPlatenumber();
+        if(CommonUtil.isNotBlank(platenumber)) {
             list = httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodeListToExport(odsRtSzdnSnapshotFlowAddcode);
         }
 
