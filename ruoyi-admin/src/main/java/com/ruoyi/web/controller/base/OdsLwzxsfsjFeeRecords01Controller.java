@@ -2,13 +2,15 @@ package com.ruoyi.web.controller.base;
 
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.base.domain.OdsLwzxsfsjFeeRecords01;
 import com.ruoyi.base.service.forest.HttpOdsLwzxsfsjFeeRecords01Service;
+import com.ruoyi.common.constant.HttpStatus;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
-import com.ruoyi.common.utils.StringUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,10 +45,7 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
     @PreAuthorize("@ss.hasPermi('base:feerecords:list')")
     @GetMapping("/list")
     public TableDataInfo list(OdsLwzxsfsjFeeRecords01 odsLwzxsfsjFeeRecords01) {
-        String vehicleplate = odsLwzxsfsjFeeRecords01.getVehicleplate();
-        if(StringUtils.isBlank(vehicleplate)) {
-            return new TableDataInfo();
-        }
+
         // 当前页面
         if (null == odsLwzxsfsjFeeRecords01.getPageNum()){
             odsLwzxsfsjFeeRecords01.setPageNum(1);
@@ -56,7 +55,26 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
             odsLwzxsfsjFeeRecords01.setPageSize(10);
         }
 
-        return odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01Page(odsLwzxsfsjFeeRecords01);
+        TableDataInfo rspData = new TableDataInfo();
+        List<OdsLwzxsfsjFeeRecords01> list = new ArrayList<>();
+        long total = 0L;
+
+        String vehicleplate = odsLwzxsfsjFeeRecords01.getVehicleplate();
+        if(CommonUtil.isNotBlank(vehicleplate)) {
+            TableDataInfo tableDataInfo =  odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01Page(odsLwzxsfsjFeeRecords01);
+            if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
+                String trackJosn = JSON.toJSONString(tableDataInfo.getRows());
+                list = JSON.parseArray(trackJosn, OdsLwzxsfsjFeeRecords01.class);
+                total = tableDataInfo.getTotal();
+            }
+        }
+
+        rspData.setCode(HttpStatus.SUCCESS);
+        rspData.setMsg("查询成功");
+        rspData.setRows(list);
+        rspData.setTotal(total);
+        return rspData;
+
     }
 
 
@@ -64,7 +82,6 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
     @GetMapping("/export")
     public AjaxResult export(OdsLwzxsfsjFeeRecords01 odsLwzxsfsjFeeRecords01, HttpServletResponse response) {
 
-
         // 当前页面
         if (null == odsLwzxsfsjFeeRecords01.getPageNum()){
             odsLwzxsfsjFeeRecords01.setPageNum(1);
@@ -74,10 +91,10 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
             odsLwzxsfsjFeeRecords01.setPageSize(10);
         }
 
-        String vehicleplate = odsLwzxsfsjFeeRecords01.getVehicleplate();
-
         List<OdsLwzxsfsjFeeRecords01> list = new ArrayList<>();
-        if(StringUtils.isNotBlank(vehicleplate)) {
+
+        String vehicleplate = odsLwzxsfsjFeeRecords01.getVehicleplate();
+        if(CommonUtil.isNotBlank(vehicleplate)) {
             list = odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01ListToExport(odsLwzxsfsjFeeRecords01);
         }
 
