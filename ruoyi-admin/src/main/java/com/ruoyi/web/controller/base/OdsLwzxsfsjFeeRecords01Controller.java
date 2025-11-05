@@ -66,28 +66,38 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
         if(StringUtils.isBlank(vehicleplate)) {
             return null;
         }
-        List<OdsLwzxsfsjFeeRecords01> list = odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01ListToExport(odsLwzxsfsjFeeRecords01);
-        for (OdsLwzxsfsjFeeRecords01 feeRecords : list) {
-            // 时间格式化
-            if (null != feeRecords.getReceivetime()) {
-                feeRecords.setReceivetimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getReceivetime()));
-                feeRecords.setLastgantrytimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getLastgantrytime()));
-            }
+        // 当前页面
+        if (null == odsLwzxsfsjFeeRecords01.getPageNum()){
+            odsLwzxsfsjFeeRecords01.setPageNum(1);
         }
-        Map<String,Object> map = new HashMap<String,Object>();
-        map.put("entitylist",list);
-        try {
-            String url = "templates/export/feeRecords.xlsx";
-            TemplateExportParams params = new TemplateExportParams(url);
-            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
-            response.setContentType("application/octet-stream;charset=UTF-8");
-            response.setHeader("Content-Disposition", "attachment");
-            OutputStream outs = response.getOutputStream();
-            workbook.write(outs);
-            outs.flush();
-            outs.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+        // 分页大小
+        if (null == odsLwzxsfsjFeeRecords01.getPageSize()){
+            odsLwzxsfsjFeeRecords01.setPageSize(10);
+        }
+        List<OdsLwzxsfsjFeeRecords01> list = odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01ListToExport(odsLwzxsfsjFeeRecords01);
+        if(list != null && !list.isEmpty()) {
+            for (OdsLwzxsfsjFeeRecords01 feeRecords : list) {
+                // 时间格式化
+                if (null != feeRecords.getReceivetime()) {
+                    feeRecords.setReceivetimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getReceivetime()));
+                    feeRecords.setLastgantrytimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getLastgantrytime()));
+                }
+            }
+            Map<String,Object> map = new HashMap<>();
+            map.put("entitylist",list);
+            try {
+                String url = "templates/export/feeRecords.xlsx";
+                TemplateExportParams params = new TemplateExportParams(url);
+                Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+                response.setContentType("application/octet-stream;charset=UTF-8");
+                response.setHeader("Content-Disposition", "attachment");
+                OutputStream outs = response.getOutputStream();
+                workbook.write(outs);
+                outs.flush();
+                outs.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         return null;
     }
