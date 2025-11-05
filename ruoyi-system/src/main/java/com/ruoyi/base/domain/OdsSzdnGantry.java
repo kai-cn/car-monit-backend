@@ -124,4 +124,12 @@ public class OdsSzdnGantry implements Custom {
     @TableField(exist = false)
     private String isData;
 
+    /** 所属路线名称 */
+    @TableField(exist = false)
+    private String roadName;
+
+    /** 所属路段名称 */
+    @TableField(exist = false)
+    private String sectionName;
+
 }
