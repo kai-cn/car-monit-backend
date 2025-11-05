@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,10 +67,7 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
     @PreAuthorize("@ss.hasPermi('base:snapshotflow:list')")
     @GetMapping("/export")
     public AjaxResult export(OdsRtSzdnSnapshotFlowAddcode odsRtSzdnSnapshotFlowAddcode, HttpServletResponse response) {
-        String platenumber = odsRtSzdnSnapshotFlowAddcode.getPlatenumber();
-        if(StringUtils.isBlank(platenumber)) {
-            return null;
-        }
+
         // 当前页面
         if (null == odsRtSzdnSnapshotFlowAddcode.getPageNum()){
             odsRtSzdnSnapshotFlowAddcode.setPageNum(1);
@@ -78,31 +76,36 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
         if (null == odsRtSzdnSnapshotFlowAddcode.getPageSize()){
             odsRtSzdnSnapshotFlowAddcode.setPageSize(10);
         }
-        List<OdsRtSzdnSnapshotFlowAddcode> list = httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodeListToExport(odsRtSzdnSnapshotFlowAddcode);
-        if(list != null && !list.isEmpty()) {
-            // 方向
-            Map<String,String> directionMap = sysDictDataService.selectDictDataMap("direction");
 
-            list.stream().forEach(dp -> {
-                dp.setDirectionStr(directionMap.get(dp.getDirection().toString()));
-            });
-
-            Map<String,Object> map = new HashMap<>();
-            map.put("entitylist",list);
-            try {
-                String url = "templates/export/snapshotFlow.xlsx";
-                TemplateExportParams params = new TemplateExportParams(url);
-                Workbook workbook = ExcelExportUtil.exportExcel(params, map);
-                response.setContentType("application/octet-stream;charset=UTF-8");
-                response.setHeader("Content-Disposition", "attachment");
-                OutputStream outs = response.getOutputStream();
-                workbook.write(outs);
-                outs.flush();
-                outs.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        String platenumber = odsRtSzdnSnapshotFlowAddcode.getPlatenumber();
+        List<OdsRtSzdnSnapshotFlowAddcode> list = new ArrayList<>();
+        if(StringUtils.isNotBlank(platenumber)) {
+            list = httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodeListToExport(odsRtSzdnSnapshotFlowAddcode);
         }
+
+        // 方向
+        Map<String,String> directionMap = sysDictDataService.selectDictDataMap("direction");
+
+        list.stream().forEach(dp -> {
+            dp.setDirectionStr(directionMap.get(dp.getDirection().toString()));
+        });
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/snapshotFlow.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return null;
     }
 

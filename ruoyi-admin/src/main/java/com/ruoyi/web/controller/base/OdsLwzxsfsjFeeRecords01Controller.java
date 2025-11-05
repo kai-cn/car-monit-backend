@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,10 +63,8 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
     @PreAuthorize("@ss.hasPermi('base:feerecords:list')")
     @GetMapping("/export")
     public AjaxResult export(OdsLwzxsfsjFeeRecords01 odsLwzxsfsjFeeRecords01, HttpServletResponse response) {
-        String vehicleplate = odsLwzxsfsjFeeRecords01.getVehicleplate();
-        if(StringUtils.isBlank(vehicleplate)) {
-            return null;
-        }
+
+
         // 当前页面
         if (null == odsLwzxsfsjFeeRecords01.getPageNum()){
             odsLwzxsfsjFeeRecords01.setPageNum(1);
@@ -74,31 +73,38 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
         if (null == odsLwzxsfsjFeeRecords01.getPageSize()){
             odsLwzxsfsjFeeRecords01.setPageSize(10);
         }
-        List<OdsLwzxsfsjFeeRecords01> list = odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01ListToExport(odsLwzxsfsjFeeRecords01);
-        if(list != null && !list.isEmpty()) {
-            for (OdsLwzxsfsjFeeRecords01 feeRecords : list) {
-                // 时间格式化
-                if (null != feeRecords.getReceivetime()) {
-                    feeRecords.setReceivetimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getReceivetime()));
-                    feeRecords.setLastgantrytimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getLastgantrytime()));
-                }
-            }
-            Map<String,Object> map = new HashMap<>();
-            map.put("entitylist",list);
-            try {
-                String url = "templates/export/feeRecords.xlsx";
-                TemplateExportParams params = new TemplateExportParams(url);
-                Workbook workbook = ExcelExportUtil.exportExcel(params, map);
-                response.setContentType("application/octet-stream;charset=UTF-8");
-                response.setHeader("Content-Disposition", "attachment");
-                OutputStream outs = response.getOutputStream();
-                workbook.write(outs);
-                outs.flush();
-                outs.close();
-            } catch (Exception e) {
-                e.printStackTrace();
+
+        String vehicleplate = odsLwzxsfsjFeeRecords01.getVehicleplate();
+
+        List<OdsLwzxsfsjFeeRecords01> list = new ArrayList<>();
+        if(StringUtils.isNotBlank(vehicleplate)) {
+            list = odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01ListToExport(odsLwzxsfsjFeeRecords01);
+        }
+
+        for (OdsLwzxsfsjFeeRecords01 feeRecords : list) {
+            // 时间格式化
+            if (null != feeRecords.getReceivetime()) {
+                feeRecords.setReceivetimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getReceivetime()));
+                feeRecords.setLastgantrytimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getLastgantrytime()));
             }
         }
+        Map<String, Object> map = new HashMap<>();
+        map.put("entitylist", list);
+        try {
+            String url = "templates/export/feeRecords.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
         return null;
     }
 
