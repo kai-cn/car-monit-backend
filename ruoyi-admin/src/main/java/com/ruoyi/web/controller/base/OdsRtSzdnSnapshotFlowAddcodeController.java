@@ -70,28 +70,38 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
         if(StringUtils.isBlank(platenumber)) {
             return null;
         }
+        // 当前页面
+        if (null == odsRtSzdnSnapshotFlowAddcode.getPageNum()){
+            odsRtSzdnSnapshotFlowAddcode.setPageNum(1);
+        }
+        // 分页大小
+        if (null == odsRtSzdnSnapshotFlowAddcode.getPageSize()){
+            odsRtSzdnSnapshotFlowAddcode.setPageSize(10);
+        }
         List<OdsRtSzdnSnapshotFlowAddcode> list = httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodeListToExport(odsRtSzdnSnapshotFlowAddcode);
-        // 方向
-        Map<String,String> directionMap = sysDictDataService.selectDictDataMap("direction");
+        if(list != null && !list.isEmpty()) {
+            // 方向
+            Map<String,String> directionMap = sysDictDataService.selectDictDataMap("direction");
 
-        list.stream().forEach(dp -> {
-            dp.setDirectionStr(directionMap.get(dp.getDirection().toString()));
-        });
+            list.stream().forEach(dp -> {
+                dp.setDirectionStr(directionMap.get(dp.getDirection().toString()));
+            });
 
-        Map<String,Object> map = new HashMap<>();
-        map.put("entitylist",list);
-        try {
-            String url = "templates/export/snapshotFlow.xlsx";
-            TemplateExportParams params = new TemplateExportParams(url);
-            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
-            response.setContentType("application/octet-stream;charset=UTF-8");
-            response.setHeader("Content-Disposition", "attachment");
-            OutputStream outs = response.getOutputStream();
-            workbook.write(outs);
-            outs.flush();
-            outs.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+            Map<String,Object> map = new HashMap<>();
+            map.put("entitylist",list);
+            try {
+                String url = "templates/export/snapshotFlow.xlsx";
+                TemplateExportParams params = new TemplateExportParams(url);
+                Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+                response.setContentType("application/octet-stream;charset=UTF-8");
+                response.setHeader("Content-Disposition", "attachment");
+                OutputStream outs = response.getOutputStream();
+                workbook.write(outs);
+                outs.flush();
+                outs.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         return null;
     }
