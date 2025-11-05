@@ -118,4 +118,10 @@ public class OdsSzdnGantry implements Custom {
     @TableField(exist = false)
     List<String> sectionCodeList;
 
+    /**
+     * 0没有1存在
+     */
+    @TableField(exist = false)
+    private String isData;
+
 }
