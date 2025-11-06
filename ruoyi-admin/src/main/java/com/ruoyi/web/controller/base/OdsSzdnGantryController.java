@@ -87,7 +87,8 @@ public class OdsSzdnGantryController extends BaseController {
                 for (OdsSzdnGantry gantry : list) {
                     gantry.setRoadName(roadMap.getOrDefault(gantry.getRoadCode(), ""));
                     gantry.setSectionName(sectionMap.getOrDefault(gantry.getSectionCode(), ""));
-                    gantry.setIsData("1".equals(gantry.getIsData()) ? "是" : "否");
+                    Long count = redisCache.getCacheObject(Constants.gantry_list_data + gantry.getGantryCode());
+                    gantry.setIsData(count != null && count > 0 ? "是" : "否");
                 }
                 list = list.stream().sorted(Comparator.comparing(OdsSzdnGantry::getRoadCode).thenComparing(OdsSzdnGantry::getSectionCode)
                         .thenComparing(OdsSzdnGantry::getGantryCode)).collect(Collectors.toList());
