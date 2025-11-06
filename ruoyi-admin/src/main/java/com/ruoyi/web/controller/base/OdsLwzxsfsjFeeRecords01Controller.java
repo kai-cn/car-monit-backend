@@ -59,8 +59,8 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
         List<OdsLwzxsfsjFeeRecords01> list = new ArrayList<>();
         long total = 0L;
 
-        String vehicleplate = odsLwzxsfsjFeeRecords01.getVehicleplate();
-        if(CommonUtil.isNotBlank(vehicleplate)) {
+        // 时间段必填
+        if(CommonUtil.isNotBlank(odsLwzxsfsjFeeRecords01.getInApplyTime1()) && CommonUtil.isNotBlank(odsLwzxsfsjFeeRecords01.getInApplyTime2())){
             TableDataInfo tableDataInfo =  odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01Page(odsLwzxsfsjFeeRecords01);
             if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
                 String trackJosn = JSON.toJSONString(tableDataInfo.getRows());
@@ -68,6 +68,8 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
                 total = tableDataInfo.getTotal();
             }
         }
+
+
 
         rspData.setCode(HttpStatus.SUCCESS);
         rspData.setMsg("查询成功");
@@ -93,8 +95,8 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
 
         List<OdsLwzxsfsjFeeRecords01> list = new ArrayList<>();
 
-        String vehicleplate = odsLwzxsfsjFeeRecords01.getVehicleplate();
-        if(CommonUtil.isNotBlank(vehicleplate)) {
+        // 时间段必填
+        if(CommonUtil.isNotBlank(odsLwzxsfsjFeeRecords01.getInApplyTime1()) && CommonUtil.isNotBlank(odsLwzxsfsjFeeRecords01.getInApplyTime2())){
             list = odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01ListToExport(odsLwzxsfsjFeeRecords01);
         }
 

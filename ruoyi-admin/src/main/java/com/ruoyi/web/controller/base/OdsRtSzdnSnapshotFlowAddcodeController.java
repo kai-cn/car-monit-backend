@@ -62,8 +62,8 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
         List<OdsRtSzdnSnapshotFlowAddcode> list = new ArrayList<>();
         long total = 0L;
 
-        String platenumber = odsRtSzdnSnapshotFlowAddcode.getPlatenumber();
-        if(CommonUtil.isNotBlank(platenumber)) {
+        // 时间段必填
+        if (CommonUtil.isNotBlank(odsRtSzdnSnapshotFlowAddcode.getApplyTime1()) && CommonUtil.isNotBlank(odsRtSzdnSnapshotFlowAddcode.getApplyTime2())){
             TableDataInfo tableDataInfo =  httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodePage(odsRtSzdnSnapshotFlowAddcode);
             if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
                 String trackJosn = JSON.toJSONString(tableDataInfo.getRows());
@@ -71,6 +71,7 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
                 total = tableDataInfo.getTotal();
             }
         }
+
 
         rspData.setCode(HttpStatus.SUCCESS);
         rspData.setMsg("查询成功");
@@ -97,10 +98,11 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
 
         List<OdsRtSzdnSnapshotFlowAddcode> list = new ArrayList<>();
 
-        String platenumber = odsRtSzdnSnapshotFlowAddcode.getPlatenumber();
-        if(CommonUtil.isNotBlank(platenumber)) {
+        // 时间段必填
+        if (CommonUtil.isNotBlank(odsRtSzdnSnapshotFlowAddcode.getApplyTime1()) && CommonUtil.isNotBlank(odsRtSzdnSnapshotFlowAddcode.getApplyTime2())){
             list = httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodeListToExport(odsRtSzdnSnapshotFlowAddcode);
         }
+
 
         // 方向
         Map<String,String> directionMap = sysDictDataService.selectDictDataMap("direction");
