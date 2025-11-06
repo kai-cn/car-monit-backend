@@ -349,6 +349,11 @@ public class Constants
      */
     public static final String gantry_list = "gantry_list";
 
+    /**
+     * 门架对象redis 数据
+     */
+    public static final String gantry_list_data = "gantry_list_data:";
+
 
 
 }
