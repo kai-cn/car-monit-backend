@@ -9,6 +9,7 @@ import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.ruoyi.base.domain.OdsSzdnSection;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.redis.RedisCache;
+import com.ruoyi.common.utils.CommonUtil;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,8 +88,14 @@ public class OdsSzdnGantryController extends BaseController {
                 for (OdsSzdnGantry gantry : list) {
                     gantry.setRoadName(roadMap.getOrDefault(gantry.getRoadCode(), ""));
                     gantry.setSectionName(sectionMap.getOrDefault(gantry.getSectionCode(), ""));
-                    Long count = redisCache.getCacheObject(Constants.gantry_list_data + gantry.getGantryCode());
-                    gantry.setIsData(count != null && count > 0 ? "是" : "否");
+                    gantry.setIsData("否");
+                    Object objNum = redisCache.getCacheObject(Constants.gantry_list_data + CommonUtil.isNull(gantry.getGantryCode()));
+                    if (null != objNum){
+                        Integer intCountNum = Integer.parseInt(objNum.toString());
+                        if (intCountNum > 0){
+                            gantry.setIsData("是");
+                        }
+                    }
                 }
                 list = list.stream().sorted(Comparator.comparing(OdsSzdnGantry::getRoadCode).thenComparing(OdsSzdnGantry::getSectionCode)
                         .thenComparing(OdsSzdnGantry::getGantryCode)).collect(Collectors.toList());
