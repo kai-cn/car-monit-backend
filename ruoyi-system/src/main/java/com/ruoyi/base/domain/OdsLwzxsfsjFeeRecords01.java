@@ -625,4 +625,8 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
 
     @TableField(exist = false)
     private String sectionName;
+
+
+    @TableField(exist = false)
+    private String roadname;
 }

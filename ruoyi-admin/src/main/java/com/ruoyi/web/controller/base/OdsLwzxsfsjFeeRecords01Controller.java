@@ -4,7 +4,6 @@ import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.alibaba.fastjson2.JSON;
 import com.ruoyi.base.domain.OdsLwzxsfsjFeeRecords01;
-import com.ruoyi.base.domain.OdsSzdnGantry;
 import com.ruoyi.base.domain.OdsSzdnSection;
 import com.ruoyi.base.service.forest.HttpOdsLwzxsfsjFeeRecords01Service;
 import com.ruoyi.common.constant.Constants;
@@ -29,7 +28,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 基础-收费流水Controller
@@ -72,22 +70,26 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
             if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
                 String trackJosn = JSON.toJSONString(tableDataInfo.getRows());
                 list = JSON.parseArray(trackJosn, OdsLwzxsfsjFeeRecords01.class);
-                List<OdsSzdnGantry> gantryList = new ArrayList<>();
-                // 根据门架编号查询路段
-                List obj = redisCache.getCacheObject(Constants.gantry_list);
-                Map<String, String> gantryMap = new HashMap<>();
-                if (null != obj) {
-                    gantryList = (List<OdsSzdnGantry>) obj;
-                    gantryMap = gantryList.stream().collect(Collectors.toMap(OdsSzdnGantry::getGantryCode, OdsSzdnGantry::getSectionCode, (k1, k2) -> k1));
-                }
-                List<OdsSzdnSection> sectionList = redisCache.getCacheList(Constants.SECTION_LIST);
-                Map<String, String> sectionMap = sectionList.stream().collect(Collectors.toMap(OdsSzdnSection::getSectionCode, OdsSzdnSection::getSectionName, (k1, k2) -> k1));
-                for (OdsLwzxsfsjFeeRecords01 feeRecords : list) {
-                    String sectionCode = gantryMap.getOrDefault(feeRecords.getGantryid(), "");
-                    if(CommonUtil.isNotBlank(sectionCode)){
-                        feeRecords.setSectionName(sectionMap.getOrDefault(sectionCode, ""));
+                if (null != list && list.size() > 0) {
+                    List<OdsSzdnSection> sectionList = redisCache.getCacheList(Constants.SECTION_LIST);
+                    Map<String, OdsSzdnSection> sectionMap = new HashMap<>();
+                    if (null !=sectionList && sectionList.size() > 0){
+                        for (OdsSzdnSection section:sectionList){
+                            sectionMap.put(CommonUtil.isNull(section.getSectionCode()),section);
+                        }
+                    }
+                    for (OdsLwzxsfsjFeeRecords01 feeRecords : list) {
+                        String sectionCode = CommonUtil.isNull(feeRecords.getSectionCodeStr());
+                        if(CommonUtil.isNotBlank(sectionCode)){
+                            if (sectionMap.containsKey(sectionCode)){
+                                OdsSzdnSection sectionBo = sectionMap.get(sectionCode);
+                                feeRecords.setSectionName(sectionBo.getSectionName());
+                                feeRecords.setRoadname(sectionBo.getRoadName());
+                            }
+                        }
                     }
                 }
+
                 total = tableDataInfo.getTotal();
             }
         }
@@ -123,31 +125,36 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
             list = odsLwzxsfsjFeeGantryFusion01.getOdsLwzxsfsjFeeRecords01ListToExport(odsLwzxsfsjFeeRecords01);
         }
 
-        List<OdsSzdnGantry> gantryList = new ArrayList<>();
-        // 根据门架编号查询路段
-        List obj = redisCache.getCacheObject(Constants.gantry_list);
-        Map<String, String> gantryMap = new HashMap<>();
-        if (null != obj) {
-            gantryList = (List<OdsSzdnGantry>) obj;
-            gantryMap = gantryList.stream().collect(Collectors.toMap(OdsSzdnGantry::getGantryCode, OdsSzdnGantry::getSectionCode, (k1, k2) -> k1));
-        }
-        List<OdsSzdnSection> sectionList = redisCache.getCacheList(Constants.SECTION_LIST);
-        Map<String, String> sectionMap = sectionList.stream().collect(Collectors.toMap(OdsSzdnSection::getSectionCode, OdsSzdnSection::getSectionName, (k1, k2) -> k1));
-        for (OdsLwzxsfsjFeeRecords01 feeRecords : list) {
-            // 时间格式化
-            if (null != feeRecords.getReceivetime()) {
-                feeRecords.setReceivetimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getReceivetime()));
+        if (null != list && list.size() > 0) {
+            List<OdsSzdnSection> sectionList = redisCache.getCacheList(Constants.SECTION_LIST);
+            Map<String, OdsSzdnSection> sectionMap = new HashMap<>();
+            if (null !=sectionList && sectionList.size() > 0){
+                for (OdsSzdnSection section:sectionList){
+                    sectionMap.put(CommonUtil.isNull(section.getSectionCode()),section);
+                }
+            }
+            for (OdsLwzxsfsjFeeRecords01 feeRecords : list) {
+                String sectionCode = CommonUtil.isNull(feeRecords.getSectionCodeStr());
+                if(CommonUtil.isNotBlank(sectionCode)){
+                    if (sectionMap.containsKey(sectionCode)){
+                        OdsSzdnSection sectionBo = sectionMap.get(sectionCode);
+                        feeRecords.setSectionName(sectionBo.getSectionName());
+                        feeRecords.setRoadname(sectionBo.getRoadName());
+                    }
+                }
 
-            }
+                // 时间格式化
+                if (null != feeRecords.getTranstime()) {
+                    feeRecords.setReceivetimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getTranstime()));
 
-            if (null != feeRecords.getLastgantrytime()) {
-                feeRecords.setLastgantrytimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getLastgantrytime()));
-            }
-            String sectionCode = gantryMap.getOrDefault(feeRecords.getGantryid(), "");
-            if(CommonUtil.isNotBlank(sectionCode)){
-                feeRecords.setSectionName(sectionMap.getOrDefault(sectionCode, ""));
+                }
+
+                if (null != feeRecords.getLastgantrytime()) {
+                    feeRecords.setLastgantrytimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getLastgantrytime()));
+                }
             }
         }
+
         Map<String, Object> map = new HashMap<>();
         map.put("entitylist", list);
         try {
