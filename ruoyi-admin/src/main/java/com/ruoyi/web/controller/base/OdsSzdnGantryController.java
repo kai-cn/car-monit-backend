@@ -7,6 +7,10 @@ import java.util.stream.Collectors;
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.ruoyi.base.domain.OdsSzdnSection;
+import com.ruoyi.base.domain.OdsSzdnToll;
+import com.ruoyi.base.domain.OdsYhglVBaseOrg;
+import com.ruoyi.base.service.IOdsSzdnTollService;
+import com.ruoyi.base.service.IOdsYhglVBaseOrgService;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
@@ -45,6 +49,10 @@ public class OdsSzdnGantryController extends BaseController {
     private IOdsSzdnGantryService odsSzdnGantryService;
     @Autowired
     private RedisCache redisCache;
+    @Autowired
+    private IOdsSzdnTollService tollService;
+    @Autowired
+    private IOdsYhglVBaseOrgService baseOrgService;
 
     /**
      * 查询门架信息列表
@@ -81,39 +89,45 @@ public class OdsSzdnGantryController extends BaseController {
             list = (List<OdsSzdnGantry>) obj;
         }
         if(!list.isEmpty()) {
+            //过滤条件 boundary_gantry_type = '1', is_virtual = '0'
+//            list = list.stream().filter(item -> "1".equals(item.getBoundaryGantryType()) && "0".equals(item.getIsVirtual())).collect(Collectors.toList());
             List<OdsSzdnSection> sectionList = redisCache.getCacheList(Constants.SECTION_LIST);
-            if(sectionList != null && !sectionList.isEmpty()) {
-                Map<String, String> roadMap = sectionList.stream().collect(Collectors.toMap(OdsSzdnSection::getRoadCode, OdsSzdnSection::getRoadName, (k1, k2) -> k1));
-                Map<String, String> sectionMap = sectionList.stream().collect(Collectors.toMap(OdsSzdnSection::getSectionCode, OdsSzdnSection::getSectionName, (k1, k2) -> k1));
-                for (OdsSzdnGantry gantry : list) {
-                    gantry.setRoadName(roadMap.getOrDefault(gantry.getRoadCode(), ""));
-                    gantry.setSectionName(sectionMap.getOrDefault(gantry.getSectionCode(), ""));
-                    gantry.setIsData("否");
-                    Object objNum = redisCache.getCacheObject(Constants.gantry_list_data + CommonUtil.isNull(gantry.getGantryCode()));
-                    if (null != objNum){
-                        Integer intCountNum = Integer.parseInt(objNum.toString());
-                        if (intCountNum > 0){
-                            gantry.setIsData("是");
-                        }
+            Map<String, String> roadMap = sectionList.stream().collect(Collectors.toMap(OdsSzdnSection::getRoadCode, OdsSzdnSection::getRoadName, (k1, k2) -> k1));
+            Map<String, String> sectionMap = sectionList.stream().collect(Collectors.toMap(OdsSzdnSection::getSectionCode, OdsSzdnSection::getSectionName, (k1, k2) -> k1));
+            Map<String, String> tollMap = tollService.list().stream().collect(Collectors.toMap(OdsSzdnToll::getTollCode, OdsSzdnToll::getTollName));
+            Map<String, String> orgMap = baseOrgService.list().stream().collect(Collectors.toMap(OdsYhglVBaseOrg::getOrgCode, OdsYhglVBaseOrg::getOrgName));
+            for (OdsSzdnGantry gantry : list) {
+                gantry.setRoadName(roadMap.getOrDefault(gantry.getRoadCode(), ""));
+                gantry.setSectionName(sectionMap.getOrDefault(gantry.getSectionCode(), ""));
+                gantry.setTollName(tollMap.getOrDefault(gantry.getTollCode(), ""));
+                gantry.setOrgName(orgMap.getOrDefault(gantry.getOrgCode(), ""));
+                gantry.setBoundaryGantryType("0".equals(gantry.getBoundaryGantryType()) ? "边界入口门架" : "边界出口门架");
+                gantry.setIsVirtual("0".equals(gantry.getIsVirtual()) ? "否" : "是");
+                gantry.setIsData("否");
+                Object objNum = redisCache.getCacheObject(Constants.gantry_list_data + CommonUtil.isNull(gantry.getGantryCode()));
+                if (null != objNum) {
+                    Integer intCountNum = Integer.parseInt(objNum.toString());
+                    if (intCountNum > 0){
+                        gantry.setIsData("是");
                     }
                 }
-                list = list.stream().sorted(Comparator.comparing(OdsSzdnGantry::getRoadCode).thenComparing(OdsSzdnGantry::getSectionCode)
-                        .thenComparing(OdsSzdnGantry::getGantryCode)).collect(Collectors.toList());
-                Map<String,Object> map = new HashMap<>();
-                map.put("entitylist", list);
-                try {
-                    String url = "templates/export/gantry.xlsx";
-                    TemplateExportParams params = new TemplateExportParams(url);
-                    Workbook workbook = ExcelExportUtil.exportExcel(params, map);
-                    response.setContentType("application/octet-stream;charset=UTF-8");
-                    response.setHeader("Content-Disposition", "attachment");
-                    OutputStream outs = response.getOutputStream();
-                    workbook.write(outs);
-                    outs.flush();
-                    outs.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+            }
+            list = list.stream().sorted(Comparator.comparing(OdsSzdnGantry::getOrgCode).thenComparing(OdsSzdnGantry::getRoadCode).thenComparing(OdsSzdnGantry::getSectionCode)
+                    .thenComparing(OdsSzdnGantry::getTollCode).thenComparing(OdsSzdnGantry::getGantryCode)).collect(Collectors.toList());
+            Map<String, Object> map = new HashMap<>();
+            map.put("entitylist", list);
+            try {
+                String url = "templates/export/gantry.xlsx";
+                TemplateExportParams params = new TemplateExportParams(url);
+                Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+                response.setContentType("application/octet-stream;charset=UTF-8");
+                response.setHeader("Content-Disposition", "attachment");
+                OutputStream outs = response.getOutputStream();
+                workbook.write(outs);
+                outs.flush();
+                outs.close();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
         return null;

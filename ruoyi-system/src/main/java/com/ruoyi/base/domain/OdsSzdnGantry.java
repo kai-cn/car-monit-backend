@@ -132,4 +132,12 @@ public class OdsSzdnGantry implements Custom {
     @TableField(exist = false)
     private String sectionName;
 
+    //收费站名称
+    @TableField(exist = false)
+    private String tollName;
+
+    //管理中心名称
+    @TableField(exist = false)
+    private String orgName;
+
 }
