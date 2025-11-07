@@ -65,6 +65,10 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
             if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
                 String trackJosn = JSON.toJSONString(tableDataInfo.getRows());
                 list = JSON.parseArray(trackJosn, OdsLwzxsfsjFeeRecords01.class);
+
+                // 根据门架编号擦好像路段
+
+
                 total = tableDataInfo.getTotal();
             }
         }
@@ -104,6 +108,10 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
             // 时间格式化
             if (null != feeRecords.getReceivetime()) {
                 feeRecords.setReceivetimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getReceivetime()));
+
+            }
+
+            if (null != feeRecords.getLastgantrytime()) {
                 feeRecords.setLastgantrytimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getLastgantrytime()));
             }
         }
