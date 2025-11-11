@@ -250,4 +250,8 @@ public class ZdataTrailTracks implements Custom {
     @TableField(exist = false)
     private Integer passCount;
 
+    /** 逃费场景 */
+    @TableField(exist = false)
+    private String escapedTfcj;
+
 }

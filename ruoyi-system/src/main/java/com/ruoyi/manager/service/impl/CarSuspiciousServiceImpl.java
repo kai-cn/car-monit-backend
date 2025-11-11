@@ -457,6 +457,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
                         carSuspicious.setTrackId(trailUUid);
                         carSuspicious.setTrackJosn(JSON.toJSON(trailInfo)+"");
+                        carSuspicious.setBackCol1(tracksBo.getEscapedTfcj());
 
                         if (checkStatus.equals("1")){
                             // 是否核实
