@@ -800,7 +800,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                             conutFeeRecord++;
                         }
                     }
-                    if (conutGantryCapture > conutFeeRecord) {
+                    if (conutGantryCapture > 0 && conutFeeRecord == 0) {
                         trailDevBO.setStatus("1");  // 异常数据
                         exceptNum++;
                     }
