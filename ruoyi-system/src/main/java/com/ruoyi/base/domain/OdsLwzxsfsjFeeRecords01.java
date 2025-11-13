@@ -604,8 +604,7 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     @TableField(exist = false)
     private String receivetimeStr;
 
-    @TableField(exist = false)
-    private String lastgantrytimeStr;
+
 
     /** 所属路段编码 */
     @TableField(exist = false)
@@ -629,4 +628,16 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
 
     @TableField(exist = false)
     private String roadname;
+
+    /**
+     * 计费交易时间
+     */
+    @TableField(exist = false)
+    private String transtimeStr;
+
+    /**
+     * 通过上一个门架的时间
+     */
+    @TableField(exist = false)
+    private String lastgantrytimeStr;
 }

@@ -143,15 +143,6 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
                     }
                 }
 
-                // 时间格式化
-                if (null != feeRecords.getTranstime()) {
-                    feeRecords.setReceivetimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getTranstime()));
-
-                }
-
-                if (null != feeRecords.getLastgantrytime()) {
-                    feeRecords.setLastgantrytimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, feeRecords.getLastgantrytime()));
-                }
             }
         }
 
