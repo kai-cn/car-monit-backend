@@ -269,6 +269,8 @@ public class CarSuspiciousController extends BaseController {
 
         Map<String,String> isExceptMap = sysDictDataService.selectDictDataMap("is_except");
 
+        Map<String,String> checkStatusMap = sysDictDataService.selectDictDataMap("check_status");
+
 
         list.stream().forEach(dp -> {
             if (null != dp.getCreateTime()){
@@ -278,7 +280,7 @@ public class CarSuspiciousController extends BaseController {
             dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
             dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
             dp.setIsExcept(CommonUtil.isNull(isExceptMap.get(dp.getIsExcept())));
-            dp.setCheckStatus(CommonUtil.isNull(isExceptMap.get(dp.getCheckStatus())));
+            dp.setCheckStatus(CommonUtil.isNull(checkStatusMap.get(dp.getCheckStatus())));
         });
 
         Map<String,Object> map = new HashMap<>();
