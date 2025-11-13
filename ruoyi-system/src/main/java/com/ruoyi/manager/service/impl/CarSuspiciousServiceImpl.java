@@ -475,7 +475,6 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                             }else{
                                 // 车型
                                 if (CommonUtil.isNotBlank(tracksBo.getEnvehicletype())){
-
                                     String carType = "";
                                     String carVehicle = "";
                                     String carTypeName = CommonUtil.isNull(carTypeMap.get(tracksBo.getEnvehicletype()));
@@ -532,7 +531,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
                             //--------------设置默认值
                             if (CommonUtil.isBlank(carSuspicious.getPlateColor())){
-                                carSuspicious.setPlateColor("0");
+                                carSuspicious.setPlateColor("9");
                             }
 
                             if (CommonUtil.isBlank(carSuspicious.getCarType())){
