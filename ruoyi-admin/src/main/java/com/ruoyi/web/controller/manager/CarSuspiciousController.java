@@ -258,6 +258,8 @@ public class CarSuspiciousController extends BaseController {
     @GetMapping("/export")
     public AjaxResult export(CarSuspicious carSuspicious, HttpServletResponse response) {
         List<CarSuspicious> list = carSuspiciousService.selectCarSuspiciousList(carSuspicious);
+        // 车牌颜色
+        Map<String,String> plateColorMap = sysDictDataService.selectDictDataMap("plate_color");
         // 车型
         Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
 
@@ -276,6 +278,7 @@ public class CarSuspiciousController extends BaseController {
             if (null != dp.getCreateTime()){
                 dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
             }
+            dp.setPlateColor(CommonUtil.isNull(plateColorMap.get(dp.getPlateColor())));
             dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
             dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
             dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
