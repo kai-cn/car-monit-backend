@@ -903,7 +903,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             Geometry rtnGeometry = new Geometry();
             if(null == paths)
             {
-                log.info("调用API找不到位置不存在-----------");
+                log.info("调用腾讯地图API找不到位置不存在-----------");
                 return this.getCarGeometry(tracksBo,josnList);
             }
             rtnGeometry.setLxbh(lxbh);
@@ -911,6 +911,73 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             List<Geometry> rtn = new ArrayList<>();
             rtn.add(rtnGeometry);
             return rtn;
+        }
+    }
+
+    /**
+     * 根据桩号转换轨迹经纬度：先通过本身的API
+     * @param josnList
+     * @return
+     */
+    @Override
+    public List<Geometry> getCarGeometryByPlanNew(ZdataTrailTracks tracksBo, List<TrailBo> josnList) {
+        if (null == tracksBo){
+            tracksBo = new ZdataTrailTracks();
+        }
+
+        List<String> nodeIds = new ArrayList<>();
+
+        if (CommonUtil.isNotBlank(tracksBo.getEntollstationid()) && CommonUtil.isNotBlank(tracksBo.getExtollstationid()))
+        {
+            nodeIds.add(tracksBo.getEntollstationid());  // 起点
+
+            String key = Constants.car_lxgh + CommonUtil.isNull(tracksBo.getPlateKey()) + CommonUtil.isNull(tracksBo.getEntollstationid())
+                    + CommonUtil.isNull(tracksBo.getExtollstationid()) + josnList.size();
+
+            String lxbh = "";
+            StringBuilder wayPoints = new StringBuilder();
+
+            for (TrailBo trailBo : josnList) {
+                String roadCode = trailBo.getRoadCode();
+                if("".equals(lxbh) && !"".equals(roadCode))
+                {
+                    lxbh = roadCode;
+                }
+                if (CommonUtil.isNotBlank(trailBo.getDevCode())) {
+                    nodeIds.add(trailBo.getDevCode());  // 中间的轨迹点
+                }
+            }
+            nodeIds.add(tracksBo.getExtollstationid()); // 终点
+
+            String paths = "";
+
+            Object obj = redisCache.getCacheObject(key);
+            if (null != obj) {
+                paths = CommonUtil.isNull(obj);
+            }else{
+                paths = lonLatPathsUtils.calcLonAndLatPaths(tracksBo.getStartLonDec().toPlainString(), tracksBo.getStratLatDec().toPlainString(),
+                        tracksBo.getEndLonDec().toPlainString(), tracksBo.getEndLatDec().toPlainString(), "", wayPoints.toString());
+                if(null != paths){
+                    redisCache.setCacheObject(key,paths);
+                }
+            }
+
+
+            Geometry rtnGeometry = new Geometry();
+            if(null == paths)
+            {
+                log.info("调用本地API找不到位置不存在-----------");
+                return this.getCarGeometryByPlan(tracksBo,josnList);
+            }
+            rtnGeometry.setLxbh(lxbh);
+            rtnGeometry.setPaths(paths);
+            List<Geometry> rtn = new ArrayList<>();
+            rtn.add(rtnGeometry);
+            return rtn;
+        }
+        else {
+            log.info("起始和终点位置不存在-----------");
+            return this.getCarGeometryByPlan(tracksBo,josnList);
         }
     }
 
