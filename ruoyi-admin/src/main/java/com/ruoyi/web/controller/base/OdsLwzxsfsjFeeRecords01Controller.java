@@ -14,7 +14,9 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.system.service.ISysDictDataService;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,6 +45,8 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
     private HttpOdsLwzxsfsjFeeRecords01Service odsLwzxsfsjFeeGantryFusion01;
     @Resource
     private RedisCache redisCache;
+    @Autowired
+    private ISysDictDataService sysDictDataService;
 
     /**
      * 查询基础-收费流水列表
@@ -126,6 +130,10 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
         }
 
         if (null != list && list.size() > 0) {
+
+            // 通行状态
+            Map<String,String> passstateMap = sysDictDataService.selectDictDataMap("passstate");
+
             List<OdsSzdnSection> sectionList = redisCache.getCacheList(Constants.SECTION_LIST);
             Map<String, OdsSzdnSection> sectionMap = new HashMap<>();
             if (null !=sectionList && sectionList.size() > 0){
@@ -142,7 +150,7 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
                         feeRecords.setRoadname(sectionBo.getRoadName());
                     }
                 }
-
+                feeRecords.setPassstate(CommonUtil.isNull(passstateMap.get(feeRecords.getPassstate())));
             }
         }
 
