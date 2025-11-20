@@ -221,6 +221,7 @@
         t.car_no,count(1) confimFreeNum,round(ifnull(sum(t.aduit_amount),0) + ifnull(sum(t.amount),0),2) confimFreeAmount
         from car_confim_free t
         where t.del_flag = '0' and t.car_no = #{carNo}
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
         group by t.car_no
     </select>
 
