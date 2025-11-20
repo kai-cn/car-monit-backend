@@ -7,6 +7,7 @@ import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.IGeometryService;
+import com.ruoyi.base.service.IRoadPathService;
 import com.ruoyi.base.service.IZdataTrailTracksService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.base.util.GpsUtil;
@@ -73,6 +74,8 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
     @Resource
     private LonLatPathsUtils lonLatPathsUtils;
+    @Autowired
+    private IRoadPathService roadPathService;
 
     /**
      * 查询车辆行驶轨迹
@@ -954,10 +957,11 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             Object obj = redisCache.getCacheObject(key);
             if (null != obj) {
                 paths = CommonUtil.isNull(obj);
-            }else{
-                paths = lonLatPathsUtils.calcLonAndLatPaths(tracksBo.getStartLonDec().toPlainString(), tracksBo.getStratLatDec().toPlainString(),
-                        tracksBo.getEndLonDec().toPlainString(), tracksBo.getEndLatDec().toPlainString(), "", wayPoints.toString());
-                if(null != paths){
+            } else {
+                paths = roadPathService.getShortestRoadPath(nodeIds);
+                /*paths = lonLatPathsUtils.calcLonAndLatPaths(tracksBo.getStartLonDec().toPlainString(), tracksBo.getStratLatDec().toPlainString(),
+                        tracksBo.getEndLonDec().toPlainString(), tracksBo.getEndLatDec().toPlainString(), "", wayPoints.toString());*/
+                if(null != paths) {
                     redisCache.setCacheObject(key,paths);
                 }
             }
