@@ -15,7 +15,7 @@ public class PathQueryRo {
     private List<String> nodeIds;
     private String pathType;
     private String includeCoordinates;
-    private int limit;
+    /*private int limit;
     private int page;
-    private int pageSize;
+    private int pageSize;*/
 }

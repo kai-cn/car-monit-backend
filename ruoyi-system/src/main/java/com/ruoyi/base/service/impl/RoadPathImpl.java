@@ -46,7 +46,7 @@ public class RoadPathImpl implements IRoadPathService {
                     JSONObject data = object.getJSONObject("data");
                     if (data != null) {
                         JSONArray array = data.getJSONArray("data");
-                        if (array != null) {
+                        if (array != null && !array.isEmpty()) {
                             JSONArray rtn = new JSONArray();
                             for (Object o : array) {
                                 JSONObject obj = (JSONObject) o;
