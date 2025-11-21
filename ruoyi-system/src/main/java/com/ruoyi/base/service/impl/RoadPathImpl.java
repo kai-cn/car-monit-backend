@@ -77,6 +77,7 @@ public class RoadPathImpl implements IRoadPathService {
                 log.error("接口调用返回结果为Null");
             }
         } catch (Exception e) {
+            log.error("接口调用返回结果为失败");
             e.printStackTrace();
             return null;
         }
