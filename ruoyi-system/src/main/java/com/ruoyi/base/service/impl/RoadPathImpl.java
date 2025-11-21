@@ -1,5 +1,6 @@
 package com.ruoyi.base.service.impl;
 
+import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
@@ -8,6 +9,7 @@ import com.ruoyi.base.domain.PathQueryRo;
 import com.ruoyi.base.domain.ResData;
 import com.ruoyi.base.service.IRoadPathService;
 import com.ruoyi.base.service.forest.RoadPathApi;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -16,12 +18,14 @@ import java.math.RoundingMode;
 import java.util.List;
 
 /**
- * @Description: 
+ * @Description:
  * @author zhukai
- * @date 2025/11/20 17:38 
- * @Param: 
- * @return: 
+ * @date 2025/11/20 17:38
+ * @Param:
+ * @return:
  */
+
+@Slf4j
 @Service
 public class RoadPathImpl implements IRoadPathService {
 
@@ -66,9 +70,14 @@ public class RoadPathImpl implements IRoadPathService {
                             return rtn.toString();
                         }
                     }
+                } else {
+                    log.error("接口调用结果success为false");
                 }
+            } else {
+                log.error("接口调用返回结果为Null");
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
         return null;
