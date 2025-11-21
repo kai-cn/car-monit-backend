@@ -925,7 +925,6 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     @Override
     public List<Geometry> getCarGeometryByPlanNew(ZdataTrailTracks tracksBo, List<TrailBo> josnList) {
 
-        // return this.getCarGeometryByPlan(tracksBo,josnList);
 
         if (null == tracksBo){
             tracksBo = new ZdataTrailTracks();
