@@ -7,6 +7,7 @@ import com.alibaba.fastjson2.TypeReference;
 import com.ruoyi.base.domain.Path;
 import com.ruoyi.base.domain.PathQueryRo;
 import com.ruoyi.base.domain.ResData;
+import com.ruoyi.base.domain.SegmentRoutes;
 import com.ruoyi.base.service.IRoadPathService;
 import com.ruoyi.base.service.forest.RoadPathApi;
 import lombok.extern.slf4j.Slf4j;
@@ -54,17 +55,21 @@ public class RoadPathImpl implements IRoadPathService {
                                 ResData resData = obj.to(new TypeReference<ResData>() {
                                 });
                                 if(resData != null) {
-                                    List<Path> pathList = resData.getPathResult().getPath();
-                                    for (Path path : pathList) {
-                                        double longitude = path.getLongitude();
+                                    List<SegmentRoutes> pathList = resData.getSegmentRoutes();
+                                    for (SegmentRoutes path : pathList) {
+                                        List<List<Double>> routePoints  = path.getRoutePoints();
+                                        for (List<Double> point:routePoints){
+                                            rtn.add(point);
+                                        }
+                                      /*  double longitude = path.getLongitude();
                                         double latitude = path.getLatitude();
                                         // 保留后6位
                                         double[] gps = new double[2];
                                         gps[0] = longitude;
                                         gps[1] = latitude;
                                         gps[0] = BigDecimal.valueOf(gps[0]).setScale(6, RoundingMode.HALF_UP).doubleValue();
-                                        gps[1] = BigDecimal.valueOf(gps[1]).setScale(6, RoundingMode.HALF_UP).doubleValue();
-                                        rtn.add(gps);
+                                        gps[1] = BigDecimal.valueOf(gps[1]).setScale(6, RoundingMode.HALF_UP).doubleValue();*/
+
                                     }
                                 }
                             }
