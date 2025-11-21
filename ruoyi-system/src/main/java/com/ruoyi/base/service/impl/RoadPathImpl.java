@@ -67,7 +67,9 @@ public class RoadPathImpl implements IRoadPathService {
                                     }
                                 }
                             }
-                            return rtn.toString();
+                            if(!rtn.isEmpty()) {
+                                return rtn.toString();
+                            }
                         }
                     }
                 } else {
