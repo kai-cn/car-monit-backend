@@ -8,5 +8,7 @@ import java.util.List;
  * @Description:
  */
 public interface IRoadPathService {
+
     String getShortestRoadPath(List<String> nodeIds);
+
 }
