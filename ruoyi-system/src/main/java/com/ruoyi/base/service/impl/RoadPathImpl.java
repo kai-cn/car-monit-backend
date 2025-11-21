@@ -41,6 +41,7 @@ public class RoadPathImpl implements IRoadPathService {
         try {
             JSONObject object = roadPathApi.getRoadPath(ro);
             if (object != null) {
+                log.info(object.toJSONString());
                 Boolean success = object.getBoolean("success");
                 if (success != null && success) {
                     JSONObject data = object.getJSONObject("data");
