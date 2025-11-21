@@ -313,7 +313,7 @@ public class CarTrackInfoController extends BaseController {
                 List<Geometry> raodTrailList = new ArrayList<>();
                 if (null != josnList && josnList.size() > 0) {
                     // raodTrailList = carTrackInfoService.getCarGeometry(tracks, josnList);
-                    raodTrailList = carTrackInfoService.getCarGeometryByPlan(tracks, josnList);
+                    raodTrailList = carTrackInfoService.getCarGeometryByPlanNew(tracks, josnList);
                 }
                 trailInfo.setRaodTrailList(raodTrailList);
                 trailInfo.setTrailDevCountBO(carTrackInfoService.getTrailDevBO(tracks,josnList));

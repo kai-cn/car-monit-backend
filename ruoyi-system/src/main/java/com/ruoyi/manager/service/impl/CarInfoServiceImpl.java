@@ -79,7 +79,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                     carTrailList = trailInfo.getTrailList();
                     if (null != carTrailList && carTrailList.size() > 0){
                         //raodTrailList = carTrackInfoService.getCarGeometry(tracks,carTrailList);
-                        raodTrailList = carTrackInfoService.getCarGeometryByPlan(tracks, carTrailList);
+                        raodTrailList = carTrackInfoService.getCarGeometryByPlanNew(tracks, carTrailList);
                     }
 
                     trailInfo.setTrailUuid(car.getCarNo());
