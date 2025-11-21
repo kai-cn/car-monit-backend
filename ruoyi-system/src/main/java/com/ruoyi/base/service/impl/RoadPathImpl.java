@@ -8,9 +8,9 @@ import com.ruoyi.base.domain.PathQueryRo;
 import com.ruoyi.base.domain.ResData;
 import com.ruoyi.base.service.IRoadPathService;
 import com.ruoyi.base.service.forest.RoadPathApi;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -25,7 +25,7 @@ import java.util.List;
 @Service
 public class RoadPathImpl implements IRoadPathService {
 
-    @Autowired
+    @Resource
     private RoadPathApi roadPathApi;
 
     @Override

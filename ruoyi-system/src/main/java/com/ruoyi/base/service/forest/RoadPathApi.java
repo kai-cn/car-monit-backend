@@ -1,7 +1,8 @@
 package com.ruoyi.base.service.forest;
 
 import com.alibaba.fastjson2.JSONObject;
-import com.dtflys.forest.annotation.*;
+import com.dtflys.forest.annotation.JSONBody;
+import com.dtflys.forest.annotation.Post;
 import com.ruoyi.base.domain.PathQueryRo;
 
 /**
@@ -13,7 +14,6 @@ import com.ruoyi.base.domain.PathQueryRo;
  */
 public interface RoadPathApi {
 
-	@Headers({ "Connection:close"})
-	@Post(url = "${roadPathUrl}/api/routes/query", connectTimeout = 30000)
+	@Post(url = "${roadPathUrl}/api/routes/query")
 	public JSONObject getRoadPath(@JSONBody PathQueryRo queryRo);
 }

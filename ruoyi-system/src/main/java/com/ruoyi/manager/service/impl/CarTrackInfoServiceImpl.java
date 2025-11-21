@@ -938,8 +938,6 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     + CommonUtil.isNull(tracksBo.getExtollstationid()) + josnList.size();
 
             String lxbh = "";
-            StringBuilder wayPoints = new StringBuilder();
-
             for (TrailBo trailBo : josnList) {
                 String roadCode = trailBo.getRoadCode();
                 if("".equals(lxbh) && !"".equals(roadCode))
@@ -959,9 +957,8 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                 paths = CommonUtil.isNull(obj);
             } else {
                 paths = roadPathService.getShortestRoadPath(nodeIds);
-                /*paths = lonLatPathsUtils.calcLonAndLatPaths(tracksBo.getStartLonDec().toPlainString(), tracksBo.getStratLatDec().toPlainString(),
-                        tracksBo.getEndLonDec().toPlainString(), tracksBo.getEndLatDec().toPlainString(), "", wayPoints.toString());*/
                 if(null != paths) {
+                    log.info("调用本地API获取path-----------");
                     redisCache.setCacheObject(key,paths);
                 }
             }
