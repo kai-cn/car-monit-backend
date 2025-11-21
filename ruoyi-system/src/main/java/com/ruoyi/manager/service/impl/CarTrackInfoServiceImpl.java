@@ -924,7 +924,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
      */
     @Override
     public List<Geometry> getCarGeometryByPlanNew(ZdataTrailTracks tracksBo, List<TrailBo> josnList) {
-        if (null == tracksBo){
+
+        return this.getCarGeometryByPlan(tracksBo,josnList);
+
+       /* if (null == tracksBo){
             tracksBo = new ZdataTrailTracks();
         }
 
@@ -979,7 +982,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         else {
             log.info("起始和终点位置不存在-----------");
             return this.getCarGeometryByPlan(tracksBo,josnList);
-        }
+        }*/
     }
 
 }
