@@ -39,6 +39,7 @@ public class RoadPathImpl implements IRoadPathService {
         ro.setNodeIds(nodeIds);
         ro.setPathType("SHORTEST");
         ro.setIncludeCoordinates("TRUE");
+        ro.setQueryMode("LENIENT");
         try {
             JSONObject object = roadPathApi.getRoadPath(ro);
             if (object != null) {
