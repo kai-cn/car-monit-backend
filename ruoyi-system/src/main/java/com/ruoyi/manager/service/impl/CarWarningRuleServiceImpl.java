@@ -75,6 +75,48 @@ public class CarWarningRuleServiceImpl extends ServiceImpl<CarWarningRuleMapper,
             // 新增 主键
             carWarningRuleMapper.insert(carWarningRule);
         }
+        cacheWarningRule();
+        return AjaxResult.success("操作成功！",carWarningRule.getId());
+    }
+
+    /**
+     * 批量删除预警规则
+     *
+     * @param ids 需要删除的预警规则ID
+     * @return 结果
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public AjaxResult deleteCarWarningRuleByIds(String[] ids)
+    {
+        int count = carWarningRuleMapper.deleteCarWarningRuleByIds(ids);
+        cacheWarningRule();
+        return AjaxResult.success(count);
+    }
+
+    /**
+     * 删除预警规则信息
+     *
+     * @param id 预警规则ID
+     * @return 结果
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public AjaxResult deleteCarWarningRuleById(String id)
+    {
+        int count = carWarningRuleMapper.deleteCarWarningRuleById(id);
+        cacheWarningRule();
+        return AjaxResult.success(count);
+    }
+
+
+    private void cacheWarningRule() {
+        //先删除
+        Collection<String> keys = redisCache.keys(Constants.CAR_WARNING_RULE + "*");
+        if(keys != null && !keys.isEmpty()) {
+            for (String key : keys) {
+                redisCache.deleteObject(key);
+            }
+        }
         List<CarWarningRule> ruleList = this.selectCarWarningRuleList(new CarWarningRule());
         Map<String, Map<String, Set<String>>> map = new HashMap<>();
         if(ruleList != null && !ruleList.isEmpty()) {
@@ -106,34 +148,6 @@ public class CarWarningRuleServiceImpl extends ServiceImpl<CarWarningRuleMapper,
                 redisCache.setCacheMap(Constants.CAR_WARNING_RULE + userId, entry.getValue());
             }
         }
-        return AjaxResult.success("操作成功！",carWarningRule.getId());
-    }
-
-    /**
-     * 批量删除预警规则
-     *
-     * @param ids 需要删除的预警规则ID
-     * @return 结果
-     */
-    @Transactional(rollbackFor = Exception.class)
-    @Override
-    public AjaxResult deleteCarWarningRuleByIds(String[] ids)
-    {
-        int count = carWarningRuleMapper.deleteCarWarningRuleByIds(ids);
-        return AjaxResult.success(count);
-    }
-
-    /**
-     * 删除预警规则信息
-     *
-     * @param id 预警规则ID
-     * @return 结果
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public AjaxResult deleteCarWarningRuleById(String id)
-    {
-        int count = carWarningRuleMapper.deleteCarWarningRuleById(id);
-        return AjaxResult.success(count);
     }
 
 

@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -83,6 +84,11 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
                         }
                     }
                     for (OdsLwzxsfsjFeeRecords01 feeRecords : list) {
+                        if(feeRecords.getFee() != null && feeRecords.getFee().compareTo(BigDecimal.ZERO) > 0) {
+                            feeRecords.setChargeStatus("1");//收费成功
+                        } else {
+                            feeRecords.setChargeStatus("2");//收费失败
+                        }
                         String sectionCode = CommonUtil.isNull(feeRecords.getSectionCodeStr());
                         if(CommonUtil.isNotBlank(sectionCode)){
                             if (sectionMap.containsKey(sectionCode)){
@@ -151,6 +157,12 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
                     }
                 }
                 feeRecords.setPassstate(CommonUtil.isNull(passstateMap.get(feeRecords.getPassstate())));
+                if(feeRecords.getFee() != null && feeRecords.getFee().compareTo(BigDecimal.ZERO) > 0) {
+                    feeRecords.setChargeStatus("1");//收费成功
+                } else {
+                    feeRecords.setChargeStatus("2");//收费失败
+                }
+                feeRecords.setChargeStatusStr(CommonUtil.isNull(passstateMap.get(feeRecords.getChargeStatus())));
             }
         }
 
