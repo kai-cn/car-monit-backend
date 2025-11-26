@@ -3,12 +3,15 @@ package com.ruoyi.web.controller.manager;
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.ruoyi.common.annotation.Log;
+import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.manager.domain.CarWarningInfo;
 import com.ruoyi.manager.service.ICarWarningInfoService;
 import com.ruoyi.system.service.ISysDictDataService;
@@ -39,6 +42,9 @@ public class CarWarningInfoController extends BaseController {
     @Autowired
     private ISysDictDataService sysDictDataService;
 
+    @Autowired
+    private RedisCache redisCache;
+
     /**
      * 查询预警车辆列表
      */
@@ -46,7 +52,6 @@ public class CarWarningInfoController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo list(CarWarningInfo carWarningInfo) {
         startPage();
-
         String flag = "";
         if (CommonUtil.isNotBlank(carWarningInfo.getQueryRante())){
             flag = carWarningInfo.getQueryRante();
@@ -81,6 +86,31 @@ public class CarWarningInfoController extends BaseController {
         }
 
         List<CarWarningInfo> list = carWarningInfoService.selectCarWarningInfoList(carWarningInfo);
+        if(list != null && !list.isEmpty()) {
+            Long userId = SecurityUtils.getUserId();
+            Map<String, Set<String>> map = redisCache.getCacheMap(Constants.CAR_WARNING_RULE + userId);
+            if (map != null && !map.isEmpty()) {
+                Set<String> setList = map.getOrDefault("1", new HashSet<>());//声音提醒
+                Object cacheObject = redisCache.getCacheObject("sys_config:warning_trigger_timespan");//预警触发时间间隔
+                if (cacheObject == null) {
+                    cacheObject = 10;//默认10min
+                }
+                long triggerTimeSpan = Long.parseLong(cacheObject.toString());
+                long MinutesInMillis = triggerTimeSpan * 60 * 1000; // 分钟转换为毫秒
+                for (CarWarningInfo warningInfo : list) {
+                    Date gantryTime = warningInfo.getGantryTime();
+                    if(gantryTime != null) {
+                        //经过时间在指定的分钟内告警
+                        if(Math.abs(gantryTime.getTime() - System.currentTimeMillis()) <= MinutesInMillis) {
+                            String gantryStationId = warningInfo.getGantryStationId();
+                            if (setList.contains(gantryStationId)) {
+                                warningInfo.setNeedToWarn(true);//需要告警标志
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return getDataTable(list);
     }
 
