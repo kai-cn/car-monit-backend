@@ -89,6 +89,7 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
                         } else {
                             feeRecords.setChargeStatus("2");//收费失败
                         }
+                        feeRecords.setFee(null);//置空
                         String sectionCode = CommonUtil.isNull(feeRecords.getSectionCodeStr());
                         if(CommonUtil.isNotBlank(sectionCode)){
                             if (sectionMap.containsKey(sectionCode)){
@@ -163,6 +164,7 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
                     feeRecords.setChargeStatus("2");//收费失败
                 }
                 feeRecords.setChargeStatusStr(CommonUtil.isNull(passstateMap.get(feeRecords.getChargeStatus())));
+                feeRecords.setFee(null);//置空
             }
         }
 
