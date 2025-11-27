@@ -85,9 +85,9 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
 
                         String feecalcresult = CommonUtil.isNull(feeRecords.getFeecalcresult()); // 计费模块响应计费结果
                         if ("0".equals(feecalcresult)) {
-                            feeRecords.setChargeStatus("成功！");
+                            feeRecords.setChargeStatus("成功");
                         }else {
-                            feeRecords.setChargeStatus("失败！");
+                            feeRecords.setChargeStatus("失败");
                         }
 
                         String sectionCode = CommonUtil.isNull(feeRecords.getSectionCodeStr());
@@ -161,9 +161,9 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
 
                 String feecalcresult = CommonUtil.isNull(feeRecords.getFeecalcresult()); // 计费模块响应计费结果
                 if ("0".equals(feecalcresult)) {
-                    feeRecords.setChargeStatus("成功！");
+                    feeRecords.setChargeStatus("成功");
                 }else {
-                    feeRecords.setChargeStatus("失败！");
+                    feeRecords.setChargeStatus("失败");
                 }
             }
         }
