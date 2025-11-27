@@ -13,7 +13,6 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
-import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.system.service.ISysDictDataService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -167,8 +165,6 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
                 }else {
                     feeRecords.setChargeStatus("失败！");
                 }
-
-                feeRecords.setFee(null);//置空
             }
         }
 
