@@ -84,12 +84,14 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
                         }
                     }
                     for (OdsLwzxsfsjFeeRecords01 feeRecords : list) {
-                        if(feeRecords.getFee() != null && feeRecords.getFee().compareTo(BigDecimal.ZERO) > 0) {
-                            feeRecords.setChargeStatus("1");//收费成功
-                        } else {
-                            feeRecords.setChargeStatus("2");//收费失败
+
+                        String feecalcresult = CommonUtil.isNull(feeRecords.getFeecalcresult()); // 计费模块响应计费结果
+                        if ("0".equals(feecalcresult)) {
+                            feeRecords.setChargeStatus("成功！");
+                        }else {
+                            feeRecords.setChargeStatus("失败！");
                         }
-                        feeRecords.setFee(null);//置空
+
                         String sectionCode = CommonUtil.isNull(feeRecords.getSectionCodeStr());
                         if(CommonUtil.isNotBlank(sectionCode)){
                             if (sectionMap.containsKey(sectionCode)){
@@ -158,12 +160,14 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
                     }
                 }
                 feeRecords.setPassstate(CommonUtil.isNull(passstateMap.get(feeRecords.getPassstate())));
-                if(feeRecords.getFee() != null && feeRecords.getFee().compareTo(BigDecimal.ZERO) > 0) {
-                    feeRecords.setChargeStatus("1");//收费成功
-                } else {
-                    feeRecords.setChargeStatus("2");//收费失败
+
+                String feecalcresult = CommonUtil.isNull(feeRecords.getFeecalcresult()); // 计费模块响应计费结果
+                if ("0".equals(feecalcresult)) {
+                    feeRecords.setChargeStatus("成功！");
+                }else {
+                    feeRecords.setChargeStatus("失败！");
                 }
-                feeRecords.setChargeStatusStr(CommonUtil.isNull(passstateMap.get(feeRecords.getChargeStatus())));
+
                 feeRecords.setFee(null);//置空
             }
         }

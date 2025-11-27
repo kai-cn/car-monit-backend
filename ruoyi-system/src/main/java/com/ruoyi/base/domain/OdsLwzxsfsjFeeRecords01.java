@@ -641,11 +641,8 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     @TableField(exist = false)
     private String lastgantrytimeStr;
 
-    //收费状态
+    // 交易结果
     @TableField(exist = false)
     private String chargeStatus;
 
-    //收费状态
-    @TableField(exist = false)
-    private String chargeStatusStr;
 }
