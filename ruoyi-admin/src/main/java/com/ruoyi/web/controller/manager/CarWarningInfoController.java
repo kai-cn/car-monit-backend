@@ -88,6 +88,10 @@ public class CarWarningInfoController extends BaseController {
         List<CarWarningInfo> list = carWarningInfoService.selectCarWarningInfoList(carWarningInfo);
         if(list != null && list.size() > 0) {
 
+            for (CarWarningInfo warningInfo : list) {
+                warningInfo.setNeedToWarnStr("0"); // 不需要告警标志
+            }
+
             int cacheObjectnum = 10; // 提醒时间默认10分钟
 
             Long userId = SecurityUtils.getUserId();
@@ -110,8 +114,6 @@ public class CarWarningInfoController extends BaseController {
                             String gantryStationId = CommonUtil.isNull(warningInfo.getGantryStationId());
                             if (setList.contains(gantryStationId)) {
                                 warningInfo.setNeedToWarnStr("1"); // 需要告警标志
-                            }else{
-                                warningInfo.setNeedToWarnStr("0"); // 需要告警标志
                             }
                         }
                     }
