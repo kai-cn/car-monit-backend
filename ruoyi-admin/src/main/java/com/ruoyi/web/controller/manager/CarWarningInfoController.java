@@ -86,25 +86,32 @@ public class CarWarningInfoController extends BaseController {
         }
 
         List<CarWarningInfo> list = carWarningInfoService.selectCarWarningInfoList(carWarningInfo);
-        if(list != null && !list.isEmpty()) {
+        if(list != null && list.size() > 0) {
+
+            int cacheObjectnum = 10; // 提醒时间默认10分钟
+
             Long userId = SecurityUtils.getUserId();
             Map<String, Set<String>> map = redisCache.getCacheMap(Constants.CAR_WARNING_RULE + userId);
             if (map != null && !map.isEmpty()) {
                 Set<String> setList = map.getOrDefault("1", new HashSet<>());//声音提醒
-                Object cacheObject = redisCache.getCacheObject("sys_config:warning_trigger_timespan");//预警触发时间间隔
-                if (cacheObject == null) {
-                    cacheObject = 10;//默认10min
+
+                String cacheObject = redisCache.getCacheObject("sys_config:warning_trigger_timespan"); //预警触发时间间隔
+                if (CommonUtil.isNotBlank(cacheObject)){
+                    cacheObjectnum = Integer.parseInt(cacheObject);
                 }
-                long triggerTimeSpan = Long.parseLong(cacheObject.toString());
-                long MinutesInMillis = triggerTimeSpan * 60 * 1000; // 分钟转换为毫秒
+
+                long MinutesInMillis = cacheObjectnum * 60 * 1000; // 分钟转换为毫秒
+                Date currentDate = new Date();
                 for (CarWarningInfo warningInfo : list) {
                     Date gantryTime = warningInfo.getGantryTime();
-                    if(gantryTime != null) {
+                    if (gantryTime != null) {
                         //经过时间在指定的分钟内告警
-                        if(Math.abs(gantryTime.getTime() - System.currentTimeMillis()) <= MinutesInMillis) {
-                            String gantryStationId = warningInfo.getGantryStationId();
+                        if (Math.abs(gantryTime.getTime() - currentDate.getTime()) <= MinutesInMillis) {
+                            String gantryStationId = CommonUtil.isNull(warningInfo.getGantryStationId());
                             if (setList.contains(gantryStationId)) {
-                                warningInfo.setNeedToWarn(true);//需要告警标志
+                                warningInfo.setNeedToWarnStr("1"); // 需要告警标志
+                            }else{
+                                warningInfo.setNeedToWarnStr("0"); // 需要告警标志
                             }
                         }
                     }

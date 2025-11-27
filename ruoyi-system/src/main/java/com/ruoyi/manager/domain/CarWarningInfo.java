@@ -243,9 +243,9 @@ public class CarWarningInfo extends BasePlusEntityNew implements Custom {
     @TableField(exist = false)
     List<String> codeList;
 
-    //需要告警标志
+    //需要告警标志 0 否1 是
     @TableField(exist = false)
-    private boolean needToWarn;
+    private String needToWarnStr;
 
 
 
