@@ -87,6 +87,11 @@
         <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
         <if test="tollOrgCode != null  and tollOrgCode != ''"> and t.toll_org_code = #{tollOrgCode}</if>
         <if test="isAccess != null  and isAccess != ''"> and t.is_access = #{isAccess}</if>
+        <if test="sectionName != null  and sectionName != ''">
+            and t.section_code in (
+            select t1.section_code from ods_szdn_section t1 where t1.section_name like concat('%', #{sectionName}, '%')
+            )
+        </if>
         order by t.toll_name
     </select>
 

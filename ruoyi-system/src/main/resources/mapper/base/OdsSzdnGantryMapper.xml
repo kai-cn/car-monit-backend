@@ -85,7 +85,7 @@
                 select t1.section_code from ods_szdn_section t1 where t1.section_name like concat('%', #{sectionName}, '%')
             )
          </if>
-        order by t.section_code,t.gantry_name
+        order by t.gantry_name
     </select>
 
     <select id="selectOdsSzdnGantryById" parameterType="String" resultMap="OdsSzdnGantryResult">
