@@ -8,6 +8,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.manager.domain.CarWarningInfo;
 import com.ruoyi.manager.domain.CarWhiteInfo;
 import com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam;
@@ -272,12 +273,43 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
             if(!addFlag){
                 continue;
             }
-
+            rtn.setNeedToWarnStr("0"); // 不需要告警标志
 
             if (addFlag){
                 rtnlist.add(rtn);
             }
         }
+
+        if (rtnlist.size() > 0){
+            int cacheObjectnum = 10; // 提醒时间默认10分钟
+
+            Long userId = SecurityUtils.getUserId();
+            Map<String, Set<String>> map = redisCache.getCacheMap(Constants.CAR_WARNING_RULE + userId);
+            if (map != null && !map.isEmpty()) {
+                Set<String> setList = map.getOrDefault("1", new HashSet<>());//声音提醒
+
+                String cacheObject = redisCache.getCacheObject("sys_config:warning_trigger_timespan"); //预警触发时间间隔
+                if (CommonUtil.isNotBlank(cacheObject)){
+                    cacheObjectnum = Integer.parseInt(cacheObject);
+                }
+
+                long MinutesInMillis = cacheObjectnum * 60 * 1000; // 分钟转换为毫秒
+                Date currentDate = new Date();
+                for (CarWarningInfo warningInfo : rtnlist) {
+                    Date gantryTime = warningInfo.getGantryTime();
+                    if (gantryTime != null) {
+                        //经过时间在指定的分钟内告警
+                        if (Math.abs(gantryTime.getTime() - currentDate.getTime()) <= MinutesInMillis) {
+                            String gantryStationId = CommonUtil.isNull(warningInfo.getGantryStationId());
+                            if (setList.contains(gantryStationId)) {
+                                warningInfo.setNeedToWarnStr("1"); // 需要告警标志
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         return rtnlist;
     }
 
