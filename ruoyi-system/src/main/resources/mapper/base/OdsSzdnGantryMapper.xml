@@ -80,7 +80,12 @@
         <if test="belongGroup != null  and belongGroup != ''"> and t.belong_group = #{belongGroup}</if>
         <if test="gantryCodeMerge != null  and gantryCodeMerge != ''"> and t.gantry_code_merge = #{gantryCodeMerge}</if>
         <if test="gantryNameAlias != null  and gantryNameAlias != ''"> and t.gantry_name_alias = #{gantryNameAlias}</if>
-        order by t.gantry_name
+        <if test="sectionName != null  and sectionName != ''">
+            and t.section_code in (
+                select t1.section_code from ods_szdn_section t1 where t1.section_name like concat('%', #{sectionName}, '%')
+            )
+         </if>
+        order by t.section_code,t.gantry_name
     </select>
 
     <select id="selectOdsSzdnGantryById" parameterType="String" resultMap="OdsSzdnGantryResult">

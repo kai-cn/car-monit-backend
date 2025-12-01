@@ -140,4 +140,6 @@ public class OdsSzdnGantry implements Custom {
     @TableField(exist = false)
     private String orgName;
 
+
+
 }

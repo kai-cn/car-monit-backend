@@ -60,8 +60,14 @@ public class OdsSzdnGantryController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo list(OdsSzdnGantry odsSzdnGantry) {
         startPage();
-        // odsSzdnGantry.setTenantId(SecurityUtils.getTenantId()); // 查询我自己单位的租户
+        List<OdsSzdnSection> sectionList = redisCache.getCacheList(Constants.SECTION_LIST);
+        Map<String, String> roadMap = sectionList.stream().collect(Collectors.toMap(OdsSzdnSection::getRoadCode, OdsSzdnSection::getRoadName, (k1, k2) -> k1));
+        Map<String, String> sectionMap = sectionList.stream().collect(Collectors.toMap(OdsSzdnSection::getSectionCode, OdsSzdnSection::getSectionName, (k1, k2) -> k1));
         List<OdsSzdnGantry> list = odsSzdnGantryService.selectOdsSzdnGantryList(odsSzdnGantry);
+        for (OdsSzdnGantry gantry : list) {
+            gantry.setRoadName(roadMap.getOrDefault(gantry.getRoadCode(), ""));
+            gantry.setSectionName(sectionMap.getOrDefault(gantry.getSectionCode(), ""));
+        }
         return getDataTable(list);
     }
 
