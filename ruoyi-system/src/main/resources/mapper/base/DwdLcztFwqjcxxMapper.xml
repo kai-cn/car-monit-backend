@@ -92,7 +92,7 @@
         <if test="sslxbh != null  and sslxbh != ''"> and t.sslxbh = #{sslxbh}</if>
         <if test="sslxmc != null  and sslxmc != ''"> and t.sslxmc = #{sslxmc}</if>
         <if test="ssldbh != null  and ssldbh != ''"> and t.ssldbh = #{ssldbh}</if>
-        <if test="ssldmc != null  and ssldmc != ''"> and t.ssldmc = #{ssldmc}</if>
+        <if test="ssldmc != null  and ssldmc != ''"> and t.ssldmc like concat('%', #{ssldmc}, '%')</if>
         <if test="sczhkgs != null  and sczhkgs != ''"> and t.sczhkgs = #{sczhkgs}</if>
         <if test="sczhszgs != null  and sczhszgs != ''"> and t.sczhszgs = #{sczhszgs}</if>
         <if test="ssglzxbm != null  and ssglzxbm != ''"> and t.ssglzxbm = #{ssglzxbm}</if>

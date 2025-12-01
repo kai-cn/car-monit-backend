@@ -129,5 +129,9 @@ public class OdsSzdnToll implements Custom {
     @TableField(exist = false)
     List<String> sectionCodeList;
 
+    /** 所属路段名称 */
+    @TableField(exist = false)
+    private String sectionName;
+
 
 }
