@@ -293,13 +293,14 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
                     cacheObjectnum = Integer.parseInt(cacheObject);
                 }
 
-                long MinutesInMillis = cacheObjectnum * 60 * 1000; // 分钟转换为毫秒
+                long MinutesInMillis = cacheObjectnum * 60 * 1000l; // 分钟转换为毫秒
                 Date currentDate = new Date();
                 for (CarWarningInfo warningInfo : rtnlist) {
                     Date gantryTime = warningInfo.getGantryTime();
                     if (gantryTime != null) {
                         //经过时间在指定的分钟内告警
-                        if (Math.abs(gantryTime.getTime() - currentDate.getTime()) <= MinutesInMillis) {
+                        long diflongtime = Math.abs(currentDate.getTime() - gantryTime.getTime());
+                        if (diflongtime <= MinutesInMillis) {
                             String gantryStationId = CommonUtil.isNull(warningInfo.getGantryStationId());
                             if (setList.contains(gantryStationId)) {
                                 warningInfo.setNeedToWarnStr("1"); // 需要告警标志
