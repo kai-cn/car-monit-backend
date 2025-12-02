@@ -181,16 +181,22 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             aduitAmount = carConfimFree.getAduitAmount();
         }
 
-        BigDecimal yzNum = (amount.add(aduitAmount)).setScale(2, RoundingMode.HALF_UP);
-        if (yzNum.compareTo(difAmount) == 0) {
-        }else{
-            return AjaxResult.error("拆分金额和处理金额合计不等于逃费金额！");
-        }
+
 
 
 
 
         String comfimFreeType = CommonUtil.isNull(carConfimFree.getComfimFreeType());
+
+        if (!comfimFreeType.equals("waibu")){
+            BigDecimal yzNum = (amount.add(aduitAmount)).setScale(2, RoundingMode.HALF_UP);
+            if (yzNum.compareTo(difAmount) == 0) {
+            }else{
+                return AjaxResult.error("拆分金额和处理金额合计不等于逃费金额！");
+            }
+        }
+
+
         if (CommonUtil.isNotBlank(carConfimFree.getId())) {
             // 修改
             carConfimFreeMapper.updateById(carConfimFree);
