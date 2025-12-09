@@ -476,6 +476,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                     if (yy != trailList.size() - 1) {
                                         TrailBo nextTrailBo = trailList.get(yy + 1);
                                         nextTrailBo.setPreCaptureTime(curCaptureTime);
+                                        if (CommonUtil.isBlank(nextTrailBo.getCaptureTime())){
+                                            nextTrailBo.setCaptureTime("2000-10-10 10:00:00");
+                                        }
                                         nextBoList.add(nextTrailBo);
                                     }
                                 }
@@ -506,7 +509,8 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     }
 
                     // 按照先countNum排序 然后按照抓拍时间
-                    nextBoList = nextBoList.stream().sorted(Comparator.comparing(TrailBo::getCountNum).reversed()
+                    nextBoList = nextBoList.stream().sorted(
+                            Comparator.comparing(TrailBo::getCountNum).reversed().thenComparing(TrailBo::getCaptureTime).reversed()
                     ).collect(Collectors.toList());
 
                     TrailBo lastTrailBo = nextBoList.get(0);
