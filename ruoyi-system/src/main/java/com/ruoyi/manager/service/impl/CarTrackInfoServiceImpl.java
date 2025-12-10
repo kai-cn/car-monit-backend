@@ -448,6 +448,11 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         }
 
         if (addCarWarningInfoList.size() > 0) {
+
+            // 去掉重合的
+            SimpleDateFormat format3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            long threeMinutesInMillis = 3 * 60 * 1000; // 三分钟转换为毫秒
+
             // 预计下一个通行时间nextPassTime  预计下一个通行地址 nextPassAddress
             for (int zz = 0; zz < addCarWarningInfoList.size(); zz++) {
                 CarWarningInfo addbo = addCarWarningInfoList.get(zz);
@@ -464,9 +469,45 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     // 找到下一个位置
                     for (TrailInfo trailInfo : trailInfoList) {
                         // ZdataTrailTracks tracksBo = trailInfo.getTracks();
-                        List<TrailBo> trailList = trailInfo.getTrailList();
+                        List<TrailBo> trailListNew = trailInfo.getTrailList();
                         // 循环轨迹
-                        if (null != trailList && trailList.size() > 0) {
+                        if (null != trailListNew && trailListNew.size() > 0) {
+                            List<TrailBo> trailList = new ArrayList<>();
+
+                            Map<String,String> distinctMap = new HashMap<>();
+                            for (TrailBo trailBoNew : trailListNew) {
+                                String stateType = CommonUtil.isNull(trailBoNew.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
+                                String captureTime = CommonUtil.isNull(trailBoNew.getCaptureTime());
+                                String curDevCode = CommonUtil.isNull(trailBoNew.getDevCode());
+                                if (stateType.equals(Constants.BORDER_WEIGHING_CAPTURE)
+                                        || stateType.equals(Constants.GANTRY_CAPTURE)
+                                        || stateType.equals(Constants.PROV_CAPTURE)
+                                        || stateType.equals(Constants.SERVICE_AREA_CAPTURE)
+                                        || stateType.equals(Constants.STATION_CAPTURE))
+                                {
+                                    // 省界称重 门架抓拍 省界抓拍  服务区抓拍  收费站抓拍
+                                    if (CommonUtil.isNotBlank(captureTime)){
+                                        if (distinctMap.containsKey(curDevCode)){
+                                            try {
+                                                // 判断时间是否超过3分钟
+                                                Date captureTimeDate1 = format3.parse(captureTime);
+                                                Date captureTimeDate2 = format3.parse(distinctMap.get(curDevCode));
+                                                long diff = Math.abs(captureTimeDate2.getTime() - captureTimeDate1.getTime());
+                                                if (diff > threeMinutesInMillis) {
+                                                    trailList.add(trailBoNew);
+                                                }
+                                            }catch (Exception e){
+                                                log.info("日期解析失败------------"+e.toString());
+                                            }
+                                        }else{
+                                            distinctMap.put(curDevCode,captureTime);
+                                            trailList.add(trailBoNew);
+                                        }
+                                    }
+                                }
+                            }
+
+
                             for (int yy = 0; yy < trailList.size(); yy++) {
                                 TrailBo trailBo = trailList.get(yy);
                                 String curDevCode = CommonUtil.isNull(trailBo.getDevCode());
