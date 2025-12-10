@@ -192,7 +192,7 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             BigDecimal yzNum = (amount.add(aduitAmount)).setScale(2, RoundingMode.HALF_UP);
             if (yzNum.compareTo(difAmount) == 0) {
             }else{
-                return AjaxResult.error("拆分金额和处理金额合计不等于逃费金额！");
+                return AjaxResult.error("录入信息的拆分金额和处理信息的拆分金额合计不等于逃费金额！");
             }
         }
 
