@@ -970,7 +970,13 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     @Override
     public List<Geometry> getCarGeometryByPlanNew(ZdataTrailTracks tracksBo, List<TrailBo> josnList) {
 
-        if (CommonUtil.isNull(isLocalhost).equals("local")){
+        String apiMap = "1";
+        String cacheObject = redisCache.getCacheObject("sys_config:api_map"); //预警触发时间间隔
+        if (CommonUtil.isNotBlank(cacheObject)){
+            apiMap = CommonUtil.isNull(cacheObject);
+        }
+
+        if (CommonUtil.isNull(apiMap).equals("0")){
             return this.getCarGeometryByPlan(tracksBo,josnList);
         }
 
