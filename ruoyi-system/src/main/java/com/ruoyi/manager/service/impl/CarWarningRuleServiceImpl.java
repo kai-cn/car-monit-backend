@@ -6,15 +6,14 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.manager.mapper.CarWarningRuleMapper;
 import com.ruoyi.manager.domain.CarWarningRule;
+import com.ruoyi.manager.mapper.CarWarningRuleMapper;
 import com.ruoyi.manager.service.ICarWarningRuleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 预警规则Service业务层处理
@@ -118,38 +117,32 @@ public class CarWarningRuleServiceImpl extends ServiceImpl<CarWarningRuleMapper,
             }
         }
         List<CarWarningRule> ruleList = this.selectCarWarningRuleList(new CarWarningRule());
-        Map<String, Map<String, Set<String>>> map = new HashMap<>();
         if(ruleList != null && !ruleList.isEmpty()) {
             for (CarWarningRule rule : ruleList) {
-                if(StringUtils.isNoneBlank(rule.getNoticeUserId(), rule.getNoticeUserId(), rule.getNoticeType())) {
-                    String[] userIds = rule.getNoticeUserId().split(",");
-                    String[] noticeRange = rule.getNoticeRangeId().split(",");
-                    String noticeType = rule.getNoticeType().trim();
-                    Set<String> notices = Arrays.stream(noticeRange)
-                            .filter(s -> !s.isEmpty())
-                            .map(String::trim)
-                            .collect(Collectors.toSet());
+                if(StringUtils.isNoneBlank(rule.getNoticeUserId(), rule.getNoticeRangeId(), rule.getNoticeType())) {
+                    String noticeType = CommonUtil.isNull(rule.getNoticeType()); // 预警方式
+                    String[] userIds = CommonUtil.deleteEnd(rule.getNoticeUserId()).split(","); // 通知人员
+                    String[] noticeRangeIds = CommonUtil.deleteEnd(rule.getNoticeRangeId()).split(","); // 预警范围id
                     for (String rawUserId : userIds) {
-                        String userId = rawUserId.trim();
-                        if (!userId.isEmpty()) {
-                            // 获取或创建用户的map
-                            Map<String, Set<String>> noticeMap = map.computeIfAbsent(userId, k -> new HashMap<>());
-                            // 获取或创建该类型的通知set
-                            Set<String> userNotices = noticeMap.computeIfAbsent(noticeType, k -> new HashSet<>());
-                            userNotices.addAll(notices);
+                        String userId = CommonUtil.isNull(rawUserId);
+                        if (CommonUtil.isNotBlank(userId) && noticeRangeIds.length > 0) {
+                            List<String> ruleListValue = new ArrayList<>();
+                            // 如果
+                            String redisKey = Constants.CAR_WARNING_RULE + userId + "type" + noticeType;
+                            Object oldObject = redisCache.getCacheObject(redisKey);
+                            if (null != oldObject) {
+                                ruleListValue = (List) oldObject;
+                            }
+                            for (String noticeRangeId : noticeRangeIds) {
+                                ruleListValue.add(CommonUtil.isNull(noticeRangeId));
+                            }
+                            redisCache.setCacheObject(redisKey, ruleListValue);
                         }
                     }
                 }
             }
         }
-        if(!map.isEmpty()) {
-            for (Map.Entry<String, Map<String, Set<String>>> entry : map.entrySet()) {
-                String userId = entry.getKey();
-                redisCache.setCacheMap(Constants.CAR_WARNING_RULE + userId, entry.getValue());
-            }
-        }
     }
-
 
 
 }

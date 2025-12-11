@@ -284,10 +284,16 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
             int cacheObjectnum = 10; // 提醒时间默认10分钟
 
             Long userId = SecurityUtils.getUserId();
-            Map<String, Set<String>> map = redisCache.getCacheMap(Constants.CAR_WARNING_RULE + userId);
-            if (map != null && !map.isEmpty()) {
-                Set<String> setList = map.getOrDefault("1", new HashSet<>());//声音提醒
-
+            // 声音提醒
+            String noticeType = "1";
+            List<String> ruleListValue = new ArrayList<>();
+            // 如果
+            String redisKey = Constants.CAR_WARNING_RULE + userId + "type" + noticeType;
+            Object oldObject = redisCache.getCacheObject(redisKey);
+            if (null != oldObject) {
+                ruleListValue = (List) oldObject;
+            }
+            if (ruleListValue != null && ruleListValue.size() > 0) {
                 String cacheObject = redisCache.getCacheObject("sys_config:warning_trigger_timespan"); //预警触发时间间隔
                 if (CommonUtil.isNotBlank(cacheObject)){
                     cacheObjectnum = Integer.parseInt(cacheObject);
@@ -302,7 +308,7 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
                         long diflongtime = Math.abs(currentDate.getTime() - gantryTime.getTime());
                         if (diflongtime <= MinutesInMillis) {
                             String gantryStationId = CommonUtil.isNull(warningInfo.getGantryStationId());
-                            if (setList.contains(gantryStationId)) {
+                            if (ruleListValue.contains(gantryStationId)) {
                                 warningInfo.setNeedToWarnStr("1"); // 需要告警标志
                             }
                         }
