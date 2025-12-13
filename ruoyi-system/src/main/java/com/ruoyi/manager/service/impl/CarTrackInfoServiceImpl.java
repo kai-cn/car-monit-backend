@@ -311,26 +311,6 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                             String devCodes = "";  // 设备所有的集合
                             for (TrailBo trailBo : josnList) {
                                 String stateType = CommonUtil.isNull(trailBo.getStateType());  // 流水来源类型标识:可作为维度字段，用于回溯数据来源、确定查找目标表
-                                // 抓拍设备
-                                if (CommonUtil.isNotBlank(trailBo.getDevCode())) {
-                                    devCodes += stateType + ":" + trailBo.getDevCode() + ",";
-                                }
-                                // 路线
-                                if (CommonUtil.isNotBlank(trailBo.getRoadCode())) {
-                                    String roadKey = "roadCode:" + trailBo.getRoadCode();
-                                    if (devCodes.indexOf(roadKey) > -1) {
-                                    } else {
-                                        devCodes += roadKey + ",";
-                                    }
-                                }
-                                // 路段
-                                if (CommonUtil.isNotBlank(trailBo.getSectionCode())) {
-                                    String sectionKey = "sectionCode:" + trailBo.getSectionCode();
-                                    if (devCodes.indexOf(sectionKey) > -1) {
-                                    } else {
-                                        devCodes += sectionKey + ",";
-                                    }
-                                }
 
                               /*  if (stateType.equals(Constants.BORDER_WEIGHING_CAPTURE)
                                         || stateType.equals(Constants.GANTRY_CAPTURE)
@@ -356,6 +336,31 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
                             // 车辆实时位置
                             if (null != lastBo){
+
+                                String stateType = CommonUtil.isNull(lastBo.getStateType());
+
+                                // 抓拍设备
+                                if (CommonUtil.isNotBlank(lastBo.getDevCode())) {
+                                    devCodes += stateType + ":" + lastBo.getDevCode() + ",";
+                                }
+                                // 路线
+                                if (CommonUtil.isNotBlank(lastBo.getRoadCode())) {
+                                    String roadKey = "roadCode:" + lastBo.getRoadCode();
+                                    if (devCodes.indexOf(roadKey) > -1) {
+                                    } else {
+                                        devCodes += roadKey + ",";
+                                    }
+                                }
+                                // 路段
+                                if (CommonUtil.isNotBlank(lastBo.getSectionCode())) {
+                                    String sectionKey = "sectionCode:" + lastBo.getSectionCode();
+                                    if (devCodes.indexOf(sectionKey) > -1) {
+                                    } else {
+                                        devCodes += sectionKey + ",";
+                                    }
+                                }
+
+
                                 car.setStatus("1");
                                 if (null != lastBo.getLon()) {
                                     car.setLastPassLongitude(CommonUtil.isNull(lastBo.getLon()));
