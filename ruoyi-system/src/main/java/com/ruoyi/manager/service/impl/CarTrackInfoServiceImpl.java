@@ -278,7 +278,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     //  判断在线最后一个节点时间
                     try {
                         SimpleDateFormat format2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                        long threeMinutesInMillis = 60 * 60 * 1000; // 60分钟转换为毫秒
+                        long threeMinutesInMillis = 120 * 60 * 1000; // 120分钟转换为毫秒
                         if (CommonUtil.isNotBlank(captureTimeLast)){
                             Date captureTimeDate1 = format2.parse(captureTimeLast);
                             Date curDate = new Date();
