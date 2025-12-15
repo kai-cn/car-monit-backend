@@ -278,7 +278,14 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                     //  判断在线最后一个节点时间
                     try {
                         SimpleDateFormat format2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                        long threeMinutesInMillis = 120 * 60 * 1000; // 120分钟转换为毫秒
+                        // ---------12个小时
+                        int syncCurrentTime = 12;
+                        String cacheObject = redisCache.getCacheObject("sys_config:sync_current_time"); //预警触发时间间隔
+                        if (CommonUtil.isNotBlank(cacheObject)){
+                            syncCurrentTime = Integer.parseInt(cacheObject);
+                        }
+
+                        long threeMinutesInMillis = syncCurrentTime * 60 * 60 * 1000; // 120分钟转换为毫秒
                         if (CommonUtil.isNotBlank(captureTimeLast)){
                             Date captureTimeDate1 = format2.parse(captureTimeLast);
                             Date curDate = new Date();
