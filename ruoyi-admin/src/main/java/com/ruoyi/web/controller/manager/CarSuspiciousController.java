@@ -298,6 +298,9 @@ public class CarSuspiciousController extends BaseController {
         Map<String,String> checkStatusMap = sysDictDataService.selectDictDataMap("check_status");
 
 
+        Map<String,String> passTypeMap = sysDictDataService.selectDictDataMap("run_type");
+
+
         list.stream().forEach(dp -> {
             if (null != dp.getCreateTime()){
                 dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
@@ -308,6 +311,51 @@ public class CarSuspiciousController extends BaseController {
             dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
             dp.setIsExcept(CommonUtil.isNull(isExceptMap.get(dp.getIsExcept())));
             dp.setCheckStatus(CommonUtil.isNull(checkStatusMap.get(dp.getCheckStatus())));
+
+            dp.setPassType(CommonUtil.isNull(passTypeMap.get(dp.getPassType())));
+
+            String txTime = "";
+            String txAddress = "";
+            String mjTime = "";
+            String mjAddress = "";
+
+            if (null != dp.getInTime()) {
+                txTime += DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, dp.getInTime());
+            }
+            if (null != dp.getOutTime()) {
+                txTime += "至" + DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, dp.getOutTime());
+            }
+
+            if (CommonUtil.isNotBlank(dp.getInStation())) {
+                txAddress += dp.getInStation();
+            }
+
+            if (CommonUtil.isNotBlank(dp.getOutStation())) {
+                txAddress += "至" + dp.getOutStation();
+            }
+
+            if (null != dp.getGantryTime()) {
+                mjTime += DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, dp.getGantryTime());
+            }
+            if (null != dp.getOutGantryTime()) {
+                mjTime += "至" + DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, dp.getOutGantryTime());
+            }
+
+            if (CommonUtil.isNotBlank(dp.getGantrytStation())) {
+                mjAddress += dp.getGantrytStation();
+            }
+
+            if (CommonUtil.isNotBlank(dp.getOutGantrytStation())) {
+                mjAddress += "至" + dp.getOutGantrytStation();
+            }
+
+
+
+            dp.setTxTime(txTime);
+            dp.setTxAddress(txAddress);
+            dp.setMjTime(mjTime);
+            dp.setMjAddress(mjAddress);
+
         });
 
         Map<String,Object> map = new HashMap<>();
