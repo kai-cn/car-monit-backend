@@ -99,7 +99,20 @@ public class BigScreenController extends BaseController {
                     sectionVO.setSectionName(item.getSectionName());
                     return sectionVO;
                 }).collect(Collectors.toList());
-        return AjaxResult.success(collect);
+
+        // 需要增加全部
+        List<SectionVO> collectNew = new ArrayList<>();
+        SectionVO sectionAll = new SectionVO();
+        sectionAll.setSectionCode("all");
+        sectionAll.setSectionName("全部");
+        collectNew.add(sectionAll);
+
+        for (SectionVO rtn:collect){
+            collectNew.add(rtn);
+        }
+
+
+        return AjaxResult.success(collectNew);
     }
 
     /**
@@ -114,8 +127,13 @@ public class BigScreenController extends BaseController {
             return AjaxResult.success(new ArrayList<>());
         }
         sectionCode = CommonUtil.deleteEnd(sectionCode);
+
         String[] split = sectionCode.split(",");
         List<String> sectionCodeList = Arrays.stream(split).collect(Collectors.toList());
+        if (sectionCode.indexOf("all") > -1){
+            sectionCodeList = new ArrayList<>();
+        }
+
         List<TollGantryFwqVO> collect = new ArrayList<>();
         if ("1".equals(type)) {
             OdsSzdnToll odsSzdnToll = new OdsSzdnToll();
