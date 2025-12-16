@@ -141,12 +141,45 @@ public class CarWarningInfoController extends BaseController {
         }
 
 
-        carWarningInfo.setTrackNames(carWarningInfo.getCode()); // 查询范围
+        //  路段
+        String sectionCode = CommonUtil.deleteEnd(carWarningInfo.getSectionCode());
+        if (CommonUtil.isNotBlank(sectionCode)){
+            if (sectionCode.indexOf(Constants.section_all) > -1) {
+            }else{
+                // 路段
+                carWarningInfo.setSectionCodeList(Arrays.stream(sectionCode.split(",")).collect(Collectors.toList()));
+            }
+            carWarningInfo.setSectionCode(""); // 查询范围
+        }
+
+        // 选择对象
+        String code = CommonUtil.deleteEnd(carWarningInfo.getCode());
+        if (CommonUtil.isNotBlank(code)) {
+            // 服务区 收费站
+            carWarningInfo.setCodeList(Arrays.stream(code.split(",")).collect(Collectors.toList()));
+            carWarningInfo.setCode(""); // 查询范围
+        } else {
+            String type = CommonUtil.isNull(carWarningInfo.getType());
+            if (CommonUtil.isNotBlank(type)) {
+                List<String> codeList = new ArrayList<>();
+                String objType = "";
+                if (type.equals("1")){
+                    objType = Constants.STATION_CAPTURE;
+                }else if (type.equals("2")){
+                    objType = Constants.GANTRY_CAPTURE;
+                }else if (type.equals("3")){
+                    objType = Constants.SERVICE_AREA_CAPTURE;
+                }
+                codeList.add(objType);
+                carWarningInfo.setCodeList(codeList);
+            }
+        }
 
         List<CarWarningInfo> list = carWarningInfoService.selectCarWarningInfoList(carWarningInfo);
 
 
         list.stream().forEach(dp -> {
+
             if (null != dp.getGantryTime()){
                 dp.setGantryTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getGantryTime()));
             }
@@ -156,6 +189,10 @@ public class CarWarningInfoController extends BaseController {
 
             if (null != dp.getInTime()){
                 dp.setInTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getInTime()));
+            }
+
+            if (null != dp.getNextPassTime()){
+                dp.setNextPassTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getNextPassTime()));
             }
 
             dp.setPlateColor(CommonUtil.isNull(plateColorMap.get(dp.getPlateColor())));
