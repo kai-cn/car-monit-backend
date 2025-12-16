@@ -3,6 +3,7 @@ package com.ruoyi.web.controller.manager;
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.ruoyi.common.annotation.Log;
+import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -65,19 +66,38 @@ public class CarWarningInfoController extends BaseController {
             carWarningInfo.setFlagTime(formattedDate);
         }
 
-
+        //  路段
         String sectionCode = CommonUtil.deleteEnd(carWarningInfo.getSectionCode());
         if (CommonUtil.isNotBlank(sectionCode)){
-            // 路段
-            carWarningInfo.setSectionCodeList(Arrays.stream(sectionCode.split(",")).collect(Collectors.toList()));
+            if (sectionCode.indexOf(Constants.section_all) > -1) {
+            }else{
+                // 路段
+                carWarningInfo.setSectionCodeList(Arrays.stream(sectionCode.split(",")).collect(Collectors.toList()));
+            }
             carWarningInfo.setSectionCode(""); // 查询范围
         }
 
+        // 选择对象
         String code = CommonUtil.deleteEnd(carWarningInfo.getCode());
-        if (CommonUtil.isNotBlank(code)){
+        if (CommonUtil.isNotBlank(code)) {
             // 服务区 收费站
             carWarningInfo.setCodeList(Arrays.stream(code.split(",")).collect(Collectors.toList()));
             carWarningInfo.setCode(""); // 查询范围
+        } else {
+            String type = CommonUtil.isNull(carWarningInfo.getType());
+            if (CommonUtil.isNotBlank(type)) {
+                List<String> codeList = new ArrayList<>();
+                String objType = "";
+                if (type.equals("1")){
+                    objType = Constants.STATION_CAPTURE;
+                }else if (type.equals("2")){
+                    objType = Constants.GANTRY_CAPTURE;
+                }else if (type.equals("3")){
+                    objType = Constants.SERVICE_AREA_CAPTURE;
+                }
+                codeList.add(objType);
+                carWarningInfo.setCodeList(codeList);
+            }
         }
 
         List<CarWarningInfo> list = carWarningInfoService.selectCarWarningInfoList(carWarningInfo);
