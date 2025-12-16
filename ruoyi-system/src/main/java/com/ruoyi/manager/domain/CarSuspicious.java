@@ -280,4 +280,31 @@ public class CarSuspicious extends BasePlusEntityNew implements Custom {
     @TableField(exist = false)
     private String difAmount;
 
+    /**
+     * 经过门架时间
+     */
+    @TableField(exist = false)
+    private String mjTime;
+
+    /**
+     * 经过门架地址
+     */
+    @TableField(exist = false)
+    private String mjAddress;
+
+
+    /**
+     * 通行时间
+     */
+    @TableField(exist = false)
+    private String txTime;
+
+    /**
+     * 通行时间地址
+     */
+    @TableField(exist = false)
+    private String txAddress;
+
+
+
 }
