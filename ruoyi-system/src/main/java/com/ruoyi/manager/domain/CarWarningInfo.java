@@ -248,5 +248,9 @@ public class CarWarningInfo extends BasePlusEntityNew implements Custom {
     private String needToWarnStr;
 
 
+    // 下一个时间
+    @TableField(exist = false)
+    private String nextPassTimeStr;
+
 
 }
