@@ -5,6 +5,7 @@ import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.alibaba.fastjson2.JSON;
 import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode;
 import com.ruoyi.base.service.forest.HttpOdsRtSzdnSnapshotFlowAddcodeService;
+import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.constant.HttpStatus;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -58,6 +59,14 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
             odsRtSzdnSnapshotFlowAddcode.setPageSize(10);
         }
 
+        //  路段
+        String sectionCodeStr = CommonUtil.deleteEnd(odsRtSzdnSnapshotFlowAddcode.getSectionCodeStr());
+        if (CommonUtil.isNotBlank(sectionCodeStr)){
+            if (sectionCodeStr.indexOf(Constants.section_all) > -1) {
+                odsRtSzdnSnapshotFlowAddcode.setSectionCodeStr("");
+            }
+        }
+
         TableDataInfo rspData = new TableDataInfo();
         List<OdsRtSzdnSnapshotFlowAddcode> list = new ArrayList<>();
         long total = 0L;
@@ -94,6 +103,14 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
         // 分页大小
         if (null == odsRtSzdnSnapshotFlowAddcode.getPageSize()){
             odsRtSzdnSnapshotFlowAddcode.setPageSize(10);
+        }
+
+        //  路段
+        String sectionCodeStr = CommonUtil.deleteEnd(odsRtSzdnSnapshotFlowAddcode.getSectionCodeStr());
+        if (CommonUtil.isNotBlank(sectionCodeStr)){
+            if (sectionCodeStr.indexOf(Constants.section_all) > -1) {
+                odsRtSzdnSnapshotFlowAddcode.setSectionCodeStr("");
+            }
         }
 
         List<OdsRtSzdnSnapshotFlowAddcode> list = new ArrayList<>();
