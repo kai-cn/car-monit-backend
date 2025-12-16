@@ -64,6 +64,14 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
             odsLwzxsfsjFeeRecords01.setPageSize(10);
         }
 
+        //  路段
+        String sectionCodeStr = CommonUtil.deleteEnd(odsLwzxsfsjFeeRecords01.getSectionCodeStr());
+        if (CommonUtil.isNotBlank(sectionCodeStr)){
+            if (sectionCodeStr.indexOf(Constants.section_all) > -1) {
+                odsLwzxsfsjFeeRecords01.setSectionCodeStr("");
+            }
+        }
+
         TableDataInfo rspData = new TableDataInfo();
         List<OdsLwzxsfsjFeeRecords01> list = new ArrayList<>();
         long total = 0L;
@@ -129,6 +137,14 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
         // 分页大小
         if (null == odsLwzxsfsjFeeRecords01.getPageSize()){
             odsLwzxsfsjFeeRecords01.setPageSize(10);
+        }
+
+        //  路段
+        String sectionCodeStr = CommonUtil.deleteEnd(odsLwzxsfsjFeeRecords01.getSectionCodeStr());
+        if (CommonUtil.isNotBlank(sectionCodeStr)){
+            if (sectionCodeStr.indexOf(Constants.section_all) > -1) {
+                odsLwzxsfsjFeeRecords01.setSectionCodeStr("");
+            }
         }
 
         List<OdsLwzxsfsjFeeRecords01> list = new ArrayList<>();
