@@ -2,6 +2,7 @@ package com.ruoyi.web.controller.manager.bigscreen;
 
 import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.*;
+import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -69,17 +70,32 @@ public class BigScreenController extends BaseController {
     @GetMapping(value = "/carLocation")
     public AjaxResult getCarLocation(CarLocationParam param) {
         String type = param.getType();
-        if(StringUtils.isNotBlank(type)) {
-            switch (type) {
-                case "1":
-                    param.setTollCode(param.getCode());
-                    break;
-                case "2":
-                    param.setGantryCode(param.getCode());
-                    break;
-                case "3":
-                    param.setFwqbm(param.getCode());
-                    break;
+        // 路段:包含全部
+        String sectionCode = CommonUtil.isNull(param.getSectionCode());
+        if (sectionCode.indexOf(Constants.section_all) > -1) {
+            param.setSectionCode("");
+        }
+        String code = CommonUtil.isNull(param.getCode());
+        if(CommonUtil.isNotBlank(type)) {
+            // 1收费站、2门架、3服务区
+            if (type.equals("1")){
+                if (CommonUtil.isNotBlank(code)){
+                    param.setTollCode(code);
+                }else{
+                    param.setTollCode(Constants.STATION_CAPTURE);
+                }
+            }else if (type.equals("2")){
+                if (CommonUtil.isNotBlank(code)){
+                    param.setGantryCode(code);
+                }else{
+                    param.setGantryCode(Constants.GANTRY_CAPTURE);
+                }
+            }else if (type.equals("3")){
+                if (CommonUtil.isNotBlank(code)){
+                    param.setFwqbm(code);
+                }else{
+                    param.setFwqbm(Constants.SERVICE_AREA_CAPTURE);
+                }
             }
         }
         List<CarLocationVO> carLocationVOList = carInfoService.carLocation(param);
@@ -103,7 +119,7 @@ public class BigScreenController extends BaseController {
         // 需要增加全部
         List<SectionVO> collectNew = new ArrayList<>();
         SectionVO sectionAll = new SectionVO();
-        sectionAll.setSectionCode("all");
+        sectionAll.setSectionCode(Constants.section_all);
         sectionAll.setSectionName("全部");
         collectNew.add(sectionAll);
 
@@ -130,7 +146,7 @@ public class BigScreenController extends BaseController {
 
         String[] split = sectionCode.split(",");
         List<String> sectionCodeList = Arrays.stream(split).collect(Collectors.toList());
-        if (sectionCode.indexOf("all") > -1){
+        if (sectionCode.indexOf(Constants.section_all) > -1) {
             sectionCodeList = new ArrayList<>();
         }
 
@@ -213,17 +229,32 @@ public class BigScreenController extends BaseController {
     @GetMapping(value = "/carWarning")
     public AjaxResult getCarWarning(CarLocationParam param) {
         String type = param.getType();
-        if(StringUtils.isNotBlank(type)) {
-            switch (type) {
-                case "1":
-                    param.setTollCode(param.getCode());
-                    break;
-                case "2":
-                    param.setGantryCode(param.getCode());
-                    break;
-                case "3":
-                    param.setFwqbm(param.getCode());
-                    break;
+        // 路段:包含全部
+        String sectionCode = CommonUtil.isNull(param.getSectionCode());
+        if (sectionCode.indexOf(Constants.section_all) > -1) {
+            param.setSectionCode("");
+        }
+        String code = CommonUtil.isNull(param.getCode());
+        if(CommonUtil.isNotBlank(type)) {
+            // 1收费站、2门架、3服务区
+            if (type.equals("1")){
+                if (CommonUtil.isNotBlank(code)){
+                    param.setTollCode(code);
+                }else{
+                    param.setTollCode(Constants.STATION_CAPTURE);
+                }
+            }else if (type.equals("2")){
+                if (CommonUtil.isNotBlank(code)){
+                    param.setGantryCode(code);
+                }else{
+                    param.setGantryCode(Constants.GANTRY_CAPTURE);
+                }
+            }else if (type.equals("3")){
+                if (CommonUtil.isNotBlank(code)){
+                    param.setFwqbm(code);
+                }else{
+                    param.setFwqbm(Constants.SERVICE_AREA_CAPTURE);
+                }
             }
         }
         List<CarWarningInfo> warningInfoList = carWarningInfoService.selectCarWarningInfoListLimit100(param);

@@ -276,11 +276,11 @@ public class Constants
 
 
 
-    public static final String BORDER_WEIGHING_CAPTURE = "BorderWeighingCapture";
-    public static final String GANTRY_CAPTURE = "GantryCapture";
-    public static final String PROV_CAPTURE = "ProvCapture";
-    public static final String SERVICE_AREA_CAPTURE = "ServiceAreaCapture";
-    public static final String STATION_CAPTURE = "StationCapture";
+    public static final String BORDER_WEIGHING_CAPTURE = "BorderWeighingCapture";  // 省界称重
+    public static final String GANTRY_CAPTURE = "GantryCapture";  // 门架抓拍
+    public static final String PROV_CAPTURE = "ProvCapture"; // 省界抓拍
+    public static final String SERVICE_AREA_CAPTURE = "ServiceAreaCapture"; // 服务区抓拍
+    public static final String STATION_CAPTURE = "StationCapture";   // 收费站抓拍
 
     public static final String FeeRecord = "FeeRecord";
     public static final String FeeStationEnter = "FeeStationEnter";
@@ -353,6 +353,12 @@ public class Constants
      * 门架对象redis 数据
      */
     public static final String gantry_list_data = "gantry_list_data:";
+
+
+    /**
+     * 全部路段
+     */
+    public static final String section_all = "all";
 
 
 
