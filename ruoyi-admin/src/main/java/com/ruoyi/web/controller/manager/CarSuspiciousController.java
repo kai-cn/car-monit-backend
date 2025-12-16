@@ -5,6 +5,7 @@ import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import cn.afterturn.easypoi.word.WordExportUtil;
 import com.ruoyi.common.annotation.Log;
+import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -68,6 +69,15 @@ public class CarSuspiciousController extends BaseController {
     public TableDataInfo list(CarSuspicious carSuspicious) {
         startPage();
 
+        //  路段
+        String sectionCode = CommonUtil.deleteEnd(carSuspicious.getSectionCode());
+        if (CommonUtil.isNotBlank(sectionCode)){
+            if (sectionCode.indexOf(Constants.section_all) > -1) {
+                carSuspicious.setSectionCode("");
+            }
+        }
+
+        // 选择对象
         if (CommonUtil.isNotBlank(carSuspicious.getCode())){
             carSuspicious.setTrackNames(carSuspicious.getCode()); // 查询范围
         }
@@ -257,6 +267,20 @@ public class CarSuspiciousController extends BaseController {
     @Log(title = "可疑车辆", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
     public AjaxResult export(CarSuspicious carSuspicious, HttpServletResponse response) {
+
+        //  路段
+        String sectionCode = CommonUtil.deleteEnd(carSuspicious.getSectionCode());
+        if (CommonUtil.isNotBlank(sectionCode)){
+            if (sectionCode.indexOf(Constants.section_all) > -1) {
+                carSuspicious.setSectionCode("");
+            }
+        }
+
+        // 选择对象
+        if (CommonUtil.isNotBlank(carSuspicious.getCode())){
+            carSuspicious.setTrackNames(carSuspicious.getCode()); // 查询范围
+        }
+
         List<CarSuspicious> list = carSuspiciousService.selectCarSuspiciousList(carSuspicious);
         // 车牌颜色
         Map<String,String> plateColorMap = sysDictDataService.selectDictDataMap("plate_color");
