@@ -330,7 +330,9 @@ public class CarExceptRecordController extends BaseController {
         if (errorList.size() == 0) {
             for (int i = 0; i < importList.size(); i++) {
                 CarExceptRecord addbo = importList.get(i);
-
+                if (null != addbo.getTotalAmount() && null !=addbo.getChargeAmount()){
+                    addbo.setDifAmount(addbo.getTotalAmount().subtract(addbo.getChargeAmount()));
+                }
                 // 根据车牌号和入口时间
                 CarExceptRecord querybo = new CarExceptRecord();
                 querybo.setCarNo(CommonUtil.isNull(addbo.getCarNo()));
@@ -362,9 +364,9 @@ public class CarExceptRecordController extends BaseController {
         boList.add(new ImportEntity("车牌号","carNo","1"));
         boList.add(new ImportEntity("通行标识","passType",""));
         boList.add(new ImportEntity("入口站","inStation",""));
-        boList.add(new ImportEntity("入口时间","inTime","1,4"));
+        boList.add(new ImportEntity("入口时间","inTime","1,8"));
         boList.add(new ImportEntity("出口站","outStation",""));
-        boList.add(new ImportEntity("出口时间","outTime","1,4"));
+        boList.add(new ImportEntity("出口时间","outTime","1,8"));
         boList.add(new ImportEntity("应缴金额（元）","totalAmount","1,2"));
         boList.add(new ImportEntity("收费金额（元）","chargeAmount","1,2"));
         boList.add(new ImportEntity("逃费类型","escapedType","1"));

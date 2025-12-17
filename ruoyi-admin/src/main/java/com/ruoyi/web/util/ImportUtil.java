@@ -30,6 +30,10 @@ public class ImportUtil {
 	//  6 年月
 	public static final String elTimeYM = "^\\d{4}(\\-|\\/|\\.)\\d{1,2}$";
 
+
+	//  8 年月
+	public static final String dateTimeRegex= "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$";
+
 	/**
 	 * 校验是否是数值类型的正则表达式
 	 * 7 => 数值类型
@@ -81,6 +85,10 @@ public class ImportUtil {
 						} else if ("7".equals(gzs[z])) {
 							if (!importUtil.validateValueRegex(value, VERIFY_NUMBER_TYPE)) {
 								errorList.add(importUtil.getErrorBO(index + 1, bo.getColName(), "不是数值"));
+							}
+						}else if (gzs[z].equals("8")) {
+							if (!importUtil.validateValueRegex(value, dateTimeRegex)) {
+								errorList.add(importUtil.getErrorBO(index + 1, bo.getColName(), "日期格式（年月日时分秒）不正确"));
 							}
 						}
 					}
