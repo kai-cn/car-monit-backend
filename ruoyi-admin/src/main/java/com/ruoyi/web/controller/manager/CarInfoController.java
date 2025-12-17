@@ -299,7 +299,7 @@ public class CarInfoController extends BaseController {
             for (int i = 0; i < importList.size(); i++) {
                 CarInfo addbo = importList.get(i);
                 addbo.setCarNo(CommonUtil.isNull(addbo.getCarNo())); //去掉空格
-                // 根据身份证
+                // 根据车牌号
                 CarInfo querybo = new CarInfo();
                 querybo.setCarNo(CommonUtil.isNull(addbo.getCarNo()));
                 List<CarInfo> queryList = carInfoService.selectCarInfoList(querybo);
