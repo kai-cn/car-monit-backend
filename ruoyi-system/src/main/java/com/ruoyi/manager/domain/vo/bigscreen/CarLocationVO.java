@@ -52,4 +52,9 @@ public class CarLocationVO {
      */
     private String status;
 
+    /**
+     * 服务器类型
+     */
+    private String lastPassType;
+
 }
