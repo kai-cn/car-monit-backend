@@ -298,6 +298,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
                     addvo.setCarType(rtn.getCarType());
                     addvo.setLonStr(rtn.getLastPassLongitude());
                     addvo.setLatStr(rtn.getLastPassLatitude());
+                    addvo.setLastPassType(rtn.getLastPassType());
                     if(CommonUtil.isNotBlank(addvo.getLonStr())) {
                         addvo.setLon(new BigDecimal(addvo.getLonStr()));
                     }
