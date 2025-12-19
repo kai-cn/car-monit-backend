@@ -519,20 +519,30 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                 }
                             }
 
-
+                            int nextCountNum = 0;
                             for (int yy = 0; yy < trailList.size(); yy++) {
-                                TrailBo trailBo = trailList.get(yy);
-                                String curDevCode = CommonUtil.isNull(trailBo.getDevCode());
-                                String curCaptureTime = trailBo.getCaptureTime();
-                                if (gantryStationId.equals(curDevCode)) {
-                                    // 判断有下一个:不是最后一个
-                                    if (yy != trailList.size() - 1) {
-                                        TrailBo nextTrailBo = trailList.get(yy + 1);
-                                        nextTrailBo.setPreCaptureTime(curCaptureTime);
-                                        if (CommonUtil.isBlank(nextTrailBo.getCaptureTime())){
-                                            nextTrailBo.setCaptureTime("2000-10-10 10:00:00");
+                                if (nextCountNum == 0){
+                                    TrailBo trailBo = trailList.get(yy);
+                                    String curDevCode = CommonUtil.isNull(trailBo.getDevCode());
+                                    String curCaptureTime = trailBo.getCaptureTime();
+                                    if (gantryStationId.equals(curDevCode)) {
+                                        // 判断有下一个:不是最后一个
+                                        if (yy != trailList.size() - 1) {
+                                            // 循环他后面的数量
+                                            for (int nextIndex = yy + 1; nextIndex < trailList.size(); nextIndex++) {
+                                                if (nextCountNum == 0) {
+                                                    TrailBo nextTrailBo = trailList.get(nextIndex);
+                                                    if (!gantryStationId.equals(CommonUtil.isNull(nextTrailBo.getDevCode()))) {
+                                                        nextTrailBo.setPreCaptureTime(curCaptureTime);
+                                                        if (CommonUtil.isBlank(nextTrailBo.getCaptureTime())) {
+                                                            nextTrailBo.setCaptureTime("2000-10-10 10:00:00");
+                                                        }
+                                                        nextBoList.add(nextTrailBo);
+                                                        nextCountNum++;
+                                                    }
+                                                }
+                                            }
                                         }
-                                        nextBoList.add(nextTrailBo);
                                     }
                                 }
                             }
