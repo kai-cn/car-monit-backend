@@ -19,6 +19,7 @@ import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.manager.domain.CarTrackInfo;
 import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
+import com.ruoyi.query.service.impl.CarQueryLogServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,8 +49,10 @@ public class CarTrackInfoController extends BaseController {
 
     @Resource
     private HttpSysUtilApiService httpSysUtilApiService;
-
-
+    
+    
+    @Autowired
+    private CarQueryLogServiceImpl carQueryLogService;
     @Autowired
     private RedisCache redisCache;
 
@@ -300,6 +303,9 @@ public class CarTrackInfoController extends BaseController {
     @Log(title = "车辆行驶轨迹", businessType = BusinessType.UPDATE)
     @PutMapping("/changeTrailInfo")
     public AjaxResult changeTrailInfo(@RequestBody TrailInfo trailInfo) {
+        
+        // 查询日志
+        carQueryLogService.queryLog(JSON.toJSONString(trailInfo), "1", "1");
         if (null != trailInfo) {
             ZdataTrailTracks tracks = trailInfo.getTracks();
             List<TrailBo> josnList = trailInfo.getTrailList();

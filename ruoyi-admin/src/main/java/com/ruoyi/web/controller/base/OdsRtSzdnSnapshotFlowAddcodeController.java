@@ -9,8 +9,13 @@ import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.constant.HttpStatus;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.domain.entity.SysUser;
+import com.ruoyi.common.core.domain.model.LoginUser;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.query.domain.CarQueryLog;
+import com.ruoyi.query.service.impl.CarQueryLogServiceImpl;
 import com.ruoyi.system.service.ISysDictDataService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +47,8 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
     private HttpOdsRtSzdnSnapshotFlowAddcodeService httpOdsRtSzdnSnapshotFlowAddcodeService;
     @Autowired
     private ISysDictDataService sysDictDataService;
+    @Autowired
+    private CarQueryLogServiceImpl carQueryLogService;
 
     /**
      * 查询门架抓拍流水列表
@@ -49,7 +56,8 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
     @PreAuthorize("@ss.hasPermi('base:snapshotflow:list')")
     @GetMapping("/list")
     public TableDataInfo list(OdsRtSzdnSnapshotFlowAddcode odsRtSzdnSnapshotFlowAddcode) {
-
+        // 查询日志
+        carQueryLogService.queryLog(JSON.toJSONString(odsRtSzdnSnapshotFlowAddcode), "2", "1");
         // 当前页面
         if (null == odsRtSzdnSnapshotFlowAddcode.getPageNum()){
             odsRtSzdnSnapshotFlowAddcode.setPageNum(1);
@@ -80,8 +88,6 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
                 total = tableDataInfo.getTotal();
             }
         }
-
-
         rspData.setCode(HttpStatus.SUCCESS);
         rspData.setMsg("查询成功");
         rspData.setRows(list);
@@ -91,11 +97,13 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
 
     }
 
-
+    
+    
     @PreAuthorize("@ss.hasPermi('base:snapshotflow:list')")
     @GetMapping("/export")
     public AjaxResult export(OdsRtSzdnSnapshotFlowAddcode odsRtSzdnSnapshotFlowAddcode, HttpServletResponse response) {
-
+        // 查询日志
+        carQueryLogService.queryLog("", "2", "2");
         // 当前页面
         if (null == odsRtSzdnSnapshotFlowAddcode.getPageNum()){
             odsRtSzdnSnapshotFlowAddcode.setPageNum(1);
