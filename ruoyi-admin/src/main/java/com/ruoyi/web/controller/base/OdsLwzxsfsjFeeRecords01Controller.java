@@ -13,6 +13,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.query.service.impl.CarQueryLogServiceImpl;
 import com.ruoyi.system.service.ISysDictDataService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,9 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
     private RedisCache redisCache;
     @Autowired
     private ISysDictDataService sysDictDataService;
+    
+    @Autowired
+    private CarQueryLogServiceImpl carQueryLogService;
 
     /**
      * 查询基础-收费流水列表
@@ -54,7 +58,8 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
     @PreAuthorize("@ss.hasPermi('base:feerecords:list')")
     @GetMapping("/list")
     public TableDataInfo list(OdsLwzxsfsjFeeRecords01 odsLwzxsfsjFeeRecords01) {
-
+        // 插入查询日志
+        carQueryLogService.queryLog(JSON.toJSONString(odsLwzxsfsjFeeRecords01), "3", "1");
         // 当前页面
         if (null == odsLwzxsfsjFeeRecords01.getPageNum()){
             odsLwzxsfsjFeeRecords01.setPageNum(1);
@@ -129,7 +134,8 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
     @PreAuthorize("@ss.hasPermi('base:feerecords:list')")
     @GetMapping("/export")
     public AjaxResult export(OdsLwzxsfsjFeeRecords01 odsLwzxsfsjFeeRecords01, HttpServletResponse response) {
-
+        // 插入查询日志
+        carQueryLogService.queryLog("", "3", "2");
         // 当前页面
         if (null == odsLwzxsfsjFeeRecords01.getPageNum()){
             odsLwzxsfsjFeeRecords01.setPageNum(1);
