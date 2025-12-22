@@ -178,7 +178,7 @@ hengda:
   secret: b48381c4b98311ea90b100155d14fa3b
 
 vehicleMonitor:
-  baseUrl: http://127.0.0.1:9901
+  baseUrl: http://172.30.100.102:9901
 isLocalhost: local # 是否本地 prod生成
 
 tx-service-url: https://apis.map.qq.com
