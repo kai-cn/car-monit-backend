@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
-import com.alibaba.fastjson2.annotation.JSONField;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -532,7 +531,6 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
 
     /** 车牌号+类型 */
     @Excel(name = "车牌号+类型")
-    @JSONField(name = "车牌号+类型")
     private String vehicleplate;
 
     /** 车辆座位数/载重 */
@@ -577,11 +575,9 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
 
     // 时间查询
     @TableField(exist = false)
-    @JSONField(name = "开始时间")
     private String inApplyTime1;
 
     @TableField(exist = false)
-    @JSONField(name = "结束时间")
     private String inApplyTime2;
 
     @TableField(exist = false)
@@ -592,12 +588,10 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
 
     // 当前页面
     @TableField(exist = false)
-    @JSONField(name = "当前页面")
     private Integer pageNum;
 
     // 分页大小
     @TableField(exist = false)
-    @JSONField(name = "分页大小")
     private Integer pageSize;
 
     @TableField(exist = false)
@@ -614,13 +608,11 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
 
     /** 所属路段编码 */
     @TableField(exist = false)
-    @JSONField(name = "所属路段编码")
     private String sectionCodeStr;
 
     /**
      * 1收费站、2门架、3服务区
      */
-    @JSONField(name = "1收费站、2门架、3服务区")
     @TableField(exist = false)
     private String type;
 
@@ -628,7 +620,6 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
      * 编码
      */
     @TableField(exist = false)
-    @JSONField(name = "编码")
     private String code;
 
     @TableField(exist = false)
