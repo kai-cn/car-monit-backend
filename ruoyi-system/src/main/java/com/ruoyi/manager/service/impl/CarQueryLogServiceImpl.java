@@ -1,13 +1,13 @@
-package com.ruoyi.query.service.impl;
+package com.ruoyi.manager.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.query.domain.CarQueryLog;
-import com.ruoyi.query.mapper.CarQueryLogMapper;
-import com.ruoyi.query.service.ICarQueryLogService;
+import com.ruoyi.manager.domain.CarQueryLog;
+import com.ruoyi.manager.mapper.CarQueryLogMapper;
+import com.ruoyi.manager.service.ICarQueryLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,6 +73,12 @@ public class CarQueryLogServiceImpl extends ServiceImpl<CarQueryLogMapper, CarQu
         return AjaxResult.success("操作成功！",carQueryLog.getId());
     }
     
+    /**
+     * 查询、导出日志记录
+     * @param queryCondition 日志实体类
+     * @param modelType 模块菜单(1轨迹单2门架拍识3门架交易流水)
+     * @param menuPiont 模块功能(1查看2导出)
+     */
     public void queryLog(String queryCondition, String modelType, String menuPiont) {
         SysUser user = SecurityUtils.getLoginUser().getUser();
         CarQueryLog carQueryLog = new CarQueryLog();

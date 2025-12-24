@@ -1,7 +1,7 @@
-package com.ruoyi.query.mapper;
+package com.ruoyi.manager.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.ruoyi.query.domain.CarQueryLog;
+import com.ruoyi.manager.domain.CarQueryLog;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
