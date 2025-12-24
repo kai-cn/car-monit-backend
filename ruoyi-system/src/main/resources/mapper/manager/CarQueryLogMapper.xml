@@ -60,6 +60,8 @@
         <if test="modelType != null  and modelType != ''"> and t.model_type = #{modelType}</if>
         <if test="menuPoint != null  and menuPoint != ''"> and t.menu_point = #{menuPoint}</if>
         <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
         order by t.create_time desc,t.id
     </select>
 
@@ -82,15 +84,5 @@
         </foreach>
     </update>
 
-    <select id="getCarStatics" parameterType="com.ruoyi.manager.domain.vo.QueryLogVO" resultType ="com.ruoyi.manager.domain.CarQueryLog">
-        select
-        <include refid="selectCarQueryLogVo"/>
-        from car_query_log t
-        where t.del_flag = '0'
-        <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
-        <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
-        <if test="modelType != null  and modelType != ''"> and t.model_type = #{modelType}</if>
-        <if test="menuPoint != null  and menuPoint != ''"> and t.menu_point = #{menuPoint}</if>
-        order by t.create_time desc
-    </select>
+
 </mapper>

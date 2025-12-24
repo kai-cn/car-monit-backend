@@ -1,12 +1,13 @@
 package com.ruoyi.manager.domain;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BasePlusEntity;
 import com.ruoyi.common.core.domain.Custom;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
 
 /**
  * 查询日志对象 car_query_log
@@ -56,5 +57,14 @@ public class CarQueryLog extends BasePlusEntity implements Custom {
     /** 备注 */
     @Excel(name = "备注")
     private String remark;
+
+
+    // 时间查询 :入口时间
+    @TableField(exist = false)
+    private String applyTime1;
+
+
+    @TableField(exist = false)
+    private String applyTime2;
 
 }
