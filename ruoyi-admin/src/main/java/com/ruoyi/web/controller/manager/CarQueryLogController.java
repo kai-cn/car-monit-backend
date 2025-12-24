@@ -8,6 +8,9 @@ import java.util.Map;
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.ruoyi.common.utils.CommonUtil;
+import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
+import com.ruoyi.manager.domain.vo.PCCarStatisticsVO;
+import com.ruoyi.manager.domain.vo.QueryLogVO;
 import com.ruoyi.system.service.ISysDictDataService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -135,6 +138,14 @@ public class CarQueryLogController extends BaseController {
         return null;
     }
     
+    
+    
+    @GetMapping(value = "/carStatics")
+    public TableDataInfo getCarStatics(QueryLogVO queryLogVO) {
+        startPage();
+        List<CarQueryLog> list = carQueryLogService.getCarStatics(queryLogVO);
+        return getDataTable(list);
+    }
     
     
 }

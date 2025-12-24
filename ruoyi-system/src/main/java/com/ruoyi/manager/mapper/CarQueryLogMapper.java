@@ -2,6 +2,7 @@ package com.ruoyi.manager.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyi.manager.domain.CarQueryLog;
+import com.ruoyi.manager.domain.vo.QueryLogVO;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -44,5 +45,6 @@ public interface CarQueryLogMapper extends BaseMapper<CarQueryLog> {
      * @return 结果
      */
     int deleteCarQueryLogById(String id);
-
+	
+	List<CarQueryLog> getCarStatics(QueryLogVO queryLogVO);
 }

@@ -6,6 +6,7 @@ import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.manager.domain.CarQueryLog;
+import com.ruoyi.manager.domain.vo.QueryLogVO;
 import com.ruoyi.manager.mapper.CarQueryLogMapper;
 import com.ruoyi.manager.service.ICarQueryLogService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,6 +108,7 @@ public class CarQueryLogServiceImpl extends ServiceImpl<CarQueryLogMapper, CarQu
      * @param modelType 模块菜单(1轨迹单2门架拍识3门架交易流水)
      * @param menuPiont 模块功能(1查看2导出)
      */
+    @Override
     public void queryLog(String queryCondition, String modelType, String menuPiont) {
         SysUser user = SecurityUtils.getLoginUser().getUser();
         CarQueryLog carQueryLog = new CarQueryLog();
@@ -118,8 +120,11 @@ public class CarQueryLogServiceImpl extends ServiceImpl<CarQueryLogMapper, CarQu
         carQueryLog.setQueryCondition(queryCondition);
         this.saveCarQueryLog(carQueryLog);
     }
-
-
-
-
+    
+    @Override
+    public List<CarQueryLog> getCarStatics(QueryLogVO queryLogVO) {
+        return carQueryLogMapper.getCarStatics(queryLogVO);
+    }
+    
+    
 }

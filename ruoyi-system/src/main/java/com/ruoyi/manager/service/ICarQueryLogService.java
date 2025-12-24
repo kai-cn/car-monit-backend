@@ -3,6 +3,7 @@ package com.ruoyi.manager.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarQueryLog;
+import com.ruoyi.manager.domain.vo.QueryLogVO;
 
 import java.util.List;
 
@@ -54,5 +55,6 @@ public interface ICarQueryLogService extends IService<CarQueryLog> {
      * @param menuPiont 模块功能(1查看2导出)
      */
     void queryLog(String queryCondition, String modelType, String menuPiont);
-
+	
+	List<CarQueryLog> getCarStatics(QueryLogVO queryLogVO);
 }
