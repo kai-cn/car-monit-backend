@@ -13,7 +13,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
-import com.ruoyi.manager.service.impl.CarQueryLogServiceImpl;
+import com.ruoyi.manager.service.ICarQueryLogService;
 import com.ruoyi.system.service.ISysDictDataService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,9 +48,9 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
     private RedisCache redisCache;
     @Autowired
     private ISysDictDataService sysDictDataService;
-    
+
     @Autowired
-    private CarQueryLogServiceImpl carQueryLogService;
+    private ICarQueryLogService carQueryLogService;
 
     /**
      * 查询基础-收费流水列表

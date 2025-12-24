@@ -59,7 +59,6 @@ public class CarQueryLogServiceImpl extends ServiceImpl<CarQueryLogMapper, CarQu
     @Override
     public AjaxResult saveCarQueryLog(CarQueryLog carQueryLog)
     {
-        Long userId = SecurityUtils.getUserId();
         if (CommonUtil.isNotBlank(carQueryLog.getId()))
         {
             // 修改
@@ -73,33 +72,7 @@ public class CarQueryLogServiceImpl extends ServiceImpl<CarQueryLogMapper, CarQu
         return AjaxResult.success("操作成功！",carQueryLog.getId());
     }
     
-    /**
-     * 查询、导出日志记录
-     * @param queryCondition 日志实体类
-     * @param modelType 模块菜单(1轨迹单2门架拍识3门架交易流水)
-     * @param menuPiont 模块功能(1查看2导出)
-     */
-    public void queryLog(String queryCondition, String modelType, String menuPiont) {
-        SysUser user = SecurityUtils.getLoginUser().getUser();
-        CarQueryLog carQueryLog = new CarQueryLog();
-        carQueryLog.setUserId(user.getUserId().toString());
-        carQueryLog.setUserName(SecurityUtils.getUserRealName());
-        carQueryLog.setUserIp(user.getLoginIp());
-        carQueryLog.setModelType(modelType);
-        carQueryLog.setMenuPoint(menuPiont);
-        carQueryLog.setQueryCondition(queryCondition);
-        this.saveCarQueryLog(carQueryLog);
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
     /**
      * 批量删除查询日志
      *
@@ -126,6 +99,26 @@ public class CarQueryLogServiceImpl extends ServiceImpl<CarQueryLogMapper, CarQu
         int count = carQueryLogMapper.deleteCarQueryLogById(id);
         return AjaxResult.success(count);
     }
+
+
+    /**
+     * 查询、导出日志记录
+     * @param queryCondition 日志实体类
+     * @param modelType 模块菜单(1轨迹单2门架拍识3门架交易流水)
+     * @param menuPiont 模块功能(1查看2导出)
+     */
+    public void queryLog(String queryCondition, String modelType, String menuPiont) {
+        SysUser user = SecurityUtils.getLoginUser().getUser();
+        CarQueryLog carQueryLog = new CarQueryLog();
+        carQueryLog.setUserId(user.getUserId().toString());
+        carQueryLog.setUserName(SecurityUtils.getUserRealName());
+        carQueryLog.setUserIp(user.getLoginIp());
+        carQueryLog.setModelType(modelType);
+        carQueryLog.setMenuPoint(menuPiont);
+        carQueryLog.setQueryCondition(queryCondition);
+        this.saveCarQueryLog(carQueryLog);
+    }
+
 
 
 
