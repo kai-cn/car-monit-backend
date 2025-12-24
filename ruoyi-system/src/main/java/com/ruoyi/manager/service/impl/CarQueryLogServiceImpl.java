@@ -6,7 +6,6 @@ import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.manager.domain.CarQueryLog;
-import com.ruoyi.manager.domain.vo.QueryLogVO;
 import com.ruoyi.manager.mapper.CarQueryLogMapper;
 import com.ruoyi.manager.service.ICarQueryLogService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -121,10 +120,6 @@ public class CarQueryLogServiceImpl extends ServiceImpl<CarQueryLogMapper, CarQu
         this.saveCarQueryLog(carQueryLog);
     }
     
-    @Override
-    public List<CarQueryLog> getCarStatics(QueryLogVO queryLogVO) {
-        return carQueryLogMapper.getCarStatics(queryLogVO);
-    }
-    
+
     
 }
