@@ -1,9 +1,10 @@
 package com.ruoyi.manager.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarQueryLog;
+
 import java.util.List;
-import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
  * 查询日志Service接口
@@ -44,5 +45,14 @@ public interface ICarQueryLogService extends IService<CarQueryLog> {
      * @return 结果
      */
     AjaxResult deleteCarQueryLogByIds(String[] ids);
+
+
+    /**
+     * 查询、导出日志记录
+     * @param queryCondition 日志实体类
+     * @param modelType 模块菜单(1轨迹单2门架拍识3门架交易流水)
+     * @param menuPiont 模块功能(1查看2导出)
+     */
+    void queryLog(String queryCondition, String modelType, String menuPiont);
 
 }

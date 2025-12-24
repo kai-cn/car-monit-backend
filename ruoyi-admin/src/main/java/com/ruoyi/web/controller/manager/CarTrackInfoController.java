@@ -16,8 +16,8 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.manager.domain.CarTrackInfo;
+import com.ruoyi.manager.service.ICarQueryLogService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
-import com.ruoyi.manager.service.impl.CarQueryLogServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,15 +44,15 @@ public class CarTrackInfoController extends BaseController {
 
     @Resource
     private HttpSysUtilApiService httpSysUtilApiService;
-    
-    
-    @Autowired
-    private CarQueryLogServiceImpl carQueryLogService;
+
     @Autowired
     private RedisCache redisCache;
 
     @Autowired
     private IZdataTrailTracksService zdataTrailTracksService;
+
+    @Autowired
+    private ICarQueryLogService carQueryLogService;
 
 
 

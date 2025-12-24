@@ -11,7 +11,7 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.utils.CommonUtil;
-import com.ruoyi.manager.service.impl.CarQueryLogServiceImpl;
+import com.ruoyi.manager.service.ICarQueryLogService;
 import com.ruoyi.system.service.ISysDictDataService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,8 +43,10 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
     private HttpOdsRtSzdnSnapshotFlowAddcodeService httpOdsRtSzdnSnapshotFlowAddcodeService;
     @Autowired
     private ISysDictDataService sysDictDataService;
+
+
     @Autowired
-    private CarQueryLogServiceImpl carQueryLogService;
+    private ICarQueryLogService carQueryLogService;
 
     /**
      * 查询门架抓拍流水列表
