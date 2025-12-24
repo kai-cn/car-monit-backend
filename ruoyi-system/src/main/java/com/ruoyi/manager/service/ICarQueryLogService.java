@@ -1,7 +1,7 @@
-package com.ruoyi.query.service;
+package com.ruoyi.manager.service;
 
 import com.ruoyi.common.core.domain.AjaxResult;
-import com.ruoyi.query.domain.CarQueryLog;
+import com.ruoyi.manager.domain.CarQueryLog;
 import java.util.List;
 import com.baomidou.mybatisplus.extension.service.IService;
 

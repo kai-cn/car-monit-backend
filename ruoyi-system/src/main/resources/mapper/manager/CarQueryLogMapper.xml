@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.query.mapper.CarQueryLogMapper">
+<mapper namespace="com.ruoyi.manager.mapper.CarQueryLogMapper">
 
-    <resultMap type="com.ruoyi.query.domain.CarQueryLog" id="CarQueryLogResult">
+    <resultMap type="com.ruoyi.manager.domain.CarQueryLog" id="CarQueryLogResult">
         <result property="id"    column="id"    />
         <result property="userId"    column="user_id"    />
         <result property="userName"    column="user_name"    />
@@ -48,7 +48,7 @@
     </sql>
 
 
-    <select id="selectCarQueryLogList" parameterType="com.ruoyi.query.domain.CarQueryLog" resultMap="CarQueryLogResult">
+    <select id="selectCarQueryLogList" parameterType="com.ruoyi.manager.domain.CarQueryLog" resultMap="CarQueryLogResult">
         SELECT
         <include refid="selectCarQueryLogVo"/>
         FROM car_query_log t

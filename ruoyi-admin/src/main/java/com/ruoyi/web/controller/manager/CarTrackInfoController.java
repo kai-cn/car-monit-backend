@@ -3,7 +3,6 @@ package com.ruoyi.web.controller.manager;
 import com.alibaba.fastjson2.JSON;
 import com.github.pagehelper.PageInfo;
 import com.ruoyi.base.domain.*;
-import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.IZdataTrailTracksService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
 import com.ruoyi.common.annotation.Log;
@@ -17,9 +16,8 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.manager.domain.CarTrackInfo;
-import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
-import com.ruoyi.query.service.impl.CarQueryLogServiceImpl;
+import com.ruoyi.manager.service.impl.CarQueryLogServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,11 +25,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 车辆行驶轨迹Controller

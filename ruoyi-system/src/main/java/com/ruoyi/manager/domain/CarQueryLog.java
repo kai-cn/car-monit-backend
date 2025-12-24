@@ -1,4 +1,4 @@
-package com.ruoyi.query.domain;
+package com.ruoyi.manager.domain;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;

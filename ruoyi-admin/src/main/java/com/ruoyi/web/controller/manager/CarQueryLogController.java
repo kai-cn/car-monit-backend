@@ -1,7 +1,6 @@
-package com.ruoyi.web.controller.query;
+package com.ruoyi.web.controller.manager;
 
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,8 +8,6 @@ import java.util.Map;
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.ruoyi.common.utils.CommonUtil;
-import com.ruoyi.common.utils.DateUtils;
-import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.system.service.ISysDictDataService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,9 +24,8 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
-import com.ruoyi.query.domain.CarQueryLog;
-import com.ruoyi.query.service.ICarQueryLogService;
-import com.ruoyi.common.utils.poi.ExcelUtil;
+import com.ruoyi.manager.domain.CarQueryLog;
+import com.ruoyi.manager.service.ICarQueryLogService;
 import com.ruoyi.common.core.page.TableDataInfo;
 
 import javax.servlet.http.HttpServletResponse;
@@ -41,7 +37,7 @@ import javax.servlet.http.HttpServletResponse;
  * @date 2025-12-22
  */
 @RestController
-@RequestMapping("/query/querylog")
+@RequestMapping("/manager/querylog")
 public class CarQueryLogController extends BaseController {
 
     @Autowired
@@ -52,7 +48,7 @@ public class CarQueryLogController extends BaseController {
     /**
      * 查询查询日志列表
      */
-    @PreAuthorize("@ss.hasPermi('query:querylog:list')")
+    @PreAuthorize("@ss.hasPermi('manager:querylog:list')")
     @GetMapping("/list")
     public TableDataInfo list(CarQueryLog carQueryLog) {
         startPage();
@@ -71,7 +67,7 @@ public class CarQueryLogController extends BaseController {
     /**
      * 新增查询日志
      */
-    @PreAuthorize("@ss.hasPermi('query:querylog:add')")
+    @PreAuthorize("@ss.hasPermi('manager:querylog:add')")
     @Log(title = "查询日志", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody CarQueryLog carQueryLog) {
@@ -81,7 +77,7 @@ public class CarQueryLogController extends BaseController {
     /**
      * 修改查询日志
      */
-    @PreAuthorize("@ss.hasPermi('query:querylog:edit')")
+    @PreAuthorize("@ss.hasPermi('manager:querylog:edit')")
     @Log(title = "查询日志", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody CarQueryLog carQueryLog) {
@@ -91,7 +87,7 @@ public class CarQueryLogController extends BaseController {
     /**
      * 删除查询日志
      */
-    @PreAuthorize("@ss.hasPermi('query:querylog:remove')")
+    @PreAuthorize("@ss.hasPermi('manager:querylog:remove')")
     @Log(title = "查询日志", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids) {
@@ -99,7 +95,7 @@ public class CarQueryLogController extends BaseController {
     }
     
     
-    @PreAuthorize("@ss.hasPermi('query:querylog:export')")
+    @PreAuthorize("@ss.hasPermi('manager:querylog:export')")
     @Log(title = "日志信息", businessType = BusinessType.EXPORT)
     @GetMapping("/export")
     public AjaxResult export(CarQueryLog carQueryLog, HttpServletResponse response) {
