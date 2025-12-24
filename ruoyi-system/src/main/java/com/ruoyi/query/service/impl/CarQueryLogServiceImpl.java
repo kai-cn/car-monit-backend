@@ -4,11 +4,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.utils.CommonUtil;
-import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.query.mapper.CarQueryLogMapper;
 import com.ruoyi.query.domain.CarQueryLog;
+import com.ruoyi.query.mapper.CarQueryLogMapper;
 import com.ruoyi.query.service.ICarQueryLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -69,13 +67,6 @@ public class CarQueryLogServiceImpl extends ServiceImpl<CarQueryLogMapper, CarQu
         }
         else
         {
-            carQueryLog.setId(StringUtils.getUUID()); // 主键
-            carQueryLog.setDelFlag("0");
-            carQueryLog.setCreateBy(userId); // 创建人
-            carQueryLog.setEpsId(SecurityUtils.getEpsId());
-            carQueryLog.setCreateTime(DateUtils.getTimestamp()); // 创建时间
-            carQueryLog.setUpdateBy(userId); // 更新人
-            carQueryLog.setUpdateTime(DateUtils.getTimestamp()); // 更新时间
             // 新增 主键
             carQueryLogMapper.insert(carQueryLog);
         }
