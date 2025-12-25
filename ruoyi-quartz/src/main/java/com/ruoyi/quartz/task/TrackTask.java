@@ -1,7 +1,7 @@
 package com.ruoyi.quartz.task;
 
+import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.base.service.IGeometryService;
-import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.service.ICarSuspiciousService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 定时任务调度测试
@@ -49,7 +51,8 @@ public class TrackTask {
     @Transactional(rollbackFor = Exception.class)
     public void syncSuspiciousCar() {
         log.info("可疑车俩数据同步开始同步！"+new Date());
-        carSuspiciousService.syncSuspiciousCar();
+        List<TrailInfo> trailInfoList = new ArrayList<>();
+        carSuspiciousService.syncSuspiciousCar("redis",trailInfoList);
         log.info("可疑车俩数据同步结束同步！"+new Date());
     }
 
