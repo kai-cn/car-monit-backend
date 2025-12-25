@@ -377,7 +377,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
      * @return 结果
      */
     @Transactional(rollbackFor = Exception.class)
-    public AjaxResult syncSuspiciousCar() {
+    public AjaxResult syncSuspiciousCar(String addFlag,List<TrailInfo> paraTrailInfoList) {
         Long userId = 1L;
         CarParaVO carParaVO = new CarParaVO();
 
@@ -398,12 +398,18 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         String formattedDate = sdf.format(now);
 
         Collection<String> keys = redisCache.keys(Constants.car_uspicious + formattedDate + "*");
-        if (null != keys && keys.size() > 0){
-            for (String key : keys) {
-                TrailInfo trailInfo = redisCache.getCacheObject(key);
-                trailInfoList.add(trailInfo);
+        if (CommonUtil.isNull(addFlag).equals("redis")){
+            if (null != keys && keys.size() > 0){
+                for (String key : keys) {
+                    TrailInfo trailInfo = redisCache.getCacheObject(key);
+                    trailInfoList.add(trailInfo);
+                }
             }
+        }else{
+            trailInfoList = paraTrailInfoList;
         }
+
+
 
         // 查询所有的车俩
         Map<String,CarInfo> carInfoMap = new HashMap<>();

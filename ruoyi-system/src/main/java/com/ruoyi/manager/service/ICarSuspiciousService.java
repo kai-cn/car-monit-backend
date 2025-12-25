@@ -1,5 +1,6 @@
 package com.ruoyi.manager.service;
 
+import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarSuspicious;
 import java.util.List;
@@ -65,5 +66,5 @@ public interface ICarSuspiciousService extends IService<CarSuspicious> {
      * 同步可疑车俩
      * @return
      */
-    AjaxResult syncSuspiciousCar();
+    AjaxResult syncSuspiciousCar(String addFlag,List<TrailInfo> paraTrailInfoList);
 }
