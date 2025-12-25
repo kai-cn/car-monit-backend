@@ -4,6 +4,8 @@ import cn.afterturn.easypoi.entity.ImageEntity;
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import cn.afterturn.easypoi.word.WordExportUtil;
+import com.ruoyi.base.domain.SuspiciousCarVO;
+import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.controller.BaseController;
@@ -12,6 +14,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecuritySHA1Utils;
 import com.ruoyi.common.utils.file.ImageUtils;
 import com.ruoyi.manager.domain.CarSuspicious;
 import com.ruoyi.manager.domain.CarSuspiciousCheck;
@@ -426,6 +429,36 @@ public class CarSuspiciousController extends BaseController {
     }
 
 
+    /**s
+     * 同步可疑车辆-----------
+     */
+    @PostMapping("/syncSuspiciousCarTask")
+    public AjaxResult syncSuspiciousCarTask(@RequestBody SuspiciousCarVO suspiciousCarVO) {
+        String signatureKey = suspiciousCarVO.getSignatureKey();
+        Long timeStamp = suspiciousCarVO.getTimeStamp();
+        String signature = suspiciousCarVO.getSignature();
+        if (CommonUtil.isNotBlank(signatureKey) && CommonUtil.isNotBlank(signature) && null != timeStamp) {
+            // 签名
+            String encode;
+            try {
+                encode = SecuritySHA1Utils.shaEncode(signatureKey + timeStamp);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            if (!encode.equals(signature)) {
+                return AjaxResult.error("错误，签名验证失败！");
+            }
+        }else{
+            return AjaxResult.error("参数错误");
+        }
+
+
+        List<TrailInfo> trailInfoList = suspiciousCarVO.getTrailInfoList();
+        if (null !=trailInfoList && trailInfoList.size() > 0){
+             carSuspiciousService.syncSuspiciousCar("task",trailInfoList);
+        }
+        return AjaxResult.success();
+    }
 
 
 }

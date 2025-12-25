@@ -1,31 +1,23 @@
 package com.ruoyi.web.controller.manager;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-
 import com.ruoyi.base.service.IGeometryService;
-import com.ruoyi.manager.service.ICarSuspiciousService;
-import com.ruoyi.manager.service.ICarTrackInfoService;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.manager.domain.BussTest;
 import com.ruoyi.manager.service.IBussTestService;
-import com.ruoyi.common.utils.poi.ExcelUtil;
-import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.manager.service.ICarSuspiciousService;
+import com.ruoyi.manager.service.ICarTrackInfoService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * 业务测试Controller
@@ -126,17 +118,7 @@ public class BussTestController extends BaseController {
     }
 
 
-    /**
-     * 可疑车俩
-     */
-    @PreAuthorize("@ss.hasPermi('manager:busstest:syncTest')")
-    @PostMapping("/syncSuspiciousCar")
-    public void syncSuspiciousCar() {
-        log.info("车俩实时轨迹同步开始同步！"+new Date());
-        carSuspiciousService.syncSuspiciousCar();
-        geometryService.getRedisList(); // 跟新缓存数据
-        log.info("车俩实时轨迹同步结束同步！"+new Date());
-    }
+
 
 
 
