@@ -54,6 +54,8 @@ public class CarExceptRecordController extends BaseController {
     @Autowired
     private IOdsSzdnTollService odsSzdnTollService;
 
+    private static final Integer[] strNum  = {0,5,6,11,12,14,15,17,18,19,21};
+    private static final String[] strName  = {"序号","出口收费站","出口时间","通行PASSID","车牌","交易车型","车种","入口站","入口时间","一级类型","二级类型","省内","省外","小计","省内","省外","小计","省内","省外","小计","备注",""};
     /**
      * 查询异常车辆流水列表
      */
@@ -214,19 +216,26 @@ public class CarExceptRecordController extends BaseController {
         }
         ImportSysUtil importUtil = new ImportSysUtil();
         XSSFSheet sheet = importUtil.getXSSFSheet(file.getInputStream(), 0); // 得到sheet页
-        List<ImportEntity> gzList = initList(); // 初始化导入头部、属性、校验规则
-
-        // 获取头部
+        
+        // 获取第二列头部
+        List<ImportEntity> gzList = initListTwo();
         String[] colsName =  new String[gzList.size()];
         for (int i = 0; i < gzList.size(); i++) {
             colsName[i] = gzList.get(i).getColName();
         }
+        
+        // 获取第三列头部
+        List<ImportEntity> gzListThree = initListTwo();
+        String[] colsNameThree =  new String[gzListThree.size()];
+        for (int i = 0; i < gzListThree.size(); i++) {
+            colsNameThree[i] = gzListThree.get(i).getColName();
+        }
         // 校验头部
-        if (!importUtil.colVdaExcel07(sheet, colsName)) {
+        if (!importUtil.colVdaExcel08(sheet, colsName,1) && !importUtil.colVdaExcel08(sheet, colsNameThree,2)) {
             return AjaxResult.error("导入失败,模板不正确,请下载对应的模板！");
         }
         // 校验数据
-        List<String[]> sheetList = importUtil.dataRtnExcel07(sheet, colsName); // 返回结果集
+        List<String[]> sheetList = importUtil.dataRtnExcel08(sheet, strName,strNum,3); // 返回结果集
         if (sheetList.size() == 0) {
             return AjaxResult.error("导入失败,模板excel没有数据可以导入，请确定！");
         }
@@ -262,10 +271,7 @@ public class CarExceptRecordController extends BaseController {
             for (OdsSzdnToll tollRtn : tolllist) {
                 tollMap.put(CommonUtil.isNull(tollRtn.getTollName()),CommonUtil.isNull(tollRtn.getTollCode()));
             }
-
-            // 通行标识
-            Map<String,String> passTypeMap = sysDictDataService.selectDictDataLaleMap("run_type");
-
+            
             // 逃费类型
             Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataLaleMap("escaped_type");
 
@@ -286,16 +292,6 @@ public class CarExceptRecordController extends BaseController {
                     }
                 }
 
-                // 通行标识
-                String passType =  CommonUtil.isNull(addbo.getPassType());
-                if (CommonUtil.isNotBlank(passType)){
-                    if (passTypeMap.containsKey(passType)) {
-                        addbo.setPassType(CommonUtil.isNull(passTypeMap.get(passType)));
-                    } else {
-                        errorList.add(importUtil.getErrorBO(i + 1, "通行标识", passType + " 通行标识不存在,请在字典菜单维护！"));
-                    }
-                }
-
                 // 逃费类型
                 String escapedType = CommonUtil.isNull(addbo.getEscapedType());
                 if (CommonUtil.isNotBlank(escapedType)){
@@ -309,15 +305,25 @@ public class CarExceptRecordController extends BaseController {
                 // 入口
                 String inStation = CommonUtil.isNull(addbo.getInStation());
                 if (CommonUtil.isNotBlank(inStation)){
-                    addbo.setInStationId(tollMap.get(inStation));
+                    if (tollMap.containsKey(inStation)) {
+                        addbo.setInStation(CommonUtil.isNull(inStation));
+                        addbo.setInStationId(CommonUtil.isNull(tollMap.get(inStation)));
+                        
+                    } else {
+                        errorList.add(importUtil.getErrorBO(i + 1, "入口站", inStation + " 入口站不存在,请在字典菜单维护！"));
+                    }
                 }
 
                 // 出口
                 String outStation = CommonUtil.isNull(addbo.getOutStation());
                 if (CommonUtil.isNotBlank(outStation)){
-                    addbo.setOutStationId(tollMap.get(outStation));
+                    if (tollMap.containsKey(outStation)) {
+                        addbo.setOutStation(CommonUtil.isNull(outStation));
+                        addbo.setOutStationId(CommonUtil.isNull(tollMap.get(outStation)));
+                    } else {
+                        errorList.add(importUtil.getErrorBO(i + 1, "出口站", outStation + " 出口站不存在,请在字典菜单维护！"));
+                    }
                 }
-
 
                 if (errorList.size() > 100){
                     break;
@@ -356,21 +362,73 @@ public class CarExceptRecordController extends BaseController {
     }
 
     /**
-     * 初始化导入头部、属性、校验规则
+     * 初始化导入头部、属性、校验规则第二列
      */
-    public List<ImportEntity> initList() {
+    public List<ImportEntity> initListTwo() {
         List<ImportEntity> boList = new ArrayList<ImportEntity>();
         // 校验规则 1 必填 2小数 3整数 4日期 5身份证 6年月 多个逗号分隔例如：1,2
-        boList.add(new ImportEntity("车牌号","carNo","1"));
-        boList.add(new ImportEntity("通行标识","passType",""));
+        boList.add(new ImportEntity("序号","",""));
+        boList.add(new ImportEntity("出口收费站","outStation",""));
+        boList.add(new ImportEntity("出口时间","outTime","1,8"));
+        boList.add(new ImportEntity("通行PASSID","passType",""));
+        boList.add(new ImportEntity("车牌","carNo","1"));
+        
+        boList.add(new ImportEntity("交易车型","",""));
+        boList.add(new ImportEntity("车种","",""));
+        
         boList.add(new ImportEntity("入口站","inStation",""));
         boList.add(new ImportEntity("入口时间","inTime","1,8"));
-        boList.add(new ImportEntity("出口站","outStation",""));
-        boList.add(new ImportEntity("出口时间","outTime","1,8"));
-        boList.add(new ImportEntity("应缴金额（元）","totalAmount","1,2"));
-        boList.add(new ImportEntity("收费金额（元）","chargeAmount","1,2"));
-        boList.add(new ImportEntity("逃费类型","escapedType","1"));
+        boList.add(new ImportEntity("漏交通行费类型","backCol1",""));
+        boList.add(new ImportEntity("","escapedType","1"));
+        
+        boList.add(new ImportEntity("交易金额","",""));
+        boList.add(new ImportEntity("","",""));
+        boList.add(new ImportEntity("","chargeAmount","1,2"));
+        
+        boList.add(new ImportEntity("应交金额","",""));
+        boList.add(new ImportEntity("","",""));
+        boList.add(new ImportEntity("","totalAmount","1,2"));
+        
+        boList.add(new ImportEntity("实际追交金额","",""));
+        boList.add(new ImportEntity("","",""));
+        boList.add(new ImportEntity("","",""));
+
         boList.add(new ImportEntity("备注","remark",""));
+        return boList;
+    }
+    /**
+     * 初始化导入头部、属性、校验规则第三列
+     */
+    public List<ImportEntity> initListThree() {
+        List<ImportEntity> boList = new ArrayList<ImportEntity>();
+        // 校验规则 1 必填 2小数 3整数 4日期 5身份证 6年月 多个逗号分隔例如：1,2
+        boList.add(new ImportEntity("","",""));
+        boList.add(new ImportEntity("","outStation",""));
+        boList.add(new ImportEntity("","outTime","1,8"));
+        boList.add(new ImportEntity("","passType",""));
+        boList.add(new ImportEntity("","carNo","1"));
+        
+        boList.add(new ImportEntity("","",""));
+        boList.add(new ImportEntity("","",""));
+        
+        boList.add(new ImportEntity("","inStation",""));
+        boList.add(new ImportEntity("","inTime","1,8"));
+        boList.add(new ImportEntity("一级类型","backCol1",""));
+        boList.add(new ImportEntity("二级类型","escapedType","1"));
+        
+        boList.add(new ImportEntity("省内","",""));
+        boList.add(new ImportEntity("省外","",""));
+        boList.add(new ImportEntity("小计","chargeAmount","1,2"));
+        
+        boList.add(new ImportEntity("省内","",""));
+        boList.add(new ImportEntity("省外","",""));
+        boList.add(new ImportEntity("小计","totalAmount","1,2"));
+        
+        boList.add(new ImportEntity("省内","",""));
+        boList.add(new ImportEntity("省外","",""));
+        boList.add(new ImportEntity("小计","","1,2"));
+        
+        boList.add(new ImportEntity("","remark",""));
         return boList;
     }
 

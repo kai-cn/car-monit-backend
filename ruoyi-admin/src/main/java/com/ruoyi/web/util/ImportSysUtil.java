@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -276,7 +277,31 @@ public class ImportSysUtil
 		}
 		return true;
 	}
-
+    
+    public boolean colVdaExcel08(XSSFSheet sheet,String[] colsName,Integer num) throws Exception
+    {
+        XSSFRow row = sheet.getRow(num);
+        if (row == null)
+        {
+            return false;
+        }
+        else
+        {
+            // 获取每个单元格的内容
+            for (int j = 0; j < colsName.length; j++)
+            {
+                // 获取指定单元格的内容
+                String cellContent = getCellFormatValue07(row.getCell(j));
+                
+                if (!colsName[j].equals(cellContent))
+                {
+                    return false;
+                }
+            }
+            
+        }
+        return true;
+    }
 
     /**
      * 验证模板 2022.1.6新类型模板校验 增加表头信息 由第四行开始
@@ -345,7 +370,52 @@ public class ImportSysUtil
 
         return list;
     }
-
+    
+    /**
+     * 多列数据表头验证
+     * @param sheet
+     * @param colsName
+     * @return
+     * @throws Exception
+     */
+    public List<String[]> dataRtnExcel08(XSSFSheet sheet,String[] colsName,Integer[] rowNume,Integer num) throws Exception
+    {
+        List<String[]> list = new ArrayList<String[]>();
+        int rowCount = sheet.getLastRowNum(); // 得到行数
+        for (int i = num; i <= rowCount; i++)
+        {
+            String[] strs = new String[colsName.length];
+            
+            XSSFRow row = sheet.getRow(i);
+            // 判断后面为空
+            int cellCount;
+            try
+            {
+                cellCount = row.getLastCellNum();
+            }
+            catch (NullPointerException e)
+            {
+                // 如果文件中没有到达最后一行，中间有空行则会报空指针，则让程序继续读下一行
+                break;
+            }
+            // 如果行中遇到break则跳出循环
+            if ("break".equals(getCellFormatValue07(row.getCell(0))) || "结束".equals(getCellFormatValue07(row.getCell(0))))
+            {
+                break;
+            }
+            
+            // 循环列名
+            for (int z = 0; z < colsName.length; z++)
+            {
+                if ( !Arrays.asList(rowNume).contains(z)){
+                    strs[z] = isNull(getCellFormatValue08(row.getCell(z)));
+                }
+            }
+            list.add(strs);
+        }
+        
+        return list;
+    }
 
     /**
      * 验证模板 2022.1.6新类型模板校验 增加表头信息 由第四行开始 并增加公式
@@ -407,6 +477,73 @@ public class ImportSysUtil
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
                         cellvalue = sdf.format(date);
 
+                    }
+                    else
+                    {
+                        DecimalFormat df = new DecimalFormat("#.##");
+                        cellvalue = df.format(cell.getNumericCellValue());
+                    }
+                    break;
+                // 公式 公式只有在每行的单项总价里有，这里需要获取
+                case FORMULA:
+//                    cellvalue = "FORMULA ";
+                    DecimalFormat df = new DecimalFormat("#.##");
+                    cellvalue = df.format(cell.getNumericCellValue());
+                    break;
+                // 如果当前Cell的Type为STRIN 判断单元格的值是否为字符串类型
+                case STRING:
+                    // 取得当前的Cell字符串
+                    cellvalue = cell.getRichStringCellValue().getString();
+                    break;
+                // 判断单元格的值是否为布尔类型
+                case BOOLEAN:
+                    cellvalue = String.valueOf(cell.getBooleanCellValue());
+                    break;
+                // 空值
+                case BLANK:
+                    cellvalue = "";
+                    break;
+                case ERROR: // 故障
+                    System.out.println(" 读取文件存在故障");
+                    break;
+                // 默认的Cell值
+                default:
+                    cellvalue = "";
+            }
+        }
+        else
+        {
+            cellvalue = "";
+        }
+        return cellvalue.trim();
+    }
+    
+    /**
+     * 获取单元格值,日期为yyyy-MM-dd hh:mm:ss
+     * @param cell
+     * @return
+     */
+    private String getCellFormatValue08(XSSFCell cell)
+    {
+        String cellvalue = "";
+        if (cell != null)
+        {
+            // 判断当前Cell的Type
+            switch (cell.getCellType())
+            {
+                // 如果当前Cell的Type为NUMERIC 判断单元格的值是否为数字类型
+                case NUMERIC:
+                    // 判断当前的cell是否为Date
+                    if (HSSFDateUtil.isCellDateFormatted(cell))
+                    {
+                        // 如果是Date类型则，转化为Data格式
+                        // 方法1：这样子的data格式是带时分秒的：2011-10-12 0:00:00
+                        // cellvalue = cell.getDateCellValue().toLocaleString();
+                        // 方法2：这样子的data格式是不带带时分秒的：2011-10-12
+                        Date date = cell.getDateCellValue();
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+                        cellvalue = sdf.format(date);
+                        
                     }
                     else
                     {
