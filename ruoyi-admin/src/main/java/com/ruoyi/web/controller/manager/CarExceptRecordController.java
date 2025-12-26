@@ -321,6 +321,13 @@ public class CarExceptRecordController extends BaseController {
                     }
                 }
 
+                if (null != addbo.getTotalAmount() && null !=addbo.getChargeAmount()){
+                    // 判断getTotalAmount  getChargeAmount
+                    if(addbo.getTotalAmount().compareTo(addbo.getChargeAmount()) < 0){
+                        
+                    }
+                }
+
                 if (errorList.size() > 100){
                     break;
                 }
