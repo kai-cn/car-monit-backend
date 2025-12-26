@@ -101,7 +101,7 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
     @GetMapping("/export")
     public AjaxResult export(OdsRtSzdnSnapshotFlowAddcode odsRtSzdnSnapshotFlowAddcode, HttpServletResponse response) {
         // 查询日志
-        carQueryLogService.queryLog("", "2", "2");
+        carQueryLogService.queryLog(JSON.toJSONString(odsRtSzdnSnapshotFlowAddcode), "2", "2");
         // 当前页面
         if (null == odsRtSzdnSnapshotFlowAddcode.getPageNum()){
             odsRtSzdnSnapshotFlowAddcode.setPageNum(1);
