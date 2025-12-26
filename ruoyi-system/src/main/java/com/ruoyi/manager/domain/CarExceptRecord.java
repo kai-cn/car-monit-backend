@@ -91,7 +91,6 @@ public class CarExceptRecord extends BasePlusEntity implements Custom {
     /** 逃费类型（字典：1少轴2屏蔽3货车客标4有入无出5绿通换挂） */
     @Excel(name = "逃费类型", readConverterExp = "字=典：1少轴2屏蔽3货车客标4有入无出5绿通换挂")
     private String escapedType;
-
     /** 备注 */
     @Excel(name = "备注")
     private String remark;
