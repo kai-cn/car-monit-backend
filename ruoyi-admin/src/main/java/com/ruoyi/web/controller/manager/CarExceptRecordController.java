@@ -309,8 +309,6 @@ public class CarExceptRecordController extends BaseController {
                         addbo.setInStation(CommonUtil.isNull(inStation));
                         addbo.setInStationId(CommonUtil.isNull(tollMap.get(inStation)));
                         
-                    } else {
-                        errorList.add(importUtil.getErrorBO(i + 1, "入口站", inStation + " 入口站不存在,请在字典菜单维护！"));
                     }
                 }
 
@@ -320,8 +318,6 @@ public class CarExceptRecordController extends BaseController {
                     if (tollMap.containsKey(outStation)) {
                         addbo.setOutStation(CommonUtil.isNull(outStation));
                         addbo.setOutStationId(CommonUtil.isNull(tollMap.get(outStation)));
-                    } else {
-                        errorList.add(importUtil.getErrorBO(i + 1, "出口站", outStation + " 出口站不存在,请在字典菜单维护！"));
                     }
                 }
 
