@@ -28,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -278,8 +279,15 @@ public class CarExceptRecordController extends BaseController {
 
             for (int i = 0; i < importList.size(); i++) {
                 CarExceptRecord addbo = importList.get(i);
-
+                
+                
+                //车牌号、颜色处理
                 String carNo = CommonUtil.isNull(addbo.getCarNo());
+                if (carNo.indexOf("_") > -1){
+                    String[] vehicleplateStr = carNo.split("_");
+                    addbo.setCarNo(vehicleplateStr[0]);
+                    carNo = vehicleplateStr[0];
+                }
                 if (CommonUtil.isNotBlank(carNo)){
                     if (carMap.containsKey(carNo)) {
                         CarInfo carInfo = carMap.get(carNo);
@@ -320,11 +328,11 @@ public class CarExceptRecordController extends BaseController {
                         addbo.setOutStationId(CommonUtil.isNull(tollMap.get(outStation)));
                     }
                 }
-
+                
                 if (null != addbo.getTotalAmount() && null !=addbo.getChargeAmount()){
-                    // 判断getTotalAmount  getChargeAmount
+                    // 判断getTotalAmount>getChargeAmount
                     if(addbo.getTotalAmount().compareTo(addbo.getChargeAmount()) < 0){
-                        
+                        errorList.add(importUtil.getErrorBO(i + 1, "缴费金额",  "交易金额不能大于应交金额"));
                     }
                 }
 
