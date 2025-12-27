@@ -541,7 +541,7 @@ public class ImportSysUtil
                         // cellvalue = cell.getDateCellValue().toLocaleString();
                         // 方法2：这样子的data格式是不带带时分秒的：2011-10-12
                         Date date = cell.getDateCellValue();
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                         cellvalue = sdf.format(date);
                         
                     }
