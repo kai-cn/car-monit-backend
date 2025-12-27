@@ -332,7 +332,7 @@ public class CarExceptRecordController extends BaseController {
                 if (null != addbo.getTotalAmount() && null !=addbo.getChargeAmount()){
                     // 判断getTotalAmount>getChargeAmount
                     if(addbo.getTotalAmount().compareTo(addbo.getChargeAmount()) < 0){
-                        errorList.add(importUtil.getErrorBO(i + 1, "缴费金额",  "交易金额不能大于应交金额"));
+                        errorList.add(importUtil.getErrorBO(i + 1, "缴费金额",  "收费金额不能大于应缴金额"));
                     }
                 }
 
