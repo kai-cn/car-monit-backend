@@ -52,7 +52,7 @@ public class TrackTask {
     public void syncSuspiciousCar() {
         log.info("可疑车俩数据同步开始同步！"+new Date());
         List<TrailInfo> trailInfoList = new ArrayList<>();
-        carSuspiciousService.syncSuspiciousCar("redis",trailInfoList);
+       //  carSuspiciousService.syncSuspiciousCar("redis",trailInfoList);
         log.info("可疑车俩数据同步结束同步！"+new Date());
     }
 
