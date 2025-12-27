@@ -55,7 +55,7 @@ public class CarExceptRecordController extends BaseController {
     @Autowired
     private IOdsSzdnTollService odsSzdnTollService;
 
-    private static final Integer[] strNum  = {0,5,6,11,12,14,15,17,18,19,21};
+    private static final Integer[] strNum  = {0,11,12,14,15,17,18,19,21};
     private static final String[] strName  = {"序号","出口收费站","出口时间","通行PASSID","车牌","交易车型","车种","入口站","入口时间","一级类型","二级类型","省内","省外","小计","省内","省外","小计","省内","省外","小计","备注",""};
     /**
      * 查询异常车辆流水列表
@@ -365,6 +365,14 @@ public class CarExceptRecordController extends BaseController {
                     // 判断getTotalAmount>getChargeAmount
                     if(addbo.getTotalAmount().compareTo(addbo.getChargeAmount()) < 0){
                         errorList.add(importUtil.getErrorBO(i + 1, "缴费金额",  "收费金额不能大于应缴金额"));
+                    }
+                }
+                
+                // 时间验证
+                if (null != addbo.getInTime() && null !=addbo.getOutTime()){
+                    // 验证时间
+                    if(addbo.getInTime().after(addbo.getOutTime())){
+                        errorList.add(importUtil.getErrorBO(i + 1, "时间",  "入口时间大于出口时间，请确认!"));
                     }
                 }
 
