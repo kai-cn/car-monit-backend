@@ -264,7 +264,7 @@ public class CarInfoController extends BaseController {
                 String carVehicle =  CommonUtil.isNull(addbo.getCarVehicle());
                 if (CommonUtil.isNotBlank(carVehicle)){
                     if (carVehicleMap.containsKey(carVehicle)) {
-                        addbo.setCarType(CommonUtil.isNull(carVehicleMap.get(carVehicle)));
+                        addbo.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(carVehicle)));
                     } else {
                         errorList.add(importUtil.getErrorBO(i + 1, "车种", carVehicle + " 车种不存在,请在字典菜单维护！"));
                     }
