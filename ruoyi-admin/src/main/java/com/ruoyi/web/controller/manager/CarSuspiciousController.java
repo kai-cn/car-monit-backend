@@ -271,6 +271,8 @@ public class CarSuspiciousController extends BaseController {
     @GetMapping("/export")
     public AjaxResult export(CarSuspicious carSuspicious, HttpServletResponse response) {
 
+        startPage();
+
         //  路段
         String sectionCode = CommonUtil.deleteEnd(carSuspicious.getSectionCode());
         if (CommonUtil.isNotBlank(sectionCode)){
@@ -315,7 +317,7 @@ public class CarSuspiciousController extends BaseController {
             dp.setIsExcept(CommonUtil.isNull(isExceptMap.get(dp.getIsExcept())));
             dp.setCheckStatus(CommonUtil.isNull(checkStatusMap.get(dp.getCheckStatus())));
 
-            dp.setPassType(CommonUtil.isNull(passTypeMap.get(dp.getPassType())));
+            // dp.setPassType(CommonUtil.isNull(passTypeMap.get(dp.getPassType())));
 
             String txTime = "";
             String txAddress = "";
@@ -503,6 +505,8 @@ public class CarSuspiciousController extends BaseController {
     @GetMapping("/exportHistory")
     public AjaxResult exportHistory(CarSuspicious carSuspicious, HttpServletResponse response) {
 
+        startPage();
+
         //  路段
         String sectionCode = CommonUtil.deleteEnd(carSuspicious.getSectionCode());
         if (CommonUtil.isNotBlank(sectionCode)){
@@ -547,7 +551,7 @@ public class CarSuspiciousController extends BaseController {
             dp.setIsExcept(CommonUtil.isNull(isExceptMap.get(dp.getIsExcept())));
             dp.setCheckStatus(CommonUtil.isNull(checkStatusMap.get(dp.getCheckStatus())));
 
-            dp.setPassType(CommonUtil.isNull(passTypeMap.get(dp.getPassType())));
+            // dp.setPassType(CommonUtil.isNull(passTypeMap.get(dp.getPassType())));
 
             String txTime = "";
             String txAddress = "";
