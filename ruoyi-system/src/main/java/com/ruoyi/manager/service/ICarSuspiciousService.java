@@ -67,4 +67,21 @@ public interface ICarSuspiciousService extends IService<CarSuspicious> {
      * @return
      */
     AjaxResult syncSuspiciousCar(String addFlag,List<TrailInfo> paraTrailInfoList);
+
+
+    /**
+     * 查询可疑车辆列表
+     *
+     * @param carSuspicious 可疑车辆
+     * @return 可疑车辆集合
+     */
+    List<CarSuspicious> selectCarSuspiciousListHistroy(CarSuspicious carSuspicious);
+
+    /**
+     * 查询可疑车辆
+     *
+     * @param id 可疑车辆ID
+     * @return 可疑车辆
+     */
+    CarSuspicious selectCarSuspiciousHistoryById(String id);
 }
