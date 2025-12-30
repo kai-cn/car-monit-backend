@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.manager.domain.CarConfimFree;
+import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.vo.PCCarStatisticsDetailVO;
 import com.ruoyi.manager.domain.vo.PCCarStatisticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
@@ -11,6 +12,7 @@ import com.ruoyi.manager.mapper.CarConfimFreeMapper;
 import com.ruoyi.manager.mapper.CarExceptRecordMapper;
 import com.ruoyi.manager.domain.CarExceptRecord;
 import com.ruoyi.manager.service.ICarExceptRecordService;
+import com.ruoyi.manager.service.ICarInfoService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,10 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
 
     @Autowired
     private CarConfimFreeMapper carConfimFreeMapper;
+    
+    @Autowired
+    private ICarInfoService carInfoService;
+    
 
     /**
      * 查询异常车辆流水
@@ -253,6 +259,41 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
     @Override
     public void saveCarExcept(CarExceptRecord carExceptRecord){
         List<CarExceptRecord>  list = carExceptRecordMapper.exceptRecordList(carExceptRecord);
-
+        List<CarInfo> updatalist = new ArrayList<CarInfo>();
+        List<CarInfo> carList = carInfoService.selectCarInfoList(new CarInfo());
+        Map<String, CarInfo> carMap = new HashMap<>();
+        for (CarInfo carRtn : carList) {
+            carMap.put(CommonUtil.isNull(carRtn.getCarNo()),carRtn);
+        }
+        for (CarExceptRecord carExceptRecord1 : list) {
+            CarInfo uptcarInfo = new CarInfo();
+            String carNo = CommonUtil.isNull(carExceptRecord1.getCarNo());
+            
+            if (CommonUtil.isNotBlank(carNo)){
+                if (carMap.containsKey(carNo)) {
+                    CarInfo carInfo = carMap.get(carNo);
+                    uptcarInfo.setId(carInfo.getId());
+                    uptcarInfo.setEscapedType(carExceptRecord1.getEscapedType());
+                    uptcarInfo.setEscapedAmount(carExceptRecord1.getExceptAmount());
+                    updatalist.add(uptcarInfo);
+                }
+            }
+        }
+        if (updatalist.size() > 0){
+            carInfoService.updateBatchById(updatalist);
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
     }
 }
