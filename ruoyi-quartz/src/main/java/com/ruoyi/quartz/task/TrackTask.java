@@ -2,6 +2,8 @@ package com.ruoyi.quartz.task;
 
 import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.base.service.IGeometryService;
+import com.ruoyi.manager.domain.CarExceptRecord;
+import com.ruoyi.manager.service.ICarExceptRecordService;
 import com.ruoyi.manager.service.ICarSuspiciousService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +32,10 @@ public class TrackTask {
 
     @Autowired
     private IGeometryService geometryService;
+    
+    @Autowired
+    private ICarExceptRecordService carExceptRecordService;
+    
 
     /**
      * 每三分钟执行一次
@@ -69,7 +75,17 @@ public class TrackTask {
         log.info("车俩历史轨迹同步结束同步！"+new Date());
 
     }
-
+    
+    /**
+     * 每天凌晨7点
+     * 车辆逃费数据更新:0 0 7 * * ?
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void saveCarExcept() {
+        log.info("车辆逃费数据更新开始！"+new Date());
+        carExceptRecordService.saveCarExcept(new CarExceptRecord());
+        log.info("车辆逃费数据更新结束！"+new Date());
+    }
 
     /**
      * 每10分钟执行一次
