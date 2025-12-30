@@ -461,4 +461,154 @@ public class CarSuspiciousController extends BaseController {
     }
 
 
+    /**
+     * 查询可疑车辆列表：菜单列表
+     */
+    @PreAuthorize("@ss.hasPermi('manager:suspicious:list')")
+    @GetMapping("/listHistory")
+    public TableDataInfo listHistory(CarSuspicious carSuspicious) {
+        startPage();
+
+        //  路段
+        String sectionCode = CommonUtil.deleteEnd(carSuspicious.getSectionCode());
+        if (CommonUtil.isNotBlank(sectionCode)){
+            if (sectionCode.indexOf(Constants.section_all) > -1) {
+                carSuspicious.setSectionCode("");
+            }
+        }
+
+        // 选择对象
+        if (CommonUtil.isNotBlank(carSuspicious.getCode())){
+            carSuspicious.setTrackNames(carSuspicious.getCode()); // 查询范围
+        }
+
+        // carSuspicious.setTenantId(SecurityUtils.getTenantId()); // 查询我自己单位的租户
+        List<CarSuspicious> list = carSuspiciousService.selectCarSuspiciousListHistroy(carSuspicious);
+        return getDataTable(list);
+    }
+
+    /**
+     * 获取可疑车辆详细信息
+     */
+    @GetMapping(value = "/history/{id}")
+    public AjaxResult gethistoryInfo(@PathVariable("id") String id) {
+        return AjaxResult.success(carSuspiciousService.selectCarSuspiciousHistoryById(id));
+    }
+
+    /**
+     * 导出可疑车辆列表
+     */
+    @PreAuthorize("@ss.hasPermi('manager:suspicious:export')")
+    @Log(title = "可疑车辆", businessType = BusinessType.EXPORT)
+    @GetMapping("/exportHistory")
+    public AjaxResult exportHistory(CarSuspicious carSuspicious, HttpServletResponse response) {
+
+        //  路段
+        String sectionCode = CommonUtil.deleteEnd(carSuspicious.getSectionCode());
+        if (CommonUtil.isNotBlank(sectionCode)){
+            if (sectionCode.indexOf(Constants.section_all) > -1) {
+                carSuspicious.setSectionCode("");
+            }
+        }
+
+        // 选择对象
+        if (CommonUtil.isNotBlank(carSuspicious.getCode())){
+            carSuspicious.setTrackNames(carSuspicious.getCode()); // 查询范围
+        }
+
+        List<CarSuspicious> list = carSuspiciousService.selectCarSuspiciousListHistroy(carSuspicious);
+        // 车牌颜色
+        Map<String,String> plateColorMap = sysDictDataService.selectDictDataMap("plate_color");
+        // 车型
+        Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
+
+        // 车种
+        Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle");
+
+        // 逃费类型
+        Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataMap("escaped_type");
+
+        Map<String,String> isExceptMap = sysDictDataService.selectDictDataMap("is_except");
+
+        Map<String,String> checkStatusMap = sysDictDataService.selectDictDataMap("check_status");
+
+
+        Map<String,String> passTypeMap = sysDictDataService.selectDictDataMap("run_type");
+
+
+        list.stream().forEach(dp -> {
+            if (null != dp.getCreateTime()){
+                dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
+            }
+            dp.setPlateColor(CommonUtil.isNull(plateColorMap.get(dp.getPlateColor())));
+            dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
+            dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
+            dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
+            dp.setIsExcept(CommonUtil.isNull(isExceptMap.get(dp.getIsExcept())));
+            dp.setCheckStatus(CommonUtil.isNull(checkStatusMap.get(dp.getCheckStatus())));
+
+            dp.setPassType(CommonUtil.isNull(passTypeMap.get(dp.getPassType())));
+
+            String txTime = "";
+            String txAddress = "";
+            String mjTime = "";
+            String mjAddress = "";
+
+            if (null != dp.getInTime()) {
+                txTime += DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, dp.getInTime());
+            }
+            if (null != dp.getOutTime()) {
+                txTime += "至" + DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, dp.getOutTime());
+            }
+
+            if (CommonUtil.isNotBlank(dp.getInStation())) {
+                txAddress += dp.getInStation();
+            }
+
+            if (CommonUtil.isNotBlank(dp.getOutStation())) {
+                txAddress += "至" + dp.getOutStation();
+            }
+
+            if (null != dp.getGantryTime()) {
+                mjTime += DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, dp.getGantryTime());
+            }
+            if (null != dp.getOutGantryTime()) {
+                mjTime += "至" + DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, dp.getOutGantryTime());
+            }
+
+            if (CommonUtil.isNotBlank(dp.getGantrytStation())) {
+                mjAddress += dp.getGantrytStation();
+            }
+
+            if (CommonUtil.isNotBlank(dp.getOutGantrytStation())) {
+                mjAddress += "至" + dp.getOutGantrytStation();
+            }
+
+
+
+            dp.setTxTime(txTime);
+            dp.setTxAddress(txAddress);
+            dp.setMjTime(mjTime);
+            dp.setMjAddress(mjAddress);
+
+        });
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/carSuspicious.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 }

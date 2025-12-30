@@ -703,4 +703,66 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
         return AjaxResult.success();
     }
+
+    /**
+     * 查询可疑车辆列表
+     *
+     * @param carSuspicious 可疑车辆
+     * @return 可疑车辆集合
+     */
+    public List<CarSuspicious> selectCarSuspiciousListHistroy(CarSuspicious carSuspicious){
+        return carSuspiciousMapper.selectCarSuspiciousListHistroy(carSuspicious);
+    }
+
+    /**
+     * 查询可疑车辆
+     *
+     * @param id 可疑车辆ID
+     * @return 可疑车辆
+     */
+    public CarSuspicious selectCarSuspiciousHistoryById(String id){
+
+        CarSuspicious carSuspicious = carSuspiciousMapper.selectCarSuspiciousHistoryById(id);
+
+        if(null != carSuspicious){
+            CarSuspiciousCheck querybo = new CarSuspiciousCheck();
+            querybo.setCarId(id);
+            List<CarSuspiciousCheck> checkList =   carSuspiciousCheckService.selectCarSuspiciousCheckList(querybo);
+            carSuspicious.setCheckList(checkList);
+
+
+            //---------------查询实时轨迹
+            TrailInfo trailInfo = new TrailInfo();
+
+            List<TrailBo> carTrailList = new ArrayList<>();
+            List<Geometry> raodTrailList = new ArrayList<>();
+            String trackJosn = carSuspicious.getTrackJosn();
+            if (CommonUtil.isNotBlank(trackJosn)) {
+                trailInfo = JSON.parseObject(trackJosn, TrailInfo.class);
+                // 转换查询
+                // trailInfo = httpSysUtilApiService.changeTrailInfo(trailInfo);
+                // 轨迹值还原
+                ZdataTrailTracks tracks = trailInfo.getTracks();
+                carTrailList = trailInfo.getTrailList();
+                if (null != carTrailList && carTrailList.size() > 0){
+                    raodTrailList = carTrackInfoService.getCarGeometryByPlanNew(tracks, carTrailList);
+                }
+
+                trailInfo.setTrailUuid(carSuspicious.getCarNo());
+                trailInfo.setTrailList(carTrailList);
+                trailInfo.setRaodTrailList(raodTrailList);
+                trailInfo.setTrailDevCountBO(carTrackInfoService.getTrailDevBO(trailInfo.getTracks(),carTrailList));
+
+            }
+
+
+            List<TrailInfo> trailList = new ArrayList<>();
+            trailList.add(trailInfo);
+            carSuspicious.setTrailList(trailList);
+
+
+        }
+
+        return carSuspicious;
+    }
 }

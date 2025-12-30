@@ -198,4 +198,73 @@
             #{id}
         </foreach>
     </update>
+
+
+    <select id="selectCarSuspiciousListHistroy" parameterType="com.ruoyi.manager.domain.CarSuspicious" resultMap="CarSuspiciousResult">
+        SELECT
+        <include refid="selectCarSuspiciousVo"/>
+        FROM car_suspicious_back t
+        WHERE t.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="plateColor != null  and plateColor != ''"> and t.plate_color = #{plateColor}</if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+        <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
+        <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
+        <if test="carNum != null "> and t.car_num = #{carNum}</if>
+        <if test="passType != null  and passType != ''"> and t.pass_type = #{passType}</if>
+        <if test="inStationId != null  and inStationId != ''"> and t.in_station_id = #{inStationId}</if>
+        <if test="inStation != null  and inStation != ''"> and t.in_station = #{inStation}</if>
+        <if test="inTime != null "> and t.in_time = #{inTime}</if>
+        <if test="outStationId != null  and outStationId != ''"> and t.out_station_id = #{outStationId}</if>
+        <if test="outStation != null  and outStation != ''"> and t.out_station = #{outStation}</if>
+        <if test="outTime != null "> and t.out_time = #{outTime}</if>
+        <if test="gantryStationId != null  and gantryStationId != ''"> and t.gantry_station_id = #{gantryStationId}</if>
+        <if test="gantrytStation != null  and gantrytStation != ''"> and t.gantryt_station = #{gantrytStation}</if>
+        <if test="gantryTime != null "> and t.gantry_time = #{gantryTime}</if>
+        <if test="fileIds != null  and fileIds != ''"> and t.file_ids = #{fileIds}</if>
+        <if test="outGantryStationId != null  and outGantryStationId != ''"> and t.out_gantry_station_id = #{outGantryStationId}</if>
+        <if test="outGantrytStation != null  and outGantrytStation != ''"> and t.out_gantryt_station = #{outGantrytStation}</if>
+        <if test="outGantryTime != null "> and t.out_gantry_time = #{outGantryTime}</if>
+        <if test="outFileIds != null  and outFileIds != ''"> and t.out_file_ids = #{outFileIds}</if>
+        <if test="escapedType != null  and escapedType != ''"> and t.escaped_type = #{escapedType}</if>
+        <if test="escapedTypeName != null  and escapedTypeName != ''"> and t.escaped_type_name like concat('%', #{escapedTypeName}, '%')</if>
+        <if test="escapedNum != null "> and t.escaped_num = #{escapedNum}</if>
+        <if test="isExcept != null  and isExcept != ''"> and t.is_except = #{isExcept}</if>
+        <if test="exceptRemark != null  and exceptRemark != ''"> and t.except_remark = #{exceptRemark}</if>
+        <if test="exceptFileIds != null  and exceptFileIds != ''"> and t.except_file_ids = #{exceptFileIds}</if>
+        <if test="checkStatus != null  and checkStatus != ''"> and t.check_status = #{checkStatus}</if>
+        <if test="orgId != null  and orgId != ''"> and t.org_id = #{orgId}</if>
+        <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
+        <if test="isWhite != null  and isWhite != ''"> and t.is_white = #{isWhite}</if>
+        <if test="whiteRemark != null  and whiteRemark != ''"> and t.white_remark = #{whiteRemark}</if>
+        <if test="whiteFileIds != null  and whiteFileIds != ''"> and t.white_file_ids = #{whiteFileIds}</if>
+        <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
+        <if test="roadName != null  and roadName != ''"> and t.road_name like concat('%', #{roadName}, '%')</if>
+        <if test="sectionCode != null  and sectionCode != ''"> and t.track_names  like concat('%', #{sectionCode}, '%')</if>
+        <if test="sectionName != null  and sectionName != ''"> and t.track_names like concat('%', #{sectionName}, '%')</if>
+        <if test="trackNames != null  and trackNames != ''"> and t.track_names like concat('%', #{trackNames}, '%')</if>
+        <if test="trackId != null  and trackId != ''"> and t.track_id = #{trackId}</if>
+        <if test="trackJosn != null  and trackJosn != ''"> and t.track_josn = #{trackJosn}</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
+
+        <if test="applyTime1 != null  and applyTime1 != ''">and t.in_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and t.out_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
+
+        order by t.out_time desc,t.id
+    </select>
+
+    <select id="selectCarSuspiciousHistoryById" parameterType="String" resultMap="CarSuspiciousResult">
+        select
+        <include refid="selectCarSuspiciousVo"/>,t.track_josn
+        from car_suspicious_back t
+        where t.id = #{id}
+    </select>
+
 </mapper>

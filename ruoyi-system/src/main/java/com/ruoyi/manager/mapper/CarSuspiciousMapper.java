@@ -46,4 +46,22 @@ public interface CarSuspiciousMapper extends BaseMapper<CarSuspicious> {
     int deleteCarSuspiciousById(String id);
 
     List<CarSuspicious> selectCarSuspiciousListLimit10();
+
+
+    /**
+     * 查询可疑车辆
+     *
+     * @param id 可疑车辆ID
+     * @return 可疑车辆
+     */
+    CarSuspicious selectCarSuspiciousHistoryById(String id);
+
+    /**
+     * 查询可疑车辆列表
+     *
+     * @param carSuspicious 可疑车辆
+     * @return 可疑车辆集合
+     */
+    List<CarSuspicious> selectCarSuspiciousListHistroy(CarSuspicious carSuspicious);
+
 }
