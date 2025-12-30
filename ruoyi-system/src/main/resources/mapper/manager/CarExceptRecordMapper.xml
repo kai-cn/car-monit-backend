@@ -189,6 +189,18 @@
         <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
     </select>
 
+    <!-- 车辆逃费 -->
+    <select id="exceptRecordList" parameterType="com.ruoyi.manager.domain.CarExceptRecord" resultMap="CarExceptRecordResult">
+        select
+        t.car_no,count(1) exceptNum,round(sum(t.dif_amount),2) exceptAmount,round(sum(t.total_amount),2) total_amount,round(sum(t.charge_amount),2) charge_amount,
+        group_concat(distinct t.escaped_type SEPARATOR ',') escaped_type
+        from car_except_record t
+        where t.del_flag = '0'
+        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        group by t.car_no
+    </select>
+
 
 
 </mapper>

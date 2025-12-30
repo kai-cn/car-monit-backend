@@ -85,4 +85,13 @@ public interface CarExceptRecordMapper extends BaseMapper<CarExceptRecord> {
      * @return 结果
      */
     public int isExitsTime(CarExceptRecord carExceptRecord);
+
+
+    /**
+     * 根据车牌号统计
+     *
+     * @param carExceptRecord  车牌号
+     * @return 异常车辆流水
+     */
+    List<CarExceptRecord> exceptRecordList(CarExceptRecord carExceptRecord);
 }
