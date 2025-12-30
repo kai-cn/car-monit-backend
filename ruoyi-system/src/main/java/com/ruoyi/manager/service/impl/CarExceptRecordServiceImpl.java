@@ -4,13 +4,13 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.manager.domain.CarConfimFree;
+import com.ruoyi.manager.domain.CarExceptRecord;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.vo.PCCarStatisticsDetailVO;
 import com.ruoyi.manager.domain.vo.PCCarStatisticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 import com.ruoyi.manager.mapper.CarConfimFreeMapper;
 import com.ruoyi.manager.mapper.CarExceptRecordMapper;
-import com.ruoyi.manager.domain.CarExceptRecord;
 import com.ruoyi.manager.service.ICarExceptRecordService;
 import com.ruoyi.manager.service.ICarInfoService;
 import org.apache.commons.collections4.CollectionUtils;
@@ -94,7 +94,12 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
             carExceptRecordMapper.insert(carExceptRecord);
         }
 
-
+        // ---------根据车辆逃费类型和金额
+        if (CommonUtil.isNotBlank(carExceptRecord.getCarNo())) {
+            CarExceptRecord queryCarExceptRecord = new CarExceptRecord();
+            queryCarExceptRecord.setCarNo(carExceptRecord.getCarNo());
+            this.saveCarExcept(queryCarExceptRecord);
+        }
 
 
 
@@ -258,17 +263,21 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
      */
     @Override
     public void saveCarExcept(CarExceptRecord carExceptRecord){
+        String carQueryNo = CommonUtil.isNull(carExceptRecord.getCarNo());
         List<CarExceptRecord>  list = carExceptRecordMapper.exceptRecordList(carExceptRecord);
         List<CarInfo> updatalist = new ArrayList<CarInfo>();
-        List<CarInfo> carList = carInfoService.selectCarInfoList(new CarInfo());
+
+        CarInfo carInfoQuery = new CarInfo();
+        carInfoQuery.setCarNo(carQueryNo);
+        List<CarInfo> carList = carInfoService.selectCarInfoList(carInfoQuery);
         Map<String, CarInfo> carMap = new HashMap<>();
         for (CarInfo carRtn : carList) {
             carMap.put(CommonUtil.isNull(carRtn.getCarNo()),carRtn);
         }
+
         for (CarExceptRecord carExceptRecord1 : list) {
             CarInfo uptcarInfo = new CarInfo();
             String carNo = CommonUtil.isNull(carExceptRecord1.getCarNo());
-            
             if (CommonUtil.isNotBlank(carNo)){
                 if (carMap.containsKey(carNo)) {
                     CarInfo carInfo = carMap.get(carNo);
@@ -279,21 +288,9 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
                 }
             }
         }
-        if (updatalist.size() > 0){
+
+        if (updatalist.size() > 0) {
             carInfoService.updateBatchById(updatalist);
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
     }
 }
