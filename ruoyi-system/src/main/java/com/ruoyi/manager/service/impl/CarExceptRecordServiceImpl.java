@@ -251,9 +251,8 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
      * @return 异常车辆流水
      */
     @Override
-    public List<CarExceptRecord> exceptRecordList(CarExceptRecord carExceptRecord){
+    public void saveCarExcept(CarExceptRecord carExceptRecord){
         List<CarExceptRecord>  list = carExceptRecordMapper.exceptRecordList(carExceptRecord);
 
-        return list;
     }
 }
