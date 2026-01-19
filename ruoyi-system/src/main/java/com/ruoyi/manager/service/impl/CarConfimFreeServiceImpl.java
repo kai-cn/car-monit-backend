@@ -377,7 +377,11 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
 
         List<Long> epsList = carExceptRecordList.stream().map(CarExceptRecord::getEpsId).distinct().collect(Collectors.toList());
         if(epsList.size() > 1){
-            return AjaxResult.error("选择的异常车辆流水存在多个录入单位，请确认！");
+            return AjaxResult.error("选择的异常流水存在多个录入单位，请确认！");
+        }else{
+            if (epsList.size() > 0){
+                carConfimFree.setOrgId(epsList.get(0)+"");  // 录入单位
+            }
         }
 
 
@@ -400,17 +404,26 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
         BigDecimal totalAmount = BigDecimal.ZERO;
         BigDecimal chargeAmount = BigDecimal.ZERO;
         BigDecimal difAmount = BigDecimal.ZERO;
+
+        BigDecimal tempCfAmount = BigDecimal.ZERO;
+
         for (CarExceptRecord record : carExceptRecordList) {
             if (null != record.getDifAmount()){
                 difAmount = difAmount.add(record.getDifAmount());
             }
         }
+
+        BigDecimal bite = new BigDecimal("0.3");
+        tempCfAmount = difAmount.multiply(bite);
+
         // 判断大于0
         if (difAmount.compareTo(BigDecimal.ZERO) != 0) {
             difAmount = difAmount.setScale(2, RoundingMode.HALF_UP);
         }
         carConfimFree.setDifAmount(difAmount);
 
+        carConfimFree.setBackCol1(bite+"");
+        carConfimFree.setAmount(tempCfAmount.setScale(2, RoundingMode.HALF_UP));
 
         return AjaxResult.success(carConfimFree);
     }

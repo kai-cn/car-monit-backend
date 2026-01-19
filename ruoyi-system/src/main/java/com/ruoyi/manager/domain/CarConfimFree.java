@@ -80,8 +80,8 @@ public class CarConfimFree extends BasePlusEntity implements Custom {
     @Excel(name = "逃费类型s")
     private String escapedTypes;
 
-    /** 备用字段1 */
-    @Excel(name = "备用字段1")
+    /** 比例 */
+    @Excel(name = "比例")
     private String backCol1;
 
     /** 备用字段2 */
