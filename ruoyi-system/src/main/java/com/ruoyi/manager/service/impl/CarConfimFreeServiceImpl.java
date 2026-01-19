@@ -375,6 +375,12 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             return AjaxResult.error("请勿选择多辆车！");
         }
 
+        List<Long> epsList = carExceptRecordList.stream().map(CarExceptRecord::getEpsId).distinct().collect(Collectors.toList());
+        if(epsList.size() > 1){
+            return AjaxResult.error("选择的异常车辆流水存在多个录入单位，请确认！");
+        }
+
+
         List<String> exceptIdList = Arrays.asList(exceptIds.split(","));
         List<CarConfimFree> list = carConfimFreeMapper.selectCarConfimFreeByExceptIds(exceptIdList);
         if (null != list && list.size() > 0) {
