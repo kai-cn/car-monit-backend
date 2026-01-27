@@ -11,6 +11,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.manager.domain.CarExceptRecord;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.service.ICarExceptRecordService;
@@ -20,6 +21,7 @@ import com.ruoyi.web.util.ImportEntity;
 import com.ruoyi.web.util.ImportErrorEntity;
 import com.ruoyi.web.util.ImportSysUtil;
 import com.ruoyi.web.util.ImportUtil;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -121,7 +123,11 @@ public class CarExceptRecordController extends BaseController {
     public AjaxResult export(CarExceptRecord carExceptRecord, HttpServletResponse response) {
         List<CarExceptRecord> list = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);
         // 车型
-        Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
+        Map<String,String> carTypeChangeMap = sysDictDataService.selectDictDataLaleMap("car_type_change");
+        Map<String, String> carTypeChangeReverseMap = new HashMap<>();
+        carTypeChangeMap.forEach((k,v)->{
+            carTypeChangeReverseMap.put(v,k);
+        });
 
         // 车种
         Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle");
@@ -131,23 +137,42 @@ public class CarExceptRecordController extends BaseController {
 
         // 补缴状态
         Map<String,String> statusMap = sysDictDataService.selectDictDataMap("supplementary_status");
-
-
+        // 车牌颜色
+        Map<String,String> plateColorMap = sysDictDataService.selectDictDataLaleMap("plate_color");
+        Map<String, String> plateColorReverseMap = new HashMap<>();
+        plateColorMap.forEach((k,v)->{
+            plateColorReverseMap.put(v,k);
+        });
 
         list.stream().forEach(dp -> {
-            if (null != dp.getCreateTime()){
-                dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
+            String carNo = dp.getCarNo();
+            String plateColor = plateColorReverseMap.get(dp.getPlateColor());
+            if(StringUtils.isNotBlank(plateColor)) {
+               carNo = carNo + "_" + plateColor;
+               dp.setCarNo(carNo);
             }
-            dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
+            if (null != dp.getInTime()) {
+                dp.setInTimeStr(DateUtils.parseDateToStr("yyyy/MM/dd HH:mm:ss", dp.getInTime()));
+            }
+            if (null != dp.getOutTime()) {
+                dp.setOutTimeStr(DateUtils.parseDateToStr("yyyy/MM/dd HH:mm:ss", dp.getOutTime()));
+            }
+            dp.setCarType(CommonUtil.isNull(carTypeChangeReverseMap.get(dp.getCarType())));
             dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
             dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
             dp.setStatus(CommonUtil.isNull(statusMap.get(dp.getStatus())));
+
         });
+        int i = 1;
+        for (CarExceptRecord record : list) {
+            record.setSort(i++);
+            record.setDelFlag("");//模板字段不能为空
+        }
 
         Map<String,Object> map = new HashMap<>();
         map.put("entitylist",list);
         try {
-            String url = "templates/export/carExceptRecord.xlsx";
+            String url = "templates/export/carExceptExport.xlsx";
             TemplateExportParams params = new TemplateExportParams(url);
             Workbook workbook = ExcelExportUtil.exportExcel(params, map);
             response.setContentType("application/octet-stream;charset=UTF-8");
@@ -217,14 +242,14 @@ public class CarExceptRecordController extends BaseController {
         }
         ImportSysUtil importUtil = new ImportSysUtil();
         XSSFSheet sheet = importUtil.getXSSFSheet(file.getInputStream(), 0); // 得到sheet页
-        
+
         // 获取第二列头部
         List<ImportEntity> gzList = initListTwo();
         String[] colsName =  new String[gzList.size()];
         for (int i = 0; i < gzList.size(); i++) {
             colsName[i] = gzList.get(i).getColName();
         }
-        
+
         // 获取第三列头部
         List<ImportEntity> gzListThree = initListTwo();
         String[] colsNameThree =  new String[gzListThree.size()];
@@ -236,13 +261,19 @@ public class CarExceptRecordController extends BaseController {
             return AjaxResult.error("导入失败,模板不正确,请下载对应的模板！");
         }
         // 校验数据
-        List<String[]> sheetList = importUtil.dataRtnExcel08(sheet, strName,strNum,3); // 返回结果集
+        /*List<String[]> sheetList = importUtil.dataRtnExcel08(sheet, strName,strNum,3); // 返回结果集
+        if (sheetList.size() == 0) {
+            return AjaxResult.error("导入失败,模板excel没有数据可以导入，请确定！");
+        }*/
+        // 校验数据
+        List<String[]> sheetList = importUtil.dataRtnExcel09(sheet, colsName, 3); // 返回结果集
         if (sheetList.size() == 0) {
             return AjaxResult.error("导入失败,模板excel没有数据可以导入，请确定！");
         }
         // 校验数据格式
-        List<ImportErrorEntity> errorList = new ArrayList<ImportErrorEntity>(); // 错误列表
-        List<CarExceptRecord> importList = new ArrayList<CarExceptRecord>(); // 导入的数据
+        List<ImportErrorEntity> errorList = new ArrayList<>(); // 错误列表
+        List<CarExceptRecord> importList = new ArrayList<>(); // 导入的数据
+        List<CarInfo> newCarList = new ArrayList<>(); // 新增的车辆
         for (int i = 0; i < sheetList.size(); i++) {
             String[] strs = sheetList.get(i);
             Object rtnObj = ImportUtil.importExcel(errorList, gzList, i, strs, CarExceptRecord.class); // 结果集转对象
@@ -274,13 +305,16 @@ public class CarExceptRecordController extends BaseController {
             }
 
             // 车型
-            Map<String,String> carTypeMap = sysDictDataService.selectDictDataLaleMap("car_type");
+            Map<String,String> carTypeChangeMap = sysDictDataService.selectDictDataLaleMap("car_type_change");
 
             // 车种
             Map<String,String> carVehicleMap = sysDictDataService.selectDictDataLaleMap("car_vehicle");
-            
+
             // 逃费类型
             Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataLaleMap("escaped_type");
+
+            // 车牌颜色
+            Map<String,String> plateColorMap = sysDictDataService.selectDictDataLaleMap("plate_color");
 
 
             for (int i = 0; i < importList.size(); i++) {
@@ -290,8 +324,8 @@ public class CarExceptRecordController extends BaseController {
                 // 车型
                 String carType =  CommonUtil.isNull(addbo.getCarType());
                 if (CommonUtil.isNotBlank(carType)){
-                    if (carTypeMap.containsKey(carType)) {
-                        addbo.setCarType(CommonUtil.isNull(carTypeMap.get(carType)));
+                    if (carTypeChangeMap.containsKey(carType)) {
+                        addbo.setCarType(CommonUtil.isNull(carTypeChangeMap.get(carType)));
                     }
                 }
 
@@ -299,20 +333,28 @@ public class CarExceptRecordController extends BaseController {
                 // 车种
                 String carVehicle =  CommonUtil.isNull(addbo.getCarVehicle());
                 if (CommonUtil.isNotBlank(carVehicle)){
-                    if (carVehicleMap.containsKey(carVehicle)) {
+                    /*if (carVehicleMap.containsKey(carVehicle)) {
                         addbo.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(carVehicle)));
+                    }*/
+                    if(carVehicle.contains("货车")) {
+                        addbo.setCarVehicle("2");
+                    } else {
+                        addbo.setCarVehicle("99");
                     }
                 }
 
                 //车牌号、颜色处理
                 String carNo = CommonUtil.isNull(addbo.getCarNo());
+                String plateColor = "";
                 if (carNo.indexOf("_") > -1){
                     String[] vehicleplateStr = carNo.split("_");
                     addbo.setCarNo(vehicleplateStr[0]);
                     carNo = vehicleplateStr[0];
+                    plateColor = vehicleplateStr[1];
                 }
                 addbo.setCarNo(carNo);
 
+                boolean flag = false;
                 if (CommonUtil.isNotBlank(carNo)){
                     if (carMap.containsKey(carNo)) {
                         CarInfo carInfo = carMap.get(carNo);
@@ -328,17 +370,19 @@ public class CarExceptRecordController extends BaseController {
 
                         addbo.setCarNum(carInfo.getCarNum());
                     } else {
-                        errorList.add(importUtil.getErrorBO(i + 1, "车牌号", carNo + " 车牌号在重点车辆库不存在！"));
+                        flag = true;
+//                        errorList.add(importUtil.getErrorBO(i + 1, "车牌号", carNo + " 车牌号在重点车辆库不存在！"));
                     }
                 }
- 
+
                 // 逃费类型
-                String escapedType = CommonUtil.isNull(addbo.getEscapedType());
-                if (CommonUtil.isNotBlank(escapedType)){
-                    if (escapedTypeMap.containsKey(escapedType)) {
-                        addbo.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(escapedType)));
+                String secondLevelCategory = CommonUtil.isNull(addbo.getSecondLevelCategory());
+//                String escapedType = CommonUtil.isNull(addbo.getEscapedType());
+                if (CommonUtil.isNotBlank(secondLevelCategory)){
+                    if (escapedTypeMap.containsKey(secondLevelCategory)) {
+                        addbo.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(secondLevelCategory)));
                     } else {
-                        errorList.add(importUtil.getErrorBO(i + 1, "逃费类型", escapedType + " 逃费类型不存在,请在字典菜单维护！"));
+                        errorList.add(importUtil.getErrorBO(i + 1, "逃费类型", secondLevelCategory + " 逃费类型不存在,请在字典菜单维护！"));
                     }
                 }
 
@@ -348,7 +392,7 @@ public class CarExceptRecordController extends BaseController {
                     if (tollMap.containsKey(inStation)) {
                         addbo.setInStation(CommonUtil.isNull(inStation));
                         addbo.setInStationId(CommonUtil.isNull(tollMap.get(inStation)));
-                        
+
                     }
                 }
 
@@ -360,14 +404,14 @@ public class CarExceptRecordController extends BaseController {
                         addbo.setOutStationId(CommonUtil.isNull(tollMap.get(outStation)));
                     }
                 }
-                
+
                 if (null != addbo.getTotalAmount() && null !=addbo.getChargeAmount()){
                     // 判断getTotalAmount>getChargeAmount
                     if(addbo.getTotalAmount().compareTo(addbo.getChargeAmount()) < 0){
                         errorList.add(importUtil.getErrorBO(i + 1, "缴费金额",  "收费金额不能大于应缴金额"));
                     }
                 }
-                
+
                 // 时间验证
                 if (null != addbo.getInTime() && null !=addbo.getOutTime()){
                     // 验证时间
@@ -378,6 +422,21 @@ public class CarExceptRecordController extends BaseController {
 
                 if (errorList.size() > 100){
                     break;
+                }
+
+                if (flag) {
+                    //新增重点车辆库
+                    CarInfo carInfo = new CarInfo();
+                    carInfo.setCarNo(carNo);
+                    String colorCode = plateColorMap.get(plateColor);
+                    if(StringUtils.isNotBlank(colorCode)){
+                        carInfo.setPlateColor(colorCode);
+                    }
+                    carInfo.setCarType(addbo.getCarType());
+                    carInfo.setCarVehicle(addbo.getCarVehicle());
+                    carInfo.setEscapedType(addbo.getEscapedType());
+                    carInfo.setDifAmount(addbo.getTotalAmount().subtract(addbo.getChargeAmount()));
+                    newCarList.add(carInfo);
                 }
             }
 
@@ -401,6 +460,12 @@ public class CarExceptRecordController extends BaseController {
                 carExceptRecordService.saveCarExceptRecord(addbo);
 
             }
+            //不存在的车辆入库保存
+            if(CollectionUtils.isNotEmpty(newCarList)) {
+                for (CarInfo carInfo : newCarList) {
+                    carInfoService.saveCarInfo(carInfo);
+                }
+            }
 
         }
 
@@ -420,29 +485,29 @@ public class CarExceptRecordController extends BaseController {
         // 校验规则 1 必填 2小数 3整数 4日期 5身份证 6年月 多个逗号分隔例如：1,2
         boList.add(new ImportEntity("序号","",""));
         boList.add(new ImportEntity("出口收费站","outStation",""));
-        boList.add(new ImportEntity("出口时间","outTime","1,8"));
+        boList.add(new ImportEntity("出口时间","outTime","1"));
         boList.add(new ImportEntity("通行PASSID","passType",""));
         boList.add(new ImportEntity("车牌","carNo","1"));
-        
+
         boList.add(new ImportEntity("交易车型","carType",""));
         boList.add(new ImportEntity("车种","carVehicle",""));
-        
+
         boList.add(new ImportEntity("入口站","inStation",""));
-        boList.add(new ImportEntity("入口时间","inTime","1,8"));
-        boList.add(new ImportEntity("漏交通行费类型","backCol1",""));
-        boList.add(new ImportEntity("","escapedType","1"));
-        
+        boList.add(new ImportEntity("入口时间","inTime","1"));
+        boList.add(new ImportEntity("漏交通行费类型","",""));
+        boList.add(new ImportEntity("","secondLevelCategory","1"));
+
         boList.add(new ImportEntity("交易金额","",""));
         boList.add(new ImportEntity("","",""));
         boList.add(new ImportEntity("","chargeAmount","1,2"));
-        
+
         boList.add(new ImportEntity("应交金额","",""));
         boList.add(new ImportEntity("","",""));
         boList.add(new ImportEntity("","totalAmount","1,2"));
-        
+
         boList.add(new ImportEntity("实际追交金额","",""));
         boList.add(new ImportEntity("","",""));
-        boList.add(new ImportEntity("","",""));
+        boList.add(new ImportEntity("","difAmount",""));
 
         boList.add(new ImportEntity("备注","remark",""));
         return boList;
@@ -458,27 +523,27 @@ public class CarExceptRecordController extends BaseController {
         boList.add(new ImportEntity("","outTime","1,8"));
         boList.add(new ImportEntity("","passType",""));
         boList.add(new ImportEntity("","carNo","1"));
-        
+
         boList.add(new ImportEntity("","",""));
         boList.add(new ImportEntity("","",""));
-        
+
         boList.add(new ImportEntity("","inStation",""));
         boList.add(new ImportEntity("","inTime","1,8"));
         boList.add(new ImportEntity("一级类型","backCol1",""));
         boList.add(new ImportEntity("二级类型","escapedType","1"));
-        
+
         boList.add(new ImportEntity("省内","",""));
         boList.add(new ImportEntity("省外","",""));
         boList.add(new ImportEntity("小计","chargeAmount","1,2"));
-        
+
         boList.add(new ImportEntity("省内","",""));
         boList.add(new ImportEntity("省外","",""));
         boList.add(new ImportEntity("小计","totalAmount","1,2"));
-        
+
         boList.add(new ImportEntity("省内","",""));
         boList.add(new ImportEntity("省外","",""));
         boList.add(new ImportEntity("小计","","1,2"));
-        
+
         boList.add(new ImportEntity("","remark",""));
         return boList;
     }

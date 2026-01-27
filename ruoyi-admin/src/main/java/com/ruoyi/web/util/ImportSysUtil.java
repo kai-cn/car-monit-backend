@@ -38,7 +38,7 @@ public class ImportSysUtil
         return sheet;
     }
 
-    
+
     /**
      * 验证模板
      */
@@ -74,9 +74,9 @@ public class ImportSysUtil
         List<String[]> list = new ArrayList<String[]>();
         int rowCount = sheet.getLastRowNum(); // 得到行数
         for (int i = 1; i <= rowCount; i++)
-        {  
+        {
             String[] strs = new String[colsName.length];
-            
+
             HSSFRow row = sheet.getRow(i);
             // 判断后面为空
             int cellCount;
@@ -102,13 +102,13 @@ public class ImportSysUtil
             }
             list.add(strs);
         }
-        
+
         return list;
     }
 
     /**
      * 根据HSSFCell类型设置数据 03
-     * 
+     *
      * @param cell
      * @return
      */
@@ -178,10 +178,10 @@ public class ImportSysUtil
         return cellvalue.trim();
     }
 
-   
+
     /**
      * 取报错信息BO
-     * 
+     *
      * @param row 行数
      * @param colName 列名
      * @param message 错误信息
@@ -198,7 +198,7 @@ public class ImportSysUtil
 
     /**
      * 正则验证,符合为true
-     * 
+     *
      * @param value
      *            行数
      * @param regex
@@ -209,14 +209,14 @@ public class ImportSysUtil
     {
         boolean enable = false;
         enable = Pattern.matches(regex, value);
-        
+
         return enable;
     }
-    
+
 
     /**
      * 判断是否为空
-     * 
+     *
      * @param names
      * @return
      */
@@ -231,9 +231,9 @@ public class ImportSysUtil
             return names.toString();
         }
     }
-    
 
-    
+
+
     /**
      * 获取第几个sheet页面
      * @param is
@@ -277,7 +277,7 @@ public class ImportSysUtil
 		}
 		return true;
 	}
-    
+
     public boolean colVdaExcel08(XSSFSheet sheet,String[] colsName,Integer num) throws Exception
     {
         XSSFRow row = sheet.getRow(num);
@@ -292,13 +292,13 @@ public class ImportSysUtil
             {
                 // 获取指定单元格的内容
                 String cellContent = getCellFormatValue07(row.getCell(j));
-                
+
                 if (!colsName[j].equals(cellContent))
                 {
                     return false;
                 }
             }
-            
+
         }
         return true;
     }
@@ -333,7 +333,7 @@ public class ImportSysUtil
 
 
 
-    
+
     public List<String[]> dataRtnExcel07(XSSFSheet sheet,String[] colsName) throws Exception
     {
         List<String[]> list = new ArrayList<String[]>();
@@ -370,22 +370,15 @@ public class ImportSysUtil
 
         return list;
     }
-    
-    /**
-     * 多列数据表头验证
-     * @param sheet
-     * @param colsName
-     * @return
-     * @throws Exception
-     */
-    public List<String[]> dataRtnExcel08(XSSFSheet sheet,String[] colsName,Integer[] rowNume,Integer num) throws Exception
+
+    public List<String[]> dataRtnExcel09(XSSFSheet sheet, String[] colsName, Integer num) throws Exception
     {
         List<String[]> list = new ArrayList<String[]>();
         int rowCount = sheet.getLastRowNum(); // 得到行数
         for (int i = num; i <= rowCount; i++)
         {
             String[] strs = new String[colsName.length];
-            
+
             XSSFRow row = sheet.getRow(i);
             // 判断后面为空
             int cellCount;
@@ -403,7 +396,51 @@ public class ImportSysUtil
             {
                 break;
             }
-            
+
+            // 循环列名
+            for (int z = 0; z < colsName.length; z++)
+            {
+                strs[z] = isNull(getCellFormatValue07(row.getCell(z)));
+            }
+            list.add(strs);
+        }
+
+        return list;
+    }
+
+    /**
+     * 多列数据表头验证
+     * @param sheet
+     * @param colsName
+     * @return
+     * @throws Exception
+     */
+    public List<String[]> dataRtnExcel08(XSSFSheet sheet,String[] colsName,Integer[] rowNume,Integer num) throws Exception
+    {
+        List<String[]> list = new ArrayList<String[]>();
+        int rowCount = sheet.getLastRowNum(); // 得到行数
+        for (int i = num; i <= rowCount; i++)
+        {
+            String[] strs = new String[colsName.length];
+
+            XSSFRow row = sheet.getRow(i);
+            // 判断后面为空
+            int cellCount;
+            try
+            {
+                cellCount = row.getLastCellNum();
+            }
+            catch (NullPointerException e)
+            {
+                // 如果文件中没有到达最后一行，中间有空行则会报空指针，则让程序继续读下一行
+                break;
+            }
+            // 如果行中遇到break则跳出循环
+            if ("break".equals(getCellFormatValue07(row.getCell(0))) || "结束".equals(getCellFormatValue07(row.getCell(0))))
+            {
+                break;
+            }
+
             // 循环列名
             for (int z = 0; z < colsName.length; z++)
             {
@@ -413,7 +450,7 @@ public class ImportSysUtil
             }
             list.add(strs);
         }
-        
+
         return list;
     }
 
@@ -474,7 +511,15 @@ public class ImportSysUtil
                         // cellvalue = cell.getDateCellValue().toLocaleString();
                         // 方法2：这样子的data格式是不带带时分秒的：2011-10-12
                         Date date = cell.getDateCellValue();
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
+                        int hours = date.getHours();
+                        int minutes = date.getMinutes();
+                        int seconds = date.getSeconds();
+                        SimpleDateFormat sdf;
+                        if(hours + minutes + seconds == 0) {
+                            sdf = new SimpleDateFormat("yyyy/MM/dd");
+                        } else {
+                            sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                        }
                         cellvalue = sdf.format(date);
 
                     }
@@ -517,7 +562,7 @@ public class ImportSysUtil
         }
         return cellvalue.trim();
     }
-    
+
     /**
      * 获取单元格值,日期为yyyy-MM-dd hh:mm:ss
      * @param cell
@@ -543,7 +588,7 @@ public class ImportSysUtil
                         Date date = cell.getDateCellValue();
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                         cellvalue = sdf.format(date);
-                        
+
                     }
                     else
                     {

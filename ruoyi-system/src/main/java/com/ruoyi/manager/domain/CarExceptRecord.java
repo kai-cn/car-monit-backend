@@ -1,5 +1,6 @@
 package com.ruoyi.manager.domain;
 
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -156,6 +157,23 @@ public class CarExceptRecord extends BasePlusEntity implements Custom {
 
     // 异常流水金额
     @TableField(exist = false)
+    @JSONField(defaultValue = "0.00")
     private BigDecimal exceptAmount;
+
+    // 漏交通行费类型二级类型
+    @TableField(exist = false)
+    private String secondLevelCategory;
+
+    //入口时间
+    @TableField(exist = false)
+    private String inTimeStr;
+
+    //出口时间
+    @TableField(exist = false)
+    private String outTimeStr;
+
+    //车牌颜色
+    @TableField(exist = false)
+    private String plateColor;
 
 }
