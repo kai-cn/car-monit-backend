@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.CarWarningConfigMapper">
+
+    <resultMap type="com.ruoyi.base.domain.CarWarningConfig" id="CarWarningConfigResult">
+        <result property="id"    column="id"    />
+        <result property="gantryCodeIn"    column="gantry_code_in"    />
+        <result property="gantryNameIn"    column="gantry_name_in"    />
+        <result property="gantryCodeOut"    column="gantry_code_out"    />
+        <result property="gantryNameOut"    column="gantry_name_out"    />
+        <result property="timeSpan"    column="time_span"    />
+        <result property="fwqbm"    column="fwqbm"    />
+        <result property="fwqmc"    column="fwqmc"    />
+        <result property="lon"    column="lon"    />
+        <result property="lat"    column="lat"    />
+        <result property="roadCode"    column="road_code"    />
+        <result property="sectionCode"    column="section_code"    />
+        <result property="pileNo"    column="pile_no"    />
+
+    </resultMap>
+
+    <sql id="selectCarWarningConfigVo">
+        t.id,
+        t.gantry_code_in,
+        t.gantry_name_in,
+        t.gantry_code_out,
+        t.gantry_name_out,
+        t.time_span,
+        t.fwqbm,
+        t.fwqmc,
+        t.lon,
+        t.lat,
+        t.road_code,
+        t.section_code,
+        t.pile_no
+    </sql>
+
+
+    <select id="selectCarWarningConfigList" parameterType="com.ruoyi.base.domain.CarWarningConfig" resultMap="CarWarningConfigResult">
+        SELECT
+        <include refid="selectCarWarningConfigVo"/>
+        FROM car_warning_config t
+        <where>
+            <if test="id != null  and id != ''"> and t.id = #{id}</if>
+            <if test="gantryCodeIn != null  and gantryCodeIn != ''"> and t.gantry_code_in = #{gantryCodeIn}</if>
+            <if test="gantryNameIn != null  and gantryNameIn != ''"> and t.gantry_name_in = #{gantryNameIn}</if>
+            <if test="gantryCodeOut != null  and gantryCodeOut != ''"> and t.gantry_code_out = #{gantryCodeOut}</if>
+            <if test="gantryNameOut != null  and gantryNameOut != ''"> and t.gantry_name_out = #{gantryNameOut}</if>
+            <if test="timeSpan != null "> and t.time_span = #{timeSpan}</if>
+            <if test="fwqbm != null  and fwqbm != ''"> and t.fwqbm = #{fwqbm}</if>
+            <if test="fwqmc != null  and fwqmc != ''"> and t.fwqmc = #{fwqmc}</if>
+            <if test="lon != null  and lon != ''"> and t.lon = #{lon}</if>
+            <if test="lat != null  and lat != ''"> and t.lat = #{lat}</if>
+            <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
+            <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
+            <if test="pileNo != null  and pileNo != ''"> and t.pile_no = #{pileNo}</if>
+        </where>
+
+    </select>
+
+    <select id="selectCarWarningConfigById" parameterType="String" resultMap="CarWarningConfigResult">
+         select
+         <include refid="selectCarWarningConfigVo"/>
+         from car_warning_config t
+         where t.id = #{id}
+    </select>
+
+
+    <update id="deleteCarWarningConfigById" parameterType="String">
+        delete from car_warning_config  where id = #{id}
+    </update>
+
+    <update id="deleteCarWarningConfigByIds" parameterType="String">
+        delete from car_warning_config where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>
