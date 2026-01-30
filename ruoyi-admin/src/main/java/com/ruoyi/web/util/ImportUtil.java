@@ -2,7 +2,6 @@ package com.ruoyi.web.util;
 
 
 import com.alibaba.fastjson2.JSONObject;
-import com.ruoyi.common.utils.StringUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -52,9 +51,7 @@ public class ImportUtil {
 		for (int i = 0; i < boList.size(); i++) {
 			String value = isNull(exceVals[i]);
 			ImportEntity bo = boList.get(i);
-			if(StringUtils.isNotBlank(bo.getColProp())) {
-				objMap.put(bo.getColProp(), value);   // 拼装map
-			}
+			objMap.put(bo.getColProp(), value);   // 拼装map
 			if (!CommonUtil.isNull(bo.getValadRes()).equals("")) {
 				String[] gzs = bo.getValadRes().split(",");
 				for (int z = 0; z < gzs.length; z++) {
