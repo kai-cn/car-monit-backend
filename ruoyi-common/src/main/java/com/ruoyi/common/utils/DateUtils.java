@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Calendar;
 import java.util.Date;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
@@ -208,4 +209,21 @@ public class DateUtils extends org.apache.commons.lang3.time.DateUtils
     {
         return  Timestamp.valueOf(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
     }
+
+
+    /**
+     * 获取当前时间
+     */
+    public static Timestamp getTimestampNew2()
+    {
+        // -------获取当前时间的前2天
+        Date currentDate = new Date();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(currentDate);
+        calendar.add(Calendar.DAY_OF_MONTH, -2);
+        Date twoDaysAgo = calendar.getTime();
+
+        return  Timestamp.valueOf(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(twoDaysAgo));
+    }
+
 }
