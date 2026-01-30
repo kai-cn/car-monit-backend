@@ -429,7 +429,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         Map<String,String> plateColorMap = sysDictDataService.selectDictDataLaleMap("plate_color");
 
         // 车型
-        Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type_old");
+        // Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type_old");
 
         // 车种
        //  Map<String,String> carVehicleMap = sysDictDataService.selectDictDataLaleMap("car_vehicle");
@@ -483,45 +483,43 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                             }else{
                                 // 车型
                                 if (CommonUtil.isNotBlank(tracksBo.getEnvehicletype())){
-                                    String carType = "";
+                                    // String carType = "";
                                     String carVehicle = "";
-                                    String carTypeName = CommonUtil.isNull(carTypeMap.get(tracksBo.getEnvehicletype()));
-                                    if (carTypeName.equals("六型货车")){
-                                        carType = "10"; // 货六
-                                        carVehicle = "2";
-                                    } else if (carTypeName.equals("五型货车")){
-                                        carType = "9"; // 货五
-                                        carVehicle = "2";
-                                    } else if (carTypeName.equals("四型货车")){
-                                        carType = "8"; // 货五
-                                        carVehicle = "2";
-                                    } else if (carTypeName.equals("三型货车")){
-                                        carType = "7"; // 货五
-                                        carVehicle = "2";
-                                    }else if (carTypeName.equals("二型货车")){
-                                        carType = "6"; // 货五
-                                        carVehicle = "2";
-                                    } else if (carTypeName.equals("小货车")){
-                                        carType = "5"; // 货五
-                                        carVehicle = "2";
-                                    } else if (carTypeName.equals("客车")){
-                                        carType = "1"; // 货一
+                                    String carTypeName = tracksBo.getEnvehicletype();
+                                    if (carTypeName.equals("1")){
                                         carVehicle = "1";
-                                    } else if (carTypeName.equals("一型客车")){
-                                        carType = "1"; //
+                                    }else if (carTypeName.equals("2")){
                                         carVehicle = "1";
-                                    }else if (carTypeName.equals("二型客车")){
-                                        carType = "2"; //
+                                    } else if (carTypeName.equals("3")){
                                         carVehicle = "1";
-                                    } else if (carTypeName.equals("三型客车")){
-                                        carType = "3"; //
+                                    }else if (carTypeName.equals("4")){
                                         carVehicle = "1";
-                                    }else if (carTypeName.equals("四型客车")){
-                                        carType = "4"; //
-                                        carVehicle = "1";
+                                    }else if (carTypeName.equals("11")){
+                                        carVehicle = "2";
+                                    }else if (carTypeName.equals("12")){
+                                        carVehicle = "2";
+                                    } else if (carTypeName.equals("13")){
+                                        carVehicle = "2";
+                                    }else if (carTypeName.equals("14")){
+                                        carVehicle = "2";
+                                    }else if (carTypeName.equals("15")){
+                                        carVehicle = "2";
+                                    } else if (carTypeName.equals("16")) {
+                                        carVehicle = "2";
+                                    }else if (carTypeName.equals("21")) {
+                                        carVehicle = "3";
+                                    }else if (carTypeName.equals("22")) {
+                                        carVehicle = "3";
+                                    }else if (carTypeName.equals("23")) {
+                                        carVehicle = "3";
+                                    }else if (carTypeName.equals("24")) {
+                                        carVehicle = "3";
+                                    }else if (carTypeName.equals("25")) {
+                                        carVehicle = "3";
+                                    }else if (carTypeName.equals("26")) {
+                                        carVehicle = "3";
                                     }
-
-                                    carSuspicious.setCarType(carType); // 对应的是car_type_old 来源于 zdata_trail_fitting envehicletype
+                                    carSuspicious.setCarType(tracksBo.getEnvehicletype()); //
                                     carSuspicious.setCarVehicle(carVehicle);
                                 }
                             }
@@ -664,9 +662,9 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                             }
 
                             carSuspicious.setCreateBy(userId); // 创建人
-                            carSuspicious.setCreateTime(DateUtils.getTimestampNew()); // 创建时间
+                            carSuspicious.setCreateTime(DateUtils.getTimestampNew2()); // 创建时间
                             carSuspicious.setUpdateBy(userId); // 更新人
-                            carSuspicious.setUpdateTime(DateUtils.getTimestampNew()); // 更新时间
+                            carSuspicious.setUpdateTime(DateUtils.getTimestampNew2()); // 更新时间
                             carSuspicious.setIsExcept("1"); // 默认是可疑车俩
                             carSuspicious.setStatus("0"); // 是否可以核实标识
 
