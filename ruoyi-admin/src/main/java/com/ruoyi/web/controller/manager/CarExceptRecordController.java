@@ -256,6 +256,12 @@ public class CarExceptRecordController extends BaseController {
             }
         }
 
+
+        // 新增车辆
+        List<CarInfo> addlist = new ArrayList<>();
+        Map<String,String> addCarMap = new HashMap<>();
+
+
         // 校验数据
         if (errorList.size() == 0) {
 
@@ -274,13 +280,16 @@ public class CarExceptRecordController extends BaseController {
             }
 
             // 车型
-            Map<String,String> carTypeMap = sysDictDataService.selectDictDataLaleMap("car_type");
+            Map<String,String> carTypeMap = sysDictDataService.selectDictDataLaleMap("car_type_change");
 
             // 车种
-            Map<String,String> carVehicleMap = sysDictDataService.selectDictDataLaleMap("car_vehicle");
+            // Map<String,String> carVehicleMap = sysDictDataService.selectDictDataLaleMap("car_vehicle");
             
             // 逃费类型
             Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataLaleMap("escaped_type");
+
+            // 车牌颜色
+            Map<String,String> plateColorMap = sysDictDataService.selectDictDataLaleMap("plate_color");
 
 
             for (int i = 0; i < importList.size(); i++) {
@@ -295,40 +304,104 @@ public class CarExceptRecordController extends BaseController {
                     }
                 }
 
+                String carTypeName = CommonUtil.isNull(addbo.getCarType());
+                String carVehicle = "";
+                if (carTypeName.equals("1")){
+                    carVehicle = "1";
+                }else if (carTypeName.equals("2")){
+                    carVehicle = "1";
+                } else if (carTypeName.equals("3")){
+                    carVehicle = "1";
+                }else if (carTypeName.equals("4")){
+                    carVehicle = "1";
+                }else if (carTypeName.equals("11")){
+                    carVehicle = "2";
+                }else if (carTypeName.equals("12")){
+                    carVehicle = "2";
+                } else if (carTypeName.equals("13")){
+                    carVehicle = "2";
+                }else if (carTypeName.equals("14")){
+                    carVehicle = "2";
+                }else if (carTypeName.equals("15")){
+                    carVehicle = "2";
+                } else if (carTypeName.equals("16")) {
+                    carVehicle = "2";
+                }else if (carTypeName.equals("21")) {
+                    carVehicle = "3";
+                }else if (carTypeName.equals("22")) {
+                    carVehicle = "3";
+                }else if (carTypeName.equals("23")) {
+                    carVehicle = "3";
+                }else if (carTypeName.equals("24")) {
+                    carVehicle = "3";
+                }else if (carTypeName.equals("25")) {
+                    carVehicle = "3";
+                }else if (carTypeName.equals("26")) {
+                    carVehicle = "3";
+                }else {
+                    carVehicle = "99";
+                }
 
                 // 车种
-                String carVehicle =  CommonUtil.isNull(addbo.getCarVehicle());
+               /* String carVehicle =  CommonUtil.isNull(addbo.getCarVehicle());
                 if (CommonUtil.isNotBlank(carVehicle)){
                     if (carVehicleMap.containsKey(carVehicle)) {
                         addbo.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(carVehicle)));
                     }
+                }*/
+
+                // 车种
+                if (CommonUtil.isNotBlank(carVehicle)){
+                    addbo.setCarVehicle(CommonUtil.isNull(carVehicle));
                 }
+
+
 
                 //车牌号、颜色处理
                 String carNo = CommonUtil.isNull(addbo.getCarNo());
-                if (carNo.indexOf("_") > -1){
+                String  plateColor = "";
+                if (carNo.indexOf("_") > -1) {
                     String[] vehicleplateStr = carNo.split("_");
-                    addbo.setCarNo(vehicleplateStr[0]);
+                    if (vehicleplateStr.length > 1){
+                        plateColor = vehicleplateStr[1];
+                    }
                     carNo = vehicleplateStr[0];
                 }
                 addbo.setCarNo(carNo);
+
+                // 车牌颜色
+                if (CommonUtil.isNotBlank(plateColor)){
+                    if (plateColorMap.containsKey(plateColor)) {
+                        plateColor = CommonUtil.isNull(plateColorMap.get(plateColor));
+                    }
+                }
 
                 if (CommonUtil.isNotBlank(carNo)){
                     if (carMap.containsKey(carNo)) {
                         CarInfo carInfo = carMap.get(carNo);
                         addbo.setCarId(carInfo.getId());
 
-                        if (CommonUtil.isBlank(addbo.getCarType())){
+                       /* if (CommonUtil.isBlank(addbo.getCarType())){
                             addbo.setCarType(carInfo.getCarType());
                         }
 
                         if (CommonUtil.isBlank(addbo.getCarVehicle())){
                             addbo.setCarVehicle(carInfo.getCarVehicle());
-                        }
+                        }*/
 
                         addbo.setCarNum(carInfo.getCarNum());
                     } else {
-                        errorList.add(importUtil.getErrorBO(i + 1, "车牌号", carNo + " 车牌号在重点车辆库不存在！"));
+                       //  errorList.add(importUtil.getErrorBO(i + 1, "车牌号", carNo + " 车牌号在重点车辆库不存在！"));
+                        if (addCarMap.containsKey(carNo)){
+                        }else{
+                            CarInfo addCarInfo = new CarInfo();
+                            addCarInfo.setCarNo(carNo);
+                            addCarInfo.setPlateColor(plateColor);
+                            addCarInfo.setCarType(addbo.getCarType());
+                            addCarInfo.setCarVehicle(addbo.getCarVehicle());
+                            addlist.add(addCarInfo);
+                            addCarMap.put(carNo,carNo);
+                        }
                     }
                 }
  
@@ -385,6 +458,14 @@ public class CarExceptRecordController extends BaseController {
 
         // 插入数据库
         if (errorList.size() == 0) {
+            // 新新增车辆--------------
+            if(addlist.size() > 0){
+                for (CarInfo addCar:addlist){
+                    carInfoService.saveCarInfo(addCar);
+                }
+            }
+
+
             for (int i = 0; i < importList.size(); i++) {
                 CarExceptRecord addbo = importList.get(i);
                 if (null != addbo.getTotalAmount() && null !=addbo.getChargeAmount()){
