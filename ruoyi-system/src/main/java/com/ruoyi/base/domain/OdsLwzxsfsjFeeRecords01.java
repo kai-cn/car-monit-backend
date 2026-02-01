@@ -645,4 +645,10 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     @TableField(exist = false)
     private String chargeStatus;
 
+    /**
+     * 进入时间Str
+     */
+    @TableField(exist = false)
+    private String entimeStr;
+
 }

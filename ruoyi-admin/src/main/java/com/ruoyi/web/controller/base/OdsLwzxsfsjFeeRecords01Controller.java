@@ -95,7 +95,34 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
                             sectionMap.put(CommonUtil.isNull(section.getSectionCode()),section);
                         }
                     }
+
+                    // 车牌颜色
+                    Map<String,String> plateColorMap = sysDictDataService.selectDictDataMap("plate_color");
+
+                    // 车型
+                    Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type_old");
+
+                    // 车种
+                    Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle_old");
+
+
                     for (OdsLwzxsfsjFeeRecords01 feeRecords : list) {
+                        if (CommonUtil.isNotBlank(feeRecords.getPlateColor())) {
+                            String plateColorVaule = CommonUtil.isNull(plateColorMap.get(feeRecords.getPlateColor()));
+                            if (CommonUtil.isNotBlank(plateColorVaule)) {
+                                feeRecords.setVehicleplate(CommonUtil.isNull(feeRecords.getVehicleplate()) + "_" + plateColorVaule);
+                            }
+                        }
+
+                        if (CommonUtil.isNotBlank(feeRecords.getFeevehicletype())) {
+                            feeRecords.setFeevehicletype(CommonUtil.isNull(carTypeMap.get(CommonUtil.isNull(feeRecords.getFeevehicletype()))));
+                        }
+
+                        if (CommonUtil.isNotBlank(feeRecords.getVehicleclass())) {
+                            feeRecords.setVehicleclass(CommonUtil.isNull(carVehicleMap.get(CommonUtil.isNull(feeRecords.getVehicleclass()))));
+                        }
+
+
 
                         BigDecimal fee = feeRecords.getFee();
                         if (null != fee && fee.compareTo(BigDecimal.ZERO) > 0) {
@@ -162,6 +189,16 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
 
         if (null != list && list.size() > 0) {
 
+            // 车牌颜色
+            Map<String,String> plateColorMap = sysDictDataService.selectDictDataMap("plate_color");
+
+            // 车型
+            Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type_old");
+
+            // 车种
+            Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle_old");
+
+
             // 通行状态
             Map<String,String> passstateMap = sysDictDataService.selectDictDataMap("passstate");
 
@@ -173,6 +210,21 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController {
                 }
             }
             for (OdsLwzxsfsjFeeRecords01 feeRecords : list) {
+
+                if (CommonUtil.isNotBlank(feeRecords.getPlateColor())) {
+                    String plateColorVaule = CommonUtil.isNull(plateColorMap.get(feeRecords.getPlateColor()));
+                    if (CommonUtil.isNotBlank(plateColorVaule)) {
+                        feeRecords.setVehicleplate(CommonUtil.isNull(feeRecords.getVehicleplate()) + "_" + plateColorVaule);
+                    }
+                }
+
+                if (CommonUtil.isNotBlank(feeRecords.getFeevehicletype())) {
+                    feeRecords.setFeevehicletype(CommonUtil.isNull(carTypeMap.get(CommonUtil.isNull(feeRecords.getFeevehicletype()))));
+                }
+
+                if (CommonUtil.isNotBlank(feeRecords.getVehicleclass())) {
+                    feeRecords.setVehicleclass(CommonUtil.isNull(carVehicleMap.get(CommonUtil.isNull(feeRecords.getVehicleclass()))));
+                }
 
                 BigDecimal fee = feeRecords.getFee();
                 if (null != fee && fee.compareTo(BigDecimal.ZERO) > 0) {
