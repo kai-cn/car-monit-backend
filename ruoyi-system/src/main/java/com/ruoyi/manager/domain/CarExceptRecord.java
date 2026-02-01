@@ -158,4 +158,13 @@ public class CarExceptRecord extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private BigDecimal exceptAmount;
 
+
+    // 查询时间
+    @TableField(exist = false)
+    private String inTimeStr;
+
+    // 查询时间
+    @TableField(exist = false)
+    private String outTimeStr;
+
 }

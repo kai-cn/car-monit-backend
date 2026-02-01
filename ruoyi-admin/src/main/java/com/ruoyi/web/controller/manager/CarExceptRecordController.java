@@ -133,21 +133,51 @@ public class CarExceptRecordController extends BaseController {
         Map<String,String> statusMap = sysDictDataService.selectDictDataMap("supplementary_status");
 
 
+        for (int i = 0; i < list.size(); i++) {
+            CarExceptRecord dp = list.get(i);
 
-        list.stream().forEach(dp -> {
             if (null != dp.getCreateTime()){
                 dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
             }
-            dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
-            dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
-            dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
+
+
+            if (null != dp.getCreateTime()){
+                dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
+            }
+
+            if (null != dp.getInTime()){
+                dp.setInTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getInTime()));
+            }
+
+            if (null != dp.getOutTime()){
+                dp.setOutTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getOutTime()));
+            }
+
+            if(carTypeMap.containsKey(dp.getCarType())){
+                dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
+            }
+
+            if(carVehicleMap.containsKey(dp.getCarVehicle())){
+                dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
+            }
+
+            if(escapedTypeMap.containsKey(dp.getEscapedType())){
+                dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
+            }
+
             dp.setStatus(CommonUtil.isNull(statusMap.get(dp.getStatus())));
-        });
+            dp.setSort(i+1);
+            dp.setCarNoQuery("");
+        }
+
+
+
+
 
         Map<String,Object> map = new HashMap<>();
         map.put("entitylist",list);
         try {
-            String url = "templates/export/carExceptRecord.xlsx";
+            String url = "templates/export/exportCarExcept.xlsx";
             TemplateExportParams params = new TemplateExportParams(url);
             Workbook workbook = ExcelExportUtil.exportExcel(params, map);
             response.setContentType("application/octet-stream;charset=UTF-8");
