@@ -10,12 +10,16 @@ import lombok.Data;
 
 @Data
 public class IncomeStatisticParam {
-    String orgCode;
-    String queryDateType;//suo查询所，zhan查询站
-    String year;
-    String month;
-    String startDate;
+    private String orgCode;
+    private String queryDateType;//suo查询所，zhan查询站
+    private String year;
+    private String month;
+    private String startDate;
     // 时间查询
     private String applyTime1;
     private String applyTime2;
+    private String orgId;
+    private String escapedType;
+
+
 }
