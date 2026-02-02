@@ -45,4 +45,9 @@ public interface ICarWarningConfigService extends IService<CarWarningConfig> {
      */
     AjaxResult deleteCarWarningConfigByIds(String[] ids);
 
+    /**
+     * 从缓存拿到配置项
+     */
+    List<CarWarningConfig> getRedisCarWarningConfig();
+
 }

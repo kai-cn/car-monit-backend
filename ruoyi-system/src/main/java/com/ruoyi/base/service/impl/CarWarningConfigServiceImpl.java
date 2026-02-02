@@ -1,7 +1,9 @@
 package com.ruoyi.base.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.base.mapper.CarWarningConfigMapper;
 import com.ruoyi.base.domain.CarWarningConfig;
@@ -23,6 +25,9 @@ public class CarWarningConfigServiceImpl extends ServiceImpl<CarWarningConfigMap
 
     @Autowired
     private CarWarningConfigMapper carWarningConfigMapper;
+
+    @Autowired
+    private RedisCache redisCache;
 
     /**
      * 查询服务区判定规则
@@ -97,6 +102,17 @@ public class CarWarningConfigServiceImpl extends ServiceImpl<CarWarningConfigMap
         return AjaxResult.success(count);
     }
 
-
-
+    @Override
+    public List<CarWarningConfig> getRedisCarWarningConfig() {
+        List<CarWarningConfig> list = null;
+        Object obj = redisCache.getCacheObject(Constants.CAR_WARNING_CONFIG_LIST);
+        if (null != obj) {
+            list = (List) obj;
+        } else {
+            CarWarningConfig carWarningConfig = new CarWarningConfig();
+            list = carWarningConfigMapper.selectCarWarningConfigList(carWarningConfig);
+            redisCache.setCacheObject(Constants.CAR_WARNING_CONFIG_LIST, list);
+        }
+        return list;
+    }
 }
