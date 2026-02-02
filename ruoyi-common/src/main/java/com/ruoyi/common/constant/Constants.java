@@ -361,5 +361,11 @@ public class Constants
     public static final String section_all = "all";
 
 
+    /**
+     * 重点车俩列表
+     */
+    public static final String CAR_WARNING_CONFIG_LIST = "car_warning_config_list";
+
+
 
 }

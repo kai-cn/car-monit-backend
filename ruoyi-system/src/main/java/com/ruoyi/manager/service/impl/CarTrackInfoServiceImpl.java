@@ -6,6 +6,7 @@ import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.*;
+import com.ruoyi.base.service.ICarWarningConfigService;
 import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.IRoadPathService;
 import com.ruoyi.base.service.IZdataTrailTracksService;
@@ -17,6 +18,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.CarTrackInfo;
 import com.ruoyi.manager.domain.CarWarningInfo;
@@ -25,6 +27,7 @@ import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
 import com.ruoyi.manager.service.ICarWarningInfoService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -33,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -76,6 +80,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     private LonLatPathsUtils lonLatPathsUtils;
     @Autowired
     private IRoadPathService roadPathService;
+
+    @Autowired
+    private ICarWarningConfigService carWarningConfigService;
 
     /**
      * 查询车辆行驶轨迹
@@ -189,6 +196,8 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         if (CommonUtil.isNull(isLocalhost).equals("local")){
             isZxFlag = false;  // 本地不执行
         }
+        SimpleDateFormat format3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        List<CarWarningConfig> configList = carWarningConfigService.getRedisCarWarningConfig();
 
         for (CarInfo vo : carList) {
             String carNo = CommonUtil.isNull(vo.getCarNo());
@@ -207,13 +216,16 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                 List<TrailBo> josnList = trailInfo.getTrailList(); // 轨迹李四
                 if (null != josnList && josnList.size() > 0) {
                     List<TrailBo> stationList = new ArrayList<TrailBo>(); // 收费站
+                    List<TrailBo> gantryList = new ArrayList<TrailBo>(); // 门架
                     TrailBo firstStation = new TrailBo(); // 第一个收费站或者门架-------------
 
                     boolean trailExits = false;  // 轨迹点是否存在
                     // 在线增加判断是否有出的话 true=进入，false=驶出 directionIn
                     int fristCountNum = 0;
                     String captureTimeLast = "";  // 最后抓拍时间
-                    boolean isExitFlag = true; // 是否离开
+                    boolean isExitFlag = true; //
+
+                    List<TrailBo> supplementList = new ArrayList<>();//补充的服务区轨迹
                     for (TrailBo trailBo : josnList) {
                         if (null != trailBo.getLon() && null != trailBo.getLat()) {
                             trailExits = true;
@@ -234,6 +246,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                                 break;
                             case Constants.GANTRY_CAPTURE:
                                 // 门架抓拍
+                                gantryList.add(trailBo);
                                 break;
                             case Constants.PROV_CAPTURE:
                                 // 省界抓拍
@@ -341,6 +354,40 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
 
                             }
 
+                            //  门架 ---------------
+                            // 最后一个门架
+                            String lastCaptureTimeStr = gantryList.get(gantryList.size() - 1).getCaptureTime();
+                            try {
+                                Date lastCaptureTime = format3.parse(lastCaptureTimeStr);
+                                Date curDate = new Date();
+                                long diff = Math.abs(lastCaptureTime.getTime() - curDate.getTime());
+                                Long timeSpan = configList.get(0).getTimeSpan();
+                                long minutesInMillis = timeSpan * 60 * 1000; // 分钟转换为毫秒
+                                if(diff > minutesInMillis) {
+                                    //超过20分钟，视作
+                                    CarWarningConfig warningConfig = configList.get(0);
+                                    //补充一条服务区轨迹
+                                    TrailBo areaTrailBo = new TrailBo();
+                                    areaTrailBo.setPointUuid(StringUtils.getUUID());
+                                    areaTrailBo.setStateType("ServiceAreaCapture");
+                                    areaTrailBo.setCaptureTime(format3.format(curDate));
+                                    areaTrailBo.setLocationCode("serviceip:172.16.204.101");
+                                    areaTrailBo.setRoadCode(warningConfig.getRoadCode());
+                                    areaTrailBo.setSectionCode(warningConfig.getSectionCode());
+                                    areaTrailBo.setDevCode(warningConfig.getFwqbm());
+                                    areaTrailBo.setDevName(warningConfig.getFwqmc());
+                                    areaTrailBo.setLon(new BigDecimal(warningConfig.getLon()));
+                                    areaTrailBo.setLat(new BigDecimal(warningConfig.getLat()));
+                                    areaTrailBo.setPileno(warningConfig.getPileNo());
+                                    supplementList.add(areaTrailBo);
+                                }
+                            } catch (ParseException e) {
+                                log.info("日期解析失败------------" + e);
+                            }
+
+                            if(CollectionUtils.isNotEmpty(supplementList)) {
+                                josnList.addAll(supplementList);
+                            }
                             // 车辆实时位置
                             if (null != lastBo){
 
@@ -465,7 +512,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         if (addCarWarningInfoList.size() > 0) {
 
             // 去掉重合的
-            SimpleDateFormat format3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//            SimpleDateFormat format3 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             long threeMinutesInMillis = 3 * 60 * 1000; // 三分钟转换为毫秒
 
             // 预计下一个通行时间nextPassTime  预计下一个通行地址 nextPassAddress
