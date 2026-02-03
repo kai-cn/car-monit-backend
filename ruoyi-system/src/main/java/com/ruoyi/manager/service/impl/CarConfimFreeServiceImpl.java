@@ -451,18 +451,19 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             String epsId = CommonUtil.isNull(carConfimFree.getEpsId()); // 单位
             String orgName = CommonUtil.isNull(carConfimFree.getOrgName()); // 单位
             String escapedType = CommonUtil.isNull(carConfimFree.getEscapedType()); // 逃费类型
-            if (CommonUtil.isNotBlank(epsId) && CommonUtil.isNotBlank(orgName)) {
-                if (!deptMap.containsKey(orgName)) {
-                    deptList.add(orgName);
-                    deptMap.put(orgName, orgName);
+            if (CommonUtil.isNotBlank(epsId)) {
+                if (!deptMap.containsKey(epsId)) {
+                    deptList.add(epsId);
+                    deptMap.put(epsId, orgName);
                 }
-                exceptMap.put(orgName + escapedType, carConfimFree);
+                exceptMap.put(epsId + escapedType, carConfimFree);
             }
         }
 
         for (String org : deptList) {
             PCCarStatisticsVO pcCarStatisticsVO = new PCCarStatisticsVO();
-            pcCarStatisticsVO.setOrgName(org);
+            pcCarStatisticsVO.setOrgId(org);
+            pcCarStatisticsVO.setOrgName(deptMap.get(org));
 
             int totalNum = 0;
             BigDecimal totalAmount = BigDecimal.ZERO;

@@ -13,6 +13,12 @@ import java.util.List;
 @Data
 public class PCCarStatisticsVO {
 
+
+    /**
+     * 录入单位
+     */
+    private String orgId;
+
     /**
      * 录入单位
      */
