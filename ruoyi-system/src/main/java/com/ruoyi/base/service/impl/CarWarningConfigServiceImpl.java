@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -72,7 +73,21 @@ public class CarWarningConfigServiceImpl extends ServiceImpl<CarWarningConfigMap
             // 新增 主键
             carWarningConfigMapper.insert(carWarningConfig);
         }
+        cacheWarningConfig();
         return AjaxResult.success("操作成功！",carWarningConfig.getId());
+    }
+
+    private void cacheWarningConfig() {
+        //先删除
+        Collection<String> keys = redisCache.keys(Constants.CAR_WARNING_CONFIG_LIST + "*");
+        if(keys != null && !keys.isEmpty()) {
+            for (String key : keys) {
+                redisCache.deleteObject(key);
+            }
+        }
+        CarWarningConfig carWarningQuery = new CarWarningConfig();
+        List<CarWarningConfig> list = carWarningConfigMapper.selectCarWarningConfigList(carWarningQuery);
+        redisCache.setCacheObject(Constants.CAR_WARNING_CONFIG_LIST, list);
     }
 
     /**
@@ -86,6 +101,7 @@ public class CarWarningConfigServiceImpl extends ServiceImpl<CarWarningConfigMap
     public AjaxResult deleteCarWarningConfigByIds(String[] ids)
     {
         int count = carWarningConfigMapper.deleteCarWarningConfigByIds(ids);
+        cacheWarningConfig();
         return AjaxResult.success(count);
     }
 
