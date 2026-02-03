@@ -156,6 +156,35 @@ public class CarAduitFreeController extends BaseController {
     }
 
 
+    /**
+     * pc统计导出：堵漏增收
+     */
+    @GetMapping(value = "/exportIncomeDetailList")
+    public AjaxResult exportIncomeDetailList(CarConfimFree carConfimFree, HttpServletResponse response) {
+
+        if (CommonUtil.isBlank(carConfimFree.getOrgId())){
+            carConfimFree.setOrgId("-1");
+        }
+        List<CarConfimFree> list = carAduitFreeService.incomeDetailList(carConfimFree);
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/exportIncomeDetailList.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
 
 
 }
