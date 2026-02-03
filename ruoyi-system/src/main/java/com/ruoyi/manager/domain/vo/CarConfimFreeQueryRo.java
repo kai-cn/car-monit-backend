@@ -5,10 +5,12 @@ import lombok.Data;
 
 @Data
 public class CarConfimFreeQueryRo {
+
+    private String orgId;
     /**
      * 录入单位id
      */
-    private String orgId;
+    private String carNo;
     private String orgName;
     /**
      * 逃费类型

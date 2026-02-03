@@ -99,7 +99,7 @@
     <select id="incomeStatistic" parameterType="com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam" resultType="com.ruoyi.manager.domain.vo.bigscreen.incomeStatisticVO">
         select sum(ifnull(amount, 0)) amount, count(distinct car_no) carNum, d.dept_name orgName, a.org_id
         from (
-          select t.car_no,t.amount,t.org_id,t.create_time,t.del_flag,t.status from car_confim_free t where t.del_flag = '0'
+          select t.car_no,t.amount,t.org_id,t.create_time,t.del_flag,t.status from car_confim_free t where t.del_flag = '0' and t.status = '0'
         UNION all
           select t.car_no,t.amount,t.org_id,t.create_time,t.del_flag,t.status from car_aduit_free t where t.del_flag = '0') a
         left join sys_dept d on d.dept_id = a.org_id and d.del_flag = '0'
@@ -122,46 +122,49 @@
 
     <select id="PCIncomeStatics" parameterType="com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo"  resultType="com.ruoyi.manager.domain.vo.PCIncomeStaticsVO">
         select sum(t.amount) amount, count(distinct t.car_no) carNum, t.org_id, t.orgName
-        from (select ifnull(a.amount, 0) amount, a.car_no, a.org_id, d.dept_name orgName
-                from  car_aduit_free a inner join sys_dept d on d.dept_id = a.org_id and d.del_flag = '0'
-                where a.del_flag = '0'
-                <if test="orgId != null  and orgId != ''"> and a.org_id = #{orgId}</if>
-                <if test="applyTime1 != null  and applyTime1 != ''">and a.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
-                <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
-                UNION all
-                select ifnull(c.amount, 0) amount, c.car_no, c.org_id, d.dept_name orgName
-                from car_confim_free c inner join sys_dept d on d.dept_id = c.org_id and d.del_flag = '0'
-                where c.del_flag = '0'
-                <if test="orgId != null  and orgId != ''"> and c.org_id = #{orgId}</if>
-                <if test="applyTime1 != null  and applyTime1 != ''">and c.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
-                <if test="applyTime2 != null  and applyTime2 != ''">and c.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
-                                               ) t
+        from (
+            select ifnull(a.amount, 0) amount, a.car_no, a.org_id, d.dept_name orgName
+            from  car_aduit_free a
+            left join sys_dept d on d.dept_id = a.org_id
+            where a.del_flag = '0' and a.status = '0'
+            <if test="orgId != null  and orgId != ''"> and a.org_id = #{orgId}</if>
+            <if test="applyTime1 != null  and applyTime1 != ''">and a.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+            <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+            <if test="carNo != null  and carNo != ''"> and a.car_no like concat('%', #{carNo}, '%')</if>
+            UNION all
+            select ifnull(a.amount, 0) amount, a.car_no, a.org_id, d.dept_name orgName
+            from car_confim_free a
+            left join sys_dept d on d.dept_id = a.org_id
+            where a.del_flag = '0'
+            <if test="orgId != null  and orgId != ''"> and a.org_id = #{orgId}</if>
+            <if test="applyTime1 != null  and applyTime1 != ''">and a.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+            <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+            <if test="carNo != null  and carNo != ''"> and a.car_no like concat('%', #{carNo}, '%')</if>
+        ) t
         group by t.org_id, t.orgName  order by amount desc
     </select>
 
     <select id="incomeDetailList" parameterType="com.ruoyi.manager.domain.CarConfimFree" resultType="com.ruoyi.manager.domain.CarConfimFree">
-       select t.*, d.dept_name orgName from car_confim_free t
-           inner join sys_dept d on d.dept_id = t.org_id and d.del_flag = '0'
-                where id in (SELECT t.confirm_id
-        FROM car_aduit_free t
-                 inner join sys_dept d on d.dept_id = t.org_id and d.del_flag = '0'
-        where t.del_flag = '0'
-        <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
-        <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
-        <if test="orgId != null  and orgId != ''"> and t.org_id = #{orgId}</if>
-        union
-        select t.id confirm_id
-        from car_confim_free t
-                inner join sys_dept d on d.dept_id = t.org_id and d.del_flag = '0'
-        where t.del_flag = '0'
-        <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
-        <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
-        <if test="orgId != null  and orgId != ''"> and t.org_id = #{orgId}</if>
-        )
-       <if test="carNo != null  and carNo != ''"> and t.car_no like concat('%', #{carNo}, '%')</if>
-       <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
-       <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
-        <if test="orgName != null  and orgName != ''"> and t.org_name like concat('%', #{orgName}, '%')</if>
+       select  t.* from  (
+        select ifnull(a.amount, 0) amount, a.car_no, a.org_id, d.dept_name orgName,a.create_time
+        from  car_aduit_free a
+        left join sys_dept d on d.dept_id = a.org_id
+        where a.del_flag = '0' and a.status = '0'
+        <if test="orgId != null  and orgId != ''"> and a.org_id = #{orgId}</if>
+        <if test="applyTime1 != null  and applyTime1 != ''">and a.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+        <if test="carNo != null  and carNo != ''"> and a.car_no like concat('%', #{carNo}, '%')</if>
+        UNION all
+        select ifnull(a.amount, 0) amount, a.car_no, a.org_id, d.dept_name orgName,a.create_time
+        from car_confim_free a
+        left join sys_dept d on d.dept_id = a.org_id
+        where a.del_flag = '0'
+        <if test="orgId != null  and orgId != ''"> and a.org_id = #{orgId}</if>
+        <if test="applyTime1 != null  and applyTime1 != ''">and a.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+        <if test="carNo != null  and carNo != ''"> and a.car_no like concat('%', #{carNo}, '%')</if>
+        ) t
+        order by t.create_time desc
     </select>
 
 

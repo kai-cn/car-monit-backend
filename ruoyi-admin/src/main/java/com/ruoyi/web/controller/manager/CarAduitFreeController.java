@@ -7,6 +7,7 @@ import java.util.Map;
 
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
+import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.manager.domain.CarConfimFree;
 import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
 import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;
@@ -56,13 +57,8 @@ public class CarAduitFreeController extends BaseController {
         return getDataTable(list);
     }
 
-    @GetMapping("/incomeDetailList")
-    public TableDataInfo incomeDetailList(CarConfimFree carConfimFree) {
-        startPage();
-        // carAduitFree.setTenantId(SecurityUtils.getTenantId()); // 查询我自己单位的租户
-        List<CarConfimFree> list = carAduitFreeService.incomeDetailList(carConfimFree);
-        return getDataTable(list);
-    }
+
+
 
     /**
      * 导出补缴处理列表
@@ -111,7 +107,7 @@ public class CarAduitFreeController extends BaseController {
     }
 
     /**
-     * pc统计
+     * pc统计：堵漏增收
      */
     @GetMapping(value = "/incomeStatics")
     public TableDataInfo incomeStatics(CarConfimFreeQueryRo queryRo) {
@@ -120,6 +116,9 @@ public class CarAduitFreeController extends BaseController {
         return getDataTable(list);
     }
 
+    /**
+     * pc统计导出：堵漏增收
+     */
     @GetMapping(value = "/exportIncomeStatics")
     public AjaxResult exportIncomeStatics(CarConfimFreeQueryRo queryRo, HttpServletResponse response) {
         List<PCIncomeStaticsVO> list = carAduitFreeService.getPCIncomeStatics(queryRo);
@@ -140,5 +139,23 @@ public class CarAduitFreeController extends BaseController {
         }
         return null;
     }
+
+    /**
+     * 明细-----------------
+     * @param carConfimFree
+     * @return
+     */
+    @GetMapping("/incomeDetailList")
+    public TableDataInfo incomeDetailList(CarConfimFree carConfimFree) {
+        startPage();
+        if (CommonUtil.isBlank(carConfimFree.getOrgId())){
+            carConfimFree.setOrgId("-1");
+        }
+        List<CarConfimFree> list = carAduitFreeService.incomeDetailList(carConfimFree);
+        return getDataTable(list);
+    }
+
+
+
 
 }
