@@ -440,8 +440,97 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
 
     @Override
     public List<PCCarStatisticsVO> getPCCarStatistics(CarConfimFreeQueryRo queryRo) {
+        List<PCCarStatisticsVO> res = new ArrayList<>();
+
         List<CarConfimFree> confimFreeList =  baseMapper.getPCCarStatistics(queryRo);
-        Map<String, List<String>> map = new HashMap<>(confimFreeList.size());
+        // 根据
+        List<String> deptList = new ArrayList<>();
+        Map<String, String> deptMap = new HashMap<>();
+        Map<String, CarConfimFree> exceptMap = new HashMap<>();
+        for (CarConfimFree carConfimFree : confimFreeList) {
+            String epsId = CommonUtil.isNull(carConfimFree.getEpsId()); // 单位
+            String orgName = CommonUtil.isNull(carConfimFree.getOrgName()); // 单位
+            String escapedType = CommonUtil.isNull(carConfimFree.getEscapedType()); // 逃费类型
+            if (CommonUtil.isNotBlank(epsId) && CommonUtil.isNotBlank(orgName)) {
+                if (!deptMap.containsKey(orgName)) {
+                    deptList.add(orgName);
+                    deptMap.put(orgName, orgName);
+                }
+                exceptMap.put(orgName + escapedType, carConfimFree);
+            }
+        }
+
+        for (String org : deptList) {
+            PCCarStatisticsVO pcCarStatisticsVO = new PCCarStatisticsVO();
+            pcCarStatisticsVO.setOrgName(org);
+
+            int totalNum = 0;
+            BigDecimal totalAmount = BigDecimal.ZERO;
+
+            String escapedType = "10";
+            if (exceptMap.containsKey(org + escapedType)) {
+                CarConfimFree rtnConfimFree = exceptMap.get(org + escapedType);
+                pcCarStatisticsVO.setEscapedType10Num(rtnConfimFree.getNumber());
+                pcCarStatisticsVO.setEscapedType10Amount(rtnConfimFree.getEscapedAmount());
+
+                totalNum = totalNum + rtnConfimFree.getNumber();
+                totalAmount = totalAmount.add(rtnConfimFree.getEscapedAmount());
+            }
+
+
+            escapedType = "20";
+            if (exceptMap.containsKey(org + escapedType)) {
+                CarConfimFree rtnConfimFree = exceptMap.get(org + escapedType);
+                pcCarStatisticsVO.setEscapedType20Num(rtnConfimFree.getNumber());
+                pcCarStatisticsVO.setEscapedType20Amount(rtnConfimFree.getEscapedAmount());
+
+                totalNum = totalNum + rtnConfimFree.getNumber();
+                totalAmount = totalAmount.add(rtnConfimFree.getEscapedAmount());
+            }
+
+            escapedType = "30";
+            if (exceptMap.containsKey(org + escapedType)) {
+                CarConfimFree rtnConfimFree = exceptMap.get(org + escapedType);
+                pcCarStatisticsVO.setEscapedType30Num(rtnConfimFree.getNumber());
+                pcCarStatisticsVO.setEscapedType30Amount(rtnConfimFree.getEscapedAmount());
+
+                totalNum = totalNum + rtnConfimFree.getNumber();
+                totalAmount = totalAmount.add(rtnConfimFree.getEscapedAmount());
+            }
+
+            escapedType = "40";
+            if (exceptMap.containsKey(org + escapedType)) {
+                CarConfimFree rtnConfimFree = exceptMap.get(org + escapedType);
+                pcCarStatisticsVO.setEscapedType40Num(rtnConfimFree.getNumber());
+                pcCarStatisticsVO.setEscapedType40Amount(rtnConfimFree.getEscapedAmount());
+
+                totalNum = totalNum + rtnConfimFree.getNumber();
+                totalAmount = totalAmount.add(rtnConfimFree.getEscapedAmount());
+            }
+
+            escapedType = "50";
+            if (exceptMap.containsKey(org + escapedType)) {
+                CarConfimFree rtnConfimFree = exceptMap.get(org + escapedType);
+                pcCarStatisticsVO.setEscapedType50Num(rtnConfimFree.getNumber());
+                pcCarStatisticsVO.setEscapedType50Amount(rtnConfimFree.getEscapedAmount());
+
+                totalNum = totalNum + rtnConfimFree.getNumber();
+                totalAmount = totalAmount.add(rtnConfimFree.getEscapedAmount());
+            }
+
+
+            // 合计---------------
+            pcCarStatisticsVO.setTotalNum(totalNum);
+            pcCarStatisticsVO.setTotalAmount(totalAmount.setScale(2, RoundingMode.HALF_UP));
+
+            res.add(pcCarStatisticsVO);
+        }
+
+
+
+        return res;
+
+      /*  Map<String, List<String>> map = new HashMap<>(confimFreeList.size());
         if(!CollectionUtils.isEmpty(confimFreeList)) {
 //            List<String> exceptIdList = new ArrayList<>();
             confimFreeList.forEach(item -> {
@@ -452,11 +541,11 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
                 map.put(item.getOrgName(), list);
             });
 //            List<CarExceptRecord> exceptRecordList = carExceptRecordService.listByIds(exceptIdList);
-            /*Map<String, CarExceptRecord> linkedHashMap = new LinkedHashMap<>(exceptRecordList.size());
+            *//*Map<String, CarExceptRecord> linkedHashMap = new LinkedHashMap<>(exceptRecordList.size());
             for (CarExceptRecord record : exceptRecordList) {
                 linkedHashMap.put(record.getId(), record);
-            }*/
-            List<PCCarStatisticsVO> res = new ArrayList<>();
+            }*//*
+
             for (CarConfimFree confimFree : confimFreeList) {
                 List<String> ids = map.get(confimFree.getOrgName());
                 PCCarStatisticsVO vo = carExceptRecordService.buildPCCarStatisticsVO(ids, queryRo.getEscapedType());
@@ -469,8 +558,8 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
                 res.add(vo);
             }
             return res;
-        }
-        return new ArrayList<>();
+        }*/
+
     }
 
     @Override

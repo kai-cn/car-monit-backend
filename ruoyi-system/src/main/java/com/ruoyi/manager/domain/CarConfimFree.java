@@ -160,5 +160,17 @@ public class CarConfimFree extends BasePlusEntity implements Custom {
     @TableField(exist = false)
     private String comfimFreeType;
 
+    /**
+     * 车辆数量
+     */
+    @TableField(exist = false)
+    private Integer number = 0;
+
+    /**
+     * 逃费金额
+     */
+    @TableField(exist = false)
+    private BigDecimal escapedAmount = BigDecimal.ZERO;
+
 
 }
