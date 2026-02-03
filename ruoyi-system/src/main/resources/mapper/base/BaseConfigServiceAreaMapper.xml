@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.BaseConfigServiceAreaMapper">
+
+    <resultMap type="com.ruoyi.base.domain.BaseConfigServiceArea" id="BaseConfigServiceAreaResult">
+        <result property="fwqbm"    column="fwqbm"    />
+        <result property="fwqmc"    column="fwqmc"    />
+        <result property="lon"    column="lon"    />
+        <result property="lat"    column="lat"    />
+        <result property="roadCode"    column="road_code"    />
+        <result property="sectionCode"    column="section_code"    />
+        <result property="pileNo"    column="pile_no"    />
+    </resultMap>
+
+    <sql id="selectBaseConfigServiceAreaVo">
+        t.fwqbm,
+        t.fwqmc,
+        t.lon,
+        t.lat,
+        t.road_code,
+        t.section_code,
+        t.pile_no
+    </sql>
+
+
+    <select id="selectBaseConfigServiceAreaList" parameterType="com.ruoyi.base.domain.BaseConfigServiceArea" resultMap="BaseConfigServiceAreaResult">
+        SELECT
+        <include refid="selectBaseConfigServiceAreaVo"/>
+        FROM base_config_service_area t
+        <where>
+            <if test="id != null  and id != ''"> and t.id = #{id}</if>
+            <if test="fwqbm != null  and fwqbm != ''"> and t.fwqbm = #{fwqbm}</if>
+            <if test="fwqmc != null  and fwqmc != ''"> and t.fwqmc = #{fwqmc}</if>
+            <if test="lon != null  and lon != ''"> and t.lon = #{lon}</if>
+            <if test="lat != null  and lat != ''"> and t.lat = #{lat}</if>
+            <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
+            <if test="sectionCode != null  and sectionCode != ''"> and t.section_code = #{sectionCode}</if>
+            <if test="pileNo != null  and pileNo != ''"> and t.pile_no = #{pileNo}</if>
+            <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        </where>
+    </select>
+
+    <select id="selectBaseConfigServiceAreaById" parameterType="String" resultMap="BaseConfigServiceAreaResult">
+         select
+         <include refid="selectBaseConfigServiceAreaVo"/>
+         from base_config_service_area t
+         where t.fwqbm = #{fwqbm}
+    </select>
+
+
+    <update id="deleteBaseConfigServiceAreaById" parameterType="String">
+        delete from base_config_service_area where fwqbm = #{fwqbm}
+    </update>
+
+    <update id="deleteBaseConfigServiceAreaByIds" parameterType="String">
+        delete from base_config_service_area where fwqbm in
+        <foreach item="fwqbm" collection="array" open="(" separator="," close=")">
+            #{fwqbm}
+        </foreach>
+    </update>
+</mapper>
