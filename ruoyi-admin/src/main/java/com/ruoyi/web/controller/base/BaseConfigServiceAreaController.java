@@ -45,6 +45,19 @@ public class BaseConfigServiceAreaController extends BaseController {
         return getDataTable(list);
     }
 
+
+
+
+    /**
+     * 查询服务区列表
+     */
+    @GetMapping("/listQuery")
+    public AjaxResult listQuery(BaseConfigServiceArea baseConfigServiceArea) {
+        List<BaseConfigServiceArea> list = baseConfigServiceAreaService.selectBaseConfigServiceAreaList(baseConfigServiceArea);
+        return AjaxResult.success(list);
+    }
+
+
     /**
      * 导出服务区列表
      */
