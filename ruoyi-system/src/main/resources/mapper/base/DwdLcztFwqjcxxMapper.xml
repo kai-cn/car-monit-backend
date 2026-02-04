@@ -181,7 +181,17 @@
                 #{item}
             </foreach>
         </if>
-        order by t.fwqmc
+        union all
+        SELECT
+        distinct t.fwqbm,t.fwqmc
+        FROM base_config_service_area t
+        WHERE 1=1
+        <if test="sectionCodeList != null and sectionCodeList.size() > 0">
+            and t.section_code in
+            <foreach collection="sectionCodeList" open="(" separator="," close=")" item="item">
+                #{item}
+            </foreach>
+        </if>
     </select>
 
 </mapper>
