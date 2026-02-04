@@ -6,6 +6,7 @@ import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.*;
+import com.ruoyi.base.service.ICarWarningConfigService;
 import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.IRoadPathService;
 import com.ruoyi.base.service.IZdataTrailTracksService;
@@ -17,6 +18,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.manager.domain.CarInfo;
 import com.ruoyi.manager.domain.CarTrackInfo;
 import com.ruoyi.manager.domain.CarWarningInfo;
@@ -76,6 +78,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     private LonLatPathsUtils lonLatPathsUtils;
     @Autowired
     private IRoadPathService roadPathService;
+
+
+    @Autowired
+    private ICarWarningConfigService carWarningConfigService;
 
     /**
      * 查询车辆行驶轨迹
@@ -189,6 +195,16 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
         if (CommonUtil.isNull(isLocalhost).equals("local")){
             isZxFlag = false;  // 本地不执行
         }
+
+
+        //---------- 服务器停留配置
+        List<CarWarningConfig> fwqTlList = carWarningConfigService.getRedisCarWarningConfig();
+        Map<String,CarWarningConfig> fwqTlMap = new HashMap<>();
+        for (CarWarningConfig fwqTlVo :fwqTlList){
+            fwqTlMap.put(CommonUtil.isNull(fwqTlVo.getGantryCodeIn()),fwqTlVo);
+        }
+
+
 
         for (CarInfo vo : carList) {
             String carNo = CommonUtil.isNull(vo.getCarNo());
@@ -311,6 +327,53 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                             // 车的门架 路段 等数据--------------
                             // 同事要跟新车俩预警  car_warning_info
                             // 进度和维度
+
+
+                            //-------------------------------- 获取最后一个节点 : 判断服务器停留配置
+                            TrailBo curJsLastBo = josnList.get(josnList.size() - 1);
+                            String  curJsDevCode = CommonUtil.isNull(curJsLastBo.getDevCode()); // 抓拍设备编码
+                            String curJsCaptureTime = CommonUtil.isNull(curJsLastBo.getCaptureTime()); // 抓拍事件--------
+                            if (CommonUtil.isNotBlank(curJsDevCode) && CommonUtil.isNotBlank(curJsCaptureTime) && fwqTlMap.containsKey(curJsDevCode)) {
+                                CarWarningConfig  warningConfig = fwqTlMap.get(curJsDevCode);
+                                //  判断在线最后一个节点时间
+                                try {
+                                    SimpleDateFormat format2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                                    // ---------分钟
+                                    long curJsCurrentTime = warningConfig.getTimeSpan();
+                                    long curJsthreeMinutesInMillis = curJsCurrentTime * 60  * 1000;
+
+                                    if (CommonUtil.isNotBlank(curJsCaptureTime)){
+                                        Date captureTimeDate1 = format2.parse(curJsCaptureTime);
+                                        Date curDate = new Date();
+                                        long diff = curDate.getTime() - captureTimeDate1.getTime();
+                                        if (diff > curJsthreeMinutesInMillis) {
+                                            TrailBo areaTrailBo = new TrailBo();
+                                            areaTrailBo.setPointUuid(StringUtils.getUUID());
+                                            areaTrailBo.setStateType(Constants.SERVICE_AREA_CAPTURE);
+                                            areaTrailBo.setCaptureTime(format2.format(curDate));
+                                            areaTrailBo.setLocationCode("");
+                                            areaTrailBo.setRoadCode(warningConfig.getRoadCode());
+                                            areaTrailBo.setSectionCode(warningConfig.getSectionCode());
+                                            areaTrailBo.setDevCode(warningConfig.getFwqbm());
+                                            areaTrailBo.setDevName(warningConfig.getFwqmc());
+
+
+                                            areaTrailBo.setPileno(warningConfig.getPileNo());
+                                            if (CommonUtil.isNotBlank(warningConfig.getLon())){
+                                                areaTrailBo.setLon(new BigDecimal(warningConfig.getLon()));
+                                            }
+                                            if (CommonUtil.isNotBlank(warningConfig.getLat())){
+                                                areaTrailBo.setLat(new BigDecimal(warningConfig.getLat()));
+                                            }
+                                            josnList.add(areaTrailBo);
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    log.info("日期解析失败------------" + e.toString());
+                                }
+                            }
+
+
                             TrailBo lastBo = null;
 
                             TrailBo lastMjBo = null;
