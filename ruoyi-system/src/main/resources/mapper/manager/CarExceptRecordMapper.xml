@@ -202,5 +202,51 @@
     </select>
 
 
+    <select id="selectCarExceptRecordListNew" parameterType="com.ruoyi.manager.domain.CarExceptRecord" resultMap="CarExceptRecordResult">
+        SELECT
+        <include refid="selectCarExceptRecordVo"/>,concat(sd.dept_name, ' ', su.nick_name) createInfo
+        FROM car_except_record t
+        left join sys_user su on su.user_id = t.create_by
+        left join sys_dept sd on t.eps_id = sd.dept_id
+        WHERE t.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="carId != null  and carId != ''"> and t.car_id = #{carId}</if>
+        <if test="carNo != null  and carNo != ''"> and t.car_no = #{carNo}</if>
+        <if test="carType != null  and carType != ''"> and t.car_type = #{carType}</if>
+        <if test="carVehicle != null  and carVehicle != ''"> and t.car_vehicle = #{carVehicle}</if>
+        <if test="carNum != null "> and t.car_num = #{carNum}</if>
+        <if test="passType != null  and passType != ''"> and t.pass_type = #{passType}</if>
+        <if test="inStationId != null  and inStationId != ''"> and t.in_station_id = #{inStationId}</if>
+        <if test="inStation != null  and inStation != ''"> and t.in_station like concat('%', #{inStation}, '%')</if>
+        <if test="inTime != null "> and t.in_time = #{inTime}</if>
+        <if test="outStationId != null  and outStationId != ''"> and t.out_station_id = #{outStationId}</if>
+        <if test="outStation != null  and outStation != ''"> and t.out_station like concat('%', #{outStation}, '%')</if>
+        <if test="outTime != null "> and t.out_time = #{outTime}</if>
+        <if test="totalAmount != null "> and t.total_amount = #{totalAmount}</if>
+        <if test="chargeAmount != null "> and t.charge_amount = #{chargeAmount}</if>
+        <if test="difAmount != null "> and t.dif_amount = #{difAmount}</if>
+        <if test="escapedType != null  and escapedType != ''"> and t.escaped_type = #{escapedType}</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.back_col1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.back_col2 = #{backCol2}</if>
+        <if test="status != null  and status != ''"> and t.status = #{status}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+
+        <if test="applyTime1 != null  and applyTime1 != ''">and t.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and t.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+        <if test="orgId != null  and orgId != ''"> and t.eps_id = #{orgId}</if>
+
+        <if test="applyTime3 != null  and applyTime3 != ''">and t.out_time >= STR_TO_DATE(#{applyTime3},'%Y-%m-%d %H:%i:%s')</if>
+        <if test="applyTime4 != null  and applyTime4 != ''">and t.out_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime4},'%Y-%m-%d %H:%i:%s')</if>
+
+        <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
+
+        <if test="exceptIds != null  and exceptIds != ''"> and find_in_set(t.id,#{exceptIds}) > 0 </if>
+        order by t.dif_amount desc,t.id
+    </select>
+
+
 
 </mapper>

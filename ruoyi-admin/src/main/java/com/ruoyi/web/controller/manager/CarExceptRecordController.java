@@ -85,6 +85,107 @@ public class CarExceptRecordController extends BaseController {
     }
 
     /**
+     * 根据车牌号查询: 根据单位
+     * @param carExceptRecord
+     * @return
+     */
+    @GetMapping("/listCarOrgId")
+    public TableDataInfo listCarOrgId(CarExceptRecord carExceptRecord) {
+        startPage();
+        if (null == carExceptRecord.getEpsId()){
+            carExceptRecord.setEpsId(-1L);
+        }
+        List<CarExceptRecord> list = carExceptRecordService.selectCarExceptRecordListNew(carExceptRecord);
+
+
+        return getDataTable(list);
+    }
+
+    /**
+     * 导出异常车辆流水列表
+     */
+    @Log(title = "异常车辆流水", businessType = BusinessType.EXPORT)
+    @GetMapping("/exportOrgId")
+    public AjaxResult exportOrgId(CarExceptRecord carExceptRecord, HttpServletResponse response) {
+
+        if (null == carExceptRecord.getEpsId()){
+            carExceptRecord.setEpsId(-1L);
+        }
+        List<CarExceptRecord> list = carExceptRecordService.selectCarExceptRecordListNew(carExceptRecord);
+        // 车型
+        Map<String,String> carTypeMap = sysDictDataService.selectDictDataMap("car_type");
+
+        // 车种
+        Map<String,String> carVehicleMap = sysDictDataService.selectDictDataMap("car_vehicle");
+
+        // 逃费类型
+        Map<String,String> escapedTypeMap = sysDictDataService.selectDictDataMap("escaped_type");
+
+        // 补缴状态
+        Map<String,String> statusMap = sysDictDataService.selectDictDataMap("supplementary_status");
+
+
+        for (int i = 0; i < list.size(); i++) {
+            CarExceptRecord dp = list.get(i);
+
+            if (null != dp.getCreateTime()){
+                dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
+            }
+
+
+            if (null != dp.getCreateTime()){
+                dp.setCreateTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getCreateTime()));
+            }
+
+            if (null != dp.getInTime()){
+                dp.setInTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getInTime()));
+            }
+
+            if (null != dp.getOutTime()){
+                dp.setOutTimeStr(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS,dp.getOutTime()));
+            }
+
+            if(carTypeMap.containsKey(dp.getCarType())){
+                dp.setCarType(CommonUtil.isNull(carTypeMap.get(dp.getCarType())));
+            }
+
+            if(carVehicleMap.containsKey(dp.getCarVehicle())){
+                dp.setCarVehicle(CommonUtil.isNull(carVehicleMap.get(dp.getCarVehicle())));
+            }
+
+            if(escapedTypeMap.containsKey(dp.getEscapedType())){
+                dp.setEscapedType(CommonUtil.isNull(escapedTypeMap.get(dp.getEscapedType())));
+            }
+
+            dp.setStatus(CommonUtil.isNull(statusMap.get(dp.getStatus())));
+            dp.setSort(i+1);
+            dp.setCarNoQuery("");
+        }
+
+
+
+
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("entitylist",list);
+        try {
+            String url = "templates/export/exportCarExcept.xlsx";
+            TemplateExportParams params = new TemplateExportParams(url);
+            Workbook workbook = ExcelExportUtil.exportExcel(params, map);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment");
+            OutputStream outs = response.getOutputStream();
+            workbook.write(outs);
+            outs.flush();
+            outs.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    /**
      * 根据车牌号查询: 根据车牌号查询
      * @param carExceptRecord
      * @return

@@ -89,4 +89,13 @@ public interface ICarExceptRecordService extends IService<CarExceptRecord> {
      */
     void saveCarExcept(CarExceptRecord carExceptRecord);
 
+
+    /**
+     * 查询异常车辆流水列表
+     *
+     * @param carExceptRecord 异常车辆流水
+     * @return 异常车辆流水集合
+     */
+    List<CarExceptRecord> selectCarExceptRecordListNew(CarExceptRecord carExceptRecord);
+
 }
