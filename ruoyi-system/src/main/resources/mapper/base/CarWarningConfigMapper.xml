@@ -16,6 +16,7 @@
         <result property="roadCode"    column="road_code"    />
         <result property="sectionCode"    column="section_code"    />
         <result property="pileNo"    column="pile_no"    />
+        <result property="remark"    column="remark"    />
 
     </resultMap>
 
@@ -26,13 +27,14 @@
         t.gantry_code_out,
         t.gantry_name_out,
         t.time_span,
+        t.remark,
         t.fwqbm,
-        t.fwqmc,
-        t.lon,
-        t.lat,
-        t.road_code,
-        t.section_code,
-        t.pile_no
+        t1.fwqmc,
+        t1.lon,
+        t1.lat,
+        t1.road_code,
+        t1.section_code,
+        t1.pile_no
     </sql>
 
 
@@ -40,15 +42,16 @@
         SELECT
         <include refid="selectCarWarningConfigVo"/>
         FROM car_warning_config t
+        join base_config_service_area t1 on t.fwqbm = t1.fwqbm
         <where>
             <if test="id != null  and id != ''"> and t.id = #{id}</if>
             <if test="gantryCodeIn != null  and gantryCodeIn != ''"> and t.gantry_code_in = #{gantryCodeIn}</if>
-            <if test="gantryNameIn != null  and gantryNameIn != ''"> and t.gantry_name_in = #{gantryNameIn}</if>
+            <if test="gantryNameIn != null  and gantryNameIn != ''"> and t.gantry_name_in like concat('%', #{gantryNameIn}, '%')</if>
             <if test="gantryCodeOut != null  and gantryCodeOut != ''"> and t.gantry_code_out = #{gantryCodeOut}</if>
-            <if test="gantryNameOut != null  and gantryNameOut != ''"> and t.gantry_name_out = #{gantryNameOut}</if>
+            <if test="gantryNameOut != null  and gantryNameOut != ''"> and t.gantry_name_out like concat('%', #{gantryNameOut}, '%')</if>
             <if test="timeSpan != null "> and t.time_span = #{timeSpan}</if>
             <if test="fwqbm != null  and fwqbm != ''"> and t.fwqbm = #{fwqbm}</if>
-            <if test="fwqmc != null  and fwqmc != ''"> and t.fwqmc = #{fwqmc}</if>
+            <if test="fwqmc != null  and fwqmc != ''"> and t1.fwqmc like concat('%', #{fwqmc}, '%')</if>
             <if test="lon != null  and lon != ''"> and t.lon = #{lon}</if>
             <if test="lat != null  and lat != ''"> and t.lat = #{lat}</if>
             <if test="roadCode != null  and roadCode != ''"> and t.road_code = #{roadCode}</if>
@@ -62,6 +65,7 @@
          select
          <include refid="selectCarWarningConfigVo"/>
          from car_warning_config t
+         join base_config_service_area t1 on t.fwqbm = t1.fwqbm
          where t.id = #{id}
     </select>
 

@@ -1,5 +1,7 @@
 package com.ruoyi.base.domain;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,7 +20,16 @@ import com.ruoyi.common.core.domain.Custom;
 @TableName("car_warning_config")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-public class CarWarningConfig extends BasePlusEntity implements Custom {
+public class CarWarningConfig  implements Custom {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 主键
+     */
+    @TableId(value = "id", type = IdType.ASSIGN_UUID)
+    private String id;
+
 
     /** 进入门架编号（分离） */
     @Excel(name = "进入门架编号", readConverterExp = "分=离")
@@ -67,6 +78,11 @@ public class CarWarningConfig extends BasePlusEntity implements Custom {
     /** 桩号 */
     @Excel(name = "桩号")
     private String pileNo;
+
+
+    /** 桩号 */
+    @Excel(name = "备注")
+    private String remark;
 
 
 }
