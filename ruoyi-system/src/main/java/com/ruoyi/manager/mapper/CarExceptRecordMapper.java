@@ -94,4 +94,13 @@ public interface CarExceptRecordMapper extends BaseMapper<CarExceptRecord> {
      * @return 异常车辆流水
      */
     List<CarExceptRecord> exceptRecordList(CarExceptRecord carExceptRecord);
+
+
+    /**
+     * 查询异常车辆流水列表
+     *
+     * @param carExceptRecord 异常车辆流水
+     * @return 异常车辆流水集合
+     */
+    List<CarExceptRecord> selectCarExceptRecordListNew(CarExceptRecord carExceptRecord);
 }

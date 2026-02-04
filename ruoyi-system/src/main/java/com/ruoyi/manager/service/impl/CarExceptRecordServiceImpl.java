@@ -293,4 +293,14 @@ public class CarExceptRecordServiceImpl extends ServiceImpl<CarExceptRecordMappe
             carInfoService.updateBatchById(updatalist);
         }
     }
+
+    /**
+     * 查询异常车辆流水列表
+     *
+     * @param carExceptRecord 异常车辆流水
+     * @return 异常车辆流水集合
+     */
+    public List<CarExceptRecord> selectCarExceptRecordListNew(CarExceptRecord carExceptRecord){
+        return carExceptRecordMapper.selectCarExceptRecordListNew(carExceptRecord);
+    }
 }
