@@ -520,6 +520,17 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
             }
 
 
+            escapedType = "60";
+            if (exceptMap.containsKey(org + escapedType)) {
+                CarConfimFree rtnConfimFree = exceptMap.get(org + escapedType);
+                pcCarStatisticsVO.setEscapedType60Num(rtnConfimFree.getNumber());
+                pcCarStatisticsVO.setEscapedType60Amount(rtnConfimFree.getEscapedAmount());
+
+                totalNum = totalNum + rtnConfimFree.getNumber();
+                totalAmount = totalAmount.add(rtnConfimFree.getEscapedAmount());
+            }
+
+
             // 合计---------------
             pcCarStatisticsVO.setTotalNum(totalNum);
             pcCarStatisticsVO.setTotalAmount(totalAmount.setScale(2, RoundingMode.HALF_UP));
