@@ -409,7 +409,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
         }*/
 
-        System.out.println("参数数组数量："+paraTrailInfoList.size());
+        // System.out.println("参数数组数量："+paraTrailInfoList.size());
         trailInfoList = paraTrailInfoList;
 
 

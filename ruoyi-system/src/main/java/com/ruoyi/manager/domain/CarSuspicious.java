@@ -24,7 +24,7 @@ import java.util.List;
 @TableName("car_suspicious")
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = false)
-public class CarSuspicious extends BasePlusEntityNew implements Custom {
+public class CarSuspicious extends BasePlusEntityLong implements Custom {
 
     /** 车牌颜色（字典：1白色2黑色） */
     @Excel(name = "车牌颜色", readConverterExp = "字=典：1白色2黑色")
