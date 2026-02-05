@@ -97,4 +97,18 @@ public class TrackTask {
         carTrackInfoService.syncHistoryTrackNoCar();
         log.info("车俩历史轨迹同步结束同步！"+new Date());*/
     }
+
+
+    /**
+     * 可疑车辆迁移
+     * 车俩历史轨迹同步:0 0 21 * * ?
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void changeCarSuspicious() {
+        log.info("可疑车辆迁移开始同步！"+new Date());
+       //  carTrackInfoService.syncHistoryTrackNoCar();
+        log.info("可疑车辆迁移同步！"+new Date());
+    }
+
+
 }

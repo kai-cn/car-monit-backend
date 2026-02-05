@@ -96,19 +96,11 @@
         t.section_code,
         t.section_name,
         t.track_id,
-        t.track_names,
         t.back_col1,
         t.back_col2,
         t.remark,
         t.status,
-        t.sort,
-        t.eps_id,
-        t.del_flag,
-        t.create_by,
-        t.create_time,
-        t.update_by,
-        t.update_time,
-        t.tenant_id
+        t.create_time
     </sql>
 
 
@@ -257,7 +249,7 @@
         <if test="applyTime1 != null  and applyTime1 != ''">and t.in_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')</if>
         <if test="applyTime2 != null  and applyTime2 != ''">and t.out_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
 
-        order by t.out_time desc,t.id
+        order by t.id
     </select>
 
     <select id="selectCarSuspiciousHistoryById" parameterType="String" resultMap="CarSuspiciousResult">
