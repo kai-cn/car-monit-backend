@@ -47,6 +47,12 @@ public class PCCarStatisticsVO {
 
     private BigDecimal escapedType50Amount = BigDecimal.ZERO;
 
+
+    private Integer escapedType60Num = 0;
+
+    private BigDecimal escapedType60Amount = BigDecimal.ZERO;
+
+
     private Integer totalNum = 0;
 
     private BigDecimal totalAmount = BigDecimal.ZERO;
