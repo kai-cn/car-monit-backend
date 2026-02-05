@@ -214,6 +214,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
      * @return 结果
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public AjaxResult cherkCarSuspicious(CarSuspicious carSuspicious) {
 
         String carId = CommonUtil.isNull(carSuspicious.getId());
