@@ -519,8 +519,13 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
                                     }else if (carTypeName.equals("26")) {
                                         carVehicle = "3";
                                     }
-                                    carSuspicious.setCarType(tracksBo.getEnvehicletype()); //
-                                    carSuspicious.setCarVehicle(carVehicle);
+
+                                    // 车型和车的种
+                                    if (!carVehicle.equals("")){
+                                        carSuspicious.setCarType(tracksBo.getEnvehicletype()); //
+                                        carSuspicious.setCarVehicle(carVehicle);
+                                    }
+
                                 }
                             }
 
