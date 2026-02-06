@@ -259,4 +259,16 @@
         where t.id = #{id}
     </select>
 
+
+    <insert id="changeCarSuspicious" parameterType="String">
+        insert into car_suspicious_back
+        select * from car_suspicious t
+        where t.del_flag = '0'
+        and t.in_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime},'%Y-%m-%d %H:%i:%s')
+    </insert>
+
+    <delete id="deleteChangeCarSuspicious" parameterType="String">
+        delete from car_suspicious where t.in_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime},'%Y-%m-%d %H:%i:%s')
+    </delete>
+
 </mapper>

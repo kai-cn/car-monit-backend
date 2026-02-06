@@ -100,14 +100,14 @@ public class TrackTask {
 
 
     /**
-     * 可疑车辆迁移
+     * 可疑车辆迁移：保留一个月的数据
      * 车俩历史轨迹同步:0 0 21 * * ?
      */
     @Transactional(rollbackFor = Exception.class)
     public void changeCarSuspicious() {
-        log.info("可疑车辆迁移开始同步！"+new Date());
-       //  carTrackInfoService.syncHistoryTrackNoCar();
-        log.info("可疑车辆迁移同步！"+new Date());
+        log.info("可疑车辆迁移开始同步！" + new Date());
+        carSuspiciousService.changeCarSuspicious();
+        log.info("可疑车辆迁移同步！" + new Date());
     }
 
 

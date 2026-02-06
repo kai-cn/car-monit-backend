@@ -769,4 +769,37 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
 
         return carSuspicious;
     }
+
+    /**
+     * 可疑车辆迁移：保留一个月的数据
+     * @return
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public AjaxResult changeCarSuspicious(){
+
+        // -------获取当前时间的前2天
+        Date currentDate = new Date();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(currentDate);
+        calendar.add(Calendar.DAY_OF_MONTH, - 30);
+        Date twoDaysAgo = calendar.getTime();
+        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd");
+        String queryDate = sdf1.format(twoDaysAgo);
+
+        String queryStartTime = queryDate + " 00:00:00";
+        // String queryEndTime = queryDate + " 23:59:59";
+
+        System.out.println("可疑车辆迁移时间------------："+queryStartTime);
+        if (CommonUtil.isNotBlank(queryStartTime)){
+            // 先转移-----
+            carSuspiciousMapper.changeCarSuspicious(queryStartTime);
+            // 然后在删除
+            carSuspiciousMapper.deleteChangeCarSuspicious(queryStartTime);
+        }
+
+
+
+
+        return  AjaxResult.success("可疑车辆迁移：保留一个月的数据！");
+    }
 }
