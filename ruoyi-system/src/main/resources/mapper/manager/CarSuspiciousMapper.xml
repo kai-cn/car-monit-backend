@@ -159,7 +159,7 @@
         <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
 
         <if test="applyTime1 != null  and applyTime1 != ''">and t.in_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')</if>
-        <if test="applyTime2 != null  and applyTime2 != ''">and t.out_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and t.in_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
 
         order by t.out_time desc,t.id
     </select>
@@ -247,7 +247,7 @@
         <if test="carNoQuery != null  and carNoQuery != ''"> and t.car_no like concat('%', #{carNoQuery}, '%')</if>
 
         <if test="applyTime1 != null  and applyTime1 != ''">and t.in_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')</if>
-        <if test="applyTime2 != null  and applyTime2 != ''">and t.out_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
+        <if test="applyTime2 != null  and applyTime2 != ''">and t.in_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime2},'%Y-%m-%d %H:%i:%s') </if>
 
         order by t.id
     </select>
@@ -268,7 +268,7 @@
     </insert>
 
     <delete id="deleteChangeCarSuspicious" parameterType="String">
-        delete from car_suspicious where t.in_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime},'%Y-%m-%d %H:%i:%s')
+        delete from car_suspicious where in_time <![CDATA[<=]]> STR_TO_DATE(#{applyTime},'%Y-%m-%d %H:%i:%s')
     </delete>
 
 </mapper>
