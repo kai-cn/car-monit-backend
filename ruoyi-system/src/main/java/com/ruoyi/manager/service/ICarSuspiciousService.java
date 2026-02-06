@@ -84,4 +84,13 @@ public interface ICarSuspiciousService extends IService<CarSuspicious> {
      * @return 可疑车辆
      */
     CarSuspicious selectCarSuspiciousHistoryById(String id);
+
+
+    /**
+     * 可疑车辆迁移：保留一个月的数据
+     * @return
+     */
+    AjaxResult changeCarSuspicious();
+
+
 }

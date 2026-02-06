@@ -64,4 +64,20 @@ public interface CarSuspiciousMapper extends BaseMapper<CarSuspicious> {
      */
     List<CarSuspicious> selectCarSuspiciousListHistroy(CarSuspicious carSuspicious);
 
+
+    /**
+     * 批量删除可疑车辆
+     *
+     * @return 结果
+     */
+    int changeCarSuspicious(String applyTime);
+
+    /**
+     * 批量删除可疑车辆
+     *
+     * @return 结果
+     */
+    int deleteChangeCarSuspicious(String applyTime);
+
+
 }
