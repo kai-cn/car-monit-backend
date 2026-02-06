@@ -796,10 +796,6 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             // 然后在删除
             carSuspiciousMapper.deleteChangeCarSuspicious(queryStartTime);
         }
-
-
-
-
         return  AjaxResult.success("可疑车辆迁移：保留一个月的数据！");
     }
 }
