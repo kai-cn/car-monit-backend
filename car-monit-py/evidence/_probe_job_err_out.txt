@@ -1,0 +1,23 @@
+POST /monitor/job {"jobName": "__probe__", "jobGroup": "PROBE", "invokeTarget": "ryTask.ryNoParams", "misfirePolicy": "3", "concurrent": "1", "status": "1"} -> HTTP 200 {"msg":"cronExpression cannot be null","code":500}
+POST /monitor/job {"jobName": "__probe__", "jobGroup": "PROBE", "invokeTarget": "ryTask.ryNoParams", "cronExpression": "", "misfirePolicy": "3", "concurrent": "1", "status": "1"} -> HTTP 200 {"msg":"cron表达式不正确","code":500}
+POST /monitor/job {"jobGroup": "PROBE", "invokeTarget": "ryTask.ryNoParams", "cronExpression": "0 0 2 * * ?", "misfirePolicy": "3", "concurrent": "1", "status": "1"} -> HTTP 200 {"msg":"操作成功","code":200}
+POST /monitor/job {"jobName": "__probe__", "jobGroup": "PROBE", "cronExpression": "0 0 2 * * ?", "misfirePolicy": "3", "concurrent": "1", "status": "1"} -> HTTP 200 {"msg":"\r\n### Error updating database.  Cause: java.sql.SQLException: Field 'invoke_target' doesn't have a default value\r\n### The error may exist in URL [jar:file:/D:/work/IdeaProjects/car-monit-backend-new/ruoyi-admin/target/ruoyi-admin.jar!/BOOT-INF/lib/ruoyi-quartz-3.8.7.jar!/mapper/quartz/SysJobMapper.xml]\r\n### The error may involve com.ruoyi.quartz.mapper.SysJobMapper.insertJob-Inline\r...
+POST /monitor/job {"jobName": "__probe__", "jobGroup": "PROBE", "invokeTarget": "ryTask.ryNoParams", "cronExpression": "0 0 2 * * ?", "misfirePolicy": "9", "concurrent": "1", "status": "1"} -> HTTP 200 {"msg":"The task misfire policy '9' cannot be used in cron schedule tasks","code":500}
+POST /monitor/job {"jobName": "__probe__", "invokeTarget": "ryTask.ryNoParams", "cronExpression": "0 0 2 * * ?", "misfirePolicy": "3", "concurrent": "1", "status": "1"} -> HTTP 200 {"msg":"操作成功","code":200}
+POST /monitor/job {}                           -> HTTP 200 {"msg":"cronExpression cannot be null","code":500}
+PUT /monitor/job jobId=999999                  -> HTTP 200 {"msg":"操作失败","code":500}
+PUT /monitor/job/changeStatus jobId=999999     -> HTTP 200 {"msg":null,"code":500}
+PUT /monitor/job/run jobId=999999              -> HTTP 200 {"msg":"The job (DEFAULT.TASK_CLASS_NAME999999) referenced by the trigger does not exist.","code":500}
+DELETE /monitor/job/999999                     -> HTTP 200 {"msg":null,"code":500}
+DELETE /monitor/job/abc                        -> HTTP 200 {"msg":"请求参数类型不匹配，参数[jobIds]要求类型为：'[Ljava.lang.Long;'，但输入值为：'abc'","code":500}
+GET /monitor/job/999999                        -> HTTP 200 {"msg":"操作成功","code":200}
+GET /monitor/jobLog/1                          -> HTTP 200 {"msg":"请求路径中缺少必需的路径变量[jobLogId]","code":500}
+GET /monitor/jobLog/abc                        -> HTTP 200 {"msg":"请求路径中缺少必需的路径变量[jobLogId]","code":500}
+DELETE /monitor/jobLog/999999                  -> HTTP 200 {"msg":"操作失败","code":500}
+DELETE /monitor/jobLog/abc                     -> HTTP 200 {"msg":"请求参数类型不匹配，参数[jobLogIds]要求类型为：'[Ljava.lang.Long;'，但输入值为：'abc'","code":500}
+GET /monitor/job/export                        -> HTTP 200 {"msg":"288307ee-81cb-47b9-98b0-9834ce084528_定时任务.xlsx","code":200}
+GET /monitor/jobLog/export                     -> HTTP 200 {"msg":"ad349134-e9ba-462b-9ac7-9a5bdf17be24_调度日志.xlsx","code":200}
+POST /monitor/job {"jobName": "__probe__", "jobGroup": "PROBE", "invokeTarget": "ryTask.ryNoParams", "cronExpression": "bogus", "misfirePolicy": "9", "concurrent": "1", "status": "1"} -> HTTP 200 {"msg":"cron表达式不正确","code":500}
+
+cleanup ids: 128,129
+{"msg":"操作成功","code":200}

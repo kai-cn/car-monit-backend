@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  ============================================================
+  文件：分区表跨月份分页查询 Mapper 示例
+  说明：把以下 select 语句块复制到你现有的
+        OdsRtSzdnSnapshotFlowAddcodeMapper.xml /
+        OdsLwzxsfsjFeeRecords01Mapper.xml /
+        ZdataTrailFittingMapper.xml
+        中即可使用，不需要改动 namespace
+  ============================================================
+-->
+
+<mapper namespace="com.ruoyi.base.mapper.OdsRtSzdnSnapshotFlowAddcodeMapper">
+
+
+    <!-- ============================================================
+         1. 抓拍流水表：跨月份 Keyset 游标分页查询
+         参数说明（通过 Map 传入）：
+           platenumber       车牌（可选）
+           gantrycode        门架编号（可选）
+           startTime         起始时间（必填，>=）
+           endTime           结束时间（必填，<）
+           lastSnapshottime  上一页最后一条的 snapshottime（首次查询传 null）
+           lastBigId         上一页最后一条的 big_id（首次查询传 null）
+           pageSize          每页条数（必填）
+         核心：
+           a. snapshottime 是分区键，必须用 >= 和 < 包区间
+              （不能包函数、不能 BETWEEN）
+           b. (snapshottime, big_id) 做游标条件，排序键唯一
+           c. openGauss 3.0 支持 LIMIT #{pageSize} 写法
+         ============================================================ -->
+    <select id="selectSnapshotFlowByCursor"
+            parameterType="java.util.Map"
+            resultMap="OdsRtSzdnSnapshotFlowAddcodeResult">
+        SELECT
+        <include refid="selectOdsRtSzdnSnapshotFlowAddcodeVo"/>
+        FROM ods_rt_szdn_snapshot_flow_addcode t
+        WHERE 1 = 1
+        <if test="platenumber != null and platenumber != ''">
+            AND t.platenumber = #{platenumber}
+        </if>
+        <if test="gantrycode != null and gantrycode != ''">
+            AND t.gantrycode = #{gantrycode}
+        </if>
+        <if test="sectioncode != null and sectioncode != ''">
+            AND t.sectioncode = #{sectioncode}
+        </if>
+        <!-- 分区键区间：必须用 >= 和 <，分区剪枝才能生效 -->
+        <if test="startTime != null">
+            AND t.snapshottime >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND t.snapshottime < #{endTime}
+        </if>
+        <!-- Keyset 游标条件：首次查询 lastSnapshottime 为 null 时不加 -->
+        <if test="lastSnapshottime != null and lastBigId != null">
+            AND (t.snapshottime, t.big_id) < (#{lastSnapshottime}, #{lastBigId})
+        </if>
+        <!-- 排序键必须唯一：snapshottime + big_id -->
+        ORDER BY t.snapshottime DESC, t.big_id DESC
+        LIMIT #{pageSize}
+    </select>
+
+
+    <!-- ============================================================
+         2. 抓拍流水表：Keyset 分页的总条数（用于 UI 显示"共 X 条"）
+         注意：WHERE 条件和上面列表查询必须完全一致，
+               否则优化器无法走分区剪枝
+         ============================================================ -->
+    <select id="countSnapshotFlowByCursor"
+            parameterType="java.util.Map"
+            resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM ods_rt_szdn_snapshot_flow_addcode t
+        WHERE 1 = 1
+        <if test="platenumber != null and platenumber != ''">
+            AND t.platenumber = #{platenumber}
+        </if>
+        <if test="gantrycode != null and gantrycode != ''">
+            AND t.gantrycode = #{gantrycode}
+        </if>
+        <if test="sectioncode != null and sectioncode != ''">
+            AND t.sectioncode = #{sectioncode}
+        </if>
+        <if test="startTime != null">
+            AND t.snapshottime >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND t.snapshottime < #{endTime}
+        </if>
+    </select>
+
+
+    <!-- ============================================================
+         3. 抓拍流水表：双层查询（当 UI 要求支持 OFFSET 跳页时用）
+         内层只扫主键（可被索引覆盖），外层回表拿完整数据
+         参数：pageNum / pageSize / platenumber / gantrycode / startTime / endTime
+         ============================================================ -->
+    <select id="selectSnapshotFlowByOffset"
+            parameterType="java.util.Map"
+            resultMap="OdsRtSzdnSnapshotFlowAddcodeResult">
+        SELECT
+        <include refid="selectOdsRtSzdnSnapshotFlowAddcodeVo"/>
+        FROM (
+            SELECT t.big_id
+            FROM ods_rt_szdn_snapshot_flow_addcode t
+            WHERE 1 = 1
+            <if test="platenumber != null and platenumber != ''">
+                AND t.platenumber = #{platenumber}
+            </if>
+            <if test="gantrycode != null and gantrycode != ''">
+                AND t.gantrycode = #{gantrycode}
+            </if>
+            <if test="startTime != null">
+                AND t.snapshottime >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND t.snapshottime < #{endTime}
+            </if>
+            ORDER BY t.snapshottime DESC, t.big_id DESC
+            LIMIT #{pageSize} OFFSET #{offset}
+        ) p
+        JOIN ods_rt_szdn_snapshot_flow_addcode t ON p.big_id = t.big_id
+        ORDER BY t.snapshottime DESC, t.big_id DESC
+    </select>
+
+
+    <!-- ============================================================
+         4. 收费流水表：Keyset 游标分页（分区键：transtime）
+         ============================================================ -->
+    <select id="selectFeeRecordByCursor"
+            parameterType="java.util.Map"
+            resultType="com.ruoyi.base.domain.OdsLwzxsfsjFeeRecords01">
+        SELECT t.big_id,
+               t.gantrycode,
+               t.platenumber,
+               t.transtime,
+               t.fee
+        FROM ods_lwzxsfsj_fee_records_01 t
+        WHERE 1 = 1
+        <if test="platenumber != null and platenumber != ''">
+            AND t.platenumber = #{platenumber}
+        </if>
+        <if test="gantrycode != null and gantrycode != ''">
+            AND t.gantrycode = #{gantrycode}
+        </if>
+        <if test="startTime != null">
+            AND t.transtime >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND t.transtime < #{endTime}
+        </if>
+        <if test="lastTranstime != null and lastBigId != null">
+            AND (t.transtime, t.big_id) < (#{lastTranstime}, #{lastBigId})
+        </if>
+        ORDER BY t.transtime DESC, t.big_id DESC
+        LIMIT #{pageSize}
+    </select>
+
+
+    <!-- ============================================================
+         5. 轨迹拟合表：Keyset 游标分页（分区键：extime）
+         ============================================================ -->
+    <select id="selectTrailFittingByCursor"
+            parameterType="java.util.Map"
+            resultType="com.ruoyi.base.domain.ZdataTrailFitting">
+        SELECT t.uuid,
+               t.plate_key,
+               t.enter_time,
+               t.exit_time,
+               t.extime,
+               t.mileage,
+               t.fee_amount
+        FROM zdata_trail_fitting t
+        WHERE 1 = 1
+        <if test="plateKey != null and plateKey != ''">
+            AND t.plate_key = #{plateKey}
+        </if>
+        <if test="startTime != null">
+            AND t.extime >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND t.extime < #{endTime}
+        </if>
+        <if test="lastExtime != null and lastUuid != null">
+            AND (t.extime, t.uuid) < (#{lastExtime}, #{lastUuid})
+        </if>
+        ORDER BY t.extime DESC, t.uuid DESC
+        LIMIT #{pageSize}
+    </select>
+
+
+    <!-- ============================================================
+         6. 批量导出用的 Keyset 分页（一次查较大批量，比如 1000 条）
+         用于 Java 程序循环导出整个时间范围的数据
+         ============================================================ -->
+    <select id="selectSnapshotFlowForExport"
+            parameterType="java.util.Map"
+            resultMap="OdsRtSzdnSnapshotFlowAddcodeResult">
+        SELECT
+        <include refid="selectOdsRtSzdnSnapshotFlowAddcodeVo"/>
+        FROM ods_rt_szdn_snapshot_flow_addcode t
+        WHERE 1 = 1
+        <if test="gantrycode != null and gantrycode != ''">
+            AND t.gantrycode = #{gantrycode}
+        </if>
+        <if test="startTime != null">
+            AND t.snapshottime >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND t.snapshottime < #{endTime}
+        </if>
+        <if test="lastSnapshottime != null and lastBigId != null">
+            AND (t.snapshottime, t.big_id) > (#{lastSnapshottime}, #{lastBigId})
+        </if>
+        <!-- 导出用正序，从早到晚，避免漏数据 -->
+        ORDER BY t.snapshottime ASC, t.big_id ASC
+        LIMIT #{batchSize}
+    </select>
+
+</mapper>

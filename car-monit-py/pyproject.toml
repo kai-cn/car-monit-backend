@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "car-monit-py"
+version = "3.8.7"
+description = "Python 3.12 port of the car-monit-backend-new Java project (RuoYi-Vue 3.8.7 / Spring Boot 2.5.15)"
+requires-python = ">=3.12"
+readme = "README_PY.md"
+
+# Runtime dependencies. See requirements.txt for the pinned lock-step list.
+# Dependency groups mirror the Java module they replace:
+#   fastapi/uvicorn          <- spring-boot-starter-web
+#   pydantic/pydantic-settings <- spring-boot-starter-validation + @ConfigurationProperties
+#   SQLAlchemy/PyMySQL       <- mybatis-plus + mybatis (XML mappers) + druid
+#   redis                    <- spring-boot-starter-data-redis
+#   PyJWT                    <- jjwt
+#   python-multipart         <- commons-fileupload / MultipartFile
+#   orjson                   <- jackson-databind
+#   httpx                    <- forest-http client
+#   psutil                   <- oshi-core
+#   openpyxl                 <- poi-ooxml / easypoi
+#   Pillow                   <- kaptcha
+#   (quartz)                 <- org.quartz:2.3.2, re-implemented in app/quartz/util/
+#                               (scheduler.py + cron_expression.py) -- no third-party dep
+#   alembic                  <- (new) schema inspection only, NOT auto-migration
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+    "pydantic==2.10.4",
+    "pydantic-settings==2.7.0",
+    "SQLAlchemy==2.0.36",
+    "PyMySQL==1.1.1",
+    "redis==5.2.1",
+    "PyJWT==2.10.1",
+    "bcrypt==4.2.1",
+    "python-multipart==0.0.20",
+    "orjson==3.10.13",
+    "httpx==0.28.1",
+    "psutil==6.1.1",
+    "openpyxl==3.1.5",
+    "Pillow==11.1.0",
+    "PyYAML==6.0.2",
+    "alembic==1.14.0",
+    "user-agents==2.2.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest==8.3.4",
+    "pytest-mock==3.14.0",
+    "pytest-cov==6.0.0",
+]
+# Phase 4 middleware adapters. Kept optional so the core service can boot
+# while Kafka / Elasticsearch / MinIO are unreachable (as they are today).
+middleware = [
+    "confluent-kafka==2.6.1",
+    "elasticsearch==7.17.12",
+    "boto3==1.35.90",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
+# ``integration`` marks tests that talk to the real MySQL / Redis from
+# config/application.yml instead of fakes. They are collected by default and
+# skip themselves when either service is unreachable, so an offline run stays
+# green. Run them explicitly with:
+#   python -m pytest tests/integration -v -m integration
+markers = [
+    "integration: hits the real MySQL / Redis configured in config/application.yml",
+]

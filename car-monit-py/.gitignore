@@ -1,0 +1,32 @@
+# Migrated from: (Java project has no .gitignore rule for a Python module)
+# 对应 Java 侧的 target/ 忽略规则。
+
+# 虚拟环境 / virtualenv
+.venv/
+venv/
+env/
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# 运行时产物（对应 Java 的 /home/ruoyi/logs 与 ruoyi.profile 目录）
+logs/
+uploads/
+*.pid
+# 本地起服务时的临时重定向目标（内容是启动日志，不是源码）
+_py.log
+
+# 本地配置（含密码），只提交 .env.example
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/

@@ -1,0 +1,39 @@
+OK  accepted '0 0 2 * * ?'            -> True
+OK  accepted '0/10 * * * * ?'         -> True
+OK  accepted '0 0 2 ? * MON'          -> True
+OK  accepted '0 0 2 L * ?'            -> True
+OK  accepted '0 0 2 ? * 6L'           -> True
+OK  accepted '0 0 2 ? * 5#2'          -> True
+OK  accepted '0 0 2 15W * ?'          -> True
+OK  accepted '0 0 2 LW * ?'           -> True
+OK  accepted '0 0 2 * * ? 2027'       -> True
+OK  accepted '*/0 * * * * ?'          -> True
+OK  rejected '0 0 * * * *'            -> False (Support for specifying both a day-of-week AND a day-of-month parameter is not implemented.)
+OK  rejected '0 0 2 * * *'            -> False (Support for specifying both a day-of-week AND a day-of-month parameter is not implemented.)
+OK  rejected '0 0 2 * *'              -> False (Unexpected end of expression.)
+OK  rejected '0 0 25 * * ?'           -> False (Hour values must be between 0 and 23)
+OK  rejected '0 0 2 32 * ?'           -> False (Day of month values must be between 1 and 31)
+OK  rejected '60 0 2 * * ?'           -> False (Minute and Second values must be between 0 and 59)
+OK  rejected '0 0 2 * 13 ?'           -> False (Month values must be between 1 and 12)
+OK  rejected '0 0 2 * * 8'            -> False (Day-of-Week values must be between 1 and 7)
+OK  rejected 'bogus'                  -> False (Illegal characters for this position: 'BOG')
+OK  rejected '0 0 2 ? * ?'            -> False ('?' can only be specified for Day-of-Month -OR- Day-of-Week.)
+
+next executions @ 2026-10-29 11:16:04
+  '0 0 2 * * ?'          -> 2026-10-30 02:00:00
+  '0/10 * * * * ?'       -> 2026-10-29 11:16:10
+  '0 0 2 ? * MON'        -> 2026-11-02 02:00:00
+  '0 0 2 L * ?'          -> 2026-10-31 02:00:00
+  '0 0 2 ? * 6L'         -> 2026-10-30 02:00:00
+  '0 0 2 ? * 5#2'        -> 2026-11-12 02:00:00
+  '0 0 2 15W * ?'        -> 2026-11-16 02:00:00
+  '0 0 2 LW * ?'         -> 2026-10-30 02:00:00
+  '0 0 2 * * ? 2027'     -> 2027-01-01 02:00:00
+  '*/0 * * * * ?'        -> 2026-10-29 11:16:05
+  '0 0 2 ? * MON'        -> 2026-11-02 02:00:00
+  '0 0 1 1 * ?'          -> 2026-11-01 01:00:00
+  '0 0 2 * * MON'        -> EXC ValueError: Support for specifying both a day-of-week AND a day-of-month parameter is not implemented.
+
+null -> ValueError : cronExpression cannot be null
+
+FAILURES = 0
