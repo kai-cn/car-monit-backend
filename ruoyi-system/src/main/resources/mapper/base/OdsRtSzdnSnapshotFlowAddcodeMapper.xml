@@ -173,4 +173,218 @@
             #{bigId}
         </foreach>
     </update>
+
+    <select id="selectShardingList" resultMap="OdsRtSzdnSnapshotFlowAddcodeResult">
+        SELECT
+        <include refid="selectOdsRtSzdnSnapshotFlowAddcodeVo"/>
+        FROM ${tableName} t
+        WHERE 1=1
+        <if test="odsRtSzdnSnapshotFlowAddcode.bigId != null  and odsRtSzdnSnapshotFlowAddcode.bigId != ''"> and t.big_id = #{odsRtSzdnSnapshotFlowAddcode.bigId}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.datasource != null  and odsRtSzdnSnapshotFlowAddcode.datasource != ''"> and t.datasource = #{odsRtSzdnSnapshotFlowAddcode.datasource}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.cameratype != null  and odsRtSzdnSnapshotFlowAddcode.cameratype != ''"> and t.cameratype = #{odsRtSzdnSnapshotFlowAddcode.cameratype}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.deviceid != null  and odsRtSzdnSnapshotFlowAddcode.deviceid != ''"> and t.deviceid = #{odsRtSzdnSnapshotFlowAddcode.deviceid}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.gantrycode != null  and odsRtSzdnSnapshotFlowAddcode.gantrycode != ''"> and t.gantrycode = #{odsRtSzdnSnapshotFlowAddcode.gantrycode}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.gantryname != null  and odsRtSzdnSnapshotFlowAddcode.gantryname != ''"> and t.gantryname like concat('%', #{odsRtSzdnSnapshotFlowAddcode.gantryname}, '%')</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.roadcode != null  and odsRtSzdnSnapshotFlowAddcode.roadcode != ''"> and t.roadcode = #{odsRtSzdnSnapshotFlowAddcode.roadcode}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.roadname != null  and odsRtSzdnSnapshotFlowAddcode.roadname != ''"> and t.roadname like concat('%', #{odsRtSzdnSnapshotFlowAddcode.roadname}, '%')</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.sectioncode != null  and odsRtSzdnSnapshotFlowAddcode.sectioncode != ''"> and t.sectioncode = #{odsRtSzdnSnapshotFlowAddcode.sectioncode}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.sectionname != null  and odsRtSzdnSnapshotFlowAddcode.sectionname != ''"> and t.sectionname like concat('%', #{odsRtSzdnSnapshotFlowAddcode.sectionname}, '%')</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.tollcode != null  and odsRtSzdnSnapshotFlowAddcode.tollcode != ''"> and t.tollcode = #{odsRtSzdnSnapshotFlowAddcode.tollcode}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.tollname != null  and odsRtSzdnSnapshotFlowAddcode.tollname != ''"> and t.tollname like concat('%', #{odsRtSzdnSnapshotFlowAddcode.tollname}, '%')</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.orgcode != null  and odsRtSzdnSnapshotFlowAddcode.orgcode != ''"> and t.orgcode = #{odsRtSzdnSnapshotFlowAddcode.orgcode}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.orgname != null  and odsRtSzdnSnapshotFlowAddcode.orgname != ''"> and t.orgname like concat('%', #{odsRtSzdnSnapshotFlowAddcode.orgname}, '%')</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.direction != null "> and t.direction = #{odsRtSzdnSnapshotFlowAddcode.direction}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.platenumber != null  and odsRtSzdnSnapshotFlowAddcode.platenumber != ''"> and t.platenumber = #{odsRtSzdnSnapshotFlowAddcode.platenumber}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.platecolor != null  and odsRtSzdnSnapshotFlowAddcode.platecolor != ''"> and t.platecolor = #{odsRtSzdnSnapshotFlowAddcode.platecolor}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.cartype != null  and odsRtSzdnSnapshotFlowAddcode.cartype != ''"> and t.cartype = #{odsRtSzdnSnapshotFlowAddcode.cartype}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.applyTime1 != null  and odsRtSzdnSnapshotFlowAddcode.applyTime1 != ''"> and t.snapshottime &gt;= #{odsRtSzdnSnapshotFlowAddcode.applyTime1}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.applyTime2 != null  and odsRtSzdnSnapshotFlowAddcode.applyTime2 != ''"> and t.snapshottime &lt;= #{odsRtSzdnSnapshotFlowAddcode.applyTime2}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.sectionCodeStr != null  and odsRtSzdnSnapshotFlowAddcode.sectionCodeStr != ''"> and find_in_set(t.sectioncode, #{odsRtSzdnSnapshotFlowAddcode.sectionCodeStr})</if>
+        ORDER BY t.snapshottime DESC
+        <if test="odsRtSzdnSnapshotFlowAddcode.pageNum != null and odsRtSzdnSnapshotFlowAddcode.pageSize != null">
+            LIMIT #{offset}, #{odsRtSzdnSnapshotFlowAddcode.pageSize}
+        </if>
+    </select>
+
+    <select id="selectShardingCount" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM ${tableName} t
+        WHERE 1=1
+        <if test="odsRtSzdnSnapshotFlowAddcode.bigId != null  and odsRtSzdnSnapshotFlowAddcode.bigId != ''"> and t.big_id = #{odsRtSzdnSnapshotFlowAddcode.bigId}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.datasource != null  and odsRtSzdnSnapshotFlowAddcode.datasource != ''"> and t.datasource = #{odsRtSzdnSnapshotFlowAddcode.datasource}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.cameratype != null  and odsRtSzdnSnapshotFlowAddcode.cameratype != ''"> and t.cameratype = #{odsRtSzdnSnapshotFlowAddcode.cameratype}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.deviceid != null  and odsRtSzdnSnapshotFlowAddcode.deviceid != ''"> and t.deviceid = #{odsRtSzdnSnapshotFlowAddcode.deviceid}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.gantrycode != null  and odsRtSzdnSnapshotFlowAddcode.gantrycode != ''"> and t.gantrycode = #{odsRtSzdnSnapshotFlowAddcode.gantrycode}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.gantryname != null  and odsRtSzdnSnapshotFlowAddcode.gantryname != ''"> and t.gantryname like concat('%', #{odsRtSzdnSnapshotFlowAddcode.gantryname}, '%')</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.roadcode != null  and odsRtSzdnSnapshotFlowAddcode.roadcode != ''"> and t.roadcode = #{odsRtSzdnSnapshotFlowAddcode.roadcode}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.roadname != null  and odsRtSzdnSnapshotFlowAddcode.roadname != ''"> and t.roadname like concat('%', #{odsRtSzdnSnapshotFlowAddcode.roadname}, '%')</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.sectioncode != null  and odsRtSzdnSnapshotFlowAddcode.sectioncode != ''"> and t.sectioncode = #{odsRtSzdnSnapshotFlowAddcode.sectioncode}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.sectionname != null  and odsRtSzdnSnapshotFlowAddcode.sectionname != ''"> and t.sectionname like concat('%', #{odsRtSzdnSnapshotFlowAddcode.sectionname}, '%')</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.tollcode != null  and odsRtSzdnSnapshotFlowAddcode.tollcode != ''"> and t.tollcode = #{odsRtSzdnSnapshotFlowAddcode.tollcode}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.tollname != null  and odsRtSzdnSnapshotFlowAddcode.tollname != ''"> and t.tollname like concat('%', #{odsRtSzdnSnapshotFlowAddcode.tollname}, '%')</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.orgcode != null  and odsRtSzdnSnapshotFlowAddcode.orgcode != ''"> and t.orgcode = #{odsRtSzdnSnapshotFlowAddcode.orgcode}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.orgname != null  and odsRtSzdnSnapshotFlowAddcode.orgname != ''"> and t.orgname like concat('%', #{odsRtSzdnSnapshotFlowAddcode.orgname}, '%')</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.direction != null "> and t.direction = #{odsRtSzdnSnapshotFlowAddcode.direction}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.platenumber != null  and odsRtSzdnSnapshotFlowAddcode.platenumber != ''"> and t.platenumber = #{odsRtSzdnSnapshotFlowAddcode.platenumber}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.platecolor != null  and odsRtSzdnSnapshotFlowAddcode.platecolor != ''"> and t.platecolor = #{odsRtSzdnSnapshotFlowAddcode.platecolor}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.cartype != null  and odsRtSzdnSnapshotFlowAddcode.cartype != ''"> and t.cartype = #{odsRtSzdnSnapshotFlowAddcode.cartype}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.applyTime1 != null  and odsRtSzdnSnapshotFlowAddcode.applyTime1 != ''"> and t.snapshottime &gt;= #{odsRtSzdnSnapshotFlowAddcode.applyTime1}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.applyTime2 != null  and odsRtSzdnSnapshotFlowAddcode.applyTime2 != ''"> and t.snapshottime &lt;= #{odsRtSzdnSnapshotFlowAddcode.applyTime2}</if>
+        <if test="odsRtSzdnSnapshotFlowAddcode.sectionCodeStr != null  and odsRtSzdnSnapshotFlowAddcode.sectionCodeStr != ''"> and find_in_set(t.sectioncode, #{odsRtSzdnSnapshotFlowAddcode.sectionCodeStr})</if>
+    </select>
+
+    <select id="checkTableExists" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = #{tableName}
+    </select>
+
+    <update id="createShardingTable">
+        CREATE TABLE IF NOT EXISTS ${tableName} LIKE ods_rt_szdn_snapshot_flow_addcode
+    </update>
+
+    <select id="getTableApproximateCount" resultType="java.lang.Long">
+        SELECT TABLE_ROWS
+        FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = #{tableName}
+    </select>
+
+    <select id="selectFromTable" resultMap="OdsRtSzdnSnapshotFlowAddcodeResult">
+        SELECT
+        <include refid="selectOdsRtSzdnSnapshotFlowAddcodeVo"/>
+        FROM ${tableName} t
+        WHERE 1=1
+        <if test="query.bigId != null and query.bigId != ''"> and t.big_id = #{query.bigId}</if>
+        <if test="query.platenumber != null and query.platenumber != ''"> and t.platenumber = #{query.platenumber}</if>
+        <if test="query.sectioncode != null and query.sectioncode != ''"> and t.sectioncode = #{query.sectioncode}</if>
+        <if test="query.gantrycode != null and query.gantrycode != ''"> and t.gantrycode = #{query.gantrycode}</if>
+        <if test="query.snapshottime != null"> and t.snapshottime &gt;= #{query.snapshottime}</if>
+        <if test="query.applyTime2 != null and query.applyTime2 != ''"> and t.snapshottime &lt; #{query.applyTime2}</if>
+        <if test="query.orgcode != null and query.orgcode != ''"> and t.orgcode = #{query.orgcode}</if>
+        ORDER BY t.snapshottime DESC
+    </select>
+
+    <select id="selectFromView" resultMap="OdsRtSzdnSnapshotFlowAddcodeResult">
+        SELECT
+        <include refid="selectOdsRtSzdnSnapshotFlowAddcodeVo"/>
+        FROM ods_rt_szdn_snapshot_flow_view t
+        WHERE 1=1
+        <if test="bigId != null and bigId != ''"> and t.big_id = #{bigId}</if>
+        <if test="platenumber != null and platenumber != ''"> and t.platenumber = #{platenumber}</if>
+        <if test="sectioncode != null and sectioncode != ''"> and t.sectioncode = #{sectioncode}</if>
+        <if test="gantrycode != null and gantrycode != ''"> and t.gantrycode = #{gantrycode}</if>
+        <if test="snapshottime != null"> and t.snapshottime &gt;= #{snapshottime}</if>
+        <if test="applyTime2 != null and applyTime2 != ''"> and t.snapshottime &lt; #{applyTime2}</if>
+        <if test="orgcode != null and orgcode != ''"> and t.orgcode = #{orgcode}</if>
+        ORDER BY t.snapshottime DESC
+    </select>
+
+    <select id="statisticsTable" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as totalCount,
+            sectioncode as sectionCode,
+            COUNT(CASE WHEN sectioncode IS NOT NULL THEN 1 END) as sectionCount
+        FROM ${tableName} t
+        WHERE 1=1
+        <if test="query.platenumber != null and query.platenumber != ''"> and t.platenumber = #{query.platenumber}</if>
+        <if test="query.snapshottime != null"> and t.snapshottime &gt;= #{query.snapshottime}</if>
+        <if test="query.applyTime2 != null and query.applyTime2 != ''"> and t.snapshottime &lt; #{query.applyTime2}</if>
+        GROUP BY sectioncode WITH ROLLUP
+    </select>
+
+    <select id="listShardingTables" resultType="java.lang.String">
+        SELECT TABLE_NAME
+        FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME LIKE CONCAT(#{tablePrefix}, '%')
+        ORDER BY TABLE_NAME DESC
+    </select>
+
+    <!-- 查询指定表中的最大snapshottime（用于增量同步） -->
+    <select id="getMaxSnapshottime" resultType="java.util.Date">
+        SELECT MAX(t.snapshottime)
+        FROM ${tableName} t
+    </select>
+
+    <!-- 批量插入数据到指定分表 -->
+    <insert id="insertBatchToTable">
+        INSERT INTO ${tableName}
+        (big_id, lon, lat, deviceip, siteid, laneid, snapshottimeunix, snapshottime,
+         receivedtimeunix, receivedtime, platenumber, platecolor, platecolorcode,
+         platetype, platetypecode, plateconfidence, carbrand, carcolor, carcolorcode,
+         cartype, cartypecode, cardirection, snappicturepath, smallpicturepath,
+         plategnssstatus, gpsinfo, deviceid, devicename, devicetype, gantrycode,
+         gantryname, roadcode, roadname, sectioncode, sectionname, tollcode, tollname,
+         orgcode, orgname, direction, datasource, carclass, gantryid, smallsideimage,
+         headimageheight, sidescenetypecode, sidescenetype, tailimagewidth, envstate,
+         headscenetypecode, headscenetype, sidedrivingdirectioncode, sidedrivingdirection,
+         sideimageheight, speed, tailplateimage, headdrivingdirectioncode,
+         headdrivingdirection, laneidcode, carlength, imagelevel, cameratype)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.bigId}, #{item.lon}, #{item.lat}, #{item.deviceip}, #{item.siteid},
+             #{item.laneid}, #{item.snapshottimeunix}, #{item.snapshottime},
+             #{item.receivedtimeunix}, #{item.receivedtime}, #{item.platenumber},
+             #{item.platecolor}, #{item.platecolorcode}, #{item.platetype},
+             #{item.platetypecode}, #{item.plateconfidence}, #{item.carbrand},
+             #{item.carcolor}, #{item.carcolorcode}, #{item.cartype},
+             #{item.cartypecode}, #{item.cardirection}, #{item.snappicturepath},
+             #{item.smallpicturepath}, #{item.plategnssstatus}, #{item.gpsinfo},
+             #{item.deviceid}, #{item.devicename}, #{item.devicetype}, #{item.gantrycode},
+             #{item.gantryname}, #{item.roadcode}, #{item.roadname}, #{item.sectioncode},
+             #{item.sectionname}, #{item.tollcode}, #{item.tollname}, #{item.orgcode},
+             #{item.orgname}, #{item.direction}, #{item.datasource}, #{item.carclass},
+             #{item.gantryid}, #{item.smallsideimage}, #{item.headimageheight},
+             #{item.sidescenetypecode}, #{item.sidescenetype}, #{item.tailimagewidth},
+             #{item.envstate}, #{item.headscenetypecode}, #{item.headscenetype},
+             #{item.sidedrivingdirectioncode}, #{item.sidedrivingdirection},
+             #{item.sideimageheight}, #{item.speed}, #{item.tailplateimage},
+             #{item.headdrivingdirectioncode}, #{item.headdrivingdirection},
+             #{item.laneidcode}, #{item.carlength}, #{item.imagelevel}, #{item.cameratype})
+        </foreach>
+    </insert>
+    <insert id="insertToTable">
+        INSERT INTO ${tableName}
+        (big_id, lon, lat, deviceip, siteid, laneid, snapshottimeunix, snapshottime,
+        receivedtimeunix, receivedtime, platenumber, platecolor, platecolorcode,
+        platetype, platetypecode, plateconfidence, carbrand, carcolor, carcolorcode,
+        cartype, cartypecode, cardirection, snappicturepath, smallpicturepath,
+        plategnssstatus, gpsinfo, deviceid, devicename, devicetype, gantrycode,
+        gantryname, roadcode, roadname, sectioncode, sectionname, tollcode, tollname,
+        orgcode, orgname, direction, datasource, carclass, gantryid, smallsideimage,
+        headimageheight, sidescenetypecode, sidescenetype, tailimagewidth, envstate,
+        headscenetypecode, headscenetype, sidedrivingdirectioncode, sidedrivingdirection,
+        sideimageheight, speed, tailplateimage, headdrivingdirectioncode,
+        headdrivingdirection, laneidcode, carlength, imagelevel, cameratype)
+        VALUES
+        (#{item.bigId}, #{item.lon}, #{item.lat}, #{item.deviceip}, #{item.siteid},
+        #{item.laneid}, #{item.snapshottimeunix}, #{item.snapshottime},
+        #{item.receivedtimeunix}, #{item.receivedtime}, #{item.platenumber},
+        #{item.platecolor}, #{item.platecolorcode}, #{item.platetype},
+        #{item.platetypecode}, #{item.plateconfidence}, #{item.carbrand},
+        #{item.carcolor}, #{item.carcolorcode}, #{item.cartype},
+        #{item.cartypecode}, #{item.cardirection}, #{item.snappicturepath},
+        #{item.smallpicturepath}, #{item.plategnssstatus}, #{item.gpsinfo},
+        #{item.deviceid}, #{item.devicename}, #{item.devicetype}, #{item.gantrycode},
+        #{item.gantryname}, #{item.roadcode}, #{item.roadname}, #{item.sectioncode},
+        #{item.sectionname}, #{item.tollcode}, #{item.tollname}, #{item.orgcode},
+        #{item.orgname}, #{item.direction}, #{item.datasource}, #{item.carclass},
+        #{item.gantryid}, #{item.smallsideimage}, #{item.headimageheight},
+        #{item.sidescenetypecode}, #{item.sidescenetype}, #{item.tailimagewidth},
+        #{item.envstate}, #{item.headscenetypecode}, #{item.headscenetype},
+        #{item.sidedrivingdirectioncode}, #{item.sidedrivingdirection},
+        #{item.sideimageheight}, #{item.speed}, #{item.tailplateimage},
+        #{item.headdrivingdirectioncode}, #{item.headdrivingdirection},
+        #{item.laneidcode}, #{item.carlength}, #{item.imagelevel}, #{item.cameratype})
+    </insert>
+
+    <!-- 根据ID从指定表查询单条数据 -->
+    <select id="selectFromTableById" resultMap="OdsRtSzdnSnapshotFlowAddcodeResult">
+        SELECT <include refid="selectOdsRtSzdnSnapshotFlowAddcodeVo" />
+        FROM ${tableName}
+        WHERE big_id = #{bigId}
+        LIMIT 1
+    </select>
 </mapper>

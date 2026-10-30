@@ -16,7 +16,7 @@ ruoyi:
 # 开发环境配置
 server:
   # 服务器的HTTP端口，默认为8080
-  port: 9999
+  port: 9989
   servlet:
     # 应用的访问路径
     context-path: /
@@ -36,6 +36,25 @@ logging:
   level:
     com.ruoyi: debug
     org.springframework: warn
+
+# ========================================
+# 监控组件配置（链路追踪、慢请求、告警）
+# ========================================
+monitor:
+  # 监控开关（true=启用，false=关闭所有监控功能）
+  enabled: true
+  # 慢请求阈值（毫秒），超过此值的请求会被标记为慢请求
+  slow-request-threshold: 3000
+  # 慢方法阈值（毫秒），超过此值的方法调用会被记录
+  slow-method-threshold: 500
+  # 慢SQL阈值（毫秒），超过此值的SQL会被记录并告警
+  slow-sql-threshold: 1000
+  # TraceId请求头名称（微服务间传递用）
+  trace-id-header: X-Trace-Id
+  # 告警窗口大小（毫秒），在此窗口内同类告警只通知一次
+  alert-window-ms: 60000
+  # 告警阈值（窗口内允许的最大告警数）
+  alert-max-count: 5
 
 # 用户配置
 user:
@@ -68,13 +87,14 @@ spring:
   # redis 配置
   redis:
     # 地址
-    host: 172.30.100.102
+#    host: 172.30.100.102
+    host: 127.0.0.1
     # 端口，默认为6379
     port: 6379
     # 数据库索引
     database: 0
     # 密码
-    password: redis321
+#    password: redis321
     # 连接超时时间
     timeout: 10s
     lettuce:
@@ -185,3 +205,57 @@ tx-service-url: https://apis.map.qq.com
 
 #路网路径
 roadPathUrl: http://36.200.30.117:8080
+
+# Kafka配置（生产级优化版）
+kafka:
+  bootstrap-servers: 127.0.0.1:9092
+  
+  # 主题配置
+  topic:
+    snapshot-flow: ods-rt-szdn-snapshot-flow
+    snapshot-flow-dlq: ods-rt-szdn-snapshot-flow-dlq
+  
+  consumer:
+    group-id: snapshot-flow-consumer-group
+    enable-auto-commit: false
+    auto-offset-reset: earliest
+    key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    
+    # 生产级优化配置（针对300G历史数据）
+    max-poll-records: 500
+    max-poll-interval-ms: 300000
+    fetch-max-bytes: 52428800
+    session-timeout-ms: 60000
+  
+  producer:
+    key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    acks: all
+    retries: 3
+  
+  listener:
+    ack-mode: manual_immediate
+    concurrency: 3
+
+# Elasticsearch配置
+elasticsearch:
+  host: 127.0.0.1
+  port: 9200
+  index:
+    snapshot-flow
+
+# 幂等性配置
+idempotent:
+  redis:
+    prefix: snapshot:flow:idempotent_
+    expire-time: 86400
+
+# 快照流分表配置
+snapshot:
+  flow:
+    sharding:
+      enabled: true
+      table-prefix: ods_rt_szdn_snapshot_flow_
+      sharding-field: snapshottime
+      sharding-type: month
