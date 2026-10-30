@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ruoyi.base.mapper.ShardingSnapshotFlowMapper">
+
+    <!-- 逻辑表名（ShardingSphere会自动路由到对应分表） -->
+    <sql id="tableName">ods_rt_szdn_snapshot_flow</sql>
+
+    <!-- 基础字段列表 -->
+    <sql id="baseColumns">
+        big_id, lon, lat, deviceip, siteid, laneid, snapshottimeunix, snapshottime, 
+        receivedtimeunix, receivedtime, platenumber, platecolor, platecolorcode, 
+        platetype, platetypecode, plateconfidence, carbrand, carcolor, carcolorcode, 
+        cartype, cartypecode, cardirection, snappicturepath, smallpicturepath, 
+        plategnssstatus, gpsinfo, deviceid, devicename, devicetype, gantrycode, 
+        gantryname, roadcode, roadname, sectioncode, sectionname, tollcode, tollname, 
+        orgcode, orgname, direction, datasource, carclass, gantryid, smallsideimage, 
+        headimageheight, sidescenetypecode, sidescenetype, tailimagewidth, envstate, 
+        headscenetypecode, headscenetype, sidedrivingdirectioncode, sidedrivingdirection, 
+        sideimageheight, speed, tailplateimage, headdrivingdirectioncode, 
+        headdrivingdirection, laneidcode, carlength, imagelevel, cameratype
+    </sql>
+
+    <!-- 插入数据（ShardingSphere自动路由） -->
+    <insert id="insert" parameterType="com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode">
+        INSERT INTO <include refid="tableName" />
+        (<include refid="baseColumns" />)
+        VALUES
+        (
+            #{bigId}, #{lon}, #{lat}, #{deviceip}, #{siteid}, #{laneid}, 
+            #{snapshottimeunix}, #{snapshottime}, #{receivedtimeunix}, #{receivedtime}, 
+            #{platenumber}, #{platecolor}, #{platecolorcode}, #{platetype}, #{platetypecode}, 
+            #{plateconfidence}, #{carbrand}, #{carcolor}, #{carcolorcode}, #{cartype}, 
+            #{cartypecode}, #{cardirection}, #{snappicturepath}, #{smallpicturepath}, 
+            #{plategnssstatus}, #{gpsinfo}, #{deviceid}, #{devicename}, #{devicetype}, 
+            #{gantrycode}, #{gantryname}, #{roadcode}, #{roadname}, #{sectioncode}, 
+            #{sectionname}, #{tollcode}, #{tollname}, #{orgcode}, #{orgname}, #{direction}, 
+            #{datasource}, #{carclass}, #{gantryid}, #{smallsideimage}, #{headimageheight}, 
+            #{sidescenetypecode}, #{sidescenetype}, #{tailimagewidth}, #{envstate}, 
+            #{headscenetypecode}, #{headscenetype}, #{sidedrivingdirectioncode}, 
+            #{sidedrivingdirection}, #{sideimageheight}, #{speed}, #{tailplateimage}, 
+            #{headdrivingdirectioncode}, #{headdrivingdirection}, #{laneidcode}, 
+            #{carlength}, #{imagelevel}, #{cameratype}
+        )
+    </insert>
+
+    <!-- 批量插入数据 -->
+    <insert id="batchInsert">
+        INSERT INTO <include refid="tableName" />
+        (<include refid="baseColumns" />)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.bigId}, #{item.lon}, #{item.lat}, #{item.deviceip}, #{item.siteid}, 
+                #{item.laneid}, #{item.snapshottimeunix}, #{item.snapshottime}, 
+                #{item.receivedtimeunix}, #{item.receivedtime}, #{item.platenumber}, 
+                #{item.platecolor}, #{item.platecolorcode}, #{item.platetype}, 
+                #{item.platetypecode}, #{item.plateconfidence}, #{item.carbrand}, 
+                #{item.carcolor}, #{item.carcolorcode}, #{item.cartype}, #{item.cartypecode}, 
+                #{item.cardirection}, #{item.snappicturepath}, #{item.smallpicturepath}, 
+                #{item.plategnssstatus}, #{item.gpsinfo}, #{item.deviceid}, #{item.devicename}, 
+                #{item.devicetype}, #{item.gantrycode}, #{item.gantryname}, #{item.roadcode}, 
+                #{item.roadname}, #{item.sectioncode}, #{item.sectionname}, #{item.tollcode}, 
+                #{item.tollname}, #{item.orgcode}, #{item.orgname}, #{item.direction}, 
+                #{item.datasource}, #{item.carclass}, #{item.gantryid}, #{item.smallsideimage}, 
+                #{item.headimageheight}, #{item.sidescenetypecode}, #{item.sidescenetype}, 
+                #{item.tailimagewidth}, #{item.envstate}, #{item.headscenetypecode}, 
+                #{item.headscenetype}, #{item.sidedrivingdirectioncode}, 
+                #{item.sidedrivingdirection}, #{item.sideimageheight}, #{item.speed}, 
+                #{item.tailplateimage}, #{item.headdrivingdirectioncode}, 
+                #{item.headdrivingdirection}, #{item.laneidcode}, #{item.carlength}, 
+                #{item.imagelevel}, #{item.cameratype}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultType="com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode">
+        SELECT <include refid="baseColumns" />
+        FROM <include refid="tableName" />
+        WHERE big_id = #{bigId}
+    </select>
+
+    <!-- 根据时间范围查询（跨分表查询） -->
+    <select id="selectByTimeRange" resultType="com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode">
+        SELECT <include refid="baseColumns" />
+        FROM <include refid="tableName" />
+        WHERE snapshottime BETWEEN #{startTime} AND #{endTime}
+        ORDER BY snapshottime DESC
+    </select>
+
+    <!-- 分页查询 -->
+    <select id="selectByTimeRangeWithPage" resultType="com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode">
+        SELECT <include refid="baseColumns" />
+        FROM <include refid="tableName" />
+        WHERE snapshottime BETWEEN #{startTime} AND #{endTime}
+        ORDER BY snapshottime DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计记录数 -->
+    <select id="countByTimeRange" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM <include refid="tableName" />
+        WHERE snapshottime BETWEEN #{startTime} AND #{endTime}
+    </select>
+
+    <!-- 更新数据 -->
+    <update id="updateById" parameterType="com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode">
+        UPDATE <include refid="tableName" />
+        SET 
+            lon = #{lon}, lat = #{lat}, deviceip = #{deviceip}, siteid = #{siteid}, 
+            laneid = #{laneid}, snapshottimeunix = #{snapshottimeunix}, 
+            snapshottime = #{snapshottime}, receivedtimeunix = #{receivedtimeunix}, 
+            receivedtime = #{receivedtime}, platenumber = #{platenumber}, 
+            platecolor = #{platecolor}, platecolorcode = #{platecolorcode}, 
+            platetype = #{platetype}, platetypecode = #{platetypecode}, 
+            plateconfidence = #{plateconfidence}, carbrand = #{carbrand}, 
+            carcolor = #{carcolor}, carcolorcode = #{carcolorcode}, 
+            cartype = #{cartype}, cartypecode = #{cartypecode}, 
+            cardirection = #{cardirection}, snappicturepath = #{snappicturepath}, 
+            smallpicturepath = #{smallpicturepath}, plategnssstatus = #{plategnssstatus}, 
+            gpsinfo = #{gpsinfo}, deviceid = #{deviceid}, devicename = #{devicename}, 
+            devicetype = #{devicetype}, gantrycode = #{gantrycode}, 
+            gantryname = #{gantryname}, roadcode = #{roadcode}, 
+            roadname = #{roadname}, sectioncode = #{sectioncode}, 
+            sectionname = #{sectionname}, tollcode = #{tollcode}, 
+            tollname = #{tollname}, orgcode = #{orgcode}, orgname = #{orgname}, 
+            direction = #{direction}, datasource = #{datasource}, 
+            carclass = #{carclass}, gantryid = #{gantryid}, 
+            smallsideimage = #{smallsideimage}, headimageheight = #{headimageheight}, 
+            sidescenetypecode = #{sidescenetypecode}, sidescenetype = #{sidescenetype}, 
+            tailimagewidth = #{tailimagewidth}, envstate = #{envstate}, 
+            headscenetypecode = #{headscenetypecode}, headscenetype = #{headscenetype}, 
+            sidedrivingdirectioncode = #{sidedrivingdirectioncode}, 
+            sidedrivingdirection = #{sidedrivingdirection}, 
+            sideimageheight = #{sideimageheight}, speed = #{speed}, 
+            tailplateimage = #{tailplateimage}, headdrivingdirectioncode = #{headdrivingdirectioncode}, 
+            headdrivingdirection = #{headdrivingdirection}, laneidcode = #{laneidcode}, 
+            carlength = #{carlength}, imagelevel = #{imagelevel}, cameratype = #{cameratype}
+        WHERE big_id = #{bigId}
+    </update>
+
+    <!-- 删除数据 -->
+    <delete id="deleteById">
+        DELETE FROM <include refid="tableName" />
+        WHERE big_id = #{bigId}
+    </delete>
+
+    <!-- 多条件查询 -->
+    <select id="selectByCondition" resultType="com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode">
+        SELECT <include refid="baseColumns" />
+        FROM <include refid="tableName" />
+        WHERE 1=1
+        <if test="platenumber != null and platenumber != ''">
+            AND platenumber LIKE CONCAT('%', #{platenumber}, '%')
+        </if>
+        <if test="deviceid != null and deviceid != ''">
+            AND deviceid = #{deviceid}
+        </if>
+        <if test="gantrycode != null and gantrycode != ''">
+            AND gantrycode = #{gantrycode}
+        </if>
+        <if test="direction != null">
+            AND direction = #{direction}
+        </if>
+        <if test="snapshottime != null">
+            AND snapshottime >= #{snapshottime}
+        </if>
+        ORDER BY snapshottime DESC
+    </select>
+
+    <!-- 多条件分页查询 -->
+    <select id="selectByConditionWithPage" resultType="com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode">
+        SELECT <include refid="baseColumns" />
+        FROM <include refid="tableName" />
+        WHERE 1=1
+        <if test="record.platenumber != null and record.platenumber != ''">
+            AND platenumber LIKE CONCAT('%', #{record.platenumber}, '%')
+        </if>
+        <if test="record.deviceid != null and record.deviceid != ''">
+            AND deviceid = #{record.deviceid}
+        </if>
+        <if test="record.gantrycode != null and record.gantrycode != ''">
+            AND gantrycode = #{record.gantrycode}
+        </if>
+        <if test="record.direction != null">
+            AND direction = #{record.direction}
+        </if>
+        <if test="record.snapshottime != null">
+            AND snapshottime >= #{record.snapshottime}
+        </if>
+        ORDER BY snapshottime DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 多条件统计 -->
+    <select id="countByCondition" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM <include refid="tableName" />
+        WHERE 1=1
+        <if test="platenumber != null and platenumber != ''">
+            AND platenumber LIKE CONCAT('%', #{platenumber}, '%')
+        </if>
+        <if test="deviceid != null and deviceid != ''">
+            AND deviceid = #{deviceid}
+        </if>
+        <if test="gantrycode != null and gantrycode != ''">
+            AND gantrycode = #{gantrycode}
+        </if>
+        <if test="direction != null">
+            AND direction = #{direction}
+        </if>
+        <if test="snapshottime != null">
+            AND snapshottime >= #{snapshottime}
+        </if>
+    </select>
+
+</mapper>

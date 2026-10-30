@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ruoyi.base.mapper.SnapshotFlowMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode">
+        <id column="big_id" property="bigId" />
+        <result column="lon" property="lon" />
+        <result column="lat" property="lat" />
+        <result column="snapshottime" property="snapshottime" />
+        <result column="platenumber" property="platenumber" />
+        <result column="platecolor" property="platecolor" />
+        <result column="deviceid" property="deviceid" />
+        <result column="cartype" property="cartype" />
+        <result column="direction" property="direction" />
+    </resultMap>
+
+    <!-- 1. 根据ID查询（使用分区提示）-->
+    <!-- 【原理】使用MySQL分区提示 /*+ PARTITION(xxx) */ 强制只扫描指定分区 -->
+    <select id="selectByIdWithPartition" resultMap="BaseResultMap">
+        SELECT /*+ PARTITION(${partition}) */ * 
+        FROM ods_rt_szdn_snapshot_flow_addcode 
+        WHERE big_id = #{bigId} 
+          AND snapshottime = #{snapshottime}
+    </select>
+
+    <!-- 2. 根据ID和时间范围查询（降级查询） -->
+    <!-- 【原理】使用时间范围缩小扫描范围，MySQL会自动进行分区裁剪 -->
+    <select id="selectByIdWithTimeRange" resultMap="BaseResultMap">
+        SELECT * 
+        FROM ods_rt_szdn_snapshot_flow_addcode 
+        WHERE big_id = #{bigId} 
+          AND snapshottime BETWEEN #{startTime} AND #{endTime}
+    </select>
+
+    <!-- 3. 根据ID查询（全表扫描，最坏情况） -->
+    <!-- 【注意】只有在无法确定分区时才使用，性能较差 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * 
+        FROM ods_rt_szdn_snapshot_flow_addcode 
+        WHERE big_id = #{bigId}
+    </select>
+
+    <!-- 4. 查询指定分区的数据 -->
+    <!-- 【原理】使用分区提示直接查询指定分区，避免扫描其他分区 -->
+    <select id="queryByPartition" resultMap="BaseResultMap">
+        SELECT /*+ PARTITION(${partition}) */ * 
+        FROM ods_rt_szdn_snapshot_flow_addcode 
+        WHERE snapshottime BETWEEN #{startTime} AND #{endTime}
+        ORDER BY snapshottime ASC
+    </select>
+
+    <!-- 5. 查询指定分区的数据（带偏移量） -->
+    <!-- 【使用场景】跨分区分页查询时，从指定偏移量开始获取数据 -->
+    <select id="queryByPartitionWithOffset" resultMap="BaseResultMap">
+        SELECT /*+ PARTITION(${partition}) */ * 
+        FROM ods_rt_szdn_snapshot_flow_addcode 
+        WHERE snapshottime BETWEEN #{startTime} AND #{endTime}
+        ORDER BY snapshottime ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 6. 统计指定分区的记录数 -->
+    <!-- 【原理】使用分区提示只统计指定分区的记录数 -->
+    <select id="countByPartition" resultType="java.lang.Long">
+        SELECT /*+ PARTITION(${partition}) */ COUNT(*) 
+        FROM ods_rt_szdn_snapshot_flow_addcode 
+        WHERE snapshottime BETWEEN #{startTime} AND #{endTime}
+    </select>
+
+    <!-- 7. 根据时间范围查询（自动分区裁剪） -->
+    <!-- 【原理】MySQL会根据WHERE条件自动进行分区裁剪，只扫描相关分区 -->
+    <select id="selectByTimeRange" resultMap="BaseResultMap">
+        SELECT * 
+        FROM ods_rt_szdn_snapshot_flow_addcode 
+        WHERE snapshottime BETWEEN #{startTime} AND #{endTime}
+        ORDER BY snapshottime ASC
+    </select>
+
+    <!-- 8. 根据时间范围分页查询 -->
+    <select id="selectByTimeRangeWithPage" resultMap="BaseResultMap">
+        SELECT * 
+        FROM ods_rt_szdn_snapshot_flow_addcode 
+        WHERE snapshottime BETWEEN #{startTime} AND #{endTime}
+        ORDER BY snapshottime ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 9. 统计时间范围内的记录数 -->
+    <select id="countByTimeRange" resultType="java.lang.Long">
+        SELECT COUNT(*) 
+        FROM ods_rt_szdn_snapshot_flow_addcode 
+        WHERE snapshottime BETWEEN #{startTime} AND #{endTime}
+    </select>
+
+</mapper>
