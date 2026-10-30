@@ -1,93 +1,145 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  监控增强版日志配置
+  【设计说明】
+  1. %X{traceId} - 从MDC中读取链路追踪ID，实现请求全链路可追溯
+  2. 日志格式支持ELK/EFK等日志分析系统的结构化提取
+  3. 慢请求日志单独输出到 sys-slow.log，便于性能分析
+  4. 增加了按文件大小滚动的策略，避免单个日志文件过大
+-->
 <configuration>
     <!-- 日志存放路径 -->
-	<property name="log.path" value="/home/ruoyi/logs" />
-    <!-- 日志输出格式 -->
-	<property name="log.pattern" value="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{20} - [%method,%line] - %msg%n" />
+    <property name="log.path" value="/home/ruoyi/logs" />
 
-	<!-- 控制台输出 -->
-	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
-		<encoder>
-			<pattern>${log.pattern}</pattern>
-		</encoder>
-	</appender>
-	
-	<!-- 系统日志输出 -->
-	<appender name="file_info" class="ch.qos.logback.core.rolling.RollingFileAppender">
-	    <file>${log.path}/sys-info.log</file>
-        <!-- 循环政策：基于时间创建日志文件 -->
-		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- 日志文件名格式 -->
-			<fileNamePattern>${log.path}/sys-info.%d{yyyy-MM-dd}.log</fileNamePattern>
-			<!-- 日志最大的历史 60天 -->
-			<maxHistory>60</maxHistory>
-		</rollingPolicy>
-		<encoder>
-			<pattern>${log.pattern}</pattern>
-		</encoder>
-		<filter class="ch.qos.logback.classic.filter.LevelFilter">
-            <!-- 过滤的级别 -->
-            <level>INFO</level>
-            <!-- 匹配时的操作：接收（记录） -->
-            <onMatch>ACCEPT</onMatch>
-            <!-- 不匹配时的操作：拒绝（不记录） -->
-            <onMismatch>DENY</onMismatch>
-        </filter>
-	</appender>
-	
-	<appender name="file_error" class="ch.qos.logback.core.rolling.RollingFileAppender">
-	    <file>${log.path}/sys-error.log</file>
-        <!-- 循环政策：基于时间创建日志文件 -->
+    <!-- 日志输出格式（包含TraceId，便于链路追踪） -->
+    <!-- %d{yyyy-MM-dd HH:mm:ss.SSS}  时间戳 -->
+    <!-- [%thread]                       线程名 -->
+    <!-- %-5level                        日志级别（左对齐5位） -->
+    <!-- %X{traceId}                     从MDC中读取的TraceId -->
+    <!-- %logger{36}                     Logger名（缩写到36字符） -->
+    <!-- %L                              行号 -->
+    <!-- %msg%n                          消息 + 换行 -->
+    <property name="log.pattern"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36}:%L - %msg%n" />
+
+    <!-- 简化格式（用于控制台，方便快速阅读） -->
+    <property name="log.console.pattern"
+              value="%d{HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{20} - %msg%n" />
+
+    <!-- ===================== 控制台输出 ===================== -->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${log.console.pattern}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ===================== INFO级别日志输出 ===================== -->
+    <appender name="file_info" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.path}/sys-info.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- 日志文件名格式 -->
-            <fileNamePattern>${log.path}/sys-error.%d{yyyy-MM-dd}.log</fileNamePattern>
-			<!-- 日志最大的历史 60天 -->
-			<maxHistory>60</maxHistory>
+            <fileNamePattern>${log.path}/sys-info.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxHistory>60</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <!-- 单个文件超过100MB时滚动 -->
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
         <encoder>
             <pattern>${log.pattern}</pattern>
+            <charset>UTF-8</charset>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
-            <!-- 过滤的级别 -->
-            <level>ERROR</level>
-			<!-- 匹配时的操作：接收（记录） -->
+            <level>INFO</level>
             <onMatch>ACCEPT</onMatch>
-			<!-- 不匹配时的操作：拒绝（不记录） -->
             <onMismatch>DENY</onMismatch>
         </filter>
     </appender>
-	
-	<!-- 用户访问日志输出  -->
-    <appender name="sys-user" class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>${log.path}/sys-user.log</file>
+
+    <!-- ===================== ERROR级别日志输出 ===================== -->
+    <appender name="file_error" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.path}/sys-error.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- 按天回滚 daily -->
-            <fileNamePattern>${log.path}/sys-user.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <!-- 日志最大的历史 60天 -->
+            <fileNamePattern>${log.path}/sys-error.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxHistory>60</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+        <encoder>
+            <!-- 错误日志使用完整格式，保留足够信息用于问题排查 -->
+            <pattern>${log.pattern}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <!-- ===================== 慢请求/慢SQL日志（新增） ===================== -->
+    <appender name="file_slow" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.path}/sys-slow.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log.path}/sys-slow.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>60</maxHistory>
         </rollingPolicy>
         <encoder>
             <pattern>${log.pattern}</pattern>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
-	
-	<!-- 系统模块日志级别控制  -->
-	<logger name="com.ruoyi" level="info" />
-	<!-- Spring日志级别控制  -->
-	<logger name="org.springframework" level="warn" />
 
-	<root level="info">
-		<appender-ref ref="console" />
-	</root>
-	
-	<!--系统操作日志-->
+    <!-- ===================== 用户访问日志 ===================== -->
+    <appender name="sys-user" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${log.path}/sys-user.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${log.path}/sys-user.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>60</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log.pattern}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ===================== 日志级别控制 ===================== -->
+    <!-- 系统模块日志级别 -->
+    <logger name="com.ruoyi" level="info" additivity="false">
+        <appender-ref ref="console" />
+        <appender-ref ref="file_info" />
+        <appender-ref ref="file_error" />
+    </logger>
+
+    <!-- 慢请求日志单独记录 -->
+    <logger name="com.ruoyi.common.core.monitor.TraceIdFilter" level="info" additivity="false">
+        <appender-ref ref="file_slow" />
+    </logger>
+    <logger name="com.ruoyi.common.core.monitor.SqlLogInterceptor" level="info" additivity="false">
+        <appender-ref ref="file_slow" />
+    </logger>
+
+    <!-- Spring日志级别 -->
+    <logger name="org.springframework" level="warn" />
+    <!-- MyBatis日志级别 -->
+    <logger name="org.mybatis" level="info" />
+    <!-- 数据库连接池日志 -->
+    <logger name="com.alibaba.druid" level="warn" />
+
+    <!-- 根logger：控制台 -->
+    <root level="info">
+        <appender-ref ref="console" />
+    </root>
+
+    <!-- 系统操作日志：文件输出 -->
     <root level="info">
         <appender-ref ref="file_info" />
         <appender-ref ref="file_error" />
     </root>
-	
-	<!--系统用户操作日志-->
+
+    <!-- 系统用户操作日志 -->
     <logger name="sys-user" level="info">
-        <appender-ref ref="sys-user"/>
+        <appender-ref ref="sys-user" />
     </logger>
 </configuration> 

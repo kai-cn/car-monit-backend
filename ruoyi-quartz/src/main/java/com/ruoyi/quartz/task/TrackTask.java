@@ -32,10 +32,10 @@ public class TrackTask {
 
     @Autowired
     private IGeometryService geometryService;
-    
+
     @Autowired
     private ICarExceptRecordService carExceptRecordService;
-    
+
 
     /**
      * 每三分钟执行一次
@@ -58,7 +58,7 @@ public class TrackTask {
     public void syncSuspiciousCar() {
         log.info("可疑车俩数据同步开始同步！"+new Date());
         List<TrailInfo> trailInfoList = new ArrayList<>();
-       //  carSuspiciousService.syncSuspiciousCar("redis",trailInfoList);
+         carSuspiciousService.syncSuspiciousCar("redis",trailInfoList);
         log.info("可疑车俩数据同步结束同步！"+new Date());
     }
 
@@ -75,7 +75,7 @@ public class TrackTask {
         log.info("车俩历史轨迹同步结束同步！"+new Date());
 
     }
-    
+
     /**
      * 每天凌晨7点
      * 车辆逃费数据更新:0 0 7 * * ?

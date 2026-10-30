@@ -4,6 +4,7 @@ import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.alibaba.fastjson2.JSON;
 import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode;
+import com.ruoyi.base.service.enhanced.SnapshotFlowEnhancedService;
 import com.ruoyi.base.service.forest.HttpOdsRtSzdnSnapshotFlowAddcodeService;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.constant.HttpStatus;
@@ -25,6 +26,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,9 +46,11 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
     @Autowired
     private ISysDictDataService sysDictDataService;
 
-
     @Autowired
     private ICarQueryLogService carQueryLogService;
+
+    @Autowired
+    private SnapshotFlowEnhancedService snapshotFlowEnhancedService;
 
     /**
      * 查询门架抓拍流水列表
@@ -79,17 +83,26 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
 
         // 时间段必填
         if (CommonUtil.isNotBlank(odsRtSzdnSnapshotFlowAddcode.getApplyTime1()) && CommonUtil.isNotBlank(odsRtSzdnSnapshotFlowAddcode.getApplyTime2())){
-            TableDataInfo tableDataInfo =  httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodePage(odsRtSzdnSnapshotFlowAddcode);
-            if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
-                String trackJosn = JSON.toJSONString(tableDataInfo.getRows());
-                list = JSON.parseArray(trackJosn, OdsRtSzdnSnapshotFlowAddcode.class);
-                total = tableDataInfo.getTotal();
+            try {
+                rspData = snapshotFlowEnhancedService.queryPage(odsRtSzdnSnapshotFlowAddcode);
+            } catch (Exception e) {
+                TableDataInfo tableDataInfo = httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodePage(odsRtSzdnSnapshotFlowAddcode);
+                if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
+                    String trackJosn = JSON.toJSONString(tableDataInfo.getRows());
+                    list = JSON.parseArray(trackJosn, OdsRtSzdnSnapshotFlowAddcode.class);
+                    total = tableDataInfo.getTotal();
+                }
+                rspData.setCode(HttpStatus.SUCCESS);
+                rspData.setMsg("查询成功");
+                rspData.setRows(list);
+                rspData.setTotal(total);
             }
+        } else {
+            rspData.setCode(HttpStatus.SUCCESS);
+            rspData.setMsg("查询成功");
+            rspData.setRows(list);
+            rspData.setTotal(total);
         }
-        rspData.setCode(HttpStatus.SUCCESS);
-        rspData.setMsg("查询成功");
-        rspData.setRows(list);
-        rspData.setTotal(total);
         return rspData;
 
 
@@ -123,7 +136,11 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
 
         // 时间段必填
         if (CommonUtil.isNotBlank(odsRtSzdnSnapshotFlowAddcode.getApplyTime1()) && CommonUtil.isNotBlank(odsRtSzdnSnapshotFlowAddcode.getApplyTime2())){
-            list = httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodeListToExport(odsRtSzdnSnapshotFlowAddcode);
+            try {
+                list = snapshotFlowEnhancedService.queryListForExport(odsRtSzdnSnapshotFlowAddcode);
+            } catch (Exception e) {
+                list = httpOdsRtSzdnSnapshotFlowAddcodeService.getOdsRtSzdnSnapshotFlowAddcodeListToExport(odsRtSzdnSnapshotFlowAddcode);
+            }
         }
 
 
@@ -161,6 +178,22 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController {
     @GetMapping(value = "/{bigId}")
     public AjaxResult getInfo(@PathVariable("bigId") String bigId) {
         return AjaxResult.success(httpOdsRtSzdnSnapshotFlowAddcodeService.selectOdsRtSzdnSnapshotFlowAddcodeById(bigId));
+    }
+
+    /**
+     * 查询GaussDB中最早的snapshottime
+     * <p>
+     * 用于全量同步任务确定起始时间
+     * </p>
+     */
+    @GetMapping("/earliest-time")
+    public AjaxResult getEarliestSnapshottime() {
+        Date earliestTime = httpOdsRtSzdnSnapshotFlowAddcodeService.getEarliestSnapshottime();
+        if (earliestTime != null) {
+            return AjaxResult.success(earliestTime);
+        } else {
+            return AjaxResult.success("暂无数据");
+        }
     }
 
 

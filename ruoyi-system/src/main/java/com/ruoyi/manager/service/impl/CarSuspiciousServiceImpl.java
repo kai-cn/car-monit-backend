@@ -398,7 +398,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         String formattedDate = sdf.format(now);
 
-       /* Collection<String> keys = redisCache.keys(Constants.car_uspicious + formattedDate + "*");
+        Collection<String> keys = redisCache.keys(Constants.car_uspicious + formattedDate + "*");
         if (CommonUtil.isNull(addFlag).equals("redis")){
             if (null != keys && keys.size() > 0){
                 for (String key : keys) {
@@ -408,7 +408,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
             }
         }else{
 
-        }*/
+        }
 
         // System.out.println("参数数组数量："+paraTrailInfoList.size());
         trailInfoList = paraTrailInfoList;
