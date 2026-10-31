@@ -1,0 +1,138 @@
+[package]
+name = "car-monit-rust"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.90"
+description = "Java RuoYi car-monit backend migrated to Rust (Axum + SQLx)"
+license = "MIT"
+
+[dependencies]
+axum = { version = "0.8", features = ["multipart", "macros"] }
+tokio = { version = "1", features = ["full"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = [
+    "cors",
+    "trace",
+    "fs",
+    "limit",
+    "compression-gzip",
+    "catch-panic",
+] }
+hyper = { version = "1", features = ["full"] }
+http = "1"
+bytes = "1"
+
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+indexmap = { version = "2", features = ["serde"] }
+
+sqlx = { version = "0.8", default-features = false, features = [
+    "runtime-tokio-rustls",
+    "mysql",
+    "chrono",
+    "rust_decimal",
+    "uuid",
+    "json",
+    "macros",
+    "migrate",
+] }
+redis = { version = "0.27", features = [
+    "tokio-comp",
+    "connection-manager",
+    "aio",
+] }
+
+chrono = { version = "0.4", features = ["serde"] }
+chrono-tz = "0.10"
+rust_decimal = { version = "1", features = ["serde-with-float"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+
+jsonwebtoken = "9"
+bcrypt = "0.16"
+config = { version = "0.15", default-features = false, features = ["yaml"] }
+
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-appender = "0.2"
+
+validator = { version = "0.19", features = ["derive"] }
+dashmap = "6"
+parking_lot = "0.12"
+
+reqwest = { version = "0.12", default-features = false, features = [
+    "json",
+    "rustls-tls",
+    "multipart",
+] }
+base64 = "0.22"
+rand = "0.8"
+regex = "1"
+once_cell = "1"
+futures = "0.3"
+async-trait = "0.1"
+url = "2"
+serde_urlencoded = "0.7"
+mime_guess = "2"
+percent-encoding = "2"
+sha2 = "0.10"
+sha1 = "0.10"
+md-5 = "0.10"
+hmac = "0.12"
+hex = "0.4"
+image = { version = "0.25", default-features = false, features = ["jpeg"] }
+
+[features]
+default = ["excel", "sysinfo"]
+kafka = ["dep:rdkafka"]
+excel = ["dep:rust_xlsxwriter", "dep:calamine"]
+templates = ["dep:minijinja"]
+oss = ["dep:aws-config", "dep:aws-sdk-s3"]
+sysinfo = ["dep:sysinfo"]
+
+[dependencies.rdkafka]
+version = "0.37"
+optional = true
+default-features = false
+features = ["tokio"]
+
+[dependencies.rust_xlsxwriter]
+version = "0.79"
+optional = true
+
+[dependencies.calamine]
+version = "0.26"
+optional = true
+
+# calamine 0.26 的 ZipFile 签名停留在 zip 2.2（zip 2.6 改了泛型参数），
+# 这里显式钉住版本，保证 excel 导入导出同时可用。
+[dependencies.zip]
+version = "=2.2.2"
+default-features = false
+
+[dependencies.minijinja]
+version = "2"
+optional = true
+features = ["loader"]
+
+[dependencies.aws-config]
+version = "1"
+optional = true
+
+[dependencies.aws-sdk-s3]
+version = "1"
+optional = true
+
+[dependencies.sysinfo]
+version = "0.33"
+optional = true
+
+[dev-dependencies]
+pretty_assertions = "1"
+tempfile = "3"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"

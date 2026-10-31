@@ -1,0 +1,42 @@
+// 来源: ruoyi-admin/src/main/java/com/ruoyi/web/controller/manager/CarRouteInfoController.java
+//       ruoyi-system/src/main/resources/mapper/manager/car_route_infoMapper.xml
+// 职责: 路线信息 CRUD 与导出（BasePlusEntity 通用逻辑）。
+// 对应关系: manager_crud! 宏生成 list/export/get/add/edit/remove。
+
+crate::manager_crud! {
+    route: "/manager/routeinfo",
+    perm: "manager:routeinfo",
+    title: "路线信息",
+    class: "com.ruoyi.web.controller.manager.CarRouteInfoController",
+    sheet: "路线信息数据",
+    table: "car_route_info",
+    select: "t.id, t.car_id, t.car_no, t.car_type, t.car_vehicle, t.car_num, t.start_address, t.start_longitude, t.start_latitude, t.end_address, t.end_longitude, t.end_latitude, t.route_detail, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id",
+    from: "from car_route_info t",
+    order: "t.create_time desc,t.id",
+    filters: [
+        Filter::eq("id", "t.id"),
+        Filter::eq("carId", "t.car_id"),
+        Filter::eq("carNo", "t.car_no"),
+        Filter::eq("carType", "t.car_type"),
+        Filter::eq("carVehicle", "t.car_vehicle"),
+        Filter::eq("carNum", "t.car_num"),
+        Filter::eq("startAddress", "t.start_address"),
+        Filter::eq("startLongitude", "t.start_longitude"),
+        Filter::eq("startLatitude", "t.start_latitude"),
+        Filter::eq("endAddress", "t.end_address"),
+        Filter::eq("endLongitude", "t.end_longitude"),
+        Filter::eq("endLatitude", "t.end_latitude"),
+        Filter::eq("routeDetail", "t.route_detail"),
+        Filter::eq("backCol1", "t.back_col1"),
+        Filter::eq("backCol2", "t.back_col2"),
+        Filter::eq("status", "t.status"),
+        Filter::eq("sort", "t.sort"),
+        Filter::eq("epsId", "t.eps_id"),
+        Filter::eq("tenantId", "t.tenant_id"),
+        Filter::eq("createBy", "t.create_by"),
+        Filter::raw("applyTime1", " and t.create_time >= STR_TO_DATE(?, '%Y-%m-%d')"),
+        Filter::raw("applyTime2", " and t.create_time < date_add(STR_TO_DATE(?, '%Y-%m-%d'), interval 1 day)"),
+    ],
+    headers: ["车辆id", "车牌号", "车型", "车种", "轴数", "起点通行地址", "最后通行经度", "起点通行维度", "终点通行地址", "终点通行经度", "终点通行维度", "路线明细JOSN", "备用字段1", "备用字段2", "状态", "备注"],
+    fields: ["carId", "carNo", "carType", "carVehicle", "carNum", "startAddress", "startLongitude", "startLatitude", "endAddress", "endLongitude", "endLatitude", "routeDetail", "backCol1", "backCol2", "status", "remark"],
+}
