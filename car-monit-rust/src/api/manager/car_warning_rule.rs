@@ -1,0 +1,39 @@
+// 来源: ruoyi-admin/src/main/java/com/ruoyi/web/controller/manager/CarWarningRuleController.java
+//       ruoyi-system/src/main/resources/mapper/manager/car_warning_ruleMapper.xml
+// 职责: 预警规则 CRUD 与导出（BasePlusEntity 通用逻辑）。
+// 对应关系: manager_crud! 宏生成 list/export/get/add/edit/remove。
+
+crate::manager_crud! {
+    route: "/manager/warningrule",
+    perm: "manager:warningrule",
+    title: "预警规则",
+    class: "com.ruoyi.web.controller.manager.CarWarningRuleController",
+    sheet: "预警规则数据",
+    table: "car_warning_rule",
+    select: "t.id, t.rule_name, t.notice_range_id, t.notice_range_anme, t.notice, t.notice_type, t.notice_user_id, t.notice_user_name, t.org_id, t.org_name, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id",
+    from: "from car_warning_rule t",
+    order: "t.create_time desc,t.id",
+    filters: [
+        Filter::eq("id", "t.id"),
+        Filter::like("ruleName", "t.rule_name"),
+        Filter::eq("noticeRangeId", "t.notice_range_id"),
+        Filter::like("noticeRangeAnme", "t.notice_range_anme"),
+        Filter::eq("notice", "t.notice"),
+        Filter::eq("noticeType", "t.notice_type"),
+        Filter::eq("noticeUserId", "t.notice_user_id"),
+        Filter::like("noticeUserName", "t.notice_user_name"),
+        Filter::eq("orgId", "t.org_id"),
+        Filter::like("orgName", "t.org_name"),
+        Filter::eq("backCol1", "t.back_col1"),
+        Filter::eq("backCol2", "t.back_col2"),
+        Filter::eq("status", "t.status"),
+        Filter::eq("sort", "t.sort"),
+        Filter::eq("epsId", "t.eps_id"),
+        Filter::eq("tenantId", "t.tenant_id"),
+        Filter::eq("createBy", "t.create_by"),
+        Filter::raw("applyTime1", " and t.create_time >= STR_TO_DATE(?, '%Y-%m-%d')"),
+        Filter::raw("applyTime2", " and t.create_time < date_add(STR_TO_DATE(?, '%Y-%m-%d'), interval 1 day)"),
+    ],
+    headers: ["规则名称", "预警范围id(包含的路段范围)", "预警范围(包含的路段范围)", "通知", "通知方式", "通知人员id", "通知人员", "所属站/所", "所属站/所", "备用字段1", "备用字段2", "状态", "备注"],
+    fields: ["ruleName", "noticeRangeId", "noticeRangeAnme", "notice", "noticeType", "noticeUserId", "noticeUserName", "orgId", "orgName", "backCol1", "backCol2", "status", "remark"],
+}

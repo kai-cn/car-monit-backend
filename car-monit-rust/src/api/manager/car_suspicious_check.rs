@@ -1,0 +1,38 @@
+// 来源: ruoyi-admin/src/main/java/com/ruoyi/web/controller/manager/CarSuspiciousCheckController.java
+//       ruoyi-system/src/main/resources/mapper/manager/car_suspicious_checkMapper.xml
+// 职责: 可疑车辆核实 CRUD 与导出（BasePlusEntity 通用逻辑）。
+// 对应关系: manager_crud! 宏生成 list/export/get/add/edit/remove。
+
+crate::manager_crud! {
+    route: "/manager/suspiciouscheck",
+    perm: "manager:suspiciouscheck",
+    title: "可疑车辆核实",
+    class: "com.ruoyi.web.controller.manager.CarSuspiciousCheckController",
+    sheet: "可疑车辆核实数据",
+    table: "car_suspicious_check",
+    select: "t.id, t.car_id, t.car_no, t.suspicous_flag, t.attachments, t.escaped_type, t.back_col1, t.charge_amount, t.total_amount, t.back_col2, t.dif_amount, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id",
+    from: "from car_suspicious_check t",
+    order: "t.create_time,t.id",
+    filters: [
+        Filter::eq("id", "t.id"),
+        Filter::eq("carId", "t.car_id"),
+        Filter::eq("carNo", "t.car_no"),
+        Filter::eq("suspicousFlag", "t.suspicous_flag"),
+        Filter::eq("attachments", "t.attachments"),
+        Filter::eq("escapedType", "t.escaped_type"),
+        Filter::eq("backCol1", "t.back_col1"),
+        Filter::eq("chargeAmount", "t.charge_amount"),
+        Filter::eq("totalAmount", "t.total_amount"),
+        Filter::eq("backCol2", "t.back_col2"),
+        Filter::eq("difAmount", "t.dif_amount"),
+        Filter::eq("status", "t.status"),
+        Filter::eq("sort", "t.sort"),
+        Filter::eq("epsId", "t.eps_id"),
+        Filter::eq("tenantId", "t.tenant_id"),
+        Filter::eq("createBy", "t.create_by"),
+        Filter::raw("applyTime1", " and t.create_time >= STR_TO_DATE(?, '%Y-%m-%d')"),
+        Filter::raw("applyTime2", " and t.create_time < date_add(STR_TO_DATE(?, '%Y-%m-%d'), interval 1 day)"),
+    ],
+    headers: ["车辆id", "车牌号", "是否为可疑车辆", "逃费类型", "收费金额", "应缴金额", "差额", "附件", "备用字段1", "备用字段2", "状态", "备注"],
+    fields: ["carId", "carNo", "suspicousFlag", "escapedType", "chargeAmount", "totalAmount", "difAmount", "attachments", "backCol1", "backCol2", "status", "remark"],
+}
