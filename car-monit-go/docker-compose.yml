@@ -1,0 +1,39 @@
+# 本地联调依赖：MySQL（端口与 application-druid.yml 一致）与 Redis。
+# 表结构与初始数据不在本仓库内，首次启动后需导入业务库 SQL：
+#   mysql -h127.0.0.1 -P3307 -uroot -proot carmonitdb < carmonitdb.sql
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: carmonit-mysql
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: carmonitdb
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      - --default-time-zone=+08:00
+    volumes:
+      - carmonit-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h127.0.0.1", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: carmonit-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - carmonit-redis-data:/data
+
+volumes:
+  carmonit-mysql-data:
+  carmonit-redis-data:
