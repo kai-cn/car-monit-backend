@@ -17,9 +17,12 @@ use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
-    select: "t.ID, t.FLOW_KEY, t.FLOW_TITLE, t.FLOW_CONTEXT, t.BUSS_NAME, t.sort, t.eps_id, \
+    select: "t.ID as id, t.FLOW_KEY as flowKey, t.FLOW_TITLE as flowTitle, \
+             t.FLOW_CONTEXT as flowContext, t.BUSS_NAME as bussName, t.sort, t.eps_id, \
              t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id, \
-             t.flow_business_type, IFNULL(sd.dept_name, '系统默认') tenantName",
+             t.flow_business_type as flowBusinessType, \
+             IFNULL(sd.dept_name, '系统默认') as tenantName, null as remark, \
+             null as deptSubCode, null as flag, null as searchValue, null as params",
     from: "from flow_name t left join sys_dept sd on sd.dept_id = t.tenant_id",
     filters: &[
         Filter::eq("id", "t.id"),
@@ -36,7 +39,7 @@ const SPEC: ListSpec = ListSpec {
         Filter::eq("createBy", "t.create_by"),
         Filter::eq("tenantId", "t.tenant_id"),
     ],
-    extra_where: "",
+    extra_where: " and t.del_flag = '0'",
     order_by: "t.tenant_id, t.flow_key, t.id",
     id_column: "t.ID",
 };
@@ -171,9 +174,11 @@ async fn get_info(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &id).await?,
-    ))
+    let mut row = support::query_by_id(&state.db, &SPEC, &id).await?;
+    if let Some(Value::Object(object)) = row.as_mut() {
+        object.insert("tenantName".to_string(), Value::Null);
+    }
+    Ok(AjaxResult::success_data(row))
 }
 
 async fn save_flow_name(

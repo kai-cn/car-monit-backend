@@ -9,6 +9,7 @@ use chrono::NaiveDateTime;
 use serde_json::{json, Map, Value};
 
 use crate::api::support;
+use crate::db::redis_cache::stamp_types;
 use crate::error::AppError;
 use crate::state::AppState;
 use crate::task::remote;
@@ -144,7 +145,10 @@ pub async fn sync_section(state: &AppState) -> Result<usize, AppError> {
     let rows = fetch_list(state, "/base/section/listAll").await?;
     let count = replace_table(state, "ods_szdn_section", &rows).await?;
     // Java: 同步后刷新 section_list 缓存（收费站/门架/收费流水补名称依赖它）。
-    state.redis.set_list(SECTION_LIST, &rows).await?;
+    // setCacheList 逐元素序列化，FastJson2 WriteClassName 会给每个元素写 @type；
+    // 缺少 @type 时 Java getCacheList 得到 JSONObject 并抛 ClassCastException。
+    let cached = stamp_types(rows.clone(), "com.ruoyi.base.domain.OdsSzdnSection");
+    state.redis.set_list(SECTION_LIST, &cached).await?;
     Ok(count)
 }
 
@@ -255,10 +259,19 @@ async fn warning_configs(state: &AppState) -> Result<Vec<Value>, AppError> {
     {
         return Ok(items);
     }
-    let rows = sqlx::query("select t.* from base_config_service_area t")
-        .fetch_all(&state.db)
-        .await?;
-    let values = crate::db::rows::rows_to_json(&rows);
+    // Java: CarWarningConfigMapper.xml#selectCarWarningConfigList
+    let rows = sqlx::query(
+        "select t.id, t.gantry_code_in, t.gantry_name_in, t.gantry_code_out, t.gantry_name_out, \
+         t.time_span, t.remark, t.fwqbm, t1.fwqmc, t1.lon, t1.lat, t1.road_code, \
+         t1.section_code, t1.pile_no \
+         from car_warning_config t join base_config_service_area t1 on t.fwqbm = t1.fwqbm",
+    )
+    .fetch_all(&state.db)
+    .await?;
+    let values = stamp_types(
+        crate::db::rows::rows_to_json(&rows),
+        "com.ruoyi.base.domain.CarWarningConfig",
+    );
     state
         .redis
         .set_object(WARNING_CONFIG_LIST, &values)
@@ -538,10 +551,11 @@ pub async fn sync_current_track(state: &AppState) -> Result<(), AppError> {
     .bind(today)
     .fetch_all(&state.db)
     .await?;
-    state
-        .redis
-        .set_object(WARNING_LIST, &crate::db::rows::rows_to_json(&rows))
-        .await?;
+    let cached = stamp_types(
+        crate::db::rows::rows_to_json(&rows),
+        "com.ruoyi.manager.domain.CarWarningInfo",
+    );
+    state.redis.set_object(WARNING_LIST, &cached).await?;
     Ok(())
 }
 

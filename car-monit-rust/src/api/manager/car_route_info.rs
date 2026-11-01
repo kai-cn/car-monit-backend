@@ -13,6 +13,7 @@ crate::manager_crud! {
     select: "t.id, t.car_id, t.car_no, t.car_type, t.car_vehicle, t.car_num, t.start_address, t.start_longitude, t.start_latitude, t.end_address, t.end_longitude, t.end_latitude, t.route_detail, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id",
     from: "from car_route_info t",
     order: "t.create_time desc,t.id",
+    binary: true,
     filters: [
         Filter::eq("id", "t.id"),
         Filter::eq("carId", "t.car_id"),

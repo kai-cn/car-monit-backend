@@ -24,7 +24,7 @@ const SPEC: ListSpec = ListSpec {
         Filter::eq("brand", "t.brand"),
     ],
     extra_where: "",
-    order_by: "t.big_id",
+    order_by: "t.id",
     id_column: "t.id",
 };
 

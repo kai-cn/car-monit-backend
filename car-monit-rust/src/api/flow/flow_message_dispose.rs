@@ -16,8 +16,11 @@ use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
-    select: "t.ID, t.MID, t.BUSS_ID, t.BUSS_NAME, t.MSG_STATUS, t.HANG_TIME, t.DISPOSE_OTHER, \
-             t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time",
+    select: "t.ID as id, t.MID as mid, t.BUSS_ID as bussId, t.BUSS_NAME as bussName, \
+             t.MSG_STATUS as msgStatus, t.HANG_TIME as hangTime, \
+             t.DISPOSE_OTHER as disposeOther, t.sort, t.eps_id, t.del_flag, t.create_by, \
+             t.create_time, t.update_by, t.update_time, null as remark, null as tenantId, \
+             null as deptSubCode, null as flag, null as searchValue, null as params",
     from: "from flow_message_dispose t",
     filters: &[
         Filter::eq("id", "t.id"),
@@ -31,7 +34,7 @@ const SPEC: ListSpec = ListSpec {
         Filter::eq("epsId", "t.eps_id"),
         Filter::eq("createBy", "t.create_by"),
     ],
-    extra_where: "",
+    extra_where: " and t.del_flag = '0'",
     order_by: "t.create_time desc, t.id",
     id_column: "t.ID",
 };

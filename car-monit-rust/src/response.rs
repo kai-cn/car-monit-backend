@@ -40,23 +40,23 @@ impl AjaxResult {
         Self::base(msg, 200)
     }
 
-    /// Java: AjaxResult.success(Object data)
+    /// Java: AjaxResult.success(Object data) —— data 为 null 时不写该键。
     pub fn success_data(data: impl DeriveSerialize) -> Self {
         let mut result = Self::base("操作成功", 200);
-        result.0.insert(
-            "data".to_string(),
-            serde_json::to_value(data).unwrap_or(Value::Null),
-        );
+        let value = serde_json::to_value(data).unwrap_or(Value::Null);
+        if !value.is_null() {
+            result.0.insert("data".to_string(), value);
+        }
         result
     }
 
-    /// Java: AjaxResult.success(String msg, Object data)
+    /// Java: AjaxResult.success(String msg, Object data) —— data 为 null 时不写该键。
     pub fn success_msg_data(msg: impl Into<String>, data: impl DeriveSerialize) -> Self {
         let mut result = Self::base(msg, 200);
-        result.0.insert(
-            "data".to_string(),
-            serde_json::to_value(data).unwrap_or(Value::Null),
-        );
+        let value = serde_json::to_value(data).unwrap_or(Value::Null);
+        if !value.is_null() {
+            result.0.insert("data".to_string(), value);
+        }
         result
     }
 

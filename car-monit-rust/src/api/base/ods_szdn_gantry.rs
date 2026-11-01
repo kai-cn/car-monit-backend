@@ -22,7 +22,9 @@ const SPEC: ListSpec = ListSpec {
     select: "t.id, t.gantry_code, t.gantry_name, t.road_code, t.section_code, t.toll_code, \
              t.org_code, t.hex_code, t.direction, t.pile_no, t.lon, t.lat, t.remark, \
              t.is_virtual, t.mileage, t.boundary_gantry_type, t.gantry_type, t.city_code, \
-             t.district_name, t.belong_group, t.gantry_code_merge, t.gantry_name_alias",
+             t.district_name, t.belong_group, t.gantry_code_merge, t.gantry_name_alias, \
+             null as sectionCodeList, null as isData, null as tollName, null as orgName, \
+             null as roadName, null as sectionName",
     from: "from ods_szdn_gantry t",
     filters: &[
         Filter::eq("id", "t.id"),
@@ -184,14 +186,17 @@ async fn list_all(
 async fn export(
     State(state): State<AppState>,
     RawQuery(_raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     // Java: List obj = redisCache.getCacheObject(Constants.gantry_list);
     let mut rows: Vec<Value> = match state.redis.get_object::<Value>("gantry_list").await? {
         Some(Value::Array(items)) => items,
         _ => Vec::new(),
     };
     if rows.is_empty() {
-        return Ok(AjaxResult::success());
+        return Ok(axum::response::Response::builder()
+            .status(axum::http::StatusCode::OK)
+            .body(axum::body::Body::empty())
+            .unwrap());
     }
 
     let (road_map, section_map) = section_maps(&state).await;
@@ -268,7 +273,7 @@ async fn export(
         "tollName", "gantryCode", "gantryName", "boundaryGantryType", "isVirtual", "isData",
     ];
     let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
-    support::export_excel(&state, "门架信息数据", &headers, &data)
+    support::export_download("门架信息数据", &headers, &data)
 }
 
 async fn code_name_map(

@@ -14,7 +14,11 @@ use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
-const SELECT: &str = "t.fwqbm, t.fwqmc, t.lon, t.lat, t.road_code, t.section_code, t.pile_no";
+// Java 实体的 BasePlusEntity 字段不在 Mapper VO 里，但 Jackson 仍输出 null。
+// 表本身也没有这些列（id 只用于 where 条件），所以用 null 别名补齐键。
+const SELECT: &str = "t.fwqbm, t.fwqmc, t.lon, t.lat, t.road_code, t.section_code, t.pile_no, \
+     null as id, null as epsId, null as delFlag, null as createBy, null as createTime, \
+     null as updateBy, null as updateTime, null as sort, null as tenantId";
 
 // Java: BaseConfigServiceAreaMapper.xml#selectBaseConfigServiceAreaList
 const SPEC: ListSpec = ListSpec {

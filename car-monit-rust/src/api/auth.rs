@@ -79,7 +79,11 @@ pub async fn get_info(
     result.insert_value("overdue", json!(false));
     result.insert_value("permissions", json!(permissions));
     result.insert_value("roles", json!(roles));
-    result.insert_value("user", serde_json::to_value(user.for_http())?);
+    let mut user_value = serde_json::to_value(user.for_http())?;
+    if let Some(object) = user_value.as_object_mut() {
+        object.remove("password");
+    }
+    result.insert_value("user", user_value);
     Ok(result)
 }
 

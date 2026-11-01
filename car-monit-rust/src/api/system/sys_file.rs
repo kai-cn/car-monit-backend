@@ -14,7 +14,7 @@ use base64::Engine;
 use serde_json::{json, Map, Value};
 
 use crate::api::meta::{self, BusinessType, LogSpec};
-use crate::api::support::{self, Filter, ListSpec};
+use crate::api::support::{self, FieldFormat, Filter, ListSpec};
 use crate::domain::LoginUser;
 use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
@@ -23,7 +23,7 @@ use crate::state::AppState;
 const SPEC: ListSpec = ListSpec {
     select: "t.id, t.file_name, t.bucket_name, t.original, t.type, t.file_size, t.buss_type, \
              t.buss_name, t.create_user, t.create_time, t.update_user, t.update_time, \
-             t.del_flag, t.tenant_id",
+             t.del_flag, t.tenant_id, null as files, null as createUserName",
     from: "from sys_file t",
     filters: &[
         Filter::eq("id", "t.id"),
@@ -42,6 +42,9 @@ const SPEC: ListSpec = ListSpec {
     order_by: "t.create_time desc, t.id",
     id_column: "t.id",
 };
+
+// Java: SysFile.id 是 String（雪花 ID），files/createUserName 为 transient 字段。
+const FORMATS: &[(&str, FieldFormat)] = &[("id", FieldFormat::String)];
 
 /// Java: fileLog/fileLogId 的扩展名白名单。
 const ALLOWED_EXT: &[&str] = &[
@@ -295,7 +298,7 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -304,7 +307,7 @@ async fn get_info_by_id(
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &id).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &id, FORMATS).await?,
     ))
 }
 
@@ -327,7 +330,9 @@ async fn get_info(
     }
     builder.push(") order by t.id");
     let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(AjaxResult::success_data(crate::db::rows::rows_to_json(&rows)))
+    let mut rows = crate::db::rows::rows_to_json(&rows);
+    support::apply_formats(&mut rows, FORMATS);
+    Ok(AjaxResult::success_data(rows))
 }
 
 async fn get_new_ca(
@@ -336,7 +341,7 @@ async fn get_new_ca(
 ) -> Result<AjaxResult, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (_, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (_, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     match rows.into_iter().next() {
         Some(row) => Ok(AjaxResult::success_data(row)),
         None => Ok(AjaxResult::error("未找到CA驱动程序")),

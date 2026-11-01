@@ -63,7 +63,7 @@ async fn export(
     State(state): State<AppState>,
     Extension(user): Extension<LoginUser>,
     RawQuery(raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let mut params = support::query_map(&raw);
     support::query_log(&state.db, &user, &support::query_json(&params), "2", "2").await?;
     normalize(&mut params);
@@ -104,7 +104,7 @@ async fn export(
         "snapshottimeStr",
     ];
     let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
-    support::export_excel(&state, "门架抓拍流水数据", &headers, &data)
+    support::export_download("门架抓拍流水数据", &headers, &data)
 }
 
 async fn get_info(

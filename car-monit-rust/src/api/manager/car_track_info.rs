@@ -24,7 +24,7 @@ const SPEC: ListSpec = ListSpec {
              t.lane_no, t.snap_time, t.receive_time, t.snap_pic, t.road_section_id, \
              t.road_section_name, t.track_id, t.back_col1, t.back_col2, t.remark, t.status, \
              t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, \
-             t.update_time, t.tenant_id",
+             t.update_time, t.tenant_id, null as applyTime1, null as applyTime2, null as latitudeDec, null as longitudeDec, null as pageNum, null as pageSize, t.track_josn",
     from: "from car_track_info t",
     filters: &[
         Filter::eq("id", "t.id"),
@@ -56,17 +56,22 @@ const SPEC: ListSpec = ListSpec {
             " and t.create_time <= STR_TO_DATE(?, '%Y-%m-%d %H:%i:%s')",
         ),
     ],
-    extra_where: "",
+    extra_where: " and t.del_flag = '0'",
     order_by: "t.create_time, t.id",
     id_column: "t.id",
 };
 
 const TRAIL_COLUMNS: &str = "t.uuid, t.type, t.point_count, t.plate_key, t.enter_time, \
-     t.exit_time, t.trail_points, t.create_time, t.enter_locationcode, t.exit_locationcode, \
+     t.exit_time, t.trail_points, t.enter_locationcode, t.exit_locationcode, \
      t.track_josn, t.enaxlecount, t.entolllaneid, t.entollstationid, t.entollstationname, \
      t.envehicleclass, t.envehicleid, t.envehicletype, t.enweight, t.extolllaneid, \
      t.extollstationid, t.extollstationname, t.exvehicleclass, t.exvehicleid, t.exvehicletype, \
-     t.exweight, t.start_lon, t.strat_lat, t.end_lon, t.end_lat";
+     t.exweight, t.start_lon, t.strat_lat, t.end_lon, t.end_lat, \
+     null as firtStationCode, null as firtStationName, null as firtStationTime, \
+     null as plateColor, null as carType, null as carNo, null as carVehicle, null as carNum, \
+     null as escapedType, null as passType, null as escapedTypeRemark, null as applyTime1, \
+     null as applyTime2, null as isCylx, null as flag, null as startLonDec, null as stratLatDec, \
+     null as endLonDec, null as endLatDec, null as uuidList, null as passCount, null as escapedTfcj";
 
 static LOG_EXPORT: LogSpec = LogSpec::new(
     "车辆行驶轨迹",
@@ -111,7 +116,7 @@ pub fn routes() -> Router<AppState> {
                 "/manager/cartrackinfo/listByCarId",
                 None,
                 None,
-                list_by_car,
+                list_by_car_id,
             ),
         )
         .route(
@@ -175,13 +180,31 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java CarTrackInfo.longitudeDec/latitudeDec：经纬度字符串转 BigDecimal。
+fn fill_decimals(rows: &mut [Value]) {
+    for row in rows {
+        let Some(object) = row.as_object_mut() else { continue };
+        for (source, target) in [("longitude", "longitudeDec"), ("latitude", "latitudeDec")] {
+            let parsed = object
+                .get(source)
+                .and_then(Value::as_str)
+                .and_then(|text| text.trim().parse::<f64>().ok())
+                .and_then(serde_json::Number::from_f64)
+                .map(Value::Number)
+                .unwrap_or(Value::Null);
+            object.insert(target.to_string(), parsed);
+        }
+    }
+}
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, mut rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    fill_decimals(&mut rows);
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -217,9 +240,14 @@ async fn get_info(
     .bind(&id)
     .fetch_optional(&state.db)
     .await?;
-    Ok(AjaxResult::success_data(
-        row.map(|row| crate::db::rows::row_to_json(&row)),
-    ))
+    Ok(AjaxResult::success_data(row.map(|row| {
+        let mut value = crate::db::rows::row_to_json(&row);
+        if let Some(object) = value.as_object_mut() {
+            object.insert("longitudeDec".to_string(), Value::Null);
+            object.insert("latitudeDec".to_string(), Value::Null);
+        }
+        value
+    })))
 }
 
 async fn add(
@@ -393,7 +421,23 @@ async fn car_track_rows(
 /// TrailInfo: tracks/trailList/trailUuid/raodTrailList/trailDevCountBO。
 fn wrap_trail(row: &Value) -> Value {
     let track_json = row.get("trackJosn").and_then(Value::as_str).unwrap_or_default();
-    let trail_list: Vec<Value> = serde_json::from_str(track_json).unwrap_or_default();
+    let mut trail_list: Vec<Value> = serde_json::from_str(track_json).unwrap_or_default();
+    // Java 反序列化成 TrailBo 后会补齐实体字段（未出现的键输出 null）。
+    const TRAIL_KEYS: &[&str] = &[
+        "pointUuid", "stateType", "pointFlag", "pointJosn", "borderWeighingCaptureBO",
+        "captureTime", "directionIn", "locationCode", "locationFlag", "ipType", "locationJosn",
+        "devCode", "devName", "imagesArry", "lon", "lat", "roadCode", "sectionCode",
+        "direction", "pileno", "preCaptureTime", "countNum", "pilenoDec", "isQuery",
+        "gantryCaptureBO", "provCaptureBO", "stationCapture", "feeRecord",
+        "feeStationEnter", "feeStationExit", "gantryIpBO", "stationIpBO",
+    ];
+    for item in &mut trail_list {
+        if let Some(object) = item.as_object_mut() {
+            for key in TRAIL_KEYS {
+                object.entry(key.to_string()).or_insert(Value::Null);
+            }
+        }
+    }
     let mut tracks = row.clone();
     if let Some(object) = tracks.as_object_mut() {
         object.insert("trailPoints".to_string(), json!(""));
@@ -408,6 +452,7 @@ fn wrap_trail(row: &Value) -> Value {
     }
     json!({
         "trailUuid": row.get("plateKey").cloned().unwrap_or(Value::Null),
+        "enterTime": Value::Null,
         "tracks": tracks,
         "trailList": trail_list,
         "raodTrailList": Vec::<Value>::new(),
@@ -418,19 +463,28 @@ fn wrap_trail(row: &Value) -> Value {
     })
 }
 
+async fn list_by_car_id(
+    State(state): State<AppState>,
+    RawQuery(raw): RawQuery,
+) -> Result<TableDataInfo<Value>, AppError> {
+    // Java listByCarId：carNo 为空时用 "-1"（查询不到数据）。
+    let mut params = support::query_map(&raw);
+    if params.get("carNo").map(|value| value.trim().is_empty()).unwrap_or(true) {
+        params.insert("carNo".to_string(), "-1".to_string());
+    }
+    let page = support::page_domain(&raw);
+    let (total, rows) = car_track_rows(&state, &params, Some(&page)).await?;
+    let wrapped = rows.iter().map(wrap_trail).collect::<Vec<_>>();
+    Ok(TableDataInfo::new(total, wrapped))
+}
+
 async fn list_by_car(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
-    let mut params = support::query_map(&raw);
-    // Java: carNo 为空时用 "-1"。
-    params
-        .entry("carNo".to_string())
-        .or_insert_with(|| "-1".to_string());
-    if params.get("carNo").map(String::as_str) == Some("") {
-        params.insert("carNo".to_string(), "-1".to_string());
-    }
+    let params = support::query_map(&raw);
+    // Java: carNo 为空时 XML 跳过该条件（返回全部）。
     let (total, rows) = car_track_rows(&state, &params, Some(&page)).await?;
     let wrapped = rows.iter().map(wrap_trail).collect::<Vec<_>>();
     Ok(TableDataInfo::new(total, wrapped))

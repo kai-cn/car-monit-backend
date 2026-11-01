@@ -20,10 +20,16 @@ use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
-const BASE_COLUMNS: &str = "t.ID, t.message_no, t.BILL_OID, t.BUSS_TYPE, t.FLOW_RUID, \
-     t.MSG_TITLE, t.MSG_CONTEXT, t.MSG_TYPE, t.MSG_URL, t.PC_OID, t.APPLY_NAME, t.BACK_COL1, \
-     t.BACK_COL2, t.BACK_COL3, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, \
-     t.update_by, t.update_time, app.FLOW_STATUS flowStatus, app.BACK_COL1 curEmpNames";
+const BASE_COLUMNS: &str = "t.ID as id, t.message_no as messageNo, t.BILL_OID as billOid, \
+     t.BUSS_TYPE as bussType, t.FLOW_RUID as flowRuid, t.MSG_TITLE as msgTitle, \
+     t.MSG_CONTEXT as msgContext, t.MSG_TYPE as msgType, t.MSG_URL as msgUrl, \
+     t.PC_OID as pcOid, t.APPLY_NAME as applyName, t.BACK_COL1 as backCol1, \
+     t.BACK_COL2 as backCol2, t.BACK_COL3 as backCol3, t.sort, t.eps_id, t.del_flag, \
+     t.create_by, t.create_time, t.update_by, t.update_time, \
+     app.FLOW_STATUS as flowStatus, app.BACK_COL1 as curEmpNames, \
+     null as remark, null as tenantId, null as deptSubCode, null as flag, \
+     null as searchValue, null as params, null as userId, null as msgStatus, \
+     null as disposeList";
 
 static LOG_EXPORT: LogSpec = LogSpec::new(
     "系统内部消息",
@@ -268,8 +274,8 @@ async fn export_shrz(
     State(_state): State<AppState>,
     RawQuery(_raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
-    // Java 模板 templates/export/exportShrz.xlsx 不存在，导出体被 catch 吞掉后 return null。
-    Ok(AjaxResult::success())
+    // Java 该导出在模板/数据缺失时抛异常，最终 code=500、msg=null。
+    Ok(AjaxResult::error(""))
 }
 
 async fn get_info(

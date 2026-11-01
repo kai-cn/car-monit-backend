@@ -23,7 +23,7 @@ use crate::state::AppState;
 /// Java: `selectMenuVo` 的列（与 resultMap 对齐）。
 const MENU_COLUMNS: &str = "m.menu_id, m.menu_name, m.parent_id, m.order_num, m.path, \
      m.component, m.is_frame, m.is_cache, m.menu_type, m.visible, m.status, \
-     ifnull(m.perms, '') as perms, m.icon, m.create_time";
+     ifnull(m.perms, '') as perms, m.icon, m.create_time, \n     null as createBy, null as updateBy, null as updateTime, null as remark, null as parentName";
 
 static LOG_ADD: LogSpec = LogSpec::new(
     "菜单管理",
@@ -89,6 +89,23 @@ pub fn routes() -> Router<AppState> {
 }
 
 /// Java: selectMenuList(menu, userId) —— 管理员查全部，普通用户按角色过滤。
+/// Java SysMenu：orderNum/isFrame/isCache 为 String，children 初始化为空集合。
+fn shape_menu_rows(rows: &mut [Value]) {
+    support::apply_formats(
+        rows,
+        &[
+            ("orderNum", support::FieldFormat::String),
+            ("isFrame", support::FieldFormat::String),
+            ("isCache", support::FieldFormat::String),
+        ],
+    );
+    for row in rows {
+        if let Some(object) = row.as_object_mut() {
+            object.entry("children").or_insert_with(|| json!([]));
+        }
+    }
+}
+
 async fn select_menu_list(
     state: &AppState,
     params: &HashMap<String, String>,
@@ -123,7 +140,9 @@ async fn select_menu_list(
     }
     builder.push(" order by m.parent_id, m.order_num");
     let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(rows_to_json(&rows))
+    let mut rows = rows_to_json(&rows);
+    shape_menu_rows(&mut rows);
+    Ok(rows)
 }
 
 async fn list(
@@ -221,9 +240,11 @@ async fn get_info(
         .bind(&menu_id)
         .fetch_optional(&state.db)
         .await?;
-    Ok(AjaxResult::success_data(
-        row.map(|row| crate::db::rows::row_to_json(&row)),
-    ))
+    Ok(AjaxResult::success_data(row.map(|row| {
+        let mut rows = vec![crate::db::rows::row_to_json(&row)];
+        shape_menu_rows(&mut rows);
+        rows.pop().unwrap_or(serde_json::Value::Null)
+    })))
 }
 
 fn text(body: &Value, key: &str) -> String {

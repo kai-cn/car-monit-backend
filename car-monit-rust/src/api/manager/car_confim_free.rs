@@ -23,7 +23,8 @@ const SPEC: ListSpec = ListSpec {
              t.org_id, sd.dept_name org_name, t.user_ids, t.user_names, t.amount, \
              t.aduit_amount, t.except_ids, t.escaped_types, t.back_col1, t.back_col2, t.remark, \
              t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, \
-             t.update_time, t.tenant_id",
+             t.update_time, t.tenant_id, 0 as number, 0 as escapedAmount, \
+             null as carAduitFreeList, null as carExceptRecordList, \n             null as totalAmount, null as chargeAmount, null as difAmount, null as applyTime1, \n             null as applyTime2, null as applyTime3, null as applyTime4, null as carNoQuery, \n             null as confimFreeNum, null as confimFreeAmount, null as escapedType, \n             null as comfimFreeType",
     from: "from car_confim_free t left join sys_dept sd on sd.dept_id = t.org_id",
     filters: &[
         Filter::eq("id", "t.id"),
@@ -56,7 +57,7 @@ const SPEC: ListSpec = ListSpec {
             " and t.create_time < date_add(STR_TO_DATE(?, '%Y-%m-%d'), interval 1 day)",
         ),
     ],
-    extra_where: "",
+    extra_where: " and t.del_flag = '0'",
     order_by: "t.create_time desc, t.id",
     id_column: "t.id",
 };
@@ -179,8 +180,11 @@ async fn list_count(
     if !status.is_empty() {
         query = query.bind(status);
     }
-    let rows = query.fetch_all(&state.db).await?;
-    Ok(AjaxResult::success_data(crate::db::rows::rows_to_json(&rows)))
+    let row = query.fetch_optional(&state.db).await?;
+    Ok(match row {
+        Some(row) => AjaxResult::success_data(crate::db::rows::row_to_json(&row)),
+        None => AjaxResult::success(),
+    })
 }
 
 fn concerned_sql(params: &HashMap<String, String>, count: bool) -> QueryBuilder<'static, MySql> {
@@ -238,7 +242,7 @@ async fn concerned_list(
 async fn export_concerned(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let page = support::page_domain(&raw);
     let mut params = support::query_map(&raw);
     params.insert("pageNum".to_string(), "1".to_string());
@@ -248,7 +252,7 @@ async fn export_concerned(
         .map(str::to_string);
     let fields = ["car_no", "car_type", "car_vehicle", "escaped_type", "org_id", "org_name", "totalAmount", "chargeAmount", "difAmount", "except_ids"];
     let data = result.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
-    support::export_excel(&state, "关注车辆", &headers, &data)
+    support::export_download("关注车辆", &headers, &data)
 }
 
 async fn concerned_list_all(
@@ -321,14 +325,14 @@ async fn car_statics(
 async fn export_car_statics(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let params = support::query_map(&raw);
     let rows = statistics_sql(&params).build().fetch_all(&state.db).await?;
     let data = crate::db::rows::rows_to_json(&rows);
     let headers = ["单位编码", "单位名称", "逃费类型", "金额", "车辆数"].map(str::to_string);
     let fields = ["eps_id", "org_name", "escapedType", "escapedAmount", "number"];
     let data = data.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
-    support::export_excel(&state, "车辆统计", &headers, &data)
+    support::export_download("车辆统计", &headers, &data)
 }
 
 async fn by_except_ids(
@@ -354,7 +358,7 @@ async fn by_except_ids(
 async fn export(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = [
@@ -369,7 +373,7 @@ async fn export(
         "backCol2", "status", "remark", "backCol1", "backCol2", "backCol1",
     ];
     let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
-    support::export_excel(&state, "确认补缴数据", &headers, &data)
+    support::export_download("确认补缴数据", &headers, &data)
 }
 
 async fn get_info(

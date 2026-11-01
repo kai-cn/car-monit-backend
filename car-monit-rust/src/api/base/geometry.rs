@@ -9,7 +9,7 @@ use axum::{Extension, Json, Router};
 use serde_json::{json, Value};
 
 use crate::api::meta::{self, BusinessType, LogSpec};
-use crate::api::support::{self, AutoFill, Filter, ListSpec};
+use crate::api::support::{self, AutoFill, FieldFormat, Filter, ListSpec};
 use crate::domain::LoginUser;
 use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
@@ -17,7 +17,8 @@ use crate::service::hen_da;
 use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
-    select: "t.id, t.lxbh, t.lxfx, t.qdzh, t.zdzh, t.paths",
+    // zhStr 是 Java 实体里的 transient 字段（Mapper 不查询，Jackson 输出 null）。
+    select: "t.id, t.lxbh, t.lxfx, t.qdzh, t.zdzh, t.paths, null as zhStr",
     from: "from geometry t",
     filters: &[
         Filter::eq("id", "t.id"),
@@ -31,6 +32,13 @@ const SPEC: ListSpec = ListSpec {
     order_by: "t.lxbh, t.qdzh",
     id_column: "t.id",
 };
+
+// Java 实体 id/qdzh/zdzh 为 Integer。
+const FORMATS: &[(&str, FieldFormat)] = &[
+    ("id", FieldFormat::Int),
+    ("qdzh", FieldFormat::Int),
+    ("zdzh", FieldFormat::Int),
+];
 
 static LOG_EXPORT: LogSpec = LogSpec::new(
     "车辆信息",
@@ -250,7 +258,7 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -259,7 +267,7 @@ async fn export(
     RawQuery(raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
-    let rows = support::query_all(&state.db, &params, &SPEC).await?;
+    let rows = support::query_all_fmt(&state.db, &params, &SPEC, FORMATS).await?;
     let headers = ["路线编号", "路线方向", "起点桩号", "终点桩号", "经纬度"].map(str::to_string);
     let fields = ["lxbh", "lxfx", "qdzh", "zdzh", "paths"];
     let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
@@ -271,7 +279,7 @@ async fn get_info(
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &id).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &id, FORMATS).await?,
     ))
 }
 

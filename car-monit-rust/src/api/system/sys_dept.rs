@@ -23,7 +23,7 @@ use crate::state::AppState;
 const DEPT_COLUMNS: &str = "d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, \
      d.leader_id, d.leader, d.fgld_id, d.fgld_name, d.bank_name, d.account, d.social_code, \
      d.postal_code, d.address, d.phone, d.email, d.status, d.del_flag, d.create_by, \
-     d.create_time, d.is_zbzg, d.is_uint, d.tree_leavel, d.sub_code, d.dept_jc, d.tenant_id";
+     d.create_time, d.is_zbzg, d.is_uint, d.tree_leavel, d.sub_code, d.dept_jc, d.tenant_id, \n     null as updateBy, null as updateTime, null as remark, null as parentName, \n     null as flag, null as dataId, null as deptSubCode";
 
 static LOG_ADD: LogSpec = LogSpec::new(
     "部门管理",
@@ -110,6 +110,16 @@ pub fn routes() -> Router<AppState> {
 }
 
 /// Java: selectDeptList —— del_flag='0' + 动态条件 + @DataScope。
+/// Java SysDept：orderNum 是 String，children 初始化为空集合。
+fn shape_dept_rows(rows: &mut [Value]) {
+    support::apply_formats(rows, &[("orderNum", support::FieldFormat::String)]);
+    for row in rows {
+        if let Some(object) = row.as_object_mut() {
+            object.entry("children").or_insert_with(|| json!([]));
+        }
+    }
+}
+
 async fn select_dept_list(
     state: &AppState,
     user: &LoginUser,
@@ -124,7 +134,9 @@ async fn select_dept_list(
     }
     builder.push(" order by d.parent_id, d.order_num");
     let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(rows_to_json(&rows))
+    let mut rows = rows_to_json(&rows);
+    shape_dept_rows(&mut rows);
+    Ok(rows)
 }
 
 fn push_dept_filters(builder: &mut QueryBuilder<'_, MySql>, params: &HashMap<String, String>) {
@@ -287,9 +299,11 @@ async fn get_info(
     .bind(&dept_id)
     .fetch_optional(&state.db)
     .await?;
-    Ok(AjaxResult::success_data(
-        row.map(|row| crate::db::rows::row_to_json(&row)),
-    ))
+    Ok(AjaxResult::success_data(row.map(|row| {
+        let mut rows = vec![crate::db::rows::row_to_json(&row)];
+        shape_dept_rows(&mut rows);
+        rows.pop().unwrap_or(Value::Null)
+    })))
 }
 
 async fn select_dept_ids_by_role(

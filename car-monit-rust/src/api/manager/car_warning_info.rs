@@ -280,7 +280,7 @@ async fn list(
 async fn export(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let mut params = support::query_map(&raw);
     normalize(&mut params);
     let (_, rows) = query(&state, &params, None).await?;
@@ -337,7 +337,7 @@ async fn export(
             values
         })
         .collect::<Vec<_>>();
-    support::export_excel(&state, "预警车辆数据", &headers, &data)
+    support::export_download("预警车辆数据", &headers, &data)
 }
 
 async fn get_info(
@@ -345,15 +345,24 @@ async fn get_info(
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     let row = sqlx::query(&format!(
-        "select {COLUMNS} from car_warning_info t left join car_info c on t.car_id = c.id \
-         where t.id = ?"
+        "select {COLUMNS}, t.track_josn, null as gantryTimeStr, null as applyTime1, \
+         null as applyTime2, null as carNoQuery, null as createTimeStr, null as inTimeStr, \
+         null as flag, null as flagTime, null as queryRante, null as gantryCode, \
+         null as tollCode, null as fwqbm, null as type, null as code, \
+         null as sectionCodeList, null as codeList, null as needToWarnStr, \
+         null as nextPassTimeStr \
+         from car_warning_info t left join car_info c on t.car_id = c.id where t.id = ?"
     ))
     .bind(&id)
     .fetch_optional(&state.db)
     .await?;
-    Ok(AjaxResult::success_data(
-        row.map(|row| crate::db::rows::row_to_json(&row)),
-    ))
+    Ok(AjaxResult::success_data(row.map(|row| {
+        let mut value = crate::db::rows::row_to_json(&row);
+        if let Some(object) = value.as_object_mut() {
+            object.insert("trailFwqList".to_string(), serde_json::json!([]));
+        }
+        value
+    })))
 }
 
 async fn add(

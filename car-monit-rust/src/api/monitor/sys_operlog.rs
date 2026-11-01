@@ -16,7 +16,7 @@ use crate::state::AppState;
 const SPEC: ListSpec = ListSpec {
     select: "oper_id, title, business_type, method, request_method, operator_type, oper_name, \
              dept_name, oper_url, oper_ip, oper_location, oper_param, json_result, status, \
-             error_msg, oper_time",
+             error_msg, oper_time, null as businessTypes, null as createBy, null as createTime, null as updateBy, null as updateTime, null as remark",
     from: "from sys_oper_log",
     filters: &[
         Filter::like("title", "title"),

@@ -29,6 +29,9 @@ pub struct SysRole {
     pub flag: bool,
     pub menu_ids: Option<Vec<i64>>,
     pub dept_ids: Option<Vec<i64>>,
+    /// Java: SysRole.isAdmin()。
+    #[serde(default)]
+    pub admin: bool,
 
     // BaseEntity
     #[serde(skip_serializing)]

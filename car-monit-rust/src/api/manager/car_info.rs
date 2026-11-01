@@ -30,7 +30,7 @@ const SPEC: ListSpec = ListSpec {
              t.road_code, t.road_name, t.toll_code, t.toll_name, t.link_name, t.link_phone, \
              t.fwqbm, t.fwqmc, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, \
              t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id, \
-             concat(sd.dept_name, ' ', su.nick_name) createInfo",
+             concat(sd.dept_name, ' ', su.nick_name) createInfo, \n             null as trackJosn, null as applyTime1, null as applyTime2, null as carNoQuery, \n             null as createTimeStr, null as trailList, null as flag",
     from: "from car_info t left join sys_user su on su.user_id = t.create_by \
            left join sys_dept sd on t.eps_id = sd.dept_id",
     filters: &[
@@ -107,7 +107,7 @@ const SPEC: ListSpec = ListSpec {
             " and not exists ( select 1 from zdata_trail_tracks tr where tr.plate_key = t.car_no )",
         ),
     ],
-    extra_where: " and not exists ( select 1 from (select t1.car_no, \
+    extra_where: " and t.del_flag = '0' and not exists ( select 1 from (select t1.car_no, \
                   sum(case when t1.status = '0' then 1 else 0 end) except_num, \
                   count(1) count_num from car_except_record t1 where t1.del_flag = '0' \
                   group by t1.car_no) k where t.car_no = k.car_no and k.count_num > 0 \
@@ -209,7 +209,7 @@ async fn list(
 async fn export(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let plate_color = support::dict_map(&state.db, "plate_color").await?;
@@ -280,7 +280,7 @@ async fn export(
             values
         })
         .collect::<Vec<_>>();
-    support::export_excel(&state, "车辆信息数据", &headers, &data)
+    support::export_download("车辆信息数据", &headers, &data)
 }
 
 async fn get_info(

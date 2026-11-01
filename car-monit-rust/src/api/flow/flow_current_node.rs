@@ -21,10 +21,18 @@ use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
-    select: "t.ID, t.FLOW_OID, t.CURRENT_OID, t.NODE_ORDER, t.NODE_KEY, t.NODE_NAME, \
-             t.CONFIG_TYPE, t.CONFIG_ID, t.CONFIG_NAME, t.BILL_OID, t.AUIT_EMP_OID, \
-             t.AUIT_EMP_NAME, t.BACK_COL1, t.BACK_COL2, t.BACK_COL3, t.sort, t.eps_id, \
-             t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time",
+    select: "t.ID as id, t.FLOW_OID as flowOid, t.CURRENT_OID as currentOid, \
+             t.NODE_ORDER as nodeOrder, t.NODE_KEY as nodeKey, t.NODE_NAME as nodeName, \
+             t.CONFIG_TYPE as configType, t.CONFIG_ID as configId, t.CONFIG_NAME as configName, \
+             t.BILL_OID as billOid, t.AUIT_EMP_OID as auitEmpOid, \
+             t.AUIT_EMP_NAME as auitEmpName, t.BACK_COL1 as backCol1, \
+             t.BACK_COL2 as backCol2, t.BACK_COL3 as backCol3, t.sort, t.eps_id, \
+             t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, \
+             null as remark, null as tenantId, null as deptSubCode, null as flag, \
+             null as searchValue, null as params, null as roleId, null as tableName, \
+             null as projectId, null as flowKey, null as flowRuid, null as flowApplyOid, \
+             null as flowStatus, null as shValue, null as shContext, null as entrustUserId, \
+             null as entrustUserName, null as roleKey, null as deptId",
     from: "from flow_current_node t",
     filters: &[
         Filter::eq("id", "t.id"),
@@ -46,7 +54,7 @@ const SPEC: ListSpec = ListSpec {
         Filter::eq("epsId", "t.eps_id"),
         Filter::eq("createBy", "t.create_by"),
     ],
-    extra_where: "",
+    extra_where: " and t.del_flag = '0'",
     order_by: "t.create_time desc, t.id",
     id_column: "t.ID",
 };
@@ -628,11 +636,26 @@ async fn get_info_by_bill(
 ) -> Result<AjaxResult, AppError> {
     let mut params = HashMap::new();
     params.insert("billOid".to_string(), bill_oid);
+    let bill_oid_value = params.get("billOid").cloned().unwrap_or_default();
     let rows = select_nodes(&state.db, &params).await?;
-    // Java: 查不到时返回 new FlowCurrentNode()（全 null 对象）。
-    Ok(AjaxResult::success_data(
-        rows.into_iter().next().unwrap_or_else(|| Value::Object(Map::new())),
-    ))
+    // Java: 查不到时返回 new FlowCurrentNode()（实体字段全 null）。
+    let node = rows.into_iter().next().unwrap_or_else(|| {
+        let mut object = Map::new();
+        for key in [
+            "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime",
+            "sort", "remark", "tenantId", "deptSubCode", "flag", "searchValue", "params",
+            "flowOid", "currentOid", "nodeOrder", "nodeKey", "nodeName", "configType",
+            "configId", "configName", "billOid", "auitEmpOid", "auitEmpName", "backCol1",
+            "backCol2", "backCol3", "roleId", "tableName", "projectId", "flowKey", "flowRuid",
+            "flowApplyOid", "flowStatus", "shValue", "shContext", "entrustUserId",
+            "entrustUserName", "roleKey", "deptId",
+        ] {
+            object.insert(key.to_string(), Value::Null);
+        }
+        object.insert("billOid".to_string(), Value::String(bill_oid_value));
+        Value::Object(object)
+    });
+    Ok(AjaxResult::success_data(node))
 }
 
 async fn add(

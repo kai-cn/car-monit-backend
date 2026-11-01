@@ -118,7 +118,21 @@ async fn car_statistics(
     }
     builder.push(" group by a.escaped_type");
     let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(AjaxResult::success_data(rows_to_json(&rows)))
+    let mut data = rows_to_json(&rows);
+    let labels = support::dict_map(&state.db, "escaped_type").await?;
+    for row in &mut data {
+        if let Some(object) = row.as_object_mut() {
+            let key = object
+                .get("escapedType")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            object.insert(
+                "escapedTypeName".to_string(),
+                json!(labels.get(key).cloned().unwrap_or_default()),
+            );
+        }
+    }
+    Ok(AjaxResult::success_data(data))
 }
 
 /// Java: CarInfoMapper.getCarLocation。
@@ -146,27 +160,87 @@ async fn car_location(
         }
     }
 
-    let mut builder = QueryBuilder::<MySql>::new(
-        "select t.id, t.car_no, t.car_type, t.last_pass_longitude as lonStr, \
-         t.last_pass_latitude as latStr, t.status from car_info t \
-         where t.del_flag = '0' and t.status = '1'",
-    );
-    for (key, column) in [
-        ("fwqbm", "t.gantry_code"),
-        ("gantryCode", "t.gantry_code"),
-        ("tollCode", "t.gantry_code"),
-        ("roadCode", "t.gantry_code"),
-        ("escapedType", "t.escaped_type"),
-        ("carNoQuery", "t.car_no"),
-    ] {
-        if let Some(value) = params.get(key).filter(|v| !v.trim().is_empty()) {
-            builder.push(format!(" and {column} like concat('%', "));
-            builder.push_bind(value.clone());
-            builder.push(", '%')");
+    // Java 从 car_list 缓存过滤（未命中时回源 DB），按逗号分隔的编码包含匹配。
+    let cached = state.redis.get_object::<Value>("car_list").await?;
+    let source = match cached {
+        Some(Value::Array(items)) => items,
+        _ => {
+            let rows = sqlx::query(
+                "select t.id, t.car_no, t.car_type, t.last_pass_longitude, t.last_pass_latitude,                  t.last_pass_type, t.status, t.gantry_code, t.escaped_type                  from car_info t where t.del_flag = '0'",
+            )
+            .fetch_all(&state.db)
+            .await?;
+            rows_to_json(&rows)
         }
+    };
+    let mut data = Vec::new();
+    for row in source {
+        if row.get("status").and_then(Value::as_str).unwrap_or_default() != "1" {
+            continue;
+        }
+        let dev_codes = row
+            .get("gantryCode")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        let mut ok = true;
+        for (param_key, row_key) in [
+            ("roadCode", "gantryCode"),
+            ("sectionCode", "gantryCode"),
+            ("tollCode", "gantryCode"),
+            ("gantryCode", "gantryCode"),
+            ("fwqbm", "gantryCode"),
+            ("escapedType", "escapedType"),
+            ("carNoQuery", "carNo"),
+        ] {
+            let para = params.get(param_key).cloned().unwrap_or_default();
+            let para = para.trim_end_matches(',').to_string();
+            if para.trim().is_empty() {
+                continue;
+            }
+            let value = if row_key == "gantryCode" {
+                dev_codes.clone()
+            } else {
+                row.get(row_key)
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_string()
+            };
+            if !para.split(',').any(|part| value.contains(part)) {
+                ok = false;
+                break;
+            }
+        }
+        if !ok {
+            continue;
+        }
+        let lon_str = row.get("lastPassLongitude").cloned().unwrap_or(Value::Null);
+        let lat_str = row.get("lastPassLatitude").cloned().unwrap_or(Value::Null);
+        let lon = lon_str
+            .as_str()
+            .and_then(|text| text.trim().parse::<f64>().ok())
+            .and_then(serde_json::Number::from_f64)
+            .map(Value::Number)
+            .unwrap_or(Value::Null);
+        let lat = lat_str
+            .as_str()
+            .and_then(|text| text.trim().parse::<f64>().ok())
+            .and_then(serde_json::Number::from_f64)
+            .map(Value::Number)
+            .unwrap_or(Value::Null);
+        data.push(json!({
+            "id": row.get("id").cloned().unwrap_or(Value::Null),
+            "carNo": row.get("carNo").cloned().unwrap_or(Value::Null),
+            "carType": row.get("carType").cloned().unwrap_or(Value::Null),
+            "lonStr": lon_str,
+            "latStr": lat_str,
+            "lastPassType": row.get("lastPassType").cloned().unwrap_or(Value::Null),
+            "lon": lon,
+            "lat": lat,
+            "status": row.get("status").cloned().unwrap_or(Value::Null),
+        }));
     }
-    let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(AjaxResult::success_data(rows_to_json(&rows)))
+    Ok(AjaxResult::success_data(data))
 }
 
 async fn section_list(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
@@ -190,10 +264,17 @@ async fn toll_gantry_fwq(
         .get("sectionCode")
         .map(|value| value.trim().trim_end_matches(',').to_string())
         .unwrap_or_default();
+    let type_value = params.get("type").cloned().unwrap_or_default();
+    if type_value.trim().is_empty() {
+        // Java: @RequestParam String type（required=true）缺失时由 Spring 返回 500。
+        return Err(AppError::BadRequest(
+            "Required request parameter 'type' for method parameter type String is not present"
+                .to_string(),
+        ));
+    }
     if section_code.is_empty() {
         return Ok(AjaxResult::success_data(Vec::<Value>::new()));
     }
-    let type_value = params.get("type").cloned().unwrap_or_default();
     let use_filter = !section_code.contains("all");
     let codes: Vec<String> = section_code
         .split(',')
@@ -241,7 +322,7 @@ async fn toll_gantry_fwq(
 
 async fn car_vo_list(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
     let rows = sqlx::query(
-        "select t.id, t.car_no, t.car_type, t.escaped_type, t.escaped_type_name, t.escaped_amount \
+        "select t.car_no, t.car_type, t.escaped_type, t.escaped_amount \
          from car_info t where t.del_flag = '0' order by t.create_time desc, t.id limit 10",
     )
     .fetch_all(&state.db)
@@ -305,26 +386,52 @@ async fn car_warning(
 }
 
 async fn exception_car(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
-    let rows = sqlx::query(
-        "select t.car_no, t.car_type, t.escaped_type, t.section_name from car_suspicious t \
+    let rows = sqlx::query(&format!(
+        "select {} from car_suspicious t \
          where t.del_flag = '0' and is_except = '1' and check_status = '1' \
          order by t.create_time desc, t.id limit 10",
-    )
+        crate::api::manager::car_suspicious::SUSPICIOUS_COLUMNS
+    ))
     .fetch_all(&state.db)
     .await?;
-    Ok(AjaxResult::success_data(rows_to_json(&rows)))
+    let mut data = rows_to_json(&rows);
+    let keep = ["carNo", "carType", "escapedType", "sectionName"];
+    for row in &mut data {
+        if let Some(object) = row.as_object_mut() {
+            for (key, value) in object.iter_mut() {
+                if !keep.contains(&key.as_str()) {
+                    *value = Value::Null;
+                }
+            }
+        }
+    }
+    Ok(AjaxResult::success_data(data))
 }
 
 async fn top_ten(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
     let rows = sqlx::query(
-        "select t1.road_code roadCode, t1.section_name sectionName, count(1) carNum \
-         from car_warning_info t, ods_szdn_section t1 \
+        "select t1.road_code roadCode, concat(t1.road_code, ' ', t1.section_name) sectionName, \
+         count(1) carNum from car_warning_info t, ods_szdn_section t1 \
          where t.del_flag = '0' and t.section_code = t1.section_code \
          group by t1.road_code, t1.section_name order by carNum desc limit 10",
     )
     .fetch_all(&state.db)
     .await?;
-    Ok(AjaxResult::success_data(rows_to_json(&rows)))
+    let mut data = rows_to_json(&rows);
+    let total: f64 = data
+        .first()
+        .and_then(|row| row.get("carNum"))
+        .and_then(Value::as_f64)
+        .unwrap_or(0.0);
+    for (index, row) in data.iter_mut().enumerate() {
+        if let Some(object) = row.as_object_mut() {
+            let count = object.get("carNum").and_then(Value::as_f64).unwrap_or(0.0);
+            object.insert("rank".to_string(), json!(index + 1));
+            let rate = if total > 0.0 { (count * 100.0 / total) as i64 } else { 0 };
+            object.insert("rate".to_string(), json!(rate.to_string()));
+        }
+    }
+    Ok(AjaxResult::success_data(data))
 }
 
 async fn org_list(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
@@ -349,7 +456,7 @@ async fn income_statistic(
 
     let mut builder = QueryBuilder::<MySql>::new(
         "select sum(ifnull(amount, 0)) amount, count(distinct car_no) carNum, \
-         d.dept_name orgName, a.org_id from ( \
+         d.dept_name orgName from ( \
          select t.car_no, t.amount, t.org_id, t.create_time, t.del_flag, t.status \
          from car_confim_free t where t.del_flag = '0' and t.status = '0' \
          union all select t.car_no, t.amount, t.org_id, t.create_time, t.del_flag, t.status \
@@ -404,9 +511,10 @@ async fn except_record_list(
         .await?;
         if let Some(object) = row.as_object_mut() {
             object.insert("orgId".to_string(), json!(org_id));
-            if count > 0 {
-                object.insert("supplementaryStatus".to_string(), json!("1"));
-            }
+            object.insert(
+                "supplementaryStatus".to_string(),
+                json!(if count > 0 { "1" } else { "0" }),
+            );
         }
     }
     Ok(TableDataInfo::new(total, rows))

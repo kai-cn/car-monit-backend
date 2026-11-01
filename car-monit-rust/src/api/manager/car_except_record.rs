@@ -22,7 +22,7 @@ const SPEC: ListSpec = ListSpec {
              t.out_time, t.total_amount, t.charge_amount, t.dif_amount, t.escaped_type, \
              t.remark, t.back_col1, t.back_col2, t.status, t.sort, t.eps_id, t.del_flag, \
              t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id, \
-             concat(sd.dept_name, ' ', su.nick_name) createInfo",
+             concat(sd.dept_name, ' ', su.nick_name) createInfo, \n             null as applyTime1, null as applyTime2, null as applyTime3, null as applyTime4, \n             null as createTimeStr, null as orgId, null as exceptIds, null as carNoQuery, \n             null as exceptNum, null as exceptAmount, null as inTimeStr, null as outTimeStr, '0' as supplementaryStatus",
     from: "from car_except_record t left join sys_user su on su.user_id = t.create_by \
            left join sys_dept sd on t.eps_id = sd.dept_id",
     filters: &[
@@ -57,7 +57,7 @@ const SPEC: ListSpec = ListSpec {
         Filter::like("carNoQuery", "t.car_no"),
         Filter::raw("exceptIds", " and find_in_set(t.id, ?) > 0"),
     ],
-    extra_where: "",
+    extra_where: " and t.del_flag = '0'",
     order_by: "t.create_time desc, t.id",
     id_column: "t.id",
 };
@@ -224,14 +224,17 @@ async fn except_count(
     if !status.is_empty() {
         q = q.bind(status);
     }
-    let rows = q.fetch_all(&state.db).await?;
-    Ok(AjaxResult::success_data(crate::db::rows::rows_to_json(&rows)))
+    let row = q.fetch_optional(&state.db).await?;
+    Ok(match row {
+        Some(row) => AjaxResult::success_data(crate::db::rows::row_to_json(&row)),
+        None => AjaxResult::success(),
+    })
 }
 
 async fn export(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     export_rows(&state, &rows).await
@@ -240,14 +243,14 @@ async fn export(
 async fn export_org(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let mut params = support::query_map(&raw);
     params.entry("epsId".to_string()).or_insert_with(|| "-1".to_string());
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     export_rows(&state, &rows).await
 }
 
-async fn export_rows(state: &AppState, rows: &[Value]) -> Result<AjaxResult, AppError> {
+async fn export_rows(state: &AppState, rows: &[Value]) -> Result<axum::response::Response, AppError> {
     let car_type = support::dict_map(&state.db, "car_type").await?;
     let car_vehicle = support::dict_map(&state.db, "car_vehicle").await?;
     let escaped_type = support::dict_map(&state.db, "escaped_type").await?;
@@ -282,7 +285,7 @@ async fn export_rows(state: &AppState, rows: &[Value]) -> Result<AjaxResult, App
             values
         })
         .collect::<Vec<_>>();
-    support::export_excel(state, "异常车辆流水数据", &headers, &data)
+    support::export_download("异常车辆流水数据", &headers, &data)
 }
 
 async fn get_confirm_id(
@@ -315,13 +318,19 @@ async fn import(
     ))
 }
 
+fn clear_create_info(row: &mut Option<Value>) {
+    if let Some(Value::Object(object)) = row.as_mut() {
+        object.insert("createInfo".to_string(), Value::Null);
+    }
+}
+
 async fn get_info(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &id).await?,
-    ))
+    let mut row = support::query_by_id(&state.db, &SPEC, &id).await?;
+    clear_create_info(&mut row);
+    Ok(AjaxResult::success_data(row))
 }
 
 async fn add(

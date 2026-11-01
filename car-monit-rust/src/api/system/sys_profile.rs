@@ -18,6 +18,27 @@ use crate::error::AppError;
 use crate::response::AjaxResult;
 use crate::state::AppState;
 
+/// Java 登录态 user 由 FastJson2 反序列化，params 字段里会残留 `@type` 键。
+fn shape_profile_user(value: &mut Value, admin: bool) {
+    let Some(object) = value.as_object_mut() else { return };
+    object.remove("password");
+    object.insert("admin".to_string(), Value::Bool(admin));
+    let params = json!({ "@type": "java.util.HashMap" });
+    object.insert("params".to_string(), params.clone());
+    if let Some(dept) = object.get_mut("dept").and_then(Value::as_object_mut) {
+        dept.insert("params".to_string(), params.clone());
+    }
+    if let Some(roles) = object.get_mut("roles").and_then(Value::as_array_mut) {
+        for role in roles {
+            if let Some(role) = role.as_object_mut() {
+                role.insert("params".to_string(), params.clone());
+                let role_admin = role.get("roleId").and_then(Value::as_i64) == Some(1);
+                role.insert("admin".to_string(), Value::Bool(role_admin));
+            }
+        }
+    }
+}
+
 static LOG_UPDATE: LogSpec = LogSpec::new(
     "个人信息",
     BusinessType::Update,
@@ -90,8 +111,10 @@ async fn profile(
     .await?
     .flatten();
 
+    let mut data = serde_json::to_value(user.user.for_http())?;
+    shape_profile_user(&mut data, user.user.is_admin());
     let mut ajax = AjaxResult::success();
-    ajax.insert_value("data", serde_json::to_value(user.user.for_http())?);
+    ajax.insert_value("data", data);
     ajax.insert_value("roleGroup", json!(role_group.unwrap_or_default()));
     ajax.insert_value("postGroup", json!(post_group.unwrap_or_default()));
     Ok(ajax)
@@ -297,11 +320,13 @@ async fn avatar(
 async fn save_login_user(state: &AppState, login_user: &LoginUser) -> Result<(), AppError> {
     let ttl = login_user.expire_time - chrono::Utc::now().timestamp_millis();
     let seconds = (ttl / 1000).max(1) as u64;
+    // FastJson2 WriteClassName：登录态写回 Redis 必须带 @type。
+    let stored = login_user.clone().for_redis();
     state
         .redis
         .set_object_ttl(
             &format!("login_tokens:{}", login_user.token),
-            login_user,
+            &stored,
             Some(std::time::Duration::from_secs(seconds)),
         )
         .await?;

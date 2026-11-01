@@ -8,7 +8,7 @@ use axum::{Extension, Json, Router};
 use serde_json::Value;
 
 use crate::api::meta::{self, BusinessType, LogSpec};
-use crate::api::support::{self, Filter, ListSpec};
+use crate::api::support::{self, FieldFormat, Filter, ListSpec};
 use crate::domain::LoginUser;
 use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
@@ -44,10 +44,15 @@ const SPEC: ListSpec = ListSpec {
         Filter::eq("tenantId", "t.tenant_id"),
         Filter::eq("createBy", "t.create_by"),
     ],
-    extra_where: "",
+    extra_where: " and t.del_flag = '0'",
     order_by: "t.create_time desc, t.id",
     id_column: "t.id",
 };
+
+const FORMATS: &[(&str, FieldFormat)] = &[
+    ("applyTime2", FieldFormat::DateOnly),
+    ("shTime", FieldFormat::DateOnly),
+];
 
 static LOG_EXPORT: LogSpec = LogSpec::new(
     "业务测试",
@@ -113,7 +118,7 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -144,7 +149,7 @@ async fn get_info(
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &id).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &id, FORMATS).await?,
     ))
 }
 

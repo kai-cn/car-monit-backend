@@ -42,6 +42,52 @@ pub fn export_workbook(
     Ok(filename)
 }
 
+/// Java: 模板导出（EasyPOI）直接写响应流。返回工作簿字节供 HTTP 下载。
+#[cfg(feature = "excel")]
+pub fn export_bytes(
+    sheet_name: &str,
+    headers: &[String],
+    rows: &[Vec<Value>],
+) -> Result<Vec<u8>, AppError> {
+    use rust_xlsxwriter::{Format, Workbook};
+
+    let mut workbook = Workbook::new();
+    let sheet_name = sanitize_sheet_name(sheet_name);
+    let worksheet = workbook.add_worksheet();
+    worksheet
+        .set_name(&sheet_name)
+        .map_err(|err| AppError::Service(format!("导出Excel失败，请联系网站管理员！{err}")))?;
+
+    let header_format = Format::new()
+        .set_bold()
+        .set_background_color(rust_xlsxwriter::Color::RGB(0xD9E1F2))
+        .set_align(rust_xlsxwriter::FormatAlign::Center);
+    for (col, header) in headers.iter().enumerate() {
+        worksheet
+            .write_string_with_format(0, col as u16, header, &header_format)
+            .map_err(|err| AppError::Service(format!("导出Excel失败，请联系网站管理员！{err}")))?;
+    }
+    for (row_index, row) in rows.iter().enumerate() {
+        let excel_row = (row_index + 1) as u32;
+        for (col, value) in row.iter().enumerate() {
+            write_cell(worksheet, excel_row, col as u16, value)
+                .map_err(|err| AppError::Service(format!("导出Excel失败，请联系网站管理员！{err}")))?;
+        }
+    }
+    workbook
+        .save_to_buffer()
+        .map_err(|err| AppError::Service(format!("导出Excel失败，请联系网站管理员！{err}")))
+}
+
+#[cfg(not(feature = "excel"))]
+pub fn export_bytes(
+    _sheet_name: &str,
+    _headers: &[String],
+    _rows: &[Vec<Value>],
+) -> Result<Vec<u8>, AppError> {
+    Err(AppError::Service("导出Excel失败，请联系网站管理员！".to_string()))
+}
+
 #[cfg(feature = "excel")]
 fn write_xlsx(
     path: &std::path::Path,
@@ -49,29 +95,8 @@ fn write_xlsx(
     headers: &[String],
     rows: &[Vec<Value>],
 ) -> Result<(), Box<dyn std::error::Error>> {
-    use rust_xlsxwriter::{Format, Workbook};
-
-    let mut workbook = Workbook::new();
-    let sheet_name = sanitize_sheet_name(sheet_name);
-    let worksheet = workbook.add_worksheet();
-    worksheet.set_name(&sheet_name)?;
-
-    // Java: createHeadCell —— 表头加粗、灰底、居中。
-    let header_format = Format::new()
-        .set_bold()
-        .set_background_color(rust_xlsxwriter::Color::RGB(0xD9E1F2))
-        .set_align(rust_xlsxwriter::FormatAlign::Center);
-    for (col, header) in headers.iter().enumerate() {
-        worksheet.write_string_with_format(0, col as u16, header, &header_format)?;
-    }
-
-    for (row_index, row) in rows.iter().enumerate() {
-        let excel_row = (row_index + 1) as u32;
-        for (col, value) in row.iter().enumerate() {
-            write_cell(worksheet, excel_row, col as u16, value)?;
-        }
-    }
-    workbook.save(path)?;
+    let bytes = export_bytes(sheet_name, headers, rows).map_err(|err| err.to_string())?;
+    std::fs::write(path, bytes)?;
     Ok(())
 }
 
@@ -97,10 +122,13 @@ fn write_cell(
             }
         }
         Value::String(text) => {
+            // Excel 单元格上限 32767 字符，超出时截断避免整个导出失败。
+            let text: String = text.chars().take(32767).collect();
             worksheet.write_string(row, col, text)?;
         }
         other => {
-            worksheet.write_string(row, col, other.to_string())?;
+            let text: String = other.to_string().chars().take(32767).collect();
+            worksheet.write_string(row, col, text)?;
         }
     };
     Ok(())

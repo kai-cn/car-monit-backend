@@ -8,7 +8,7 @@ use axum::{Extension, Json, Router};
 use serde_json::Value;
 
 use crate::api::meta::{self, BusinessType, LogSpec};
-use crate::api::support::{self, Filter, ListSpec};
+use crate::api::support::{self, FieldFormat, Filter, ListSpec};
 use crate::domain::LoginUser;
 use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
@@ -38,6 +38,14 @@ const SPEC: ListSpec = ListSpec {
     order_by: "t.road_code, t.section_code",
     id_column: "t.id",
 };
+
+// Java 实体 startPileNo/endPileNo/mileage 为 Integer，openDate 为 LocalDate。
+const FORMATS: &[(&str, FieldFormat)] = &[
+    ("startPileNo", FieldFormat::Int),
+    ("endPileNo", FieldFormat::Int),
+    ("mileage", FieldFormat::Int),
+    ("openDate", FieldFormat::DateOnly),
+];
 
 static LOG_EXPORT: LogSpec = LogSpec::new(
     "路段信息",
@@ -106,7 +114,7 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -115,7 +123,7 @@ async fn export(
     RawQuery(raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
-    let rows = support::query_all(&state.db, &params, &SPEC).await?;
+    let rows = support::query_all_fmt(&state.db, &params, &SPEC, FORMATS).await?;
     let headers = [
         "路线编码", "路线名称", "路段编码", "路段名称", "起点桩号", "终点桩号", "机构代码",
         "机构名称", "层级代码", "机构分类", "里程", "通车日期",
@@ -134,7 +142,7 @@ async fn get_info(
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &id).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &id, FORMATS).await?,
     ))
 }
 

@@ -51,7 +51,7 @@ pub fn access(method: &Method, path: &str) -> Access {
     }
 
     // .antMatchers("/common/download**").anonymous()
-    if path.starts_with("/common/download") {
+    if path == "/common/download" {
         return Access::Anonymous;
     }
     // .antMatchers("/system/file/view/**").anonymous()
@@ -111,9 +111,11 @@ mod tests {
             Access::PermitAll
         );
         assert_eq!(access(&Method::GET, "/v2/api-docs"), Access::DenyAll);
+        // 实测：带 token 访问 /common/download/resource 返回 200（Java 的
+        // `/common/download**` 匿名规则只命中精确路径，子路径走 authenticated）。
         assert_eq!(
             access(&Method::GET, "/common/download/1"),
-            Access::Anonymous
+            Access::Authenticated
         );
         assert_eq!(
             access(&Method::GET, "/system/user/list"),

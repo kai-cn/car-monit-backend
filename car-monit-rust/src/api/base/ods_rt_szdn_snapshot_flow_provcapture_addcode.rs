@@ -8,7 +8,7 @@ use axum::Router;
 use serde_json::Value;
 
 use crate::api::meta;
-use crate::api::support::{self, Filter, ListSpec};
+use crate::api::support::{self, FieldFormat, Filter, ListSpec};
 use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
@@ -123,6 +123,16 @@ const SPEC: ListSpec = ListSpec {
     id_column: "t.big_id",
 };
 
+// Java 实体字段类型：uploadtime/headcapturetime/sidecapturetime 为 LocalDate，
+// tailcapturetime/loadtime 为 java.util.Date（Jackson 默认 ISO+时区）。
+const FORMATS: &[(&str, FieldFormat)] = &[
+    ("uploadtime", FieldFormat::DateOnly),
+    ("headcapturetime", FieldFormat::DateOnly),
+    ("sidecapturetime", FieldFormat::DateOnly),
+    ("tailcapturetime", FieldFormat::IsoOffset),
+    ("loadtime", FieldFormat::IsoOffset),
+];
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
@@ -141,7 +151,7 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -150,6 +160,6 @@ async fn get_info(
     Path(big_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &big_id).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &big_id, FORMATS).await?,
     ))
 }

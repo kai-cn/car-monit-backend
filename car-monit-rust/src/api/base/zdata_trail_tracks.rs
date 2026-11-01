@@ -15,12 +15,17 @@ use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
     select: "t.uuid, t.type, t.point_count, t.plate_key, t.enter_time, t.exit_time, \
-             t.trail_points, t.create_time, t.enter_locationcode, t.exit_locationcode, \
+             t.trail_points, t.enter_locationcode, t.exit_locationcode, \
              t.track_josn, t.enaxlecount, t.entolllaneid, t.entollstationid, \
              t.entollstationname, t.envehicleclass, t.envehicleid, t.envehicletype, t.enweight, \
              t.extolllaneid, t.extollstationid, t.extollstationname, t.exvehicleclass, \
              t.exvehicleid, t.exvehicletype, t.exweight, t.start_lon, t.strat_lat, t.end_lon, \
-             t.end_lat",
+             t.end_lat, null as firtStationCode, null as firtStationName, null as firtStationTime, \
+             null as plateColor, null as carType, null as carNo, null as carVehicle, null as carNum, \
+             null as escapedType, null as passType, null as escapedTypeRemark, null as applyTime1, \
+             null as applyTime2, null as isCylx, null as flag, null as startLonDec, \
+             null as stratLatDec, null as endLonDec, null as endLatDec, null as uuidList, \
+             null as passCount, null as escapedTfcj",
     from: "from zdata_trail_tracks t",
     filters: &[
         Filter::eq("uuid", "t.uuid"),

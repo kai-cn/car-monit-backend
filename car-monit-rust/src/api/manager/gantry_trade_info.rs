@@ -3,6 +3,8 @@
 // 职责: 门架交易 CRUD 与导出（BasePlusEntity 通用逻辑）。
 // 对应关系: manager_crud! 宏生成 list/export/get/add/edit/remove。
 
+use crate::api::support::FieldFormat;
+
 crate::manager_crud! {
     route: "/manager/gantrytrade",
     perm: "manager:gantrytrade",
@@ -10,9 +12,14 @@ crate::manager_crud! {
     class: "com.ruoyi.web.controller.manager.GantryTradeInfoController",
     sheet: "门架交易数据",
     table: "gantry_trade_info",
-    select: "t.id, t.car_no, t.car_type, t.car_vehicle, t.car_num, t.in_station_id, t.in_station, t.in_time, t.out_station_id, t.out_station, t.out_time, t.charge_type, t.amount, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id",
+    select: "t.id, t.car_no, t.car_type, t.car_vehicle, t.car_num, t.in_station_id, t.in_station, t.in_time, t.out_station_id, t.out_station, t.out_time, t.charge_type, t.amount, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id, null as applyTime1, null as applyTime2, null as createTimeStr",
     from: "from gantry_trade_info t",
     order: "t.create_time desc,t.id",
+    dates: [
+        ("inTime", FieldFormat::DateOnly),
+        ("outTime", FieldFormat::DateOnly),
+    ],
+    binary: true,
     filters: [
         Filter::eq("id", "t.id"),
         Filter::eq("carNo", "t.car_no"),

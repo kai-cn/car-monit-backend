@@ -22,7 +22,7 @@ const SPEC: ListSpec = ListSpec {
     select: "t.id, t.confirm_id, t.car_id, t.car_no, t.car_type, t.car_vehicle, t.org_id, \
              t.user_ids, t.user_names, t.amount, t.back_col1, t.back_col2, t.remark, t.status, \
              t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, \
-             t.update_time, t.tenant_id, d.dept_name org_name",
+             t.update_time, t.tenant_id, d.dept_name org_name, \n             null as applyTime1, null as applyTime2",
     from: "from car_aduit_free t left join sys_dept d on d.dept_id = t.org_id and d.del_flag = '0'",
     filters: &[
         Filter::eq("id", "t.id"),
@@ -44,7 +44,7 @@ const SPEC: ListSpec = ListSpec {
         Filter::eq("tenantId", "t.tenant_id"),
         Filter::eq("createBy", "t.create_by"),
     ],
-    extra_where: "",
+    extra_where: " and t.del_flag = '0'",
     order_by: "t.create_time, t.id",
     id_column: "t.id",
 };
@@ -205,14 +205,14 @@ async fn income_statics(
 async fn export_income_statics(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let params = support::query_map(&raw);
     let rows = income_sql(&params).build().fetch_all(&state.db).await?;
     let data = crate::db::rows::rows_to_json(&rows);
     let headers = ["金额", "车辆数", "单位编码", "单位名称"].map(str::to_string);
     let fields = ["amount", "carNum", "org_id", "orgName"];
     let data = data.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
-    support::export_excel(&state, "收入统计", &headers, &data)
+    support::export_download("收入统计", &headers, &data)
 }
 
 fn detail_sql(
@@ -262,14 +262,14 @@ async fn income_details(
 async fn export_income_details(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let params = support::query_map(&raw);
     let rows = detail_sql(&params, false).build().fetch_all(&state.db).await?;
     let data = crate::db::rows::rows_to_json(&rows);
     let headers = ["金额", "车牌号", "单位编码", "单位名称", "时间"].map(str::to_string);
     let fields = ["amount", "carNo", "org_id", "orgName", "create_time"];
     let data = data.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
-    support::export_excel(&state, "收入明细", &headers, &data)
+    support::export_download("收入明细", &headers, &data)
 }
 
 async fn get_info(
