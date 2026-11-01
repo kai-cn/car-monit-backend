@@ -8,7 +8,7 @@ use axum::Router;
 use serde_json::Value;
 
 use crate::api::meta;
-use crate::api::support::{self, Filter, ListSpec};
+use crate::api::support::{self, FieldFormat, Filter, ListSpec};
 use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
@@ -63,6 +63,13 @@ const SPEC: ListSpec = ListSpec {
     id_column: "t.big_id",
 };
 
+// Java 实体这些字段为 LocalDate。
+const FORMATS: &[(&str, FieldFormat)] = &[
+    ("snapshottime", FieldFormat::DateOnly),
+    ("receivedtime", FieldFormat::DateOnly),
+    ("loadtime", FieldFormat::DateOnly),
+];
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
@@ -81,7 +88,7 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -90,6 +97,6 @@ async fn get_info(
     Path(big_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &big_id).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &big_id, FORMATS).await?,
     ))
 }

@@ -190,7 +190,7 @@ async fn get_config_key(
             other => other.to_string(),
         };
         if !text.is_empty() {
-            return Ok(AjaxResult::success_data(text));
+            return Ok(AjaxResult::success_msg(text));
         }
     }
     let value: Option<String> =
@@ -201,9 +201,10 @@ async fn get_config_key(
     match value {
         Some(value) => {
             state.redis.set_object(&cache_key, &value).await?;
-            Ok(AjaxResult::success_data(value))
+            // Java 重载解析命中 success(String msg)：值放在 msg 上，没有 data。
+            Ok(AjaxResult::success_msg(value))
         }
-        None => Ok(AjaxResult::success_data("")),
+        None => Ok(AjaxResult::success_msg("")),
     }
 }
 

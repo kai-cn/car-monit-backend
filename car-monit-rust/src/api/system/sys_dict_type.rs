@@ -16,7 +16,8 @@ use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
-    select: "dict_id, dict_name, dict_type, status, create_by, create_time, remark",
+    select: "dict_id, dict_name, dict_type, status, create_by, create_time, remark, \
+             null as updateBy, null as updateTime",
     from: "from sys_dict_type",
     filters: &[
         Filter::like("dictName", "dict_name"),

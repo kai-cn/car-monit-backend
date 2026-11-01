@@ -8,7 +8,7 @@ use axum::Router;
 use serde_json::Value;
 
 use crate::api::meta;
-use crate::api::support::{self, Filter, ListSpec};
+use crate::api::support::{self, FieldFormat, Filter, ListSpec};
 use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
@@ -60,6 +60,13 @@ const SPEC: ListSpec = ListSpec {
     id_column: "t.dataSource",
 };
 
+// Java 实体 checkTime/loadTime 为 LocalDate，loadRate 为 Integer。
+const FORMATS: &[(&str, FieldFormat)] = &[
+    ("checkTime", FieldFormat::DateOnly),
+    ("loadTime", FieldFormat::DateOnly),
+    ("loadRate", FieldFormat::Int),
+];
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
@@ -78,7 +85,7 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -86,7 +93,19 @@ async fn get_info(
     State(state): State<AppState>,
     Path(data_source): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &data_source).await?,
-    ))
+    // MyBatis selectOne：多于一条记录抛 TooManyResultsException。
+    let rows = support::query_all_fmt(
+        &state.db,
+        &std::collections::HashMap::from([("dataSource".to_string(), data_source.clone())]),
+        &SPEC,
+        FORMATS,
+    )
+    .await?;
+    match rows.len() {
+        0 => Ok(AjaxResult::success()),
+        1 => Ok(AjaxResult::success_data(rows.into_iter().next())),
+        _ => Ok(AjaxResult::error(
+            "Expected one result (or null) to be returned by selectOne(), but found multiple",
+        )),
+    }
 }

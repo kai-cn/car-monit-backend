@@ -279,7 +279,13 @@ async fn column_list(
     // Java: 路径变量拼写为 {talbleId}，真正取值来自 query 的 tableId。
     let table_id = query.get("tableId").cloned().unwrap_or_default();
     let rows = select_columns(&state.db, &table_id).await?;
-    Ok(TableDataInfo::new(rows.len() as i64, rows))
+    // Java GenController.columnList：new TableDataInfo() 形态（code=0, msg=null）。
+    Ok(TableDataInfo {
+        total: rows.len() as i64,
+        rows,
+        code: 0,
+        msg: None,
+    })
 }
 
 async fn select_columns(pool: &MySqlPool, table_id: &str) -> Result<Vec<Value>, AppError> {

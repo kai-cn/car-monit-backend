@@ -15,7 +15,7 @@ use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
     select: "job_log_id, job_name, job_group, invoke_target, job_message, status, \
-             exception_info, create_time",
+             exception_info, create_time, null as createBy, null as remark, null as startTime, null as stopTime, null as updateBy, null as updateTime",
     from: "from sys_job_log",
     filters: &[
         Filter::like("jobName", "job_name"),
@@ -135,12 +135,11 @@ async fn export(
 }
 
 async fn get_info(
-    State(state): State<AppState>,
-    Path(job_log_id): Path<String>,
+    State(_state): State<AppState>,
+    Path(_job_log_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &job_log_id).await?,
-    ))
+    // Java: 路由变量名是 {configId}，方法参数 @PathVariable("jobLogId")，绑定失败返回 500。
+    Ok(AjaxResult::error("请求路径中缺少必需的路径变量[jobLogId]"))
 }
 
 async fn remove(

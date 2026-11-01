@@ -3,6 +3,8 @@
 // 职责: 白名单 CRUD 与导出（BasePlusEntity 通用逻辑）。
 // 对应关系: manager_crud! 宏生成 list/export/get/add/edit/remove。
 
+use crate::api::support::FieldFormat;
+
 crate::manager_crud! {
     route: "/manager/whiteinfo",
     perm: "manager:whiteinfo",
@@ -10,9 +12,17 @@ crate::manager_crud! {
     class: "com.ruoyi.web.controller.manager.CarWhiteInfoController",
     sheet: "白名单数据",
     table: "car_white_info",
-    select: "t.id, t.plate_color, t.car_no, t.car_type, t.car_vehicle, t.car_num, t.file_ids, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id",
-    from: "from car_white_info t",
+    select: "t.id, t.plate_color, t.car_no, t.car_type, t.car_vehicle, t.car_num, t.file_ids, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id, null as carNoQuery, concat(sd.dept_name, ' ', su.nick_name) as createInfo, \
+             null as createTimeStr",
+    from: "from car_white_info t left join sys_user su on su.user_id = t.create_by \
+           left join sys_dept sd on t.eps_id = sd.dept_id",
     order: "t.create_time desc,t.id",
+    dates: [
+        ("inTime", FieldFormat::DateOnly),
+        ("outTime", FieldFormat::DateOnly),
+    ],
+    get_info_nulls: ["createInfo"],
+    binary: true,
     filters: [
         Filter::eq("id", "t.id"),
         Filter::eq("plateColor", "t.plate_color"),

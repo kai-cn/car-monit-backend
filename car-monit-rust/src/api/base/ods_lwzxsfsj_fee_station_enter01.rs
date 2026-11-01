@@ -8,14 +8,14 @@ use axum::Router;
 use serde_json::Value;
 
 use crate::api::meta;
-use crate::api::support::{self, Filter, ListSpec};
+use crate::api::support::{self, FieldFormat, Filter, ListSpec};
 use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
     select: "t.big_id, t.cardid, t.electricalpercentage, t.enaxlecount, t.entime, \
-             t.entolllanehex, t.entolllaneid, t.entollstationid, t.enweight, t.id, \
+             t.entolllanehex, t.entolllaneid, t.entollstationid, t.enweight, \
              t.identifyvehicleid, t.lanetype, t.mediatype, t.operid, t.operationmedia, t.params, \
              t.passid, t.receivetime, t.shift, t.signstatus, t.specialtype, t.tac, t.terminalno, \
              t.terminaltransno, t.transfee, t.transtype, t.vcount, t.vehicleclass, t.vehicleid, \
@@ -61,6 +61,13 @@ const SPEC: ListSpec = ListSpec {
     id_column: "t.big_id",
 };
 
+// Java 实体这些字段是 LocalDate（只输出 yyyy-MM-dd），DB 是 datetime。
+const FORMATS: &[(&str, FieldFormat)] = &[
+    ("entime", FieldFormat::DateOnly),
+    ("receivetime", FieldFormat::DateOnly),
+    ("loadTime", FieldFormat::DateOnly),
+];
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
@@ -79,7 +86,7 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -88,6 +95,6 @@ async fn get_info(
     Path(big_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &big_id).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &big_id, FORMATS).await?,
     ))
 }

@@ -18,6 +18,9 @@ macro_rules! manager_crud {
         select: $select:literal,
         from: $from:literal,
         order: $order:literal,
+        $(dates: [$($date:expr),* $(,)?],)?
+        $(get_info_nulls: [$($null_key:literal),* $(,)?],)?
+        binary: $binary:literal,
         filters: [$($filter:expr),* $(,)?],
         headers: [$($header:literal),* $(,)?],
         fields: [$($field:literal),* $(,)?]
@@ -29,7 +32,8 @@ macro_rules! manager_crud {
             select: $select,
             from: $from,
             filters: &[$($filter),*],
-            extra_where: "",
+            // Java Mapper XML 的列表 SQL 都带逻辑删除条件。
+            extra_where: " and t.del_flag = '0'",
             order_by: $order,
             id_column: "t.id",
         };
@@ -104,14 +108,17 @@ macro_rules! manager_crud {
         ) -> Result<$crate::response::TableDataInfo<serde_json::Value>, $crate::error::AppError> {
             let page = support::page_domain(&raw);
             let params = support::query_map(&raw);
-            let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+            let (total, mut rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+            let formats: &[(&str, support::FieldFormat)] = &[$($($date),*)?];
+            support::apply_formats(&mut rows, formats);
             Ok($crate::response::TableDataInfo::new(total, rows))
         }
 
         async fn export(
             axum::extract::State(state): axum::extract::State<$crate::state::AppState>,
             axum::extract::RawQuery(raw): axum::extract::RawQuery,
-        ) -> Result<$crate::response::AjaxResult, $crate::error::AppError> {
+        ) -> Result<axum::response::Response, $crate::error::AppError> {
+            use axum::response::IntoResponse;
             let params = support::query_map(&raw);
             let rows = support::query_all(&state.db, &params, &SPEC).await?;
             let headers = [$($header.to_string()),*];
@@ -120,16 +127,29 @@ macro_rules! manager_crud {
                 .iter()
                 .map(|row| support::pick_fields(row, &fields))
                 .collect::<Vec<_>>();
-            support::export_excel(&state, $sheet, &headers, &data)
+            if $binary {
+                support::export_download($sheet, &headers, &data)
+            } else {
+                Ok(support::export_excel(&state, $sheet, &headers, &data)?.into_response())
+            }
         }
 
         async fn get_info(
             axum::extract::State(state): axum::extract::State<$crate::state::AppState>,
             axum::extract::Path(id): axum::extract::Path<String>,
         ) -> Result<$crate::response::AjaxResult, $crate::error::AppError> {
-            Ok($crate::response::AjaxResult::success_data(
-                support::query_by_id(&state.db, &SPEC, &id).await?,
-            ))
+            let mut row = support::query_by_id(&state.db, &SPEC, &id).await?;
+            if let Some(value) = row.as_mut() {
+                let formats: &[(&str, support::FieldFormat)] = &[$($($date),*)?];
+                support::apply_formats(std::slice::from_mut(value), formats);
+                if let Some(object) = value.as_object_mut() {
+                    let keys: &[&str] = &[$($($null_key),*)?];
+                    for key in keys {
+                        object.insert(key.to_string(), serde_json::Value::Null);
+                    }
+                }
+            }
+            Ok($crate::response::AjaxResult::success_data(row))
         }
 
         async fn add(

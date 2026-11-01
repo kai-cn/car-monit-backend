@@ -16,9 +16,13 @@ use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
-    select: "t.ID, t.BILL_OID, t.BUSS_TYPE, t.TASK_ID, t.flow_ruid, t.CURRENT_OID, t.SH_USER, \
-             t.SH_KEY, t.SH_VALUE, t.SH_CONTEXT, t.BACK_COL1, t.BACK_COL2, t.BACK_COL3, t.sort, \
-             t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time",
+    select: "t.ID as id, t.BILL_OID as billOid, t.BUSS_TYPE as bussType, \
+             t.TASK_ID as taskId, t.flow_ruid as flowRuid, t.CURRENT_OID as currentOid, \
+             t.SH_USER as shUser, t.SH_KEY as shKey, t.SH_VALUE as shValue, \
+             t.SH_CONTEXT as shContext, t.BACK_COL1 as backCol1, t.BACK_COL2 as backCol2, \
+             t.BACK_COL3 as backCol3, t.sort, t.eps_id, t.del_flag, t.create_by, \
+             t.create_time, t.update_by, t.update_time, null as remark, null as tenantId, \
+             null as deptSubCode, null as flag, null as searchValue, null as params",
     from: "from flow_list t",
     filters: &[
         Filter::eq("id", "t.id"),
@@ -38,7 +42,7 @@ const SPEC: ListSpec = ListSpec {
         Filter::eq("epsId", "t.eps_id"),
         Filter::eq("createBy", "t.create_by"),
     ],
-    extra_where: "",
+    extra_where: " and t.del_flag = '0'",
     order_by: "t.create_time ASC, t.id",
     id_column: "t.ID",
 };

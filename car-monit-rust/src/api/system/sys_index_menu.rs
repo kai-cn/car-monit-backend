@@ -19,8 +19,13 @@ use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
-    select: "t.ID, t.USER_ID, t.MENU_ID, t.SORT, t.EPS_ID, t.DEL_FLAG, t.CREATE_BY, \
-             t.CREATE_TIME, t.UPDATE_BY, t.UPDATE_TIME, t.TENANT_ID",
+    select: "t.ID as id, t.USER_ID as userId, t.MENU_ID as menuId, t.SORT as sort, \
+             t.EPS_ID as epsId, t.DEL_FLAG as delFlag, t.CREATE_BY as createBy, \
+             t.CREATE_TIME as createTime, t.UPDATE_BY as updateBy, \
+             t.UPDATE_TIME as updateTime, t.TENANT_ID as tenantId, \
+             null as menuName, null as menuName1, null as menuName2, null as menuName3, \
+             null as menuIds, null as menuUrl, null as remark, null as deptSubCode, \
+             null as flag, null as searchValue, null as params",
     from: "from sys_index_menu t",
     filters: &[],
     extra_where: "",
@@ -104,7 +109,11 @@ fn candidate_sql(
         "select count(0) from sys_menu t1, sys_menu t2 \
          where t1.menu_type='C' and t1.visible = '0' and t2.menu_id = t1.parent_id"
     } else {
-        "select t2.menu_name as menu_name2, t1.menu_id, t1.menu_name \
+        "select t2.menu_name as menu_name2, t1.menu_id, t1.menu_name, \
+         null as id, null as epsId, null as delFlag, null as createBy, null as createTime, \
+         null as updateBy, null as updateTime, null as sort, null as remark, null as tenantId, \
+         null as deptSubCode, null as flag, null as searchValue, null as params, null as userId, \
+         null as menuName1, null as menuName3, null as menuIds, null as menuUrl \
          from sys_menu t1, sys_menu t2 \
          where t1.menu_type='C' and t1.visible = '0' and t2.menu_id = t1.parent_id"
     });
@@ -174,7 +183,13 @@ async fn my_list(
     Extension(user): Extension<LoginUser>,
 ) -> Result<AjaxResult, AppError> {
     let rows = sqlx::query(
-        "select t.id, t1.menu_name, concat(t2.path, '/', t1.path) as menuUrl \
+        "select t.ID as id, t.USER_ID as userId, t.MENU_ID as menuId, t.SORT as sort, \
+         t.EPS_ID as epsId, t.DEL_FLAG as delFlag, t.CREATE_BY as createBy, \
+         t.CREATE_TIME as createTime, t.UPDATE_BY as updateBy, t.UPDATE_TIME as updateTime, \
+         t.TENANT_ID as tenantId, t1.menu_name as menuName, \
+         concat(t2.path, '/', t1.path) as menuUrl, null as menuName1, null as menuName2, \
+         null as menuName3, null as menuIds, null as remark, null as deptSubCode, \
+         null as flag, null as searchValue, null as params \
          from SYS_INDEX_MENU t \
          left join sys_menu t1 on t.MENU_ID = t1.menu_id \
          left join sys_menu t2 on t1.parent_id = t2.menu_id \
@@ -184,7 +199,27 @@ async fn my_list(
     .bind(user.user.user_id)
     .fetch_all(&state.db)
     .await?;
-    Ok(AjaxResult::success_data(rows_to_json(&rows)))
+    let mut data = rows_to_json(&rows);
+    for row in &mut data {
+        if let Some(object) = row.as_object_mut() {
+            let id = object.remove("id").unwrap_or(Value::Null);
+            object.insert(
+                "id".to_string(),
+                match id {
+                    Value::Number(number) => Value::String(number.to_string()),
+                    other => other,
+                },
+            );
+            for key in [
+                "userId", "menuId", "sort", "epsId", "delFlag", "createBy", "createTime",
+                "updateBy", "updateTime", "tenantId", "menuName1", "menuName2", "menuName3",
+                "menuIds", "remark", "deptSubCode", "flag", "searchValue", "params",
+            ] {
+                object.insert(key.to_string(), Value::Null);
+            }
+        }
+    }
+    Ok(AjaxResult::success_data(data))
 }
 
 async fn export(
@@ -212,9 +247,13 @@ async fn get_info(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &id).await?,
-    ))
+    let mut row = support::query_by_id(&state.db, &SPEC, &id).await?;
+    if let Some(Value::Object(object)) = row.as_mut() {
+        if let Some(number) = object.get("id").and_then(Value::as_i64) {
+            object.insert("id".to_string(), Value::String(number.to_string()));
+        }
+    }
+    Ok(AjaxResult::success_data(row))
 }
 
 async fn add(

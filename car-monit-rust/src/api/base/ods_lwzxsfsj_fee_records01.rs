@@ -173,14 +173,15 @@ async fn export(
     State(state): State<AppState>,
     Extension(user): Extension<LoginUser>,
     RawQuery(raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let query = support::query_map(&raw);
     support::query_log(&state.db, &user, &support::query_json(&query), "3", "2").await?;
 
     let start = query.get("inApplyTime1").map(|value| !is_blank(value)).unwrap_or(false);
     let end = query.get("inApplyTime2").map(|value| !is_blank(value)).unwrap_or(false);
     if !(start && end) {
-        return Ok(AjaxResult::success());
+        // Java 模板导出即使没有数据也会写出表头工作簿。
+        return support::export_download("基础-收费流水数据", &[], &[]);
     }
 
     let forwarded = remote_query(&query);
@@ -205,7 +206,7 @@ async fn export(
         "passstate", "chargeStatus", "feevehicletype", "vehicleclass", "passid", "entimeStr",
     ];
     let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
-    support::export_excel(&state, "基础-收费流水数据", &headers, &data)
+    support::export_download("基础-收费流水数据", &headers, &data)
 }
 
 async fn get_info(

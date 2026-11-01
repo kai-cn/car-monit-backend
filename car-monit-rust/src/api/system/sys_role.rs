@@ -21,7 +21,34 @@ use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
 const ROLE_COLUMNS: &str = "r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, \
-     r.menu_check_strictly, r.dept_check_strictly, r.status, r.del_flag, r.create_time, r.remark";
+     r.menu_check_strictly, r.dept_check_strictly, r.status, r.del_flag, r.create_time, r.remark, \
+     null as createBy, null as updateBy, null as updateTime, 0 as flag, \
+     null as menuIds, null as deptIds";
+
+const ROLE_FORMATS: &[(&str, support::FieldFormat)] = &[
+    ("roleSort", support::FieldFormat::String),
+    ("menuCheckStrictly", support::FieldFormat::Bool),
+    ("deptCheckStrictly", support::FieldFormat::Bool),
+    ("flag", support::FieldFormat::Bool),
+];
+
+/// Java: SysRole.isAdmin() 影响 JSON 的 `admin` 字段；menuIds/deptIds 为 null。
+pub(crate) fn role_rows(mut rows: Vec<Value>) -> Vec<Value> {
+    support::apply_formats(&mut rows, ROLE_FORMATS);
+    for row in &mut rows {
+        if let Some(object) = row.as_object_mut() {
+            let admin = object
+                .get("roleId")
+                .and_then(Value::as_i64)
+                .map(|id| id == 1)
+                .unwrap_or(false);
+            object.insert("admin".to_string(), Value::Bool(admin));
+            object.entry("menuIds").or_insert(Value::Null);
+            object.entry("deptIds").or_insert(Value::Null);
+        }
+    }
+    rows
+}
 
 static LOG_EXPORT: LogSpec = LogSpec::new(
     "角色管理",
@@ -170,7 +197,7 @@ async fn select_roles(
     }
     builder.push(" order by r.role_sort");
     let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(rows_to_json(&rows))
+    Ok(role_rows(rows_to_json(&rows)))
 }
 
 async fn list(
@@ -207,7 +234,7 @@ async fn list(
     builder.push(" offset ");
     builder.push_bind(offset);
     let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(TableDataInfo::new(total, rows_to_json(&rows)))
+    Ok(TableDataInfo::new(total, role_rows(rows_to_json(&rows))))
 }
 
 async fn export(
@@ -279,7 +306,11 @@ async fn get_info(
     .fetch_optional(&state.db)
     .await?;
     Ok(AjaxResult::success_data(
-        row.map(|row| crate::db::rows::row_to_json(&row)),
+        row.map(|row| {
+            role_rows(vec![crate::db::rows::row_to_json(&row)])
+                .pop()
+                .unwrap_or(Value::Null)
+        }),
     ))
 }
 
@@ -617,11 +648,12 @@ async fn refresh_login_user(state: &AppState, user: &LoginUser) -> Result<(), Ap
     let ttl = login_user.expire_time - chrono::Utc::now().timestamp_millis();
     let seconds = (ttl / 1000).max(1) as u64;
     // Java: TokenService.setLoginUser —— 以相同 key 覆盖缓存，保留原过期窗口。
+    let stored = login_user.clone().for_redis();
     state
         .redis
         .set_object_ttl(
             &format!("login_tokens:{}", login_user.token),
-            &login_user,
+            &stored,
             Some(std::time::Duration::from_secs(seconds)),
         )
         .await?;

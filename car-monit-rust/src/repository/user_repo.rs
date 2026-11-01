@@ -57,8 +57,7 @@ pub async fn select_user_by_user_name(
         order_num: order_num.map(|n| n.to_string()),
         leader,
         status: dept_status,
-        tenant_id,
-        sub_code: sub_code.clone(),
+        // Java deptResult 只映射 deptId/parentId/deptName/orderNum/leader/status。
         ..Default::default()
     });
 
@@ -81,8 +80,9 @@ pub async fn select_user_by_user_name(
         login_date: row.try_get::<Option<NaiveDateTime>, _>("login_date")?,
         create_by: row.try_get("create_by")?,
         create_time: row.try_get::<Option<NaiveDateTime>, _>("create_time")?,
-        update_by: row.try_get("update_by")?,
-        update_time: row.try_get::<Option<NaiveDateTime>, _>("update_time")?,
+        // selectUserVo 未查询 u.update_by/u.update_time。
+        update_by: None,
+        update_time: None,
         remark: row.try_get("remark")?,
         cert_entity_id: row.try_get("cert_entity_id")?,
         cert_id: row.try_get("cert_id")?,

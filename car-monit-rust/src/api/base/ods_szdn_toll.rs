@@ -8,7 +8,7 @@ use axum::{Extension, Json, Router};
 use serde_json::Value;
 
 use crate::api::meta::{self, BusinessType, LogSpec};
-use crate::api::support::{self, Filter, ListSpec};
+use crate::api::support::{self, FieldFormat, Filter, ListSpec};
 use crate::domain::LoginUser;
 use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
@@ -18,7 +18,7 @@ const SELECT: &str = "t.id, t.road_code, t.id_card, t.toll_code, t.toll_name, t.
      t.org_name, t.hex_code, t.state_code, t.org_code, t.longitude, t.latitude, t.open_date, \
      t.toll_alias_name, t.in_monitor_resource, t.lane_monitor_resource, t.square_monitor_resource, \
      t.dynamic_monitor_resource, t.toll_code_merge, t.state_code_merge, t.toll_name_merge, \
-     t.section_code, t.toll_org_code, t.is_access";
+     t.section_code, t.toll_org_code, t.is_access, \n     null as sectionCodeList, null as sectionName";
 
 const SPEC: ListSpec = ListSpec {
     select: SELECT,
@@ -58,6 +58,9 @@ const SPEC: ListSpec = ListSpec {
     order_by: "t.toll_name",
     id_column: "t.id",
 };
+
+// Java 实体 openDate 为 LocalDate。
+const FORMATS: &[(&str, FieldFormat)] = &[("openDate", FieldFormat::DateOnly)];
 
 static LOG_EXPORT: LogSpec = LogSpec::new(
     "收费站基础信息",
@@ -139,7 +142,7 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, mut rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, mut rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     let names = section_names(&state).await;
     for row in &mut rows {
         if let Some(object) = row.as_object_mut() {
@@ -157,7 +160,7 @@ async fn list_all(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -166,7 +169,7 @@ async fn export(
     RawQuery(raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
-    let rows = support::query_all(&state.db, &params, &SPEC).await?;
+    let rows = support::query_all_fmt(&state.db, &params, &SPEC, FORMATS).await?;
     let headers = [
         "路线编号", "收费站业务唯一编码", "收费站编号", "收费站名称", "桩号", "所属机构名称",
         "收费站HEX编码", "国网编号", "机构编码", "经度", "纬度", "开通日期", "收费站别名",
@@ -211,7 +214,7 @@ async fn get_info(
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &id).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &id, FORMATS).await?,
     ))
 }
 

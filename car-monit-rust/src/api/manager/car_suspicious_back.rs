@@ -3,6 +3,8 @@
 // 职责: 可疑车辆库 CRUD 与导出（BasePlusEntity 通用逻辑）。
 // 对应关系: manager_crud! 宏生成 list/export/get/add/edit/remove。
 
+use crate::api::support::FieldFormat;
+
 crate::manager_crud! {
     route: "/manager/carsuspiciousback",
     perm: "manager:carsuspiciousback",
@@ -10,9 +12,16 @@ crate::manager_crud! {
     class: "com.ruoyi.web.controller.manager.CarSuspiciousBackController",
     sheet: "可疑车辆库数据",
     table: "car_suspicious_back",
-    select: "t.id, t.plate_color, t.car_no, t.car_type, t.car_vehicle, t.car_num, t.pass_type, t.in_station_id, t.in_station, t.in_time, t.out_station_id, t.out_station, t.out_time, t.gantry_station_id, t.gantryt_station, t.gantry_time, t.file_ids, t.out_gantry_station_id, t.out_gantryt_station, t.out_gantry_time, t.out_file_ids, t.escaped_type, t.escaped_type_name, t.escaped_num, t.is_except, t.except_remark, t.except_file_ids, t.check_status, t.org_id, t.org_name, t.is_white, t.white_remark, t.white_file_ids, t.road_code, t.road_name, t.section_code, t.section_name, t.track_id, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.create_time",
+    select: "t.id, t.plate_color, t.car_no, t.car_type, t.car_vehicle, t.car_num, t.pass_type, t.in_station_id, t.in_station, t.in_time, t.out_station_id, t.out_station, t.out_time, t.gantry_station_id, t.gantryt_station, t.gantry_time, t.file_ids, t.out_gantry_station_id, t.out_gantryt_station, t.out_gantry_time, t.out_file_ids, t.escaped_type, t.escaped_type_name, t.escaped_num, t.is_except, t.except_remark, t.except_file_ids, t.check_status, t.org_id, t.org_name, t.is_white, t.white_remark, t.white_file_ids, t.road_code, t.road_name, t.section_code, t.section_name, t.track_id, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.create_time, null as epsId, null as delFlag, null as createBy, null as updateBy, null as updateTime, null as tenantId, null as trackJosn, null as trackNames",
     from: "from car_suspicious_back t",
     order: "t.create_time desc,t.id",
+    dates: [
+        ("inTime", FieldFormat::DateOnly),
+        ("outTime", FieldFormat::DateOnly),
+        ("gantryTime", FieldFormat::DateOnly),
+        ("outGantryTime", FieldFormat::DateOnly),
+    ],
+    binary: false,
     filters: [
         Filter::eq("id", "t.id"),
         Filter::eq("plateColor", "t.plate_color"),

@@ -155,6 +155,50 @@ impl RedisCache {
     }
 }
 
+/// FastJson2 `WriteClassName`：给缓存对象补 `@type`，Java 端 `getCacheObject`
+/// / `getCacheList` 依赖它才能反序列化成具体类（否则得到 JSONObject 抛 ClassCastException）。
+pub fn stamp_type(mut value: serde_json::Value, type_name: &str) -> serde_json::Value {
+    if let serde_json::Value::Object(map) = &mut value {
+        let mut stamped = serde_json::Map::with_capacity(map.len() + 1);
+        stamped.insert(
+            "@type".to_string(),
+            serde_json::Value::String(type_name.to_string()),
+        );
+        for (key, item) in std::mem::take(map) {
+            stamped.insert(key, item);
+        }
+        *map = stamped;
+    }
+    value
+}
+
+/// 批量补 `@type`（FastJson2 集合元素同样带类名）。
+pub fn stamp_types(values: Vec<serde_json::Value>, type_name: &str) -> Vec<serde_json::Value> {
+    values
+        .into_iter()
+        .map(|value| stamp_type(value, type_name))
+        .collect()
+}
+
+/// 从缓存对象中剥离 FastJson2 的 `@type`：Java 反序列化后返回的 HTTP 实体
+/// 不含该字段，Rust 直接把缓存 JSON 返回给前端时需要先去掉。
+pub fn strip_type(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            map.remove("@type");
+            for item in map.values_mut() {
+                strip_type(item);
+            }
+        }
+        serde_json::Value::Array(items) => {
+            for item in items {
+                strip_type(item);
+            }
+        }
+        _ => {}
+    }
+}
+
 /// FastJson2 的 `WriteClassName` 会给 Long 输出 `123L`（非法 JSON）。
 /// Redis 与 Java 共存时需要先剥掉整数字面量后缀再交给 serde。
 fn sanitize_fastjson2(text: &str) -> std::borrow::Cow<'_, str> {
@@ -169,23 +213,71 @@ fn sanitize_fastjson2(text: &str) -> std::borrow::Cow<'_, str> {
                 break;
             }
         }
+        // FastJson2 WriteClassName 的容器字面量：Set[...] / List[...] / JSONArray[...]。
+        if *byte == b'[' {
+            for prefix in [b"Set[".as_slice(), b"List[".as_slice(), b"JSONArray[".as_slice()] {
+                let start = index + 1;
+                if start >= prefix.len() && &bytes[start - prefix.len()..start] == prefix {
+                    needs = true;
+                    break;
+                }
+            }
+        }
     }
     if !needs {
         return std::borrow::Cow::Borrowed(text);
     }
     let mut out = String::with_capacity(text.len());
     let mut previous_digit = false;
-    let mut chars = text.char_indices().peekable();
-    while let Some((_, ch)) = chars.next() {
+    let mut in_string = false;
+    let mut escaped = false;
+    let mut index = 0;
+    while index < text.len() {
+        let ch = text[index..].chars().next().unwrap();
+        if in_string {
+            out.push(ch);
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                in_string = false;
+            }
+            previous_digit = false;
+            index += ch.len_utf8();
+            continue;
+        }
+        if ch == '"' {
+            in_string = true;
+            out.push(ch);
+            previous_digit = false;
+            index += 1;
+            continue;
+        }
+        let mut typed_prefix = 0;
+        for prefix in ["Set[", "List[", "JSONArray["] {
+            if text[index..].starts_with(prefix) {
+                typed_prefix = prefix.len();
+                break;
+            }
+        }
+        if typed_prefix > 0 {
+            out.push('[');
+            previous_digit = false;
+            index += typed_prefix;
+            continue;
+        }
         if matches!(ch, 'L' | 'l') && previous_digit {
-            if let Some((_, next)) = chars.peek() {
-                if matches!(next, ',' | '}' | ']') {
-                    continue;
-                }
+            let next = text[index + 1..].chars().next();
+            if matches!(next, Some(',') | Some('}') | Some(']')) {
+                previous_digit = false;
+                index += 1;
+                continue;
             }
         }
         previous_digit = ch.is_ascii_digit();
         out.push(ch);
+        index += ch.len_utf8();
     }
     std::borrow::Cow::Owned(out)
 }

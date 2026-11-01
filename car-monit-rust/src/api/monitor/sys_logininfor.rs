@@ -14,7 +14,7 @@ use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
-    select: "info_id, user_name, ipaddr, login_location, browser, os, status, msg, login_time",
+    select: "info_id, user_name, ipaddr, login_location, browser, os, status, msg, login_time, \n             null as createBy, null as createTime, null as updateBy, null as updateTime, \n             null as remark",
     from: "from sys_logininfor",
     filters: &[
         Filter::like("ipaddr", "ipaddr"),

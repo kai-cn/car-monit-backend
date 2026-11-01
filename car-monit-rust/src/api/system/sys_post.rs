@@ -8,14 +8,14 @@ use axum::{Extension, Json, Router};
 use serde_json::{json, Value};
 
 use crate::api::meta::{self, BusinessType, LogSpec};
-use crate::api::support::{self, AutoFill, Filter, ListSpec};
+use crate::api::support::{self, AutoFill, FieldFormat, Filter, ListSpec};
 use crate::domain::LoginUser;
 use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
-    select: "post_id, post_code, post_name, post_sort, status, create_by, create_time, remark",
+    select: "post_id, post_code, post_name, post_sort, status, create_by, create_time, remark, \n             null as updateBy, null as updateTime, 0 as flag",
     from: "from sys_post",
     filters: &[
         Filter::like("postCode", "post_code"),
@@ -26,6 +26,12 @@ const SPEC: ListSpec = ListSpec {
     order_by: "",
     id_column: "post_id",
 };
+
+// Java: postSort 是 String；flag 是 boolean。
+const FORMATS: &[(&str, FieldFormat)] = &[
+    ("postSort", FieldFormat::String),
+    ("flag", FieldFormat::Bool),
+];
 
 static LOG_EXPORT: LogSpec = LogSpec::new(
     "岗位管理",
@@ -99,7 +105,7 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -108,7 +114,7 @@ async fn export(
     RawQuery(raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
-    let rows = support::query_all(&state.db, &params, &SPEC).await?;
+    let rows = support::query_all_fmt(&state.db, &params, &SPEC, FORMATS).await?;
     let headers =
         ["岗位序号", "岗位编码", "岗位名称", "岗位排序", "状态"].map(str::to_string);
     let fields = ["postId", "postCode", "postName", "postSort", "status"];
@@ -130,9 +136,22 @@ async fn export(
     support::export_excel(&state, "岗位数据", &headers, &data)
 }
 
+fn shape_post_rows(mut rows: Vec<Value>) -> Vec<Value> {
+    support::apply_formats(&mut rows, FORMATS);
+    for row in &mut rows {
+        if let Some(object) = row.as_object_mut() {
+            object.entry("updateBy").or_insert(Value::Null);
+            object.entry("updateTime").or_insert(Value::Null);
+            object.entry("flag").or_insert(Value::Bool(false));
+        }
+    }
+    rows
+}
+
 async fn optionselect(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
-    let rows = support::query_all(&state.db, &std::collections::HashMap::new(), &SPEC).await?;
-    Ok(AjaxResult::success_data(rows))
+    let rows =
+        support::query_all_fmt(&state.db, &std::collections::HashMap::new(), &SPEC, FORMATS).await?;
+    Ok(AjaxResult::success_data(shape_post_rows(rows)))
 }
 
 async fn get_info(
@@ -140,7 +159,7 @@ async fn get_info(
     Path(post_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &post_id).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &post_id, FORMATS).await?,
     ))
 }
 

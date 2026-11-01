@@ -16,10 +16,15 @@ use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
 pub(crate) const SPEC: ListSpec = ListSpec {
-    select: "t.ID, t.FLOW_OID, t.FLOW_TYPE, t.NODE_ORDER, t.NODE_KEY, t.NODE_NAME, \
-             t.NEXT_NODE_OID, t.PREVIOUS_NODE_OID, t.RETURN_NUM, t.RETURN_NODE_OID, \
-             t.CONFIG_CONDTION, t.CONFIG_TYPE, t.CONFIG_ID, t.CONFIG_NAME, t.sort, t.eps_id, \
-             t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time",
+    select: "t.ID as id, t.FLOW_OID as flowOid, t.FLOW_TYPE as flowType, \
+             t.NODE_ORDER as nodeOrder, t.NODE_KEY as nodeKey, t.NODE_NAME as nodeName, \
+             t.NEXT_NODE_OID as nextNodeOid, t.PREVIOUS_NODE_OID as previousNodeOid, \
+             t.RETURN_NUM as returnNum, t.RETURN_NODE_OID as returnNodeOid, \
+             t.CONFIG_CONDTION as configCondtion, t.CONFIG_TYPE as configType, \
+             t.CONFIG_ID as configId, t.CONFIG_NAME as configName, t.sort, t.eps_id, \
+             t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, \
+             null as remark, null as tenantId, null as deptSubCode, null as flag, \
+             null as searchValue, null as params",
     from: "from flow_template t",
     filters: &[
         Filter::eq("id", "t.id"),
@@ -40,7 +45,7 @@ pub(crate) const SPEC: ListSpec = ListSpec {
         Filter::eq("epsId", "t.eps_id"),
         Filter::eq("createBy", "t.create_by"),
     ],
-    extra_where: "",
+    extra_where: " and t.del_flag = '0'",
     order_by: "t.NODE_ORDER, t.id",
     id_column: "t.ID",
 };

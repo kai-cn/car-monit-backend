@@ -9,7 +9,7 @@ use axum::{Extension, Json, Router};
 use serde_json::{json, Map, Value};
 
 use crate::api::meta::{self, BusinessType, LogSpec};
-use crate::api::support::{self, AutoFill, Filter, ListSpec};
+use crate::api::support::{self, AutoFill, FieldFormat, Filter, ListSpec};
 use crate::api::system::sys_dict_type::clear_dict_cache;
 use crate::domain::LoginUser;
 use crate::error::AppError;
@@ -18,7 +18,9 @@ use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
     select: "dict_code, dict_sort, dict_label, dict_value, dict_type, css_class, list_class, \
-             is_default, status, create_by, create_time, remark",
+             is_default, status, create_by, create_time, remark, \
+             null as updateBy, null as updateTime, \
+             case when is_default = 'Y' then 1 else 0 end as `default`",
     from: "from sys_dict_data",
     filters: &[
         Filter::eq("dictType", "dict_type"),
@@ -30,8 +32,24 @@ const SPEC: ListSpec = ListSpec {
     id_column: "dict_code",
 };
 
+// Java: `default` 是 boolean getter。
+const FORMATS: &[(&str, FieldFormat)] = &[("default", FieldFormat::Bool)];
+
+fn add_dict_params(rows: &mut [Value]) {
+    for row in rows {
+        if let Some(object) = row.as_object_mut() {
+            object.insert(
+                "params".to_string(),
+                serde_json::json!({ "@type": "java.util.HashMap" }),
+            );
+        }
+    }
+}
+
 const BY_TYPE_SQL: &str = "select dict_code, dict_sort, dict_label, dict_value, dict_type, \
-     css_class, list_class, is_default, status, create_by, create_time, remark \
+     css_class, list_class, is_default, status, create_by, create_time, remark, \
+     null as updateBy, null as updateTime, \
+     case when is_default = 'Y' then 1 else 0 end as `default` \
      from sys_dict_data where status = '0' and dict_type = ? order by dict_sort asc";
 
 static LOG_EXPORT: LogSpec = LogSpec::new(
@@ -119,7 +137,7 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -128,7 +146,7 @@ async fn export(
     RawQuery(raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
-    let rows = support::query_all(&state.db, &params, &SPEC).await?;
+    let rows = support::query_all_fmt(&state.db, &params, &SPEC, FORMATS).await?;
     let headers = [
         "字典编码", "字典排序", "字典标签", "字典键值", "字典类型", "是否默认", "状态",
     ]
@@ -162,7 +180,7 @@ async fn get_info(
     Path(dict_code): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &dict_code).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &dict_code, FORMATS).await?,
     ))
 }
 
@@ -171,8 +189,9 @@ async fn by_type(
     Path(dict_type): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     let cache_key = format!("sys_dict:{dict_type}");
-    if let Some(cached) = state.redis.get_object::<Value>(&cache_key).await? {
+    if let Some(mut cached) = state.redis.get_object::<Value>(&cache_key).await? {
         if cached.as_array().map(|items| !items.is_empty()).unwrap_or(false) {
+            crate::db::redis_cache::strip_type(&mut cached);
             return Ok(AjaxResult::success_data(cached));
         }
     }
@@ -180,9 +199,17 @@ async fn by_type(
         .bind(&dict_type)
         .fetch_all(&state.db)
         .await?;
-    let data = crate::db::rows::rows_to_json(&rows);
+    let mut data = crate::db::rows::rows_to_json(&rows);
+    support::apply_formats(&mut data, FORMATS);
+    add_dict_params(&mut data);
     if !data.is_empty() {
-        state.redis.set_object(&cache_key, &data).await?;
+        // Java: DictTypeServiceImpl 通过 setCacheObject(List<SysDictData>) 写缓存，
+        // FastJson2 WriteClassName 为每个元素写 @type；缺少会使 Java 反序列化失败。
+        let cached = crate::db::redis_cache::stamp_types(
+            data.clone(),
+            "com.ruoyi.common.core.domain.entity.SysDictData",
+        );
+        state.redis.set_object(&cache_key, &cached).await?;
         return Ok(AjaxResult::success_data(data));
     }
     Ok(AjaxResult::success_data(Vec::<Value>::new()))
@@ -200,8 +227,9 @@ async fn by_type_more(
     let names: Vec<&str> = types.split(',').collect();
     let mut builder = sqlx::QueryBuilder::<sqlx::MySql>::new(
         "select dict_code, dict_sort, dict_label, dict_value, dict_type, css_class, list_class, \
-         is_default, status, create_by, create_time, remark from sys_dict_data \
-         where status = '0' and dict_type in (",
+         is_default, status, create_by, create_time, remark, null as updateBy, \
+         null as updateTime, case when is_default = 'Y' then 1 else 0 end as `default` \
+         from sys_dict_data where status = '0' and dict_type in (",
     );
     let mut separated = builder.separated(", ");
     for name in &names {
@@ -209,7 +237,8 @@ async fn by_type_more(
     }
     builder.push(") order by dict_type, dict_sort asc");
     let rows = builder.build().fetch_all(&state.db).await?;
-    let data = crate::db::rows::rows_to_json(&rows);
+    let mut data = crate::db::rows::rows_to_json(&rows);
+    support::apply_formats(&mut data, FORMATS);
 
     let mut grouped: Map<String, Value> = Map::new();
     for row in data {

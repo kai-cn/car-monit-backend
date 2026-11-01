@@ -17,7 +17,7 @@ use crate::api::support;
 use crate::auth::password;
 use crate::common::utils::password_invalid;
 use crate::db::rows::rows_to_json;
-use crate::domain::LoginUser;
+use crate::domain::{LoginUser, SysDept};
 use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
@@ -26,12 +26,13 @@ const USER_COLUMNS: &str = "u.user_id, u.user_no, u.dept_id, u.nick_name, u.user
      u.avatar, u.phonenumber, u.password, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, \
      u.create_by, u.create_time, u.remark, u.user_type, u.cert_entity_id, u.cert_id, u.buss_id, \
      u.buss_name, u.eps_name, ifnull(d.tenant_id, -1) tenant_id, d2.dept_name tenant_name, \
-     d.dept_name, d.leader, u.image_id";
+     d.dept_name, d.leader, d.sub_code, u.image_id";
 
 const USER_FROM: &str = "from sys_user u      left join sys_dept d on u.dept_id = d.dept_id      left join sys_dept d2 on d.tenant_id = d2.dept_id where u.del_flag = '0'";
 
 const ROLE_COLUMNS: &str = "r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, \
-     r.menu_check_strictly, r.dept_check_strictly, r.status, r.del_flag, r.create_time, r.remark";
+     r.menu_check_strictly, r.dept_check_strictly, r.status, r.del_flag, r.create_time, r.remark, \
+     null as createBy, null as updateBy, null as updateTime, 0 as flag";
 
 const POST_COLUMNS: &str = "post_id, post_code, post_name, post_sort, status, create_by, \
      create_time, remark";
@@ -320,15 +321,61 @@ async fn query_users(
     }
     let rows = builder.build().fetch_all(&state.db).await?;
     let mut data = rows_to_json(&rows);
-    strip_password(&mut data);
+    shape_user_rows(&mut data);
     Ok((total, data))
 }
 
-fn strip_password(rows: &mut [Value]) {
-    for row in rows {
+/// Java SysPost：postSort 为 String，flag 为 boolean。
+fn shape_post_rows(mut rows: Vec<Value>) -> Vec<Value> {
+    support::apply_formats(
+        &mut rows,
+        &[
+            ("postSort", support::FieldFormat::String),
+            ("flag", support::FieldFormat::Bool),
+        ],
+    );
+    for row in &mut rows {
         if let Some(object) = row.as_object_mut() {
-            object.remove("password");
+            object.entry("updateBy").or_insert(Value::Null);
+            object.entry("updateTime").or_insert(Value::Null);
+            object.entry("flag").or_insert(Value::Bool(false));
         }
+    }
+    rows
+}
+
+/// Java SysUserResult：BaseEntity 空字段 + 关联 dept（deptResult 只映射 VO 选中的列）。
+fn shape_user_rows(rows: &mut [Value]) {
+    for row in rows {
+        let Some(object) = row.as_object_mut() else { continue };
+        object.remove("password");
+        let dept_id = object.get("deptId").cloned().unwrap_or(Value::Null);
+        let dept_name = object.get("deptName").cloned().unwrap_or(Value::Null);
+        let leader = object.remove("leader").unwrap_or(Value::Null);
+        let user_id = object.get("userId").and_then(Value::as_i64);
+        for key in [
+            "updateBy", "updateTime", "confirmPassword", "salt", "roleCode", "roleIds",
+            "postIds", "flag", "dataId", "subCode", "queryNickName", "excludeSelf",
+            "excludeId", "headOffice", "procurementManager", "pjFlag",
+        ] {
+            object.entry(key).or_insert(Value::Null);
+        }
+        object.entry("pjFlag").or_insert_with(|| json!(0));
+        object.insert("admin".to_string(), Value::Bool(user_id == Some(1)));
+        object.entry("roles").or_insert_with(|| json!([]));
+        let mut dept = serde_json::to_value(SysDept::default()).unwrap_or(json!({}));
+        if let Some(map) = dept.as_object_mut() {
+            if !dept_id.is_null() {
+                map.insert("deptId".to_string(), dept_id);
+            }
+            if !dept_name.is_null() {
+                map.insert("deptName".to_string(), dept_name);
+            }
+            if !leader.is_null() {
+                map.insert("leader".to_string(), leader);
+            }
+        }
+        object.insert("dept".to_string(), dept);
     }
 }
 
@@ -457,7 +504,18 @@ async fn list_by_dept(
 }
 
 async fn current_user(Extension(user): Extension<LoginUser>) -> Result<AjaxResult, AppError> {
-    Ok(AjaxResult::success_data(user.user.for_http()))
+    // Java: SecurityUtils.getLoginUser().getUser() —— 登录态里的 user 对象；
+    // dept/roles 未加载时为 null，password 有 @JsonIgnore 不输出。
+    let mut value = serde_json::to_value(user.user.for_http())?;
+    if let Some(object) = value.as_object_mut() {
+        object.remove("password");
+        object.remove("params");
+        let admin = user.user.is_admin();
+        object.insert("admin".to_string(), Value::Bool(admin));
+        object.insert("dept".to_string(), Value::Null);
+        object.insert("roles".to_string(), Value::Null);
+    }
+    Ok(AjaxResult::success_data(value))
 }
 
 async fn get_role_user(
@@ -538,9 +596,9 @@ async fn import_template(State(state): State<AppState>) -> Result<AjaxResult, Ap
 
 /// Java: getInfo(userId=null) —— 只返回可分配角色与岗位。
 async fn get_info_root(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
-    let roles = sqlx::query(
-        "select distinct role_id, role_name, role_key, role_sort, data_scope,          menu_check_strictly, dept_check_strictly, status, del_flag, create_time, remark          from sys_role where del_flag = '0' order by role_sort",
-    )
+    let roles = sqlx::query(&format!(
+        "select distinct {ROLE_COLUMNS} from sys_role r where r.del_flag = '0' order by r.role_sort"
+    ))
     .fetch_all(&state.db)
     .await?;
     let posts = sqlx::query(
@@ -549,8 +607,15 @@ async fn get_info_root(State(state): State<AppState>) -> Result<AjaxResult, AppE
     .fetch_all(&state.db)
     .await?;
     let mut ajax = AjaxResult::success();
-    ajax.insert_value("roles", serde_json::json!(crate::db::rows::rows_to_json(&roles)));
-    ajax.insert_value("posts", serde_json::json!(crate::db::rows::rows_to_json(&posts)));
+    let mut role_values = crate::api::system::sys_role::role_rows(
+        crate::db::rows::rows_to_json(&roles),
+    );
+    role_values.retain(|role| role.get("roleId").and_then(Value::as_i64) != Some(1));
+    ajax.insert_value("roles", json!(role_values));
+    ajax.insert_value(
+        "posts",
+        json!(shape_post_rows(crate::db::rows::rows_to_json(&posts))),
+    );
     Ok(ajax)
 }
 
@@ -568,8 +633,16 @@ async fn get_info(
         .await?;
 
     let mut ajax = AjaxResult::success();
-    ajax.insert_value("roles", json!(rows_to_json(&roles)));
-    ajax.insert_value("posts", json!(rows_to_json(&posts)));
+    let mut role_values =
+        crate::api::system::sys_role::role_rows(rows_to_json(&roles));
+    if user_id.trim() != "1" {
+        role_values.retain(|role| role.get("roleId").and_then(Value::as_i64) != Some(1));
+    }
+    ajax.insert_value("roles", json!(role_values));
+    ajax.insert_value(
+        "posts",
+        json!(shape_post_rows(rows_to_json(&posts))),
+    );
     if !user_id.is_empty() {
         let row = sqlx::query(&format!(
             "select {USER_COLUMNS} from sys_user u \
@@ -579,9 +652,52 @@ async fn get_info(
         .bind(&user_id)
         .fetch_optional(&state.db)
         .await?;
-        let mut user = row.map(|row| crate::db::rows::row_to_json(&row));
-        if let Some(Value::Object(object)) = &mut user {
-            object.remove("password");
+        let mut wrapper = vec![row
+            .map(|row| crate::db::rows::row_to_json(&row))
+            .unwrap_or(Value::Null)];
+        shape_user_rows(&mut wrapper);
+        let mut user = wrapper.pop().unwrap_or(Value::Null);
+        // getInfo 的 selectUserVo 取 d.sub_code；列表 VO 不取（保持 null）。
+        if let Value::Object(object) = &mut user {
+            let dept_id = object.get("deptId").and_then(Value::as_i64);
+            if let Some(dept_id) = dept_id {
+                let sub_code: Option<String> =
+                    sqlx::query_scalar("select sub_code from sys_dept where dept_id = ?")
+                        .bind(dept_id)
+                        .fetch_optional(&state.db)
+                        .await?
+                        .flatten();
+                object.insert("subCode".to_string(), json!(sub_code));
+            }
+        }
+        if let Value::Object(object) = &mut user {
+            let assoc = sqlx::query(
+                "select distinct r.role_id, r.role_name, r.role_key, r.role_sort,                  r.data_scope, r.status from sys_role r                  left join sys_user_role ur on ur.role_id = r.role_id                  where ur.user_id = ?",
+            )
+            .bind(&user_id)
+            .fetch_all(&state.db)
+            .await?;
+            let assoc_rows = rows_to_json(&assoc);
+            let mut roles_value = Vec::with_capacity(assoc_rows.len());
+            for row in &assoc_rows {
+                // Java RoleResult 只映射 6 个列，其余 SysRole 字段为默认值。
+                let mut role = serde_json::to_value(crate::domain::SysRole::default())?;
+                if let Some(map) = role.as_object_mut() {
+                    for key in ["roleId", "roleName", "roleKey", "roleSort", "dataScope", "status"] {
+                        let mut value = row.get(key).cloned().unwrap_or(Value::Null);
+                        if key == "roleSort" {
+                            if let Some(text) = value.as_i64() {
+                                value = Value::String(text.to_string());
+                            }
+                        }
+                        map.insert(key.to_string(), value);
+                    }
+                    let admin = row.get("roleId").and_then(Value::as_i64) == Some(1);
+                    map.insert("admin".to_string(), Value::Bool(admin));
+                }
+                roles_value.push(role);
+            }
+            object.insert("roles".to_string(), json!(roles_value));
         }
         let post_ids: Vec<i64> =
             sqlx::query_scalar("select post_id from sys_user_post where user_id = ?")
@@ -593,7 +709,7 @@ async fn get_info(
                 .bind(&user_id)
                 .fetch_all(&state.db)
                 .await?;
-        ajax.insert_value("data", user.unwrap_or(Value::Null));
+        ajax.insert_value("data", user);
         ajax.insert_value("postIds", json!(post_ids));
         ajax.insert_value("roleIds", json!(role_ids));
     }

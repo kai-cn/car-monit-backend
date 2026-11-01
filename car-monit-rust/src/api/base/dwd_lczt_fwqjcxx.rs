@@ -16,7 +16,8 @@ use crate::state::AppState;
 // 实体只实现 Custom（无 BasePlusEntity 的 del_flag/审计字段），
 // resultMap 列与表列一致，这里用 t.* 并依赖 rows->camelCase 映射。
 const SPEC: ListSpec = ListSpec {
-    select: "t.*",
+    // sectionCodeList 是 Java 实体里的 transient 字段，Mapper 不查询但 Jackson 输出 null。
+    select: "t.*, null as sectionCodeList",
     from: "from dwd_lczt_fwqjcxx t",
     filters: &[
         Filter::eq("agentPk", "t.agent_pk"),

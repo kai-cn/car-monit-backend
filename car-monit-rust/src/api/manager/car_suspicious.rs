@@ -17,14 +17,14 @@ use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
-const SUSPICIOUS_COLUMNS: &str = "t.id, t.plate_color, t.car_no, t.car_type, t.car_vehicle, \
+pub(crate) const SUSPICIOUS_COLUMNS: &str = "t.id, t.plate_color, t.car_no, t.car_type, t.car_vehicle, \
      t.car_num, t.pass_type, t.in_station_id, t.in_station, t.in_time, t.out_station_id, \
      t.out_station, t.out_time, t.gantry_station_id, t.gantryt_station, t.gantry_time, \
      t.file_ids, t.out_gantry_station_id, t.out_gantryt_station, t.out_gantry_time, \
      t.out_file_ids, t.escaped_type, t.escaped_type_name, t.escaped_num, t.is_except, \
      t.except_remark, t.except_file_ids, t.check_status, t.org_id, t.org_name, t.is_white, \
      t.white_remark, t.white_file_ids, t.road_code, t.road_name, t.section_code, \
-     t.section_name, t.track_id, t.back_col1, t.back_col2, t.remark, t.status, t.create_time";
+     t.section_name, t.track_id, t.back_col1, t.back_col2, t.remark, t.status, t.create_time, \n     null as epsId, null as delFlag, null as createBy, null as updateBy, null as updateTime, null as sort, null as tenantId, null as trackJosn, null as trackNames, null as carNoQuery, null as applyTime1, null as applyTime2, null as createTimeStr, null as checkList, null as trailList, null as gantryCode, null as tollCode, null as fwqbm, null as type, null as code, null as chargeAmount, null as totalAmount, null as difAmount, null as mjTime, null as mjAddress, null as txTime, null as txAddress";
 
 const FILTERS: &[Filter] = &[
     Filter::eq("id", "t.id"),
@@ -89,7 +89,7 @@ const SPEC: ListSpec = ListSpec {
     select: SUSPICIOUS_COLUMNS,
     from: "from car_suspicious t",
     filters: FILTERS,
-    extra_where: "",
+    extra_where: " and t.del_flag = '0'",
     order_by: "t.out_time desc, t.id",
     id_column: "t.id",
 };
@@ -98,8 +98,8 @@ const HISTORY_SPEC: ListSpec = ListSpec {
     select: SUSPICIOUS_COLUMNS,
     from: "from car_suspicious_back t",
     filters: FILTERS,
-    extra_where: "",
-    order_by: "t.out_time desc, t.id",
+    extra_where: " and t.del_flag = '0'",
+    order_by: "t.id",
     id_column: "t.id",
 };
 
@@ -316,7 +316,7 @@ async fn list_file_car_no(
 async fn export(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let mut params = support::query_map(&raw);
     normalize(&mut params, false);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
@@ -326,7 +326,7 @@ async fn export(
 async fn export_history(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
-) -> Result<AjaxResult, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let mut params = support::query_map(&raw);
     normalize(&mut params, false);
     let rows = support::query_all(&state.db, &params, &HISTORY_SPEC).await?;
@@ -334,7 +334,7 @@ async fn export_history(
 }
 
 /// Java export 的字段翻译（车牌颜色/车型/车种/逃费类型/是否可疑/核实状态 + 通行/门架时间段）。
-async fn export_rows(state: &AppState, rows: &[Value], sheet: &str) -> Result<AjaxResult, AppError> {
+async fn export_rows(state: &AppState, rows: &[Value], sheet: &str) -> Result<axum::response::Response, AppError> {
     let plate_color = support::dict_map(&state.db, "plate_color").await?;
     let car_type = support::dict_map(&state.db, "car_type").await?;
     let car_vehicle = support::dict_map(&state.db, "car_vehicle").await?;
@@ -398,15 +398,15 @@ async fn export_rows(state: &AppState, rows: &[Value], sheet: &str) -> Result<Aj
         .collect::<Vec<_>>();
     let mut all_headers = headers.to_vec();
     all_headers.extend(["txTime", "txAddress", "mjTime", "mjAddress"].map(str::to_string));
-    support::export_excel(state, sheet, &all_headers, &data)
+    support::export_download(sheet, &all_headers, &data)
 }
 
 async fn export_abnormal(
     State(_state): State<AppState>,
     RawQuery(_raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
-    // Java 模板导出未产生响应体；保持空操作返回。
-    Ok(AjaxResult::success())
+    // Java 模板导出在缺少必需数据时抛出异常，最终 code=500。
+    Ok(AjaxResult::error(""))
 }
 
 async fn get_info(

@@ -10,9 +10,10 @@ crate::manager_crud! {
     class: "com.ruoyi.web.controller.manager.CarSuspiciousCheckController",
     sheet: "可疑车辆核实数据",
     table: "car_suspicious_check",
-    select: "t.id, t.car_id, t.car_no, t.suspicous_flag, t.attachments, t.escaped_type, t.back_col1, t.charge_amount, t.total_amount, t.back_col2, t.dif_amount, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id",
+    select: "t.id, t.car_id, t.car_no, t.suspicous_flag, t.attachments, t.escaped_type, t.back_col1, t.charge_amount, t.total_amount, t.back_col2, t.dif_amount, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id, null as applyTime1, null as applyTime2, null as createTimeStr",
     from: "from car_suspicious_check t",
     order: "t.create_time,t.id",
+    binary: true,
     filters: [
         Filter::eq("id", "t.id"),
         Filter::eq("carId", "t.car_id"),

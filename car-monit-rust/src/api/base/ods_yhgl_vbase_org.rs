@@ -8,7 +8,7 @@ use axum::{Extension, Json, Router};
 use serde_json::Value;
 
 use crate::api::meta::{self, BusinessType, LogSpec};
-use crate::api::support::{self, Filter, ListSpec};
+use crate::api::support::{self, FieldFormat, Filter, ListSpec};
 use crate::domain::LoginUser;
 use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
@@ -45,6 +45,12 @@ const SPEC: ListSpec = ListSpec {
     order_by: "t.big_id",
     id_column: "t.big_id",
 };
+
+// Java 实体 loadTime 为 LocalDate，parentId 为 Integer。
+const FORMATS: &[(&str, FieldFormat)] = &[
+    ("loadTime", FieldFormat::DateOnly),
+    ("parentId", FieldFormat::Int),
+];
 
 static LOG_EXPORT: LogSpec = LogSpec::new(
     "机构信息",
@@ -109,7 +115,7 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -118,7 +124,7 @@ async fn export(
     RawQuery(raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
-    let rows = support::query_all(&state.db, &params, &SPEC).await?;
+    let rows = support::query_all_fmt(&state.db, &params, &SPEC, FORMATS).await?;
     let headers = [
         "机构代码", "机构名称", "机构简称", "上级机构ID", "层级代码",
         "是否虚机构 1：虚机构，0：非需机构", "是否是养护类", "机构顺序",
@@ -155,7 +161,7 @@ async fn get_info(
     Path(big_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &big_id).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &big_id, FORMATS).await?,
     ))
 }
 

@@ -51,17 +51,35 @@ fn cell_to_json(row: &MySqlRow, index: usize, type_name: &str) -> Value {
 
     match type_name {
         "TINYINT" | "SMALLINT" | "MEDIUMINT" | "INT" | "INTEGER" | "BIGINT" | "YEAR" => {
-            if let Ok(value) = row.try_get::<i64, _>(index) {
-                return Value::from(value);
+            // sqlx 对不同位宽的整数类型解码是严格的：TINYINT 只能按 i8 取。
+            macro_rules! try_num {
+                ($($ty:ty),*) => {$(
+                    if let Ok(value) = row.try_get::<$ty, _>(index) {
+                        return Value::from(value);
+                    }
+                )*};
             }
-            if let Ok(value) = row.try_get::<u64, _>(index) {
-                return Value::from(value);
+            try_num!(i64, u64, i32, u32, i16, u16, i8, u8);
+        }
+        // sqlx 把 tinyint(1) 映射成 BOOLEAN。
+        "BOOLEAN" | "BOOL" => {
+            if let Ok(value) = row.try_get::<bool, _>(index) {
+                return Value::Bool(value);
+            }
+            if let Ok(value) = row.try_get::<i8, _>(index) {
+                return Value::Bool(value != 0);
             }
         }
-        "TINYINT UNSIGNED" | "SMALLINT UNSIGNED" | "MEDIUMINT UNSIGNED" => {
-            if let Ok(value) = row.try_get::<u64, _>(index) {
-                return Value::from(value);
+        "TINYINT UNSIGNED" | "SMALLINT UNSIGNED" | "MEDIUMINT UNSIGNED"
+        | "INT UNSIGNED" | "BIGINT UNSIGNED" => {
+            macro_rules! try_unum {
+                ($($ty:ty),*) => {$(
+                    if let Ok(value) = row.try_get::<$ty, _>(index) {
+                        return Value::from(value);
+                    }
+                )*};
             }
+            try_unum!(u64, i64, u32, i32, u16, i16, u8, i8);
         }
         "FLOAT" | "DOUBLE" => {
             if let Ok(value) = row.try_get::<f64, _>(index) {
@@ -96,6 +114,11 @@ fn cell_to_json(row: &MySqlRow, index: usize, type_name: &str) -> Value {
         }
         "BLOB" | "TINYBLOB" | "MEDIUMBLOB" | "LONGBLOB" | "BINARY" | "VARBINARY" => {
             if let Ok(value) = row.try_get::<Vec<u8>, _>(index) {
+                // MyBatis 对 String 属性使用 StringTypeHandler，BLOB 会按文本读出；
+                // 只有真正的二进制字段（Java 属性为 byte[]）才走 Jackson 的 base64。
+                if let Ok(text) = String::from_utf8(value.clone()) {
+                    return Value::String(text);
+                }
                 return Value::String(base64::engine::general_purpose::STANDARD.encode(value));
             }
         }

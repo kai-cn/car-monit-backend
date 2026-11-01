@@ -140,6 +140,10 @@ pub struct SysUser {
     pub role_ids: Option<Vec<i64>>,
     #[sqlx(skip)]
     pub post_ids: Option<Vec<i64>>,
+    /// Java: SysUser.isAdmin() —— Jackson 输出 boolean 属性 admin。
+    #[serde(default)]
+    #[sqlx(skip)]
+    pub admin: bool,
 }
 
 impl SysUser {
@@ -160,6 +164,7 @@ impl SysUser {
         copy.confirm_password = None;
         copy.salt = None;
         copy.type_name = None;
+        copy.admin = self.is_admin();
         copy
     }
 
@@ -167,6 +172,26 @@ impl SysUser {
     pub fn for_redis(&self) -> Self {
         let mut copy = self.clone();
         copy.type_name = Some("com.ruoyi.common.core.domain.entity.SysUser".to_string());
+        copy.admin = self.is_admin();
+        let params = || {
+            let mut map = serde_json::Map::new();
+            map.insert("@type".to_string(), serde_json::Value::String("java.util.HashMap".into()));
+            Some(map)
+        };
+        if copy.params.is_none() {
+            copy.params = params();
+        }
+        if let Some(dept) = copy.dept.as_mut() {
+            if dept.params.is_none() {
+                dept.params = params();
+            }
+        }
+        for role in &mut copy.roles {
+            if role.params.is_none() {
+                role.params = params();
+            }
+            role.admin = role.role_id == Some(1);
+        }
         copy
     }
 }

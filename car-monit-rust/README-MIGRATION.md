@@ -7,6 +7,7 @@
 - 基线清单：`docs/01-MIGRATION-BASELINE.md`、`docs/01-baseline/*.md`
 - Java ↔ Rust 全量映射：`docs/02-JAVA-RUST-MAPPING.md`
 - 切片移植约定（维护者用）：`tools/porting-briefing.md`
+- Java↔Rust GET 全量校验结论：`docs/03-INTERFACE-VERIFICATION.md`（297 条：160 OK / 109 仅顺序或错误文案 / 13 聚合类待补 / 12 环境受限）
 
 ---
 

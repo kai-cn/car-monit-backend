@@ -6,6 +6,10 @@
 
 use std::collections::HashMap;
 
+use axum::body::Body;
+use axum::http::header::{CONTENT_DISPOSITION, CONTENT_TYPE};
+use axum::response::Response;
+
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use sqlx::mysql::MySql;
@@ -88,7 +92,22 @@ pub fn export_excel(
         headers,
         rows,
     )?;
-    Ok(AjaxResult::success_data(filename))
+    // Java ExcelUtil.exportExcel：文件落盘，响应里只有 msg=文件名。
+    Ok(AjaxResult::success_msg(filename))
+}
+
+/// Java: 模板导出（EasyPOI）—— 直接把工作簿写入 HTTP 响应流。
+pub fn export_download(
+    sheet_name: &str,
+    headers: &[String],
+    rows: &[Vec<Value>],
+) -> Result<Response, AppError> {
+    let bytes = excel::export_bytes(sheet_name, headers, rows)?;
+    Ok(Response::builder()
+        .header(CONTENT_TYPE, "application/octet-stream;charset=UTF-8")
+        .header(CONTENT_DISPOSITION, "attachment")
+        .body(Body::from(bytes))
+        .map_err(|err| AppError::Service(err.to_string()))?)
 }
 
 /// 按字段名从 JSON 行里取证（@Excel 列的取值）。
@@ -399,6 +418,151 @@ pub async fn query_all(
 ) -> Result<Vec<Value>, AppError> {
     let rows = build_list_sql(spec, params, true).build().fetch_all(pool).await?;
     Ok(crate::db::rows::rows_to_json(&rows))
+}
+
+/// Java 实体字段类型与 MySQL 列类型不一致时的序列化覆盖。
+/// 例如 DB 是 DATE 但实体是 `java.util.Date`（ISO+时区），
+/// 或 DB 是 DOUBLE 但实体是 `Integer`。
+#[derive(Clone, Copy)]
+pub enum FieldFormat {
+    /// `java.time.LocalDate` -> `yyyy-MM-dd`
+    DateOnly,
+    /// `java.util.Date`（Jackson 默认）-> `yyyy-MM-dd'T'HH:mm:ss.SSS+08:00`
+    IsoOffset,
+    /// `java.time.LocalDateTime` / `@JsonFormat` -> `yyyy-MM-dd HH:mm:ss`
+    DateTimeSpace,
+    /// 数值列按整数输出（Java Integer/Long）
+    Int,
+    /// 数值列按字符串输出（Java String）
+    String,
+    /// 0/1、Y/N 转 JSON 布尔（Java boolean）
+    Bool,
+}
+
+/// 按字段名覆盖行值格式（key 为 JSON 驼峰名）。
+pub fn apply_formats(rows: &mut [Value], formats: &[(&str, FieldFormat)]) {
+    if formats.is_empty() {
+        return;
+    }
+    for row in rows.iter_mut() {
+        let Some(object) = row.as_object_mut() else { continue };
+        for (key, format) in formats {
+            let Some(value) = object.get_mut(*key) else { continue };
+            if value.is_null() {
+                continue;
+            }
+            *value = format_value(value, *format);
+        }
+    }
+}
+
+fn format_value(value: &Value, format: FieldFormat) -> Value {
+    match format {
+        FieldFormat::Int => match value {
+            Value::Number(number) => {
+                if let Some(text) = number.as_i64() {
+                    Value::from(text)
+                } else if let Some(float) = number.as_f64() {
+                    Value::from(float.trunc() as i64)
+                } else {
+                    value.clone()
+                }
+            }
+            Value::String(text) => match text.trim().parse::<i64>() {
+                Ok(number) => Value::from(number),
+                Err(_) => match text.trim().parse::<f64>() {
+                    Ok(float) => Value::from(float.trunc() as i64),
+                    Err(_) => value.clone(),
+                },
+            },
+            _ => value.clone(),
+        },
+        FieldFormat::String => match value {
+            Value::String(_) => value.clone(),
+            Value::Null => value.clone(),
+            other => Value::String(other.to_string()),
+        },
+        FieldFormat::Bool => match value {
+            Value::Bool(_) => value.clone(),
+            Value::Number(number) => Value::Bool(number.as_i64().unwrap_or(0) != 0),
+            Value::String(text) => Value::Bool(matches!(text.as_str(), "1" | "Y" | "y" | "true")),
+            _ => value.clone(),
+        },
+        FieldFormat::DateOnly => match value.as_str() {
+            Some(text) if text.len() >= 10 => Value::String(text[..10].to_string()),
+            _ => value.clone(),
+        },
+        FieldFormat::IsoOffset => match value.as_str() {
+            Some(text) => match parse_naive(text) {
+                Some(dt) => Value::String(dt.format("%Y-%m-%dT%H:%M:%S.000+08:00").to_string()),
+                None => value.clone(),
+            },
+            _ => value.clone(),
+        },
+        FieldFormat::DateTimeSpace => match value.as_str() {
+            Some(text) => match parse_naive(text) {
+                Some(dt) => Value::String(dt.format("%Y-%m-%d %H:%M:%S").to_string()),
+                None => value.clone(),
+            },
+            _ => value.clone(),
+        },
+    }
+}
+
+fn parse_naive(text: &str) -> Option<chrono::NaiveDateTime> {
+    let trimmed = text.trim();
+    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(trimmed, "%Y-%m-%d %H:%M:%S") {
+        return Some(dt);
+    }
+    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(trimmed, "%Y-%m-%dT%H:%M:%S") {
+        return Some(dt);
+    }
+    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(trimmed) {
+        return Some(dt.naive_local());
+    }
+    if let Ok(date) = chrono::NaiveDate::parse_from_str(trimmed.get(..10).unwrap_or(trimmed), "%Y-%m-%d") {
+        return date.and_hms_opt(0, 0, 0);
+    }
+    None
+}
+
+/// Java: startPage(); mapper.selectXxxList —— 分页查询后按实体字段类型覆盖格式。
+pub async fn query_list_fmt(
+    pool: &MySqlPool,
+    params: &HashMap<String, String>,
+    spec: &ListSpec,
+    page: &PageDomain,
+    formats: &[(&str, FieldFormat)],
+) -> Result<(i64, Vec<Value>), AppError> {
+    let (total, mut rows) = query_list(pool, params, spec, page).await?;
+    apply_formats(&mut rows, formats);
+    Ok((total, rows))
+}
+
+/// Java: mapper.selectXxxList（不分页）后按实体字段类型覆盖格式。
+pub async fn query_all_fmt(
+    pool: &MySqlPool,
+    params: &HashMap<String, String>,
+    spec: &ListSpec,
+    formats: &[(&str, FieldFormat)],
+) -> Result<Vec<Value>, AppError> {
+    let mut rows = query_all(pool, params, spec).await?;
+    apply_formats(&mut rows, formats);
+    Ok(rows)
+}
+
+/// Java: mapper.selectXxxById 后按实体字段类型覆盖格式。
+pub async fn query_by_id_fmt(
+    pool: &MySqlPool,
+    spec: &ListSpec,
+    id: &str,
+    formats: &[(&str, FieldFormat)],
+) -> Result<Option<Value>, AppError> {
+    let mut row = query_by_id(pool, spec, id).await?;
+    if let Some(value) = row.as_mut() {
+        apply_formats(std::slice::from_mut(value), formats);
+    }
+    Ok(row)
 }
 
 /// Java: mapper.selectXxxById。

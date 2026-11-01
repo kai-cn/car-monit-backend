@@ -10,9 +10,10 @@ crate::manager_crud! {
     class: "com.ruoyi.web.controller.manager.CarQueryLogController",
     sheet: "查询日志数据",
     table: "car_query_log",
-    select: "t.id, t.user_id, t.user_name, t.user_ip, t.model_type, t.menu_point, t.query_condition, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id",
+    select: "t.id, t.user_id, t.user_name, t.user_ip, t.model_type, t.menu_point, t.query_condition, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id, null as applyTime1, null as applyTime2",
     from: "from car_query_log t",
     order: "t.create_time desc,t.id",
+    binary: true,
     filters: [
         Filter::eq("id", "t.id"),
         Filter::eq("userId", "t.user_id"),

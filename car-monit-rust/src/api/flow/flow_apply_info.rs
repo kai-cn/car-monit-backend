@@ -16,11 +16,15 @@ use crate::response::{AjaxResult, TableDataInfo};
 use crate::state::AppState;
 
 pub(crate) const APPLY_SPEC: ListSpec = ListSpec {
-    select: "t.ID, t.entrust_info, t.BILL_OID, t.BUSS_TYPE, t.FLOW_RUID, t.MSG_TITLE, \
-             t.MSG_CONTEXT, t.MSG_TYPE, t.MSG_URL, t.APPLY_NAME, t.CURRENT_OID, t.PC_OID, \
-             t.BACK_COL1, t.BACK_COL2, t.BACK_COL3, t.FLOW_STATUS, t.sort, t.eps_id, \
-             t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, \
-             t.BACK_COL1 auitEmpName",
+    select: "t.ID as id, t.entrust_info as entrustInfo, t.BILL_OID as billOid, \
+             t.BUSS_TYPE as bussType, t.FLOW_RUID as flowRuid, t.MSG_TITLE as msgTitle, \
+             t.MSG_CONTEXT as msgContext, t.MSG_TYPE as msgType, t.MSG_URL as msgUrl, \
+             t.APPLY_NAME as applyName, t.CURRENT_OID as currentOid, t.PC_OID as pcOid, \
+             t.BACK_COL1 as backCol1, t.BACK_COL2 as backCol2, t.BACK_COL3 as backCol3, \
+             t.FLOW_STATUS as flowStatus, t.sort, t.eps_id, t.del_flag, t.create_by, \
+             t.create_time, t.update_by, t.update_time, \
+             t.BACK_COL1 as auitEmpName, null as remark, null as tenantId, \
+             null as deptSubCode, null as flag, null as searchValue, null as params",
     from: "from flow_apply_info t",
     filters: &[
         Filter::eq("id", "t.id"),
@@ -42,7 +46,7 @@ pub(crate) const APPLY_SPEC: ListSpec = ListSpec {
         Filter::eq("epsId", "t.eps_id"),
         Filter::eq("createBy", "t.create_by"),
     ],
-    extra_where: "",
+    extra_where: " and t.del_flag = '0'",
     order_by: "t.create_time desc, t.id",
     id_column: "t.ID",
 };
@@ -152,9 +156,11 @@ async fn get_info(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &APPLY_SPEC, &id).await?,
-    ))
+    let mut row = support::query_by_id(&state.db, &APPLY_SPEC, &id).await?;
+    if let Some(Value::Object(object)) = row.as_mut() {
+        object.insert("auitEmpName".to_string(), Value::Null);
+    }
+    Ok(AjaxResult::success_data(row))
 }
 
 async fn add(

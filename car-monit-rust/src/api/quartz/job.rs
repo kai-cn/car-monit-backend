@@ -18,7 +18,7 @@ use crate::task::cron::CronExpression;
 
 const SPEC: ListSpec = ListSpec {
     select: "job_id, job_name, job_group, invoke_target, cron_expression, misfire_policy, \
-             concurrent, status, create_by, create_time, remark",
+             concurrent, status, create_by, create_time, remark, null as updateBy, null as updateTime",
     from: "from sys_job",
     filters: &[
         Filter::like("jobName", "job_name"),
@@ -136,8 +136,27 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, mut rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    fill_next_valid_time(&mut rows);
     Ok(TableDataInfo::new(total, rows))
+}
+
+/// Java: SysJob.getNextValidTime() —— 用 Quartz cron 计算下一次执行时间。
+fn fill_next_valid_time(rows: &mut [Value]) {
+    let now = chrono::Local::now().naive_local();
+    for row in rows {
+        let Some(object) = row.as_object_mut() else { continue };
+        let expression = object
+            .get("cronExpression")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        let next = crate::task::cron::CronExpression::parse(&expression)
+            .ok()
+            .and_then(|cron| cron.next_after(now))
+            .map(|time| time.format("%Y-%m-%d %H:%M:%S").to_string());
+        object.insert("nextValidTime".to_string(), serde_json::json!(next));
+    }
 }
 
 async fn export(
@@ -184,9 +203,11 @@ async fn get_info(
     State(state): State<AppState>,
     Path(job_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &job_id).await?,
-    ))
+    let mut row = support::query_by_id(&state.db, &SPEC, &job_id).await?;
+    if let Some(value) = row.as_mut() {
+        fill_next_valid_time(std::slice::from_mut(value));
+    }
+    Ok(AjaxResult::success_data(row))
 }
 
 async fn add(
