@@ -147,3 +147,8 @@ app:
   elasticsearch-enabled: true
   oss-enabled: false
   banner-enabled: true
+
+# Java: generator-code.mybatis-plus.enable —— 代码生成使用 vmplus（MyBatis-Plus）模板
+generator-code:
+  mybatis-plus:
+    enable: true

@@ -1,18 +1,20 @@
 // 来源: ruoyi-generator/src/main/java/com/ruoyi/generator/controller/GenController.java
 //       ruoyi-generator/src/main/java/com/ruoyi/generator/util/GenUtils.java
 //       ruoyi-generator/src/main/resources/mapper/generator/*.xml
-// 职责: 代码生成器元数据（gen_table/gen_table_column）管理。
-// 说明: preview/download/genCode/batchGenCode 依赖 Apache Velocity 模板引擎；
-//       Rust 版本暂未内置模板渲染，返回明确错误（见 README-MIGRATION.md）。
+// 职责: 代码生成器元数据（gen_table/gen_table_column）管理 + preview/download/genCode。
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
+use axum::body::Body;
 use axum::extract::{Path, Query, RawQuery, State};
+use axum::http::header;
+use axum::response::Response;
 use axum::{Extension, Json, Router};
 use serde_json::{json, Map, Value};
 use sqlx::mysql::MySql;
 use sqlx::{MySqlPool, QueryBuilder};
 
+use crate::api::generator::{gen_render, gen_zip};
 use crate::api::meta::{self, BusinessType, LogSpec};
 use crate::api::support::{self, Filter, ListSpec};
 use crate::domain::LoginUser;
@@ -31,6 +33,18 @@ const COLUMN_COLUMNS: &str = "column_id, table_id, column_name, column_comment, 
      update_time, link_table_id, single_selection, multiple_selections, \
      dialog_search_column_ids, dialog_list_column_ids, field_map_string";
 
+/// Java: selectGenTableById 的列（不含审计字段）。
+const INFO_COLUMNS: &str = "table_id, table_name, table_comment, sub_table_name,      sub_table_fk_name, class_name, tpl_category, package_name, module_name, business_name,      function_name, function_author, gen_type, gen_path, options, remark";
+
+const ALL_SPEC: ListSpec = ListSpec {
+    select: TABLE_COLUMNS,
+    from: "from gen_table",
+    filters: &[],
+    extra_where: "",
+    order_by: "create_time DESC",
+    id_column: "table_id",
+};
+
 const GEN_AUTHOR: &str = "ruoyi";
 const GEN_PACKAGE: &str = "com.ruoyi.manager";
 
@@ -38,7 +52,10 @@ const SPEC: ListSpec = ListSpec {
     select: TABLE_COLUMNS,
     from: "from gen_table",
     filters: &[
-        Filter::raw("tableName", " and lower(table_name) like lower(concat('%', ?, '%'))"),
+        Filter::raw(
+            "tableName",
+            " and lower(table_name) like lower(concat('%', ?, '%'))",
+        ),
         Filter::raw(
             "tableComment",
             " and lower(table_comment) like lower(concat('%', ?, '%'))",
@@ -94,7 +111,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/tool/gen/column/{tableId}",
-            meta::get_route("/tool/gen/column/{tableId}", Some("tool:gen:list"), None, column_list),
+            meta::get_route(
+                "/tool/gen/column/{tableId}",
+                Some("tool:gen:list"),
+                None,
+                column_list,
+            ),
         )
         .route(
             "/tool/gen/getColumnList",
@@ -102,7 +124,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/tool/gen/getAllColumnList",
-            meta::post_route("/tool/gen/getAllColumnList", None, None, get_all_column_list),
+            meta::post_route(
+                "/tool/gen/getAllColumnList",
+                None,
+                None,
+                get_all_column_list,
+            ),
         )
         .route(
             "/tool/gen/importTable",
@@ -115,7 +142,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/tool/gen/preview/{tableId}",
-            meta::get_route("/tool/gen/preview/{tableId}", Some("tool:gen:preview"), None, preview),
+            meta::get_route(
+                "/tool/gen/preview/{tableId}",
+                Some("tool:gen:preview"),
+                None,
+                preview,
+            ),
         )
         .route(
             "/tool/gen/download/{tableName}",
@@ -155,11 +187,21 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/tool/gen/{tableIds}",
-            meta::get_route("/tool/gen/{tableIds}", Some("tool:gen:query"), None, get_info),
+            meta::get_route(
+                "/tool/gen/{tableIds}",
+                Some("tool:gen:query"),
+                None,
+                get_info,
+            ),
         )
         .route(
             "/tool/gen",
-            meta::put_route("/tool/gen", Some("tool:gen:edit"), Some(&LOG_EDIT), edit_save),
+            meta::put_route(
+                "/tool/gen",
+                Some("tool:gen:edit"),
+                Some(&LOG_EDIT),
+                edit_save,
+            ),
         )
         .route(
             "/tool/gen/{tableIds}",
@@ -191,15 +233,387 @@ fn camel_case(value: &str, capitalize_first: bool) -> String {
 }
 
 fn business_name(table_name: &str) -> String {
-    table_name.rsplit('_').next().unwrap_or(table_name).to_string()
+    table_name
+        .rsplit('_')
+        .next()
+        .unwrap_or(table_name)
+        .to_string()
 }
 
 fn module_name() -> String {
-    GEN_PACKAGE.rsplit('.').next().unwrap_or_default().to_string()
+    GEN_PACKAGE
+        .rsplit('.')
+        .next()
+        .unwrap_or_default()
+        .to_string()
 }
 
 fn function_name(comment: &str) -> String {
     comment.replace('表', "").replace("若依", "")
+}
+
+/// Java: GenTable 实体的 Jackson 键顺序（BaseEntity 在前，派生 getter 在后）。
+const GEN_TABLE_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "tableId",
+    "tableName",
+    "tableComment",
+    "subTableName",
+    "subTableFkName",
+    "className",
+    "tplCategory",
+    "packageName",
+    "moduleName",
+    "businessName",
+    "functionName",
+    "functionAuthor",
+    "genType",
+    "genPath",
+    "pkColumn",
+    "subTable",
+    "columns",
+    "dictionaryInfoList",
+    "dictionaryInfoString",
+    "options",
+    "treeCode",
+    "treeParentCode",
+    "treeName",
+    "parentMenuId",
+    "parentMenuName",
+    "dictionaryListKeySuffix",
+    "uploadInfo",
+    "richTextInfo",
+    "columnDialogInfo",
+    "filterColumnList",
+    "crud",
+    "sub",
+    "tree",
+];
+
+/// Java: GenTableColumn 实体的 Jackson 键顺序。
+const GEN_COLUMN_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "columnId",
+    "tableId",
+    "columnName",
+    "columnComment",
+    "columnType",
+    "javaType",
+    "javaField",
+    "isPk",
+    "isIncrement",
+    "isRequired",
+    "isInsert",
+    "isEdit",
+    "isList",
+    "isQuery",
+    "queryType",
+    "htmlType",
+    "dictType",
+    "dictTypeCamelCase",
+    "sort",
+    "generateLinkTableFlag",
+    "linkTableId",
+    "linkTable",
+    "singleSelection",
+    "multipleSelections",
+    "dialogSearchColumnIds",
+    "dialogListColumnIds",
+    "dialogSearchColumnList",
+    "dialogShowColumnList",
+    "dialogSearchColumnNames",
+    "dialogListColumnNames",
+    "fieldMapString",
+    "tableFieldList",
+    "customFieldList",
+    "majorLinkFieldInfo",
+    "required",
+    "list",
+    "pk",
+    "query",
+    "usableColumn",
+    "edit",
+    "superColumn",
+    "insert",
+    "capJavaField",
+    "increment",
+];
+
+/// GenTableColumnResult 映射的属性（其余属性由 Jackson 输出为 null）。
+const COLUMN_MAPPED_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "columnId",
+    "tableId",
+    "columnName",
+    "columnComment",
+    "columnType",
+    "javaType",
+    "javaField",
+    "isPk",
+    "isIncrement",
+    "isRequired",
+    "isInsert",
+    "isEdit",
+    "isList",
+    "isQuery",
+    "queryType",
+    "htmlType",
+    "dictType",
+    "sort",
+    "linkTableId",
+    "singleSelection",
+    "multipleSelections",
+    "dialogSearchColumnIds",
+    "dialogListColumnIds",
+    "fieldMapString",
+];
+
+/// join 后只属于子表的标签，父行需要剔除。
+const COLUMN_ONLY_KEYS: &[&str] = &[
+    "columnId",
+    "columnName",
+    "columnComment",
+    "columnType",
+    "javaType",
+    "javaField",
+    "isPk",
+    "isIncrement",
+    "isRequired",
+    "isInsert",
+    "isEdit",
+    "isList",
+    "isQuery",
+    "queryType",
+    "htmlType",
+    "dictType",
+    "fieldMapString",
+    "linkTableId",
+    "singleSelection",
+    "multipleSelections",
+    "dialogSearchColumnIds",
+    "dialogListColumnIds",
+    "sort",
+];
+
+/// 按 Java 实体声明顺序重排；缺失的键补 null，多出的键保持原顺序追加。
+fn reorder(row: &mut Value, order: &[&str]) {
+    let Some(object) = row.as_object().cloned() else {
+        return;
+    };
+    let mut out = Map::with_capacity(object.len().max(order.len()));
+    for key in order {
+        out.insert(
+            (*key).to_string(),
+            object.get(*key).cloned().unwrap_or(Value::Null),
+        );
+    }
+    for (key, value) in object {
+        out.entry(key).or_insert(value);
+    }
+    *row = Value::Object(out);
+}
+
+/// Java: StringUtils.capitalize。
+fn capitalize(text: &str) -> String {
+    let mut chars = text.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+        None => String::new(),
+    }
+}
+
+fn is_one(src: &Map<String, Value>, key: &str) -> bool {
+    src.get(key).and_then(Value::as_str) == Some("1")
+}
+
+/// Java: GenTableColumn 实体（含 isPk()/isSuperColumn()/getCapJavaField() 等派生属性）。
+fn shape_column(src: &Map<String, Value>) -> Value {
+    let java_field = src
+        .get("javaField")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let lower = java_field.as_deref().map(|value| value.to_lowercase());
+    // Java: isSuperColumn 的忽略名单（BaseEntity + TreeEntity 字段）。
+    let super_column = matches!(
+        lower.as_deref(),
+        Some("createby")
+            | Some("createtime")
+            | Some("updateby")
+            | Some("updatetime")
+            | Some("remark")
+            | Some("parentname")
+            | Some("parentid")
+            | Some("ordernum")
+            | Some("ancestors")
+    );
+    let usable_column = matches!(
+        lower.as_deref(),
+        Some("parentid") | Some("ordernum") | Some("remark")
+    );
+    let mut map = Map::new();
+    for key in COLUMN_MAPPED_KEYS {
+        if let Some(value) = src.get(*key) {
+            map.insert(key.to_string(), value.clone());
+        }
+    }
+    // gen_table_column.table_id 是 varchar，而 Java 属性是 Long（MyBatis 取 getLong），
+    // 因此数字串要输出成 JSON 数字。
+    for key in ["columnId", "tableId", "linkTableId"] {
+        if let Some(Value::String(text)) = map.get(key) {
+            if let Ok(number) = text.parse::<i64>() {
+                map.insert(key.to_string(), json!(number));
+            }
+        }
+    }
+    map.insert("generateLinkTableFlag".to_string(), json!("0"));
+    map.insert(
+        "capJavaField".to_string(),
+        match &java_field {
+            Some(value) => Value::String(capitalize(value)),
+            None => Value::Null,
+        },
+    );
+    for (key, value) in [
+        ("required", is_one(src, "isRequired")),
+        ("list", is_one(src, "isList")),
+        ("pk", is_one(src, "isPk")),
+        ("query", is_one(src, "isQuery")),
+        ("usableColumn", usable_column),
+        ("edit", is_one(src, "isEdit")),
+        ("superColumn", super_column),
+        ("insert", is_one(src, "isInsert")),
+        ("increment", is_one(src, "isIncrement")),
+    ] {
+        map.insert(key.to_string(), Value::Bool(value));
+    }
+    let mut row = Value::Object(map);
+    reorder(&mut row, GEN_COLUMN_KEYS);
+    row
+}
+
+/// Java: GenTable.isCrud()/isSub()/isTree()（Jackson 会输出这三个派生属性）。
+fn add_tpl_flags(row: &mut Value) {
+    let category = row
+        .get("tplCategory")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let flag = |expect: &str| Value::Bool(category.as_deref() == Some(expect));
+    if let Some(object) = row.as_object_mut() {
+        object.insert("crud".to_string(), flag("crud"));
+        object.insert("sub".to_string(), flag("sub"));
+        object.insert("tree".to_string(), flag("tree"));
+    }
+}
+
+/// MyBatis 的嵌套 `<collection>` 即使没有子表列也会产出一个子对象，
+/// 其同名标签（create_by/create_time/table_id…）取自父行。
+fn inherited_column(parent: Option<&Map<String, Value>>) -> Value {
+    let mut src = Map::new();
+    if let Some(parent) = parent {
+        for key in [
+            "createBy",
+            "createTime",
+            "updateBy",
+            "updateTime",
+            "tableId",
+        ] {
+            if let Some(value) = parent.get(key) {
+                src.insert(key.to_string(), value.clone());
+            }
+        }
+    }
+    Value::Array(vec![shape_column(&src)])
+}
+
+/// 给 gen_table 行补齐派生键（columns / 未映射字段 / crud|sub|tree）。
+fn finish_gen_table_row(row: &mut Value, columns: Option<Vec<Value>>) {
+    let parent = row.as_object().cloned();
+    if let Some(object) = row.as_object_mut() {
+        let columns_value = match columns {
+            Some(items) if !items.is_empty() => Value::Array(items),
+            _ => inherited_column(parent.as_ref()),
+        };
+        object.insert("columns".to_string(), columns_value);
+    }
+    add_tpl_flags(row);
+    reorder(row, GEN_TABLE_KEYS);
+}
+
+/// Java: `selectDbTableList` 的 resultMap 只有 4 列有标签，其余实体字段为 null。
+fn shape_db_table_row(row: Value) -> Value {
+    let mut map = Map::new();
+    for key in ["createTime", "tableName", "tableComment", "updateTime"] {
+        if let Some(value) = row.get(key) {
+            map.insert(key.to_string(), value.clone());
+        }
+    }
+    let mut value = Value::Object(map);
+    finish_gen_table_row(&mut value, None);
+    value
+}
+
+/// Java: selectGenTableAll —— 与列 join，`<collection>` 按 table_id 归并（首次出现顺序）。
+const ALL_JOIN_SELECT: &str = "t.table_id, t.table_name, t.table_comment, t.sub_table_name,      \
+     t.sub_table_fk_name, t.class_name, t.tpl_category, t.package_name, t.module_name,      \
+     t.business_name, t.function_name, t.function_author, t.options, t.remark,      \
+     c.column_id, c.column_name, c.column_comment, c.column_type, c.java_type, c.java_field,      \
+     c.is_pk, c.is_increment, c.is_required, c.is_insert, c.is_edit, c.is_list, c.is_query,      \
+     c.query_type, c.html_type, c.dict_type, c.field_map_string, c.link_table_id,      \
+     c.single_selection, c.multiple_selections, c.dialog_search_column_ids,      \
+     c.dialog_list_column_ids, c.sort";
+
+async fn gen_tables_all(pool: &MySqlPool) -> Result<Vec<Value>, AppError> {
+    let sql = format!(
+        "select {ALL_JOIN_SELECT} from gen_table t \
+         left join gen_table_column c on t.table_id = c.table_id order by c.sort"
+    );
+    let rows = sqlx::query(&sql).fetch_all(pool).await?;
+    let mut order: Vec<String> = Vec::new();
+    let mut groups: HashMap<String, Vec<Value>> = HashMap::new();
+    for row in crate::db::rows::rows_to_json(&rows) {
+        let key = match row.get("tableId") {
+            Some(value) if !value.is_null() => value.to_string(),
+            _ => String::new(),
+        };
+        if !groups.contains_key(&key) {
+            order.push(key.clone());
+        }
+        groups.entry(key).or_default().push(row);
+    }
+    let mut tables = Vec::with_capacity(order.len());
+    for key in order {
+        let Some(items) = groups.remove(&key) else {
+            continue;
+        };
+        let Some(first) = items.first() else {
+            continue;
+        };
+        let mut table = first.clone();
+        if let Some(object) = table.as_object_mut() {
+            for column_key in COLUMN_ONLY_KEYS {
+                object.remove(*column_key);
+            }
+        }
+        let columns = items
+            .iter()
+            .filter_map(Value::as_object)
+            .map(shape_column)
+            .collect();
+        finish_gen_table_row(&mut table, Some(columns));
+        tables.push(table);
+    }
+    Ok(tables)
 }
 
 async fn list(
@@ -208,7 +622,10 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    let (total, mut rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
+    for row in &mut rows {
+        finish_gen_table_row(row, None);
+    }
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -217,9 +634,12 @@ async fn all_list(
     RawQuery(raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
-    Ok(AjaxResult::success_data(
-        support::query_all(&state.db, &params, &SPEC).await?,
-    ))
+    // Java: getAllGenerateTableList 复用 selectGenTableList（不含列 join）。
+    let mut rows = support::query_all(&state.db, &params, &ALL_SPEC).await?;
+    for row in &mut rows {
+        finish_gen_table_row(row, None);
+    }
+    Ok(AjaxResult::success_data(rows))
 }
 
 fn push_db_table_filters(builder: &mut QueryBuilder<'_, MySql>, params: &HashMap<String, String>) {
@@ -233,12 +653,18 @@ fn push_db_table_filters(builder: &mut QueryBuilder<'_, MySql>, params: &HashMap
         builder.push_bind(value.clone());
         builder.push(", '%'))");
     }
-    if let Some(value) = params.get("params[beginTime]").filter(|value| !value.is_empty()) {
+    if let Some(value) = params
+        .get("params[beginTime]")
+        .filter(|value| !value.is_empty())
+    {
         builder.push(" and date_format(create_time,'%y%m%d') >= date_format(");
         builder.push_bind(value.clone());
         builder.push(", '%y%m%d')");
     }
-    if let Some(value) = params.get("params[endTime]").filter(|value| !value.is_empty()) {
+    if let Some(value) = params
+        .get("params[endTime]")
+        .filter(|value| !value.is_empty())
+    {
         builder.push(" and date_format(create_time,'%y%m%d') <= date_format(");
         builder.push_bind(value.clone());
         builder.push(", '%y%m%d')");
@@ -252,7 +678,8 @@ async fn db_list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let mut builder = QueryBuilder::<MySql>::new(
-        "select table_name, table_comment, create_time, update_time from information_schema.tables \
+        "select table_name as tableName, table_comment as tableComment, \
+         create_time as createTime, update_time as updateTime from information_schema.tables \
          where table_schema = (select database()) and table_name not like 'qrtz_%' \
          and table_name not like 'gen_%' and table_name not in (select table_name from gen_table)",
     );
@@ -261,14 +688,21 @@ async fn db_list(
         "select count(0) from information_schema.tables          where table_schema = (select database()) and table_name not like 'qrtz_%'          and table_name not like 'gen_%' and table_name not in (select table_name from gen_table)",
     );
     push_db_table_filters(&mut count_builder, &params);
-    let total: i64 = count_builder.build_query_scalar().fetch_one(&state.db).await?;
+    let total: i64 = count_builder
+        .build_query_scalar()
+        .fetch_one(&state.db)
+        .await?;
     let (offset, limit) = page.resolve(total);
     builder.push(" limit ");
     builder.push_bind(limit);
     builder.push(" offset ");
     builder.push_bind(offset);
     let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(TableDataInfo::new(total, crate::db::rows::rows_to_json(&rows)))
+    let data = crate::db::rows::rows_to_json(&rows)
+        .into_iter()
+        .map(shape_db_table_row)
+        .collect::<Vec<_>>();
+    Ok(TableDataInfo::new(total, data))
 }
 
 async fn column_list(
@@ -288,14 +722,28 @@ async fn column_list(
     })
 }
 
+/// MyBatis 用 Long 绑定主键；若按字符串绑定，MySQL 会把结果集中同名列的
+/// 元数据也报成字符串（sqlx 于是取到 "231" 而不是 231）。
+fn bind_id(builder: &mut QueryBuilder<'_, MySql>, value: &str) {
+    let text = value.trim_matches('"');
+    match text.parse::<i64>() {
+        Ok(number) => builder.push_bind(number),
+        Err(_) => builder.push_bind(text.to_string()),
+    };
+}
+
 async fn select_columns(pool: &MySqlPool, table_id: &str) -> Result<Vec<Value>, AppError> {
     let mut builder = QueryBuilder::<MySql>::new(format!(
         "select {COLUMN_COLUMNS} from gen_table_column where table_id = "
     ));
-    builder.push_bind(table_id.to_string());
+    bind_id(&mut builder, table_id);
     builder.push(" order by sort");
     let rows = builder.build().fetch_all(pool).await?;
-    Ok(crate::db::rows::rows_to_json(&rows))
+    Ok(crate::db::rows::rows_to_json(&rows)
+        .iter()
+        .filter_map(Value::as_object)
+        .map(shape_column)
+        .collect())
 }
 
 async fn get_column_list(
@@ -309,14 +757,22 @@ async fn get_column_list(
     ));
     if let Some(table_id) = body.get("tableId").filter(|value| !value.is_null()) {
         builder.push(" and table_id = ");
-        builder.push_bind(table_id.to_string().trim_matches('"').to_string());
+        bind_id(&mut builder, &table_id.to_string());
     }
-    if let Some(value) = body.get("columnName").and_then(Value::as_str).filter(|v| !v.is_empty()) {
+    if let Some(value) = body
+        .get("columnName")
+        .and_then(Value::as_str)
+        .filter(|v| !v.is_empty())
+    {
         builder.push(" and column_name like concat('%', ");
         builder.push_bind(value.to_string());
         builder.push(", '%')");
     }
-    if let Some(value) = body.get("javaField").and_then(Value::as_str).filter(|v| !v.is_empty()) {
+    if let Some(value) = body
+        .get("javaField")
+        .and_then(Value::as_str)
+        .filter(|v| !v.is_empty())
+    {
         builder.push(" and java_field like concat('%', ");
         builder.push_bind(value.to_string());
         builder.push(", '%')");
@@ -325,26 +781,44 @@ async fn get_column_list(
         QueryBuilder::<MySql>::new("select count(0) from gen_table_column where 1=1");
     if let Some(table_id) = body.get("tableId").filter(|value| !value.is_null()) {
         count_builder.push(" and table_id = ");
-        count_builder.push_bind(table_id.to_string().trim_matches('"').to_string());
+        let table_id = table_id.to_string();
+        let table_id = table_id.trim_matches('"').to_string();
+        count_builder.push_bind(table_id);
     }
-    if let Some(value) = body.get("columnName").and_then(Value::as_str).filter(|v| !v.is_empty()) {
+    if let Some(value) = body
+        .get("columnName")
+        .and_then(Value::as_str)
+        .filter(|v| !v.is_empty())
+    {
         count_builder.push(" and column_name like concat('%', ");
         count_builder.push_bind(value.to_string());
         count_builder.push(", '%')");
     }
-    if let Some(value) = body.get("javaField").and_then(Value::as_str).filter(|v| !v.is_empty()) {
+    if let Some(value) = body
+        .get("javaField")
+        .and_then(Value::as_str)
+        .filter(|v| !v.is_empty())
+    {
         count_builder.push(" and java_field like concat('%', ");
         count_builder.push_bind(value.to_string());
         count_builder.push(", '%')");
     }
-    let total: i64 = count_builder.build_query_scalar().fetch_one(&state.db).await?;
+    let total: i64 = count_builder
+        .build_query_scalar()
+        .fetch_one(&state.db)
+        .await?;
     let (offset, limit) = page.resolve(total);
     builder.push(" limit ");
     builder.push_bind(limit);
     builder.push(" offset ");
     builder.push_bind(offset);
     let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(TableDataInfo::new(total, crate::db::rows::rows_to_json(&rows)))
+    let data = crate::db::rows::rows_to_json(&rows)
+        .iter()
+        .filter_map(Value::as_object)
+        .map(shape_column)
+        .collect::<Vec<_>>();
+    Ok(TableDataInfo::new(total, data))
 }
 
 async fn get_all_column_list(
@@ -360,32 +834,103 @@ async fn get_all_column_list(
     if ids.is_empty() {
         return Ok(AjaxResult::success_data(Vec::<Value>::new()));
     }
+    let items: Vec<&str> = ids
+        .split(',')
+        .map(str::trim)
+        .filter(|item| !item.is_empty())
+        .collect();
     let mut builder = QueryBuilder::<MySql>::new(format!(
         "select {COLUMN_COLUMNS} from gen_table_column where column_id in ("
     ));
+    // 与 bind_id 同理：column_id 按数字绑定，否则结果集列元数据会变成字符串。
+    let numbers: Option<Vec<i64>> = items.iter().map(|item| item.parse::<i64>().ok()).collect();
     let mut separated = builder.separated(", ");
-    for id in ids.split(',').filter(|item| !item.is_empty()) {
-        separated.push_bind(id.to_string());
+    match numbers {
+        Some(values) => {
+            for value in values {
+                separated.push_bind(value);
+            }
+        }
+        None => {
+            for item in &items {
+                separated.push_bind(item.to_string());
+            }
+        }
     }
     builder.push(") order by sort");
     let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(AjaxResult::success_data(crate::db::rows::rows_to_json(&rows)))
+    let data = crate::db::rows::rows_to_json(&rows)
+        .iter()
+        .filter_map(Value::as_object)
+        .map(shape_column)
+        .collect::<Vec<_>>();
+    Ok(AjaxResult::success_data(data))
+}
+
+/// Java: GenTableServiceImpl.setTableFromOptions —— 仅 selectGenTableById 会调用。
+fn apply_table_options(row: &mut Value) {
+    let Some(Value::String(options)) = row.get("options").cloned() else {
+        return;
+    };
+    let Ok(parsed) = serde_json::from_str::<Value>(&options) else {
+        return;
+    };
+    let Some(object) = parsed.as_object() else {
+        return;
+    };
+    let Some(target) = row.as_object_mut() else {
+        return;
+    };
+    for key in [
+        "treeCode",
+        "treeParentCode",
+        "treeName",
+        "parentMenuId",
+        "parentMenuName",
+    ] {
+        // Java: paramsObj.getString(key)，非字符串值也会转成字符串。
+        let value = match object.get(key) {
+            Some(Value::String(text)) => Value::String(text.clone()),
+            Some(Value::Null) | None => Value::Null,
+            Some(other) => Value::String(other.to_string()),
+        };
+        target.insert(key.to_string(), value);
+    }
 }
 
 async fn get_info(
     State(state): State<AppState>,
     Path(table_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let table = support::query_by_id(&state.db, &SPEC, &table_id).await?;
-    let rows = select_columns(&state.db, &table_id).await?;
     let mut builder = QueryBuilder::<MySql>::new(format!(
-        "select t.table_name, t.table_comment from gen_table t order by t.create_time desc"
+        "select {INFO_COLUMNS} from gen_table where table_id = "
     ));
-    let tables = builder.build().fetch_all(&state.db).await?;
+    bind_id(&mut builder, &table_id);
+    let info_row = builder.build().fetch_optional(&state.db).await?;
+    let rows = select_columns(&state.db, &table_id).await?;
+    let mut info = info_row
+        .map(|row| crate::db::rows::row_to_json(&row))
+        .unwrap_or(Value::Null);
+    if info.is_object() {
+        // Java: info.columns 来自 selectGenTableById 的 join，其中没有 c.create_by
+        // 等审计标签，因此子对象的审计字段为 null（rows 才有值）。
+        let mut join_columns = rows.clone();
+        for column in &mut join_columns {
+            if let Some(object) = column.as_object_mut() {
+                for key in ["createBy", "createTime", "updateBy", "updateTime"] {
+                    object.insert(key.to_string(), Value::Null);
+                }
+            }
+        }
+        finish_gen_table_row(&mut info, Some(join_columns));
+        apply_table_options(&mut info);
+    }
+    let tables = gen_tables_all(&state.db).await?;
+    // Java 端为 HashMap：实测键顺序 tables, rows, info。
     let mut map = Map::new();
-    map.insert("info".to_string(), table.unwrap_or(Value::Null));
+    map.insert("tables".to_string(), json!(tables));
     map.insert("rows".to_string(), json!(rows));
-    map.insert("tables".to_string(), json!(crate::db::rows::rows_to_json(&tables)));
+    map.insert("info".to_string(), info);
     Ok(AjaxResult::success_data(map))
 }
 
@@ -394,14 +939,14 @@ fn init_table_body(table_name: &str, table_comment: &str, oper_name: &str) -> Ma
     let mut map = Map::new();
     map.insert("tableName".to_string(), json!(table_name));
     map.insert("tableComment".to_string(), json!(table_comment));
-    map.insert(
-        "className".to_string(),
-        json!(camel_case(table_name, true)),
-    );
+    map.insert("className".to_string(), json!(camel_case(table_name, true)));
     map.insert("packageName".to_string(), json!(GEN_PACKAGE));
     map.insert("moduleName".to_string(), json!(module_name()));
     map.insert("businessName".to_string(), json!(business_name(table_name)));
-    map.insert("functionName".to_string(), json!(function_name(table_comment)));
+    map.insert(
+        "functionName".to_string(),
+        json!(function_name(table_comment)),
+    );
     map.insert("functionAuthor".to_string(), json!(GEN_AUTHOR));
     map.insert("createBy".to_string(), json!(oper_name));
     map
@@ -409,8 +954,14 @@ fn init_table_body(table_name: &str, table_comment: &str, oper_name: &str) -> Ma
 
 /// Java: GenUtils.initColumnField。
 fn init_column(row: &Value, table_id: i64, create_by: &str) -> Map<String, Value> {
-    let column_name = row.get("columnName").and_then(Value::as_str).unwrap_or_default();
-    let column_type = row.get("columnType").and_then(Value::as_str).unwrap_or_default();
+    let column_name = row
+        .get("columnName")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let column_type = row
+        .get("columnType")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
     let data_type = column_type
         .split('(')
         .next()
@@ -425,8 +976,14 @@ fn init_column(row: &Value, table_id: i64, create_by: &str) -> Map<String, Value
         row.get("columnComment").cloned().unwrap_or(Value::Null),
     );
     map.insert("columnType".to_string(), json!(column_type));
-    map.insert("sort".to_string(), row.get("sort").cloned().unwrap_or(Value::Null));
-    map.insert("isPk".to_string(), row.get("isPk").cloned().unwrap_or(Value::Null));
+    map.insert(
+        "sort".to_string(),
+        row.get("sort").cloned().unwrap_or(Value::Null),
+    );
+    map.insert(
+        "isPk".to_string(),
+        row.get("isPk").cloned().unwrap_or(Value::Null),
+    );
     map.insert(
         "isIncrement".to_string(),
         row.get("isIncrement").cloned().unwrap_or(Value::Null),
@@ -447,8 +1004,17 @@ fn init_column(row: &Value, table_id: i64, create_by: &str) -> Map<String, Value
     let text_types = ["tinytext", "text", "mediumtext", "longtext"];
     let time_types = ["datetime", "time", "date", "timestamp"];
     let number_types = [
-        "tinyint", "smallint", "mediumint", "int", "number", "integer", "bit", "bigint", "float",
-        "double", "decimal",
+        "tinyint",
+        "smallint",
+        "mediumint",
+        "int",
+        "number",
+        "integer",
+        "bit",
+        "bigint",
+        "float",
+        "double",
+        "decimal",
     ];
     if str_types.contains(&data_type.as_str()) || text_types.contains(&data_type.as_str()) {
         let length = column_type
@@ -486,7 +1052,14 @@ fn init_column(row: &Value, table_id: i64, create_by: &str) -> Map<String, Value
 
     let is_pk = row.get("isPk").and_then(Value::as_str) == Some("1");
     let not_edit = ["id", "create_by", "create_time", "del_flag"];
-    let not_list = ["id", "create_by", "create_time", "del_flag", "update_by", "update_time"];
+    let not_list = [
+        "id",
+        "create_by",
+        "create_time",
+        "del_flag",
+        "update_by",
+        "update_time",
+    ];
     let not_query = [
         "id",
         "create_by",
@@ -636,8 +1209,14 @@ async fn edit_save(
         );
         object.insert("updateTime".to_string(), json!(support::now_string()));
     }
-    support::update_entity_by_id(&state.db, "gen_table", "table_id", &table, support::AutoFill::NONE)
-        .await?;
+    support::update_entity_by_id(
+        &state.db,
+        "gen_table",
+        "table_id",
+        &table,
+        support::AutoFill::NONE,
+    )
+    .await?;
 
     if let Some(columns) = body.get("columns").and_then(Value::as_array) {
         for column in columns {
@@ -736,37 +1315,165 @@ async fn synch_db(
 }
 
 async fn preview(
-    State(_state): State<AppState>,
-    Path(_table_id): Path<String>,
+    State(state): State<AppState>,
+    Path(table_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    Err(AppError::Service(
-        "代码预览依赖 Velocity 模板引擎，Rust 迁移版本暂未提供".to_string(),
-    ))
+    // Java: GenTableServiceImpl.previewCode —— selectGenTableById + 表信息加工 + 逐模板渲染。
+    let mut builder = QueryBuilder::<MySql>::new(format!(
+        "select {INFO_COLUMNS} from gen_table where table_id = "
+    ));
+    bind_id(&mut builder, &table_id);
+    let Some(info_row) = builder.build().fetch_optional(&state.db).await? else {
+        // Java 在 table 为 null 时后续加工直接 NPE -> code 500
+        return Err(AppError::Service(format!("gen_table 不存在: {table_id}")));
+    };
+    let mut info = crate::db::rows::row_to_json(&info_row);
+    let columns = select_columns(&state.db, &table_id).await?;
+    if info.is_object() {
+        // Java: previewCode 拿到的是 selectGenTableById 的完整 GenTable
+        // （含 crud/sub/tree 派生属性与 columns），模板用 `$table.crud` 走分支。
+        finish_gen_table_row(&mut info, Some(columns.clone()));
+        apply_table_options(&mut info);
+    }
+    let datetime = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let data = gen_render::render_preview(
+        &info,
+        &columns,
+        &datetime,
+        state.settings.generator_code.mybatis_plus.enable,
+    )
+    .map_err(AppError::Service)?;
+    Ok(AjaxResult::success_data(data))
 }
 
 async fn download(
-    State(_state): State<AppState>,
-    Path(_table_name): Path<String>,
-) -> Result<AjaxResult, AppError> {
-    Err(AppError::Service(
-        "代码下载依赖 Velocity 模板引擎，Rust 迁移版本暂未提供".to_string(),
-    ))
+    State(state): State<AppState>,
+    Path(table_name): Path<String>,
+) -> Result<Response, AppError> {
+    // Java: GenTableServiceImpl.downloadCode(String tableName) -> genCode(response, data)
+    let entries = zip_entries(&state, &[table_name]).await?;
+    zip_response(gen_zip::build(&entries))
 }
 
 async fn gen_code(
-    State(_state): State<AppState>,
-    Path(_table_name): Path<String>,
+    State(state): State<AppState>,
+    Path(table_name): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    Err(AppError::Service(
-        "代码生成依赖 Velocity 模板引擎，Rust 迁移版本暂未提供".to_string(),
-    ))
+    let (table, columns) = load_table_by_name(&state.db, &table_name)
+        .await?
+        .ok_or_else(|| AppError::Service(format!("gen_table 不存在: {table_name}")))?;
+    let datetime = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let rendered = gen_render::render_templates(
+        &table,
+        &columns,
+        &datetime,
+        state.settings.generator_code.mybatis_plus.enable,
+    )
+    .map_err(AppError::Service)?;
+    for (template, text) in rendered {
+        // Java: 自定义路径生成跳过 sql.vm / api.js.vm / index.vue.vm / index-tree.vue.vm
+        if ["sql.vm", "api.js.vm", "index.vue.vm", "index-tree.vue.vm"]
+            .iter()
+            .any(|skip| template.contains(*skip))
+        {
+            continue;
+        }
+        let path = gen_render::gen_path(&table, &template).map_err(AppError::Service)?;
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).map_err(|err| {
+                AppError::Service(format!("渲染模板失败，表名：{}: {err}", table_name))
+            })?;
+        }
+        // Java: FileUtils.writeStringToFile(new File(path), sw.toString(), UTF_8)
+        std::fs::write(&path, text).map_err(|err| {
+            AppError::Service(format!("渲染模板失败，表名：{}: {err}", table_name))
+        })?;
+    }
+    Ok(AjaxResult::success())
 }
 
 async fn batch_gen_code(
-    State(_state): State<AppState>,
-    Query(_params): Query<HashMap<String, String>>,
-) -> Result<AjaxResult, AppError> {
-    Err(AppError::Service(
-        "代码生成依赖 Velocity 模板引擎，Rust 迁移版本暂未提供".to_string(),
+    State(state): State<AppState>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Result<Response, AppError> {
+    // Java: Convert.toStrArray(tables) —— 按逗号切分，空串得到空数组，仍然返回合法空 zip。
+    let raw = params.get("tables").map(String::as_str).unwrap_or_default();
+    let names: Vec<String> = raw
+        .split(',')
+        .filter(|name| !name.is_empty())
+        .map(str::to_string)
+        .collect();
+    let entries = zip_entries(&state, &names).await?;
+    zip_response(gen_zip::build(&entries))
+}
+
+/// Java: GenController.genCode(HttpServletResponse response, byte[] data)
+fn zip_response(data: Vec<u8>) -> Result<Response, AppError> {
+    Response::builder()
+        .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+        .header(header::ACCESS_CONTROL_EXPOSE_HEADERS, "Content-Disposition")
+        .header(
+            header::CONTENT_DISPOSITION,
+            "attachment; filename=\"ruoyi.zip\"",
+        )
+        .header(
+            header::CONTENT_TYPE,
+            "application/octet-stream;charset=UTF-8",
+        )
+        .body(Body::from(data))
+        .map_err(|err| AppError::Service(err.to_string()))
+}
+
+/// Java: selectGenTableByName + `<collection>` 归并出的 GenTable（含 columns）。
+async fn load_table_by_name(
+    pool: &MySqlPool,
+    table_name: &str,
+) -> Result<Option<(Value, Vec<Value>)>, AppError> {
+    let Some(row) = sqlx::query(&format!(
+        "select {INFO_COLUMNS} from gen_table where table_name = ?"
     ))
+    .bind(table_name)
+    .fetch_optional(pool)
+    .await?
+    else {
+        return Ok(None);
+    };
+    let mut table = crate::db::rows::row_to_json(&row);
+    let table_id = table
+        .get("tableId")
+        .map(Value::to_string)
+        .unwrap_or_default();
+    let columns = select_columns(pool, &table_id).await?;
+    finish_gen_table_row(&mut table, Some(columns.clone()));
+    apply_table_options(&mut table);
+    Ok(Some((table, columns)))
+}
+
+async fn zip_entries(
+    state: &AppState,
+    table_names: &[String],
+) -> Result<Vec<(String, Vec<u8>)>, AppError> {
+    let mut entries: Vec<(String, Vec<u8>)> = Vec::new();
+    let mut names: HashSet<String> = HashSet::new();
+    for table_name in table_names {
+        let (table, columns) = load_table_by_name(&state.db, table_name)
+            .await?
+            .ok_or_else(|| AppError::Service(format!("gen_table 不存在: {table_name}")))?;
+        let datetime = chrono::Local::now().format("%Y-%m-%d").to_string();
+        let rendered = gen_render::render_templates(
+            &table,
+            &columns,
+            &datetime,
+            state.settings.generator_code.mybatis_plus.enable,
+        )
+        .map_err(AppError::Service)?;
+        for (template, text) in rendered {
+            let entry = gen_render::file_name(&template, &table).map_err(AppError::Service)?;
+            // Java: 重名条目在 putNextEntry 抛 ZipException，被 catch 后该条目不写入。
+            if names.insert(entry.clone()) {
+                entries.push((entry, text.into_bytes()));
+            }
+        }
+    }
+    Ok(entries)
 }

@@ -41,6 +41,21 @@ pub struct Settings {
     /// Java: `isLocalhost`（local 时实时轨迹任务只做落库、不判定驶出）。
     #[serde(default = "default_localhost")]
     pub is_localhost: String,
+    /// Java: `generator-code.mybatis-plus.enable`（决定代码生成取 vm 还是 vmplus 模板）。
+    #[serde(rename = "generator-code", default)]
+    pub generator_code: GeneratorCodeSettings,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct GeneratorCodeSettings {
+    #[serde(rename = "mybatis-plus", default)]
+    pub mybatis_plus: GeneratorMybatisPlus,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct GeneratorMybatisPlus {
+    #[serde(default)]
+    pub enable: bool,
 }
 
 fn default_localhost() -> String {

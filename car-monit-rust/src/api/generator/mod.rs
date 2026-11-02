@@ -5,6 +5,8 @@ use axum::Router;
 use crate::state::AppState;
 
 pub mod gen;
+pub mod gen_render;
+pub mod gen_zip;
 
 pub fn routes() -> Router<AppState> {
     let mut router = Router::new();

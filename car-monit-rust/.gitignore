@@ -1,3 +1,11 @@
 target/
 .qoder/
 .env
+# 端点对等校验的生成物（清单、报告、Python 缓存）
+build/
+tools/__pycache__/
+# /tool/gen/genCode 在 gen_path=/ 时按 Java 规则写到「进程目录/src/」，
+# 从本 crate 启动服务时会落在这里，属于生成物而非源码。
+src/main/java/
+src/main/resources/
+src/vue/
