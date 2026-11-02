@@ -13,7 +13,7 @@
 | 对比脚本 | `C:/Users/abelz/AppData/Local/Temp/cmp_api.py <路径前缀> <报告.json>`；单接口用 `cmp_one.py`（能区分「键缺失」与「值为 null」） |
 | 写接口生命周期对比 | `cmp_crud2.py [路径...]`：取真实行做模板 → 两端各插一条 `PARITY_*` 标记行 → 比 POST/详情/PUT/DELETE → 按标记硬清理 |
 | 落库逐列对比 | `probe_db.py <路径>`：两端各插一行后直接比数据库列值（接口回显之外的真相） |
-| Redis 共存验收 | `verify_redis.py`（登录态）、`verify_carlist.py`（车辆缓存）、`verify_cfg_dict.py`（参数/字典）、`grab_java_cache.py`（抓 Java 原值当黄金样本） |
+| Redis 共存验收 | `verify_redis.py`（登录态）、`verify_carlist.py`（车辆缓存）、`verify_cfg_dict.py`（参数/字典）、`grab_java_cache.py`（抓 Java 原值当黄金样本）、`smoke_redis.py [轮数]`（多轮稳定性冒烟，交替由两端回填缓存） |
 | 路由清单来源 | Go 启动日志 `C:/Users/abelz/AppData/Local/Temp/carmonit.log` 里的 `[GIN-debug]` 行 |
 | 归一化规则 | `yyyy-MM-dd HH:mm:ss` → `<DT>`、带横杠/无横杠 UUID → `<UUID>`/`<HEX32>`、15–20 位主键 → `<ID>`、`PARITY_*` 测试值 → `<PARITY>`、浮点保留 6 位，深度逐字段比较 |
 
@@ -104,7 +104,10 @@ Java 的 `redisTemplate` 值序列化器是 `FastJson2JsonRedisSerializer(Object
 - `login_tokens:*` 补 Java 有而 Go 没有的 `username`、`user.password`（HTTP 响应里被 `@JsonIgnore`，缓存里有），
   `loginDate` 用 fastjson2 的 `yyyy-MM-dd HH:mm:ss`（`internal/auth/login_cache.go`）
 - `sys_config:*` 改为 FastJson2 的带引号字符串值，Go 读回时脱引号（原来读到 `"123"` 会连引号一起返回）
-- `sys_dict:*` 保持 Java 的 string + 整数组形态（本工程 `DictUtils` 用的是 `setCacheObject`，不是 `setCacheList`）
+- `sys_dict:*` 保持 Java 的 string + 整数组形态（本工程 `DictUtils` 用的是 `setCacheObject`，不是 `setCacheList`）；
+  缓存值里的 `params` 由 `JavaOptions.Maps` 规则**强制补齐**成 `{"@type":"java.util.HashMap"}` ——
+  少这个标记时，「谁先回填缓存」会改变另一端读到的字段集合（Java 的 `BaseEntity.params` 是
+  `@JsonInclude(NON_EMPTY)`：只有 map 里真的留有 `@type` 键时才会输出 `params`）
 - `section_list` 由 Java 定时任务写成 Redis List，Go 改用 `ListJava` 读取（原来是裸 `LRange` + `json.Unmarshal`）
 - `web.DateTime` / `web.ISODateTime` 接受裸毫秒时间戳：Java 老会话里就是 `"loginDate":1715955352000`，
   否则整条 `login_tokens` 解析失败、在线列表少 25 条
@@ -112,6 +115,8 @@ Java 的 `redisTemplate` 值序列化器是 `FastJson2JsonRedisSerializer(Object
 
 **验收**：两端 `/monitor/online/list` 返回 96/96 条且 tokenId 集合一致；Go 刷新 `car_list` 后 Java 端点正常读取；
 Go 写的 `sys_config`/`sys_dict` Java 读得到，反之亦然。
+稳定性冒烟 `smoke_redis.py`（4 轮，交替由 Go/Java 回填字典缓存，覆盖登录态形态、在线列表、大屏位置、
+白名单/车辆/门架列表、缓存原值类型、参数与字典的双向读写与删除驱逐）：**140 项检查 0 失败**，测试数据与测试键无残留。
 
 ### 3.8 写接口回归发现并修复（本轮）
 
@@ -190,4 +195,5 @@ MSYS2_ARG_CONV_EXCL='*' python C:/Users/abelz/AppData/Local/Temp/cmp_crud2.py --
 MSYS2_ARG_CONV_EXCL='*' python C:/Users/abelz/AppData/Local/Temp/probe_db.py /manager/carinfo
 python C:/Users/abelz/AppData/Local/Temp/grab_java_cache.py       # 抓 Java 写入的缓存原值
 python C:/Users/abelz/AppData/Local/Temp/verify_redis.py          # 登录态共存
+python C:/Users/abelz/AppData/Local/Temp/smoke_redis.py 4         # 共存端点多轮稳定性冒烟
 ```

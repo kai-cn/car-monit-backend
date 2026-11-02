@@ -37,35 +37,15 @@ func loginUserCacheView(lu *model.LoginUser) map[string]any {
 	if user == nil || lu.User == nil {
 		return view
 	}
-	// SysUser.password 在 HTTP 响应里被 @JsonIgnore，但 Redis 原值里有
+	// SysUser.password 在 HTTP 响应里被 @JsonIgnore，但 Java 的 Redis 原值里有
 	if lu.User.Password != nil {
 		user["password"] = *lu.User.Password
 	}
-	ensureParams(user)
-	if dept, ok := user["dept"].(map[string]any); ok {
-		ensureParams(dept)
-	}
-	if roles, ok := user["roles"].([]any); ok {
-		for _, item := range roles {
-			if role, ok := item.(map[string]any); ok {
-				ensureParams(role)
-			}
-		}
-	}
+	// user/dept/roles 的 params 由 cache.ToJava 按 Maps 规则补齐
 	if text, ok := user["loginDate"].(string); ok {
 		user["loginDate"] = javaDateText(text)
 	}
 	return view
-}
-
-// ensureParams 补 Java BaseEntity.params 的空 HashMap（序列化后是 {"@type":"java.util.HashMap"}）。
-func ensureParams(m map[string]any) {
-	if v, ok := m["params"].(map[string]any); ok && len(v) == 0 {
-		return
-	}
-	if _, ok := m["params"].(map[string]any); !ok {
-		m["params"] = map[string]any{}
-	}
 }
 
 // javaDateText 把 ISO8601（Jackson 输出）换成 fastjson2 的 "yyyy-MM-dd HH:mm:ss"。

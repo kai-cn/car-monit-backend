@@ -109,6 +109,33 @@ func TestToJavaWritesFastJson2Syntax(t *testing.T) {
 	}
 }
 
+func TestToJavaForcesParamsOnElements(t *testing.T) {
+	// sys_dict：Java 空 HashMap 也会写出类型标记，Go 从库里读出的行没有 params 字段
+	rows := []any{
+		map[string]any{"dictCode": int64(1), "dictType": "sys_x"},
+		map[string]any{"dictCode": int64(2), "dictType": "sys_x"},
+	}
+	raw, err := ToJava(rows, SysDictDataJava)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(raw)
+	if strings.Count(got, `"params":{"@type":"java.util.HashMap"}`) != 2 {
+		t.Errorf("数组每个元素都应补 params: %s", got)
+	}
+	// 根对象不补：LoginUser 自己没有 params 字段
+	root, err := ToJava(map[string]any{
+		"token": "t",
+		"user":  map[string]any{"userId": int64(1)},
+	}, LoginUserJava)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(string(root), `"params":{"@type":"java.util.HashMap"}`) != 1 {
+		t.Errorf("只应给嵌套的 user 补 params: %s", root)
+	}
+}
+
 func TestToJavaRootArrayWritesTypePerElement(t *testing.T) {
 	rows := []any{
 		map[string]any{"id": "1", "epsId": int64(25367)},
