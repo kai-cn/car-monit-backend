@@ -88,6 +88,31 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 SysMenu 键序：BaseEntity 在前（含 params），`children` 是派生 getter 所以最后。
+const MENU_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "params",
+    "menuId",
+    "menuName",
+    "parentName",
+    "parentId",
+    "orderNum",
+    "path",
+    "component",
+    "isFrame",
+    "isCache",
+    "menuType",
+    "visible",
+    "status",
+    "perms",
+    "icon",
+    "children",
+];
+
 /// Java: selectMenuList(menu, userId) —— 管理员查全部，普通用户按角色过滤。
 /// Java SysMenu：orderNum/isFrame/isCache 为 String，children 初始化为空集合。
 fn shape_menu_rows(rows: &mut [Value]) {
@@ -99,10 +124,13 @@ fn shape_menu_rows(rows: &mut [Value]) {
             ("isCache", support::FieldFormat::String),
         ],
     );
-    for row in rows {
+    for row in rows.iter_mut() {
         if let Some(object) = row.as_object_mut() {
             object.entry("children").or_insert_with(|| json!([]));
         }
+    }
+    for row in rows.iter_mut() {
+        *row = support::reorder_keys(row.take(), MENU_KEYS);
     }
 }
 

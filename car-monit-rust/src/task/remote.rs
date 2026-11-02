@@ -145,7 +145,7 @@ pub async fn get_json_owned(
                     return Ok(serde_json::from_str(&body)
                         .unwrap_or_else(|_| serde_json::Value::String(body.trim().to_string())));
                 }
-                last_error = format!("{path} 返回 HTTP {status}: {body}");
+                last_error = format!("HTTP {} ErrorContent={body}", status.as_u16());
             }
             Err(err) => last_error = format!("{path} 请求失败: {err}"),
         }
@@ -155,6 +155,27 @@ pub async fn get_json_owned(
     }
 
     Err(AppError::Internal(Some(last_error)))
+}
+
+/// Java: hutool `JSONObject` 默认 ignoreNullValue=true —— 解析时丢掉值为 null 的键。
+/// （`HttpOdsLwzxsfsjFeeStationExit01Service` 的返回类型就是 hutool JSONObject。）
+pub fn strip_nulls(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            map.retain(|_, item| !item.is_null());
+            for item in map.values_mut() {
+                strip_nulls(item);
+            }
+        }
+        serde_json::Value::Array(items) => items.iter_mut().for_each(strip_nulls),
+        _ => {}
+    }
+}
+
+/// 对齐 Java：hutool JSONObject 透传的响应需要丢掉 null 键。
+pub fn strip_nulls_owned(mut value: serde_json::Value) -> serde_json::Value {
+    strip_nulls(&mut value);
+    value
 }
 
 fn urlencoding(value: &str) -> String {
@@ -189,5 +210,19 @@ mod tests {
         );
         assert_eq!(row.receivedtime.unwrap().date().to_string(), "2025-08-29");
         assert_eq!(row.direction, Some(1));
+    }
+
+    #[test]
+    fn strip_nulls_matches_hutool_ignore_null_value() {
+        let mut value = json!({
+            "total": 1,
+            "rows": [{"bigId": "1", "enweight": null, "nested": {"a": null, "b": 1}}],
+            "code": 200
+        });
+        strip_nulls(&mut value);
+        assert_eq!(
+            value,
+            json!({"total": 1, "rows": [{"bigId": "1", "nested": {"b": 1}}], "code": 200})
+        );
     }
 }

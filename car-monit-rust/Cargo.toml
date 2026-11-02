@@ -23,7 +23,8 @@ http = "1"
 bytes = "1"
 
 serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1", features = ["preserve_order"] }
+# float_roundtrip: 按 Java 的十进制字面量原样读写浮点（默认实现会把 115.86275068219831 读成 …32）。
+serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
 indexmap = { version = "2", features = ["serde"] }
 
 sqlx = { version = "0.8", default-features = false, features = [

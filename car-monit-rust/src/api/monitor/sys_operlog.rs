@@ -84,6 +84,33 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 SysOperLog 键序。
+const OPERLOG_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "params",
+    "operId",
+    "title",
+    "businessType",
+    "businessTypes",
+    "method",
+    "requestMethod",
+    "operatorType",
+    "operName",
+    "deptName",
+    "operUrl",
+    "operIp",
+    "operLocation",
+    "operParam",
+    "jsonResult",
+    "status",
+    "errorMsg",
+    "operTime",
+];
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -91,7 +118,7 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::reorder_rows(rows, OPERLOG_KEYS)))
 }
 
 fn convert_business_type(text: &str) -> String {

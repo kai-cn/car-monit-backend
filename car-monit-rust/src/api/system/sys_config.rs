@@ -133,6 +133,25 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 SysConfig 键序：BaseEntity 在前（含 params），再按声明顺序。
+const CONFIG_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "params",
+    "configId",
+    "configName",
+    "configKey",
+    "configValue",
+    "configType",
+];
+
+fn shape_config_rows(rows: Vec<Value>) -> Vec<Value> {
+    support::reorder_rows(rows, CONFIG_KEYS)
+}
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -140,7 +159,7 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, shape_config_rows(rows)))
 }
 
 async fn export(
@@ -175,7 +194,9 @@ async fn get_info(
     Path(config_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &config_id).await?,
+        support::query_by_id(&state.db, &SPEC, &config_id)
+            .await?
+            .map(|row| shape_config_rows(vec![row]).pop().unwrap_or(Value::Null)),
     ))
 }
 

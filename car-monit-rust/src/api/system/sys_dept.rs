@@ -109,14 +109,57 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 SysDept 键序：BaseEntity 字段在前（含 params），再按声明顺序，
+/// 最后是派生 getter（parentName/children/flag/dataId/deptSubCode）。
+pub(crate) const DEPT_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "params",
+    "deptId",
+    "parentId",
+    "ancestors",
+    "deptName",
+    "orderNum",
+    "leaderId",
+    "leader",
+    "fgldId",
+    "fgldName",
+    "bankName",
+    "account",
+    "socialCode",
+    "postalCode",
+    "address",
+    "phone",
+    "email",
+    "status",
+    "isZbzg",
+    "isUint",
+    "treeLeavel",
+    "subCode",
+    "deptJc",
+    "delFlag",
+    "parentName",
+    "children",
+    "tenantId",
+    "flag",
+    "dataId",
+    "deptSubCode",
+];
+
 /// Java: selectDeptList —— del_flag='0' + 动态条件 + @DataScope。
 /// Java SysDept：orderNum 是 String，children 初始化为空集合。
 fn shape_dept_rows(rows: &mut [Value]) {
     support::apply_formats(rows, &[("orderNum", support::FieldFormat::String)]);
-    for row in rows {
+    for row in rows.iter_mut() {
         if let Some(object) = row.as_object_mut() {
             object.entry("children").or_insert_with(|| json!([]));
         }
+    }
+    for row in rows.iter_mut() {
+        *row = support::reorder_keys(row.take(), DEPT_KEYS);
     }
 }
 

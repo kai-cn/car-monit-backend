@@ -46,6 +46,72 @@ fn add_dict_params(rows: &mut [Value]) {
     }
 }
 
+/// Java: SysDictData 的 Jackson 键顺序（BaseEntity 在前）。
+const DICT_DATA_KEYS: &[&str] = &[
+    "createBy", "createTime", "updateBy", "updateTime", "remark", "params", "dictCode",
+    "dictSort", "dictLabel", "dictValue", "dictType", "cssClass", "listClass", "isDefault",
+    "status", "default",
+];
+
+/// 缓存里的元素带 FastJson2 的根 `@type`（Jackson 会消费掉）。
+/// `params` 特殊：DB 直查时是空 Map，Jackson 的 NON_EMPTY 会省略；
+/// 而从 Redis 反序列化回来的值是 FastJson2 写的 `{"@type":"java.util.HashMap"}`，会被原样输出。
+fn project_dict_rows(rows: Vec<Value>) -> Vec<Value> {
+    rows.into_iter()
+        .map(|row| {
+            let mut source = row.as_object().cloned().unwrap_or_default();
+            source.remove("@type");
+            let params = source
+                .remove("params")
+                .filter(|value| value.as_object().map(|map| !map.is_empty()).unwrap_or(false));
+            let mut out = Map::new();
+            for key in DICT_DATA_KEYS {
+                if *key == "params" {
+                    if let Some(value) = &params {
+                        out.insert("params".to_string(), value.clone());
+                    }
+                    continue;
+                }
+                out.insert(
+                    key.to_string(),
+                    source.get(*key).cloned().unwrap_or(Value::Null),
+                );
+            }
+            for (key, value) in source {
+                out.entry(key).or_insert(value);
+            }
+            Value::Object(out)
+        })
+        .collect()
+}
+
+/// 按 dictType 分组（Java 用 Collectors.groupingBy，HashMap 无序；这里保持首次出现顺序）。
+fn group_by_dict_type(rows: Vec<Value>) -> Map<String, Value> {
+    let mut grouped: Map<String, Value> = Map::new();
+    for row in rows {
+        let key = row
+            .get("dictType")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        let entry = grouped.entry(key).or_insert_with(|| Value::Array(Vec::new()));
+        if let Some(items) = entry.as_array_mut() {
+            items.push(row);
+        }
+    }
+    grouped
+}
+
+/// Java: 缓存写入时 FastJson2 会把 params 空 Map 序列化成类型标记。
+fn cached_dict_rows(rows: &[Value]) -> Vec<Value> {
+    let mut cached = rows.to_vec();
+    add_dict_params(&mut cached);
+    crate::db::redis_cache::stamp_types(
+        cached,
+        "com.ruoyi.common.core.domain.entity.SysDictData",
+    )
+}
+
 const BY_TYPE_SQL: &str = "select dict_code, dict_sort, dict_label, dict_value, dict_type, \
      css_class, list_class, is_default, status, create_by, create_time, remark, \
      null as updateBy, null as updateTime, \
@@ -138,7 +204,7 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::reorder_rows(rows, DICT_DATA_KEYS)))
 }
 
 async fn export(
@@ -180,7 +246,9 @@ async fn get_info(
     Path(dict_code): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id_fmt(&state.db, &SPEC, &dict_code, FORMATS).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &dict_code, FORMATS)
+            .await?
+            .map(|row| support::reorder_keys(row, DICT_DATA_KEYS)),
     ))
 }
 
@@ -189,10 +257,11 @@ async fn by_type(
     Path(dict_type): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     let cache_key = format!("sys_dict:{dict_type}");
-    if let Some(mut cached) = state.redis.get_object::<Value>(&cache_key).await? {
+    if let Some(cached) = state.redis.get_object::<Value>(&cache_key).await? {
         if cached.as_array().map(|items| !items.is_empty()).unwrap_or(false) {
-            crate::db::redis_cache::strip_type(&mut cached);
-            return Ok(AjaxResult::success_data(cached));
+            return Ok(AjaxResult::success_data(project_dict_rows(
+                cached.as_array().cloned().unwrap_or_default(),
+            )));
         }
     }
     let rows = sqlx::query(BY_TYPE_SQL)
@@ -201,14 +270,11 @@ async fn by_type(
         .await?;
     let mut data = crate::db::rows::rows_to_json(&rows);
     support::apply_formats(&mut data, FORMATS);
-    add_dict_params(&mut data);
+    let data = project_dict_rows(data);
     if !data.is_empty() {
         // Java: DictTypeServiceImpl 通过 setCacheObject(List<SysDictData>) 写缓存，
         // FastJson2 WriteClassName 为每个元素写 @type；缺少会使 Java 反序列化失败。
-        let cached = crate::db::redis_cache::stamp_types(
-            data.clone(),
-            "com.ruoyi.common.core.domain.entity.SysDictData",
-        );
+        let cached = cached_dict_rows(&data);
         state.redis.set_object(&cache_key, &cached).await?;
         return Ok(AjaxResult::success_data(data));
     }
@@ -223,6 +289,15 @@ async fn by_type_more(
     let mut types = dict_type.trim().to_string();
     if types.is_empty() {
         types = "-dadadadas".to_string();
+    }
+    // Java: deleteEnd 等价于原样返回（substring(0, length) 不做任何删除），
+    // 并且 DictUtils.getDictCache 用的是整个逗号串作 key。
+    let cache_key = format!("sys_dict:{types}");
+    if let Some(cached) = state.redis.get_object::<Value>(&cache_key).await? {
+        if cached.as_array().map(|items| !items.is_empty()).unwrap_or(false) {
+            let rows = project_dict_rows(cached.as_array().cloned().unwrap_or_default());
+            return Ok(AjaxResult::success_data(group_by_dict_type(rows)));
+        }
     }
     let names: Vec<&str> = types.split(',').collect();
     let mut builder = sqlx::QueryBuilder::<sqlx::MySql>::new(
@@ -239,22 +314,12 @@ async fn by_type_more(
     let rows = builder.build().fetch_all(&state.db).await?;
     let mut data = crate::db::rows::rows_to_json(&rows);
     support::apply_formats(&mut data, FORMATS);
-
-    let mut grouped: Map<String, Value> = Map::new();
-    for row in data {
-        let key = row
-            .get("dictType")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string();
-        let entry = grouped
-            .entry(key)
-            .or_insert_with(|| Value::Array(Vec::new()));
-        if let Some(items) = entry.as_array_mut() {
-            items.push(row);
-        }
+    let data = project_dict_rows(data);
+    if !data.is_empty() {
+        let cached = cached_dict_rows(&data);
+        state.redis.set_object(&cache_key, &cached).await?;
     }
-    Ok(AjaxResult::success_data(grouped))
+    Ok(AjaxResult::success_data(group_by_dict_type(data)))
 }
 
 async fn save(

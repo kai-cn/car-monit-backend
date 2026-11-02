@@ -266,6 +266,19 @@ async fn query(
     Ok((total, rows_to_json(&rows)))
 }
 
+/// Java Jackson 的 CarWarningInfo 键序（列表 VO 用查询列序，详情 VO 多了下面这些派生列）。
+const CAR_WARNING_KEYS: &[&str] = &[
+    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
+    "tenantId", "carId", "carNo", "carType", "carVehicle", "carNum", "inStationId", "inStation",
+    "inTime", "gantryStationId", "gantrytStation", "gantryTime", "fileIds", "nextPassTime",
+    "nextPassType", "nextPassAddress", "nextPassLongitude", "nextPassLatitude", "roadCode",
+    "roadName", "sectionCode", "sectionName", "trackId", "trackJosn", "trackNames", "backCol1",
+    "backCol2", "status", "gantryTimeStr", "applyTime1", "applyTime2", "escapedType",
+    "escapedAmount", "carNoQuery", "createTimeStr", "inTimeStr", "flag", "flagTime",
+    "queryRante", "gantryCode", "tollCode", "fwqbm", "type", "code", "plateColor",
+    "trailFwqList", "sectionCodeList", "codeList", "needToWarnStr", "nextPassTimeStr",
+];
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -361,7 +374,7 @@ async fn get_info(
         if let Some(object) = value.as_object_mut() {
             object.insert("trailFwqList".to_string(), serde_json::json!([]));
         }
-        value
+        support::reorder_keys(value, CAR_WARNING_KEYS)
     })))
 }
 

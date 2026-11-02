@@ -275,7 +275,7 @@ async fn export_shrz(
     RawQuery(_raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
     // Java 该导出在模板/数据缺失时抛异常，最终 code=500、msg=null。
-    Ok(AjaxResult::error(""))
+    Ok(AjaxResult::error_null_msg())
 }
 
 async fn get_info(

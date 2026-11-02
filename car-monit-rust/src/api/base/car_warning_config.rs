@@ -98,6 +98,12 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 BaseConfig 键序：实体声明顺序，`remark` 排在业务列之后。
+const BASE_CONFIG_KEYS: &[&str] = &[
+    "id", "gantryCodeIn", "gantryNameIn", "gantryCodeOut", "gantryNameOut", "timeSpan",
+    "fwqbm", "fwqmc", "lon", "lat", "roadCode", "sectionCode", "pileNo", "remark",
+];
+
 pub async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -105,7 +111,7 @@ pub async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::reorder_rows(rows, BASE_CONFIG_KEYS)))
 }
 
 pub async fn export(
@@ -171,7 +177,8 @@ pub async fn get_info(
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &id).await?,
+        support::query_by_id(&state.db, &SPEC, &id).await?
+            .map(|row| support::reorder_keys(row, BASE_CONFIG_KEYS)),
     ))
 }
 

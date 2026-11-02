@@ -197,6 +197,15 @@ fn fill_decimals(rows: &mut [Value]) {
     }
 }
 
+/// Java: CarTrackInfo extends BasePlusEntity 的 Jackson 键顺序。
+const CAR_TRACK_KEYS: &[&str] = &[
+    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
+    "tenantId", "carId", "carNo", "longitude", "latitude", "deviceType", "deviceNo", "laneNo",
+    "snapTime", "receiveTime", "snapPic", "roadSectionId", "roadSectionName", "trackId",
+    "trackJosn", "backCol1", "backCol2", "status", "remark", "applyTime1", "applyTime2",
+    "longitudeDec", "latitudeDec", "pageNum", "pageSize",
+];
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -205,7 +214,8 @@ async fn list(
     let params = support::query_map(&raw);
     let (total, mut rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
     fill_decimals(&mut rows);
-    Ok(TableDataInfo::new(total, rows))
+    let data = support::shape_rows(rows, CAR_TRACK_KEYS);
+    Ok(TableDataInfo::new(total, data))
 }
 
 async fn export(
@@ -246,7 +256,7 @@ async fn get_info(
             object.insert("longitudeDec".to_string(), Value::Null);
             object.insert("latitudeDec".to_string(), Value::Null);
         }
-        value
+        support::shape_entity_row(value, CAR_TRACK_KEYS)
     })))
 }
 
@@ -418,35 +428,63 @@ async fn car_track_rows(
     Ok((total, data))
 }
 
+/// Java: ZdataTrailTracks 的声明顺序（51 键）。
+const TRACK_KEYS: &[&str] = &[
+    "uuid", "type", "pointCount", "plateKey", "enterTime", "exitTime", "trailPoints",
+    "enterLocationcode", "exitLocationcode", "trackJosn", "enaxlecount", "entolllaneid",
+    "entollstationid", "entollstationname", "envehicleclass", "envehicleid", "envehicletype",
+    "enweight", "extolllaneid", "extollstationid", "extollstationname", "exvehicleclass",
+    "exvehicleid", "exvehicletype", "exweight", "startLon", "stratLat", "endLon", "endLat",
+    "firtStationCode", "firtStationName", "firtStationTime", "plateColor", "carType", "carNo",
+    "carVehicle", "carNum", "escapedType", "passType", "escapedTypeRemark", "applyTime1",
+    "applyTime2", "isCylx", "flag", "startLonDec", "stratLatDec", "endLonDec", "endLatDec",
+    "uuidList", "passCount", "escapedTfcj",
+];
+
+/// Java: TrailBo 的声明顺序（32 键）。
+pub(crate) const TRAIL_BO_KEYS: &[&str] = &[
+    "pointUuid", "stateType", "pointFlag", "pointJosn", "borderWeighingCaptureBO",
+    "gantryCaptureBO", "provCaptureBO", "stationCapture", "feeRecord", "feeStationEnter",
+    "feeStationExit", "captureTime", "directionIn", "locationCode", "locationFlag", "ipType",
+    "locationJosn", "gantryIpBO", "stationIpBO", "devCode", "devName", "imagesArry", "lon",
+    "lat", "roadCode", "sectionCode", "direction", "pileno", "preCaptureTime", "countNum",
+    "pilenoDec", "isQuery",
+];
+
+/// Java: `new BigDecimal(String)` —— 整数字面量不会变成 x.0。
+fn decimal_like(text: &str) -> Value {
+    let trimmed = text.trim();
+    if !trimmed.contains('.') && !trimmed.contains('e') && !trimmed.contains('E') {
+        if let Ok(number) = trimmed.parse::<i64>() {
+            return json!(number);
+        }
+    }
+    match trimmed.parse::<f64>() {
+        Ok(float) => serde_json::Number::from_f64(float)
+            .map(Value::Number)
+            .unwrap_or(Value::String(trimmed.to_string())),
+        Err(_) => Value::String(trimmed.to_string()),
+    }
+}
+
 /// TrailInfo: tracks/trailList/trailUuid/raodTrailList/trailDevCountBO。
 fn wrap_trail(row: &Value) -> Value {
     let track_json = row.get("trackJosn").and_then(Value::as_str).unwrap_or_default();
-    let mut trail_list: Vec<Value> = serde_json::from_str(track_json).unwrap_or_default();
-    // Java 反序列化成 TrailBo 后会补齐实体字段（未出现的键输出 null）。
-    const TRAIL_KEYS: &[&str] = &[
-        "pointUuid", "stateType", "pointFlag", "pointJosn", "borderWeighingCaptureBO",
-        "captureTime", "directionIn", "locationCode", "locationFlag", "ipType", "locationJosn",
-        "devCode", "devName", "imagesArry", "lon", "lat", "roadCode", "sectionCode",
-        "direction", "pileno", "preCaptureTime", "countNum", "pilenoDec", "isQuery",
-        "gantryCaptureBO", "provCaptureBO", "stationCapture", "feeRecord",
-        "feeStationEnter", "feeStationExit", "gantryIpBO", "stationIpBO",
-    ];
-    for item in &mut trail_list {
-        if let Some(object) = item.as_object_mut() {
-            for key in TRAIL_KEYS {
-                object.entry(key.to_string()).or_insert(Value::Null);
-            }
-        }
-    }
-    let mut tracks = row.clone();
+    let parsed: Value = serde_json::from_str(track_json).unwrap_or(Value::Null);
+    let points = parsed
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .iter()
+        .map(|item| support::project_entity_row(item.clone(), TRAIL_BO_KEYS))
+        .collect::<Vec<_>>();
+    let mut tracks = support::project_entity_row(row.clone(), TRACK_KEYS);
     if let Some(object) = tracks.as_object_mut() {
         object.insert("trailPoints".to_string(), json!(""));
         object.insert("trackJosn".to_string(), json!(""));
         for key in ["startLon", "stratLat", "endLon", "endLat"] {
             if let Some(text) = object.get(key).and_then(Value::as_str) {
-                if let Ok(number) = text.parse::<f64>() {
-                    object.insert(format!("{key}Dec"), json!(number));
-                }
+                object.insert(format!("{key}Dec"), decimal_like(text));
             }
         }
     }
@@ -454,13 +492,447 @@ fn wrap_trail(row: &Value) -> Value {
         "trailUuid": row.get("plateKey").cloned().unwrap_or(Value::Null),
         "enterTime": Value::Null,
         "tracks": tracks,
-        "trailList": trail_list,
+        "trailList": points,
         "raodTrailList": Vec::<Value>::new(),
+        // Java: 列表接口不调用 getTrailDevBO，只输出 TrailInfo 的初始值。
         "trailDevCountBO": {
             "exceptNum": 0,
-            "TrailDevList": Vec::<Value>::new(),
+            "trailList": Value::Null,
+            "exceptMsg": Value::Null,
+            "trailDevList": Vec::<Value>::new(),
         },
     })
+}
+
+/// Java: Constants.lxbh_jdwd —— 路线点位缓存（GeometryServiceImpl.getRedisList）。
+const GEOMETRY_CACHE_KEY: &str = "lxbh_jdwd:";
+/// Java: Constants.car_lxgh —— 路网规划结果缓存。
+const ROAD_PATH_CACHE_PREFIX: &str = "car_lxgh:";
+/// Java: Constants.GANTRY_CAPTURE / Constants.FeeRecord
+const GANTRY_CAPTURE: &str = "GantryCapture";
+const FEE_RECORD: &str = "FeeRecord";
+/// Java: Geometry implements Custom 的声明顺序。
+const GEOMETRY_KEYS: &[&str] = &["id", "lxbh", "lxfx", "qdzh", "zdzh", "paths", "zhStr"];
+
+fn dec_of(value: Option<&Value>) -> Option<rust_decimal::Decimal> {
+    support::json_decimal(value)
+}
+
+/// Java: `setScale(4, HALF_UP).intValue()`（intValue 截断小数）。
+fn pileno_int(value: rust_decimal::Decimal) -> i64 {
+    value
+        .round_dp_with_strategy(4, rust_decimal::RoundingStrategy::MidpointAwayFromZero)
+        .to_string()
+        .parse::<f64>()
+        .map(|float| float as i64)
+        .unwrap_or(0)
+}
+
+/// Java: GeometryServiceImpl.getRedisList —— 按 lxbh 分组的路线点位。
+async fn geometry_groups(state: &AppState) -> Result<HashMap<String, Vec<Value>>, AppError> {
+    let cached = state
+        .redis
+        .get_object::<Vec<Value>>(GEOMETRY_CACHE_KEY)
+        .await
+        .ok()
+        .flatten()
+        .filter(|rows| !rows.is_empty());
+    let rows = match cached {
+        Some(rows) => rows,
+        None => {
+            let fetched = sqlx::query(
+                "select t.id, t.lxbh, t.lxfx, t.qdzh, t.zdzh, t.paths from geometry t \
+                 where 1=1 and t.lxfx = '1' order by lxbh, t.qdzh",
+            )
+            .fetch_all(&state.db)
+            .await?;
+            let rows = rows_to_json(&fetched);
+            let stored: Vec<Value> = rows
+                .iter()
+                .map(|row| support::project_entity_row(row.clone(), GEOMETRY_KEYS))
+                .filter(|row| {
+                    !support::java_text(row.get("lxbh")).is_empty()
+                        && !support::java_text(row.get("paths")).is_empty()
+                })
+                .collect();
+            // Java: redisCache.setCacheObject(lxbh_jdwd, list)（无 TTL），需补 @type 供 Java 读取。
+            let stamped = crate::db::redis_cache::stamp_types(
+                stored.clone(),
+                "com.ruoyi.base.domain.Geometry",
+            );
+            let _ = state.redis.set_object(GEOMETRY_CACHE_KEY, &stamped).await;
+            stored
+        }
+    };
+    let mut map: HashMap<String, Vec<Value>> = HashMap::new();
+    for row in rows {
+        let row = support::project_entity_row(row, GEOMETRY_KEYS);
+        let lxbh = support::java_text(row.get("lxbh"));
+        if lxbh.is_empty() || support::java_text(row.get("paths")).is_empty() {
+            continue;
+        }
+        map.entry(lxbh).or_default().push(row);
+    }
+    Ok(map)
+}
+
+/// Java: 只填 lxbh/paths 的 Geometry 返回体。
+fn geometry_row(lxbh: Value, paths: String) -> Value {
+    json!({
+        "id": Value::Null,
+        "lxbh": lxbh,
+        "lxfx": Value::Null,
+        "qdzh": Value::Null,
+        "zdzh": Value::Null,
+        "paths": paths,
+        "zhStr": Value::Null,
+    })
+}
+
+/// 把 JSON 数组文本按顶层元素切开（紧凑、无空格），保留数字字面量。
+fn json_array_elements(text: &str) -> Vec<String> {
+    let trimmed = text.trim();
+    let inner = trimmed
+        .strip_prefix('[')
+        .and_then(|value| value.strip_suffix(']'))
+        .unwrap_or(trimmed);
+    let compact = |value: &str| value.chars().filter(|ch| !ch.is_whitespace()).collect::<String>();
+    let mut out: Vec<String> = Vec::new();
+    let mut depth = 0i32;
+    let mut current = String::new();
+    let mut in_string = false;
+    let mut escaped = false;
+    for ch in inner.chars() {
+        if in_string {
+            current.push(ch);
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                in_string = false;
+            }
+            continue;
+        }
+        match ch {
+            '"' => {
+                in_string = true;
+                current.push(ch);
+            }
+            '[' | '{' => {
+                depth += 1;
+                current.push(ch);
+            }
+            ']' | '}' => {
+                depth -= 1;
+                current.push(ch);
+            }
+            ',' if depth == 0 => {
+                out.push(compact(&current));
+                current.clear();
+            }
+            _ => current.push(ch),
+        }
+    }
+    out.push(compact(&current));
+    out.retain(|item| !item.is_empty());
+    out
+}
+
+/// Java: CarTrackInfoServiceImpl.getCarGeometry —— 按路线编号 + 桩号区间拼本地路径点。
+async fn get_car_geometry(
+    state: &AppState,
+    points: &mut [Value],
+) -> Result<Vec<Value>, AppError> {
+    // Java: LinkedHashMap 分组（首次出现顺序），并回填 pilenoDec。
+    let mut roads: Vec<String> = Vec::new();
+    let mut groups: HashMap<String, Vec<usize>> = HashMap::new();
+    for index in 0..points.len() {
+        let road_code = support::java_text(points[index].get("roadCode"));
+        let pileno = support::java_text(points[index].get("pileno"));
+        if road_code.is_empty() || pileno.is_empty() {
+            continue;
+        }
+        let changed = pileno
+            .replace('+', ".")
+            .replace("ZK", "")
+            .replace("YK", "")
+            .replace('K', "");
+        let dec = changed
+            .parse::<rust_decimal::Decimal>()
+            .unwrap_or(rust_decimal::Decimal::ZERO);
+        if let Some(object) = points[index].as_object_mut() {
+            object.insert("pilenoDec".to_string(), support::decimal_json(dec));
+        }
+        if !groups.contains_key(&road_code) {
+            roads.push(road_code.clone());
+        }
+        groups.entry(road_code).or_default().push(index);
+    }
+    let road_map = geometry_groups(state).await?;
+    let mut out = Vec::new();
+    for road in roads {
+        let indexes = groups.remove(&road).unwrap_or_default();
+        if indexes.is_empty() {
+            continue;
+        }
+        let mut items: Vec<(rust_decimal::Decimal, usize)> = indexes
+            .iter()
+            .filter_map(|index| {
+                dec_of(points[*index].get("pilenoDec")).map(|dec| (dec, *index))
+            })
+            .collect();
+        if items.is_empty() {
+            continue;
+        }
+        // Java: 首尾（按分组顺序）判断方向，再按桩号稳定排序。
+        let reverse = items.first().map(|(dec, _)| *dec).unwrap_or_default()
+            > items.last().map(|(dec, _)| *dec).unwrap_or_default();
+        items.sort_by(|left, right| left.0.cmp(&right.0));
+        let sq = pileno_int(items.first().map(|(dec, _)| *dec).unwrap_or_default());
+        let sz = if items.len() > 1 {
+            pileno_int(items.last().map(|(dec, _)| *dec).unwrap_or_default()) + 1
+        } else {
+            sq
+        };
+        let mut add: Vec<&Value> = Vec::new();
+        if let Some(rows) = road_map.get(&road) {
+            for row in rows {
+                let qd = support::java_int(row.get("qdzh"));
+                let zd = support::java_int(row.get("zdzh"));
+                let mut count = 0;
+                if qd <= sq && zd >= sz {
+                    count += 1;
+                }
+                if qd > sq && qd < sz {
+                    count += 1;
+                }
+                if zd > sq && zd < sz {
+                    count += 1;
+                }
+                if qd >= sq && zd <= sz {
+                    count += 1;
+                }
+                if count > 0 {
+                    add.push(row);
+                }
+            }
+        }
+        if add.is_empty() {
+            continue;
+        }
+        // Java: hutool JSONArray 用 BigDecimal 保留字面量，toString() 也不加空格；
+        // 这里按顶层元素原样拼接，避免经过 f64 丢位。
+        let mut path_points: Vec<String> = Vec::new();
+        for row in add {
+            let text = support::java_text(row.get("paths"));
+            if text.is_empty() {
+                continue;
+            }
+            path_points.extend(json_array_elements(&text));
+        }
+        if reverse {
+            path_points.reverse();
+        }
+        let paths = format!("[{}]", path_points.join(","));
+        out.push(geometry_row(json!(road), paths));
+    }
+    Ok(out)
+}
+
+/// Java: getCarGeometryByPlanNew + getCarGeometryByPlan。
+/// 外部路网/腾讯地图 API 不可用时与 Java 一致：视为返回 null，落到本地桩号兜底。
+async fn get_car_geometry_by_plan(
+    state: &AppState,
+    tracks: &Value,
+    points: &mut Vec<Value>,
+) -> Result<Vec<Value>, AppError> {
+    let api_map = state
+        .redis
+        .get_object::<Value>("sys_config:api_map")
+        .await
+        .ok()
+        .flatten();
+    let api_map = match api_map {
+        Some(value) => support::java_text(Some(&value)),
+        None => "1".to_string(),
+    };
+    let first_road_code = |points: &[Value]| -> Value {
+        let mut lxbh = Value::String(String::new());
+        for point in points {
+            let road = point.get("roadCode").cloned().unwrap_or(Value::Null);
+            if lxbh.as_str() == Some("") && road.as_str() != Some("") {
+                lxbh = road;
+            }
+        }
+        lxbh
+    };
+    if api_map != "0" {
+        let entoll = support::java_text(tracks.get("entollstationid"));
+        let extoll = support::java_text(tracks.get("extollstationid"));
+        if !entoll.is_empty() && !extoll.is_empty() {
+            let key = format!(
+                "{ROAD_PATH_CACHE_PREFIX}{}{entoll}{extoll}{}",
+                support::java_text(tracks.get("plateKey")),
+                points.len()
+            );
+            if let Some(paths) = cached_paths(state, &key).await {
+                return Ok(vec![geometry_row(first_road_code(points), paths)]);
+            }
+            return get_car_geometry(state, points).await;
+        }
+    }
+    let ends = ["startLonDec", "stratLatDec", "endLonDec", "endLatDec"];
+    if ends
+        .iter()
+        .all(|key| tracks.get(*key).map(|value| !value.is_null()).unwrap_or(false))
+    {
+        let key = format!(
+            "{ROAD_PATH_CACHE_PREFIX}{}{}{}{}{}{}",
+            support::java_text(tracks.get("plateKey")),
+            support::java_text(tracks.get("startLonDec")),
+            support::java_text(tracks.get("stratLatDec")),
+            support::java_text(tracks.get("endLonDec")),
+            support::java_text(tracks.get("endLatDec")),
+            points.len()
+        );
+        if let Some(paths) = cached_paths(state, &key).await {
+            return Ok(vec![geometry_row(first_road_code(points), paths)]);
+        }
+    }
+    get_car_geometry(state, points).await
+}
+
+async fn cached_paths(state: &AppState, key: &str) -> Option<String> {
+    let value = state.redis.get_object::<Value>(key).await.ok().flatten()?;
+    let text = match &value {
+        Value::String(text) => text.clone(),
+        other => other.to_string(),
+    };
+    if text.is_empty() {
+        None
+    } else {
+        Some(text)
+    }
+}
+
+/// Java: CarTrackInfoServiceImpl.getTrailDevBO —— 门架抓拍缺流水的设备计为异常。
+fn get_trail_dev_bo(tracks: &Value, points: &[Value]) -> Value {
+    let is_capture = |value: &str| value == GANTRY_CAPTURE || value == FEE_RECORD;
+    let mut groups: HashMap<String, Vec<usize>> = HashMap::new();
+    let mut rtn: Vec<usize> = Vec::new();
+    for (index, point) in points.iter().enumerate() {
+        let state_type = support::java_text(point.get("stateType"));
+        let dev_name = support::java_text(point.get("devName"));
+        if is_capture(&state_type) {
+            if !dev_name.is_empty() {
+                if groups.contains_key(&dev_name) {
+                    groups.entry(dev_name).or_default().push(index);
+                } else {
+                    rtn.push(index);
+                    groups.insert(dev_name, vec![index]);
+                }
+            } else {
+                rtn.push(index);
+            }
+        } else {
+            rtn.push(index);
+        }
+    }
+    let mut dev_list: Vec<Value> = Vec::new();
+    let mut except_num: i64 = 0;
+    for index in rtn {
+        let point = &points[index];
+        let state_type = support::java_text(point.get("stateType"));
+        let dev_name = support::java_text(point.get("devName"));
+        let mut status = "0";
+        let mut trail_list: Vec<Value> = Vec::new();
+        if is_capture(&state_type) {
+            if let Some(group) = groups.get(&dev_name) {
+                trail_list = group.iter().map(|item| points[*item].clone()).collect();
+                let count_gantry = group
+                    .iter()
+                    .filter(|item| support::java_text(points[**item].get("stateType")) == GANTRY_CAPTURE)
+                    .count();
+                let count_fee = group
+                    .iter()
+                    .filter(|item| support::java_text(points[**item].get("stateType")) == FEE_RECORD)
+                    .count();
+                if count_gantry > 0 && count_fee == 0 {
+                    status = "1";
+                    except_num += 1;
+                }
+            } else {
+                trail_list.push(point.clone());
+            }
+        } else {
+            trail_list.push(point.clone());
+        }
+        dev_list.push(json!({
+            "status": status,
+            "devName": dev_name,
+            "trailList": trail_list,
+        }));
+    }
+    let missing = |key: &str| tracks.get(key).map(|value| value.is_null()).unwrap_or(true);
+    let mut tips = String::new();
+    if missing("startLonDec") || missing("stratLatDec") {
+        tips = "起始位置".to_string();
+    }
+    if missing("endLonDec") || missing("endLatDec") {
+        tips = if tips.is_empty() {
+            "终点位置".to_string()
+        } else {
+            format!("{tips}和终点位置")
+        };
+    }
+    let except_msg = if tips.is_empty() {
+        String::new()
+    } else {
+        format!("由于无法获取轨迹{tips}，系统路线规划采用已有的轨迹点进行轨迹绘制，可能会导致部分路线丢失。")
+    };
+    json!({
+        "exceptNum": except_num,
+        "trailList": points,
+        "exceptMsg": except_msg,
+        "trailDevList": dev_list,
+    })
+}
+
+/// Java: CarSuspiciousServiceImpl 里由 track_josn 组装 TrailInfo。
+pub(crate) async fn suspicious_trail_info(
+    state: &AppState,
+    track_json: &str,
+    car_no: &str,
+) -> Result<Value, AppError> {
+    let parsed: Value = serde_json::from_str(track_json).unwrap_or(Value::Null);
+    let tracks = support::project_entity_row(
+        parsed.get("tracks").cloned().unwrap_or(Value::Null),
+        TRACK_KEYS,
+    );
+    let mut points: Vec<Value> = parsed
+        .get("trailList")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default()
+        .iter()
+        .map(|item| support::project_entity_row(item.clone(), TRAIL_BO_KEYS))
+        .collect();
+    let enter_time = parsed.get("enterTime").cloned().unwrap_or(Value::Null);
+    let raod = if points.is_empty() {
+        Vec::new()
+    } else {
+        get_car_geometry_by_plan(state, &tracks, &mut points).await?
+    };
+    let dev = get_trail_dev_bo(&tracks, &points);
+    Ok(json!({
+        "trailUuid": car_no,
+        "enterTime": enter_time,
+        "tracks": tracks,
+        "trailList": points,
+        "raodTrailList": raod,
+        "trailDevCountBO": dev,
+    }))
 }
 
 async fn list_by_car_id(

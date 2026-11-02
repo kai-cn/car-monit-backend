@@ -116,6 +116,25 @@ pub fn routes() -> Router<AppState> {
 }
 
 // Java: startPage(); selectBaseConfigServiceAreaList
+/// Java Jackson 的 BaseConfigServiceArea 键序：BaseEntity 组在前，业务列在后。
+const SERVICE_AREA_KEYS: &[&str] = &[
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "tenantId",
+    "fwqbm",
+    "fwqmc",
+    "lon",
+    "lat",
+    "roadCode",
+    "sectionCode",
+    "pileNo",
+];
 pub async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -123,7 +142,7 @@ pub async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::reorder_rows(rows, SERVICE_AREA_KEYS)))
 }
 
 // Java: listQuery —— 不分页，直接 AjaxResult.success(list)
@@ -133,7 +152,7 @@ pub async fn list_query(
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
-    Ok(AjaxResult::success_data(rows))
+    Ok(AjaxResult::success_data(support::reorder_rows(rows, SERVICE_AREA_KEYS)))
 }
 
 // Java: ExcelUtil.exportExcel(list, "服务区数据")
@@ -163,7 +182,8 @@ pub async fn get_info(
     Path(fwqbm): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &fwqbm).await?,
+        support::query_by_id(&state.db, &SPEC, &fwqbm).await?
+            .map(|row| support::reorder_keys(row, SERVICE_AREA_KEYS)),
     ))
 }
 

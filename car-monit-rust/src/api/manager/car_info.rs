@@ -196,6 +196,22 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 CarInfo 键序（实体声明顺序 + 派生 applyTime*/carNoQuery/createInfo/trailList/flag）。
+const CAR_INFO_KEYS: &[&str] = &[
+    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
+    "tenantId", "carNo", "carType", "carVehicle", "carNum", "escapedType", "escapedTypeName",
+    "escapedAmount", "escapedNum", "returnAmount", "totalAmount", "chargeAmount", "difAmount",
+    "auitOrgId", "auitOrgName", "isWhite", "whiteRemark", "fileIds", "brand", "plateColor",
+    "plateType", "carColor", "dataSource", "dataSourceName", "lastPassTime", "lastPassPicture",
+    "lastPassType", "lastPassAddress", "lastPassLongitude", "lastPassLatitude",
+    "lastPassCardirection", "roadSectionId", "sectionCode", "roadSectionName", "nextPassTime",
+    "nextPassType", "nextPassAddress", "nextPassLongitude", "nextPassLatitude", "trackId",
+    "trackJosn", "orgId", "orgCode", "orgName", "gantryCode", "roadCode", "roadName",
+    "tollCode", "tollName", "linkName", "linkPhone", "fwqbm", "fwqmc", "backCol1", "backCol2",
+    "status", "remark", "applyTime1", "applyTime2", "carNoQuery", "createTimeStr",
+    "createInfo", "trailList", "flag",
+];
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -203,7 +219,7 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::reorder_rows(rows, CAR_INFO_KEYS)))
 }
 
 async fn export(

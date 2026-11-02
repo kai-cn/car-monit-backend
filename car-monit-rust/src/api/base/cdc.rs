@@ -36,13 +36,13 @@ async fn status(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
     let retry_keys = state.redis.keys(&format!("{RETRY_PREFIX}*")).await?;
     let dead_keys = state.redis.keys(&format!("{DEAD_PREFIX}*")).await?;
     let cdc = &state.settings.cdc;
-    Ok(AjaxResult::success_data(json!({
+    Ok(AjaxResult::success_data(crate::response::java_ordered(&json!({
         "retryQueueSize": retry_keys.len(),
         "deadLetterQueueSize": dead_keys.len(),
         "kafkaTopic": cdc.kafka.topic,
         "consumerGroupId": cdc.kafka.group_id,
         "maxRetryAttempts": cdc.retry.max_retries,
-    })))
+    }))))
 }
 
 async fn dead_letters(State(state): State<AppState>) -> Result<AjaxResult, AppError> {

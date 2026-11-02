@@ -93,6 +93,25 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 SysJobLog 键序。
+const JOB_LOG_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "params",
+    "jobLogId",
+    "jobName",
+    "jobGroup",
+    "invokeTarget",
+    "jobMessage",
+    "status",
+    "exceptionInfo",
+    "startTime",
+    "stopTime",
+];
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -100,7 +119,7 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::reorder_rows(rows, JOB_LOG_KEYS)))
 }
 
 async fn export(

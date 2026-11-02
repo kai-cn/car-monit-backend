@@ -292,6 +292,30 @@ fn result_map(state: &AppState, file_name: &str, id: Option<i64>) -> Map<String,
     map
 }
 
+/// Java Jackson 的 SysFile 键序：实体声明顺序 + 派生 `files`/`createUserName`。
+const FILE_KEYS: &[&str] = &[
+    "id",
+    "fileName",
+    "bucketName",
+    "original",
+    "type",
+    "fileSize",
+    "bussType",
+    "bussName",
+    "createTime",
+    "createUser",
+    "updateTime",
+    "updateUser",
+    "delFlag",
+    "tenantId",
+    "files",
+    "createUserName",
+];
+
+fn shape_file_rows(rows: Vec<Value>) -> Vec<Value> {
+    support::reorder_rows(rows, FILE_KEYS)
+}
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -299,7 +323,7 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, shape_file_rows(rows)))
 }
 
 async fn get_info_by_id(
@@ -307,7 +331,9 @@ async fn get_info_by_id(
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id_fmt(&state.db, &SPEC, &id, FORMATS).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &id, FORMATS)
+            .await?
+            .map(|row| shape_file_rows(vec![row]).pop().unwrap_or(Value::Null)),
     ))
 }
 
@@ -332,7 +358,7 @@ async fn get_info(
     let rows = builder.build().fetch_all(&state.db).await?;
     let mut rows = crate::db::rows::rows_to_json(&rows);
     support::apply_formats(&mut rows, FORMATS);
-    Ok(AjaxResult::success_data(rows))
+    Ok(AjaxResult::success_data(shape_file_rows(rows)))
 }
 
 async fn get_new_ca(
@@ -342,7 +368,7 @@ async fn get_new_ca(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (_, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
-    match rows.into_iter().next() {
+    match shape_file_rows(rows).into_iter().next() {
         Some(row) => Ok(AjaxResult::success_data(row)),
         None => Ok(AjaxResult::error("未找到CA驱动程序")),
     }

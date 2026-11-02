@@ -20,6 +20,7 @@ macro_rules! manager_crud {
         order: $order:literal,
         $(dates: [$($date:expr),* $(,)?],)?
         $(get_info_nulls: [$($null_key:literal),* $(,)?],)?
+        $(keys: [$($key:literal),* $(,)?],)?
         binary: $binary:literal,
         filters: [$($filter:expr),* $(,)?],
         headers: [$($header:literal),* $(,)?],
@@ -27,6 +28,9 @@ macro_rules! manager_crud {
         $(,)?
     ) => {
         use $crate::api::support::{self, Filter, ListSpec};
+
+        /// Java Jackson 的实体键序；不填则保持查询列顺序（空列表 = 不重排）。
+        const ROW_KEYS: &[&str] = &[$($($key),*)?];
 
         const SPEC: ListSpec = ListSpec {
             select: $select,
@@ -111,7 +115,10 @@ macro_rules! manager_crud {
             let (total, mut rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
             let formats: &[(&str, support::FieldFormat)] = &[$($($date),*)?];
             support::apply_formats(&mut rows, formats);
-            Ok($crate::response::TableDataInfo::new(total, rows))
+            Ok($crate::response::TableDataInfo::new(
+                total,
+                support::reorder_rows(rows, ROW_KEYS),
+            ))
         }
 
         async fn export(
@@ -149,6 +156,7 @@ macro_rules! manager_crud {
                     }
                 }
             }
+            let row = row.map(|value| support::reorder_keys(value, ROW_KEYS));
             Ok($crate::response::AjaxResult::success_data(row))
         }
 

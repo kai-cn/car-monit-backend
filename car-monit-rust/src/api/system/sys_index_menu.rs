@@ -151,6 +151,37 @@ fn candidate_sql(
     }
 }
 
+/// Java Jackson 的 SysIndexMenu 键序：BaseEntity（本类自己声明的 id/epsId/delFlag/审计列/sort…）
+/// 在前，再按声明顺序，业务列（userId/menuId/menuName…）最后。
+const INDEX_MENU_KEYS: &[&str] = &[
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "remark",
+    "tenantId",
+    "deptSubCode",
+    "flag",
+    "searchValue",
+    "params",
+    "userId",
+    "menuId",
+    "menuName",
+    "menuName1",
+    "menuName2",
+    "menuName3",
+    "menuIds",
+    "menuUrl",
+];
+
+fn shape_index_menu_rows(rows: Vec<Value>) -> Vec<Value> {
+    support::reorder_rows(rows, INDEX_MENU_KEYS)
+}
+
 async fn list(
     State(state): State<AppState>,
     Extension(user): Extension<LoginUser>,
@@ -175,7 +206,7 @@ async fn list(
     builder.push(" offset ");
     builder.push_bind(offset);
     let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(TableDataInfo::new(total, rows_to_json(&rows)))
+    Ok(TableDataInfo::new(total, shape_index_menu_rows(rows_to_json(&rows))))
 }
 
 async fn my_list(
@@ -219,7 +250,7 @@ async fn my_list(
             }
         }
     }
-    Ok(AjaxResult::success_data(data))
+    Ok(AjaxResult::success_data(shape_index_menu_rows(data)))
 }
 
 async fn export(
@@ -253,7 +284,9 @@ async fn get_info(
             object.insert("id".to_string(), Value::String(number.to_string()));
         }
     }
-    Ok(AjaxResult::success_data(row))
+    Ok(AjaxResult::success_data(
+        row.map(|value| shape_index_menu_rows(vec![value]).pop().unwrap_or(Value::Null)),
+    ))
 }
 
 async fn add(

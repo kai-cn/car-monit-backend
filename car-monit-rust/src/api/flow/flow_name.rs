@@ -133,6 +133,30 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 FlowName 键序：BaseEntity 组在前，业务列在后。
+const FLOW_NAME_KEYS: &[&str] = &[
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "remark",
+    "tenantId",
+    "deptSubCode",
+    "flag",
+    "searchValue",
+    "params",
+    "flowKey",
+    "flowTitle",
+    "flowContext",
+    "bussName",
+    "tenantName",
+    "flowBusinessType",
+];
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -178,7 +202,9 @@ async fn get_info(
     if let Some(Value::Object(object)) = row.as_mut() {
         object.insert("tenantName".to_string(), Value::Null);
     }
-    Ok(AjaxResult::success_data(row))
+    Ok(AjaxResult::success_data(
+        row.map(|value| support::reorder_keys(value, FLOW_NAME_KEYS)),
+    ))
 }
 
 async fn save_flow_name(

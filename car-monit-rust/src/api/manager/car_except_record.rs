@@ -64,6 +64,21 @@ const SPEC: ListSpec = ListSpec {
 
 pub(crate) const EXCEPT_SPEC: ListSpec = SPEC;
 
+/// Java: CarExceptRecord extends BasePlusEntity 的 Jackson 键顺序。
+pub(crate) const EXCEPT_RECORD_KEYS: &[&str] = &[
+    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
+    "tenantId", "carId", "carNo", "carType", "carVehicle", "carNum", "passType", "inStationId",
+    "inStation", "inTime", "outStationId", "outStation", "outTime", "totalAmount", "chargeAmount",
+    "difAmount", "escapedType", "remark", "backCol1", "backCol2", "status", "applyTime1",
+    "applyTime2", "applyTime3", "applyTime4", "createTimeStr", "orgId", "supplementaryStatus",
+    "exceptIds", "carNoQuery", "createInfo", "exceptNum", "exceptAmount", "inTimeStr",
+    "outTimeStr",
+];
+
+pub(crate) fn shape_except_record_row(row: Value) -> Value {
+    support::shape_entity_row(row, EXCEPT_RECORD_KEYS)
+}
+
 static LOG_EXPORT: LogSpec = LogSpec::new(
     "异常车辆流水",
     BusinessType::Export,
@@ -153,7 +168,8 @@ async fn query(
     let mut params = support::query_map(&raw);
     mutate(&mut params);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    let data = support::shape_rows(rows, EXCEPT_RECORD_KEYS);
+    Ok(TableDataInfo::new(total, data))
 }
 
 async fn list(
@@ -328,7 +344,9 @@ async fn get_info(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let mut row = support::query_by_id(&state.db, &SPEC, &id).await?;
+    let mut row = support::query_by_id(&state.db, &SPEC, &id)
+        .await?
+        .map(shape_except_record_row);
     clear_create_info(&mut row);
     Ok(AjaxResult::success_data(row))
 }

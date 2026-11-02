@@ -9,8 +9,9 @@ use axum::extract::{ConnectInfo, State};
 use axum::http::HeaderMap;
 use axum::Extension;
 use axum::Json;
-use serde_json::json;
+use serde_json::{json, Value};
 
+use crate::api::support;
 use crate::auth::login_service;
 use crate::common::constants::{ALL_PERMISSION, SUPER_ADMIN};
 use crate::common::utils::{client_meta, password_invalid};
@@ -82,7 +83,17 @@ pub async fn get_info(
     let mut user_value = serde_json::to_value(user.for_http())?;
     if let Some(object) = user_value.as_object_mut() {
         object.remove("password");
+        // Jackson 顺序：先排嵌套对象内部，再排外层。
+        if let Some(dept) = object.get_mut("dept") {
+            *dept = support::reorder_keys(dept.take(), crate::api::system::sys_dept::DEPT_KEYS);
+        }
+        if let Some(roles) = object.get_mut("roles").and_then(Value::as_array_mut) {
+            for role in roles.iter_mut() {
+                *role = support::reorder_keys(role.take(), crate::api::system::sys_role::ROLE_KEYS);
+            }
+        }
     }
+    user_value = support::reorder_keys(user_value, crate::api::system::sys_user::USER_KEYS);
     result.insert_value("user", user_value);
     Ok(result)
 }

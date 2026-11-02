@@ -106,7 +106,7 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, shape_post_rows(rows)))
 }
 
 async fn export(
@@ -136,6 +136,22 @@ async fn export(
     support::export_excel(&state, "岗位数据", &headers, &data)
 }
 
+/// Java Jackson 的 SysPost 键序（BaseEntity 在前，派生 getter `flag` 最后）。
+pub(crate) const POST_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "params",
+    "postId",
+    "postCode",
+    "postName",
+    "postSort",
+    "status",
+    "flag",
+];
+
 fn shape_post_rows(mut rows: Vec<Value>) -> Vec<Value> {
     support::apply_formats(&mut rows, FORMATS);
     for row in &mut rows {
@@ -144,6 +160,9 @@ fn shape_post_rows(mut rows: Vec<Value>) -> Vec<Value> {
             object.entry("updateTime").or_insert(Value::Null);
             object.entry("flag").or_insert(Value::Bool(false));
         }
+    }
+    for row in rows.iter_mut() {
+        *row = support::reorder_keys(row.take(), POST_KEYS);
     }
     rows
 }
@@ -159,7 +178,9 @@ async fn get_info(
     Path(post_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id_fmt(&state.db, &SPEC, &post_id, FORMATS).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &post_id, FORMATS)
+            .await?
+            .map(|row| shape_post_rows(vec![row]).pop().unwrap_or(Value::Null)),
     ))
 }
 

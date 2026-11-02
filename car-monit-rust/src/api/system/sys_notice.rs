@@ -91,6 +91,28 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 SysNotice 键序：BaseEntity 在前（含 params），再按声明顺序。
+const NOTICE_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "params",
+    "noticeId",
+    "noticeTitle",
+    "noticeType",
+    "noticeContent",
+    "status",
+    "bussId",
+    "bussName",
+    "tenantId",
+];
+
+fn shape_notice_rows(rows: Vec<Value>) -> Vec<Value> {
+    support::reorder_rows(rows, NOTICE_KEYS)
+}
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -116,7 +138,7 @@ async fn query(
         params.insert("status".to_string(), "0".to_string());
     }
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, shape_notice_rows(rows)))
 }
 
 async fn get_info(
@@ -124,7 +146,9 @@ async fn get_info(
     Path(notice_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &notice_id).await?,
+        support::query_by_id(&state.db, &SPEC, &notice_id)
+            .await?
+            .map(|row| shape_notice_rows(vec![row]).pop().unwrap_or(Value::Null)),
     ))
 }
 

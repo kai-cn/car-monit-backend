@@ -107,6 +107,40 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 FlowApplyInfo 键序（BaseEntity 组 + 业务列 + 派生 entrustInfo）。
+const APPLY_INFO_KEYS: &[&str] = &[
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "remark",
+    "tenantId",
+    "deptSubCode",
+    "flag",
+    "searchValue",
+    "params",
+    "billOid",
+    "bussType",
+    "flowRuid",
+    "msgTitle",
+    "msgContext",
+    "msgType",
+    "msgUrl",
+    "applyName",
+    "currentOid",
+    "pcOid",
+    "backCol1",
+    "backCol2",
+    "backCol3",
+    "flowStatus",
+    "auitEmpName",
+    "entrustInfo",
+];
+
 async fn list(
     State(state): State<AppState>,
     Extension(user): Extension<LoginUser>,
@@ -160,7 +194,9 @@ async fn get_info(
     if let Some(Value::Object(object)) = row.as_mut() {
         object.insert("auitEmpName".to_string(), Value::Null);
     }
-    Ok(AjaxResult::success_data(row))
+    Ok(AjaxResult::success_data(
+        row.map(|value| support::reorder_keys(value, APPLY_INFO_KEYS)),
+    ))
 }
 
 async fn add(
