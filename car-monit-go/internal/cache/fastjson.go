@@ -32,7 +32,9 @@ type JavaOptions struct {
 	Longs map[string]bool
 	// Sets Java 侧为 Set 的键，数组输出为 Set[...]。
 	Sets map[string]bool
-	// Maps Java 侧为 Map/HashMap 的键，输出补 {"@type":"java.util.HashMap"}。
+	// Maps Java 侧为 Map/HashMap 的字段：一定写成 {"@type":"java.util.HashMap"}，
+	// 对象里没有这个键时也会补上 —— fastjson2 对空 HashMap 同样写类型标记，
+	// 少了它会让「谁先回填缓存」改变另一端读到的字段集合。
 	Maps map[string]bool
 }
 
@@ -126,7 +128,30 @@ func emitObject(buf *bytes.Buffer, obj map[string]any, ctx emitCtx) {
 		emitValue(buf, obj[k], emitCtx{opts: ctx.opts, key: k})
 		written++
 	}
+	// Maps 声明的字段在嵌套对象里必须存在（Java 侧是初始化好的 new HashMap<>()）；
+	// 根对象不补：LoginUser 自己就没有 params 字段。数组元素不算根，所以 sys_dict 的行会被补上。
+	if ctx.opts != nil && !ctx.atRoot && !ctx.opts.Maps[ctx.key] {
+		for _, k := range sortedKeys(ctx.opts.Maps) {
+			if _, has := obj[k]; has {
+				continue
+			}
+			if written > 0 {
+				buf.WriteByte(',')
+			}
+			buf.WriteString(`"` + k + `":{"@type":"` + hashMapType + `"}`)
+			written++
+		}
+	}
 	buf.WriteByte('}')
+}
+
+func sortedKeys(set map[string]bool) []string {
+	out := make([]string, 0, len(set))
+	for k := range set {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
 }
 
 func objectTypeName(ctx emitCtx) string {
