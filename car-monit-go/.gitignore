@@ -4,3 +4,5 @@ bin/
 logs/
 .idea/
 *.prof
+__pycache__/
+scripts/parity/routes_compare.json

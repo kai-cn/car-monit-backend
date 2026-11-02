@@ -283,11 +283,11 @@ func pageColumns(rows []*GenTableColumn, pd web.PageDomain) ([]*GenTableColumn, 
 	if !pd.HasPage {
 		return rows, total
 	}
-	start := pd.Offset()
+	limit, start := pd.LimitOffset(total)
 	if start >= len(rows) {
 		return make([]*GenTableColumn, 0), total
 	}
-	end := start + pd.Limit()
+	end := start + limit
 	if end > len(rows) {
 		end = len(rows)
 	}

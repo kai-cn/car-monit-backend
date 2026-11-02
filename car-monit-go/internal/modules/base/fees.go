@@ -12,6 +12,7 @@
 package base
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -71,11 +72,52 @@ func (h *handler) forestGet(ctx context.Context, path string, params map[string]
 	if err != nil {
 		return nil, web.NewServiceError("读取车辆监测服务响应失败: %v", err)
 	}
+	// UseNumber：保持上游数字的字面量（Java 侧 hutool/Jackson 原样透传，
+	// feerate 是 0.0 而不是 0；大整数也不会被 float64 打回科学计数）。
 	var out any
-	if err := json.Unmarshal(body, &out); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(body))
+	dec.UseNumber()
+	if err := dec.Decode(&out); err != nil {
 		return nil, web.NewServiceError("车辆监测服务响应不是合法 JSON: %s", target)
 	}
 	return out, nil
+}
+
+// jsonFloat 取数字成员：UseNumber 解码后是 json.Number，旧路径可能仍是 float64。
+func jsonFloat(v any) (float64, bool) {
+	switch x := v.(type) {
+	case json.Number:
+		f, err := x.Float64()
+		return f, err == nil
+	case float64:
+		return x, true
+	}
+	return 0, false
+}
+
+// dropNullMembers 对应 hutool JSONObject 的默认 ignoreNullValue=true：
+// JSONUtil.toBean(jsonObject, TableDataInfo.class) 会把值为 null 的成员丢掉，
+// 因此 Java 的行对象比 Go 少一批恒为 null 的字段（cid/enweight/paycardid…）。
+func dropNullMembers(v any) any {
+	switch x := v.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(x))
+		for k, item := range x {
+			if item == nil {
+				continue
+			}
+			out[k] = dropNullMembers(item)
+		}
+		return out
+	case []any:
+		out := make([]any, 0, len(x))
+		for _, item := range x {
+			out = append(out, dropNullMembers(item))
+		}
+		return out
+	default:
+		return v
+	}
 }
 
 // remoteTable 是上游 TableDataInfo 的透传形态（rows 保留原始 JSON）。
@@ -92,16 +134,31 @@ func (h *handler) forestGetTable(c *gin.Context, path string, params map[string]
 	if err != nil {
 		return nil, err
 	}
+	// 数字成员经 UseNumber 解码后是 json.Number，不能再按 float64 断言
+	asInt := func(v any) (int64, bool) {
+		switch x := v.(type) {
+		case json.Number:
+			n, err := x.Int64()
+			if err == nil {
+				return n, true
+			}
+			f, err := x.Float64()
+			return int64(f), err == nil
+		case float64:
+			return int64(x), true
+		}
+		return 0, false
+	}
 	table := &remoteTable{Code: 0}
 	if m, ok := payload.(map[string]any); ok {
-		if v, ok := m["total"].(float64); ok {
-			table.Total = int64(v)
+		if v, ok := asInt(m["total"]); ok {
+			table.Total = v
 		}
 		if v, ok := m["rows"]; ok {
 			raw, _ := json.Marshal(v)
 			table.Rows = raw
 		}
-		if v, ok := m["code"].(float64); ok {
+		if v, ok := asInt(m["code"]); ok {
 			table.Code = int(v)
 		}
 		if v, ok := m["msg"].(string); ok {
@@ -111,11 +168,23 @@ func (h *handler) forestGetTable(c *gin.Context, path string, params map[string]
 	return table, nil
 }
 
-// renderRemoteTable 直接透传上游 TableDataInfo。
-func renderRemoteTable(c *gin.Context, table *remoteTable) {
+// renderRemoteTable 输出上游 TableDataInfo。
+//
+// 两种 Java 侧机制的可见差别，用 dropNull 区分：
+//   - OdsLwzxsfsjFeeStationExit01Controller.list:53 用 JSONUtil.toBean(jsonObject, TableDataInfo.class)，
+//     hutool 的 JSONObject 默认 ignoreNullValue=true ⇒ 值为 null 的成员整个丢掉；
+//   - OdsLwzxsfsjFeeGantryFusion01Controller.list:48 直接返回 Forest 反序列化的 TableDataInfo，
+//     走的是 Jackson ⇒ null 成员照旧输出。
+//
+// 两条路径都保留上游数字的字面量（feerate 是 0.0，不是 0）。
+func renderRemoteTable(c *gin.Context, table *remoteTable, dropNull bool) {
 	rows := any(nil)
 	if len(table.Rows) > 0 {
-		_ = json.Unmarshal(table.Rows, &rows)
+		dec := json.NewDecoder(bytes.NewReader(table.Rows))
+		dec.UseNumber()
+		if err := dec.Decode(&rows); err == nil && dropNull {
+			rows = dropNullMembers(rows)
+		}
 	}
 	c.JSON(http.StatusOK, &web.TableDataInfo{Total: table.Total, Rows: rows, Code: table.Code, Msg: table.Msg})
 }
@@ -141,7 +210,8 @@ func (h *handler) feeGantryList(c *gin.Context) {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
-	renderRemoteTable(c, table)
+	// Forest 反序列化的 TableDataInfo 由 Jackson 输出，null 成员保留
+	renderRemoteTable(c, table, false)
 }
 
 // feeGantryGet 对应 GET /base/feeGantry/{bigId}。
@@ -244,7 +314,8 @@ func (h *handler) feeStationExitList(c *gin.Context) {
 		web.JSON(c, web.ErrorResult(web.NewServiceError("获取数据异常,请联系管理员")))
 		return
 	}
-	renderRemoteTable(c, table)
+	// Java 侧是 JSONUtil.toBean(...)，hutool 丢 null 成员
+	renderRemoteTable(c, table, true)
 }
 
 // feeStationExitGet 对应 GET /base/feestationexit/{bigId}。
@@ -335,7 +406,7 @@ func (h *handler) enrichFeeRecords(ctx context.Context, rows []map[string]any, w
 		if vehicleClass := cellText(row, "vehicleclass"); isNotBlank(vehicleClass) {
 			row["vehicleclass"] = isNull(carVehicleMap[isNull(vehicleClass)])
 		}
-		if fee, ok := row["fee"].(float64); ok && fee > 0 {
+		if fee, ok := jsonFloat(row["fee"]); ok && fee > 0 {
 			row["chargeStatus"] = "成功"
 		} else {
 			row["chargeStatus"] = "失败"

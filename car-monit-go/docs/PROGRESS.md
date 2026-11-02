@@ -2,11 +2,16 @@
 
 > **第三轮（2026-11-02）另见 `docs/PARITY-2026-11-02.md`**：共用 MySQL、**两端使用不同 Redis DB
 > （Java=db0 / Go=db2）**重做全量校验，校验脚本进仓库（`scripts/parity/`）。
-> 该轮结果：路由 Java 有/Go 没有 **0** 条；GET 288 条中 249 条逐字段一致、15 条差异全部定性为
-> 环境设定或 Java 侧缺陷；写接口 32 资源中 24 个四步全一致；Redis 双 DB 隔离 24 项断言全通过。
-> 新发现并修复 5 类问题：登录审计 `status` 写错导致整行丢失、`GET /system/user/` 缺失、
-> 根路径只注册 GET、`/oss/**` 九个端点未迁移、**45 个列表端点在请求不带分页参数时未按 Java 默认
-> `pageSize=10` 分页**（该差异在带参数的对比里是隐形的，由 `check_default_page.py` 专项暴露：42 → 0）。
+> 该轮结果：路由 Java 有/Go 没有 **0** 条；GET 288 条中 **250** 条逐字段一致、14 条差异全部定性为
+> 环境设定或 Java 侧缺陷；写接口 32 资源中 24 个四步全一致；Redis 双 DB 隔离 24 项断言全通过；
+> 查询参数矩阵 696 组合 **0** 差异。
+> 新发现并修复 9 类问题：登录审计 `status` 写错导致整行丢失、`GET /system/user/` 缺失、
+> 根路径只注册 GET、`/oss/**` 九个端点未迁移、MinIO 建连超时、
+> **45 个列表端点在请求不带分页参数时未按 Java 默认 `pageSize=10` 分页**、
+> 分页参数取值与 `reasonable` 越界回末页、客户端 `orderByColumn` 被忽略、
+> 以及 PageHelper「count=0 就不再执行分页查询」的短路（`web.PageDomain.SkipQuery`）。
+> 后四类在「固定带 `pageSize=3` 的对比」里都是隐形的，只有 `check_default_page.py` /
+> `check_query_matrix.py` 两个专项才暴露（42 → 0、183 → 0）。
 > 下文保留第一、二轮的记录。
 
 > 记录时间：2026-11-02（第三轮更新）。前两轮修掉 GET 响应的字段级差异；本轮补齐
@@ -19,18 +24,19 @@
 | Java 参考服务 | `ruoyi-admin/target/ruoyi-admin.jar`，端口 **9988**（`--server.port=9988`） |
 | Go 服务 | `bin/carmonit-server.exe`，端口 **9989**，配置 `configs/config.yaml` |
 | 账号 | admin / Admin@2025-（Java 登录需验证码，答案从 Redis `captcha_codes:<uuid>` 读取） |
-| 对比脚本 | `C:/Users/abelz/AppData/Local/Temp/cmp_api.py <路径前缀> <报告.json>`；单接口用 `cmp_one.py`（能区分「键缺失」与「值为 null」） |
-| 写接口生命周期对比 | `cmp_crud2.py [路径...]`：取真实行做模板 → 两端各插一条 `PARITY_*` 标记行 → 比 POST/详情/PUT/DELETE → 按标记硬清理 |
-| 落库逐列对比 | `probe_db.py <路径>`：两端各插一行后直接比数据库列值（接口回显之外的真相） |
-| Redis 共存验收 | `verify_redis.py`（登录态）、`verify_carlist.py`（车辆缓存）、`verify_cfg_dict.py`（参数/字典）、`grab_java_cache.py`（抓 Java 原值当黄金样本）、`smoke_redis.py [轮数]`（多轮稳定性冒烟，交替由两端回填缓存） |
+| 对比脚本 | 第三轮起统一在仓库内：`scripts/parity/compare_get.py --prefix /<模块> --out <报告.json>`（前两轮使用的 `cmp_api.py`/`cmp_one.py` 已作废） |
+| 写接口生命周期对比 | `scripts/parity/compare_write.py`：取真实行做模板 → 两端各插一条 `PARITY_*` 标记行 → 比 POST/详情/PUT/DELETE → 按标记硬清理 |
+| 落库逐列对比 | `scripts/parity/pp.py` 里的 `sql()`/`read_key()` 封装（MySQL CLI + db 感知的 redis-cli） |
+| Redis 共存验收 | `scripts/parity/check_redis_isolation.py`（双 DB 隔离 24 项断言）；早期的 `verify_*.py`/`smoke_redis.py` 为共享 DB 时期脚本 |
 | 路由清单来源 | Go 启动日志 `C:/Users/abelz/AppData/Local/Temp/carmonit.log` 里的 `[GIN-debug]` 行 |
 | 归一化规则 | `yyyy-MM-dd HH:mm:ss` → `<DT>`、带横杠/无横杠 UUID → `<UUID>`/`<HEX32>`、15–20 位主键 → `<ID>`、`PARITY_*` 测试值 → `<PARITY>`、浮点保留 6 位，深度逐字段比较 |
 
-GET 逐字段比较用 `cmp_api.py`；写接口不再用畸形请求体探测，改为 `cmp_crud2.py` 走完整生命周期。
+GET 逐字段比较用 `scripts/parity/compare_get.py`；写接口不再用畸形请求体探测，改为
+`scripts/parity/compare_write.py` 走完整生命周期。
 两端**共用一个库**，所以每条记录的唯一列用不同随机盐，比对时把标记值与主键一并屏蔽；
 `/base/section`、`/flow/*` 一类空表没有样本行可克隆，改用手工请求体（`RESOURCES[].body`）。
 
-## 2. 最终对比结果（第三轮结束）
+## 2. 对比结果（第二轮；第三轮的 288 条 URL 与专项数字见 `docs/PARITY-2026-11-02.md`）
 
 注册路由合计 **498** 条（移除 Go 多注册的 `GET /system/user` 后，与 Java 路由表一致）。
 
@@ -143,6 +149,25 @@ Go 写的 `sys_config`/`sys_dict` Java 读得到，反之亦然。
   `parentId`/`menuIds`/`deptIds` 这类 Java 侧无空判断的字段必须按前端真实形态补全；
   定位新增行改用 SQL 按标记值查（列表接口有树形与数据权限过滤）；
   `/system/dept` 的 `subCode` 依赖「插入前同级数量」，同库并行必然差 1 ⇒ 忽略该列
+
+### 3.9 分页与代理响应语义（第三轮，`internal/web/pagination.go` 等）
+
+Java 的分页是 PageHelper 拦截器行为，前两轮「固定带 `?pageNum=1&pageSize=3`」的对比看不到它，
+本轮用 `check_default_page.py`（不带参数）与 `check_query_matrix.py`（11 种参数组合）专攻：
+
+- **缺省也分页**：`TableSupport.getPageDomain` 给 `pageNum=1、pageSize=10` ⇒ 新增 `web.PageAlways(c)`，
+  所有 Java 侧调过 `startPage()` 的列表路径都改用它（45 个端点，42 → 0）
+- **参数取值**：照抄 `Convert.toInt(参数, 默认)` —— 只有没传/解析不出数字才回落默认，
+  显式 `pageSize=0/-1` 是合法入参；删掉 Go 自造的 `MaxPageSize=500`
+- **`reasonable` 越界回末页**：`PageDomain.getReasonable()` null → TRUE ⇒ 新增 `Clamp(total)`/`LimitOffset(total)`，
+  16 处分页点接上 total
+- **客户端排序优先**：`startPage` 的 orderBy **覆盖** mapper XML 的 order by ⇒ `manager.orderFor`、
+  `base.orderByFor`、`generator.selectGenTableList` 统一这个优先级
+- **count=0 短路**：PageHelper 在总数为 0 时不再执行数据查询，因此「空结果 + 非法排序列」在 Java 侧不报错 ⇒
+  新增 `web.PageDomain.SkipQuery(total)`，9 个「客户端排序能进 SQL」的分页执行器接上（696 组合 → 0 差异）
+- **代理 JSON 形态**：hutool `JSONUtil.toBean(..., TableDataInfo.class)` 默认丢 null 成员，
+  Forest+Jackson 保留 —— 按端点区分（`renderRemoteTable(c, table, dropNull)`），
+  上游响应 `UseNumber` 解码以原样透传数字字面量（`0` 不会变成 `0.0`）
 
 ## 4. 剩余差异
 

@@ -116,7 +116,7 @@ func springBool(raw string, present bool) (*bool, error) {
 //   - 分页时先 `select count(0) from (原语句) table_count`，再追加 limit/offset。
 //
 // DIFF: PageHelper 的 count 语句会去掉 ORDER BY（count 优化），这里同样只对 count 语句
-// 使用不含排序的 baseSQL；`reasonable` 页码修正未实现（web.Page 的默认行为已足够）。
+// 使用不含排序的 baseSQL；count=0 时同样跳过数据查询（web.PageDomain.SkipQuery）。
 func queryPage[T any](ctx context.Context, db *gorm.DB, baseSQL string, args []any, orderBy string, pd web.PageDomain) ([]T, int64, error) {
 	dataSQL := baseSQL
 	if strings.TrimSpace(orderBy) != "" {
@@ -139,10 +139,15 @@ func queryPage[T any](ctx context.Context, db *gorm.DB, baseSQL string, args []a
 		return nil, 0, err
 	}
 
+	if pd.SkipQuery(total) {
+		return make([]T, 0), total, nil
+	}
+
 	var rows []T
 	pageArgs := make([]any, 0, len(args)+2)
 	pageArgs = append(pageArgs, args...)
-	pageArgs = append(pageArgs, pd.Limit(), pd.Offset())
+	lim, off := pd.LimitOffset(total)
+	pageArgs = append(pageArgs, lim, off)
 	if err := db.WithContext(ctx).Raw(dataSQL+" limit ? offset ?", pageArgs...).Scan(&rows).Error; err != nil {
 		return nil, 0, err
 	}

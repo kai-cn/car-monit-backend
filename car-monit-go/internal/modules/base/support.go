@@ -165,6 +165,9 @@ func (h *handler) list(ctx context.Context, q listQuery, dest any) (int64, error
 		}
 	}
 
+	if q.Page.SkipQuery(total) {
+		return total, nil
+	}
 	sqlStr := "SELECT " + q.SelectSQL + " " + baseSQL
 	if q.OrderBy != "" {
 		sqlStr += " ORDER BY " + q.OrderBy
@@ -172,7 +175,8 @@ func (h *handler) list(ctx context.Context, q listQuery, dest any) (int64, error
 	args := q.Where.Args()
 	if q.Page.HasPage {
 		sqlStr += " LIMIT ? OFFSET ?"
-		args = append(args, q.Page.Limit(), q.Page.Offset())
+		lim, off := q.Page.LimitOffset(total)
+		args = append(args, lim, off)
 	}
 	if err := h.app.DB.WithContext(ctx).Raw(sqlStr, args...).Scan(dest).Error; err != nil {
 		return 0, err

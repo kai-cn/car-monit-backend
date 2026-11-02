@@ -304,12 +304,13 @@ func (h *handler) bigIncomeStatistic(c *gin.Context) {
 func (h *handler) bigExceptRecordList(c *gin.Context) {
 	clause, args := buildWhere(c, exceptRecordSpec.prefix(), exceptRecordSpec.conditions)
 	dest := newSliceOf(&carExceptRecord{})
+	page := web.PageAlways(c)
 	total, err := h.list(c.Request.Context(), listQuery{
 		SelectSQL: exceptRecordSpec.selectSQL + exceptRecordSpec.selectSuffix,
 		FromSQL:   exceptRecordSpec.from(),
 		Where:     &whereClause{clause: clause, args: args},
-		OrderBy:   exceptRecordSpec.orderBy,
-		Page:      web.PageAlways(c),
+		OrderBy:   orderFor(exceptRecordSpec.orderBy, page),
+		Page:      page,
 	}, dest)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))

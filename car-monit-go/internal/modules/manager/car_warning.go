@@ -148,12 +148,13 @@ func isExitsStr(source, para any) bool {
 func (h *handler) warningInfoList(c *gin.Context) {
 	clause, args := warningClause(c)
 	dest := newSliceOf(&carWarningInfo{})
+	page := web.Page(c)
 	total, err := h.list(c.Request.Context(), listQuery{
 		SelectSQL: warningInfoSpec.selectSQL,
 		FromSQL:   warningInfoSpec.from(),
 		Where:     &whereClause{clause: clause, args: args},
-		OrderBy:   warningInfoSpec.orderBy,
-		Page:      web.Page(c),
+		OrderBy:   orderFor(warningInfoSpec.orderBy, page),
+		Page:      page,
 	}, dest)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))

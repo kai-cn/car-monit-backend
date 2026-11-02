@@ -215,6 +215,10 @@ func (h *handler) list(ctx context.Context, q listQuery, dest any) (int64, error
 		total = 0
 	}
 
+	if q.Page.SkipQuery(total) {
+		return total, nil
+	}
+
 	sqlStr := "SELECT " + q.SelectSQL + " " + base
 	if q.OrderBy != "" {
 		sqlStr += " ORDER BY " + q.OrderBy
@@ -222,7 +226,8 @@ func (h *handler) list(ctx context.Context, q listQuery, dest any) (int64, error
 	args := q.Where.Args()
 	if q.Page.HasPage {
 		sqlStr += " LIMIT ? OFFSET ?"
-		args = append(args, q.Page.Limit(), q.Page.Offset())
+		lim, off := q.Page.LimitOffset(total)
+		args = append(args, lim, off)
 	}
 	if err := h.app.DB.WithContext(ctx).Raw(sqlStr, args...).Scan(dest).Error; err != nil {
 		return 0, err
@@ -295,6 +300,15 @@ func (h *handler) loadDict(ctx context.Context, dictType string) ([]dictDataRow,
 
 // auditNow 返回当前时间，对应 DateUtils.getTimestamp()。
 func auditNow() time.Time { return time.Now() }
+
+// orderFor 对应 PageHelper 的 orderBy：请求里带了 orderByColumn 时，
+// PageHelper 会用客户端排序**覆盖** mapper XML 里的 order by；没带才用服务端默认排序。
+func orderFor(defaultOrder string, page web.PageDomain) string {
+	if o := page.OrderBy(); o != "" {
+		return o
+	}
+	return defaultOrder
+}
 
 // withInsertAudit 对应 insertFill：create_by / create_time / eps_id / tenant_id。
 //

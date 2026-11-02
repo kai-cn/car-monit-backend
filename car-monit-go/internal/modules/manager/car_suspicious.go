@@ -133,12 +133,13 @@ func (h *handler) suspiciousListFileCarNo(c *gin.Context) {
 	setQueryOverride(c, "checkStatus", "1")
 	clause, args := buildWhere(c, suspiciousSpec.prefix(), suspiciousSpec.conditions)
 	dest := newSliceOf(&carSuspicious{})
+	page := web.Page(c)
 	total, err := h.list(c.Request.Context(), listQuery{
 		SelectSQL: suspiciousSpec.selectSQL,
 		FromSQL:   suspiciousSpec.from(),
 		Where:     &whereClause{clause: clause, args: args},
-		OrderBy:   suspiciousSpec.orderBy,
-		Page:      web.Page(c),
+		OrderBy:   orderFor(suspiciousSpec.orderBy, page),
+		Page:      page,
 	}, dest)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
