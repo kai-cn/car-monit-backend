@@ -245,8 +245,12 @@ func queryPagedTables(ctx context.Context, db *gorm.DB, pd web.PageDomain, base 
 	if len(countRows) > 0 {
 		total = rowInt64(countRows[0], "count(0)")
 	}
+	if pd.SkipQuery(total) {
+		return []map[string]any{}, total, nil
+	}
 	query += " limit ? offset ?"
-	pagedArgs := append(append([]any{}, args...), pd.Limit(), pd.Offset())
+	lim, off := pd.LimitOffset(total)
+	pagedArgs := append(append([]any{}, args...), lim, off)
 	rows, err := queryMaps(ctx, db, query, pagedArgs...)
 	if err != nil {
 		return nil, 0, err
@@ -424,7 +428,13 @@ func (m *genTableMapper) selectGenTableList(ctx context.Context, filter *GenTabl
 	if len(conditions) > 0 {
 		base += "\n\t\twhere " + strings.Join(conditions, " and ")
 	}
-	rows, total, err := queryPagedTables(ctx, m.db, pd, base, args, "ORDER BY create_time DESC")
+	order := pd.OrderBy()
+	if order == "" {
+		order = "ORDER BY create_time DESC"
+	} else {
+		order = "ORDER BY " + order
+	}
+	rows, total, err := queryPagedTables(ctx, m.db, pd, base, args, order)
 	if err != nil {
 		return nil, 0, err
 	}

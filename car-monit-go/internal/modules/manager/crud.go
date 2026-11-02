@@ -70,12 +70,13 @@ func (h *handler) tableList(c *gin.Context, spec *tableSpec) {
 // 不带分页参数时同样只返回一页，故用 PageAlways；导出接口不走这里（Java 导出不分页）。
 func (h *handler) respondList(c *gin.Context, spec *tableSpec, clause string, args []any) {
 	dest := newSliceOf(spec.prototype)
+	page := web.PageAlways(c)
 	total, err := h.list(c.Request.Context(), listQuery{
 		SelectSQL: spec.selectSQL + spec.selectSuffix,
 		FromSQL:   spec.from(),
 		Where:     &whereClause{clause: clause, args: args},
-		OrderBy:   spec.orderBy,
-		Page:      web.PageAlways(c),
+		OrderBy:   orderFor(spec.orderBy, page),
+		Page:      page,
 	}, dest)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))

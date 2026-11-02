@@ -50,9 +50,13 @@ func (s *Service) ListJobs(ctx context.Context, f JobFilter, p web.PageDomain) (
 		return nil, 0, err
 	}
 	rows := make([]*SysJob, 0, 16)
+	if p.SkipQuery(total) {
+		return rows, total, nil
+	}
 	listQ := s.jobQuery(ctx, f).Order(p.OrderByWithDefault("job_id asc"))
 	if p.HasPage {
-		listQ = listQ.Offset(p.Offset()).Limit(p.Limit())
+		lim, off := p.LimitOffset(total)
+		listQ = listQ.Offset(off).Limit(lim)
 	}
 	if err := listQ.Find(&rows).Error; err != nil {
 		return nil, 0, err
@@ -390,9 +394,13 @@ func (s *Service) ListJobLogs(ctx context.Context, f JobFilter, p web.PageDomain
 		return nil, 0, err
 	}
 	rows := make([]*SysJobLog, 0, 16)
+	if p.SkipQuery(total) {
+		return rows, total, nil
+	}
 	listQ := s.jobLogQuery(ctx, f).Order(p.OrderByWithDefault("create_time desc"))
 	if p.HasPage {
-		listQ = listQ.Offset(p.Offset()).Limit(p.Limit())
+		lim, off := p.LimitOffset(total)
+		listQ = listQ.Offset(off).Limit(lim)
 	}
 	if err := listQ.Find(&rows).Error; err != nil {
 		return nil, 0, err

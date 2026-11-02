@@ -134,11 +134,12 @@ func nonNilSlice(dest any) any {
 }
 
 // orderByFor 复刻 PageHelper：语句本身没有 order by 时才追加客户端排序。
+// 客户端的 orderByColumn 优先（PageHelper 的 orderBy 会覆盖 XML 里的 order by）。
 func orderByFor(spec *tableSpec, page web.PageDomain) string {
-	if spec.orderBy != "" {
-		return spec.orderBy
+	if o := page.OrderBy(); o != "" {
+		return o
 	}
-	return page.OrderBy()
+	return spec.orderBy
 }
 
 // tableGet 对应 GET /{pk} —— 详情语句不带 del_flag（与 XML 一致）。

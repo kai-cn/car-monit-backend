@@ -74,13 +74,16 @@ func queryList(ctx context.Context, db *gorm.DB, selectSQL, fromSQL, cond, order
 		if err != nil {
 			return 0, err
 		}
-		sqlStr, sqlArgs := pageSQL("select "+selectSQL+" from "+fromSQL+" where 1 = 1"+cond, args, pd, order)
+		if pd.SkipQuery(total) {
+			return total, nil
+		}
+		sqlStr, sqlArgs := pageSQL("select "+selectSQL+" from "+fromSQL+" where 1 = 1"+cond, args, pd, order, total)
 		if err := db.WithContext(ctx).Raw(sqlStr, sqlArgs...).Scan(dest).Error; err != nil {
 			return 0, err
 		}
 		return total, nil
 	}
-	sqlStr, sqlArgs := pageSQL("select "+selectSQL+" from "+fromSQL+" where 1 = 1"+cond, args, pd, order)
+	sqlStr, sqlArgs := pageSQL("select "+selectSQL+" from "+fromSQL+" where 1 = 1"+cond, args, pd, order, 0)
 	if err := db.WithContext(ctx).Raw(sqlStr, sqlArgs...).Scan(dest).Error; err != nil {
 		return 0, err
 	}

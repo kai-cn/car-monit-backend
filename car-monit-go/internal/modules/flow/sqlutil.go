@@ -129,11 +129,13 @@ func (c *colset) update(ctx context.Context, db *gorm.DB, table, id string) erro
 }
 
 // pageSQL 对应 PageHelper：追加排序与分页。
-func pageSQL(base string, args []any, pd web.PageDomain, defaultOrder string) (string, []any) {
+// pageSQL 对应 PageHelper：追加排序与分页。total 用于 reasonable 越界钳位（页码超出总页数回到末页）。
+func pageSQL(base string, args []any, pd web.PageDomain, defaultOrder string, total int64) (string, []any) {
 	q := base + " order by " + pd.OrderByWithDefault(defaultOrder)
 	if pd.HasPage {
 		q += " limit ? offset ?"
-		args = append(args, pd.Limit(), pd.Offset())
+		lim, off := pd.LimitOffset(total)
+		args = append(args, lim, off)
 	}
 	return q, args
 }

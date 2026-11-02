@@ -190,6 +190,9 @@ func queryPage[T any](ctx context.Context, db *gorm.DB, pd web.PageDomain,
 			return nil, 0, err
 		}
 	}
+	if pd.SkipQuery(total) {
+		return []T{}, total, nil
+	}
 	sql := listSQL
 	// JAVA 对照: PageHelper 对已带 ORDER BY 的语句不再追加客户端排序。
 	if !strings.Contains(strings.ToLower(sql), " order by ") {
@@ -201,7 +204,8 @@ func queryPage[T any](ctx context.Context, db *gorm.DB, pd web.PageDomain,
 	q := db.WithContext(ctx)
 	if pd.HasPage {
 		sql += " limit ? offset ?"
-		q = q.Raw(sql, append(append([]any{}, args...), pd.Limit(), pd.Offset())...)
+		lim, off := pd.LimitOffset(total)
+		q = q.Raw(sql, append(append([]any{}, args...), lim, off)...)
 	} else {
 		q = q.Raw(sql, args...)
 	}

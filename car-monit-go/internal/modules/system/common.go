@@ -194,8 +194,12 @@ func queryPaged[T any](ctx context.Context, db *gorm.DB, pd web.PageDomain, base
 		if err := db.WithContext(ctx).Raw("select count(1) from ("+base+") t", args...).Scan(&total).Error; err != nil {
 			return nil, 0, err
 		}
+		if pd.SkipQuery(total) {
+			return rows, total, nil
+		}
 		sql += " limit ? offset ?"
-		args = append(append([]any{}, args...), pd.Limit(), pd.Offset())
+		lim, off := pd.LimitOffset(total)
+		args = append(append([]any{}, args...), lim, off)
 	}
 	if err := db.WithContext(ctx).Raw(sql, args...).Scan(&rows).Error; err != nil {
 		return nil, 0, err

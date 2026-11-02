@@ -93,9 +93,13 @@ func (s *Service) selectMessageInfoList(ctx context.Context, db *gorm.DB, q Mess
 		}
 	}
 
+	if pd.SkipQuery(total) {
+		return rows, total, nil
+	}
+
 	args := append(selectArgs, w.args...)
 	base := "select " + selectSQL + " from " + messageInfoFrom + " where 1 = 1" + cond
-	sqlStr, sqlArgs := pageSQL(base, args, pd, "t.create_time desc,t.id")
+	sqlStr, sqlArgs := pageSQL(base, args, pd, "t.create_time desc,t.id", total)
 	if err := db.WithContext(ctx).Raw(sqlStr, sqlArgs...).Scan(&rows).Error; err != nil {
 		return nil, 0, err
 	}

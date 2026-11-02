@@ -204,7 +204,8 @@ func (h *handler) pcIncomeStatics(c *gin.Context, page web.PageDomain) ([]*pcInc
 	queryArgs := args
 	if page.HasPage {
 		sqlStr += " LIMIT ? OFFSET ?"
-		queryArgs = append(append([]any{}, args...), page.Limit(), page.Offset())
+		lim, off := page.LimitOffset(total)
+		queryArgs = append(append([]any{}, args...), lim, off)
 	}
 	var rows []*pcIncomeStaticsVO
 	if err := h.app.DB.WithContext(c.Request.Context()).Raw(sqlStr, queryArgs...).Scan(&rows).Error; err != nil {
@@ -273,7 +274,8 @@ func (h *handler) incomeDetailList(c *gin.Context) ([]*carConfimFree, int64, err
 	queryArgs := args
 	if page.HasPage {
 		sqlStr += " LIMIT ? OFFSET ?"
-		queryArgs = append(append([]any{}, args...), page.Limit(), page.Offset())
+		lim, off := page.LimitOffset(total)
+		queryArgs = append(append([]any{}, args...), lim, off)
 	}
 	var rows []*incomeDetailRow
 	if err := h.app.DB.WithContext(c.Request.Context()).Raw(sqlStr, queryArgs...).Scan(&rows).Error; err != nil {
@@ -813,7 +815,8 @@ func (h *handler) concernedList(c *gin.Context, page web.PageDomain) ([]*carConf
 	}
 	if page.HasPage {
 		sqlStr += " LIMIT ? OFFSET ?"
-		queryArgs = append(queryArgs, page.Limit(), page.Offset())
+		lim, off := page.LimitOffset(total)
+		queryArgs = append(queryArgs, lim, off)
 	}
 	var rows []*concernedRow
 	if err := h.app.DB.WithContext(c.Request.Context()).Raw(sqlStr, queryArgs...).Scan(&rows).Error; err != nil {
@@ -923,7 +926,8 @@ func (h *handler) pcCarStatistics(c *gin.Context) ([]*pcCarStatisticsVO, int64, 
 	queryArgs := args
 	if page.HasPage {
 		sqlStr += " LIMIT ? OFFSET ?"
-		queryArgs = append(append([]any{}, args...), page.Limit(), page.Offset())
+		lim, off := page.LimitOffset(total)
+		queryArgs = append(append([]any{}, args...), lim, off)
 	}
 	var statRows []*pcStatRow
 	if err := h.app.DB.WithContext(c.Request.Context()).Raw(sqlStr, queryArgs...).Scan(&statRows).Error; err != nil {

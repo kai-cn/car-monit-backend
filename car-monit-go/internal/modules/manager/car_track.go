@@ -27,12 +27,13 @@ import (
 func (h *handler) trackList(c *gin.Context) {
 	clause, args := buildWhere(c, trackInfoSpec.prefix(), trackInfoSpec.conditions)
 	dest := newSliceOf(&carTrackInfo{})
+	page := web.PageAlways(c)
 	total, err := h.list(c.Request.Context(), listQuery{
 		SelectSQL: trackInfoSpec.selectSQL,
 		FromSQL:   trackInfoSpec.from(),
 		Where:     &whereClause{clause: clause, args: args},
-		OrderBy:   trackInfoSpec.orderBy,
-		Page:      web.PageAlways(c),
+		OrderBy:   orderFor(trackInfoSpec.orderBy, page),
+		Page:      page,
 	}, dest)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
@@ -327,11 +328,15 @@ func (h *handler) trackQuery(c *gin.Context) ([]*zdataTrailTracks, int64, error)
 			return nil, 0, err
 		}
 	}
+	if page.SkipQuery(total) {
+		return []*zdataTrailTracks{}, total, nil
+	}
 	sqlStr := "SELECT " + zdataTrailTracksColumns + base + " ORDER BY t.enter_time DESC"
 	queryArgs := args
 	if page.HasPage {
 		sqlStr += " LIMIT ? OFFSET ?"
-		queryArgs = append(append([]any{}, args...), page.Limit(), page.Offset())
+		lim, off := page.LimitOffset(total)
+		queryArgs = append(append([]any{}, args...), lim, off)
 	}
 	rows := newSliceOf(&zdataTrailTracks{})
 	if err := h.app.DB.WithContext(c.Request.Context()).Raw(sqlStr, queryArgs...).Scan(rows).Error; err != nil {
