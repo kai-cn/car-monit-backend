@@ -1,0 +1,481 @@
+<template>
+    <div>
+        <el-form ref="form" :model="form" :rules="rules" label-width="auto" id="form" @submit.native.prevent >
+          <template v-if="!datFromDisabled">
+            <el-row :gutter="20">
+                #set($uploadRefSuffix="Ref")
+                #foreach($column in $columns)
+                    #set($dictKey="$column.dictTypeCamelCase$dictionaryListKeySuffix")
+                    #if(${column.javaField} !="id" && ${column.javaField} !="epsId"  && ${column.javaField} !="delFlag" && ${column.javaField} !="createBy" && ${column.javaField} !="createTime" && ${column.javaField} !="updateBy" && ${column.javaField} !="updateTime" && ${column.javaField} !="sort" && ${column.javaField} !="flowKey" && ${column.javaField} !="flowRuid" && ${column.javaField} !="flowApplyOid" && ${column.javaField} !="flowStatus" && ${column.javaField} !="status" && ${column.javaField} !="tenantId")
+                        #if(${column.generateLinkTableFlag} == "1")
+                        <el-col :span="12">
+                            <el-form-item label="${column.columnComment}" prop="${column.javaField}">
+                                <el-input  style="width:100%;"    readonly v-model="form.${column.majorLinkFieldInfo.tableFileAlias}" placeholder="请选择">
+                                    #set($firstUpperName=$column.javaField.substring(0, 1).toUpperCase()+${column.javaField.substring(1)})
+                                    #if(${column.singleSelection} == "1")
+                                    <el-button slot="append" icon="el-icon-search" @click="open${firstUpperName}RadioDialog"></el-button>
+                                    #else
+                                    <el-button slot="append" icon="el-icon-search" @click="open${firstUpperName}CheckboxDialog"></el-button>
+                                    #end
+                                </el-input>
+                            </el-form-item>
+                        </el-col>
+                        #else
+                            #if($column.htmlType == "fileUpload")
+                                <el-col :span="24">
+                                    <el-form-item label="${column.columnComment}">
+                                        <CustomUpload ref="${column.javaField}$uploadRefSuffix" v-bind="uploadData" :ids="form.${column.javaField}" />
+                                    </el-form-item>
+                                </el-col>
+                            #elseif($column.htmlType == "editor" || $column.htmlType == "textarea")
+                                <el-col :span="24">
+                                    <el-form-item label="${column.columnComment}" prop="${column.javaField}">
+                                        #if($column.htmlType == "editor")
+                                            <vQuillEditor ref="${column.javaField}Ref" v-bind="editorOption" :editorValue="form.${column.javaField}"  @onEditorChange="(value) => onEditorChange({key:'${column.javaField}', value})" />
+                                        #elseif($column.htmlType == "textarea")
+                                            <el-input  style="width:100%;"   :disabled="datFromDisabled" v-model="form.${column.javaField}" type="textarea" :autosize="{minRows:2}" placeholder="请输入${column.columnComment}" />
+                                        #end
+                                    </el-form-item>
+                                </el-col>
+                            #else
+                                <el-col :span="12">
+                                    <el-form-item label="${column.columnComment}" prop="${column.javaField}">
+                                        #if($column.htmlType == "input")
+                                            <el-input  style="width:100%;"   :disabled="datFromDisabled" v-model="form.${column.javaField}" placeholder="请输入${column.columnComment}" />
+                                        #elseif($column.htmlType == "select" || $column.htmlType == "radio")
+                                            <el-select  style="width:100%;"   :disabled="datFromDisabled" v-model="form.${column.javaField}" :clearable="true" filterable placeholder="请选择${column.columnComment}">
+                                                <el-option v-for="(item, index) in $dictKey" :key="index" :label="item.dictLabel" :value="item.dictValue">
+                                                </el-option>
+                                            </el-select>
+                                        #elseif($column.htmlType == "datetime")
+                                            <el-date-picker  style="width:100%;"   :disabled="datFromDisabled" v-model="form.${column.javaField}" type="date" value-format="yyyy-MM-dd" placement="bottom-start" placeholder="${column.columnComment}">
+                                            </el-date-picker>
+                                        #else
+                                            <el-input  style="width:100%;"   :disabled="datFromDisabled" v-model="form.${column.javaField}" placeholder="请输入${column.columnComment}" />
+                                        #end
+                                    </el-form-item>
+                                </el-col>
+                            #end
+                        #end
+                    #end
+                #end
+            </el-row>
+          </template>
+            <template v-else>
+                <el-descriptions :column="2" border :label-style="{width:'200px'}">
+#foreach($column in $columns)
+#if(${column.javaField} !="id" && ${column.javaField} !="epsId"  && ${column.javaField} !="delFlag" && ${column.javaField} !="createBy" && ${column.javaField} !="createTime" && ${column.javaField} !="updateBy" && ${column.javaField} !="updateTime" && ${column.javaField} !="sort" && ${column.javaField} !="flowKey" && ${column.javaField} !="flowRuid" && ${column.javaField} !="flowApplyOid" && ${column.javaField} !="flowStatus" && ${column.javaField} !="status" && ${column.javaField} !="tenantId")
+                    <el-descriptions-item >
+                        <template slot="label">
+                            ${column.columnComment}
+                        </template>
+                        <span>{{ form.${column.javaField} }}</span>
+                    </el-descriptions-item>
+#end
+#end
+                </el-descriptions>
+            </template>
+        </el-form>
+
+        #if($columnDialogInfo.checkboxNumber > 0)
+            #foreach($checkboxColumnInfo in $columnDialogInfo.checkBoxColumnList)
+            #set($firstUpperName=$checkboxColumnInfo.javaField.substring(0, 1).toUpperCase()+${checkboxColumnInfo.javaField.substring(1)})
+                <componentsDialogCheckbox v-bind="${checkboxColumnInfo.javaField}CheckboxOption" @beforeClose="${checkboxColumnInfo.javaField}CheckboxOption.show = false" @getSelectData="get${firstUpperName}CheckboxData" />
+            #end
+        #end
+        #if($columnDialogInfo.radioNumber > 0)
+            #foreach($radioColumnInfo in $columnDialogInfo.radioColumnList)
+                #set($firstUpperName=$radioColumnInfo.javaField.substring(0, 1).toUpperCase()+${radioColumnInfo.javaField.substring(1)})
+                <componentsDialogRadio v-bind="${radioColumnInfo.javaField}RadioOption" @beforeClose="${radioColumnInfo.javaField}RadioOption.show = false" @getSelectData="get${firstUpperName}RadioData" />
+            #end
+        #end
+    </div>
+</template>
+
+<script>
+    import { get${BusinessName}, add${BusinessName}, update${BusinessName} } from "@/api/${moduleName}/${businessName}";
+    import { dialogLoading } from '@/mixins/dialogLoading.js'
+    #if($uploadInfo.uploadCount > 0)
+    import CustomUpload from '@/components/upload/customUpload.vue'
+    #end
+    #if($richTextInfo.richTextCount > 0)
+    import vQuillEditor from '@/components/Vue-Quill-Editor/index'
+    #end
+    #if($columnDialogInfo.checkboxNumber > 0)
+    import componentsDialogCheckbox from "@/components/dialog/components-dialog-checkbox.vue"
+    #end
+    #if($columnDialogInfo.radioNumber > 0)
+    import componentsDialogRadio from "@/components/dialog/components-dialog-radio.vue"
+    #end
+
+    export default {
+        mixins: [dialogLoading],
+        components: {
+        #if($uploadInfo.uploadCount > 0)
+            CustomUpload,
+        #end
+        #if($richTextInfo.richTextCount > 0)
+            vQuillEditor,
+        #end
+        #if($columnDialogInfo.checkboxNumber > 0)
+            componentsDialogCheckbox,
+        #end
+        #if($columnDialogInfo.radioNumber > 0)
+            componentsDialogRadio,
+        #end
+        },
+        created() {
+            #if($dictionaryInfoString && $dictionaryInfoString != "")
+                this.getDictMore("$dictionaryInfoString").then((response) => {
+                #foreach($dict in $dictionaryInfoList)
+                    #set($dictKey="$dict.dictionaryKeyCamelCase$dictionaryListKeySuffix")
+                    this.$dictKey = response.data.$dict.dictionaryKey
+                #end
+                });
+            #end
+        },
+        mounted() {
+        },
+        data() {
+            return {
+                flag: '',
+                #if($columnDialogInfo.checkboxNumber > 0)
+                    #foreach($checkboxColumnInfo in $columnDialogInfo.checkBoxColumnList)
+                        ${checkboxColumnInfo.javaField}CheckboxOption: {
+                            show: false,
+                            title: "选择数据",
+                            queryParamsProp: [
+                                #foreach($searchColumn in $checkboxColumnInfo.dialogSearchColumnList)
+                                    {
+                                        label: "${searchColumn.columnComment}",
+                                        name: "${searchColumn.javaField}",
+                                        #if($searchColumn.htmlType == "select")
+                                        type: 'select',
+                                        dictName: '${searchColumn.dictType}',
+                                        #elseif($searchColumn.htmlType == "datetime")
+                                        type: 'dateTime',
+                                        #else
+                                        type: 'input',
+                                        #end
+                                    },
+                                #end
+                            ],
+                            req: {
+                                url: "/${checkboxColumnInfo.linkTable.moduleName}/${checkboxColumnInfo.linkTable.businessName}/list",
+                                method: "GET"
+                            },
+                            tableHeader: [
+                                #foreach($showColumn in $checkboxColumnInfo.dialogShowColumnList)
+                                    {
+                                        label: "${showColumn.columnComment}",
+                                        name: "${showColumn.javaField}",
+                                        minWidth: 150,
+                                        overflowTool: true,
+                                    #if($showColumn.htmlType == "select")
+                                        type: 'select',
+                                        dictName: '${showColumn.dictType}',
+                                    #end
+                                    },
+                                #end
+                            ]
+                        },
+                    #end
+                #end
+                #if($columnDialogInfo.radioNumber > 0)
+                    #foreach($radioColumnInfo in $columnDialogInfo.radioColumnList)
+                        ${radioColumnInfo.javaField}RadioOption: {
+                            radioMark: '${radioColumnInfo.linkTable.pkColumn.javaField}',
+                            show: false,
+                            title: "选择数据",
+                            queryParamsProp: [
+                                #foreach($searchColumn in $radioColumnInfo.dialogSearchColumnList)
+                                    {
+                                        label: "${searchColumn.columnComment}",
+                                        name: "${searchColumn.javaField}",
+                                        #if($searchColumn.htmlType == "select")
+                                            type: 'select',
+                                            dictName: '${searchColumn.dictType}',
+                                        #elseif($searchColumn.htmlType == "datetime")
+                                            type: 'dateTime',
+                                        #else
+                                            type: 'input',
+                                        #end
+                                    },
+                                #end
+                            ],
+                            req: {
+                                url: "/${radioColumnInfo.linkTable.moduleName}/${radioColumnInfo.linkTable.businessName}/list",
+                                method: "GET"
+                            },
+                            tableHeader: [
+                                #foreach($showColumn in $radioColumnInfo.dialogShowColumnList)
+                                    {
+                                        label: "${showColumn.columnComment}",
+                                        name: "${showColumn.javaField}",
+                                        minWidth: 150,
+                                        overflowTool: true,
+                                        #if($showColumn.htmlType == "select")
+                                            type: 'select',
+                                            dictName: '${showColumn.dictType}',
+                                        #end
+                                    },
+                                #end
+                            ]
+                        },
+                    #end
+                #end
+                #if($richTextInfo.richTextCount > 0)
+                    // 所有的富文本类型字段放这里 方便后期验证（代码生成）
+                    editorKeysName: {
+                    #foreach($richTextColumn in $richTextInfo.columnList)
+                        "$richTextColumn.javaField": "${richTextColumn.columnComment}",
+                    #end
+                    },
+                    editorOption: {
+                        editorValue: '',
+                        maxSize: 4000, // kb
+                        height: '500px',
+                        isEdit: true
+                    },
+                #end
+                #if($uploadInfo.uploadCount > 0)
+                    uploadData: {
+                        accept: '.xlsx,.xls,.pdf,.doc,.docx,.png,.jpg,.jpeg,.zip,.jar,.rar',
+                        uploadBtnShow: false,
+                        isView: false,
+                        ids: '',
+                    },
+                    // 所有的附件上传字段放这 方便代码生成模版
+                    allFileKeysName: {
+                    #foreach($upload in $uploadInfo.uploadColumn)
+                        "$upload.javaField": '',
+                    #end
+                    },
+                #end
+                #if($dictionaryInfoList.size() > 0)
+                    #foreach($dict in $dictionaryInfoList)
+                        #set($dictKey="$dict.dictionaryKeyCamelCase$dictionaryListKeySuffix")
+                            $dictKey: [],
+                    #end
+                #end
+                #foreach($column in $columns)
+                    #if(${column.javaField} !="id" && ${column.javaField} !="epsId"  && ${column.javaField} !="delFlag" && ${column.javaField} !="createBy" && ${column.javaField} !="createTime" && ${column.javaField} !="updateBy" && ${column.javaField} !="updateTime" && ${column.javaField} !="sort" && ${column.javaField} !="flowKey" && ${column.javaField} !="flowRuid" && ${column.javaField} !="flowApplyOid" && ${column.javaField} !="flowStatus")
+                        #if($column.htmlType == "select")
+                                ${column.javaField}List:[],
+                        #end
+                    #end
+                #end
+                datFromDisabled: false,
+                form: {
+                    #foreach($column in $columns)
+                        #if(${column.javaField} !="epsId"  && ${column.javaField} !="delFlag" && ${column.javaField} !="createBy" && ${column.javaField} !="createTime" && ${column.javaField} !="updateBy" && ${column.javaField} !="updateTime" && ${column.javaField} !="sort" && ${column.javaField} !="flowKey" && ${column.javaField} !="flowRuid" && ${column.javaField} !="flowApplyOid" && ${column.javaField} !="flowStatus" && ${column.javaField} !="shTime" && ${column.javaField} !="tenantId")
+                                ${column.javaField}: null,
+                        #end
+                    #end
+                    #if($columnDialogInfo.customFieldList.size() > 0)
+                        #foreach($linkColumnInfo in $columnDialogInfo.customFieldList)
+                                ${linkColumnInfo.customFieldName}: null,
+                        #end
+                    #end
+                },
+                // 表单校验
+                rules: {
+                    #foreach($column in $columns)
+                        #if(${column.javaField} !="id" && ${column.javaField} !="epsId"  && ${column.javaField} !="delFlag" && ${column.javaField} !="createBy" && ${column.javaField} !="createTime" && ${column.javaField} !="updateBy" && ${column.javaField} !="updateTime" && ${column.javaField} !="sort" && ${column.javaField} !="flowKey" && ${column.javaField} !="flowRuid" && ${column.javaField} !="flowApplyOid" && ${column.javaField} !="flowStatus")
+                                ${column.javaField}: [
+                                { required: true, message: '${column.columnComment}不能为空', trigger: #if($column.htmlType == "select")"change"#else"blur"#end }
+                            ],
+                        #end
+                    #end
+                },
+            }
+        },
+        methods: {
+            init({flag, id}) {
+                this.flag = flag
+                let o = {
+                    'add': () => {
+                        this.datFromDisabled = false
+                        #if($uploadInfo.uploadCount > 0)
+                        // 附件
+                        this.uploadData.isView = false
+                        #end
+                    },
+                    'edit': () => {
+                        this.datFromDisabled = false
+                        #if($uploadInfo.uploadCount > 0)
+                        // 附件
+                        this.uploadData.isView = false
+                        #end
+                        this.getData(id)
+                    },
+                    'view': () => {
+                        this.datFromDisabled = true
+                        #if($uploadInfo.uploadCount > 0)
+                        // 附件
+                        this.uploadData.isView = true
+                        #end
+                        this.getData(id)
+                    }
+                }
+                o[flag]()
+            },
+            #if($columnDialogInfo.radioNumber > 0)
+                #foreach($radioColumn in $columnDialogInfo.radioColumnList)
+                #set($firstUpperName=$radioColumn.javaField.substring(0, 1).toUpperCase()+${radioColumn.javaField.substring(1)})
+                open${firstUpperName}RadioDialog() {
+                    this.${radioColumn.javaField}RadioOption.show = true
+                },
+                #end
+            #end
+            #if($columnDialogInfo.checkboxNumber > 0)
+                #foreach($checkboxColumn in $columnDialogInfo.checkBoxColumnList)
+                #set($firstUpperName=$checkboxColumn.javaField.substring(0, 1).toUpperCase()+${checkboxColumn.javaField.substring(1)})
+                open${firstUpperName}CheckboxDialog() {
+                    this.${checkboxColumn.javaField}CheckboxOption.show = true
+                },
+                #end
+            #end
+            #if($columnDialogInfo.radioNumber > 0)
+                #foreach($radioColumn in $columnDialogInfo.radioColumnList)
+                #set($firstUpperName=$radioColumn.javaField.substring(0, 1).toUpperCase()+${radioColumn.javaField.substring(1)})
+                    get${firstUpperName}RadioData(row) {
+                        #foreach($tableFiled in $radioColumn.tableFieldList)
+                        this.form.${tableFiled.tableFileInfo.javaField} = row.${tableFiled.linkTableFieldInfo.javaField}
+                        #end
+
+                        #foreach($customField in $radioColumn.customFieldList)
+                        this.form.${customField.customFieldName} = row.${customField.linkTableFieldInfo.javaField}
+                        #end
+
+                        this.${radioColumn.javaField}RadioOption.show = false
+                    },
+                #end
+            #end
+            #if($columnDialogInfo.checkboxNumber > 0)
+                #foreach($checkboxColumn in $columnDialogInfo.checkBoxColumnList)
+                #set($firstUpperName=$checkboxColumn.javaField.substring(0, 1).toUpperCase()+${checkboxColumn.javaField.substring(1)})
+                    get${firstUpperName}CheckboxData(array) {
+                        #foreach($tableFiled in $checkboxColumn.tableFieldList)
+                            this.form.${tableFiled.tableFileInfo.javaField} = array.map(item => item.${tableFiled.linkTableFieldInfo.javaField}).join(',')
+                        #end
+
+                        #foreach($customField in $checkboxColumn.customFieldList)
+                            this.form.${customField.customFieldName} = array.map(item => item.${customField.linkTableFieldInfo.javaField}).join(',')
+                        #end
+
+                        this.${checkboxColumn.javaField}CheckboxOption.show = false
+                    },
+                #end
+            #end
+            /** 提交按钮 */
+            submitFormValidate() {
+                this['$refs'].form.validate((valid) => {
+                    if (valid) {
+                        #if($richTextInfo.richTextCount > 0)
+                        // 代码生成 验证富文本是否填写
+                        let editorOver = this.validateEditorFillIn()
+                        if (!editorOver.over) {
+                            this.msgWarning(editorOver.value + '不能为空')
+                            return false
+                        }
+                        #end
+                        if (!this.openDialogLoading('form')) {
+                            return false
+                        }
+                        #if($uploadInfo.uploadCount > 0)
+                        this.uploadAll()
+                        #else
+                        this.submitForm()
+                        #end
+                    }
+                });
+            },
+            #if($richTextInfo.richTextCount > 0)
+            /**
+             * 验证所有富文本是否填写内容 不需要可以不调
+             * 否则对象 obj.over如果为true 说明验证通过 否则去obj.value给提示
+             * @returns {object<over:boolean;key:string;value:string>}
+             */
+            validateEditorFillIn() {
+                let arr = Object.entries(this.editorKeysName)
+                let t = this
+                let obj = {
+                    over: true,
+                    key: '',
+                    value: ''
+                }
+                for (let [key, value] of arr) {
+                    if (!t['$refs'][key + 'Ref'].validate()) {
+                        obj = { 'over': false, key, value }
+                        return obj
+                    }
+                }
+                return obj
+            },
+            onEditorChange({key, value}) {
+                this.form[key] = value
+            },
+            #end
+            #if($uploadInfo.uploadCount > 0)
+            /**
+             * 用来上传所有附件 （代码生成）
+             */
+            uploadAll() {
+                let allArray = Object.entries(this.allFileKeysName)
+                let paramArray = []
+                for (let [key] of allArray) {
+                    paramArray.push(this['$refs'][key + 'Ref'].submitUpload())
+                }
+                Promise.all(paramArray)
+                        .then(fileArr => {
+                            let param = {}
+                            let i = 0
+                            for (let [key] of allArray) {
+                                param[key] = fileArr[i]
+                                ++i
+                            }
+                            this.saveFormIdsFromFile(param)
+                        }).catch(err => {
+                    this.closeDialogLoading()
+                })
+            },
+            saveFormIdsFromFile(obj) {
+                let arr = Object.entries(this.allFileKeysName)
+                let _this = this
+                for (let [key, value] of arr) {
+                    _this.form[key] = obj[key]
+                }
+                this.submitForm()
+            },
+            #end
+            // 提交方法 此时提交的参数应都处理完毕
+            submitForm() {
+                if (this.form.id) {
+                    update${BusinessName}(this.form).then(response => {
+                        this.msgSuccess("修改成功");
+                        this.$emit('resSuccess')
+                    }).catch(err => {
+                        this.closeDialogLoading()
+                    });
+                } else {
+                    add${BusinessName}(this.form).then(response => {
+                        this.msgSuccess("新增成功");
+                        this.$emit('resSuccess')
+                    }).catch(err => {
+                        this.closeDialogLoading()
+                    });
+                }
+            },
+            // 修改时回显数据
+            getData(id) {
+                get${BusinessName}(id).then(response => {
+                    this.form = response.data;
+                })
+            }
+        },
+    }
+</script>
+
+<style lang='scss'>
+</style>

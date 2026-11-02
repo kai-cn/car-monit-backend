@@ -1,0 +1,367 @@
+<template>
+    <div class="app-container">
+        <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="auto" class="app-form" @submit.native.prevent >
+            <RowLayout>
+            #foreach($column in $columns)
+                #if($column.query)
+                    #set($dictType=$column.dictType)
+                    #set($dictKey="$column.dictTypeCamelCase$dictionaryListKeySuffix")
+                    #set($AttrName=$column.javaField.substring(0,1).toUpperCase() + ${column.javaField.substring(1)})
+                    #set($parentheseIndex=$column.columnComment.indexOf("（"))
+                    #if($parentheseIndex != -1)
+                        #set($comment=$column.columnComment.substring(0, $parentheseIndex))
+                    #else
+                        #set($comment=$column.columnComment)
+                    #end
+                    #if($column.htmlType == "input")
+                        #if($column.generateLinkTableFlag == "1")
+                        <ColLayout isDefaultSearchLayout>
+                        <el-form-item label="${comment}" prop="${column.majorLinkFieldInfo.tableFileAlias}">
+                            <el-input  class="searchWidthFixed" v-model="queryParams.${column.majorLinkFieldInfo.tableFileAlias}" placeholder="请输入${comment}" clearable
+                                      size="small" @keyup.enter.native="getList"/>
+                        </el-form-item>
+                        </ColLayout>
+                        #else
+                        <ColLayout isDefaultSearchLayout>
+                        <el-form-item label="${comment}" prop="${column.javaField}">
+                            <el-input  class="searchWidthFixed" v-model="queryParams.${column.javaField}" placeholder="请输入${comment}" clearable
+                                      size="small" @keyup.enter.native="getList"/>
+                        </el-form-item>
+                        </ColLayout>
+                        #end
+                    #elseif(($column.htmlType == "select" || $column.htmlType == "radio") && "" != $dictType)
+                    <ColLayout isDefaultSearchLayout>
+                        <el-form-item label="${comment}" prop="${column.javaField}">
+                            <el-select  class="searchWidthFixed" v-model="queryParams.${column.javaField}" placeholder="请选择${comment}" clearable
+                                       size="small">
+                                <el-option v-for="(item, key) in $dictKey" :key="key"
+                                           :label="item.dictLabel" :value="item.dictValue"/>
+                            </el-select>
+                        </el-form-item>
+                    </ColLayout>
+                    #elseif(($column.htmlType == "select" || $column.htmlType == "radio") && $dictType)
+                    <ColLayout isDefaultSearchLayout>
+                        <el-form-item label="${comment}" prop="${column.javaField}">
+                            <el-select  class="searchWidthFixed"  v-model="queryParams.${column.javaField}" placeholder="请选择${comment}" clearable
+                                       size="small">
+                                <el-option label="请选择字典生成" value=""/>
+                            </el-select>
+                        </el-form-item>
+                    </ColLayout>
+                    #elseif($column.htmlType == "datetime" && $column.queryType != "BETWEEN")
+                    <ColLayout isDefaultSearchLayout>
+                        <el-form-item label="${comment}" prop="${column.javaField}">
+                            <el-date-picker  class="searchWidthFixed"  clearable size="small" v-model="queryParams.${column.javaField}"
+                                            type="date" value-format="yyyy-MM-dd" placeholder="选择${comment}" placement="bottom-start" >
+                            </el-date-picker>
+                        </el-form-item>
+                    </ColLayout>
+                    #elseif($column.htmlType == "datetime" && $column.queryType == "BETWEEN")
+                    <ColLayout isDefaultSearchLayout>
+                        <el-form-item label="${comment}">
+                            <el-date-picker   class="searchWidthFixed"  v-model="daterange${AttrName}" size="small" style="width: 240px"
+                                            value-format="yyyy-MM-dd" type="daterange" range-separator="-"
+                                            start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
+                        </el-form-item>
+                    </ColLayout>
+                    #end
+                #end
+            #end
+            <ColLayout isDefaultSearchLayout>
+            <el-form-item>
+                <el-button type="primary" icon="el-icon-search" size="mini" @click="doQuery">搜索</el-button>
+                <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+            </el-form-item>
+            </ColLayout>
+            </RowLayout>
+        </el-form>
+
+
+        <xTable v-bind="fetchList" v-loading="loading" @handleCurrentChange="handleCurrentChange"
+                @handleSizeChange="handleSizeChange" @handleSelectionChange="handleSelectionChange"/>
+        <!-- 添加或修改${functionName}对话框 -->
+        <el-dialog :title="title" :visible.sync="open" width="1000px" append-to-body :close-on-click-modal="false">
+            <dialogForm v-if="open" ref="dialogForm" @resSuccess="resSuccess"/>
+            <div slot="footer" class="dialog-footer">
+                <el-button type="primary" @click="submitForm" v-if="!datFromDisabled">确 定</el-button>
+                <el-button @click="open = false">取 消</el-button>
+            </div>
+        </el-dialog>
+    </div>
+</template>
+
+<script>
+
+    import {list${BusinessName}, del${BusinessName}, export${BusinessName}} from "@/api/${moduleName}/${businessName}";
+    import dialogForm from './index-form'
+    import {resetForm} from "@/utils/srx.js";
+    import xTable from "@/components/table/xTable";
+    import RowLayout from "@/layout/components/Cell/Row.vue";
+    import ColLayout from "@/layout/components/Cell/Col.vue";
+
+    export default {
+        name: "${BusinessName}Index",
+        components: {
+            xTable, dialogForm, RowLayout, ColLayout
+        },
+        data() {
+            return {
+            #if($dictionaryInfoList.size() > 0)  #foreach($dict in $dictionaryInfoList)   #set($dictKey="$dict.dictionaryKeyCamelCase$dictionaryListKeySuffix")  $dictKey: [],#end
+            #end
+                /** 表单是否编辑 */
+                datFromDisabled: false,
+                /** 遮罩层 */
+                loading: true,
+                /** 弹出层标题 */
+                title: "",
+                /** 是否显示弹出层 */
+                open: false,
+                /** 查询参数 */
+                queryParams: {
+                    pageNum: 1,
+                    pageSize: 10,
+                    #foreach ($column in $columns)
+                        #if($column.query)
+                                $column.javaField: null,
+                        #end
+                    #end
+                    #if($columnDialogInfo.customFieldList.size() > 0)
+                        #foreach($linkColumnInfo in $columnDialogInfo.customFieldList)
+                                ${linkColumnInfo.customFieldName}: null,
+                        #end
+                    #end
+                },
+                /** 表单参数 */
+                fetchList: {
+                    rightTool: false,
+                    list: [],
+                    isMultiple: true,
+                    typeIndex: true,
+                    tableHeader: [
+                        #foreach($column in $columns)
+                            #set($dictKey="$column.dictTypeCamelCase$dictionaryListKeySuffix")
+                            #if(${column.javaField} !="id" && ${column.javaField} !="epsId"  && ${column.javaField} != "delFlag" && ${column.javaField} !="createBy" && ${column.javaField} !="createTime" && ${column.javaField} !="updateBy" && ${column.javaField} !="updateTime" && ${column.javaField} !="sort" && ${column.javaField} !="flowKey" && ${column.javaField} !="flowRuid" && ${column.javaField} !="flowApplyOid" && ${column.javaField} !="flowStatus")
+                                #if($column.generateLinkTableFlag == "1")
+                       {label: '$column.columnComment',name: '$column.majorLinkFieldInfo.tableFileAlias',show: true, overflowTool: true},
+                                #else
+                                    #if($column.dictType && $column.dictType != '')
+                       {
+                           label: '$column.columnComment',name: '$column.javaField',show: true,formatter: (row, col) => {
+                               return this.getTableDic(this.$dictKey, row.$column.javaField);
+                           }
+                       },
+                                    #else
+                       { label: '$column.columnComment',name: '$column.javaField',show: true, overflowTool: true},
+                                    #end
+                                #end
+                            #end
+                        #end
+                    ],
+                    listQuery: {
+                        page: 1,
+                        pageSize: 10
+                    },
+                    total: 0,
+                    operates: {
+                        show: true,
+                        fixed: "right",
+                        width: '220px',
+                        list: [
+                            {
+                                label: '查看',
+                                type: 'text',
+                                icon: 'el-icon-view',
+                                size: 'mini',
+                                filter: (row) => {
+                                    return true
+                                },
+                                hasPermi: ['${moduleName}:${businessName}:query'],
+                                method: (index, row) => {
+                                    this.handleView(row)
+                                }
+                            },
+                            {
+                                label: '修改',
+                                type: 'text',
+                                icon: 'el-icon-edit',
+                                size: 'mini',
+                                filter: (row) => {
+                                    return true
+                                },
+                                hasPermi: ['${moduleName}:${businessName}:edit'],
+                                method: (index, row) => {
+                                    this.handleUpdate(row)
+                                }
+                            },
+                            {
+                                label: '删除',
+                                type: 'text',
+                                icon: 'el-icon-delete',
+                                size: 'mini',
+                                filter: (row) => {
+                                    return true
+                                },
+                                hasPermi: ['${moduleName}:${businessName}:remove'],
+                                method: (index, row) => {
+                                    this.handleDelete(row)
+                                }
+                            }
+                        ]
+                    },
+                    title: {
+                        show: true,
+                        list: [
+                            {
+                                show: true,
+                                label: "新增",
+                                type: "primary",
+                                icon: "el-icon-plus",
+                                size: "mini",
+                                hasPermi: ['${moduleName}:${businessName}:add'],
+                                method: () => {
+                                    this.handleAdd();
+                                }
+                            },
+                            {
+                                show: true,
+                                label: "导出",
+                                type: "warning",
+                                icon: "el-icon-download",
+                                size: "mini",
+                                hasPermi: ['${moduleName}:${businessName}:export'],
+                                method: () => {
+                                    this.handleExport();
+                                }
+                            },
+                        ]
+                    }
+                },
+            };
+        },
+        created() {
+            #if($dictionaryInfoString && $dictionaryInfoString != "")
+                this.getDictMore("$dictionaryInfoString").then((response) => {
+                    #foreach($dict in $dictionaryInfoList)
+                        #set($dictKey="$dict.dictionaryKeyCamelCase$dictionaryListKeySuffix")
+                        this.$dictKey = response.data.$dict.dictionaryKey
+                    #end
+                });
+            #end
+            this.getList();
+        },
+        methods: {
+            /** 查询${functionName}列表 */
+            getList() {
+                this.loading = true;
+                let query = {...this.queryParams}
+                query.pageNum = this.fetchList.listQuery.page
+                query.pageSize = this.fetchList.listQuery.pageSize
+                list${BusinessName}(query).then(response => {
+                    this.fetchList.list = response.rows;
+                    this.fetchList.total = response.total;
+                    this.loading = false;
+                });
+            },
+            /** 每页数 */
+            handleSizeChange(val) {
+                this.fetchList.listQuery.pageSize = val
+                this.doQuery()
+            },
+            /** 当前页 */
+            handleCurrentChange(val) {
+                this.fetchList.listQuery.page = val
+                this.getList()
+            },
+            /** 重置按钮操作 */
+            resetQuery() {
+                this.queryParams = resetForm(this.queryParams);
+                this.doQuery();
+            },
+            /** 多选框选中数据 */
+            handleSelectionChange(selection) {
+                this.selection = selection;
+            },
+            /** 新增按钮操作 */
+            handleAdd() {
+                this.open = true;
+                this.datFromDisabled = false
+                this.title = "添加${functionName}";
+                this.$nextTick(() => {
+                    this.$refs.dialogForm.init({"flag": 'add', "id": ''})
+                })
+            },
+            /** 修改按钮操作 */
+            handleUpdate(row) {
+                this.open = true;
+                this.datFromDisabled = false
+                this.title = "修改${functionName}"
+                const id = row.id
+                this.$nextTick(() => {
+                    this.$refs.dialogForm.init({"flag": 'edit', "id": id})
+                })
+            },
+            /** 查看按钮操作 */
+            handleView(row) {
+                this.open = true;
+                this.datFromDisabled = true
+                this.title = "查看${functionName}"
+                const id = row.id
+                this.$nextTick(() => {
+                    this.$refs.dialogForm.init({"flag": 'view', "id": id})
+                })
+            },
+            /** 删除按钮操作 */
+            handleDelete(row) {
+                const ids = row.id || this.ids;
+                this.$confirm('是否确认删除该数据吗?', "警告", {
+                    confirmButtonText: "确定",
+                    cancelButtonText: "取消",
+                    type: "warning"
+                }).then(() => {
+                    this.delFn(row.id);
+                }).catch(() => {
+                    this.msgInfo("已取消删除");
+                });
+            },
+            delFn(id) {
+                del${BusinessName}(id).then(() => {
+                    this.doQuery();
+                    this.msgSuccess("删除成功");
+                });
+            },
+            /** 导出按钮操作 */
+            handleExport() {
+                const queryParams = this.queryParams;
+                this.$confirm('是否确认导出所有${functionName}数据项?', "警告", {
+                    confirmButtonText: "确定",
+                    cancelButtonText: "取消",
+                    type: "warning"
+                }).then(() => {
+                    this.exportFn();
+                }).catch(() => {
+                     this.msgInfo("已取消导出操作");
+                });
+            },
+            exportFn() {
+                export${BusinessName}(this.queryParams).then((response) => {
+                    this.download(response.msg);
+                });
+            },
+            /** 表单提交 */
+            submitForm() {
+                this.$refs.dialogForm.submitFormValidate()
+            },
+            /** 接口请求成功回调 */
+            resSuccess() {
+                this.open = false
+                this.fetchList.listQuery.page = 1
+                this.getList()
+            },
+            /** 查询 */
+            doQuery() {
+                this.fetchList.listQuery.page = 1;
+                this.getList();
+            },
+        }
+    };
+</script>
