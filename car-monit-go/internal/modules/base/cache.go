@@ -5,8 +5,9 @@
 // 类/职责: base 模块的 Redis 缓存读写
 // 对应 Go 文件: internal/modules/base/cache.go
 //
-// DIFF: Java 的 RedisCache 用 fastjson2 序列化成 JSON；Go 的 Cache.Set 同样以 JSON 存储。
-// DIFF: section_list 在 Java 里是 Redis List（rightPushAll），这里用 LRange 逐条反序列化。
+// DIFF: Java 的 RedisCache 用 fastjson2(WriteClassName) 序列化，共享键一律经 Cache.SetJava
+// 补 @type / Long 的 L 后缀，Java 进程读回才能强转成业务类型（见 internal/cache/javatypes.go）。
+// DIFF: section_list 在 Java 里是 Redis List（rightPushAll），这里用 ListJava 逐条还原。
 package base
 
 import (
@@ -15,6 +16,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"car-monit-go/internal/cache"
 )
 
 const (
@@ -32,8 +35,8 @@ const (
 // 保证 /base/gantry/list、/base/toll/list 的 roadName/sectionName 可用。
 func (h *handler) loadSectionList(ctx context.Context) []*odsSzdnSection {
 	if h.app.Redis != nil {
-		values, err := h.app.Redis.LRange(ctx, sectionListKey, 0, -1).Result()
-		if err == nil && len(values) > 0 {
+		// Java 侧是 setCacheList（真 Redis LIST，元素带 @type/L 后缀），ListJava 负责还原
+		if values, ok := h.app.Cache.ListJava(ctx, sectionListKey); ok {
 			out := make([]*odsSzdnSection, 0, len(values))
 			for _, raw := range values {
 				var row odsSzdnSection
@@ -132,7 +135,7 @@ func refreshWarningConfigCache(h *handler, c *gin.Context) {
 		h.app.Log.Warn("刷新服务区判定规则缓存失败", "err", err)
 		return
 	}
-	if err := h.app.Cache.Set(ctx, carWarningConfigListKey, rows, time.Duration(cacheTTL)); err != nil {
+	if err := h.app.Cache.SetJava(ctx, carWarningConfigListKey, rows, time.Duration(cacheTTL), cache.CarWarningConfigJava); err != nil {
 		h.app.Log.Warn("写入服务区判定规则缓存失败", "err", err)
 	}
 }
@@ -157,7 +160,7 @@ func refreshGeometryCache(h *handler, c *gin.Context) {
 			out = append(out, row)
 		}
 	}
-	if err := h.app.Cache.Set(ctx, geometryCacheKey, out, time.Duration(cacheTTL)); err != nil {
+	if err := h.app.Cache.SetJava(ctx, geometryCacheKey, out, time.Duration(cacheTTL), cache.GeometryJava); err != nil {
 		h.app.Log.Warn("写入路线经纬度缓存失败", "err", err)
 	}
 }

@@ -23,6 +23,7 @@ import (
 
 	"car-monit-go/internal/app"
 	"car-monit-go/internal/auth"
+	"car-monit-go/internal/cache"
 	"car-monit-go/internal/middleware"
 	"car-monit-go/internal/model"
 	"car-monit-go/internal/router"
@@ -331,12 +332,28 @@ func (s *dictService) selectDataByID(ctx context.Context, dictCode int64) (*mode
 	return &row, nil
 }
 
+// dictCacheGet 对应 DictUtils#getDictCache（本工程是 setCacheObject/getCacheObject：
+// 键是 string，值是整个数组，不是 Redis List）。
+func (s *dictService) dictCacheGet(ctx context.Context, key string) []model.SysDictData {
+	var cached []model.SysDictData
+	if !s.app.Cache.Get(ctx, key, &cached) {
+		return nil
+	}
+	return cached
+}
+
+// dictCacheSet 对应 DictUtils#setDictCache：整份数组以 FastJson2 兼容格式写成一个 string 值。
+func (s *dictService) dictCacheSet(ctx context.Context, key string, rows []model.SysDictData, dictType string) {
+	if err := s.app.Cache.SetJava(ctx, key, rows, 0, cache.SysDictDataJava); err != nil {
+		s.app.Log.Warn("写入字典缓存失败", "dictType", dictType, "err", err)
+	}
+}
+
 // selectDataByType 对应 SysDictTypeServiceImpl.selectDictDataByType：
 // @Cacheable —— 先查缓存，未命中查库（status='0'），非空回填，仍为空返回 nil。
 func (s *dictService) selectDataByType(ctx context.Context, dictType string) ([]model.SysDictData, error) {
 	key := dictCacheKey(dictType)
-	var cached []model.SysDictData
-	if s.app.Cache.Get(ctx, key, &cached) && len(cached) > 0 {
+	if cached := s.dictCacheGet(ctx, key); len(cached) > 0 {
 		return cached, nil
 	}
 	var rows []model.SysDictData
@@ -346,9 +363,7 @@ func (s *dictService) selectDataByType(ctx context.Context, dictType string) ([]
 		return nil, err
 	}
 	if len(rows) > 0 {
-		if err := s.app.Cache.Set(ctx, key, rows, 0); err != nil {
-			s.app.Log.Warn("写入字典缓存失败", "dictType", dictType, "err", err)
-		}
+		s.dictCacheSet(ctx, key, rows, dictType)
 		return rows, nil
 	}
 	return nil, nil
@@ -366,8 +381,7 @@ func (s *dictService) selectDataByTypeMore(ctx context.Context, dictType string)
 		dictType = "-dadadadas"
 	}
 	key := dictCacheKey(dictType)
-	var cached []model.SysDictData
-	if s.app.Cache.Get(ctx, key, &cached) && len(cached) > 0 {
+	if cached := s.dictCacheGet(ctx, key); len(cached) > 0 {
 		return cached, nil
 	}
 	types := make([]string, 0, 4)
@@ -390,9 +404,7 @@ func (s *dictService) selectDataByTypeMore(ctx context.Context, dictType string)
 		return nil, err
 	}
 	if len(rows) > 0 {
-		if err := s.app.Cache.Set(ctx, key, rows, 0); err != nil {
-			s.app.Log.Warn("写入字典缓存失败", "dictType", dictType, "err", err)
-		}
+		s.dictCacheSet(ctx, key, rows, dictType)
 		return rows, nil
 	}
 	return nil, nil

@@ -18,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"car-monit-go/internal/auth"
+	"car-monit-go/internal/cache"
 	"car-monit-go/internal/web"
 )
 
@@ -424,7 +425,7 @@ func (h *handler) selectWarningListLimit100(c *gin.Context) []*carWarningInfo {
 	var ruleList []string
 	h.app.Cache.Get(c.Request.Context(), redisKey, &ruleList)
 	if len(ruleList) > 0 {
-		if span, ok := h.app.Cache.GetString(c.Request.Context(), "sys_config:warning_trigger_timespan"); ok {
+		if span, ok := h.app.Cache.GetStringJava(c.Request.Context(), "sys_config:warning_trigger_timespan"); ok {
 			if v, err := strconv.Atoi(span); err == nil {
 				cacheObjectNum = v
 			}
@@ -455,7 +456,7 @@ func (h *handler) getRedisWarningList(c *gin.Context) []*carWarningInfo {
 		return cached
 	}
 	rows := h.queryWarningToday(c)
-	_ = h.app.Cache.Set(c.Request.Context(), carWarningListKey, rows, time.Duration(cacheTTL))
+	_ = h.app.Cache.SetJava(c.Request.Context(), carWarningListKey, rows, time.Duration(cacheTTL), cache.CarWarningInfoJava)
 	return rows
 }
 
@@ -475,7 +476,7 @@ func (h *handler) queryWarningToday(c *gin.Context) []*carWarningInfo {
 // updateRedisWarningList 对应 updateRedisWarningList（供定时任务调用）。
 func (h *handler) updateRedisWarningList(c *gin.Context) {
 	rows := h.queryWarningToday(c)
-	_ = h.app.Cache.Set(c.Request.Context(), carWarningListKey, rows, time.Duration(cacheTTL))
+	_ = h.app.Cache.SetJava(c.Request.Context(), carWarningListKey, rows, time.Duration(cacheTTL), cache.CarWarningInfoJava)
 }
 
 // sliceLenOf 返回 *[]T 的长度。

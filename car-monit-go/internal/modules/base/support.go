@@ -245,12 +245,8 @@ func (h *handler) insertAudit(c *gin.Context, cols map[string]any) {
 			cols["tenant_id"] = currentTenantID(c)
 		}
 	}
-	if _, ok := cols["update_by"]; !ok {
-		cols["update_by"] = currentUserID(c)
-	}
-	if _, ok := cols["update_time"]; !ok {
-		cols["update_time"] = now
-	}
+	// update_by/update_time 不在此处填：Java 的 updateFill 只在 UPDATE 时触发，
+	// insert 后这两列保持 NULL（BasePlusEntity 上标注的是 FieldFill.UPDATE）。
 }
 
 // updateAudit 对应 updateFill：update_by / update_time。

@@ -296,9 +296,12 @@ func (h *handler) loadDict(ctx context.Context, dictType string) ([]dictDataRow,
 // auditNow 返回当前时间，对应 DateUtils.getTimestamp()。
 func auditNow() time.Time { return time.Now() }
 
-// withInsertAudit 对应 insertFill：create_by / create_time / eps_id / update_by / update_time。
+// withInsertAudit 对应 insertFill：create_by / create_time / eps_id / tenant_id。
 //
-// DIFF: Java 由 MetaObjectHandler 在 insert 时自动填；Go 在拼 INSERT 前显式调用，且只在调用方未给出时填充。
+// JAVA 对照: MyBatisPlusHandlerConfig#insertFill —— tenantId 的守卫写的是 `if (epsId == null)`
+// （复制粘贴 bug）：调用方传了 epsId 时 Java 不填 tenant_id，这里一并复刻。
+// DIFF: update_by/update_time 属于 updateFill（Java 实体上标注 FieldFill.UPDATE），
+// insert 时不填，两列保持 NULL。
 func (h *handler) withInsertAudit(c *gin.Context, cols map[string]any) {
 	now := auditNow()
 	if _, ok := cols["create_time"]; !ok {
@@ -307,17 +310,14 @@ func (h *handler) withInsertAudit(c *gin.Context, cols map[string]any) {
 	if _, ok := cols["create_by"]; !ok {
 		cols["create_by"] = currentUserID(c)
 	}
+	originalEps := cols["eps_id"]
 	if _, ok := cols["eps_id"]; !ok {
 		cols["eps_id"] = currentEpsID(c)
 	}
-	if _, ok := cols["tenant_id"]; !ok {
-		cols["tenant_id"] = currentTenantID(c)
-	}
-	if _, ok := cols["update_by"]; !ok {
-		cols["update_by"] = currentUserID(c)
-	}
-	if _, ok := cols["update_time"]; !ok {
-		cols["update_time"] = now
+	if originalEps == nil {
+		if _, ok := cols["tenant_id"]; !ok {
+			cols["tenant_id"] = currentTenantID(c)
+		}
 	}
 	if _, ok := cols["del_flag"]; !ok {
 		cols["del_flag"] = "0"

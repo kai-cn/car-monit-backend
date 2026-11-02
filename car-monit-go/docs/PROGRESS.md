@@ -1,6 +1,7 @@
 # 迁移工作进度（接口返回逐一对比阶段）
 
-> 记录时间：2026-10-31（第二轮更新）。本轮目标：把 Go 服务的接口返回与 Java 原服务逐字段对比，修掉所有代码层面的不一致。
+> 记录时间：2026-11-02（第三轮更新）。前两轮修掉 GET 响应的字段级差异；本轮补齐
+> **Redis 共存**（Go 写的缓存 Java 读得回来）与 **写接口（POST/详情/PUT/DELETE）全生命周期回归**。
 
 ## 1. 对比方法
 
@@ -10,28 +11,43 @@
 | Go 服务 | `bin/carmonit-server.exe`，端口 **9989**，配置 `configs/config.yaml` |
 | 账号 | admin / Admin@2025-（Java 登录需验证码，答案从 Redis `captcha_codes:<uuid>` 读取） |
 | 对比脚本 | `C:/Users/abelz/AppData/Local/Temp/cmp_api.py <路径前缀> <报告.json>`；单接口用 `cmp_one.py`（能区分「键缺失」与「值为 null」） |
+| 写接口生命周期对比 | `cmp_crud2.py [路径...]`：取真实行做模板 → 两端各插一条 `PARITY_*` 标记行 → 比 POST/详情/PUT/DELETE → 按标记硬清理 |
+| 落库逐列对比 | `probe_db.py <路径>`：两端各插一行后直接比数据库列值（接口回显之外的真相） |
+| Redis 共存验收 | `verify_redis.py`（登录态）、`verify_carlist.py`（车辆缓存）、`verify_cfg_dict.py`（参数/字典）、`grab_java_cache.py`（抓 Java 原值当黄金样本） |
 | 路由清单来源 | Go 启动日志 `C:/Users/abelz/AppData/Local/Temp/carmonit.log` 里的 `[GIN-debug]` 行 |
-| 归一化规则 | `yyyy-MM-dd HH:mm:ss` → `<DT>`、带横杠/无横杠 UUID → `<UUID>`/`<HEX32>`、浮点保留 6 位，深度逐字段比较 |
+| 归一化规则 | `yyyy-MM-dd HH:mm:ss` → `<DT>`、带横杠/无横杠 UUID → `<UUID>`/`<HEX32>`、15–20 位主键 → `<ID>`、`PARITY_*` 测试值 → `<PARITY>`、浮点保留 6 位，深度逐字段比较 |
 
-对比只对 GET 接口逐字段比较；POST/PUT/DELETE 走 `verify_non_get.py`（用非法请求体探测，避免污染数据）。
+GET 逐字段比较用 `cmp_api.py`；写接口不再用畸形请求体探测，改为 `cmp_crud2.py` 走完整生命周期。
+两端**共用一个库**，所以每条记录的唯一列用不同随机盐，比对时把标记值与主键一并屏蔽；
+`/base/section`、`/flow/*` 一类空表没有样本行可克隆，改用手工请求体（`RESOURCES[].body`）。
 
-## 2. 最终对比结果（第二轮结束）
+## 2. 最终对比结果（第三轮结束）
 
 注册路由合计 **498** 条（移除 Go 多注册的 `GET /system/user` 后，与 Java 路由表一致）。
 
+### 2.1 GET 响应
+
 | 模块 | GET 路由 | 完全一致 | 仍有差异 | 非 JSON/二进制 | 说明 |
 |---|---|---|---|---|---|
-| `/manager/**` | 99 | 78 | 2 | 19 | 差异=Java 缓存串号 500 + 路网几何未复现；其余为 Excel 附件流 |
-| `/base/**` | 70 | 55 | 10 | 5 | 差异=外部服务/Java 自身缺陷（见 §4） |
+| `/manager/**` | 99 | 79 | 0 | 20 | 原 `carLocation`/`online/list` 差异随 Redis 共存修复消失；其余为 Excel 附件流 |
+| `/base/**` | 70 | 57 | 8 | 5 | 差异=外部服务/Java 自身缺陷（见 §4.1） |
 | `/flow/**` | 30 | 30 | 0 | 0 | 全量一致 |
 | `/system/**` | 65 | 60 | 4 | 1 | 差异=upgradeInfo 的 500 错误文本 |
-| `/monitor/**` | 13 | 9 | 4 | 0 | 差异=Redis 运行态统计 + 3 个 Java 自身异常 |
+| `/monitor/**` | 13 | 10 | 3 | 0 | 差异=Redis 运行态统计 + 2 个 Java 自身异常 |
 | `/tool/**` | 10 | 10 | 0 | 0 | 全量一致 |
-| **合计** | **287** | **242** | **20** | **25** | |
+| **合计** | **287** | **246** | **15** | **26** | 第二轮为 242 一致 / 20 差异 |
 
-报告：`final_manager.json`、`final_base.json`、`final_flow.json`、`final_system2.json`、`final_monitor2.json`、`final_tool2.json`（差异均为 §4 所列外部依赖或 Java 侧缺陷）。
+报告：`recheck_manager.json`、`recheck2_base.json`、`recheck_flow.json`、`recheck2_system.json`、`recheck2_monitor.json`、`recheck_tool.json`。
 
-## 3. 本轮修复清单
+### 2.2 写接口生命周期（32 个资源 × POST→详情→PUT→DELETE）
+
+| 结果 | 数量 | 明细 |
+|---|---|---|
+| 四步全一致 | 24 | dict/type、dict/data、config、notice、post、dept、menu、role、base/config、geometry、carinfo、whiteinfo、warningrule、querylog、suspiciouscheck、cartrackinfo、busstest、routeinfo、routedetail、feerecord、splitrecord、carwarning、flowname、flowlist、flowtemplate |
+| 仅 Java 侧缺陷 | 8 | 见 §4.2：`/system/user` 与 5 个 `IdType.INPUT` 主键未由服务层生成、`/base/configServiceArea` 引用不存在的 `id` 列、`/base/geometry` 删除引用不存在的 `del_flag` |
+| 收尾清理 | failures=0 | 按 `PARITY` 标记逐表扫描字符列后硬删，测试数据无残留 |
+
+## 3. 修复清单（累计三轮；§3.1–§3.6 为前两轮，§3.7–§3.8 为本轮）
 
 ### 3.1 响应信封 / 公共设施
 - `AjaxResult`：`data` 仅在非 null 时输出；`rows` 恒为数组（`internal/web/response.go`）
@@ -72,28 +88,80 @@
 - `SysOperLog.businessTypes` 恒输出 null
 - 生成器：`information_schema` 列名大小写归一、`gen/list|all/list|db/list` 复刻 MyBatis `<collection>` 的空占位元素、`gen/{id}` 的列补 `tableId` —— **/tool 10/10 一致**
 
-## 4. 剩余差异（全部为外部依赖或 Java 侧缺陷，均已标注）
+### 3.7 Redis 共存（本轮，新增 `internal/cache/fastjson.go`、`internal/cache/javatypes.go`）
+
+Java 的 `redisTemplate` 值序列化器是 `FastJson2JsonRedisSerializer(Object.class)` + `WriteClassName`，
+写出的值不是标准 JSON；Go 原来写标准 JSON，Java 的 `getCacheObject` 反序列化得到 `JSONObject`，
+强转业务类型即 `ClassCastException`（这正是 `/monitor/online/list`、`/manager/bigScreen/carLocation` 500 的根因）。
+
+- `cache.ToJava(v, JavaOptions)` 写出：根对象/根数组元素补 `@type`、包装类型 `Long` 补 `L`、
+  `Set` 字段写成 `Set[...]`、`params` 写成 `{"@type":"java.util.HashMap"}`、null 成员不写（fastjson2 默认行为）
+- `cache.FromJava(raw)` 读回：去 `Set[` 前缀、去 `L` 后缀；**保留 `@type` 成员** ——
+  Java 会把它读进 `BaseEntity.params`（`Map<String,Object>`）并原样输出到响应，剥掉反而不一致
+- `Cache` 新增 `SetJava / SetJavaString / GetStringJava / ListJava`，`Get` 一律走容错解码
+- 类型表按 Java 进程真实原值核对（`grab_java_cache.py` 抓取）：`LoginUser`、`CarInfo`、`CarVO`、
+  `CarWhiteInfo`、`CarWarningInfo`、`CarWarningConfig`、`Geometry`、`OdsSzdnGantry`、`SysDictData`
+- `login_tokens:*` 补 Java 有而 Go 没有的 `username`、`user.password`（HTTP 响应里被 `@JsonIgnore`，缓存里有），
+  `loginDate` 用 fastjson2 的 `yyyy-MM-dd HH:mm:ss`（`internal/auth/login_cache.go`）
+- `sys_config:*` 改为 FastJson2 的带引号字符串值，Go 读回时脱引号（原来读到 `"123"` 会连引号一起返回）
+- `sys_dict:*` 保持 Java 的 string + 整数组形态（本工程 `DictUtils` 用的是 `setCacheObject`，不是 `setCacheList`）
+- `section_list` 由 Java 定时任务写成 Redis List，Go 改用 `ListJava` 读取（原来是裸 `LRange` + `json.Unmarshal`）
+- `web.DateTime` / `web.ISODateTime` 接受裸毫秒时间戳：Java 老会话里就是 `"loginDate":1715955352000`，
+  否则整条 `login_tokens` 解析失败、在线列表少 25 条
+- 新增 `internal/cache/fastjson_test.go`：用 Java 真实原值做样本，覆盖 `@type`/`L`/`Set`/`HashMap`/null 五种写法与回读
+
+**验收**：两端 `/monitor/online/list` 返回 96/96 条且 tokenId 集合一致；Go 刷新 `car_list` 后 Java 端点正常读取；
+Go 写的 `sys_config`/`sys_dict` Java 读得到，反之亦然。
+
+### 3.8 写接口回归发现并修复（本轮）
+
+- **审计字段**：Java 的 `insertFill` 只填 `createTime/createBy/epsId/tenantId`，
+  `updateBy/updateTime` 属于 `updateFill`（实体上标 `FieldFill.UPDATE`）⇒ insert 后这两列是 NULL。
+  Go 的 `withInsertAudit`/`insertAudit` 原来也填 update_*，已去掉（manager/base 两处）
+- **`tenantId` 的复制粘贴 bug**：Java `insertFill` 判断的是 `if (epsId == null)` 而非 `tenantId == null`，
+  即调用方传了 `epsId` 时 Java **不填** `tenant_id`；Go 一并复刻
+- **`car_info` 特例**：`CarInfoServiceImpl.saveCarInfo:143-149` 由服务层显式写
+  `epsId/createBy/updateBy/updateTime` 且从不写 `tenant_id`（Go 原来落 -1）⇒ `carInfoSave` 显式补齐
+- `POST /system/dept` 父部门不存在时 Java 抛 NPE ⇒ `msg` 应为 **null** 而非字符串 `"null"`（改用 `web.NewNilMessageError()`）
+- `car_warning_info` 实体补 Java 的两个 `@TableField(exist=false)` 集合字段
+  `sectionCodeList` / `codeList`（Java 未赋值时 Jackson 仍输出 `null`，键必须存在）
+- 对比脚本需要避开的坑（复现时注意）：唯一列要用不同随机盐；主键/盐值/手机号进屏蔽表；
+  `parentId`/`menuIds`/`deptIds` 这类 Java 侧无空判断的字段必须按前端真实形态补全；
+  定位新增行改用 SQL 按标记值查（列表接口有树形与数据权限过滤）；
+  `/system/dept` 的 `subCode` 依赖「插入前同级数量」，同库并行必然差 1 ⇒ 忽略该列
+
+## 4. 剩余差异
+
+### 4.1 GET（15 项，均为外部依赖或 Java 侧缺陷）
 
 | 接口 | 现象 | 结论 |
 |---|---|---|
-| `/manager/bigScreen/carLocation`、`/monitor/online/list` | Java 500 `JSONObject cannot be cast to ...` | 两服务共用 Redis，Go 写入的缓存 Java 反序列化失败（并行运行的环境现象，单服务部署无此问题） |
-| `/manager/suspicious/{id}` 的 `raodTrailList` | 缺路网几何 | Java 依赖 `getCarGeometryByPlanNew`（路网最短路服务 + 腾讯路线规划），Go 不复现，固定空数组 |
-| `/base/{gantry,toll}/list` 的 `roadName/sectionName` | Java 为 `""`，Go 有值 | Java 的 `section_list` 缓存由未迁移的外部同步任务写入，当前为空；Go 回源查库（见 `cache.go` 的 `// DIFF:`） |
-| `/base/feeGantry/*`、`/base/feerecords/*`、`/base/feestationexit/*`、`/base/snapshotflow/{id,earliest-time}` | Java 500（String 强转 / SocketException） | 这些端点在 Java 里是转发外部 9901 服务的 proxy，Java 侧解析失败；Go 代理正常返回 |
-| `/base/vehicleweight/ZdTrails:BorderWeighing` | Java 500 `TooManyResultsException` | Java 用 selectOne 取到 200 行（数据触发），Go 返回首行 |
-| `/base/geometry/syncAllGeometry`、`/system/upgradeInfo/*` | 两侧均 500，错误文本不同 | 同为「表不存在」：Java 是 MyBatis 包装后的长文本，Go 是驱动错误文本 |
+| `/manager/suspicious/{id}` 的 `raodTrailList` | 缺路网几何 | Java 依赖 `getCarGeometryByPlanNew`（路网最短路 + 腾讯路线规划），Go 不复现，固定空数组 |
+| `/base/feeGantry/*`、`/base/feerecords/*`、`/base/feestationexit/list`、`/base/snapshotflow/{id,earliest-time}` | Java 500（`String cannot be cast to ...` / `SocketException`） | 这些端点在 Java 里是转发外部 9901 服务的 proxy，Java 侧解析失败；Go 代理正常返回 |
+| `/base/vehicleweight/ZdTrails:BorderWeighing` | Java 500 `TooManyResultsException` | Java 用 selectOne 取到多行（数据触发），Go 返回首行 |
+| `/base/geometry/syncAllGeometry`、`/system/upgradeInfo/*` | 两侧均 500，错误文本不同 | 同为「表不存在」：`geometry_copy1`、`sys_upgrade_info` 本地基线库没有 |
+| `/base/fitting/list` | Java 500 `ReflectionException` | Java Mapper 引用了实体上不存在的 `id` 属性；Go 保持可用 |
 | `/base/cdc/config` | Java 返回两段拼接的非法 JSON | Java 自身序列化缺陷（含 Spring 内部结构 + 错误体），Go 返回合法 JSON |
 | `/base/geometry/getHenDa` | Java 连接被重置 | 外部 HenDa 服务不可达导致 Java 侧连接中断 |
 | `/monitor/jobLog/{id}` | Java 500 `缺少必需的路径变量[jobLogId]` | Java 编译未保留参数名，接口在 Java 侧不可用；Go 正常返回 |
-| `/monitor/server` | Java 500 `NoSuchMethodError: com.sun.jna.Memory.close()` | Java 依赖 JNA 版本冲突；Go 正常返回 |
+| `/monitor/server` | Java 500 `NoSuchMethodError: com.sun.jna.Memory.close()` | Java 依赖的 JNA 版本冲突；Go 正常返回 |
 | `/monitor/cache` | 命令统计/键数量不同 | Redis 运行态数据（两服务共享同一实例），结构一致 |
-| 25 项非 JSON | Excel/Word/图片等附件流 | POI/EasyPOI 与 excelize 生成的二进制无法逐字节一致，表头与列顺序已按 Java 注解还原 |
+| 26 项非 JSON | Excel/Word/图片等附件流 | POI/EasyPOI 与 excelize 生成的二进制无法逐字节一致，表头与列顺序已按 Java 注解还原 |
+
+### 4.2 写接口（8 个资源，全部是 Java 侧写入路径本身不可用）
+
+| 接口 | Java 现象 | 结论 |
+|---|---|---|
+| `POST /system/user` | `IndexOutOfBoundsException: No group 2`，任意请求体都失败 | `SqlLogInterceptor:265` 用 `sql.replaceFirst("\\?", paramValue)` 拼 SQL，BCrypt 串里的 `$2a$` 被当成正则分组引用 ⇒ Java 新增用户整体不可用；Go 正常 |
+| `POST /base/{section,toll,gantry}`、`/base/org`、`/manager/carsuspiciousback` | `Column 'id'`/`'big_id' cannot be null` | 实体是 `IdType.INPUT` 且服务层不生成主键，前端不传 id 时 Java 必然插入失败；Go 生成主键后可用 |
+| `POST /base/configServiceArea` | `Unknown column 'id' in 'field list'` | Java 实体声明了库里不存在的 `id` 列 |
+| `DELETE /base/geometry/{ids}` | `Unknown column 'del_flag' in 'field list'` | Java 的 `GeometryMapper.xml` 逻辑删除引用了库里没有的 `del_flag`；Go 走可用路径 |
 
 ## 5. 下一步
 
-1. 如需要「连错误文本都一致」，可把 §4 里的 MyBatis 错误文本按模板拼出来（当前判断为无收益，未做）
-2. 在只运行 Go 单服务的前提下复测 `carLocation` / `online/list`（排除共享 Redis 干扰）
-3. 补一次写接口回归（POST/PUT/DELETE）：`verify_non_get.py` 仅做了畸形请求探测，正常写入路径建议在隔离库上验证
+1. 如需要「连错误文本都一致」，可按模板拼出 §4 里的 MyBatis 长错误文本（当前判断为无收益，未做）
+2. 只跑 Go 单服务的复测（排除共享 Redis / 共享库干扰）：写接口 32 资源 + GET 287 路由
+3. Java 进程下线后，可清理为兼容而保留的 `@type` 注入路径（`profile` 接口的手工注入与 `cache.ToJava` 重叠）
 
 ## 6. 复现命令
 
@@ -108,7 +176,18 @@ taskkill //PID $PID //F
 go build -o bin/carmonit-server.exe ./cmd/server
 bin/carmonit-server.exe > C:/Users/abelz/AppData/Local/Temp/carmonit.log 2>&1 &
 
-# 逐字段对比（MSYS 会把 /manager 当路径改写，必须屏蔽）
-MSYS2_ARG_CONV_EXCL='/manager' python C:/Users/abelz/AppData/Local/Temp/cmp_api.py \
-  /manager C:/Users/abelz/AppData/Local/Temp/final_manager.json
+# 逐字段对比（MSYS 会把 /manager 当路径改写，必须屏蔽；PYTHONIOENCODING 防 GBK 控制台崩溃）
+MSYS2_ARG_CONV_EXCL='*' PYTHONIOENCODING=utf-8 \
+  python C:/Users/abelz/AppData/Local/Temp/cmp_api.py \
+  /manager C:/Users/abelz/AppData/Local/Temp/recheck_manager.json
+
+# 写接口生命周期回归（结束后自动按 PARITY 标记清理）
+MSYS2_ARG_CONV_EXCL='*' PYTHONIOENCODING=utf-8 \
+  python C:/Users/abelz/AppData/Local/Temp/cmp_crud2.py
+MSYS2_ARG_CONV_EXCL='*' python C:/Users/abelz/AppData/Local/Temp/cmp_crud2.py --clean   # 只清理
+
+# 落库逐列对比 / Redis 共存验收
+MSYS2_ARG_CONV_EXCL='*' python C:/Users/abelz/AppData/Local/Temp/probe_db.py /manager/carinfo
+python C:/Users/abelz/AppData/Local/Temp/grab_java_cache.py       # 抓 Java 写入的缓存原值
+python C:/Users/abelz/AppData/Local/Temp/verify_redis.py          # 登录态共存
 ```

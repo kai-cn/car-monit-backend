@@ -228,8 +228,8 @@ func (s *service) prepareDeptForWrite(ctx context.Context, d *model.SysDept) err
 			return err
 		}
 		if parent == nil {
-			// Java 在 parentBO.getTreeLeavel() 处抛 NPE，GlobalExceptionHandler 返回 null。
-			return web.NewServiceError("null")
+			// Java 在 parentBO.getTreeLeavel() 处抛 NPE，GlobalExceptionHandler 返回 msg=null。
+			return web.NewNilMessageError()
 		}
 		d.TreeLeavel = model.IntPtr(model.IntVal(parent.TreeLeavel) + 1)
 		parentSubCode = model.Str(parent.SubCode)

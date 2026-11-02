@@ -19,6 +19,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"car-monit-go/internal/auth"
+	"car-monit-go/internal/cache"
 	"car-monit-go/internal/web"
 )
 
@@ -157,6 +158,14 @@ func (h *handler) carInfoSave(c *gin.Context) {
 		if _, ok := cols["escaped_amount"]; !ok {
 			cols["escaped_amount"] = 0
 		}
+		// JAVA 对照: CarInfoServiceImpl.saveCarInfo:145-149 —— 新增时服务层显式写
+		// epsId/createBy/updateBy/updateTime；epsId 已非空，insertFill 的 tenantId
+		// 守卫不成立，所以 car_info.tenant_id 落 NULL（其余表由 insertFill 填 -1）。
+		userID := currentUserID(c)
+		now := auditNow()
+		cols["eps_id"] = currentEpsID(c)
+		cols["update_by"] = userID
+		cols["update_time"] = now
 		id = newUUID()
 		cols["id"] = id
 		h.withInsertAudit(c, cols)
@@ -421,10 +430,10 @@ func (h *handler) refreshCarListContext(ctx context.Context) error {
 	for _, item := range cars {
 		jc = append(jc, &carVO{CarID: strOf(item.ID), CarNo: strOf(item.CarNo)})
 	}
-	if err := h.app.Cache.Set(ctx, carListJcKey, jc, time.Duration(cacheTTL)); err != nil {
+	if err := h.app.Cache.SetJava(ctx, carListJcKey, jc, time.Duration(cacheTTL), cache.CarVOJava); err != nil {
 		return err
 	}
-	return h.app.Cache.Set(ctx, carListKey, cars, time.Duration(cacheTTL))
+	return h.app.Cache.SetJava(ctx, carListKey, cars, time.Duration(cacheTTL), cache.CarInfoJava)
 }
 
 // getRedisCarList 对应 getRedisCarList：命中直接用，未命中回源并回写 car_list。
