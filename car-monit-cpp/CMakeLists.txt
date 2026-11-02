@@ -23,19 +23,32 @@ option(CAR_MONIT_BUILD_TESTS "Build unit tests" ON)
 option(CAR_MONIT_BUILD_ASAN "Build with AddressSanitizer" OFF)
 
 find_package(Threads REQUIRED)
-find_package(OpenSSL REQUIRED)
-find_package(ZLIB REQUIRED)
+
+# 本工程自带 SHA-1/SHA-256/SHA-512/HMAC/RSA-OAEP 与 DEFLATE 实现
+# （src/cm/common/utils/crypto/*、src/cm/common/utils/Deflate.cpp），
+# 所以 OpenSSL 与 zlib 都不再是必需依赖 —— 这是为了让 “clone 即可构建” 成立
+# （Windows 上装 OpenSSL 开发包是 Java 同学的第一道坎）。
+# 如果系统里存在 zlib，则优先用系统 zlib 出更小的 PNG。
+find_package(ZLIB QUIET)
+if (ZLIB_FOUND)
+    set(CAR_MONIT_HAVE_ZLIB ON)
+endif()
 
 # ---------------------------------------------------------------------------
 # 第三方库（vendored）
 # ---------------------------------------------------------------------------
-add_library(bcrypt STATIC
+set(BCRYPT_SOURCES
     third_party/bcrypt/src/bcrypt.c
     third_party/bcrypt/src/crypt_blowfish.c
     third_party/bcrypt/src/crypt_gensalt.c
     third_party/bcrypt/src/wrapper.c
-    third_party/bcrypt/src/x86.S
 )
+# x86.S 是 elf 平台的手写汇编（.globl/.type 语法）；Windows 的 pe 目标用 C 回退实现
+if (NOT WIN32)
+    list(APPEND BCRYPT_SOURCES third_party/bcrypt/src/x86.S)
+endif()
+
+add_library(bcrypt STATIC ${BCRYPT_SOURCES})
 target_include_directories(bcrypt PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/bcrypt/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/bcrypt/include/bcrypt
@@ -61,12 +74,19 @@ target_include_directories(carmonit_core PUBLIC
 )
 target_link_libraries(carmonit_core PUBLIC
     bcrypt
-    OpenSSL::SSL
-    OpenSSL::Crypto
-    ZLIB::ZLIB
     Threads::Threads
     ${CMAKE_DL_LIBS}
 )
+
+if (CAR_MONIT_HAVE_ZLIB)
+    target_link_libraries(carmonit_core PUBLIC ZLIB::ZLIB)
+    target_compile_definitions(carmonit_core PUBLIC CM_HAVE_ZLIB=1)
+endif()
+
+if (WIN32)
+    # Winsock2：Server / RedisClient / MySqlConnection 的 socket 封装
+    target_link_libraries(carmonit_core PUBLIC ws2_32)
+endif()
 
 if (CAR_MONIT_BUILD_ASAN)
     target_compile_options(carmonit_core PUBLIC -fsanitize=address -fno-omit-frame-pointer)

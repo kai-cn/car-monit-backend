@@ -3,7 +3,6 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include <set>
 
 #include "cm/common/core/domain/entity/SysDept.hpp"
 
@@ -23,7 +22,8 @@ public:
     static int deleteDeptById(long long deptId);
     static std::vector<cm::domain::SysDept> buildDeptTree(std::vector<cm::domain::SysDept> depts);
     static Json buildDeptTreeSelect(const std::vector<cm::domain::SysDept>& depts);
-    static std::set<cm::domain::SysDept> selectHeadOffice();
+    /** 对应 Java Collectors.toSet()：按对象身份去重等价于不去重，故用 vector */
+    static std::vector<cm::domain::SysDept> selectHeadOffice();
 };
 
 } // namespace cm::system::service

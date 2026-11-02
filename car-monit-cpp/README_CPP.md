@@ -36,6 +36,9 @@ curl -s http://127.0.0.1:9989/health
 
 ## 2. 依赖
 
+> 构建只需要 CMake + 一个 C++20 编译器：clone 下来无需 Conan/vcpkg、无需 OpenSSL/zlib 开发包。
+> 内置实现的正确性由 `bash scripts/verify_crypto_vs_openssl.sh` 与 OpenSSL CLI 对拍证明。
+
 | 依赖 | 版本要求 | 用途 | 安装（Debian/Ubuntu） |
 |---|---|---|---|
 | CMake | ≥ 3.16 | 构建 | `apt install cmake` |
@@ -46,8 +49,8 @@ curl -s http://127.0.0.1:9989/health
 | MySQL | 8.0（端口 **3307**） | 业务库 `carmonitdb` | `docker compose up -d mysql` |
 | Redis | 6/7（端口 **6379**） | token、验证码、字典缓存 | `docker compose up -d redis` |
 
-CentOS/RHEL：`yum install cmake gcc-c++ openssl-devel zlib-devel`。
-macOS：`brew install cmake openssl zlib`，CMake 会自动找到 Homebrew 的 OpenSSL。
+CentOS/RHEL：`yum install cmake gcc-c++`（zlib-devel 可选）。
+macOS：`brew install cmake`。Windows：MinGW-w64 GCC 13+（或 MSVC + CMake）均可，socket 走 Winsock2 兼容层。
 
 **无需联网**：`third_party/` 已 vendor 了 nlohmann/json（`ordered_json`）与 libbcrypt。
 

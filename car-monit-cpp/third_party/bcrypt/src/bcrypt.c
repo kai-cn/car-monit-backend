@@ -33,8 +33,16 @@ typedef __int64 ssize_t;
 
 #include "../include/bcrypt/bcrypt.h"
 
+/* 本工程把 vendored 的 bcrypt.h 放在了 include 路径里，会和 Windows SDK 的
+   <bcrypt.h> 撞名，进而让 <wincrypt.h>/<ncrypt.h> 里的类型解析失败。
+   因此这里不引 wincrypt.h，改为动态解析 advapi32 的 SystemFunction036
+   (RtlGenRandom)，语义与原来的 CryptAcquireContext/CryptGenRandom 相同。 */
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
-#include <wincrypt.h> /* CryptAcquireContext, CryptGenRandom */
+/* 原实现在 Windows 分支里没带 ow-crypt.h，crypt_rn/crypt_gensalt_rn 会变成隐式声明 */
+#include "../include/bcrypt/ow-crypt.h"
 #else
 #include "bcrypt.h"
 #include "ow-crypt.h"
@@ -122,21 +130,19 @@ int bcrypt_gensalt(int factor, char salt[BCRYPT_HASHSIZE])
 
 	// Note: Windows does not have /dev/urandom sadly.
 #if defined(_WIN32) || defined(_WIN64)
-	HCRYPTPROV p;
-	ULONG     i;
-
-	// Acquire a crypt context for generating random bytes.
-	if (CryptAcquireContext(&p, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) == FALSE) {
+	typedef int (__stdcall *rtl_gen_random_fn)(void *, unsigned long);
+	HMODULE advapi = LoadLibraryA("advapi32.dll");
+	rtl_gen_random_fn gen = advapi != NULL
+	                                ? (rtl_gen_random_fn)(void *)GetProcAddress(advapi, "SystemFunction036")
+	                                : NULL;
+	if (gen == NULL) {
 		return 1;
 	}
-
-	if (CryptGenRandom(p, RANDBYTES, (BYTE*)input) == FALSE) {
+	if (gen(input, RANDBYTES) == 0) {
+		FreeLibrary(advapi);
 		return 2;
 	}
-
-	if (CryptReleaseContext(p, 0) == FALSE) {
-		return 3;
-	}
+	FreeLibrary(advapi);
 #else
 	// Get random bytes on Unix/Linux.
 	fd = open("/dev/urandom", O_RDONLY);

@@ -48,6 +48,18 @@ bool segmentWildcardMatch(const std::string& pattern, const std::string& text) {
     return pi == pattern.size();
 }
 
+bool hasWildcard(const std::string& seg) {
+    return seg.find('*') != std::string::npos || seg.find('?') != std::string::npos;
+}
+
+bool isVar(const std::string& seg) { return seg.size() >= 2 && seg.front() == '{' && seg.back() == '}'; }
+
+std::string varName(const std::string& seg) {
+    std::string inner = seg.substr(1, seg.size() - 2);
+    size_t colon = inner.find(':');
+    return colon == std::string::npos ? inner : inner.substr(0, colon);
+}
+
 /** Spring AntPathMatcher 语义（分段）：** 跨段，* 段内 */
 bool antMatch(const std::vector<std::string>& pat, size_t pi, const std::vector<std::string>& path, size_t si) {
     while (pi < pat.size()) {
@@ -59,6 +71,12 @@ bool antMatch(const std::vector<std::string>& pat, size_t pi, const std::vector<
             return false;
         }
         if (si >= path.size()) return false;
+        // {var} 匹配一个完整路径段（Spring @PathVariable），不能按字面量比较
+        if (isVar(pat[pi])) {
+            ++pi;
+            ++si;
+            continue;
+        }
         if (!segmentWildcardMatch(pat[pi], path[si])) return false;
         ++pi;
         ++si;
@@ -68,18 +86,6 @@ bool antMatch(const std::vector<std::string>& pat, size_t pi, const std::vector<
 
 bool antMatch(const std::string& pattern, const std::string& path) {
     return antMatch(splitSegments(pattern), 0, splitSegments(path), 0);
-}
-
-bool hasWildcard(const std::string& seg) {
-    return seg.find('*') != std::string::npos || seg.find('?') != std::string::npos;
-}
-
-bool isVar(const std::string& seg) { return seg.size() >= 2 && seg.front() == '{' && seg.back() == '}'; }
-
-std::string varName(const std::string& seg) {
-    std::string inner = seg.substr(1, seg.size() - 2);
-    size_t colon = inner.find(':');
-    return colon == std::string::npos ? inner : inner.substr(0, colon);
 }
 
 int routeSpecificity(const Route& r) {

@@ -1,0 +1,16 @@
+// 由 scripts/gen_crud_spec.py 生成（area=@@AREA@@）。
+// 重新生成: python scripts/gen_crud_spec.py --area @@AREA@@
+//
+// 只覆盖同构 CRUD：list / export / getInfo / add / edit / remove。
+// 非 CRUD 接口、唯一性校验、tenant 过滤、软删除、外部服务依赖等仍由手写控制器负责
+// （src/cm/web/controller/**）。解析不到的控制器整只跳过，见生成器输出。
+#include "cm/framework/web/Router.hpp"
+#include "cm/framework/web/crud/CrudSpec.hpp"
+
+namespace cm::web::crud {
+
+void register@@PREFIX@@Area(Router& r) {
+@@BODY@@
+}
+
+} // namespace cm::web::crud

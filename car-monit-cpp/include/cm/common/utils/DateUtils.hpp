@@ -1,6 +1,7 @@
 #pragma once
 // 对应 Java: com.ruoyi.common.utils.DateUtils
 #include <chrono>
+#include "cm/common/compat/Posix.hpp"
 #include <cstdio>
 #include <cstring>
 #include <ctime>
@@ -53,7 +54,7 @@ public:
     static std::tm localTm(TimePoint tp) {
         std::time_t t = std::chrono::system_clock::to_time_t(tp);
         std::tm tm{};
-        localtime_r(&t, &tm);
+        cm::compat::localtime_r(&t, &tm);
         return tm;
     }
 
@@ -94,7 +95,7 @@ public:
         };
         for (const char* f : fmts) {
             std::tm tm{};
-            if (strptime(text.c_str(), f, &tm) != nullptr) {
+            if (cm::compat::strptime(text.c_str(), f, &tm) != nullptr) {
                 tm.tm_isdst = -1;
                 std::time_t t = std::mktime(&tm);
                 if (t != static_cast<std::time_t>(-1)) return fromMillis(t * 1000LL);
@@ -131,7 +132,7 @@ public:
         std::time_t t = static_cast<std::time_t>(local / 1000);
         int millis = static_cast<int>(((local % 1000) + 1000) % 1000);
         std::tm tm{};
-        gmtime_r(&t, &tm);
+        cm::compat::gmtime_r(&t, &tm);
         char buf[64];
         std::strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S", &tm);
         char out[80];
@@ -143,7 +144,7 @@ public:
     static std::string formatInZone(long long ms, int offsetSeconds, const char* fmt) {
         std::time_t t = static_cast<std::time_t>((ms + offsetSeconds * 1000LL) / 1000);
         std::tm tm{};
-        gmtime_r(&t, &tm);
+        cm::compat::gmtime_r(&t, &tm);
         char buf[128];
         std::strftime(buf, sizeof(buf), fmt, &tm);
         return buf;
@@ -156,9 +157,9 @@ public:
         const char* fmts[] = {"%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S.", "%Y-%m-%d"};
         for (const char* f : fmts) {
             std::memset(&tm, 0, sizeof(tm));
-            if (strptime(text.c_str(), f, &tm) != nullptr) {
+            if (cm::compat::strptime(text.c_str(), f, &tm) != nullptr) {
                 // wall clock in +08:00 -> epoch millis
-                std::time_t utc = timegm(&tm);
+                std::time_t utc = cm::compat::timegm(&tm);
                 return static_cast<long long>(utc) * 1000LL - 8LL * 3600 * 1000;
             }
         }

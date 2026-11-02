@@ -1,11 +1,10 @@
 #include "cm/framework/redis/RedisClient.hpp"
 
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
+#include "cm/framework/net/Os.hpp"
 
+#include <cctype>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 
 namespace cm::redis {
@@ -16,11 +15,11 @@ std::string toUpper(std::string s) {
     return s;
 }
 
-bool readLine(int fd, std::string& line) {
+bool readLine(cm::net::Fd fd, std::string& line) {
     line.clear();
     char c;
     for (;;) {
-        ssize_t n = ::read(fd, &c, 1);
+        long n = cm::net::readSome(fd, &c, 1);
         if (n <= 0) return false;
         if (c == '\r') continue;
         if (c == '\n') return true;
@@ -37,33 +36,13 @@ void RedisClient::setError(const std::string& msg) { last_error_ = msg; }
 bool RedisClient::connect(const RedisConfig& cfg) {
     close();
     cfg_ = cfg;
-    addrinfo hints{};
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    addrinfo* res = nullptr;
-    std::string port = std::to_string(cfg.port);
-    if (getaddrinfo(cfg.host.c_str(), port.c_str(), &hints, &res) != 0 || !res) {
-        setError("无法解析 Redis 主机: " + cfg.host);
+    std::string err;
+    cm::net::Fd fd = cm::net::connectTcp(cfg.host, cfg.port, cfg.timeoutMs, &err);
+    if (!cm::net::isValid(fd)) {
+        setError(err);
         return false;
     }
-    fd_ = ::socket(AF_INET, SOCK_STREAM, 0);
-    if (fd_ < 0) {
-        freeaddrinfo(res);
-        setError("socket() 失败: " + std::string(std::strerror(errno)));
-        return false;
-    }
-    timeval tv{};
-    tv.tv_sec = cfg.timeoutMs / 1000;
-    tv.tv_usec = (cfg.timeoutMs % 1000) * 1000;
-    setsockopt(fd_, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-    setsockopt(fd_, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-    if (::connect(fd_, res->ai_addr, res->ai_addrlen) != 0) {
-        setError("连接 Redis 失败: " + std::string(std::strerror(errno)));
-        freeaddrinfo(res);
-        close();
-        return false;
-    }
-    freeaddrinfo(res);
+    fd_ = cm::net::toStorage(fd);
 
     if (!cfg.password.empty()) {
         std::vector<std::string> args{"AUTH", cfg.password};
@@ -99,16 +78,16 @@ bool RedisClient::connect(const RedisConfig& cfg) {
 }
 
 void RedisClient::close() {
-    if (fd_ >= 0) {
-        ::close(fd_);
-        fd_ = -1;
+    if (fd_ != cm::net::kInvalidStorage) {
+        cm::net::closeTcp(handle());
+        fd_ = cm::net::kInvalidStorage;
     }
 }
 
 bool RedisClient::reconnect() { return connect(cfg_); }
 
 bool RedisClient::ensureConnected() {
-    if (fd_ >= 0) return true;
+    if (fd_ != cm::net::kInvalidStorage) return true;
     return connect(cfg_);
 }
 
@@ -126,7 +105,7 @@ bool RedisClient::sendCommand(const std::vector<std::string>& args) {
     }
     size_t sent = 0;
     while (sent < buf.size()) {
-        ssize_t n = ::write(fd_, buf.data() + sent, buf.size() - sent);
+        long n = cm::net::writeSome(handle(), buf.data() + sent, buf.size() - sent);
         if (n <= 0) {
             setError("写入 Redis 失败: " + std::string(std::strerror(errno)));
             close();
@@ -139,7 +118,7 @@ bool RedisClient::sendCommand(const std::vector<std::string>& args) {
 
 bool RedisClient::readBulk(std::string& out) {
     std::string line;
-    if (!readLine(fd_, line)) return false;
+    if (!readLine(handle(), line)) return false;
     if (line.empty()) return false;
     if (line[0] == '-') {
         setError(line);
@@ -151,14 +130,14 @@ bool RedisClient::readBulk(std::string& out) {
         out.resize(static_cast<size_t>(len));
         size_t got = 0;
         while (got < static_cast<size_t>(len)) {
-            ssize_t n = ::read(fd_, &out[got], static_cast<size_t>(len) - got);
+            long n = cm::net::readSome(handle(), &out[got], static_cast<size_t>(len) - got);
             if (n <= 0) return false;
             got += static_cast<size_t>(n);
         }
         char crlf[2];
         size_t r = 0;
         while (r < 2) {
-            ssize_t n = ::read(fd_, crlf + r, 2 - r);
+            long n = cm::net::readSome(handle(), crlf + r, 2 - r);
             if (n <= 0) return false;
             r += static_cast<size_t>(n);
         }
@@ -171,7 +150,7 @@ bool RedisClient::readBulk(std::string& out) {
 bool RedisClient::readReply(std::string& out, bool* isNil) {
     if (isNil) *isNil = false;
     std::string line;
-    if (!readLine(fd_, line)) return false;
+    if (!readLine(handle(), line)) return false;
     if (line.empty()) {
         setError("空的 Redis 回复");
         return false;
@@ -196,14 +175,14 @@ bool RedisClient::readReply(std::string& out, bool* isNil) {
         out.resize(static_cast<size_t>(len));
         size_t got = 0;
         while (got < static_cast<size_t>(len)) {
-            ssize_t n = ::read(fd_, &out[got], static_cast<size_t>(len) - got);
+            long n = cm::net::readSome(handle(), &out[got], static_cast<size_t>(len) - got);
             if (n <= 0) return false;
             got += static_cast<size_t>(n);
         }
         char crlf[2];
         size_t r = 0;
         while (r < 2) {
-            ssize_t n = ::read(fd_, crlf + r, 2 - r);
+            long n = cm::net::readSome(handle(), crlf + r, 2 - r);
             if (n <= 0) return false;
             r += static_cast<size_t>(n);
         }

@@ -3,6 +3,8 @@
 #include <optional>
 #include <string>
 
+/* putStr/putI64 等序列化辅助函数定义在 BaseEntity.hpp 的 cm::domain 里 */
+#include "cm/common/core/domain/BaseEntity.hpp"
 #include "cm/common/utils/JsonUtils.hpp"
 
 namespace cm::domain {

@@ -17,7 +17,9 @@
 #include "cm/framework/security/Jwt.hpp"
 #include "cm/framework/security/SecurityUtils.hpp"
 
-static int fails = 0;
+// 各测试文件共用的失败计数（tests/*.cpp 通过 extern 引用）
+int g_fails = 0;
+#define fails g_fails
 #define CHECK(x)                                                          \
     do {                                                                  \
         if (!(x)) {                                                       \
@@ -196,6 +198,9 @@ static void testStringUtils() {
     CHECK(!cm::utils::StringUtils::isBlank(std::string("x")));
 }
 
+void run_crypto_tests();
+void run_crud_engine_tests();
+
 int main() {
     testAjaxResultOrder();
     testTableDataInfoOrder();
@@ -210,6 +215,8 @@ int main() {
     testIds();
     testCaptcha();
     testStringUtils();
+    run_crypto_tests();
+    run_crud_engine_tests();
     if (fails == 0) {
         std::printf("ALL TESTS PASSED\n");
         return 0;

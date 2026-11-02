@@ -25,6 +25,8 @@ public:
     static R ok(Json data, const std::string& msg) { return restResult(std::move(data), SUCCESS, msg); }
     static R fail() { return restResult(Json(nullptr), FAIL, "操作失败"); }
     static R fail(const std::string& msg) { return restResult(Json(nullptr), FAIL, msg); }
+    /** 字符串字面量必须走 msg 语义（对应 Java 选择 fail(String msg) 重载） */
+    static R fail(const char* msg) { return fail(std::string(msg)); }
     static R fail(Json data) { return restResult(std::move(data), FAIL, "操作失败"); }
     static R fail(Json data, const std::string& msg) { return restResult(std::move(data), FAIL, msg); }
     static R fail(int code, const std::string& msg) { return restResult(Json(nullptr), code, msg); }

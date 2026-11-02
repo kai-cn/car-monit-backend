@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "cm/framework/net/Fd.hpp"
+
 namespace cm::redis {
 
 struct RedisConfig {
@@ -30,7 +32,7 @@ public:
 
     bool connect(const RedisConfig& cfg);
     void close();
-    bool isOpen() const { return fd_ >= 0; }
+    bool isOpen() const { return cm::net::validStorage(fd_); }
     bool reconnect();
 
     // ---- 基础命令 ----
@@ -73,8 +75,13 @@ private:
     bool readBulk(std::string& out);
     bool ensureConnected();
     void setError(const std::string& msg);
+    /** fd_ 以 long long 存放，避免头文件拖进 winsock2.h */
+    cm::net::Fd handle() const {
+        return cm::net::fromStorage(fd_);
+    }
 
-    int fd_{-1};
+    /** 句柄数值以 long long 存放，避免头文件引入 winsock2.h */
+    long long fd_{cm::net::kInvalidStorage};
     RedisConfig cfg_;
     std::string last_error_;
     std::mutex mu_;

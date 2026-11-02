@@ -4,6 +4,7 @@
 #include "cm/framework/config/AppConfig.hpp"
 #include "cm/framework/web/Router.hpp"
 #include "cm/web/controller/Controllers.hpp"
+#include "cm/framework/web/crud/CrudSpec.hpp"
 #include "cm/web/controller/common/CommonController.hpp"
 #include "cm/web/controller/common/DownTemplateController.hpp"
 #include "cm/web/controller/monitor/CacheController.hpp"
@@ -54,6 +55,10 @@ void registerControllers(Router& r) {
     registerSysFileController(r);
     // tool
     registerTestController(r);
+    // 业务域（base / manager / flow）：同构 CRUD 由 spec 引擎批量注册
+    crud::registerBaseArea(r);
+    crud::registerManagerArea(r);
+    crud::registerFlowArea(r);
 }
 
 } // namespace cm::web

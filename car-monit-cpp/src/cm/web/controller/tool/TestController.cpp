@@ -4,6 +4,7 @@
 #include <map>
 
 #include "cm/common/core/domain/R.hpp"
+#include "cm/common/utils/Convert.hpp"
 #include "cm/common/utils/StringUtils.hpp"
 #include "cm/framework/web/Router.hpp"
 

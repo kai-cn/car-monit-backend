@@ -1,6 +1,6 @@
 #include "cm/common/utils/CaptchaUtil.hpp"
 
-#include <zlib.h>
+#include "cm/common/utils/Deflate.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -116,7 +116,7 @@ void chunk(std::string& png, const char* type, const std::string& data) {
     std::string body(type, 4);
     body += data;
     png += body;
-    uLong crc = crc32(0, reinterpret_cast<const Bytef*>(body.data()), static_cast<uInt>(body.size()));
+    const uint32_t crc = cm::utils::crc32(body);
     putU32(png, static_cast<uint32_t>(crc));
 }
 
@@ -178,13 +178,8 @@ std::string CaptchaUtil::renderPng(const std::string& text, int width, int heigh
         raw.append(reinterpret_cast<const char*>(&pix[static_cast<size_t>(y) * W * 3]),
                    static_cast<size_t>(W) * 3);
     }
-    uLongf bound = compressBound(static_cast<uLong>(raw.size()));
-    std::string z(bound, '\0');
-    if (compress2(reinterpret_cast<Bytef*>(&z[0]), &bound,
-                  reinterpret_cast<const Bytef*>(raw.data()), static_cast<uLong>(raw.size()), 6) != Z_OK) {
-        return "";
-    }
-    z.resize(bound);
+    const std::string z = cm::utils::deflateZlib(raw, 6);
+    if (z.empty()) return "";
 
     std::string png("\x89PNG\r\n\x1a\n", 8);
     std::string ihdr;

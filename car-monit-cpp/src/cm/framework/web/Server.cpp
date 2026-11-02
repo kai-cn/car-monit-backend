@@ -1,14 +1,8 @@
 #include "cm/framework/web/Server.hpp"
 
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
 #include <cerrno>
+
+#include "cm/framework/net/Os.hpp"
 #include <chrono>
 #include <condition_variable>
 #include <cstring>
@@ -45,7 +39,7 @@ std::string trimCr(std::string s) {
 }
 
 /** 从缓冲区读出一行（含 \r\n），返回是否成功 */
-bool readLine(int fd, std::string& buf, std::string& line) {
+bool readLine(cm::net::Fd fd, std::string& buf, std::string& line) {
     for (;;) {
         size_t p = buf.find("\r\n");
         if (p != std::string::npos) {
@@ -54,18 +48,18 @@ bool readLine(int fd, std::string& buf, std::string& line) {
             return true;
         }
         char tmp[4096];
-        ssize_t n = ::read(fd, tmp, sizeof(tmp));
+        const long n = cm::net::readSome(fd, tmp, sizeof(tmp));
         if (n <= 0) return false;
         buf.append(tmp, static_cast<size_t>(n));
         if (buf.size() > 64 * 1024) return false; // 头部过大
     }
 }
 
-bool readExact(int fd, std::string& buf, size_t n, std::string& out) {
+bool readExact(cm::net::Fd fd, std::string& buf, size_t n, std::string& out) {
     while (buf.size() < n) {
         char tmp[65536];
         size_t want = std::min(sizeof(tmp), n - buf.size());
-        ssize_t r = ::read(fd, tmp, want);
+        const long r = cm::net::readSome(fd, tmp, want);
         if (r <= 0) return false;
         buf.append(tmp, static_cast<size_t>(r));
     }
@@ -162,27 +156,10 @@ Server::Server(std::string host, int port, int workers, int backlog)
 Server::~Server() { stop(); }
 
 bool Server::start() {
-    listen_fd_ = ::socket(AF_INET, SOCK_STREAM, 0);
-    if (listen_fd_ < 0) {
-        LOG_ERROR("Server", std::string("socket() 失败: ") + std::strerror(errno));
-        return false;
-    }
-    int one = 1;
-    setsockopt(listen_fd_, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
-    sockaddr_in addr{};
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(static_cast<uint16_t>(port_));
-    addr.sin_addr.s_addr = INADDR_ANY;
-    if (::bind(listen_fd_, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
-        LOG_ERROR("Server", std::string("bind 失败: ") + std::strerror(errno));
-        ::close(listen_fd_);
-        listen_fd_ = -1;
-        return false;
-    }
-    if (::listen(listen_fd_, backlog_) != 0) {
-        LOG_ERROR("Server", std::string("listen 失败: ") + std::strerror(errno));
-        ::close(listen_fd_);
-        listen_fd_ = -1;
+    std::string err;
+    listen_fd_ = cm::net::listenTcp(host_, port_, backlog_, &err);
+    if (!cm::net::isValid(listen_fd_)) {
+        LOG_ERROR("Server", err);
         return false;
     }
     running_.store(true);
@@ -197,17 +174,18 @@ bool Server::start() {
 
 void Server::stop() {
     if (!running_.exchange(false)) return;
-    if (listen_fd_ >= 0) {
-        ::shutdown(listen_fd_, SHUT_RDWR);
-        ::close(listen_fd_);
-        listen_fd_ = -1;
+    if (cm::net::isValid(listen_fd_)) {
+        // 先 shutdown 唤醒阻塞在 accept() 上的线程，再关闭句柄
+        cm::net::shutdownTcp(listen_fd_);
+        cm::net::closeTcp(listen_fd_);
+        listen_fd_ = cm::net::kInvalid;
     }
     queue_cv_.notify_all();
     // 关闭尚未处理的连接
     {
         std::lock_guard<std::mutex> lk(queue_mu_);
         while (!queue_.empty()) {
-            ::close(queue_.front().first);
+            cm::net::closeTcp(queue_.front().first);
             queue_.pop();
         }
     }
@@ -219,18 +197,15 @@ void Server::stop() {
 
 void Server::acceptLoop() {
     while (running_.load()) {
-        sockaddr_in peer{};
-        socklen_t len = sizeof(peer);
-        int fd = ::accept(listen_fd_, reinterpret_cast<sockaddr*>(&peer), &len);
-        if (fd < 0) {
+        std::string ip;
+        cm::net::Fd fd = cm::net::acceptTcp(listen_fd_, ip);
+        if (!cm::net::isValid(fd)) {
             if (!running_.load()) break;
             continue;
         }
-        char ip[64] = {0};
-        inet_ntop(AF_INET, &peer.sin_addr, ip, sizeof(ip));
         {
             std::lock_guard<std::mutex> lk(queue_mu_);
-            queue_.emplace(fd, std::string(ip));
+            queue_.emplace(fd, ip);
         }
         queue_cv_.notify_one();
     }
@@ -251,7 +226,7 @@ void Server::workerLoop() {
     }
 }
 
-bool Server::readRequest(int fd, std::string& buf, cm::http::HttpRequest& req, bool& closeAfter) {
+bool Server::readRequest(cm::net::Fd fd, std::string& buf, cm::http::HttpRequest& req, bool& closeAfter) {
     closeAfter = false;
     std::string line;
     if (!readLine(fd, buf, line)) return false;
@@ -427,13 +402,9 @@ cm::http::ApiResponse Server::dispatch(cm::http::HttpRequest& req) {
     }
 }
 
-void Server::handleConnection(int fd, const std::string& peer) {
-    int one = 1;
-    setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
-    timeval tv{};
-    tv.tv_sec = 60;
-    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-    setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+void Server::handleConnection(cm::net::Fd fd, const std::string& peer) {
+    cm::net::setNoDelay(fd);
+    cm::net::setTimeout(fd, 60000);  // 对应 Tomcat keepAliveTimeout
 
     std::string buf;
     while (running_.load()) {
@@ -445,10 +416,10 @@ void Server::handleConnection(int fd, const std::string& peer) {
         writeResponse(fd, resp, !closeAfter);
         if (closeAfter) break;
     }
-    ::close(fd);
+    cm::net::closeTcp(fd);
 }
 
-void Server::writeResponse(int fd, const cm::http::ApiResponse& resp, bool keepAlive) {
+void Server::writeResponse(cm::net::Fd fd, const cm::http::ApiResponse& resp, bool keepAlive) {
     std::ostringstream head;
     head << "HTTP/1.1 " << resp.status << " " << (resp.status == 200 ? "OK"
                                             : resp.status == 201 ? "Created"
@@ -468,7 +439,7 @@ void Server::writeResponse(int fd, const cm::http::ApiResponse& resp, bool keepA
     std::string data = head.str() + resp.body;
     size_t sent = 0;
     while (sent < data.size()) {
-        ssize_t n = ::write(fd, data.data() + sent, data.size() - sent);
+        const long n = cm::net::writeSome(fd, data.data() + sent, data.size() - sent);
         if (n <= 0) break;
         sent += static_cast<size_t>(n);
     }

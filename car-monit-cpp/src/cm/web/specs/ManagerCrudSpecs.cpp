@@ -1,0 +1,683 @@
+// 由 scripts/gen_crud_spec.py 生成（area=manager）。
+// 重新生成: python scripts/gen_crud_spec.py --area manager
+//
+// 只覆盖同构 CRUD：list / export / getInfo / add / edit / remove。
+// 非 CRUD 接口、唯一性校验、tenant 过滤、软删除、外部服务依赖等仍由手写控制器负责
+// （src/cm/web/controller/**）。解析不到的控制器整只跳过，见生成器输出。
+#include "cm/framework/web/Router.hpp"
+#include "cm/framework/web/crud/CrudSpec.hpp"
+
+namespace cm::web::crud {
+
+void registerManagerArea(Router& r) {
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/BussTest.java
+        // ruoyi-system/src/main/resources/mapper/manager/BussTestMapper.xml
+        Spec s;
+        s.table = "buss_test";
+        s.alias = "t";
+        s.fields = {
+            {"billName", "bill_name", Fmt::Str, Cond::Like, "业务名称", false, false},
+            {"billType", "bill_type", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"amount", "amount", Fmt::Double, Cond::Eq, "金额", false, false},
+            {"deptId", "dept_id", Fmt::Long, Cond::Eq, "部门id", false, false},
+            {"userId", "user_id", Fmt::Long, Cond::Eq, "人员id", false, false},
+            {"applyTime", "apply_time", Fmt::DateYmd, Cond::Eq, "申请时间", false, false},
+            {"applyTime2", "apply_time2", Fmt::DateYmd, Cond::Eq, "时间时分秒", false, false},
+            {"fileIds", "file_ids", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"flowKey", "flow_key", Fmt::Str, Cond::Eq, "流程key", false, false},
+            {"flowRuid", "flow_ruid", Fmt::Str, Cond::Eq, "流程实例ID", false, false},
+            {"flowApplyOid", "flow_apply_oid", Fmt::Str, Cond::Eq, "流程申请ID", false, false},
+            {"flowStatus", "flow_status", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"shTime", "sh_time", Fmt::DateYmd, Cond::Eq, "审核时间", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "业务测试";
+        Perms p;
+        p.list = "manager:busstest:list";
+        registerCrud(r, "/manager/busstest", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarAduitFree.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarAduitFreeMapper.xml
+        Spec s;
+        s.table = "car_aduit_free";
+        s.alias = "t";
+        s.fields = {
+            {"confirmId", "confirm_id", Fmt::Str, Cond::Eq, "确认补缴id", false, false},
+            {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
+            {"carNo", "car_no", Fmt::Str, Cond::Like, "车牌号", false, false},
+            {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
+            {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
+            {"orgId", "org_id", Fmt::Str, Cond::Eq, "处理单位id", false, false},
+            {"orgName", "org_name", Fmt::Str, Cond::Like, "处理单位", false, false},
+            {"userIds", "user_ids", Fmt::Str, Cond::Eq, "处理人员ids", false, false},
+            {"userNames", "user_names", Fmt::Str, Cond::Eq, "处理人员", false, false},
+            {"amount", "amount", Fmt::Double, Cond::Eq, "拆分金额", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time,t.id";
+        s.excelSheetName = "补缴处理";
+        Perms p;
+        registerCrud(r, "/manager/aduitfree", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarConfimFree.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarConfimFreeMapper.xml
+        Spec s;
+        s.table = "car_confim_free";
+        s.alias = "t";
+        s.fields = {
+            {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
+            {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
+            {"linkName", "link_name", Fmt::Str, Cond::Like, "司机名称", false, false},
+            {"linkPhone", "link_phone", Fmt::Str, Cond::Eq, "联系方式", false, false},
+            {"orgId", "org_id", Fmt::Str, Cond::Eq, "录入单位id", false, false},
+            {"orgName", "org_name", Fmt::Str, Cond::Like, "录入单位", false, false},
+            {"userIds", "user_ids", Fmt::Str, Cond::Eq, "录入人员ids", false, false},
+            {"userNames", "user_names", Fmt::Str, Cond::Eq, "录入人员", false, false},
+            {"amount", "amount", Fmt::Double, Cond::Eq, "拆分金额", false, false},
+            {"aduitAmount", "aduit_amount", Fmt::Double, Cond::None, "处理金额", false, false},
+            {"exceptIds", "except_ids", Fmt::Str, Cond::FindInSet, "异常流水ids", false, false},
+            {"escapedTypes", "escaped_types", Fmt::Str, Cond::Eq, "逃费类型s", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "比例", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "确认补缴";
+        Perms p;
+        registerCrud(r, "/manager/confimfree", s, p, "exceptIds");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarExceptRecord.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarExceptRecordMapper.xml
+        Spec s;
+        s.table = "car_except_record";
+        s.alias = "t";
+        s.fields = {
+            {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
+            {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
+            {"carNum", "car_num", Fmt::Long, Cond::Eq, "轴数", false, false},
+            {"passType", "pass_type", Fmt::Str, Cond::Eq, "通行标识", false, false},
+            {"inStationId", "in_station_id", Fmt::Str, Cond::Eq, "入口站id", false, false},
+            {"inStation", "in_station", Fmt::Str, Cond::Like, "入口站", false, false},
+            {"inTime", "in_time", Fmt::DateYmdHms, Cond::Eq, "入口时间", false, false},
+            {"outStationId", "out_station_id", Fmt::Str, Cond::Eq, "出口站id", false, false},
+            {"outStation", "out_station", Fmt::Str, Cond::Like, "出口站", false, false},
+            {"outTime", "out_time", Fmt::DateYmdHms, Cond::Eq, "出口时间", false, false},
+            {"totalAmount", "total_amount", Fmt::Double, Cond::Eq, "应缴金额", false, false},
+            {"chargeAmount", "charge_amount", Fmt::Double, Cond::Eq, "收费金额", false, false},
+            {"difAmount", "dif_amount", Fmt::Double, Cond::Eq, "差额", false, false},
+            {"escapedType", "escaped_type", Fmt::Str, Cond::Eq, "逃费类型", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "异常车辆流水";
+        Perms p;
+        registerCrud(r, "/manager/exceptrecord", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarFeeRecord.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarFeeRecordMapper.xml
+        Spec s;
+        s.table = "car_fee_record";
+        s.alias = "t";
+        s.fields = {
+            {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
+            {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
+            {"inStationId", "in_station_id", Fmt::Str, Cond::Eq, "入口站id", false, false},
+            {"inStation", "in_station", Fmt::Str, Cond::Eq, "入口站", false, false},
+            {"inTime", "in_time", Fmt::DateYmd, Cond::Eq, "入口时间", false, false},
+            {"outStationId", "out_station_id", Fmt::Str, Cond::Eq, "出口站id", false, false},
+            {"outStation", "out_station", Fmt::Str, Cond::Eq, "出口站", false, false},
+            {"outTime", "out_time", Fmt::DateYmd, Cond::Eq, "出口时间", false, false},
+            {"chargeType", "charge_type", Fmt::Str, Cond::Eq, "交易类型", false, false},
+            {"amount", "amount", Fmt::Double, Cond::Eq, "收费金额", false, false},
+            {"exceptId", "except_id", Fmt::Str, Cond::Eq, "异常流水id", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "收费流水";
+        Perms p;
+        p.list = "manager:feerecord:list";
+        registerCrud(r, "/manager/feerecord", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarInfo.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarInfoMapper.xml
+        Spec s;
+        s.table = "car_info";
+        s.alias = "t";
+        s.fields = {
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
+            {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
+            {"carNum", "car_num", Fmt::Long, Cond::Eq, "轴数", false, false},
+            {"escapedType", "escaped_type", Fmt::Str, Cond::Like, "逃费类型", false, false},
+            {"escapedTypeName", "escaped_type_name", Fmt::Str, Cond::Like, "逃费类型名称", false, false},
+            {"escapedAmount", "escaped_amount", Fmt::Double, Cond::Eq, "逃费金额", false, false},
+            {"escapedNum", "escaped_num", Fmt::Long, Cond::Eq, nullptr, false, false},
+            {"returnAmount", "return_amount", Fmt::Double, Cond::Eq, "累计追缴金额", false, false},
+            {"totalAmount", "total_amount", Fmt::Double, Cond::Eq, "应缴金额", false, false},
+            {"chargeAmount", "charge_amount", Fmt::Double, Cond::Eq, "收费金额", false, false},
+            {"difAmount", "dif_amount", Fmt::Double, Cond::Eq, "差额", false, false},
+            {"auitOrgId", "auit_org_id", Fmt::Str, Cond::Eq, "处理单位id", false, false},
+            {"auitOrgName", "auit_org_name", Fmt::Str, Cond::Like, "处理单位", false, false},
+            {"isWhite", "is_white", Fmt::Str, Cond::Eq, "是否在白名单", false, false},
+            {"whiteRemark", "white_remark", Fmt::Str, Cond::Eq, "白名单原因", false, false},
+            {"fileIds", "file_ids", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"brand", "brand", Fmt::Str, Cond::Eq, "车辆品牌", false, false},
+            {"plateColor", "plate_color", Fmt::Str, Cond::Eq, "车牌颜色", false, false},
+            {"plateType", "plate_type", Fmt::Str, Cond::Eq, "车牌类型", false, false},
+            {"carColor", "car_color", Fmt::Str, Cond::Eq, "车辆颜色", false, false},
+            {"dataSource", "data_source", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"dataSourceName", "data_source_name", Fmt::Str, Cond::Like, "来源名称", false, false},
+            {"lastPassTime", "last_pass_time", Fmt::DateYmd, Cond::Eq, "最后通行时间", false, false},
+            {"lastPassPicture", "last_pass_picture", Fmt::Str, Cond::Eq, "最后通行图片", false, false},
+            {"lastPassType", "last_pass_type", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"lastPassAddress", "last_pass_address", Fmt::Str, Cond::Eq, "最后通行地址", false, false},
+            {"lastPassLongitude", "last_pass_longitude", Fmt::Str, Cond::Eq, "最后通行经度", false, false},
+            {"lastPassLatitude", "last_pass_latitude", Fmt::Str, Cond::Eq, "最后通行维度", false, false},
+            {"lastPassCardirection", "last_pass_cardirection", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"roadSectionId", "road_section_id", Fmt::Str, Cond::Eq, "管理中心路段id", false, false},
+            {"sectionCode", "section_code", Fmt::Str, Cond::Eq, "所属路段编码", false, false},
+            {"roadSectionName", "road_section_name", Fmt::Str, Cond::Like, "管理中心路段名称", false, false},
+            {"nextPassTime", "next_pass_time", Fmt::DateYmd, Cond::Eq, "预计下一个通行时间", false, false},
+            {"nextPassType", "next_pass_type", Fmt::Str, Cond::Eq, "预计下一个通行类型", false, false},
+            {"nextPassAddress", "next_pass_address", Fmt::Str, Cond::Eq, "预计下一个通行地址", false, false},
+            {"nextPassLongitude", "next_pass_longitude", Fmt::Str, Cond::Eq, "预计下一个通行经度", false, false},
+            {"nextPassLatitude", "next_pass_latitude", Fmt::Str, Cond::Eq, "预计下一个通行维度", false, false},
+            {"trackId", "track_id", Fmt::Str, Cond::None, "行驶轨迹id", false, false},
+            {"trackJosn", "track_josn", Fmt::Str, Cond::None, "行驶轨迹josn", false, false},
+            {"orgId", "org_id", Fmt::Str, Cond::Eq, "管理中心id", false, false},
+            {"orgCode", "org_code", Fmt::Str, Cond::Eq, "所属管理中心机构编码", false, false},
+            {"orgName", "org_name", Fmt::Str, Cond::Like, "管理中心名称", false, false},
+            {"gantryCode", "gantry_code", Fmt::Str, Cond::Like, "门架编号", false, false},
+            {"roadCode", "road_code", Fmt::Str, Cond::Like, "所属路线编码", false, false},
+            {"roadName", "road_name", Fmt::Str, Cond::Like, "所属路线名称", false, false},
+            {"tollCode", "toll_code", Fmt::Str, Cond::Like, "所属收费站编码", false, false},
+            {"tollName", "toll_name", Fmt::Str, Cond::Like, "所属收费站名称", false, false},
+            {"linkName", "link_name", Fmt::Str, Cond::Like, "司机名称", false, false},
+            {"linkPhone", "link_phone", Fmt::Str, Cond::Eq, "联系方式", false, false},
+            {"fwqbm", "fwqbm", Fmt::Str, Cond::Like, "服务区编码", false, false},
+            {"fwqmc", "fwqmc", Fmt::Str, Cond::Eq, "服务区名称", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "车辆信息";
+        Perms p;
+        p.list = "manager:carinfo:list";
+        registerCrud(r, "/manager/carinfo", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarQueryLog.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarQueryLogMapper.xml
+        Spec s;
+        s.table = "car_query_log";
+        s.alias = "t";
+        s.fields = {
+            {"userId", "user_id", Fmt::Str, Cond::Eq, "用户ID", false, false},
+            {"userName", "user_name", Fmt::Str, Cond::Like, "用户名称", false, false},
+            {"userIp", "user_ip", Fmt::Str, Cond::Eq, "用户IP", false, false},
+            {"modelType", "model_type", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"menuPoint", "menu_point", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"queryCondition", "query_condition", Fmt::Str, Cond::None, "查询条件", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::None, nullptr, false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::None, nullptr, false, false},
+            {"status", "status", Fmt::Str, Cond::None, nullptr, false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "查询日志";
+        Perms p;
+        p.list = "manager:querylog:list";
+        registerCrud(r, "/manager/querylog", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarRouteDetail.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarRouteDetailMapper.xml
+        Spec s;
+        s.table = "car_route_detail";
+        s.alias = "t";
+        s.fields = {
+            {"routeId", "route_id", Fmt::Str, Cond::Eq, "路线d", false, false},
+            {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"dataSource", "data_source", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"dataSourceName", "data_source_name", Fmt::Str, Cond::Like, "来源名称", false, false},
+            {"lastPassTime", "last_pass_time", Fmt::DateYmd, Cond::Eq, "最后通行时间", false, false},
+            {"lastPassPicture", "last_pass_picture", Fmt::Str, Cond::Eq, "最后通行图片", false, false},
+            {"lastPassType", "last_pass_type", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"lastPassAddress", "last_pass_address", Fmt::Str, Cond::Eq, "最后通行地址", false, false},
+            {"lastPassLongitude", "last_pass_longitude", Fmt::Str, Cond::Eq, "最后通行经度", false, false},
+            {"lastPassLatitude", "last_pass_latitude", Fmt::Str, Cond::Eq, "最后通行维度", false, false},
+            {"lastPassCardirection", "last_pass_cardirection", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"roadSectionId", "road_section_id", Fmt::Str, Cond::Eq, "管理中心路段id", false, false},
+            {"roadSectionName", "road_section_name", Fmt::Str, Cond::Like, "管理中心路段名称", false, false},
+            {"nextPassTime", "next_pass_time", Fmt::DateYmd, Cond::Eq, "预计下一个通行时间", false, false},
+            {"nextPassType", "next_pass_type", Fmt::Str, Cond::Eq, "预计下一个通行类型", false, false},
+            {"nextPassAddress", "next_pass_address", Fmt::Str, Cond::Eq, "预计下一个通行地址", false, false},
+            {"nextPassLongitude", "next_pass_longitude", Fmt::Str, Cond::Eq, "预计下一个通行经度", false, false},
+            {"nextPassLatitude", "next_pass_latitude", Fmt::Str, Cond::Eq, "预计下一个通行维度", false, false},
+            {"orgId", "org_id", Fmt::Str, Cond::Eq, "管理中心id", false, false},
+            {"orgName", "org_name", Fmt::Str, Cond::Like, "管理中心名称", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "常用路线明细";
+        Perms p;
+        p.list = "manager:routedetail:list";
+        registerCrud(r, "/manager/routedetail", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarRouteInfo.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarRouteInfoMapper.xml
+        Spec s;
+        s.table = "car_route_info";
+        s.alias = "t";
+        s.fields = {
+            {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
+            {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
+            {"carNum", "car_num", Fmt::Long, Cond::Eq, "轴数", false, false},
+            {"startAddress", "start_address", Fmt::Str, Cond::Eq, "起点通行地址", false, false},
+            {"startLongitude", "start_longitude", Fmt::Str, Cond::Eq, "最后通行经度", false, false},
+            {"startLatitude", "start_latitude", Fmt::Str, Cond::Eq, "起点通行维度", false, false},
+            {"endAddress", "end_address", Fmt::Str, Cond::Eq, "终点通行地址", false, false},
+            {"endLongitude", "end_longitude", Fmt::Str, Cond::Eq, "终点通行经度", false, false},
+            {"endLatitude", "end_latitude", Fmt::Str, Cond::Eq, "终点通行维度", false, false},
+            {"routeDetail", "route_detail", Fmt::Str, Cond::Eq, "路线明细JOSN", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "常用路线";
+        Perms p;
+        p.list = "manager:routeinfo:list";
+        registerCrud(r, "/manager/routeinfo", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarSplitRecord.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarSplitRecordMapper.xml
+        Spec s;
+        s.table = "car_split_record";
+        s.alias = "t";
+        s.fields = {
+            {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
+            {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
+            {"passType", "pass_type", Fmt::Str, Cond::Eq, "通信标识", false, false},
+            {"inStationId", "in_station_id", Fmt::Str, Cond::Eq, "入口站id", false, false},
+            {"inStation", "in_station", Fmt::Str, Cond::Eq, "入口站", false, false},
+            {"inTime", "in_time", Fmt::DateYmd, Cond::Eq, "入口时间", false, false},
+            {"outStationId", "out_station_id", Fmt::Str, Cond::Eq, "出口站id", false, false},
+            {"outStation", "out_station", Fmt::Str, Cond::Eq, "出口站", false, false},
+            {"outTime", "out_time", Fmt::DateYmd, Cond::Eq, "出口时间", false, false},
+            {"amount", "amount", Fmt::Double, Cond::Eq, "拆分金额", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "拆分流水";
+        Perms p;
+        p.list = "manager:splitrecord:list";
+        registerCrud(r, "/manager/splitrecord", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarSuspiciousBack.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarSuspiciousBackMapper.xml
+        Spec s;
+        s.table = "car_suspicious_back";
+        s.alias = "t";
+        s.fields = {
+            {"plateColor", "plate_color", Fmt::Str, Cond::Eq, "车牌颜色", false, false},
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
+            {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
+            {"carNum", "car_num", Fmt::Long, Cond::Eq, "轴数", false, false},
+            {"passType", "pass_type", Fmt::Str, Cond::Eq, "通行标识", false, false},
+            {"inStationId", "in_station_id", Fmt::Str, Cond::Eq, "入口站id", false, false},
+            {"inStation", "in_station", Fmt::Str, Cond::Eq, "入口站", false, false},
+            {"inTime", "in_time", Fmt::DateYmd, Cond::Eq, "通行时间", false, false},
+            {"outStationId", "out_station_id", Fmt::Str, Cond::Eq, "出口站id", false, false},
+            {"outStation", "out_station", Fmt::Str, Cond::Eq, "出口站", false, false},
+            {"outTime", "out_time", Fmt::DateYmd, Cond::Eq, "出口时间", false, false},
+            {"gantryStationId", "gantry_station_id", Fmt::Str, Cond::Eq, "门架id", false, false},
+            {"gantrytStation", "gantryt_station", Fmt::Str, Cond::Eq, "门架名称", false, false},
+            {"gantryTime", "gantry_time", Fmt::DateYmd, Cond::Eq, "经过时间", false, false},
+            {"fileIds", "file_ids", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"outGantryStationId", "out_gantry_station_id", Fmt::Str, Cond::Eq, "终止门架id", false, false},
+            {"outGantrytStation", "out_gantryt_station", Fmt::Str, Cond::Eq, "终止门架名称", false, false},
+            {"outGantryTime", "out_gantry_time", Fmt::DateYmd, Cond::Eq, "终止经过时间", false, false},
+            {"outFileIds", "out_file_ids", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"escapedType", "escaped_type", Fmt::Str, Cond::Eq, "逃费类型", false, false},
+            {"escapedTypeName", "escaped_type_name", Fmt::Str, Cond::Like, "逃费类型名称", false, false},
+            {"escapedNum", "escaped_num", Fmt::Long, Cond::Eq, "异常通行门架次数", false, false},
+            {"isExcept", "is_except", Fmt::Str, Cond::Eq, "是否为可疑车辆", false, false},
+            {"exceptRemark", "except_remark", Fmt::Str, Cond::Eq, "可疑原因", false, false},
+            {"exceptFileIds", "except_file_ids", Fmt::Str, Cond::Eq, "可疑材料", false, false},
+            {"checkStatus", "check_status", Fmt::Str, Cond::Eq, "核实状态", false, false},
+            {"orgId", "org_id", Fmt::Str, Cond::Eq, "管理中心id", false, false},
+            {"orgName", "org_name", Fmt::Str, Cond::Like, "管理中心名称", false, false},
+            {"isWhite", "is_white", Fmt::Str, Cond::Eq, "是否在白名单", false, false},
+            {"whiteRemark", "white_remark", Fmt::Str, Cond::Eq, "白名单原因", false, false},
+            {"whiteFileIds", "white_file_ids", Fmt::Str, Cond::Eq, "白名单材料", false, false},
+            {"roadCode", "road_code", Fmt::Str, Cond::Eq, "所属路线编码", false, false},
+            {"roadName", "road_name", Fmt::Str, Cond::Like, "所属路线名称", false, false},
+            {"sectionCode", "section_code", Fmt::Str, Cond::Eq, "所属路段编码", false, false},
+            {"sectionName", "section_name", Fmt::Str, Cond::Like, "所属路段名称", false, false},
+            {"trackId", "track_id", Fmt::Str, Cond::Eq, "行驶轨迹id", false, false},
+            {"trackJosn", "track_josn", Fmt::Str, Cond::Eq, "行驶轨迹josn", false, false},
+            {"trackNames", "track_names", Fmt::Str, Cond::Eq, "轨迹点集合", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "可疑车辆备份";
+        Perms p;
+        p.list = "manager:carsuspiciousback:list";
+        registerCrud(r, "/manager/carsuspiciousback", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarSuspiciousCheck.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarSuspiciousCheckMapper.xml
+        Spec s;
+        s.table = "car_suspicious_check";
+        s.alias = "t";
+        s.fields = {
+            {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"suspicousFlag", "suspicous_flag", Fmt::Str, Cond::Eq, "是否为可疑车辆", false, false},
+            {"escapedType", "escaped_type", Fmt::Str, Cond::Eq, "逃费类型", false, false},
+            {"chargeAmount", "charge_amount", Fmt::Double, Cond::Eq, "收费金额", false, false},
+            {"totalAmount", "total_amount", Fmt::Double, Cond::Eq, "应缴金额", false, false},
+            {"difAmount", "dif_amount", Fmt::Double, Cond::Eq, "差额", false, false},
+            {"attachments", "attachments", Fmt::Str, Cond::Eq, "附件", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time,t.id";
+        s.excelSheetName = "可疑车辆人工核实";
+        Perms p;
+        p.list = "manager:suspiciouscheck:list";
+        registerCrud(r, "/manager/suspiciouscheck", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarSuspicious.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarSuspiciousMapper.xml
+        Spec s;
+        s.table = "car_suspicious";
+        s.alias = "t";
+        s.fields = {
+            {"plateColor", "plate_color", Fmt::Str, Cond::Eq, "车牌颜色", false, false},
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
+            {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
+            {"carNum", "car_num", Fmt::Long, Cond::Eq, "轴数", false, false},
+            {"passType", "pass_type", Fmt::Str, Cond::Eq, "通行标识", false, false},
+            {"inStationId", "in_station_id", Fmt::Str, Cond::Eq, "入口站id", false, false},
+            {"inStation", "in_station", Fmt::Str, Cond::Eq, "入口站", false, false},
+            {"inTime", "in_time", Fmt::DateYmdHms, Cond::Eq, "通行时间", false, false},
+            {"outStationId", "out_station_id", Fmt::Str, Cond::Eq, "出口站id", false, false},
+            {"outStation", "out_station", Fmt::Str, Cond::Eq, "出口站", false, false},
+            {"outTime", "out_time", Fmt::DateYmdHms, Cond::Eq, "出口时间", false, false},
+            {"gantryStationId", "gantry_station_id", Fmt::Str, Cond::Eq, "门架id", false, false},
+            {"gantrytStation", "gantryt_station", Fmt::Str, Cond::Eq, "门架名称", false, false},
+            {"gantryTime", "gantry_time", Fmt::DateYmdHms, Cond::Eq, "经过时间", false, false},
+            {"fileIds", "file_ids", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"outGantryStationId", "out_gantry_station_id", Fmt::Str, Cond::Eq, "终止门架id", false, false},
+            {"outGantrytStation", "out_gantryt_station", Fmt::Str, Cond::Eq, "终止门架名称", false, false},
+            {"outGantryTime", "out_gantry_time", Fmt::DateYmdHms, Cond::Eq, "终止经过时间", false, false},
+            {"outFileIds", "out_file_ids", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"escapedType", "escaped_type", Fmt::Str, Cond::Eq, "逃费类型", false, false},
+            {"escapedTypeName", "escaped_type_name", Fmt::Str, Cond::Like, "逃费类型名称", false, false},
+            {"escapedNum", "escaped_num", Fmt::Long, Cond::Eq, "异常通行门架次数", false, false},
+            {"isExcept", "is_except", Fmt::Str, Cond::Eq, "是否为可疑车辆", false, false},
+            {"exceptRemark", "except_remark", Fmt::Str, Cond::Eq, "可疑原因", false, false},
+            {"exceptFileIds", "except_file_ids", Fmt::Str, Cond::Eq, "可疑材料", false, false},
+            {"checkStatus", "check_status", Fmt::Str, Cond::Eq, "核实状态", false, false},
+            {"orgId", "org_id", Fmt::Str, Cond::Eq, "管理中心id", false, false},
+            {"orgName", "org_name", Fmt::Str, Cond::Like, "管理中心名称", false, false},
+            {"isWhite", "is_white", Fmt::Str, Cond::Eq, "是否在白名单", false, false},
+            {"whiteRemark", "white_remark", Fmt::Str, Cond::Eq, "白名单原因", false, false},
+            {"whiteFileIds", "white_file_ids", Fmt::Str, Cond::Eq, "白名单材料", false, false},
+            {"roadCode", "road_code", Fmt::Str, Cond::Eq, "所属路线编码", false, false},
+            {"roadName", "road_name", Fmt::Str, Cond::Like, "所属路线名称", false, false},
+            {"sectionCode", "section_code", Fmt::Str, Cond::Like, "所属路段编码", false, false},
+            {"sectionName", "section_name", Fmt::Str, Cond::Like, "所属路段名称", false, false},
+            {"trackId", "track_id", Fmt::Str, Cond::Eq, "行驶轨迹id", false, false},
+            {"trackJosn", "track_josn", Fmt::Str, Cond::Eq, "行驶轨迹josn", false, false},
+            {"trackNames", "track_names", Fmt::Str, Cond::Like, "轨迹点集合", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "逃费场景", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.out_time desc,t.id";
+        s.excelSheetName = "可疑车辆";
+        Perms p;
+        p.list = "manager:suspicious:list";
+        registerCrud(r, "/manager/suspicious", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarTrackInfo.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarTrackInfoMapper.xml
+        Spec s;
+        s.table = "car_track_info";
+        s.alias = "t";
+        s.fields = {
+            {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"longitude", "longitude", Fmt::Str, Cond::Eq, "经度", false, false},
+            {"latitude", "latitude", Fmt::Str, Cond::Eq, "维度", false, false},
+            {"deviceType", "device_type", Fmt::Str, Cond::Eq, "设备类型", false, false},
+            {"deviceNo", "device_no", Fmt::Str, Cond::Eq, "设备编号", false, false},
+            {"laneNo", "lane_no", Fmt::Str, Cond::Eq, "车道编号", false, false},
+            {"snapTime", "snap_time", Fmt::DateYmd, Cond::Eq, "抓拍时间", false, false},
+            {"receiveTime", "receive_time", Fmt::DateYmd, Cond::Eq, "接收时间", false, false},
+            {"snapPic", "snap_pic", Fmt::Str, Cond::Eq, "抓拍图片", false, false},
+            {"roadSectionId", "road_section_id", Fmt::Str, Cond::Eq, "管理中心路段id", false, false},
+            {"roadSectionName", "road_section_name", Fmt::Str, Cond::Like, "管理中心路段名称", false, false},
+            {"trackId", "track_id", Fmt::Str, Cond::None, "行驶轨迹id", false, false},
+            {"trackJosn", "track_josn", Fmt::Str, Cond::None, "行驶轨迹josn", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time,t.id";
+        s.excelSheetName = "车辆行驶轨迹";
+        Perms p;
+        p.list = "manager:cartrackinfo:list";
+        registerCrud(r, "/manager/cartrackinfo", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarWarningInfo.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarWarningInfoMapper.xml
+        Spec s;
+        s.table = "car_warning_info";
+        s.alias = "t";
+        s.fields = {
+            {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
+            {"carNo", "car_no", Fmt::Str, Cond::Like, "车牌号", false, false},
+            {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
+            {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
+            {"carNum", "car_num", Fmt::Long, Cond::Eq, "轴数", false, false},
+            {"inStationId", "in_station_id", Fmt::Str, Cond::Eq, "入口站id", false, false},
+            {"inStation", "in_station", Fmt::Str, Cond::Eq, "入口站", false, false},
+            {"inTime", "in_time", Fmt::DateYmdHms, Cond::Eq, "入口时间", false, false},
+            {"gantryStationId", "gantry_station_id", Fmt::Str, Cond::Eq, "门架id", false, false},
+            {"gantrytStation", "gantryt_station", Fmt::Str, Cond::Like, "门架名称", false, false},
+            {"gantryTime", "gantry_time", Fmt::DateYmdHms, Cond::Eq, "经过时间", false, false},
+            {"fileIds", "file_ids", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"nextPassTime", "next_pass_time", Fmt::DateYmdHms, Cond::Eq, "预计下一个通行时间", false, false},
+            {"nextPassType", "next_pass_type", Fmt::Str, Cond::Eq, "预计下一个通行类型", false, false},
+            {"nextPassAddress", "next_pass_address", Fmt::Str, Cond::Eq, "预计下一个通行地址", false, false},
+            {"nextPassLongitude", "next_pass_longitude", Fmt::Str, Cond::Eq, "预计下一个通行经度", false, false},
+            {"nextPassLatitude", "next_pass_latitude", Fmt::Str, Cond::Eq, "预计下一个通行维度", false, false},
+            {"roadCode", "road_code", Fmt::Str, Cond::Like, "所属路线编码", false, false},
+            {"roadName", "road_name", Fmt::Str, Cond::Like, "所属路线名称", false, false},
+            {"sectionCode", "section_code", Fmt::Str, Cond::Like, "所属路段编码", false, false},
+            {"sectionName", "section_name", Fmt::Str, Cond::Like, "所属路段名称", false, false},
+            {"trackId", "track_id", Fmt::Str, Cond::Eq, "行驶轨迹id", false, false},
+            {"trackJosn", "track_josn", Fmt::Str, Cond::Eq, "行驶轨迹josn", false, false},
+            {"trackNames", "track_names", Fmt::Str, Cond::Like, "轨迹点集合", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "同步日期", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+        };
+        s.orderBy = "t.gantry_time desc,t.id";
+        s.excelSheetName = "预警车辆";
+        Perms p;
+        p.list = "manager:carwarning:list";
+        registerCrud(r, "/manager/carwarning", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarWarningRule.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarWarningRuleMapper.xml
+        Spec s;
+        s.table = "car_warning_rule";
+        s.alias = "t";
+        s.fields = {
+            {"ruleName", "rule_name", Fmt::Str, Cond::Like, "规则名称", false, false},
+            {"noticeRangeId", "notice_range_id", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"noticeRangeAnme", "notice_range_anme", Fmt::Str, Cond::Like, nullptr, false, false},
+            {"notice", "notice", Fmt::Str, Cond::Eq, "通知", false, false},
+            {"noticeType", "notice_type", Fmt::Str, Cond::Eq, "通知方式", false, false},
+            {"noticeUserId", "notice_user_id", Fmt::Str, Cond::Eq, "通知人员id", false, false},
+            {"noticeUserName", "notice_user_name", Fmt::Str, Cond::Like, "通知人员", false, false},
+            {"orgId", "org_id", Fmt::Str, Cond::Eq, "所属站/所", false, false},
+            {"orgName", "org_name", Fmt::Str, Cond::Like, "所属站/所", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "预警规则";
+        Perms p;
+        p.list = "manager:warningrule:list";
+        registerCrud(r, "/manager/warningrule", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarWhiteInfo.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarWhiteInfoMapper.xml
+        Spec s;
+        s.table = "car_white_info";
+        s.alias = "t";
+        s.fields = {
+            {"plateColor", "plate_color", Fmt::Str, Cond::Eq, "车牌颜色", false, false},
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
+            {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
+            {"carNum", "car_num", Fmt::Long, Cond::Eq, "轴数", false, false},
+            {"fileIds", "file_ids", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "车俩白名单";
+        Perms p;
+        p.list = "manager:whiteinfo:list";
+        registerCrud(r, "/manager/whiteinfo", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/GantryCar.java
+        // ruoyi-system/src/main/resources/mapper/manager/GantryCarMapper.xml
+        Spec s;
+        s.table = "gantry_car";
+        s.alias = "t";
+        s.fields = {
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
+            {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
+            {"carNum", "car_num", Fmt::Long, Cond::Eq, "轴数", false, false},
+            {"inStationId", "in_station_id", Fmt::Str, Cond::Eq, "入口站id", false, false},
+            {"inStation", "in_station", Fmt::Str, Cond::Eq, "入口站", false, false},
+            {"inTime", "in_time", Fmt::DateYmd, Cond::Eq, "通行时间", false, false},
+            {"gantryStationId", "gantry_station_id", Fmt::Str, Cond::Eq, "门架id", false, false},
+            {"gantrytStation", "gantryt_station", Fmt::Str, Cond::Eq, "门架名称", false, false},
+            {"gantryTime", "gantry_time", Fmt::DateYmd, Cond::Eq, "经过时间", false, false},
+            {"fileIds", "file_ids", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "门架拍识查询";
+        Perms p;
+        p.list = "manager:gantrycar:list";
+        registerCrud(r, "/manager/gantrycar", s, p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/GantryTradeInfo.java
+        // ruoyi-system/src/main/resources/mapper/manager/GantryTradeInfoMapper.xml
+        Spec s;
+        s.table = "gantry_trade_info";
+        s.alias = "t";
+        s.fields = {
+            {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
+            {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
+            {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
+            {"carNum", "car_num", Fmt::Long, Cond::Eq, "轴数", false, false},
+            {"inStationId", "in_station_id", Fmt::Str, Cond::Eq, "入门架id", false, false},
+            {"inStation", "in_station", Fmt::Str, Cond::Eq, "入门架", false, false},
+            {"inTime", "in_time", Fmt::DateYmd, Cond::Eq, "入门时间", false, false},
+            {"outStationId", "out_station_id", Fmt::Str, Cond::Eq, "出口门架id", false, false},
+            {"outStation", "out_station", Fmt::Str, Cond::Eq, "出口门架", false, false},
+            {"outTime", "out_time", Fmt::DateYmd, Cond::Eq, "出口时间", false, false},
+            {"chargeType", "charge_type", Fmt::Str, Cond::Eq, "交易类型", false, false},
+            {"amount", "amount", Fmt::Double, Cond::Eq, "收费金额", false, false},
+            {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
+            {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+        };
+        s.orderBy = "t.create_time desc,t.id";
+        s.excelSheetName = "门架交易查询";
+        Perms p;
+        p.list = "manager:gantrytrade:list";
+        registerCrud(r, "/manager/gantrytrade", s, p, "id");
+    }
+}
+
+} // namespace cm::web::crud

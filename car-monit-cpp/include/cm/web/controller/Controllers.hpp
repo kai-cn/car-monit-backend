@@ -14,6 +14,15 @@ void registerCaptchaController(Router& r);
 void registerLoginController(Router& r);
 void registerIndexController(Router& r);
 
+/** 业务域同构 CRUD 的批量注册入口。
+ *  实现在 src/cm/web/specs/{Base,Manager,Flow}CrudSpecs.cpp，
+ *  由 scripts/gen_crud_spec.py 从 Java 实体 + MyBatis XML + 控制器抽取生成。 */
+namespace crud {
+void registerBaseArea(Router& r);
+void registerManagerArea(Router& r);
+void registerFlowArea(Router& r);
+} // namespace crud
+
 /** 汇总注册（main.cpp 调用） */
 void registerControllers(Router& r);
 

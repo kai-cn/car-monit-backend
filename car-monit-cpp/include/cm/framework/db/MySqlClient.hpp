@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "cm/framework/db/Row.hpp"
+#include "cm/framework/net/Fd.hpp"
 
 namespace cm::db {
 
@@ -38,7 +39,7 @@ public:
 
     bool connect(const DbConfig& cfg);
     void close();
-    bool isOpen() const { return fd_ >= 0; }
+    bool isOpen() const { return cm::net::validStorage(fd_); }
 
     /** 执行一条或多条语句；返回最后一个结果集 */
     bool query(const std::string& sql, Result& out);
@@ -65,7 +66,11 @@ private:
     bool readOkOrErr(std::string& payload, Result& out);
     void setError(const std::string& msg, int err = -1);
 
-    int fd_{-1};
+    /** socket 句柄以 long long 存放（Windows 的 SOCKET 是 64 位），避免头文件引入 winsock2.h */
+    long long fd_{cm::net::kInvalidStorage};
+    cm::net::Fd handle() const {
+        return cm::net::fromStorage(fd_);
+    }
     uint8_t seq_{0};
     unsigned long thread_id_{0};
     std::string last_error_;

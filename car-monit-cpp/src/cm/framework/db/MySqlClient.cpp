@@ -8,21 +8,9 @@
 //   * 显式事务
 #include "cm/framework/db/MySqlClient.hpp"
 
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <sys/uio.h>
-#include <unistd.h>
-
-#include <openssl/evp.h>
-#include <openssl/pem.h>
-#include <openssl/rsa.h>
-#include <openssl/sha.h>
-#include <openssl/x509.h>
+#include "cm/common/utils/crypto/Digest.hpp"
+#include "cm/common/utils/crypto/Rsa.hpp"
+#include "cm/framework/net/Os.hpp"
 
 #include <cerrno>
 #include <chrono>
@@ -125,16 +113,8 @@ void writeLenencStr(std::string& out, const std::string& s) {
     out += s;
 }
 
-std::string sha1(const std::string& in) {
-    unsigned char digest[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char*>(in.data()), in.size(), digest);
-    return std::string(reinterpret_cast<char*>(digest), SHA_DIGEST_LENGTH);
-}
-std::string sha256(const std::string& in) {
-    unsigned char digest[SHA256_DIGEST_LENGTH];
-    SHA256(reinterpret_cast<const unsigned char*>(in.data()), in.size(), digest);
-    return std::string(reinterpret_cast<char*>(digest), SHA256_DIGEST_LENGTH);
-}
+std::string sha1(const std::string& in) { return cm::crypto::sha1(in); }
+std::string sha256(const std::string& in) { return cm::crypto::sha256(in); }
 std::string xorBytes(const std::string& a, const std::string& b) {
     std::string r = a;
     for (size_t i = 0; i < r.size() && i < b.size(); ++i) r[i] = static_cast<char>(r[i] ^ b[i]);
@@ -160,37 +140,19 @@ std::string cachingSha2Password(const std::string& password, const std::string& 
 }
 
 /** RSA-OAEP(SHA1) 加密 (password XOR scramble)，输出 PEM 公钥可解密的密文 */
-std::string rsaEncryptPassword(const std::string& password, const std::string& scramble, const std::string& pem) {
+std::string rsaEncryptPassword(const std::string& password, const std::string& scramble,
+                               const std::string& pem) {
     std::string plain = password;
     // 密码与 scramble 循环异或
     for (size_t i = 0; i < plain.size(); ++i) plain[i] = static_cast<char>(plain[i] ^ scramble[i % scramble.size()]);
     plain.push_back('\0');
 
-    BIO* bio = BIO_new_mem_buf(pem.data(), static_cast<int>(pem.size()));
-    if (!bio) return "";
-    EVP_PKEY* pkey = PEM_read_bio_PUBKEY(bio, nullptr, nullptr, nullptr);
-    BIO_free(bio);
-    if (!pkey) return "";
-
-    EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(pkey, nullptr);
+    std::string err;
     std::string out;
-    if (ctx && EVP_PKEY_encrypt_init(ctx) > 0) {
-        EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
-        EVP_PKEY_CTX_set_rsa_oaep_md(ctx, EVP_sha1());
-        size_t outlen = 0;
-        if (EVP_PKEY_encrypt(ctx, nullptr, &outlen,
-                             reinterpret_cast<const unsigned char*>(plain.data()), plain.size()) > 0) {
-            out.resize(outlen);
-            if (EVP_PKEY_encrypt(ctx, reinterpret_cast<unsigned char*>(&out[0]), &outlen,
-                                 reinterpret_cast<const unsigned char*>(plain.data()), plain.size()) > 0) {
-                out.resize(outlen);
-            } else {
-                out.clear();
-            }
-        }
+    if (!cm::crypto::rsaOaepEncryptPem(pem, plain, out, &err)) {
+        std::fprintf(stderr, "[mysql] RSA full-auth 失败: %s\n", err.c_str());
+        return "";
     }
-    if (ctx) EVP_PKEY_CTX_free(ctx);
-    EVP_PKEY_free(pkey);
     return out;
 }
 
@@ -214,43 +176,16 @@ void MySqlConnection::setError(const std::string& msg, int err) {
 
 bool MySqlConnection::connect(const DbConfig& cfg) {
     close();
-    addrinfo hints{};
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    addrinfo* res = nullptr;
-    std::string port = std::to_string(cfg.port);
-    if (getaddrinfo(cfg.host.c_str(), port.c_str(), &hints, &res) != 0 || !res) {
-        setError("无法解析 MySQL 主机: " + cfg.host);
+    std::string err;
+    cm::net::Fd fd = cm::net::connectTcp(cfg.host, cfg.port, cfg.connectTimeoutMs, &err);
+    if (!cm::net::isValid(fd)) {
+        setError(err.empty() ? "连接 MySQL 失败 " + cfg.host : err);
         return false;
     }
-    fd_ = ::socket(AF_INET, SOCK_STREAM, 0);
-    if (fd_ < 0) {
-        freeaddrinfo(res);
-        setError("socket() 失败: " + std::string(std::strerror(errno)));
-        return false;
-    }
-    // 连接超时
-    struct timeval tv {};
-    tv.tv_sec = cfg.connectTimeoutMs / 1000;
-    tv.tv_usec = (cfg.connectTimeoutMs % 1000) * 1000;
-    setsockopt(fd_, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-    setsockopt(fd_, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-
-    if (::connect(fd_, res->ai_addr, res->ai_addrlen) != 0) {
-        setError("连接 MySQL 失败 " + cfg.host + ":" + port + " - " + std::strerror(errno));
-        freeaddrinfo(res);
-        close();
-        return false;
-    }
-    freeaddrinfo(res);
-
-    // 切换到读写超时
-    tv.tv_sec = cfg.socketTimeoutMs / 1000;
-    tv.tv_usec = (cfg.socketTimeoutMs % 1000) * 1000;
-    setsockopt(fd_, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-    setsockopt(fd_, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-    int one = 1;
-    setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+    fd_ = cm::net::toStorage(fd);
+    // 连上之后切换到读写超时
+    cm::net::setTimeout(fd, cfg.socketTimeoutMs);
+    cm::net::setNoDelay(fd);
 
     if (!handshake(cfg)) {
         close();
@@ -260,16 +195,19 @@ bool MySqlConnection::connect(const DbConfig& cfg) {
 }
 
 void MySqlConnection::close() {
-    if (fd_ >= 0) {
-        ::close(fd_);
-        fd_ = -1;
+    if (cm::net::validStorage(fd_)) {
+        cm::net::closeTcp(cm::net::fromStorage(fd_));
+        fd_ = cm::net::kInvalidStorage;
     }
     in_tx_ = false;
     seq_ = 0;
 }
 
 bool MySqlConnection::sendPacket(const std::string& payload) {
+    // MySQL 包头 4 字节：3 字节长度 + 1 字节序号；超过 0xffffff 需要拆多包，
+    // 且恰好等于 0xffffff 时必须再补一个 0 长度包（协议规定）
     size_t pos = 0;
+    size_t chunk_count = 0;
     do {
         size_t chunk = payload.size() - pos;
         if (chunk > 0xffffff) chunk = 0xffffff;
@@ -278,39 +216,27 @@ bool MySqlConnection::sendPacket(const std::string& payload) {
         header[1] = static_cast<char>((chunk >> 8) & 0xff);
         header[2] = static_cast<char>((chunk >> 16) & 0xff);
         header[3] = static_cast<char>(seq_++ & 0xff);
-        iovec iov[2];
-        iov[0].iov_base = &header[0];
-        iov[0].iov_len = 4;
-        iov[1].iov_base = const_cast<char*>(payload.data() + pos);
-        iov[1].iov_len = chunk;
-        size_t total = 4 + chunk;
-        size_t sent = 0;
-        while (sent < total) {
-            iovec cur[2];
-            size_t off = sent;
-            int n = 0;
-            if (off < 4) {
-                cur[n].iov_base = static_cast<char*>(iov[0].iov_base) + off;
-                cur[n].iov_len = 4 - off;
-                ++n;
-                cur[n].iov_base = iov[1].iov_base;
-                cur[n].iov_len = chunk;
-                ++n;
-            } else {
-                cur[n].iov_base = static_cast<char*>(iov[1].iov_base) + (off - 4);
-                cur[n].iov_len = chunk - (off - 4);
-                ++n;
-            }
-            ssize_t w = ::writev(fd_, cur, n);
-            if (w <= 0) {
-                setError("发送 MySQL 数据包失败: " + std::string(std::strerror(errno)));
-                return false;
-            }
-            sent += static_cast<size_t>(w);
+        const std::vector<cm::net::Chunk> parts{
+            {header.data(), header.size()}, {payload.data() + pos, chunk}};
+        std::string werr;
+        if (!cm::net::writeChunks(handle(), parts, &werr)) {
+            setError("发送 MySQL 数据包失败: " + werr);
+            return false;
         }
+        ++chunk_count;
         pos += chunk;
-        if (chunk < 0xffffff) break; // 最后一包
     } while (pos < payload.size());
+    if ((payload.size() % 0xffffff) == 0) {
+        // 长度是 0xffffff 的整数倍：补发一个空包表示结束
+        std::string header(4, '\0');
+        header[3] = static_cast<char>(seq_++ & 0xff);
+        std::string werr;
+        if (!cm::net::writeChunks(handle(), {{header.data(), header.size()}}, &werr)) {
+            setError("发送 MySQL 结束包失败: " + werr);
+            return false;
+        }
+    }
+    (void)chunk_count;
     return true;
 }
 
@@ -320,9 +246,9 @@ bool MySqlConnection::recvPacket(std::string& payload) {
         unsigned char header[4];
         size_t got = 0;
         while (got < 4) {
-            ssize_t r = ::read(fd_, header + got, 4 - got);
+            const long r = cm::net::readSome(handle(), header + got, 4 - got);
             if (r <= 0) {
-                setError("读取 MySQL 数据包头失败: " + std::string(std::strerror(errno)));
+                setError("读取 MySQL 数据包头失败: " + cm::net::lastError());
                 return false;
             }
             got += static_cast<size_t>(r);
@@ -335,9 +261,9 @@ bool MySqlConnection::recvPacket(std::string& payload) {
         payload.resize(start + len);
         got = 0;
         while (got < len) {
-            ssize_t r = ::read(fd_, &payload[start + got], len - got);
+            const long r = cm::net::readSome(handle(), &payload[start + got], len - got);
             if (r <= 0) {
-                setError("读取 MySQL 数据包失败: " + std::string(std::strerror(errno)));
+                setError("读取 MySQL 数据包失败: " + cm::net::lastError());
                 return false;
             }
             got += static_cast<size_t>(r);
@@ -677,7 +603,7 @@ bool MySqlConnection::readResult(Result& out, bool& more_results) {
 }
 
 bool MySqlConnection::query(const std::string& sql, Result& out) {
-    if (fd_ < 0) {
+    if (!cm::net::validStorage(fd_)) {
         setError("MySQL 连接未建立");
         return false;
     }
@@ -730,7 +656,7 @@ bool MySqlConnection::rollback() {
 }
 
 bool MySqlConnection::ping() {
-    if (fd_ < 0) return false;
+    if (!cm::net::validStorage(fd_)) return false;
     seq_ = 0;
     std::string payload(1, '\x0e'); // COM_PING
     if (!sendPacket(payload)) return false;

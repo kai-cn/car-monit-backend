@@ -10,6 +10,8 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+
+#include "cm/framework/net/Fd.hpp"
 #include <string>
 #include <thread>
 #include <utility>
@@ -36,20 +38,21 @@ public:
 private:
     void acceptLoop();
     void workerLoop();
-    void handleConnection(int fd, const std::string& peer);
-    bool readRequest(int fd, std::string& buffer, cm::http::HttpRequest& req, bool& closeAfter);
-    static void writeResponse(int fd, const cm::http::ApiResponse& resp, bool keepAlive);
+    void handleConnection(cm::net::Fd fd, const std::string& peer);
+    bool readRequest(cm::net::Fd fd, std::string& buffer, cm::http::HttpRequest& req,
+                     bool& closeAfter);
+    static void writeResponse(cm::net::Fd fd, const cm::http::ApiResponse& resp, bool keepAlive);
 
     std::string host_;
     int port_;
     int workers_;
     int backlog_;
-    int listen_fd_{-1};
+    cm::net::Fd listen_fd_{cm::net::kInvalid};
     std::atomic<bool> running_{false};
     std::vector<std::thread> threads_;
     std::mutex queue_mu_;
     std::condition_variable queue_cv_;
-    std::queue<std::pair<int, std::string>> queue_;
+    std::queue<std::pair<cm::net::Fd, std::string>> queue_;
 };
 
 } // namespace cm::web

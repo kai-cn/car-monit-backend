@@ -1,8 +1,6 @@
 #include "cm/framework/security/Jwt.hpp"
 
-#include <openssl/crypto.h>
-#include <openssl/evp.h>
-#include <openssl/hmac.h>
+#include "cm/common/utils/crypto/Digest.hpp"
 
 #include <cctype>
 #include <vector>
@@ -121,11 +119,8 @@ std::optional<std::string> Jwt::decodeJavaBase64(const std::string& in) {
 }
 
 std::string Jwt::hmacSha512(const std::string& data, const std::string& key) {
-    unsigned char digest[EVP_MAX_MD_SIZE];
-    unsigned int len = 0;
-    HMAC(EVP_sha512(), key.data(), static_cast<int>(key.size()),
-         reinterpret_cast<const unsigned char*>(data.data()), data.size(), digest, &len);
-    return std::string(reinterpret_cast<char*>(digest), len);
+    // 对应 Java: Mac.getInstance("HmacSHA512") + SecretKeySpec(key)
+    return cm::crypto::hmacSha512(key, data);
 }
 
 std::string Jwt::createToken(const std::string& loginUserKey) const {
@@ -148,7 +143,12 @@ std::optional<std::string> Jwt::parsePayload(const std::string& token) const {
     if (!decodedSig) return std::nullopt;
     std::string expected = hmacSha512(signingInput, key_);
     if (expected.size() != decodedSig->size()) return std::nullopt;
-    if (CRYPTO_memcmp(expected.data(), decodedSig->data(), expected.size()) != 0) return std::nullopt;
+    // 恒定时间比较，避免签名校验的时序侧信道（等价 MessageDigest.isEqual）
+    unsigned char diff = 0;
+    for (size_t i = 0; i < expected.size(); ++i) {
+        diff |= static_cast<unsigned char>(expected[i] ^ (*decodedSig)[i]);
+    }
+    if (diff != 0) return std::nullopt;
     auto payload = base64UrlDecode(token.substr(d1 + 1, d2 - d1 - 1));
     if (!payload) return std::nullopt;
     return payload;

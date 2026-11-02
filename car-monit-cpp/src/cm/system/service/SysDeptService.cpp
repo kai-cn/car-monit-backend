@@ -1,4 +1,6 @@
 // 对应 Java: com.ruoyi.system.service.impl.SysDeptServiceImpl
+#include <set>
+
 #include "cm/system/service/SysDeptService.hpp"
 #include "cm/system/mapper/SysDeptMapper.hpp"
 #include "cm/system/mapper/SysRoleMapper.hpp"
@@ -91,19 +93,19 @@ Json SysDeptService::buildDeptTreeSelect(const std::vector<cm::domain::SysDept>&
     return arr;
 }
 
-std::set<cm::domain::SysDept> SysDeptService::selectHeadOffice() {
+std::vector<cm::domain::SysDept> SysDeptService::selectHeadOffice() {
     cm::domain::SysDept query;
     auto list = selectDeptList(query);
-    std::set<cm::domain::SysDept> filterSet;
+    std::vector<cm::domain::SysDept> filterSet;
     std::set<long long> filterDeptIds;
     for (const auto& dept : list) {
         if (dept.treeLeavel && (*dept.treeLeavel == 1 || *dept.treeLeavel == 2)) {
-            filterSet.insert(dept);
+            filterSet.push_back(dept);
             if (dept.deptId) filterDeptIds.insert(*dept.deptId);
         }
     }
     for (const auto& dept : list) {
-        if (dept.tenantId && filterDeptIds.count(*dept.tenantId)) filterSet.insert(dept);
+        if (dept.tenantId && filterDeptIds.count(*dept.tenantId)) filterSet.push_back(dept);
     }
     return filterSet;
 }

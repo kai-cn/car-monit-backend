@@ -1,5 +1,14 @@
 #pragma once
 // 对应 Java: com.ruoyi.common.constant.HttpStatus
+#ifdef _WIN32
+// <winerror.h>（随 winsock2.h 一起被拉进来）把 ERROR 定义成了宏（资源类型 0），
+// 会吃掉下面的 HttpStatus::ERROR。Java 侧常量名就是 ERROR，为了保持逐层对照，
+// 这里取消宏定义而不是给常量改名。
+#ifdef ERROR
+#undef ERROR
+#endif
+#endif
+
 namespace cm::constant {
 
 struct HttpStatus {

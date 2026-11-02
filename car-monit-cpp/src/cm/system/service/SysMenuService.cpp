@@ -1,8 +1,12 @@
 // 对应 Java: com.ruoyi.system.service.impl.SysMenuServiceImpl（登录/路由所需部分）
 #include "cm/system/service/SysMenuService.hpp"
 
+#include "cm/common/core/domain/entity/SysRole.hpp"
+#include "cm/common/core/domain/entity/SysUser.hpp"
+#include "cm/common/exception/Exceptions.hpp"
 #include "cm/common/utils/StringUtils.hpp"
 #include "cm/system/mapper/SysMenuMapper.hpp"
+#include "cm/system/mapper/SysRoleMapper.hpp"
 
 namespace cm::system::service {
 
@@ -162,11 +166,12 @@ std::optional<cm::domain::SysMenu> SysMenuService::selectMenuById(long long menu
 }
 
 std::vector<long long> SysMenuService::selectMenuListByRoleId(long long roleId) {
-    auto role = cm::system::mapper::SysMenuMapper::selectMenuTreeAll().empty() ?
-        std::optional<cm::domain::SysRole>{} : cm::system::mapper::SysMenuMapper::selectMenuTreeAll().empty() ?
-        std::optional<cm::domain::SysRole>{} : std::optional<cm::domain::SysRole>{};
-    // Simplified: just get from mapper with strict=true
-    return cm::system::mapper::SysMenuMapper::selectMenuListByRoleId(roleId, true);
+    // 对应 Java: SysRole role = roleMapper.selectRoleById(roleId);
+    //            return menuMapper.selectMenuListByRoleId(roleId, role.isMenuCheckStrictly());
+    // role 为 null 时 Java 直接 NPE（GlobalExceptionHandler 映射成 500），这里保持同样的行为
+    auto role = cm::system::mapper::SysRoleMapper::selectRoleById(roleId);
+    if (!role) throw cm::exception::NullPointerException();  // Java: role.isMenuCheckStrictly() 处直接 NPE
+    return cm::system::mapper::SysMenuMapper::selectMenuListByRoleId(roleId, role->menuCheckStrictly);
 }
 
 std::string SysMenuService::checkMenuNameUnique(const cm::domain::SysMenu& menu) {
