@@ -1,0 +1,59 @@
+// 对应 Java: com.ruoyi.web.controller.system.SysIndexController
+#include <string>
+
+#include "cm/framework/config/AppConfig.hpp"
+#include "cm/framework/web/Router.hpp"
+#include "cm/web/controller/Controllers.hpp"
+#include "cm/web/controller/common/CommonController.hpp"
+#include "cm/web/controller/common/DownTemplateController.hpp"
+#include "cm/web/controller/monitor/CacheController.hpp"
+#include "cm/web/controller/monitor/ServerController.hpp"
+#include "cm/web/controller/monitor/SysLogininforController.hpp"
+#include "cm/web/controller/monitor/SysOperlogController.hpp"
+#include "cm/web/controller/monitor/SysUserOnlineController.hpp"
+#include "cm/web/controller/system/SysAuxControllers.hpp"
+#include "cm/web/controller/tool/TestController.hpp"
+
+namespace cm::web {
+
+void registerIndexController(Router& r) {
+    // @RequestMapping("/") —— 所有方法都映射到同一处理器
+    auto handler = [](RequestContext&) -> cm::http::ApiResponse {
+        auto& cfg = cm::config::AppConfig::instance();
+        // StringUtils.format("欢迎使用{}后台管理框架，请通过前端地址访问。", name)
+        return cm::http::ApiResponse::text(
+            "欢迎使用" + cfg.name + "后台管理框架，请通过前端地址访问。",
+            "text/plain;charset=UTF-8");
+    };
+    r.get("/", handler).permitAll();
+    r.post("/", handler).permitAll();
+    r.put("/", handler).permitAll();
+    r.del("/", handler).permitAll();
+    r.patch("/", handler).permitAll();
+}
+
+void registerControllers(Router& r) {
+    registerCaptchaController(r);
+    registerLoginController(r);
+    registerIndexController(r);
+    // common
+    registerCommonController(r);
+    registerDownTemplateController(r);
+    // monitor
+    registerCacheController(r);
+    registerServerController(r);
+    registerSysLogininforController(r);
+    registerSysOperlogController(r);
+    registerSysUserOnlineController(r);
+    // system 辅助模块
+    registerSysConfigController(r);
+    registerSysDictTypeController(r);
+    registerSysDictDataController(r);
+    registerSysNoticeController(r);
+    registerSysUpgradeInfoController(r);
+    registerSysFileController(r);
+    // tool
+    registerTestController(r);
+}
+
+} // namespace cm::web

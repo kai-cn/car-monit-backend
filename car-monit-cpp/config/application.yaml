@@ -1,0 +1,75 @@
+# 与 ruoyi-admin/src/main/resources/application.yml 一一对应
+ruoyi:
+  name: 系统
+  version: 3.8.7
+  copyrightYear: 2024
+  profile: D:/ruoyi/uploadPath
+  addressEnabled: false
+  captchaType: math
+
+server:
+  port: 9989
+  servlet:
+    context-path: /
+  tomcat:
+    uri-encoding: UTF-8
+    accept-count: 1000
+    threads:
+      max: 800
+      min-spare: 100
+
+logging:
+  level:
+    com.ruoyi: debug
+    org.springframework: warn
+
+monitor:
+  enabled: true
+  slow-request-threshold: 3000
+  slow-method-threshold: 500
+  slow-sql-threshold: 1000
+  trace-id-header: X-Trace-Id
+  alert-window-ms: 60000
+  alert-max-count: 5
+
+user:
+  password:
+    maxRetryCount: 5
+    lockTime: 10
+
+spring:
+  profiles:
+    active: druid
+  servlet:
+    multipart:
+      max-file-size: 40MB
+      max-request-size: 200MB
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    database: 0
+    timeout: 10s
+    lettuce:
+      pool:
+        min-idle: 0
+        max-idle: 8
+        max-active: 8
+        max-wait: -1ms
+
+token:
+  header: Authorization
+  secret: abcdefghijklmnopqrstuvwxyz
+  expireTime: 120
+
+# ---- 以下为 C++ 侧扩展（Java 中为 @Value/@ConfigurationProperties 之外的部分） ----
+cm:
+  log:
+    dir: logs
+    level: debug
+  upload:
+    max-file-size: 41943040
+    max-request-size: 209715200
+  xss:
+    enabled: true
+    excludes: /system/notice
+    url-patterns: /system/*,/monitor/*,/tool/*
