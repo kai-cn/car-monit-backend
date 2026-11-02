@@ -206,6 +206,12 @@ func (h *userHandler) ImportData(c *gin.Context) {
 	web.JSON(c, web.SuccessMsg(msg))
 }
 
+// MethodNotAllowed 对应 Spring 对 GET /system/user 的处理：
+// HttpRequestMethodNotSupportedException -> AjaxResult.error("Request method 'GET' not supported")。
+func (h *userHandler) MethodNotAllowed(c *gin.Context) {
+	web.JSON(c, web.ErrorMsg("Request method 'GET' not supported"))
+}
+
 // GetInfo 对应 SysUserController.getInfo（GET /system/user、/system/user/{userId}）。
 func (h *userHandler) GetInfo(c *gin.Context) {
 	var userID *int64
@@ -528,6 +534,12 @@ func registerUser(reg *router.Registry, svc *service) {
 	g.GET("/currentUser", h.CurrentUser)
 	g.GET("/getroleUser/:roleCode", h.GetRoleUser)
 	g.GET("/:userId", middleware.Perm("system:user:query"), h.GetInfo)
+	// JAVA 对照: SysUserController:174 @GetMapping(value = {"/", "/{userId}"})
+	// 前端新增用户表单走 getUser('') -> GET /system/user/（带斜杠），缺它就无法取 roles/posts。
+	g.GET("/", middleware.Perm("system:user:query"), h.GetInfo)
+	// 精确路径 /system/user 在 Java 只注册了 POST/PUT，GET 会命中 Spring 的
+	// HttpRequestMethodNotSupportedException，被 GlobalExceptionHandler 包成 500。
+	g.GET("", h.MethodNotAllowed)
 
 	g.POST("", middleware.Perm("system:user:add"),
 		middleware.OperLog(reg.App, "用户管理", middleware.BusinessInsert), h.Add)

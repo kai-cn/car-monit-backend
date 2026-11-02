@@ -128,8 +128,10 @@ func (h *handler) aduitFreeExport(c *gin.Context) {
 }
 
 // aduitFreeIncomeStatics 对应 GET /incomeStatics（分页的 PCIncomeStaticsVO）。
+// JAVA 对照: CarAduitFreeController.incomeStatics:113-116 先 startPage()，
+// 没带分页参数时 TableSupport 默认 1/10 —— 不能当成「不分页」。
 func (h *handler) aduitFreeIncomeStatics(c *gin.Context) {
-	rows, total, err := h.pcIncomeStatics(c)
+	rows, total, err := h.pcIncomeStatics(c, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -137,8 +139,9 @@ func (h *handler) aduitFreeIncomeStatics(c *gin.Context) {
 	web.JSON(c, web.Table(rows, total))
 }
 
+// aduitFreeExportIncomeStatics 对应 exportIncomeStatics：Java 未 startPage，导出全量。
 func (h *handler) aduitFreeExportIncomeStatics(c *gin.Context) {
-	rows, _, err := h.pcIncomeStatics(c)
+	rows, _, err := h.pcIncomeStatics(c, web.Page(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -157,7 +160,7 @@ func (h *handler) aduitFreeExportIncomeStatics(c *gin.Context) {
 }
 
 // pcIncomeStatics 对应 getPCIncomeStatics（SQL 两段 UNION ALL + 共同的 4 条 <if>）。
-func (h *handler) pcIncomeStatics(c *gin.Context) ([]*pcIncomeStaticsVO, int64, error) {
+func (h *handler) pcIncomeStatics(c *gin.Context, page web.PageDomain) ([]*pcIncomeStaticsVO, int64, error) {
 	buildFilter := func() (string, []any) {
 		filter := ""
 		var args []any
@@ -190,7 +193,6 @@ func (h *handler) pcIncomeStatics(c *gin.Context) ([]*pcIncomeStaticsVO, int64, 
 		") t GROUP BY t.org_id, t.orgName ORDER BY amount DESC"
 	args := append(append([]any{}, a1...), a2...)
 
-	page := web.Page(c)
 	var total int64
 	if page.HasPage {
 		countSQL := "SELECT COUNT(0) FROM (" + base + ") table_count"
@@ -735,8 +737,9 @@ type concernedRow struct {
 }
 
 // confimFreeConcernedList 对应 selectConcernedList（car_info JOIN 聚合派生表）。
+// JAVA 对照: CarConfimFreeController.concernedList:172-173 先 startPage()，默认 1/10。
 func (h *handler) confimFreeConcernedList(c *gin.Context) {
-	rows, total, err := h.concernedList(c)
+	rows, total, err := h.concernedList(c, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -744,8 +747,9 @@ func (h *handler) confimFreeConcernedList(c *gin.Context) {
 	web.JSON(c, web.Table(rows, total))
 }
 
+// confimFreeExportConcernedList 对应导出：Java 未 startPage，导出全量。
 func (h *handler) confimFreeExportConcernedList(c *gin.Context) {
-	rows, _, err := h.concernedList(c)
+	rows, _, err := h.concernedList(c, web.Page(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -775,7 +779,7 @@ func (h *handler) confimFreeExportConcernedList(c *gin.Context) {
 	downloadAttachment(c, "concernedList.xlsx", data)
 }
 
-func (h *handler) concernedList(c *gin.Context) ([]*carConfimFree, int64, error) {
+func (h *handler) concernedList(c *gin.Context, page web.PageDomain) ([]*carConfimFree, int64, error) {
 	base := "SELECT t.id, t.car_no, t.car_type, t.car_vehicle, t.escaped_type, t.org_id, sd.dept_name AS org_name, " +
 		"k.total_amount AS total_amount, k.charge_amount AS charge_amount, k.dif_amount AS dif_amount, k.except_ids " +
 		"FROM car_info t JOIN (SELECT t1.car_no, sum(t1.total_amount) total_amount, sum(t1.charge_amount) charge_amount, " +
@@ -800,7 +804,6 @@ func (h *handler) concernedList(c *gin.Context) ([]*carConfimFree, int64, error)
 	// buildWhere 需要完整 WHERE；base 已带 WHERE，这里只拼额外条件。
 	extra, queryArgs := buildWhere(c, "", conds)
 	sqlStr := base + extra
-	page := web.Page(c)
 	var total int64
 	if page.HasPage {
 		if err := h.app.DB.WithContext(c.Request.Context()).

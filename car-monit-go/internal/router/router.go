@@ -48,7 +48,9 @@ func Setup(a *app.App) *gin.Engine {
 	authH := handler.NewAuthHandler(a)
 
 	// JAVA 对照: SecurityConfig 中的 permitAll 端点
-	engine.GET("/", authH.Index)
+	// SysIndexController:24 用的是 @RequestMapping("/")（不限方法），故这里注册全部方法；
+	// 之前只注册 GET，导致 POST/PUT/DELETE/PATCH / 在 Go 侧 404、Java 侧 200 文本。
+	engine.Any("/", authH.Index)
 	engine.GET("/healthz", handler.Health(a))
 	engine.GET("/captchaImage", authH.CaptchaImage)
 	engine.POST("/login", authH.Login)

@@ -233,6 +233,22 @@ func (s *Service) MenuPermissions(ctx context.Context, user *model.SysUser) []st
 	return out
 }
 
+// logininforStatus 对应 AsyncFactory.recordLogininfor:71-80 的状态映射：
+// Success/Logout（Java 还包含 Register，本工程无注册流程）-> Constants.SUCCESS("0")，
+// Error -> Constants.FAIL("1")，其它值 Java 不设置状态（列为 NULL）。
+// sys_logininfor.status 是 char(1)，直接把语义串写进去会被 MySQL 以 Data too long
+// 拒绝，整条审计日志丢失。
+func logininforStatus(status string) any {
+	switch status {
+	case LoginSuccess, LogoutFlag:
+		return "0"
+	case LoginFail:
+		return "1"
+	default:
+		return nil
+	}
+}
+
 // recordLogininfor 对应 AsyncFactory.recordLogininfor + SysLogininforMapper.insertLogininfor。
 func (s *Service) recordLogininfor(ctx context.Context, username, status, msg, ip, ua string) {
 	if username == "" {
@@ -244,7 +260,7 @@ func (s *Service) recordLogininfor(ctx context.Context, username, status, msg, i
 		err := s.db.WithContext(ctx).Exec(`
 			insert into sys_logininfor (user_name, status, ipaddr, login_location, browser, os, msg, login_time)
 			values (?, ?, ?, ?, ?, ?, ?, ?)`,
-			username, status, ip, addressByIP(ip), browserName(ua), osName(ua), msg, time.Now(),
+			username, logininforStatus(status), ip, addressByIP(ip), browserName(ua), osName(ua), msg, time.Now(),
 		).Error
 		if err != nil {
 			s.log.Warn("写入登录日志失败", "err", err)

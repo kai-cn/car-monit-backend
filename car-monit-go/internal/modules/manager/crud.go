@@ -65,6 +65,9 @@ func (h *handler) tableList(c *gin.Context, spec *tableSpec) {
 }
 
 // respondList 执行列表查询并输出 TableDataInfo。
+//
+// JAVA 对照: 控制器 list 一律先 startPage()（TableSupport 默认 pageNum=1、pageSize=10），
+// 不带分页参数时同样只返回一页，故用 PageAlways；导出接口不走这里（Java 导出不分页）。
 func (h *handler) respondList(c *gin.Context, spec *tableSpec, clause string, args []any) {
 	dest := newSliceOf(spec.prototype)
 	total, err := h.list(c.Request.Context(), listQuery{
@@ -72,7 +75,7 @@ func (h *handler) respondList(c *gin.Context, spec *tableSpec, clause string, ar
 		FromSQL:   spec.from(),
 		Where:     &whereClause{clause: clause, args: args},
 		OrderBy:   spec.orderBy,
-		Page:      web.Page(c),
+		Page:      web.PageAlways(c),
 	}, dest)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))

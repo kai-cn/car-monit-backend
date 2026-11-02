@@ -18,7 +18,7 @@ import (
 // gantryList 对应 GET /base/gantry/list：用 redis section_list 回填 roadName/sectionName。
 func (h *handler) gantryList(c *gin.Context) {
 	clause, args := buildWhere(c, gantrySpec.prefix(), gantrySpec.conditions)
-	page := web.Page(c)
+	page := web.PageAlways(c)
 	dest := newSliceOf(&odsSzdnGantry{})
 	total, err := h.list(c.Request.Context(), listQuery{
 		SelectSQL: gantrySpec.selectSQL,
@@ -50,7 +50,7 @@ func (h *handler) gantryListAll(c *gin.Context) {
 // JAVA 对照: 控制器里还算了 roadMap，但没用上（照抄：不输出 roadName）。
 func (h *handler) tollList(c *gin.Context) {
 	clause, args := buildWhere(c, tollSpec.prefix(), tollSpec.conditions)
-	page := web.Page(c)
+	page := web.PageAlways(c)
 	dest := newSliceOf(&odsSzdnToll{})
 	total, err := h.list(c.Request.Context(), listQuery{
 		SelectSQL: tollSpec.selectSQL,

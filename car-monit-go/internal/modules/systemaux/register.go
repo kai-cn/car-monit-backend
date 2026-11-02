@@ -18,4 +18,5 @@ func Register(reg *router.Registry) {
 	registerUpgrade(reg)
 	registerProfile(reg)
 	registerFile(reg)
+	registerOSSEndpoint(reg)
 }

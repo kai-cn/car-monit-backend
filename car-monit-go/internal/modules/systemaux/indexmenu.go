@@ -268,7 +268,7 @@ func newIndexMenuHandler(a *app.App) *indexMenuHandler {
 
 // List 对应 GET /system/indexmenu/list（无权限点）。
 func (h *indexMenuHandler) List(c *gin.Context) {
-	rows, total, err := h.svc.selectList(c.Request.Context(), web.Page(c), bindIndexMenuQuery(c), auth.CurrentUserID(c))
+	rows, total, err := h.svc.selectList(c.Request.Context(), web.PageAlways(c), bindIndexMenuQuery(c), auth.CurrentUserID(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
