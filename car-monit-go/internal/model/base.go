@@ -4,7 +4,8 @@
 //
 // DIFF: Java 的 Date 用 @JsonFormat 输出 "yyyy-MM-dd HH:mm:ss"，
 // Go 用 web.DateTime 承担；searchValue 标 @JsonIgnore，因此 json:"-"。
-// DIFF: Jackson 默认输出 null，Go 的 string 零值是 ""；前端对二者等价，差异记录在 docs/COMPATIBILITY.md。
+// DIFF: Jackson 默认输出 null，Go 的 string 零值是 ""；可空字段统一用指针表达，
+// 差异清单记录在 docs/PROGRESS.md §3.5。
 package model
 
 import "car-monit-go/internal/web"

@@ -120,7 +120,7 @@ func (s *TokenService) refreshToken(ctx context.Context, lu *model.LoginUser) er
 	now := time.Now()
 	lu.LoginTime = now.UnixMilli()
 	lu.ExpireTime = now.Add(time.Duration(s.cfg.Token.ExpireTime) * time.Minute).UnixMilli()
-	return s.cache.Set(ctx, LoginTokenKey+lu.Token, lu, time.Duration(s.cfg.Token.ExpireTime)*time.Minute)
+	return s.storeLoginUser(ctx, lu)
 }
 
 func (s *TokenService) parseToken(token string) (jwt.MapClaims, error) {

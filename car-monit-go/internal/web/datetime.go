@@ -10,6 +10,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -32,13 +33,22 @@ func (d DateTime) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + d.Format(dateTimeLayout) + `"`), nil
 }
 
-func (d *DateTime) UnmarshalJSON(b []byte) error {
+// parseJSONDate 解析 JSON 里的日期值。除了字符串形式，还要接受裸的毫秒时间戳：
+// Java 侧 FastJson2 对 java.util.Date 有 WriteClassName/无格式两种写法，
+// login_tokens:* 的老会话里就是 "loginDate":1715955352000。
+func parseJSONDate(b []byte) (time.Time, error) {
 	s := strings.Trim(string(b), `"`)
 	if s == "" || s == "null" {
-		d.Time = time.Time{}
-		return nil
+		return time.Time{}, nil
 	}
-	t, err := ParseDate(s)
+	if millis, err := strconv.ParseInt(s, 10, 64); err == nil {
+		return time.UnixMilli(millis), nil
+	}
+	return ParseDate(s)
+}
+
+func (d *DateTime) UnmarshalJSON(b []byte) error {
+	t, err := parseJSONDate(b)
 	if err != nil {
 		return err
 	}
@@ -138,12 +148,7 @@ func (d ISODateTime) MarshalJSON() ([]byte, error) {
 }
 
 func (d *ISODateTime) UnmarshalJSON(b []byte) error {
-	s := strings.Trim(string(b), `"`)
-	if s == "" || s == "null" {
-		d.Time = time.Time{}
-		return nil
-	}
-	t, err := ParseDate(s)
+	t, err := parseJSONDate(b)
 	if err != nil {
 		return err
 	}

@@ -676,6 +676,10 @@ type carWarningInfo struct {
 	NeedToWarnStr   *string    `json:"needToWarnStr" gorm:"-"`
 	NextPassTimeStr *string    `json:"nextPassTimeStr" gorm:"-"`
 	TrailFwqList    []*trailBO `json:"trailFwqList" gorm:"-"`
+	// JAVA 对照: CarWarningInfo:238-244 两个 @TableField(exist=false) 集合字段，
+	// Java 未赋值时 Jackson 仍输出 null，键必须存在。
+	SectionCodeList []*string `json:"sectionCodeList" gorm:"-"`
+	CodeList        []*string `json:"codeList" gorm:"-"`
 }
 
 var carWarningInfoColumns = mergeColumns(baseColumns, map[string]string{

@@ -8,7 +8,7 @@
 // 对应 Go 文件: internal/model/system.go
 //
 // DIFF: Java 的实体由 MyBatis-Plus 按驼峰-下划线映射；Go 用显式 gorm column 标签 + TableName。
-// DIFF: Java 的 Long 包装类型可为 null；Go 用 int64 零值 0，差异见 COMPATIBILITY.md。
+// DIFF: Java 的 Long 包装类型可为 null；可空列用 *int64/*string 表达，清单见 docs/PROGRESS.md §3.5。
 package model
 
 import (

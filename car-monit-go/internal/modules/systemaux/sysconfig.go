@@ -87,7 +87,8 @@ func (s *configService) selectByID(ctx context.Context, configID int64) (*model.
 // selectByKey 对应 SysConfigServiceImpl.selectConfigByKey：
 // 先读缓存，未命中查库并回填；found=false 表示参数不存在（Java 返回 null）。
 func (s *configService) selectByKey(ctx context.Context, configKey string) (value string, found bool, err error) {
-	if v, ok := s.app.Cache.GetString(ctx, s.cacheKey(configKey)); ok && v != "" {
+	// GetStringJava：Java 写的是 FastJson2 的字符串值（外层带引号），读回要脱引号
+	if v, ok := s.app.Cache.GetStringJava(ctx, s.cacheKey(configKey)); ok && v != "" {
 		return v, true, nil
 	}
 	var cfg model.SysConfig
@@ -98,7 +99,7 @@ func (s *configService) selectByKey(ctx context.Context, configKey string) (valu
 	if err != nil {
 		return "", false, err
 	}
-	if err := s.app.Cache.SetString(ctx, s.cacheKey(configKey), model.Str(cfg.ConfigValue), 0); err != nil {
+	if err := s.app.Cache.SetJavaString(ctx, s.cacheKey(configKey), model.Str(cfg.ConfigValue), 0); err != nil {
 		s.app.Log.Warn("写入参数配置缓存失败", "key", configKey, "err", err)
 	}
 	return model.Str(cfg.ConfigValue), true, nil
@@ -158,7 +159,7 @@ func (s *configService) insert(ctx context.Context, b *configBody, username stri
 		return 0, res.Error
 	}
 	if res.RowsAffected > 0 {
-		if err := s.app.Cache.SetString(ctx, s.cacheKey(strVal(b.ConfigKey)), strVal(b.ConfigValue), 0); err != nil {
+		if err := s.app.Cache.SetJavaString(ctx, s.cacheKey(strVal(b.ConfigKey)), strVal(b.ConfigValue), 0); err != nil {
 			s.app.Log.Warn("刷新参数配置缓存失败", "key", strVal(b.ConfigKey), "err", err)
 		}
 	}
@@ -191,7 +192,7 @@ func (s *configService) update(ctx context.Context, b *configBody) (int64, error
 		return 0, res.Error
 	}
 	if res.RowsAffected > 0 {
-		if err := s.app.Cache.SetString(ctx, s.cacheKey(strVal(b.ConfigKey)), strVal(b.ConfigValue), 0); err != nil {
+		if err := s.app.Cache.SetJavaString(ctx, s.cacheKey(strVal(b.ConfigKey)), strVal(b.ConfigValue), 0); err != nil {
 			s.app.Log.Warn("刷新参数配置缓存失败", "key", strVal(b.ConfigKey), "err", err)
 		}
 	}

@@ -11,7 +11,7 @@
 // DIFF: Go 没有 JVM，Jvm 面板改用宿主机内存 + Go 运行时信息（与 Python 版选择一致）：
 // total/max 取物理内存、free 取可用内存，因此 used/usage 是整机内存占用，不会出现假值。
 // DIFF: 磁盘采集失败的分区**跳过**（Java 的 OSHI 会抛 IOException 导致整页 500）；
-// 与 Python 版一致，理由同 COMPATIBILITY.md §39：少一块盘优于整页监控不可用。
+// 与 Python 版一致：少一块盘优于整页监控不可用（Java 的 OSHI 会抛 IOException 导致 500）。
 // DIFF: Windows 上 gopsutil 不提供卷标，typeName 退回到设备名（Python 版取到了卷标）。
 // DIFF: Jackson 对 double 总是输出 ".0" 后缀，Go 默认会省略；这里用 javaFloat 补齐。
 package ops

@@ -120,27 +120,44 @@ level=INFO msg=服务启动 addr=:9989 config=configs/config.yaml
 
 `GET /base/tollStationIp/list` 是唯一「照抄即 500」被主动修掉的接口：Java XML 的 `order by t.big_id` 指向不存在的列，Go 侧改为 `t.id` 并在 `specs.go` 写了 `// DIFF:` 说明。
 
-### 1.6 与 Java 返回体逐字段对比（2026-10-31）
+### 1.6 与 Java 返回体逐字段对比（2026-11-02）
 
-以 Java 服务（9988）为基准，对 Go 服务（9989）的 GET 接口做归一化后的深度逐字段比较（脚本 `cmp_api.py`，报告 `final_*.json`，明细见 `docs/PROGRESS.md`）：
+以 Java 服务（9988）为基准，对 Go 服务（9989）做归一化后的深度逐字段比较（脚本 `cmp_api.py`，报告 `recheck*.json`，明细见 `docs/PROGRESS.md`）。
+
+GET 响应：
 
 | 模块 | GET 路由 | 完全一致 | 仍有差异 | 非 JSON/二进制 |
 |---|---|---|---|---|
-| `/manager/**` | 99 | 78 | 2 | 19 |
-| `/base/**` | 70 | 55 | 10 | 5 |
+| `/manager/**` | 99 | 79 | 0 | 20 |
+| `/base/**` | 70 | 57 | 8 | 5 |
 | `/flow/**` | 30 | 30 | 0 | 0 |
 | `/system/**` | 65 | 60 | 4 | 1 |
-| `/monitor/**` | 13 | 9 | 4 | 0 |
+| `/monitor/**` | 13 | 10 | 3 | 0 |
 | `/tool/**` | 10 | 10 | 0 | 0 |
-| 合计 | 287 | 242 | 20 | 25 |
+| 合计 | 287 | 246 | 15 | 26 |
 
-剩余差异全部属于「外部依赖不可复现」或「Java 自身缺陷」，逐条原因见 `docs/PROGRESS.md` §4，主要包括：
-- 两服务共享 Redis 导致的 Java 反序列化失败（`/manager/bigScreen/carLocation`、`/monitor/online/list`）；单服务部署时不存在
-- 路网几何（`raodTrailList`）、`section_list` 缓存同步、恒达桩号转经纬度、外部 9901 费用服务等未迁移的外部依赖
-- Java 侧框架/库缺陷：`sys_upgrade_info` 表缺失、`geometry_copy1` 表缺失、`jobLog/{id}` 缺少路径变量、`/monitor/server` 的 JNA 版本冲突
-- 25 项 Excel/Word/图片附件流：POI/EasyPOI 与 excelize 的二进制不可能逐字节一致（表头、列顺序、文件名信封已对齐）
+写接口（`cmp_crud2.py`：两端各插一条 `PARITY_*` 记录，比 POST/详情/PUT/DELETE 四步响应，结束后按标记硬清理）：
+32 个资源里 **24 个四步全一致**，其余 8 个的差异全部来自 Java 侧写入路径本身不可用（`IdType.INPUT` 主键未生成、
+`POST /system/user` 因 SQL 日志拦截器把 BCrypt 串当正则替换而必然抛 `No group 2`、引用库里不存在的列等）。
 
-实现要点（详细清单见 `docs/PROGRESS.md` §3）：响应信封与 `data` 键语义、`id`/`password`/`salt` 等可空字段、三态日期（`yyyy-MM-dd` / `yyyy-MM-dd HH:mm:ss` / Jackson 默认 ISO-8601）、Jackson 派生属性（`admin`/`default`/`children`）、以及各 Mapper XML 的投影列与排序。
+Redis 共存（`internal/cache/fastjson.go` + `internal/cache/javatypes.go`）：
+
+- Java 的缓存值是 FastJson2 `WriteClassName` 格式（`@type`、`25367L`、`Set[...]`、`{"@type":"java.util.HashMap"}`、null 成员不写）。
+  Go 写标准 JSON 时，Java `getCacheObject` 得到 `JSONObject`，强转业务类型即 `ClassCastException`
+  —— 这就是 `/monitor/online/list`、`/manager/bigScreen/carLocation` 在并行比对时 500 的根因，已修复
+- 写入统一走 `Cache.SetJava/SetJavaString`，读取走 `Cache.Get/ListJava/GetStringJava`（容错解码 Java 原值）
+- `login_tokens:*` 补齐 Java 才有的 `username`、`user.password` 与 fastjson2 的 `loginDate` 写法；
+  `web.DateTime`/`ISODateTime` 额外接受裸毫秒时间戳（Java 老会话形态）
+- 验收结果：两端在线列表 96/96 条且 tokenId 集合一致；Go 刷新的 `car_list` 等 Java 读得回；`sys_config`/`sys_dict` 双向可读
+
+剩余 GET 差异全部属于「外部依赖不可复现」或「Java 自身缺陷」，逐条原因见 `docs/PROGRESS.md` §4，主要包括：
+- 路网几何（`raodTrailList`）、恒达桩号转经纬度、外部 9901 费用服务等未迁移的外部依赖
+- Java 侧框架/库缺陷：`sys_upgrade_info`/`geometry_copy1` 表缺失、`jobLog/{id}` 缺少路径变量、`/monitor/server` 的 JNA 版本冲突
+- 26 项 Excel/Word/图片附件流：POI/EasyPOI 与 excelize 的二进制不可能逐字节一致（表头、列顺序、文件名信封已对齐）
+
+实现要点（详细清单见 `docs/PROGRESS.md` §3）：响应信封与 `data` 键语义、`id`/`password`/`salt` 等可空字段、
+三态日期（`yyyy-MM-dd` / `yyyy-MM-dd HH:mm:ss` / Jackson 默认 ISO-8601）、Jackson 派生属性（`admin`/`default`/`children`）、
+各 Mapper XML 的投影列与排序，以及 MyBatis-Plus `insertFill/updateFill` 的审计字段边界（insert 不写 `update_by`/`update_time`）。
 
 ### 1.5 常见问题
 

@@ -3,7 +3,9 @@
 // 类/职责: manager 模块的 Redis 缓存读写
 // 对应 Go 文件: internal/modules/manager/cache.go
 //
-// DIFF: Java 的 RedisCache 把对象序列化成 JSON；Go 的 cache.Set 同样以 JSON 存储。
+// DIFF: Java 的 RedisCache 用 fastjson2(WriteClassName) 序列化，共享键经 Cache.SetJava
+// 补 @type / Long 的 L 后缀（类型见 internal/cache/javatypes.go）；
+// car_warning_rule:<用户>type<方式> 在 Java 里是 List<String>，无类型标记，Set 即可。
 package manager
 
 import (
@@ -13,6 +15,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"car-monit-go/internal/cache"
 	"car-monit-go/internal/web"
 )
 
@@ -39,7 +42,7 @@ func (h *handler) refreshWhiteList(c *gin.Context) error {
 	}, rows); err != nil {
 		return err
 	}
-	return h.app.Cache.Set(c.Request.Context(), whiteCarListKey, rows, time.Duration(cacheTTL))
+	return h.app.Cache.SetJava(c.Request.Context(), whiteCarListKey, rows, time.Duration(cacheTTL), cache.CarWhiteInfoJava)
 }
 
 // getRedisWhiteList 对应 getRedisCarWhiteList：命中直接返回，未命中回源并回写。
@@ -59,7 +62,7 @@ func (h *handler) getRedisWhiteList(c *gin.Context) []*carWhiteInfo {
 		return nil
 	}
 	out := *(rows.(*[]*carWhiteInfo))
-	_ = h.app.Cache.Set(c.Request.Context(), whiteCarListKey, out, time.Duration(cacheTTL))
+	_ = h.app.Cache.SetJava(c.Request.Context(), whiteCarListKey, out, time.Duration(cacheTTL), cache.CarWhiteInfoJava)
 	return out
 }
 
