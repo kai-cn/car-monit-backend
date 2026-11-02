@@ -38,6 +38,7 @@ user:
 spring:
   profiles:
     active: druid
+  # 仅作 Java 原配置的对照展示，运行期不读取；生效的是顶层 redis 段（Go 用独立 DB）
   redis:
     host: 127.0.0.1
     port: 6379
@@ -66,11 +67,14 @@ database:
     conn-max-idle-time-seconds: 300
     slow-sql-millis: 1000
 
+# Go 侧实际使用的 Redis 段。逐接口对比阶段与 Java 共用 MySQL(3307/carmonitdb) 但
+# 使用不同的 Redis DB：Java(application.yml spring.redis.database)=0，Go=2
+# （db1 已被其它移植端占用）。两端缓存互不覆盖，读回形态只由各端自己决定。
 redis:
   host: 127.0.0.1
   port: 6379
   password: ""
-  database: 0
+  database: 2
   timeout: 10s
   max-active: 8
   max-idle: 8

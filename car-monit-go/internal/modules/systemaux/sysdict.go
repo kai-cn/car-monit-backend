@@ -553,7 +553,7 @@ func newDictHandler(a *app.App) *dictHandler { return &dictHandler{app: a, svc: 
 
 // TypeList 对应 SysDictTypeController.list（GET /system/dict/type/list）。
 func (h *dictHandler) TypeList(c *gin.Context) {
-	rows, total, err := h.svc.selectTypeList(c.Request.Context(), web.Page(c), bindDictTypeQuery(c))
+	rows, total, err := h.svc.selectTypeList(c.Request.Context(), web.PageAlways(c), bindDictTypeQuery(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -697,7 +697,7 @@ func (h *dictHandler) TypeOptionSelect(c *gin.Context) {
 
 // DataList 对应 SysDictDataController.list。
 func (h *dictHandler) DataList(c *gin.Context) {
-	rows, total, err := h.svc.selectDataList(c.Request.Context(), web.Page(c), bindDictDataQuery(c))
+	rows, total, err := h.svc.selectDataList(c.Request.Context(), web.PageAlways(c), bindDictDataQuery(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

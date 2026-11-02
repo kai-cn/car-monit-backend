@@ -870,9 +870,9 @@ func parseLongPathParam(name, raw string) (int64, error) {
 	return v, nil
 }
 
-// List 对应 GET /system/file/list。
+// List 对应 GET /system/file/list（Java 侧 startPage）。
 func (h *fileHandler) List(c *gin.Context) {
-	rows, total, err := h.svc.selectSysFileList(c.Request.Context(), web.Page(c), bindSysFileQuery(c))
+	rows, total, err := h.svc.selectSysFileList(c.Request.Context(), web.PageAlways(c), bindSysFileQuery(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

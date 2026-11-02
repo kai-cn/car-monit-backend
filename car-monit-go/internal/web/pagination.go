@@ -68,6 +68,15 @@ func Page(c *gin.Context) PageDomain {
 	return pd
 }
 
+// PageAlways 对应 Java 里无条件调用 startPage() 的端点：
+// TableSupport.getPageDomain 对缺省参数取 pageNum=1、pageSize=10，
+// 因此请求里不带分页参数时同样只返回一页（Go 只用 Page() 会退化成「不分页」）。
+func PageAlways(c *gin.Context) PageDomain {
+	pd := Page(c)
+	pd.HasPage = true
+	return pd
+}
+
 func (p PageDomain) Offset() int {
 	if !p.HasPage {
 		return 0

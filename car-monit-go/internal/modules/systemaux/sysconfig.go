@@ -273,7 +273,7 @@ func newConfigHandler(a *app.App) *configHandler {
 
 // List 对应 SysConfigController.list（GET /system/config/list，system:config:list）。
 func (h *configHandler) List(c *gin.Context) {
-	rows, total, err := h.svc.selectList(c.Request.Context(), web.Page(c), bindConfigQuery(c))
+	rows, total, err := h.svc.selectList(c.Request.Context(), web.PageAlways(c), bindConfigQuery(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

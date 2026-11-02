@@ -290,7 +290,7 @@ func newNoticeHandler(a *app.App) *noticeHandler { return &noticeHandler{svc: ne
 
 // List 对应 GET /system/notice/list（无 @PreAuthorize，登录即可）。
 func (h *noticeHandler) List(c *gin.Context) {
-	rows, total, err := h.svc.selectNoticeList(c.Request.Context(), web.Page(c), bindNoticeQuery(c))
+	rows, total, err := h.svc.selectNoticeList(c.Request.Context(), web.PageAlways(c), bindNoticeQuery(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -303,7 +303,7 @@ func (h *noticeHandler) ListQuery(c *gin.Context) {
 	q := bindNoticeQuery(c)
 	status := "0"
 	q.Status = &status
-	rows, total, err := h.svc.selectNoticeList(c.Request.Context(), web.Page(c), q)
+	rows, total, err := h.svc.selectNoticeList(c.Request.Context(), web.PageAlways(c), q)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

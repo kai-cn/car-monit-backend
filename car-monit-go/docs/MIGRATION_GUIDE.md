@@ -122,6 +122,10 @@ level=INFO msg=服务启动 addr=:9989 config=configs/config.yaml
 
 ### 1.6 与 Java 返回体逐字段对比（2026-11-02）
 
+> 第三轮已在「共用 MySQL + **两端不同 Redis DB**（Java=db0 / Go=db2）」的设定下重跑，
+> 路由覆盖、GET 288 条、写 32 资源的完整结果与本轮新发现的 5 项修复见
+> **`docs/PARITY-2026-11-02.md`**；校验脚本在 `scripts/parity/`。下面两小节是前两轮记录。
+
 以 Java 服务（9988）为基准，对 Go 服务（9989）做归一化后的深度逐字段比较（脚本 `cmp_api.py`，报告 `recheck*.json`，明细见 `docs/PROGRESS.md`）。
 
 GET 响应：

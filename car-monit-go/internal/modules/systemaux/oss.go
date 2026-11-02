@@ -12,7 +12,10 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -42,6 +45,14 @@ func newOssStorage(cfg config.Oss) *ossStorage {
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, ""),
 		Secure: secure,
+		// JAVA 对照: AWS SDK 有 connectionTimeout + 重试，端点不可达时十几秒就返回 500；
+		// Go 默认沿用 OS 的 TCP 超时（Windows ~21s）再乘 minio 的三次重试，会拖到 200s+。
+		// 只限制「建立连接」阶段，不影响慢但正常的上传/下载。
+		Transport: &http.Transport{
+			DialContext:         (&net.Dialer{Timeout: 3 * time.Second}).DialContext,
+			TLSHandshakeTimeout: 5 * time.Second,
+			MaxIdleConns:        8,
+		},
 	})
 	return &ossStorage{client: client, bucket: cfg.BucketName, err: err}
 }

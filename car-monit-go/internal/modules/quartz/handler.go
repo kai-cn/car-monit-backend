@@ -40,7 +40,7 @@ func (h *JobHandler) List(c *gin.Context) {
 		Status:       c.Query("status"),
 		InvokeTarget: c.Query("invokeTarget"),
 	}
-	rows, total, err := h.svc.ListJobs(c.Request.Context(), filter, web.Page(c))
+	rows, total, err := h.svc.ListJobs(c.Request.Context(), filter, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -175,7 +175,7 @@ func NewJobLogHandler(a *app.App, svc *Service) *JobLogHandler {
 
 // List 对应 SysJobLogController.list（第 32-42 行）：/monitor/jobLog/list
 func (h *JobLogHandler) List(c *gin.Context) {
-	rows, total, err := h.svc.ListJobLogs(c.Request.Context(), jobLogFilter(c), web.Page(c))
+	rows, total, err := h.svc.ListJobLogs(c.Request.Context(), jobLogFilter(c), web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

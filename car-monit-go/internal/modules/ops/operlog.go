@@ -140,7 +140,7 @@ func (h *operLogHandler) List(c *gin.Context) {
 	}
 	baseSQL, args := buildOperLogSQL(q)
 	rows, total, err := queryPage[model.SysOperLog](c.Request.Context(), h.app.DB, baseSQL, args,
-		"order by oper_id desc", web.Page(c))
+		"order by oper_id desc", web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

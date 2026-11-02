@@ -195,7 +195,7 @@ type columnTableInfo struct {
 // genList GET /tool/gen/list。
 func (h *genHandler) genList(c *gin.Context) {
 	filter := bindGenTableQuery(c)
-	rows, total, err := h.svc.selectGenTableList(c.Request.Context(), filter, web.Page(c))
+	rows, total, err := h.svc.selectGenTableList(c.Request.Context(), filter, web.PageAlways(c))
 	if err != nil {
 		renderError(c, err)
 		return
@@ -217,7 +217,7 @@ func (h *genHandler) getAllGenerateTableList(c *gin.Context) {
 // dataList GET /tool/gen/db/list。
 func (h *genHandler) dataList(c *gin.Context) {
 	filter := bindGenTableQuery(c)
-	rows, total, err := h.svc.selectDbTableList(c.Request.Context(), filter, web.Page(c))
+	rows, total, err := h.svc.selectDbTableList(c.Request.Context(), filter, web.PageAlways(c))
 	if err != nil {
 		renderError(c, err)
 		return

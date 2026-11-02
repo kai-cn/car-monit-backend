@@ -32,7 +32,7 @@ func (h *handler) trackList(c *gin.Context) {
 		FromSQL:   trackInfoSpec.from(),
 		Where:     &whereClause{clause: clause, args: args},
 		OrderBy:   trackInfoSpec.orderBy,
-		Page:      web.Page(c),
+		Page:      web.PageAlways(c),
 	}, dest)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
@@ -246,8 +246,9 @@ func (h *handler) registerTrackInfo(reg *router.Registry) {
 }
 
 // trackQuery 对应 selectZdataTrailTracksList / getCyly + getHistoryTrail。
+// 两个调用方（listByCarId、listByCarByTime）在 Java 里都先 startPage() ⇒ 默认 1/10 分页。
 func (h *handler) trackQuery(c *gin.Context) ([]*zdataTrailTracks, int64, error) {
-	page := web.Page(c)
+	page := web.PageAlways(c)
 	isCylx := isNull(queryParam(c, "isCylx"))
 	base := " FROM zdata_trail_tracks t WHERE 1 = 1"
 	var args []any

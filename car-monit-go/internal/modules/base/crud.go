@@ -104,14 +104,18 @@ func (h *handler) tableList(c *gin.Context, spec *tableSpec) {
 }
 
 // respondList 执行列表查询并输出 TableDataInfo。
+//
+// JAVA 对照: 这些 list 方法都先 startPage()，TableSupport 对缺省参数取 1/10，
+// 所以不带分页参数时也必须只返回一页 —— 用 PageAlways 而不是 Page。
 func (h *handler) respondList(c *gin.Context, spec *tableSpec, clause string, args []any) {
 	dest := newSliceOf(spec.prototype)
+	page := web.PageAlways(c)
 	total, err := h.list(c.Request.Context(), listQuery{
 		SelectSQL: spec.selectSQL,
 		FromSQL:   "FROM " + spec.from() + " ",
 		Where:     &whereClause{clause: clause, args: args},
-		OrderBy:   orderByFor(spec, web.Page(c)),
-		Page:      web.Page(c),
+		OrderBy:   orderByFor(spec, page),
+		Page:      page,
 	}, dest)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))

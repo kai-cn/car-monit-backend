@@ -309,7 +309,7 @@ func (h *handler) bigExceptRecordList(c *gin.Context) {
 		FromSQL:   exceptRecordSpec.from(),
 		Where:     &whereClause{clause: clause, args: args},
 		OrderBy:   exceptRecordSpec.orderBy,
-		Page:      web.Page(c),
+		Page:      web.PageAlways(c),
 	}, dest)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
