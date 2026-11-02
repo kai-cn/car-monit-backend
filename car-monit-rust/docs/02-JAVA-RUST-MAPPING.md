@@ -34,7 +34,7 @@
 | 基础设施 | `src/db/**`（`redis_cache.rs`、`sharding.rs`、`rows.rs`）；Kafka/ES/OSS/SMS 为可选 feature，尚未接线 |
 | 中间件 | `src/middleware/**` + `src/api/meta.rs`（@PreAuthorize/@Log 统一执行） |
 | 配置 | `config/application.yaml`（`config` crate，`APP_` 环境变量前缀） |
-| 资源 | Java `resources/templates|i18n|static` 暂未迁移（Rust 侧无模板引擎依赖） |
+| 资源 | 代码生成的 26 个 `vm/**.vm` 原样拷入 `car-monit-rust/templates/` 并用 `include_str!` 内嵌；`i18n`/`static` 未迁移（响应文案按 Java 默认 locale 直接内嵌中文） |
 
 ### 0.2 用户决策（覆盖基线中的“保持失效”建议）
 
@@ -210,7 +210,7 @@
 | Forest 1.6.0 | `reqwest::Client` + 超时/重试 | 无注解式接口 | 超时 60s、重试 2 次 |
 | kaptcha | `captcha` crate | 像素不一致 | 只保证算式/字符、2 分钟、一次性 |
 | POI / EasyPOI | `rust_xlsxwriter` / `calamine` | 样式/公式支持有限 | 模板文件逐单元格对比 |
-| Velocity | `minijinja` / `tera` | 模板语法不同 | 生成物换行/缩进需快照对比 |
+| Velocity 2.3 | 自研子集 `src/service/velocity.rs`（未引第三方模板引擎） | 仅覆盖 vm 模板用到的指令/表达式 | 逐模板与 Java 产物字节对拍（`tools/endpoint_parity/gen_preview_diff.py`、`gen_zip_diff.py`） |
 | OSHI | `sysinfo` | 字段名/单位不同 | 监控页数值口径需对齐 |
 | UserAgentUtils | `user-agent-parser` | 浏览器/OS 名称映射 | 登录日志的 browser/os 字段需一致 |
 | 本地文件 `/profile/**` | `ServeDir` | 路径拼接 | 目录穿越与 URL 编码 |
@@ -420,11 +420,11 @@
 | quartz | 2 + 调度器 | 完成 | `src/api/quartz/*.rs`、`src/service/quartz_runtime.rs` |
 | common | 2 | 完成 | `src/api/common/*.rs`（下载/上传/模板下载） |
 | tool | 1 | 完成 | `src/api/tool/test.rs` |
-| generator | 1 | 元数据完成 | `src/api/generator/gen.rs`（Velocity 渲染未迁移，见 README §6） |
+| generator | 1 | 完成 | `src/api/generator/{gen,gen_render,gen_zip}.rs` + `src/service/velocity.rs`（preview/download/genCode/batchGenCode 已与 Java 一致） |
 | 死代码 6 类 | — | 完成 | `src/service/legacy_sharding.rs` |
 
 已用 `route_parity` 单测按附录 B 的 501 条端点逐条对拍（method + 路径形状），全部注册成功。
 
 已接线：`sys_job` 的 `vehicleMonitoringTask` 全量基础信息同步、`trackTask` 实时/历史轨迹与逃费回写/可疑车迁移（远端 baseInfo 走 `vehicleMonitor.baseUrl`，轨迹读 Redis 缓存）。
 
-仍未接入：代码生成模板渲染（Velocity）、Kafka/ES（Java 侧 ES 写入被注释、Kafka 消费无业务效果）、OSS（Rust 用本地存储等价实现）。详见 README-MIGRATION §6。
+仍未接入：Kafka/ES（Java 侧 ES 写入被注释、Kafka 消费无业务效果）、OSS（Rust 用本地存储等价实现）、代码生成里的关联表回查（`field_map_string`/`link_table_id`）。详见 README-MIGRATION §6。

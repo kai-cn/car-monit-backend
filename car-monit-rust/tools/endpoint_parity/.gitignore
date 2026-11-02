@@ -1,0 +1,4 @@
+# 生成物不入库：清单与对比结果每次现跑
+endpoints.json
+report.json
+__pycache__/
