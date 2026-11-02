@@ -200,7 +200,7 @@ curl -s localhost:9989/captchaImage
 - [x] `sys_job` 调度循环接线（启动加载 status=0 任务；增改/启停/立即执行/删除同步 tokio 调度）
 - [ ] Kafka 消费者 / ES 同步接线（可选 feature）
 - [ ] OSS 对象存储 / SMS 短信（可选 feature）
-- [ ] 代码生成器的 Velocity 模板渲染（元数据 CRUD 已迁移）
+- [x] 代码生成器的 Velocity 模板渲染（`src/service/velocity.rs` 自研子集 + 26 个 vm 模板内嵌；`gen_table` 全 53 张表的 preview/download 产物与 Java 逐字节一致）
 - [x] 本地联调冒烟：MySQL 3307 + Redis 6379 启动服务，完成登录（验证码换取 token）、`/getInfo`、系统/基础/管理/流程/监控/定时任务/生成器 40+ 代表性端点读写验证
 - [ ] 与 Java 的完整黄金样本对拍（需 GaussDB 联调环境）
 
@@ -226,9 +226,9 @@ curl -s localhost:9989/captchaImage
 | 死代码类 | 8 个类照样迁移：`ShardingConfig`/`ShardingTableTask` 在 `db::sharding`、`task::sharding_table`；`PartitionMappingCache`、`PartitionParallelQueryService`、`ShardingQueryService`、`ShardingSyncService`、`DataConsistencyService`、`ViewMaintenanceOptimizationService` 在 `service::legacy_sharding`（无路由引用，与 Java 一致） |
 | Kafka/ES | Java 中 `CdcSyncService` 对 ES 的写入全部被注释，Kafka 消费实际只记日志；Rust 保留 `/base/cdc/*` 队列管理端点（Redis 重试/死信），不启动消费者 |
 | OSS/SMS | Java `SysFileServiceImpl` 走 S3（OssTemplate）；Rust 用 `ruoyi.profile/upload` 本地落盘并保持相同响应结构；`AliyunSMSUtil` 在 Java 中无调用方，未迁移 |
-| sys_job | 启动时加载 status=0 的任务并按 cron 调度；`invoke_target` 覆盖 6 个 @Scheduled 方法、`vehicleMonitoringTask` 全量基础信息同步、`trackTask` 历史轨迹/实时轨迹/逃费回写/可疑车迁移与 `ryTask`。`orgTask.syncOrgInfo` 与 `syncHistoryTrackNoCar` 在 Java 中方法体已注释，按空操作迁移 |
+| sys_job | 启动时加载 status=0 的任务并按 cron 调度；`invoke_target` 覆盖 6 个 @Scheduled 方法、`vehicleMonitoringTask` 全量基础信息同步、`trackTask` 历史轨迹/实时轨迹/逃费回写/可疑车迁移与 `ryTask`。`orgTask.syncOrgInfo` 与 `syncHistoryTrackNoCar` 在 Java 中方法体已注释，按空操作迁移。留白：分发是白名单式的（`quartz_runtime.rs`），未复刻 Java `JobInvokeUtil` 的「任意 bean + 参数字面量反射」，未知 target 直接失败并记日志——本库现有 17 条 job 全部命中白名单 |
 | 模板导出 | EasyPOI 模板导出（gantry/snapshotFlow/feeRecords/carInfo/carSuspicious 等）改为标准 xlsx 工作簿，列顺序与模板一致；返回 `data=文件名` 而非二进制响应体 |
-| 代码生成器 | `preview/download/genCode/batchGenCode` 依赖 Apache Velocity + 13 个 vm 模板 + VelocityUtils 上下文（约 1200 行 Java），Rust 版本返回明确错误；`gen_table/gen_table_column` 的列表/导入/同步/编辑已迁移。若后续需要，可单独引入模板引擎按 `config/vm` 渲染 |
+| 代码生成器 | `preview/download/genCode/batchGenCode` 已迁移：`src/service/velocity.rs`（Velocity 2.3 指令与空格吞噬子集）+ `src/api/generator/gen_render.rs`（prepareContext/getTemplateList/getImportList 桶序/dictionaryKeyToCamelCase/setPkColumn/init* 与 getFileName/getGenPath）+ `gen_zip.rs`（STORE ZIP）。Java 的 DEFLATE 与 Rust 的 STORE 压缩包字节不同，按解压后的条目名与内容对拍：53 张表 x 10 模板逐字节一致。关联表回查（`field_map_string` + `link_table_id` -> LinkTableField/linkTable/tableFileInfo）未迁移，配置了关联列的表会显式报错；本库无此类配置 |
 | 实时/可疑车轨迹 | `trackTask` 已接线：实时轨迹读 `car_curent_trail:*`、历史轨迹读 `car_history_trail:*`、可疑车读请求体 `trailInfoList`。这些 Redis 缓存由外部采集服务写入；缓存为空时任务正常完成但不产生数据（与 Java 一致） |
 | 车辆导入 | CarInfo `/manager/carinfo/import` 已迁移（字典 label→value）；CarExceptRecord 的 ImportSysUtil 多模板校验未迁移 |
 | 车辆轨迹 | `listByCarId/listByCarByTime` 走本地 `zdata_trail_tracks`；远端 sysutil 回退、`changeTrailInfo` 的 Geometry 计算、`carSnapShot` 远端抓拍返回空/原结构 |
