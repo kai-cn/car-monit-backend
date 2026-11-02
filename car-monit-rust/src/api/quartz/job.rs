@@ -130,6 +130,25 @@ fn text(body: &Value, key: &str) -> String {
     body.get(key).and_then(Value::as_str).unwrap_or_default().trim().to_string()
 }
 
+/// Java Jackson 的 SysJob 键序：BaseEntity 在前，派生 `nextValidTime` 最后。
+const JOB_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "params",
+    "jobId",
+    "jobName",
+    "jobGroup",
+    "invokeTarget",
+    "cronExpression",
+    "misfirePolicy",
+    "concurrent",
+    "status",
+    "nextValidTime",
+];
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -138,7 +157,7 @@ async fn list(
     let params = support::query_map(&raw);
     let (total, mut rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
     fill_next_valid_time(&mut rows);
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::reorder_rows(rows, JOB_KEYS)))
 }
 
 /// Java: SysJob.getNextValidTime() —— 用 Quartz cron 计算下一次执行时间。
@@ -207,7 +226,9 @@ async fn get_info(
     if let Some(value) = row.as_mut() {
         fill_next_valid_time(std::slice::from_mut(value));
     }
-    Ok(AjaxResult::success_data(row))
+    Ok(AjaxResult::success_data(
+        row.map(|value| support::reorder_keys(value, JOB_KEYS)),
+    ))
 }
 
 async fn add(

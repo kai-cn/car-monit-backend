@@ -36,11 +36,13 @@ async fn get_info(State(state): State<AppState>) -> Result<AjaxResult, AppError>
         pie_list.push(json!({ "name": name, "value": calls }));
     }
 
-    Ok(AjaxResult::success_data(json!({
+    // Java 侧这两层都是 HashMap，键序按桶序而非构造序。
+    let info_map = crate::response::java_hashtable_ordered(&Value::Object(info_map));
+    Ok(AjaxResult::success_data(crate::response::java_ordered(&json!({
         "info": info_map,
         "dbSize": db_size,
         "commandStats": pie_list,
-    })))
+    }))))
 }
 
 fn parse_info(text: &str) -> Map<String, Value> {

@@ -325,6 +325,57 @@ async fn query_users(
     Ok((total, data))
 }
 
+/// Java Jackson 的 SysUser 键序：BaseEntity（含 params）→ 声明顺序 → 关联对象 → 派生 getter。
+/// `/system/user/list` 一类 VO 没有 params 键，重排时自动跳过。
+pub(crate) const USER_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "params",
+    "userId",
+    "userNo",
+    "deptId",
+    "userName",
+    "nickName",
+    "userType",
+    "email",
+    "phonenumber",
+    "sex",
+    "avatar",
+    "confirmPassword",
+    "salt",
+    "status",
+    "delFlag",
+    "loginIp",
+    "loginDate",
+    "certId",
+    "certEntityId",
+    "bussId",
+    "bussName",
+    "epsName",
+    "tenantId",
+    "tenantName",
+    "roleCode",
+    "dept",
+    "roles",
+    "roleIds",
+    "postIds",
+    "flag",
+    "dataId",
+    "subCode",
+    "queryNickName",
+    "excludeSelf",
+    "excludeId",
+    "headOffice",
+    "procurementManager",
+    "deptName",
+    "pjFlag",
+    "imageId",
+    "admin",
+];
+
 /// Java SysPost：postSort 为 String，flag 为 boolean。
 fn shape_post_rows(mut rows: Vec<Value>) -> Vec<Value> {
     support::apply_formats(
@@ -341,41 +392,48 @@ fn shape_post_rows(mut rows: Vec<Value>) -> Vec<Value> {
             object.entry("flag").or_insert(Value::Bool(false));
         }
     }
+    for row in rows.iter_mut() {
+        *row = support::reorder_keys(row.take(), super::sys_post::POST_KEYS);
+    }
     rows
 }
 
 /// Java SysUserResult：BaseEntity 空字段 + 关联 dept（deptResult 只映射 VO 选中的列）。
 fn shape_user_rows(rows: &mut [Value]) {
     for row in rows {
-        let Some(object) = row.as_object_mut() else { continue };
-        object.remove("password");
-        let dept_id = object.get("deptId").cloned().unwrap_or(Value::Null);
-        let dept_name = object.get("deptName").cloned().unwrap_or(Value::Null);
-        let leader = object.remove("leader").unwrap_or(Value::Null);
-        let user_id = object.get("userId").and_then(Value::as_i64);
-        for key in [
-            "updateBy", "updateTime", "confirmPassword", "salt", "roleCode", "roleIds",
-            "postIds", "flag", "dataId", "subCode", "queryNickName", "excludeSelf",
-            "excludeId", "headOffice", "procurementManager", "pjFlag",
-        ] {
-            object.entry(key).or_insert(Value::Null);
+        {
+            let Some(object) = row.as_object_mut() else { continue };
+            object.remove("password");
+            let dept_id = object.get("deptId").cloned().unwrap_or(Value::Null);
+            let dept_name = object.get("deptName").cloned().unwrap_or(Value::Null);
+            let leader = object.remove("leader").unwrap_or(Value::Null);
+            let user_id = object.get("userId").and_then(Value::as_i64);
+            for key in [
+                "updateBy", "updateTime", "confirmPassword", "salt", "roleCode", "roleIds",
+                "postIds", "flag", "dataId", "subCode", "queryNickName", "excludeSelf",
+                "excludeId", "headOffice", "procurementManager", "pjFlag",
+            ] {
+                object.entry(key).or_insert(Value::Null);
+            }
+            object.entry("pjFlag").or_insert_with(|| json!(0));
+            object.insert("admin".to_string(), Value::Bool(user_id == Some(1)));
+            object.entry("roles").or_insert_with(|| json!([]));
+            let mut dept = serde_json::to_value(SysDept::default()).unwrap_or(json!({}));
+            if let Some(map) = dept.as_object_mut() {
+                if !dept_id.is_null() {
+                    map.insert("deptId".to_string(), dept_id);
+                }
+                if !dept_name.is_null() {
+                    map.insert("deptName".to_string(), dept_name);
+                }
+                if !leader.is_null() {
+                    map.insert("leader".to_string(), leader);
+                }
+            }
+            let dept = support::reorder_keys(dept, super::sys_dept::DEPT_KEYS);
+            object.insert("dept".to_string(), dept);
         }
-        object.entry("pjFlag").or_insert_with(|| json!(0));
-        object.insert("admin".to_string(), Value::Bool(user_id == Some(1)));
-        object.entry("roles").or_insert_with(|| json!([]));
-        let mut dept = serde_json::to_value(SysDept::default()).unwrap_or(json!({}));
-        if let Some(map) = dept.as_object_mut() {
-            if !dept_id.is_null() {
-                map.insert("deptId".to_string(), dept_id);
-            }
-            if !dept_name.is_null() {
-                map.insert("deptName".to_string(), dept_name);
-            }
-            if !leader.is_null() {
-                map.insert("leader".to_string(), leader);
-            }
-        }
-        object.insert("dept".to_string(), dept);
+        *row = support::reorder_keys(row.take(), USER_KEYS);
     }
 }
 
@@ -515,6 +573,7 @@ async fn current_user(Extension(user): Extension<LoginUser>) -> Result<AjaxResul
         object.insert("dept".to_string(), Value::Null);
         object.insert("roles".to_string(), Value::Null);
     }
+    let value = support::reorder_keys(value, USER_KEYS);
     Ok(AjaxResult::success_data(value))
 }
 
@@ -695,7 +754,10 @@ async fn get_info(
                     let admin = row.get("roleId").and_then(Value::as_i64) == Some(1);
                     map.insert("admin".to_string(), Value::Bool(admin));
                 }
-                roles_value.push(role);
+                roles_value.push(support::reorder_keys(
+                    role,
+                    crate::api::system::sys_role::ROLE_KEYS,
+                ));
             }
             object.insert("roles".to_string(), json!(roles_value));
         }

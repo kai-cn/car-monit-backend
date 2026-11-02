@@ -33,6 +33,29 @@ const ROLE_FORMATS: &[(&str, support::FieldFormat)] = &[
 ];
 
 /// Java: SysRole.isAdmin() 影响 JSON 的 `admin` 字段；menuIds/deptIds 为 null。
+/// Java Jackson 的 SysRole 键序：BaseEntity 在前（含 params），派生 getter（flag/menuIds/deptIds/admin）在最后。
+pub(crate) const ROLE_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "params",
+    "roleId",
+    "roleName",
+    "roleKey",
+    "roleSort",
+    "dataScope",
+    "menuCheckStrictly",
+    "deptCheckStrictly",
+    "status",
+    "delFlag",
+    "flag",
+    "menuIds",
+    "deptIds",
+    "admin",
+];
+
 pub(crate) fn role_rows(mut rows: Vec<Value>) -> Vec<Value> {
     support::apply_formats(&mut rows, ROLE_FORMATS);
     for row in &mut rows {
@@ -46,6 +69,9 @@ pub(crate) fn role_rows(mut rows: Vec<Value>) -> Vec<Value> {
             object.entry("menuIds").or_insert(Value::Null);
             object.entry("deptIds").or_insert(Value::Null);
         }
+    }
+    for row in rows.iter_mut() {
+        *row = support::reorder_keys(row.take(), ROLE_KEYS);
     }
     rows
 }

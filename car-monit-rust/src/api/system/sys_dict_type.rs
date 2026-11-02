@@ -126,6 +126,24 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 SysDictType 键序：BaseEntity 在前（含 params），再按声明顺序。
+const DICT_TYPE_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "params",
+    "dictId",
+    "dictName",
+    "dictType",
+    "status",
+];
+
+fn shape_dict_type_rows(rows: Vec<Value>) -> Vec<Value> {
+    support::reorder_rows(rows, DICT_TYPE_KEYS)
+}
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -133,7 +151,7 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, shape_dict_type_rows(rows)))
 }
 
 async fn export(
@@ -167,7 +185,7 @@ fn convert_status(text: &str) -> String {
 
 async fn optionselect(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
     let rows = support::query_all(&state.db, &std::collections::HashMap::new(), &SPEC).await?;
-    Ok(AjaxResult::success_data(rows))
+    Ok(AjaxResult::success_data(shape_dict_type_rows(rows)))
 }
 
 async fn get_info(
@@ -175,7 +193,9 @@ async fn get_info(
     Path(dict_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &dict_id).await?,
+        support::query_by_id(&state.db, &SPEC, &dict_id)
+            .await?
+            .map(|row| shape_dict_type_rows(vec![row]).pop().unwrap_or(Value::Null)),
     ))
 }
 

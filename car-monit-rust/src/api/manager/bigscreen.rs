@@ -98,6 +98,34 @@ fn push_time_filters(
 }
 
 /// Java: CarConfimFreeMapper.getCarStatistics（按逃费类型汇总）。
+
+/// 以下三组是 Java Jackson 对 VO/实体的键序（实测自 Java 响应）。
+const CAR_STATISTICS_KEYS: &[&str] = &["escapedType", "escapedTypeName", "number", "escapedAmount"];
+const EXCEPTION_CAR_KEYS: &[&str] = &[
+    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
+    "tenantId", "plateColor", "carNo", "carType", "carVehicle", "carNum", "passType",
+    "inStationId", "inStation", "inTime", "outStationId", "outStation", "outTime",
+    "gantryStationId", "gantrytStation", "gantryTime", "fileIds", "outGantryStationId",
+    "outGantrytStation", "outGantryTime", "outFileIds", "escapedType", "escapedTypeName",
+    "escapedNum", "isExcept", "exceptRemark", "exceptFileIds", "checkStatus", "orgId",
+    "orgName", "isWhite", "whiteRemark", "whiteFileIds", "roadCode", "roadName",
+    "sectionCode", "sectionName", "trackId", "trackJosn", "trackNames", "backCol1",
+    "backCol2", "status", "remark", "carNoQuery", "applyTime1", "applyTime2",
+    "createTimeStr", "checkList", "trailList", "gantryCode", "tollCode", "fwqbm", "type",
+    "code", "chargeAmount", "totalAmount", "difAmount", "mjTime", "mjAddress", "txTime",
+    "txAddress",
+];
+const INCOME_STATISTIC_KEYS: &[&str] = &["orgName", "amount", "carNum"];
+const EXCEPT_RECORD_KEYS: &[&str] = &[
+    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
+    "tenantId", "carId", "carNo", "carType", "carVehicle", "carNum", "passType",
+    "inStationId", "inStation", "inTime", "outStationId", "outStation", "outTime",
+    "totalAmount", "chargeAmount", "difAmount", "escapedType", "remark", "backCol1",
+    "backCol2", "status", "applyTime1", "applyTime2", "applyTime3", "applyTime4",
+    "createTimeStr", "orgId", "supplementaryStatus", "exceptIds", "carNoQuery",
+    "createInfo", "exceptNum", "exceptAmount", "inTimeStr", "outTimeStr",
+];
+
 async fn car_statistics(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -132,7 +160,7 @@ async fn car_statistics(
             );
         }
     }
-    Ok(AjaxResult::success_data(data))
+    Ok(AjaxResult::success_data(support::reorder_rows(data, CAR_STATISTICS_KEYS)))
 }
 
 /// Java: CarInfoMapper.getCarLocation。
@@ -353,11 +381,12 @@ async fn car_audit(
     let confirm_value =
         confirm_row.map(|row| crate::db::rows::row_to_json(&row)).unwrap_or(Value::Null);
 
+    // Java 侧 VO 的声明顺序即 totalCount, finishedCount, totalAmount, finishedAmount。
     Ok(AjaxResult::success_data(json!({
-        "totalAmount": audit_value.get("escapedAmount").cloned().unwrap_or(Value::Null),
         "totalCount": audit_value.get("number").cloned().unwrap_or(Value::Null),
-        "finishedAmount": confirm_value.get("escapedAmount").cloned().unwrap_or(Value::Null),
         "finishedCount": confirm_value.get("number").cloned().unwrap_or(Value::Null),
+        "totalAmount": audit_value.get("escapedAmount").cloned().unwrap_or(Value::Null),
+        "finishedAmount": confirm_value.get("escapedAmount").cloned().unwrap_or(Value::Null),
     })))
 }
 
@@ -405,7 +434,7 @@ async fn exception_car(State(state): State<AppState>) -> Result<AjaxResult, AppE
             }
         }
     }
-    Ok(AjaxResult::success_data(data))
+    Ok(AjaxResult::success_data(support::reorder_rows(data, EXCEPTION_CAR_KEYS)))
 }
 
 async fn top_ten(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
@@ -482,7 +511,7 @@ async fn income_statistic(
     push_time_filters(&mut builder, &params, "a.create_time");
     builder.push(" group by a.org_id order by amount desc");
     let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(AjaxResult::success_data(rows_to_json(&rows)))
+    Ok(AjaxResult::success_data(support::reorder_rows(rows_to_json(&rows), INCOME_STATISTIC_KEYS)))
 }
 
 async fn except_record_list(
@@ -517,5 +546,5 @@ async fn except_record_list(
             );
         }
     }
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::reorder_rows(rows, EXCEPT_RECORD_KEYS)))
 }

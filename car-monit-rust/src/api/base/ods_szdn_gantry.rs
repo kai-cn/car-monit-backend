@@ -145,6 +145,37 @@ async fn section_maps(state: &AppState) -> (HashMap<String, String>, HashMap<Str
     (road, section)
 }
 
+/// Java Jackson 的 BaseGantryInfo 键序（实体声明顺序 + 派生 sectionCodeList/isData/名称字段）。
+const GANTRY_KEYS: &[&str] = &[
+    "id",
+    "gantryCode",
+    "gantryName",
+    "roadCode",
+    "sectionCode",
+    "tollCode",
+    "orgCode",
+    "hexCode",
+    "direction",
+    "pileNo",
+    "lon",
+    "lat",
+    "isVirtual",
+    "mileage",
+    "boundaryGantryType",
+    "gantryType",
+    "cityCode",
+    "districtName",
+    "belongGroup",
+    "gantryCodeMerge",
+    "gantryNameAlias",
+    "remark",
+    "sectionCodeList",
+    "isData",
+    "roadName",
+    "sectionName",
+    "tollName",
+    "orgName",
+];
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -170,7 +201,7 @@ async fn list(
         object.insert("roadName".to_string(), Value::String(road_name));
         object.insert("sectionName".to_string(), Value::String(section_name));
     }
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::reorder_rows(rows, GANTRY_KEYS)))
 }
 
 async fn list_all(
@@ -180,7 +211,7 @@ async fn list_all(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::reorder_rows(rows, GANTRY_KEYS)))
 }
 
 async fn export(
@@ -292,7 +323,8 @@ async fn get_info(
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &id).await?,
+        support::query_by_id(&state.db, &SPEC, &id).await?
+            .map(|row| support::reorder_keys(row, GANTRY_KEYS)),
     ))
 }
 

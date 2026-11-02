@@ -20,23 +20,36 @@ use crate::state::AppState;
 
 /// Java 登录态 user 由 FastJson2 反序列化，params 字段里会残留 `@type` 键。
 fn shape_profile_user(value: &mut Value, admin: bool) {
-    let Some(object) = value.as_object_mut() else { return };
-    object.remove("password");
-    object.insert("admin".to_string(), Value::Bool(admin));
-    let params = json!({ "@type": "java.util.HashMap" });
-    object.insert("params".to_string(), params.clone());
-    if let Some(dept) = object.get_mut("dept").and_then(Value::as_object_mut) {
-        dept.insert("params".to_string(), params.clone());
-    }
-    if let Some(roles) = object.get_mut("roles").and_then(Value::as_array_mut) {
-        for role in roles {
-            if let Some(role) = role.as_object_mut() {
+    {
+        let Some(object) = value.as_object_mut() else { return };
+        object.remove("password");
+        object.insert("admin".to_string(), Value::Bool(admin));
+        let params = json!({ "@type": "java.util.HashMap" });
+        object.insert("params".to_string(), params.clone());
+        if let Some(dept) = object.get_mut("dept").and_then(Value::as_object_mut) {
+            dept.insert("params".to_string(), params.clone());
+        }
+        if let Some(roles) = object.get_mut("roles").and_then(Value::as_array_mut) {
+            for role in roles.iter_mut() {
+                let Some(role) = role.as_object_mut() else { continue };
                 role.insert("params".to_string(), params.clone());
                 let role_admin = role.get("roleId").and_then(Value::as_i64) == Some(1);
                 role.insert("admin".to_string(), Value::Bool(role_admin));
             }
         }
     }
+    // Jackson 顺序：先把嵌套对象内部排好，再排外层（外层重排会把它们放到各自的位置上）。
+    if let Some(object) = value.as_object_mut() {
+        if let Some(dept) = object.get_mut("dept") {
+            *dept = support::reorder_keys(dept.take(), super::sys_dept::DEPT_KEYS);
+        }
+        if let Some(roles) = object.get_mut("roles").and_then(Value::as_array_mut) {
+            for role in roles.iter_mut() {
+                *role = support::reorder_keys(role.take(), super::sys_role::ROLE_KEYS);
+            }
+        }
+    }
+    *value = support::reorder_keys(value.take(), super::sys_user::USER_KEYS);
 }
 
 static LOG_UPDATE: LogSpec = LogSpec::new(

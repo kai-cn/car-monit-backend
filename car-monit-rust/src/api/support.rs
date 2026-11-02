@@ -439,6 +439,107 @@ pub enum FieldFormat {
     Bool,
 }
 
+/// 按 Java 实体的声明顺序补齐并排序键：未查询的属性输出 null，
+/// 多出的键保持原相对顺序追加在后面。
+pub fn shape_entity_row(row: Value, keys: &[&str]) -> Value {
+    let source = match row {
+        Value::Object(object) => object,
+        _ => serde_json::Map::new(),
+    };
+    let mut out = serde_json::Map::with_capacity(keys.len());
+    for key in keys {
+        out.insert(
+            (*key).to_string(),
+            source.get(*key).cloned().unwrap_or(Value::Null),
+        );
+    }
+    for (key, value) in source {
+        out.entry(key).or_insert(value);
+    }
+    Value::Object(out)
+}
+
+// ==================== Java 常用工具语义 ====================
+
+/// Java: CommonUtil.isNull —— null 转空串，其余 toString + trim。
+pub fn java_text(value: Option<&Value>) -> String {
+    match value {
+        Some(Value::String(text)) => text.trim().to_string(),
+        Some(Value::Null) | None => String::new(),
+        Some(other) => other.to_string().trim().to_string(),
+    }
+}
+
+/// Java: BigDecimal 字段的值（列可能是 DECIMAL/字符串）。
+pub fn json_decimal(value: Option<&Value>) -> Option<rust_decimal::Decimal> {
+    match value {
+        Some(Value::Number(number)) => number.to_string().parse::<rust_decimal::Decimal>().ok(),
+        Some(Value::String(text)) => text.trim().parse::<rust_decimal::Decimal>().ok(),
+        _ => None,
+    }
+}
+
+/// BigDecimal -> JSON 数字（保持 Jackson 的写法）。
+pub fn decimal_json(value: rust_decimal::Decimal) -> Value {
+    value
+        .to_string()
+        .parse::<serde_json::Number>()
+        .map(Value::Number)
+        .unwrap_or_else(|_| Value::String(value.to_string()))
+}
+
+/// Java: Integer/int 字段。
+pub fn java_int(value: Option<&Value>) -> i64 {
+    match value {
+        Some(Value::Number(number)) => number.as_i64().unwrap_or(0),
+        Some(Value::String(text)) => text
+            .trim()
+            .parse::<f64>()
+            .map(|float| float as i64)
+            .unwrap_or(0),
+        _ => 0,
+    }
+}
+
+/// 只保留实体声明的键（Java 的 fastjson2/Jackson 会丢弃 DTO 之外的字段）。
+pub fn project_entity_row(row: Value, keys: &[&str]) -> Value {
+    let source = match row {
+        Value::Object(object) => object,
+        _ => serde_json::Map::new(),
+    };
+    let mut out = serde_json::Map::with_capacity(keys.len());
+    for key in keys {
+        out.insert(
+            (*key).to_string(),
+            source.get(*key).cloned().unwrap_or(Value::Null),
+        );
+    }
+    Value::Object(out)
+}
+
+/// Java 实体里的集合字段：null 时 Jackson 输出 null，空集合输出 []。
+pub fn shape_rows(rows: Vec<Value>, keys: &[&str]) -> Vec<Value> {
+    rows.into_iter().map(|row| shape_entity_row(row, keys)).collect()
+}
+
+/// 纯键序重排：只按 `keys` 调整已有键的先后，不补 null、不删键。
+/// 用于「值一致、只有 Jackson 顺序不同」的端点（BaseEntity 字段在前 + 声明顺序 + 派生 getter）。
+pub fn reorder_keys(row: Value, keys: &[&str]) -> Value {
+    let Value::Object(mut source) = row else { return row };
+    let mut out = serde_json::Map::with_capacity(source.len());
+    for key in keys {
+        if let Some((name, value)) = source.remove_entry(*key) {
+            out.insert(name, value);
+        }
+    }
+    out.extend(source);
+    Value::Object(out)
+}
+
+pub fn reorder_rows(rows: Vec<Value>, keys: &[&str]) -> Vec<Value> {
+    rows.into_iter().map(|row| reorder_keys(row, keys)).collect()
+}
+
 /// 按字段名覆盖行值格式（key 为 JSON 驼峰名）。
 pub fn apply_formats(rows: &mut [Value], formats: &[(&str, FieldFormat)]) {
     if formats.is_empty() {

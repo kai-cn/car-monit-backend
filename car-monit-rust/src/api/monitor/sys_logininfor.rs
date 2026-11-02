@@ -90,6 +90,25 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 SysLogininfor 键序。
+const LOGININFOR_KEYS: &[&str] = &[
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "params",
+    "infoId",
+    "userName",
+    "status",
+    "ipaddr",
+    "loginLocation",
+    "browser",
+    "os",
+    "msg",
+    "loginTime",
+];
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -97,7 +116,7 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::reorder_rows(rows, LOGININFOR_KEYS)))
 }
 
 async fn export(

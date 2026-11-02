@@ -9,12 +9,11 @@ use axum::response::{IntoResponse, Response};
 use indexmap::IndexMap;
 use serde::ser::{Serialize, Serializer};
 use serde::Serialize as DeriveSerialize;
-use serde_json::{json, Value};
+use serde_json::{json, Map, Value};
 
 /// Java: `public class AjaxResult extends HashMap<String,Object>`。
-/// 注意：Java 的实际字段顺序来自 HashMap 桶序，不是插入序。实测顺序：
-/// 错误 `msg,code`；登录 `msg,code,token`；getInfo `msg,code,pjFlag,overdue,permissions,roles,user`。
-/// 这里用 IndexMap 固定插入顺序，构造器按实测顺序插入。
+/// 键序不取决于插入序，而是 HashMap 桶序，序列化时由 `java_hashmap_ordered` 统一还原
+/// （见 `src/api/system/sys_*` 里按实体声明顺序的 reorder_keys，是 Jackson 对实体的另一套规则）。
 #[derive(Debug, Clone, Default)]
 pub struct AjaxResult(pub IndexMap<String, Value>);
 
@@ -65,6 +64,15 @@ impl AjaxResult {
         Self::base(msg, 500)
     }
 
+    /// Java: `AjaxResult.error(500, e.getMessage())` 且异常 message 为 null ——
+    /// HashMap 里 msg 键存在但值为 null，响应是 `{"msg":null,"code":500}`。
+    pub fn error_null_msg() -> Self {
+        let mut map = IndexMap::new();
+        map.insert("msg".to_string(), Value::Null);
+        map.insert("code".to_string(), json!(500));
+        Self(map)
+    }
+
     /// Java: AjaxResult.error(int code, String msg)
     pub fn error_code(code: i32, msg: impl Into<String>) -> Self {
         Self::base(msg, code)
@@ -93,13 +101,84 @@ impl AjaxResult {
     }
 
     pub fn to_value(&self) -> Value {
-        Value::Object(self.0.clone().into_iter().collect())
+        Value::Object(java_hashmap_ordered(&self.0).into_iter().collect())
     }
+}
+
+/// Java: `AjaxResult extends HashMap<String,Object>`，Jackson 输出的键序是 HashMap 的桶序：
+/// 桶下标 = `(h ^ (h >>> 16)) & (容量 - 1)`，`h` 为 String.hashCode（UTF-16 码元 31 进制），
+/// 容量从 16 起、元素数超过 0.75×容量时翻倍；同桶按插入序。
+/// 实测校验：`/captchaImage` -> msg,img,code,uuid；`/getInfo` -> msg,code,pjFlag,overdue,
+/// permissions,roles,user；`/system/user/1` -> msg,code,roleIds,data,postIds,roles,posts。
+pub(crate) fn java_hashmap_ordered(map: &IndexMap<String, Value>) -> IndexMap<String, Value> {
+    let mut capacity = 16usize;
+    while map.len() > capacity * 3 / 4 {
+        capacity *= 2;
+    }
+    let mut keyed = map
+        .iter()
+        .enumerate()
+        .map(|(index, (key, value))| (bucket(key, capacity), index, key.clone(), value.clone()))
+        .collect::<Vec<_>>();
+    // sort_by 稳定：同桶保留插入序。
+    keyed.sort_by(|left, right| left.0.cmp(&right.0).then(left.1.cmp(&right.1)));
+    keyed
+        .into_iter()
+        .map(|(_, _, key, value)| (key, value))
+        .collect()
+}
+
+fn bucket(key: &str, capacity: usize) -> usize {
+    let mut hash: u32 = 0;
+    for unit in key.encode_utf16() {
+        hash = hash.wrapping_mul(31).wrapping_add(unit as u32);
+    }
+    ((hash ^ (hash >> 16)) as usize) & (capacity - 1)
+}
+
+/// 把任意 JSON 对象按 Java HashMap 桶序重排——Java 侧用 `HashMap` 承载的响应片段
+/// （如 `/monitor/cache` 的 info 与外壳）走这套规则，而非实体声明顺序。
+pub(crate) fn java_ordered(value: &Value) -> Value {
+    let Some(object) = value.as_object() else {
+        return value.clone();
+    };
+    let indexed = object.clone().into_iter().collect::<IndexMap<String, Value>>();
+    Value::Object(java_hashmap_ordered(&indexed).into_iter().collect())
+}
+
+/// Java: `Properties`（Hashtable 子类）的迭代顺序——容量从 11 起按 `2n+1` 扩容，
+/// 桶下标 = `(hash & 0x7FFFFFFF) % 容量`（不做 `h ^ (h>>>16)` 扩散），
+/// 从最后一个桶往前遍历。`/monitor/cache` 的 `data.info` 就是 Jackson 直接序列化
+/// Properties 的结果：这样排完与 Java 大部分一致，但同桶内的链表顺序随 JDK 的
+/// 头插/尾插实现有关，仍有出入（该端点因此保留 ORDER-DIFF 级 WARN，值完全一致）。
+pub(crate) fn java_hashtable_ordered(value: &Value) -> Value {
+    let Some(object) = value.as_object() else {
+        return value.clone();
+    };
+    let mut capacity = 11usize;
+    while object.len() > capacity * 3 / 4 {
+        capacity = capacity * 2 + 1;
+    }
+    let mut buckets = vec![Vec::new(); capacity];
+    for (index, (key, value)) in object.iter().enumerate() {
+        let mut hash: u32 = 0;
+        for unit in key.encode_utf16() {
+            hash = hash.wrapping_mul(31).wrapping_add(unit as u32);
+        }
+        buckets[(hash & 0x7FFF_FFFF) as usize % capacity].push((index, key.clone(), value.clone()));
+    }
+    let mut out = Map::with_capacity(object.len());
+    for bucket in buckets.iter().rev() {
+        for (_, key, value) in bucket {
+            out.insert(key.clone(), value.clone());
+        }
+    }
+    Value::Object(out)
 }
 
 impl Serialize for AjaxResult {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        self.0.serialize(serializer)
+        java_hashmap_ordered(&self.0).serialize(serializer)
     }
 }
 
@@ -206,4 +285,50 @@ pub struct DefaultErrorBody {
     pub status: i32,
     pub error: String,
     pub path: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn keys(inserted: &[&str]) -> Vec<String> {
+        let mut map = IndexMap::new();
+        for key in inserted {
+            map.insert((*key).to_string(), Value::Null);
+        }
+        java_hashmap_ordered(&map).keys().cloned().collect()
+    }
+
+    /// 与 Java 实测响应顺序逐条对齐（均为 HashMap<String,Object> 子类）。
+    #[test]
+    fn ajax_result_uses_java_hash_bucket_order() {
+        assert_eq!(
+            keys(&["msg", "code", "uuid", "img"]),
+            vec!["msg", "img", "code", "uuid"]
+        );
+        assert_eq!(
+            keys(&["msg", "code", "pjFlag", "overdue", "permissions", "roles", "user"]),
+            vec!["msg", "code", "pjFlag", "overdue", "permissions", "roles", "user"]
+        );
+        assert_eq!(
+            keys(&["msg", "code", "roles", "posts", "postIds", "roleIds", "data"]),
+            vec!["msg", "code", "roleIds", "data", "postIds", "roles", "posts"]
+        );
+        assert_eq!(
+            keys(&["msg", "code", "data", "roleGroup", "postGroup"]),
+            vec!["msg", "postGroup", "code", "data", "roleGroup"]
+        );
+        assert_eq!(
+            keys(&["msg", "code", "menus", "checkedKeys"]),
+            vec!["msg", "code", "menus", "checkedKeys"]
+        );
+    }
+
+    /// 与插入顺序无关：同输入集合必得同输出。
+    #[test]
+    fn order_is_independent_of_insertion() {
+        let a = keys(&["msg", "code", "data", "token"]);
+        let b = keys(&["data", "token", "msg", "code"]);
+        assert_eq!(a, b);
+    }
 }

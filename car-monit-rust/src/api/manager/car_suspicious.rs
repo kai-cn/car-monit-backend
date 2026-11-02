@@ -26,6 +26,41 @@ pub(crate) const SUSPICIOUS_COLUMNS: &str = "t.id, t.plate_color, t.car_no, t.ca
      t.white_remark, t.white_file_ids, t.road_code, t.road_name, t.section_code, \
      t.section_name, t.track_id, t.back_col1, t.back_col2, t.remark, t.status, t.create_time, \n     null as epsId, null as delFlag, null as createBy, null as updateBy, null as updateTime, null as sort, null as tenantId, null as trackJosn, null as trackNames, null as carNoQuery, null as applyTime1, null as applyTime2, null as createTimeStr, null as checkList, null as trailList, null as gantryCode, null as tollCode, null as fwqbm, null as type, null as code, null as chargeAmount, null as totalAmount, null as difAmount, null as mjTime, null as mjAddress, null as txTime, null as txAddress";
 
+/// Java: CarSuspicious extends BasePlusEntityLong 的 Jackson 键顺序。
+const SUSPICIOUS_KEYS: &[&str] = &[
+    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
+    "tenantId", "plateColor", "carNo", "carType", "carVehicle", "carNum", "passType",
+    "inStationId", "inStation", "inTime", "outStationId", "outStation", "outTime",
+    "gantryStationId", "gantrytStation", "gantryTime", "fileIds", "outGantryStationId",
+    "outGantrytStation", "outGantryTime", "outFileIds", "escapedType", "escapedTypeName",
+    "escapedNum", "isExcept", "exceptRemark", "exceptFileIds", "checkStatus", "orgId", "orgName",
+    "isWhite", "whiteRemark", "whiteFileIds", "roadCode", "roadName", "sectionCode",
+    "sectionName", "trackId", "trackJosn", "trackNames", "backCol1", "backCol2", "status",
+    "remark", "carNoQuery", "applyTime1", "applyTime2", "createTimeStr", "checkList",
+    "trailList", "gantryCode", "tollCode", "fwqbm", "type", "code", "chargeAmount",
+    "totalAmount", "difAmount", "mjTime", "mjAddress", "txTime", "txAddress",
+];
+
+/// Java: CarSuspiciousCheck extends BasePlusEntity 的 Jackson 键顺序。
+const CHECK_KEYS: &[&str] = &[
+    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
+    "tenantId", "carId", "carNo", "suspicousFlag", "escapedType", "chargeAmount", "totalAmount",
+    "difAmount", "attachments", "backCol1", "backCol2", "status", "remark", "applyTime1",
+    "applyTime2", "createTimeStr",
+];
+
+/// Java: track_josn 为空时 TrailInfo 的全部字段都是 null。
+fn empty_trail_info() -> Value {
+    json!({
+        "trailUuid": Value::Null,
+        "enterTime": Value::Null,
+        "tracks": Value::Null,
+        "trailList": Value::Null,
+        "raodTrailList": Value::Null,
+        "trailDevCountBO": Value::Null,
+    })
+}
+
 const FILTERS: &[Filter] = &[
     Filter::eq("id", "t.id"),
     Filter::eq("plateColor", "t.plate_color"),
@@ -226,7 +261,7 @@ async fn list(
     let mut params = support::query_map(&raw);
     normalize(&mut params, false);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::shape_rows(rows, SUSPICIOUS_KEYS)))
 }
 
 async fn list_car_no(
@@ -237,7 +272,7 @@ async fn list_car_no(
     let mut params = support::query_map(&raw);
     normalize(&mut params, true);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::shape_rows(rows, SUSPICIOUS_KEYS)))
 }
 
 async fn list_history(
@@ -248,7 +283,7 @@ async fn list_history(
     let mut params = support::query_map(&raw);
     normalize(&mut params, false);
     let (total, rows) = support::query_list(&state.db, &params, &HISTORY_SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::shape_rows(rows, SUSPICIOUS_KEYS)))
 }
 
 async fn check_list(state: &AppState, car_id: &str) -> Result<Vec<Value>, AppError> {
@@ -256,12 +291,51 @@ async fn check_list(state: &AppState, car_id: &str) -> Result<Vec<Value>, AppErr
         "select id, car_id, car_no, suspicous_flag, attachments, escaped_type, back_col1, \
          charge_amount, total_amount, back_col2, dif_amount, remark, status, sort, eps_id, \
          del_flag, create_by, create_time, update_by, update_time, tenant_id \
-         from car_suspicious_check where car_id = ? and del_flag = '0'",
+         from car_suspicious_check where car_id = ? and del_flag = '0' \
+         order by create_time, id",
     )
     .bind(car_id)
     .fetch_all(&state.db)
     .await?;
-    Ok(crate::db::rows::rows_to_json(&rows))
+    let rows = crate::db::rows::rows_to_json(&rows)
+        .into_iter()
+        .map(|row| support::shape_entity_row(row, CHECK_KEYS))
+        .collect();
+    Ok(rows)
+}
+
+/// Java: selectCarSuspiciousById / selectCarSuspiciousHistoryById 的详情装配。
+async fn detail(state: &AppState, table: &str, id: &str) -> Result<AjaxResult, AppError> {
+    // Java: 仅详情查询追加 t.track_josn（列表 Vo 里没有）。
+    let sql = format!(
+        "select {}, t.track_josn from {table} t where t.id = ?",
+        SUSPICIOUS_COLUMNS
+    );
+    let row = sqlx::query(&sql).bind(id).fetch_optional(&state.db).await?;
+    let Some(row) = row.map(|row| crate::db::rows::row_to_json(&row)) else {
+        return Ok(AjaxResult::success());
+    };
+    let mut data = support::shape_entity_row(row, SUSPICIOUS_KEYS);
+    let object = data.as_object_mut().expect("object");
+    let checks = check_list(state, id).await?;
+    object.insert("checkList".to_string(), json!(checks));
+    let track_json = support::java_text(object.get("trackJosn"));
+    let car_no = support::java_text(object.get("carNo"));
+    let trail = if track_json.trim().is_empty() {
+        empty_trail_info()
+    } else {
+        crate::api::manager::car_track_info::suspicious_trail_info(state, &track_json, &car_no)
+            .await?
+    };
+    object.insert("trailList".to_string(), json!([trail]));
+    Ok(AjaxResult::success_data(data))
+}
+
+async fn get_info(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<AjaxResult, AppError> {
+    detail(&state, "car_suspicious", &id).await
 }
 
 async fn list_file_car_no(
@@ -406,54 +480,14 @@ async fn export_abnormal(
     RawQuery(_raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
     // Java 模板导出在缺少必需数据时抛出异常，最终 code=500。
-    Ok(AjaxResult::error(""))
-}
-
-async fn get_info(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> Result<AjaxResult, AppError> {
-    let mut row = support::query_by_id(&state.db, &SPEC, &id).await?;
-    if let Some(Value::Object(object)) = &mut row {
-        let checks = check_list(&state, &id).await?;
-        object.insert("checkList".to_string(), json!(checks));
-        let track_json = sqlx::query_scalar::<_, Option<String>>(
-            "select track_josn from car_suspicious where id = ?",
-        )
-        .bind(&id)
-        .fetch_optional(&state.db)
-        .await?
-        .flatten()
-        .unwrap_or_default();
-        let trail_list: Vec<Value> = serde_json::from_str(&track_json).unwrap_or_default();
-        object.insert(
-            "trailList".to_string(),
-            json!([{
-                "trailUuid": object.get("carNo").cloned().unwrap_or(Value::Null),
-                "tracks": Value::Object(Map::new()),
-                "trailList": trail_list,
-                "raodTrailList": [],
-                "trailDevCountBO": { "exceptNum": 0, "TrailDevList": [] },
-            }]),
-        );
-    }
-    Ok(AjaxResult::success_data(row))
+    Ok(AjaxResult::error_null_msg())
 }
 
 async fn get_history_info(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let row = sqlx::query(&format!(
-        "select {}, t.track_josn from car_suspicious_back t where t.id = ?",
-        SUSPICIOUS_COLUMNS
-    ))
-    .bind(&id)
-    .fetch_optional(&state.db)
-    .await?;
-    Ok(AjaxResult::success_data(
-        row.map(|row| crate::db::rows::row_to_json(&row)),
-    ))
+    detail(&state, "car_suspicious_back", &id).await
 }
 
 async fn add(

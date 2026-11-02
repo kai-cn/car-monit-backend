@@ -112,6 +112,14 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 BussTest 键序（BaseEntity 组 + 业务列）。
+const BUSS_TEST_KEYS: &[&str] = &[
+    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
+    "tenantId", "billName", "billType", "amount", "deptId", "userId", "applyTime", "applyTime2",
+    "fileIds", "flowKey", "flowRuid", "flowApplyOid", "flowStatus", "shTime", "backCol1",
+    "backCol2", "status", "remark",
+];
+
 async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -119,7 +127,7 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::reorder_rows(rows, BUSS_TEST_KEYS)))
 }
 
 async fn export(
@@ -149,7 +157,9 @@ async fn get_info(
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id_fmt(&state.db, &SPEC, &id, FORMATS).await?,
+        support::query_by_id_fmt(&state.db, &SPEC, &id, FORMATS)
+            .await?
+            .map(|row| support::reorder_keys(row, BUSS_TEST_KEYS)),
     ))
 }
 

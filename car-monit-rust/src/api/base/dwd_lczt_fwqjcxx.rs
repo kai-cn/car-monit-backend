@@ -116,6 +116,43 @@ pub fn routes() -> Router<AppState> {
         )
 }
 
+/// Java Jackson 的 DwdLcztFwqjcxx 键序（实体声明顺序 + 派生 loadTime/allColPk/sectionCodeList）。
+const FWQJCXX_KEYS: &[&str] = &[
+    "agentPk",
+    "yxtzj",
+    "fwqbm",
+    "fwqmc",
+    "wd",
+    "fxmc",
+    "fxdm",
+    "jd",
+    "sslxbh",
+    "sslxmc",
+    "ssldbh",
+    "ssldmc",
+    "sczhkgs",
+    "sczhszgs",
+    "ssglzxbm",
+    "ssglzxmc",
+    "xzqhmc",
+    "yyrq",
+    "cws",
+    "sfszlkk",
+    "cdzs",
+    "sfcyfw",
+    "sftgzsfw",
+    "sftgqxfw",
+    "sftgcsfw",
+    "sftgjyfw",
+    "mj",
+    "sftgcshfw",
+    "xzqhdm",
+    "synx",
+    "lyxt",
+    "loadTime",
+    "allColPk",
+    "sectionCodeList",
+];
 pub async fn list(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
@@ -123,7 +160,7 @@ pub async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, rows))
+    Ok(TableDataInfo::new(total, support::reorder_rows(rows, FWQJCXX_KEYS)))
 }
 
 pub async fn export(
@@ -156,7 +193,8 @@ pub async fn get_info(
     Path(agent_pk): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &agent_pk).await?,
+        support::query_by_id(&state.db, &SPEC, &agent_pk).await?
+            .map(|row| support::reorder_keys(row, FWQJCXX_KEYS)),
     ))
 }
 

@@ -104,8 +104,9 @@ async fn get_info(
     match rows.len() {
         0 => Ok(AjaxResult::success()),
         1 => Ok(AjaxResult::success_data(rows.into_iter().next())),
-        _ => Ok(AjaxResult::error(
-            "Expected one result (or null) to be returned by selectOne(), but found multiple",
-        )),
+        _ => Ok(AjaxResult::error(format!(
+            "nested exception is org.apache.ibatis.exceptions.TooManyResultsException: Expected one result (or null) to be returned by selectOne(), but found: {}",
+            rows.len()
+        ))),
     }
 }

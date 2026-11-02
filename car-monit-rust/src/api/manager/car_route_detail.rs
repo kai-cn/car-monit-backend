@@ -8,7 +8,7 @@ crate::manager_crud! {
     perm: "manager:routedetail",
     title: "路线明细",
     class: "com.ruoyi.web.controller.manager.CarRouteDetailController",
-    sheet: "路线明细数据",
+    sheet: "常用路线明细数据",
     table: "car_route_detail",
     select: "t.id, t.route_id, t.car_id, t.car_no, t.data_source, t.data_source_name, t.last_pass_time, t.last_pass_picture, t.last_pass_type, t.last_pass_address, t.last_pass_longitude, t.last_pass_latitude, t.last_pass_cardirection, t.road_section_id, t.road_section_name, t.next_pass_time, t.next_pass_type, t.next_pass_address, t.next_pass_longitude, t.next_pass_latitude, t.org_id, t.org_name, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id",
     from: "from car_route_detail t",
