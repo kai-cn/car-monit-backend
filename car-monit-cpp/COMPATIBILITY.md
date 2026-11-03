@@ -181,6 +181,8 @@ C++ 对应实现位置：
 | `Date`（无注解） | ISO-8601 带 `+08:00`（Spring Boot 关了 `WRITE_DATES_AS_TIMESTAMPS`，见 §4.6） | `formatIsoDate` |
 | `@JsonFormat` | `yyyy-MM-dd HH:mm:ss` | `formatJsonDate` |
 | `null` 字段 | Jackson 默认输出 `null` | `putStr/putI64` 输出 `null` |
+| 实体字段**初始值** | `private String x = "0";` 未被 MyBatis 赋值时仍是 `"0"`；`flag = false`、`number = 0`、`children = new ArrayList<>()` 同理 | spec 的 `Field::dflt` 输出 JSON 字面量（不是 null）；无初值的非列属性才是 null |
+| 数组类型属性 | `private Long[] menuIds;` 也照样有序列化键 | 生成器的字段正则支持 `[]` 与泛型 |
 | `@JsonInclude(NON_EMPTY)` VO | 空串/null/空集合不输出 | `RouterVo` 等按此实现 |
 | `password` | `@JsonIgnore` 不输出 | `SysUser::toJson` 不输出 |
 

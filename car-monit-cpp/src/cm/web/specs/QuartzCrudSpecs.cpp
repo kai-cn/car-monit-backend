@@ -29,6 +29,7 @@ const Spec& specSysJob() {
             {"jobGroup", "job_group", Fmt::Str, Cond::Eq, "任务组名", false, false, true, true},
             {"invokeTarget", "invoke_target", Fmt::Str, Cond::Eq, "调用目标字符串", false, false, true, true},
             {"cronExpression", "cron_expression", Fmt::Str, Cond::Eq, "执行表达式 ", false, false, true, true},
+            {"misfirePolicy", "misfire_policy", Fmt::Str, Cond::Eq, "计划策略 ", false, false, true, true},
             {"concurrent", "concurrent", Fmt::Str, Cond::Eq, "并发执行", false, false, true, true},
             {"status", "status", Fmt::Str, Cond::Eq, "任务状态", false, false, true, true},
         };
@@ -56,8 +57,8 @@ const Spec& specSysJobLog() {
             {"jobMessage", "job_message", Fmt::Str, Cond::None, "日志信息", false, false, true, true},
             {"status", "status", Fmt::Str, Cond::Eq, "执行状态", false, false, true, true},
             {"exceptionInfo", "exception_info", Fmt::Str, Cond::None, "异常信息", false, false, true, true},
-            {"startTime", nullptr, Fmt::DateIso, Cond::None, nullptr, false, false, false, false},
-            {"stopTime", nullptr, Fmt::DateIso, Cond::None, nullptr, false, false, false, false},
+            {"startTime", nullptr, Fmt::DateIso, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"stopTime", nullptr, Fmt::DateIso, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "create_time desc";
         s.excelSheetName = "任务调度日志";

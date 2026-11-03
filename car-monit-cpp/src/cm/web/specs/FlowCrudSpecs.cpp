@@ -48,7 +48,7 @@ const Spec& specFlowApplyInfo() {
             {"backCol2", "BACK_COL2", Fmt::Str, Cond::Eq, "备用字段2", false, false, true, true},
             {"backCol3", "BACK_COL3", Fmt::Str, Cond::Eq, "备用字段3", false, false, true, true},
             {"flowStatus", "FLOW_STATUS", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
-            {"auitEmpName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"auitEmpName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
             {"entrustInfo", "entrust_info", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
         };
         s.orderBy = "t.create_time desc,t.id";
@@ -93,19 +93,19 @@ const Spec& specFlowCurrentNode() {
             {"backCol1", "BACK_COL1", Fmt::Str, Cond::Eq, "备用字段1", false, false, true, true},
             {"backCol2", "BACK_COL2", Fmt::Str, Cond::Eq, "备用字段2", false, false, true, true},
             {"backCol3", "BACK_COL3", Fmt::Str, Cond::Eq, "备用字段3", false, false, true, true},
-            {"roleId", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"tableName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"projectId", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"flowKey", nullptr, Fmt::Str, Cond::None, "流程key", false, false, false, false},
-            {"flowRuid", nullptr, Fmt::Str, Cond::None, "流程实例ID", false, false, false, false},
-            {"flowApplyOid", nullptr, Fmt::Str, Cond::None, "流程申请ID", false, false, false, false},
-            {"flowStatus", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"shValue", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"shContext", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"entrustUserId", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"entrustUserName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"roleKey", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"deptId", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"roleId", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"tableName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"projectId", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"flowKey", nullptr, Fmt::Str, Cond::None, "流程key", false, false, false, false, nullptr, nullptr},
+            {"flowRuid", nullptr, Fmt::Str, Cond::None, "流程实例ID", false, false, false, false, nullptr, nullptr},
+            {"flowApplyOid", nullptr, Fmt::Str, Cond::None, "流程申请ID", false, false, false, false, nullptr, nullptr},
+            {"flowStatus", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"shValue", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"shContext", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"entrustUserId", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"entrustUserName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"roleKey", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"deptId", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "流程_当前节点";
@@ -224,11 +224,11 @@ const Spec& specFlowMessageInfo() {
             {"backCol1", "BACK_COL1", Fmt::Str, Cond::Eq, "备用字段1", false, false, true, true},
             {"backCol2", "BACK_COL2", Fmt::Str, Cond::Eq, "备用字段2", false, false, true, true},
             {"backCol3", "BACK_COL3", Fmt::Str, Cond::Eq, "备用字段3", false, false, true, true},
-            {"userId", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false},
-            {"msgStatus", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"flowStatus", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"curEmpNames", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"disposeList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"userId", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"msgStatus", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"flowStatus", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"curEmpNames", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"disposeList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "系统内部消息";
@@ -262,7 +262,7 @@ const Spec& specFlowName() {
             {"flowTitle", "FLOW_TITLE", Fmt::Str, Cond::Eq, "流程名称", false, false, true, true},
             {"flowContext", "FLOW_CONTEXT", Fmt::Str, Cond::Eq, "内容", false, false, true, true},
             {"bussName", "BUSS_NAME", Fmt::Str, Cond::Eq, "业务名称", false, false, true, true},
-            {"tenantName", nullptr, Fmt::Str, Cond::None, "单位名称", false, false, false, false},
+            {"tenantName", nullptr, Fmt::Str, Cond::None, "单位名称", false, false, false, false, nullptr, nullptr},
             {"flowBusinessType", "flow_business_type", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
         };
         s.orderBy = "t.tenant_id,t.flow_key,t.id";

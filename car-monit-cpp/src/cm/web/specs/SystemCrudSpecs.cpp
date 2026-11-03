@@ -108,8 +108,8 @@ const Spec& specSysFile() {
             {"updateUser", "update_user", Fmt::Str, Cond::Eq, "文件大小", false, false, true, true},
             {"delFlag", "del_flag", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
             {"tenantId", "tenant_id", Fmt::Long, Cond::Eq, "所属租户", false, false, true, true},
-            {"files", nullptr, Fmt::Str, Cond::None, "文件s", false, false, false, false},
-            {"createUserName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"files", nullptr, Fmt::Str, Cond::None, "文件s", false, false, false, false, nullptr, nullptr},
+            {"createUserName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "文件";
@@ -161,6 +161,7 @@ const Spec& specSysPost() {
             {"postName", "post_name", Fmt::Str, Cond::Eq, "岗位名称", false, false, true, true},
             {"postSort", "post_sort", Fmt::Str, Cond::Eq, "岗位排序", false, false, true, true},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false, true, true},
+            {"flag", nullptr, Fmt::Bool, Cond::None, nullptr, false, false, false, false, nullptr, "false"},
         };
         s.excelSheetName = "岗位管理";
         return s;
@@ -189,6 +190,9 @@ const Spec& specSysRole() {
             {"deptCheckStrictly", "dept_check_strictly", Fmt::Bool, Cond::Eq, nullptr, false, false, true, true},
             {"status", "status", Fmt::Str, Cond::Eq, "角色状态", false, false, true, true},
             {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"flag", nullptr, Fmt::Bool, Cond::None, nullptr, false, false, false, false, nullptr, "false"},
+            {"menuIds", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"deptIds", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "r.role_sort";
         s.excelSheetName = "角色管理";

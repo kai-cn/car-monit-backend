@@ -163,6 +163,25 @@ C++ 此前**只读不写** `sys_oper_log`：Java 侧每个带 `@Log` 的写接�
   oper_location/oper_name/dept_name/oper_param(排除 password)/json_result(丢 null)`；
   另有 2 组单测（`testOperLogHelpers` / `testOperLogBuild`）覆盖纯函数与 `build()` 全分支。
 
+## 4.3 生成器的两处实体解析缺陷（`scripts/audit_spec_keys.py` 扫出来的）
+
+新加的审计脚本把"Java 实体字段（Jackson 会全部序列化）"与"生成 spec 实际输出的 JSON 键"逐实体对拍，
+一开始报出 8 个缺失键，根因都在解析器正则上：
+
+| 缺陷 | 影响 | 修法 |
+|---|---|---|
+| 字段正则要求 `private T name;`，**带初值的声明整条漏掉** | `sys_job.misfire_policy` 是真实列，却根本没进 SELECT，列表里也没有这个键；`supplementaryStatus="0"`、`number=0`、`escapedAmount=ZERO`、`flag=false` 全部缺键 | 正则收 `= 初值`，新增 `json_literal()` 映射 Java 字面量（含 `BigDecimal.ZERO`、`new ArrayList<>()`），`Field` 增加 `dflt`，非列属性输出初值而不是 null |
+| 类型字符类不含 `[]`，**数组字段整条漏掉** | `SysRole.menuIds/deptIds` 两个键整个不存在 | 类型类允许 `[]`；重跑五个 area 的生成 |
+
+关键点：Java 的 `private String x = "0";` 经过 MyBatis（不填该属性）之后仍是 `"0"`，
+Jackson 就输出 `"0"`，**不能退化成 null**；只有真的没有初值时才是 null。
+
+回归：`audit_spec_keys.py` 现在报 0 缺失；`verify_generated_sql.py` 59 份 spec 全部在真库跑通；
+`/monitor/job/list` 的 `misfirePolicy` 拿到真实值 `3`（此前该列没被选中），
+`/system/role/list` 出现 `flag:false, menuIds:null, deptIds:null`，
+`/manager/exceptrecord/list` 出现 `supplementaryStatus:"0"`，
+`/manager/confimfree/list` 出现 `number:0, escapedAmount:0`；分页 total 与修复前一致（18/3/273/3/83）。
+
 ## 5. 已知行为差异（完整清单见 COMPATIBILITY.md）
 
 - ✅ Excel **导出**已是真 `.xlsx`（自研 OOXML，`python zipfile` 独立校验过），响应形态、文件名

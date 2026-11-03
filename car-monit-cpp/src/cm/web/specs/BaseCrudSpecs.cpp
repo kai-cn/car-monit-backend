@@ -190,7 +190,7 @@ const Spec& specGeometry() {
             {"qdzh", "qdzh", Fmt::Int, Cond::Eq, "起点桩号", false, false, true, true},
             {"zdzh", "zdzh", Fmt::Int, Cond::Eq, "终点桩号", false, false, true, true},
             {"paths", "paths", Fmt::Str, Cond::Eq, "经纬度", false, false, true, true},
-            {"zhStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"zhStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "lxbh,t.qdzh";
         s.excelSheetName = "车辆信息";
@@ -309,12 +309,12 @@ const Spec& specOdsLwzxsfsjFeeGantryFusion01() {
             {"vid", "vid", Fmt::Str, Cond::Eq, "车牌号ID", false, false, true, true},
             {"loadTime", "load_time", Fmt::DateYmd, Cond::Eq, "加载时间", false, false, true, true},
             {"gradeLevel", "grade_level", Fmt::Long, Cond::Eq, "分类分级", false, false, true, true},
-            {"inApplyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"inApplyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"outApplyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"outApplyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"pageNum", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
-            {"pageSize", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"inApplyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"inApplyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"outApplyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"outApplyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"pageNum", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"pageSize", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "交易流水";
@@ -461,26 +461,26 @@ const Spec& specOdsLwzxsfsjFeeRecords01() {
             {"verifycode", "verifycode", Fmt::Str, Cond::Eq, "校验码", false, false, true, true},
             {"loadTime", "load_time", Fmt::DateYmdHms, Cond::Eq, "加载时间", false, false, true, true},
             {"gradeLevel", "grade_level", Fmt::Long, Cond::Eq, "分类分级", false, false, true, true},
-            {"cid", nullptr, Fmt::Str, Cond::None, "cid", false, false, false, false},
-            {"cidList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"inApplyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"inApplyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"outApplyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"outApplyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"pageNum", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
-            {"pageSize", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
-            {"plateColor", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"gantryName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"receivetimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"sectionCodeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"type", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"code", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"sectionName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"roadname", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"transtimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"lastgantrytimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"chargeStatus", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"entimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"cid", nullptr, Fmt::Str, Cond::None, "cid", false, false, false, false, nullptr, nullptr},
+            {"cidList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"inApplyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"inApplyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"outApplyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"outApplyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"pageNum", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"pageSize", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"plateColor", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"gantryName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"receivetimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"sectionCodeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"type", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"code", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"sectionName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"roadname", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"transtimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"lastgantrytimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"chargeStatus", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"entimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "基础-收费流水";
@@ -608,9 +608,9 @@ const Spec& specOdsLwzxsfsjFeeStationExit01() {
             {"vehiclesignid", "vehiclesignid", Fmt::Str, Cond::Eq, "车牌识别流水号", false, false, true, true},
             {"vehiclesign", "vehiclesign", Fmt::Str, Cond::Eq, "车辆状态标识", false, false, true, true},
             {"gradeLevel", "grade_level", Fmt::Str, Cond::Eq, "分类分级", false, false, true, true},
-            {"cid", nullptr, Fmt::Str, Cond::None, "cid", false, false, false, false},
-            {"pageNum", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
-            {"pageSize", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"cid", nullptr, Fmt::Str, Cond::None, "cid", false, false, false, false, nullptr, nullptr},
+            {"pageNum", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"pageSize", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "收费站出口流水";
@@ -668,16 +668,16 @@ const Spec& specOdsRtSzdnSnapshotFlowAddcode() {
             {"gradelevel", "gradelevel", Fmt::Int, Cond::Eq, "分类分级", false, false, true, true},
             {"datauuid", "datauuid", Fmt::Str, Cond::Eq, "uuid", false, false, true, true},
             {"reserve3", "reserve3", Fmt::Str, Cond::Eq, "备用字段", false, false, true, true},
-            {"id", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"snapshottimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"pageNum", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
-            {"pageSize", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
-            {"directionStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"sectionCodeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"type", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"code", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"id", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"snapshottimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"pageNum", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"pageSize", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"directionStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"sectionCodeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"type", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"code", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "门架抓拍流水";
@@ -858,11 +858,11 @@ const Spec& specOdsSzdnGantry() {
             {"gantryCodeMerge", "gantry_code_merge", Fmt::Str, Cond::Eq, "门架编号", false, false, true, true},
             {"gantryNameAlias", "gantry_name_alias", Fmt::Str, Cond::Eq, "门架别名", false, false, true, true},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false, true, true},
-            {"isData", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"roadName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"sectionName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"tollName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"orgName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"isData", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"roadName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"sectionName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"tollName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"orgName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "t.gantry_name";
         s.excelSheetName = "门架信息";
@@ -884,7 +884,7 @@ const Spec& specOdsSzdnGantryIp() {
             {"ip", "ip", Fmt::Str, Cond::Eq, "设备ip", false, false, true, true},
             {"brand", "brand", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
             {"type", "type", Fmt::Str, Cond::Eq, "类型1是省界门架", false, false, true, true},
-            {"odsSzdnGantry", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"odsSzdnGantry", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "t.id";
         s.excelSheetName = "OdsSzdnGantryIp";
@@ -995,7 +995,7 @@ const Spec& specOdsSzdnToll() {
             {"sectionCode", "section_code", Fmt::Str, Cond::Eq, "所属路段编码", false, false, true, true},
             {"tollOrgCode", "toll_org_code", Fmt::Str, Cond::Eq, "收费站对应机构编码", false, false, true, true},
             {"isAccess", "is_access", Fmt::Str, Cond::Eq, "流水是否接入", false, false, true, true},
-            {"sectionName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"sectionName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "t.toll_name";
         s.excelSheetName = "收费站基础信息";
@@ -1016,7 +1016,7 @@ const Spec& specOdsSzdnTollStationIp() {
             {"orgCode", "org_code", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
             {"ip", "ip", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
             {"brand", "brand", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
-            {"odsSzdnToll", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"odsSzdnToll", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "OdsSzdnTollStationIp";
@@ -1048,7 +1048,7 @@ const Spec& specOdsYhglVBaseOrg() {
             {"orgIsYhAutarky", "org_is_yh_autarky", Fmt::Str, Cond::Eq, "是自营养护单位", false, false, true, true},
             {"loadTime", "load_time", Fmt::DateYmd, Cond::Eq, "加载时间", false, false, true, true},
             {"gradeLevel", "grade_level", Fmt::Int, Cond::Eq, "分类分级", false, false, true, true},
-            {"parentId", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"parentId", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "机构信息";
@@ -1153,28 +1153,28 @@ const Spec& specZdataTrailTracks() {
             {"stratLat", "strat_lat", Fmt::Str, Cond::None, "入口收费站维度", false, false, true, true},
             {"endLon", "end_lon", Fmt::Str, Cond::None, "出口收费站经度", false, false, true, true},
             {"endLat", "end_lat", Fmt::Str, Cond::None, "出口收费站维度", false, false, true, true},
-            {"firtStationCode", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"firtStationName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"firtStationTime", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"plateColor", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"carType", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"carNo", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"carVehicle", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"carNum", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false},
-            {"escapedType", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"passType", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"escapedTypeRemark", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"isCylx", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"flag", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"startLonDec", nullptr, Fmt::Double, Cond::None, "入口收费站经度", false, false, false, false},
-            {"stratLatDec", nullptr, Fmt::Double, Cond::None, "入口收费站维度", false, false, false, false},
-            {"endLonDec", nullptr, Fmt::Double, Cond::None, "出口收费站经度", false, false, false, false},
-            {"endLatDec", nullptr, Fmt::Double, Cond::None, "出口收费站维度", false, false, false, false},
-            {"uuidList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"passCount", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
-            {"escapedTfcj", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"firtStationCode", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"firtStationName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"firtStationTime", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"plateColor", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"carType", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"carNo", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"carVehicle", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"carNum", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"escapedType", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"passType", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"escapedTypeRemark", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"isCylx", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"flag", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"startLonDec", nullptr, Fmt::Double, Cond::None, "入口收费站经度", false, false, false, false, nullptr, nullptr},
+            {"stratLatDec", nullptr, Fmt::Double, Cond::None, "入口收费站维度", false, false, false, false, nullptr, nullptr},
+            {"endLonDec", nullptr, Fmt::Double, Cond::None, "出口收费站经度", false, false, false, false, nullptr, nullptr},
+            {"endLatDec", nullptr, Fmt::Double, Cond::None, "出口收费站维度", false, false, false, false, nullptr, nullptr},
+            {"uuidList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"passCount", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"escapedTfcj", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
         s.orderBy = "t.enter_time desc";
         s.excelSheetName = "ZdataTrailTracks";

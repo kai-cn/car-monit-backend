@@ -13,6 +13,7 @@
 """
 import argparse
 import io
+import json
 import os
 import re
 import sys
@@ -184,6 +185,38 @@ def snake_case(name):
         out.append(ch.lower())
     return ''.join(out)
 
+def json_literal(raw):
+    """Java 字段初始值 -> JSON 字面量字符串；认不出的返回 None（按 null 处理）"""
+    if not raw:
+        return None
+    t = raw.strip()
+    if re.match(r'^-?\d+$', t):
+        return t
+    if re.match(r'^-?\d+\.\d+[fFdD]?$', t):
+        return re.sub(r'[fFdD]$', '', t)
+    if t in ("true", "false"):
+        return t
+    if re.match(r'^".*"$', t) or re.match(r"^'.*'$", t):
+        return json.dumps(t[1:-1])
+    if t == "BigDecimal.ZERO":
+        return "0"
+    if t == "BigDecimal.ONE":
+        return "1"
+    if t == "BigDecimal.TEN":
+        return "10"
+    if t == "Integer.MAX_VALUE":
+        return str(2 ** 31 - 1)
+    if t == "Long.MAX_VALUE":
+        return str(2 ** 63 - 1)
+    if re.match(r'^new\s+(ArrayList|LinkedList|CopyOnWriteArrayList)<>', t) or t.startswith("Lists.newArrayList"):
+        return "[]"
+    if re.match(r'^new\s+HashMap<>', t) or t.startswith("Maps.newHashMap"):
+        return "{}"
+    if re.match(r'^new\s+HashSet<>', t):
+        return "[]"
+    return None
+
+
 def parse_domain(entity):
     """返回 (table, pk_field, pk_is_auto, [(java_name, java_type, jsonfmt, excel_name)])"""
     path = find_domain_class(entity)
@@ -207,11 +240,14 @@ def parse_domain(entity):
     base_cls = bm.group(1) if bm else None
 
     fields = []
-    # 逐个 private 字段，带它上面的注解
+    # 逐个 private 字段，带它上面的注解。初值也要抓：Java 的 `private String x = "0";`
+    # 在 Jackson 里就是 "0"，不是 null（漏掉初值会让响应少键或把值写成 null）。
+    # 类型里要允许数组/泛型（Long[] menuIds 这类漏掉过整根键）。
     for fm in re.finditer(
-        r'((?:@\w+(?:\([^)]*\))?\s*\n\s*)*)private\s+([\w.<>,\s]+?)\s+(\w+)\s*;', src
+        r'((?:@\w+(?:\([^)]*\))?\s*\n\s*)*)private\s+([\w.<>,\s\[\]]+?)\s+(\w+)\s*(?:=\s*([^;]+))?\s*;', src
     ):
         annos, jtype, name = fm.group(1), fm.group(2).strip(), fm.group(3)
+        dflt = (fm.group(4) or "").strip()
         jtype = jtype.split("<")[0].strip()
         if name in ("serialVersionUID",):
             continue
@@ -232,7 +268,8 @@ def parse_domain(entity):
         mapped = TYPE_MAP.get(jtype, "Str")
         if jtype in ("Date", "LocalDateTime", "LocalDate") and fmt:
             mapped = fmt
-        fields.append((name, jtype, mapped, excel, bool(re.search(r'@JsonIgnore', annos))))
+        fields.append((name, jtype, mapped, excel, bool(re.search(r'@JsonIgnore', annos)),
+                       json_literal(dflt)))
     return table, pk_field, pk_auto, fields, path, base_cls
 
 
@@ -371,7 +408,7 @@ def gen_entity(entity, ctrl_path):
     cols = real_columns(table)
     if cols is not None:
         bad = []
-        for _n, _t, _f, _e, _ig in fields:
+        for _n, _t, _f, _e, _ig, _d in fields:
             if _ig:
                 continue
             _col = (colmap.get(_n) or snake_case(_n)).lower()
@@ -427,7 +464,7 @@ def gen_entity(entity, ctrl_path):
     L.append("        s.fields = {")
     # 1) 父类字段先输出（Jackson 的声明序），列以 resultMap 为准；
     #    resultMap 没映射的保持“只进 JSON 的 null”，与 MyBatis 不填的行为一致。
-    own_names = {n for n, _jt, _fmt, _ex, _ig in fields}
+    own_names = {n for n, _jt, _fmt, _ex, _ig, _d in fields}
     for name, _fallback, bfmt in BASE_FIELDS.get(base_cls or "", []):
         if name in own_names:
             continue  # 子类自己声明了同名字段，以子类为准
@@ -446,26 +483,28 @@ def gen_entity(entity, ctrl_path):
                     "true" if is_pk else "false",
                     "true" if ins else "false", "true" if upd else "false"))
     # 2) 子类自有字段
-    for name, jtype, fmt, excel, ignored in fields:
+    for name, jtype, fmt, excel, ignored, dflt in fields:
         if ignored:
             continue
         is_pk = (name == pk_field)
         col = colmap.get(name) or snake_case(name)
         ex = '\"%s\"' % c_escape(excel) if excel else "nullptr"
         if known and col.lower() not in known and not is_pk:
-            # 派生属性 / @TableField(exist=false)：MyBatis 不填值，但 Jackson 照样输出键（值为 null）。
-            # 所以不能丢掉这个字段，只是不能进 SELECT。
+            # 派生属性 / @TableField(exist=false)：MyBatis 不填值，但 Jackson 照样输出键。
+            # 有 Java 字段初值的输出初值（如 supplementaryStatus = "0"、children = new ArrayList<>()），
+            # 没有的才是 null。
             # 例外：XML 里仍然可能拿它当查询条件，且条件左值是别的列
             #       （car_except_record 的 find_in_set(t.id, #{exceptIds})），这时要保住条件。
             cond_cpp = "Cond::None"
-            tail = ""
+            cond_col = "nullptr"
             if conds.get(name) == "find_in_set_col" and name in cond_cols:
                 left = cond_cols[name]
                 if left.startswith(alias + "."):
                     left = left[len(alias) + 1:]
-                cond_cpp, tail = "Cond::FindInSetCol", ', "%s"' % left
-            L.append('            {"%s", nullptr, Fmt::%s, %s, %s, false, false, false, false%s},'
-                     % (name, fmt if fmt in FMT_NAMES else "Str", cond_cpp, ex, tail))
+                cond_cpp, cond_col = "Cond::FindInSetCol", '\"%s\"' % left
+            dflt_cpp = '"%s"' % dflt.replace('"', '\\"') if dflt else "nullptr"
+            L.append('            {"%s", nullptr, Fmt::%s, %s, %s, false, false, false, false, %s, %s},'
+                     % (name, fmt if fmt in FMT_NAMES else "Str", cond_cpp, ex, cond_col, dflt_cpp))
             continue
         cond_kind = conds.get(name, "None")
         cond_cpp = {

@@ -67,6 +67,9 @@ struct Field {
     /** 仅作为 WHERE 左值的列名覆盖：XML 里条件列与该属性的取值列不同时用
      *  （如 find_in_set(t.id, #{exceptIds}) —— 拿主键去匹配传入的 csv） */
     const char* condColumn{nullptr};
+    /** 非列属性（column==nullptr）在 Java 里的字段初始值，写成 JSON 字面量，
+     *  如 "\"0\"" / "0" / "false" / "[]"。Jackson 会把它照样输出，所以不能退化成 null。 */
+    const char* dflt{nullptr};
 };
 
 /** 每个动作的 @PreAuthorize 权限串（nullptr 表示 Java 侧没有 @PreAuthorize） */

@@ -119,7 +119,13 @@ std::string rangeExpr(const Spec& s, const Field& f, const std::string& op, cons
 Json rowToJson(const Spec& spec, const cm::db::Row& row) {
     Json j = Json::object();
     for (const auto& f : spec.fields) {
-        auto v = f.column ? row.get(f.column) : std::nullopt;
+        if (f.column == nullptr) {
+            // 非列属性：Java 的字段初始值（= "0" / = new ArrayList<>()）会被 Jackson 原样输出，
+            // 只有没有初始值时才是 null。列属性走下面的 DB 取值，NULL 就是 null。
+            j[f.json] = f.dflt ? Json::parse(f.dflt) : Json(nullptr);
+            continue;
+        }
+        auto v = row.get(f.column);
         if (!v) {
             j[f.json] = nullptr;
             continue;
