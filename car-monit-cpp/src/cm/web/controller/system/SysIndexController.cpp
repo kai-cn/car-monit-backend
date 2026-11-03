@@ -11,6 +11,7 @@
 #include "cm/web/controller/common/CommonController.hpp"
 #include "cm/web/controller/common/DownTemplateController.hpp"
 #include "cm/web/controller/flow/FlowExtraControllers.hpp"
+#include "cm/web/controller/manager/ManagerExtraControllers.hpp"
 #include "cm/web/controller/monitor/CacheController.hpp"
 #include "cm/web/controller/monitor/ServerController.hpp"
 #include "cm/web/controller/monitor/SysLogininforController.hpp"
@@ -68,6 +69,7 @@ void registerControllers(Router& r) {
     registerSysIndexMenuController(r);
     registerCdcController(r);
     registerFlowExtraControllers(r);
+    registerManagerExtraControllers(r);
     registerTestController(r);
     // 业务域（base / manager / flow）：同构 CRUD 由 spec 引擎批量注册
     crud::registerBaseArea(r);
