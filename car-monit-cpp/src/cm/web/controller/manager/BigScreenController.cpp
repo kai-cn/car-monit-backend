@@ -191,6 +191,37 @@ void registerBigScreenController(Router& r) {
         return BaseController::ok(AjaxResult::success(arr));
     });
 
+    // GET /manager/bigScreen/carAudit —— 逃费/追缴两个汇总（CarAuditVO 四个字段都有初值）
+    r.get("/manager/bigScreen/carAudit", [](RequestContext& ctx) -> cm::http::ApiResponse {
+        const std::string t1 = param(ctx, "applyTime1");
+        const std::string t2 = param(ctx, "applyTime2");
+        auto window = [&](std::string sql) {
+            if (!t1.empty())
+                sql += " and a.create_time >= STR_TO_DATE(" + Db::lit(t1) + ",'%Y-%m-%d')";
+            if (!t2.empty())
+                sql += " and a.create_time < date_add(STR_TO_DATE(" + Db::lit(t2) +
+                       ", '%Y-%m-%d'), interval 1 day)";
+            return sql;
+        };
+        auto audit = run(window(
+            "select sum(ifnull(a.dif_amount, 0)) escapedAmount,count(distinct a.car_no) number"
+            " from car_except_record a where a.del_flag = '0'"));
+        auto confirm = run(window(
+            "select sum(ifnull(a.amount, 0) + ifnull(a.aduit_amount, 0)) escapedAmount,"
+            "count(distinct a.car_no) number from car_confim_free a where a.del_flag = '0' and a.status = '0'"));
+
+        // CarAuditVO 声明序：totalCount, finishedCount, totalAmount, finishedAmount
+        Json vo = Json::object();
+        const cm::db::Row& a = audit.rows.empty() ? cm::db::Row{} : audit.rows.front();
+        const cm::db::Row& c = confirm.rows.empty() ? cm::db::Row{} : confirm.rows.front();
+        vo["totalCount"] = a.i64("number");
+        vo["finishedCount"] = c.i64("number");
+        // sum() 在零行时是 NULL，MyBatis 会把 VO 里的 BigDecimal.ZERO 覆盖成 null —— 照抄
+        vo["totalAmount"] = a.get("escapedAmount") ? Json(a.dbl("escapedAmount")) : Json(nullptr);
+        vo["finishedAmount"] = c.get("escapedAmount") ? Json(c.dbl("escapedAmount")) : Json(nullptr);
+        return BaseController::ok(AjaxResult::success(vo));
+    });
+
     // GET /manager/bigScreen/carLocation —— 车辆定位
     // 数据源是 Redis car_list（Java 用 setCacheObject 不带过期时间），没有才按
     // selectCarInfoList(new CarInfo()) 回源并写回缓存；随后在内存里按设备编码串过滤。

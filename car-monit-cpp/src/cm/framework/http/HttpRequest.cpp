@@ -22,12 +22,12 @@ int hexVal(char c) {
 }
 } // namespace
 
-std::string HttpRequest::urlDecode(const std::string& s) {
+std::string HttpRequest::percentDecode(const std::string& s, bool plusAsSpace) {
     std::string out;
     out.reserve(s.size());
     for (size_t i = 0; i < s.size(); ++i) {
         char c = s[i];
-        if (c == '+') {
+        if (c == '+' && plusAsSpace) {
             out.push_back(' ');
         } else if (c == '%' && i + 2 < s.size()) {
             int hi = hexVal(s[i + 1]);
@@ -44,6 +44,9 @@ std::string HttpRequest::urlDecode(const std::string& s) {
     }
     return out;
 }
+
+/** application/x-www-form-urlencoded 语义：+ 表示空格 */
+std::string HttpRequest::urlDecode(const std::string& s) { return percentDecode(s, true); }
 
 std::string HttpRequest::urlEncode(const std::string& s) {
     static const char* hex = "0123456789ABCDEF";

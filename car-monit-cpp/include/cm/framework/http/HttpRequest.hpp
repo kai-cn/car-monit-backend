@@ -62,7 +62,10 @@ public:
     /** 解析 body 为 JSON；非法 JSON 抛 JsonParseException（对应 Jackson） */
     Json json() const;
 
+    /** application/x-www-form-urlencoded 语义：+ 表示空格（查询串、表单体） */
     static std::string urlDecode(const std::string& s);
+    /** 路径解码用 plusAsSpace=false：Tomcat/Spring 不会把 URI 里的 + 当空格 */
+    static std::string percentDecode(const std::string& s, bool plusAsSpace);
     static std::string urlEncode(const std::string& s);
     static void parseUrlEncoded(const std::string& text,
                                 std::vector<std::pair<std::string, std::string>>& out);

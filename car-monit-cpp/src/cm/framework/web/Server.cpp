@@ -237,7 +237,11 @@ bool Server::readRequest(cm::net::Fd fd, std::string& buf, cm::http::HttpRequest
         if (!(ss >> req.method >> target >> req.http_version)) return false;
         req.target = target;
         size_t q = target.find('?');
-        req.path = q == std::string::npos ? target : target.substr(0, q);
+        const std::string rawPath = q == std::string::npos ? target : target.substr(0, q);
+        // Tomcat/Spring 会按 URIEncoding(UTF-8) 解码 request URI，路径变量与 /profile/** 的
+        // 文件名都是解码后交给处理器的；查询参数在 parseUrlEncoded 里已解码，路径此前漏了，
+        // 导致 %20 / %E4%BA%91 之类的路径变量与 Java 行为不一致。
+        req.path = cm::http::HttpRequest::percentDecode(rawPath, false);
         if (q != std::string::npos) {
             cm::http::HttpRequest::parseUrlEncoded(target.substr(q + 1), req.query_params);
         }

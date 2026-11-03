@@ -15,6 +15,7 @@
 #include "cm/common/utils/StringUtils.hpp"
 #include "cm/common/utils/sql/SqlUtil.hpp"
 #include "cm/framework/db/Db.hpp"
+#include "cm/framework/http/HttpRequest.hpp"
 #include "cm/framework/security/Jwt.hpp"
 #include "cm/framework/security/SecurityUtils.hpp"
 
@@ -228,6 +229,23 @@ static void testStringUtils() {
     CHECK(!cm::utils::StringUtils::isBlank(std::string("x")));
 }
 
+/** 请求 URI 的百分号解码：Tomcat/Spring 会把路径解码后交给 @PathVariable，C++ 必须一致 */
+static void testUrlDecode() {
+    CHECK_EQ(cm::http::HttpRequest::urlDecode("%20"), std::string(" "));
+    CHECK_EQ(cm::http::HttpRequest::urlDecode("/profile/a%20b.jpeg"), std::string("/profile/a b.jpeg"));
+    CHECK_EQ(cm::http::HttpRequest::urlDecode("%E4%BA%91AK7388"), std::string("云AK7388"));
+    CHECK_EQ(cm::http::HttpRequest::urlDecode("a+b"), std::string("a b"));  // 查询串：+ 是空格
+    CHECK_EQ(cm::http::HttpRequest::percentDecode("a+b", false), std::string("a+b"));  // 路径：+ 原样
+    CHECK_EQ(cm::http::HttpRequest::percentDecode("/p/a%20b.jpeg", false), std::string("/p/a b.jpeg"));
+    CHECK_EQ(cm::http::HttpRequest::urlDecode("100%"), std::string("100%"));  // 残缺转义原样保留
+    std::vector<std::pair<std::string, std::string>> params;
+    cm::http::HttpRequest::parseUrlEncoded("carNo=%E4%BA%91AK7388&status=0", params);
+    CHECK_EQ(params.size(), size_t(2));
+    CHECK_EQ(params[0].first, std::string("carNo"));
+    CHECK_EQ(params[0].second, std::string("云AK7388"));
+    CHECK_EQ(params[1].second, std::string("0"));
+}
+
 void run_crypto_tests();
 void run_crud_engine_tests();
 
@@ -246,6 +264,7 @@ int main() {
     testIds();
     testCaptcha();
     testStringUtils();
+    testUrlDecode();
     run_crypto_tests();
     run_crud_engine_tests();
     if (fails == 0) {

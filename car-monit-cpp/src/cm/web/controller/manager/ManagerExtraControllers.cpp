@@ -6,10 +6,13 @@
 // 只在其上叠加 Java 里的前置条件；统计类接口则是 XML 里独立的 group by 语句。
 #include "cm/web/controller/manager/ManagerExtraControllers.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <string>
 #include <vector>
 
 #include "cm/common/core/domain/AjaxResult.hpp"
+#include "cm/common/utils/CommonUtil.hpp"
 #include "cm/common/utils/StringUtils.hpp"
 #include "cm/framework/db/Db.hpp"
 #include "cm/framework/web/Router.hpp"
@@ -142,6 +145,68 @@ void registerManagerExtraControllers(Router& r) {
         AjaxResult success = AjaxResult::success();
         success.put("data", confirmId);
         return BaseController::ok(success);
+    });
+
+    // GET /manager/confimfree/except/{exceptIds} —— 按异常流水 id 串组装"确认补缴"表单
+    // 对应 CarConfimFreeServiceImpl.selectCarConfimFreeByExceptIds(String)
+    r.get("/manager/confimfree/except/{exceptIds}", [](RequestContext& ctx) -> cm::http::ApiResponse {
+        std::string exceptIds = cm::utils::CommonUtil::deleteEnd(ctx.pathVar("exceptIds"));
+        if (StringUtils::isBlank(exceptIds))
+            return BaseController::ok(AjaxResult::error("请选择车辆异常流水！"));
+
+        const auto& rs = specCarExceptRecord();
+        Json q = Json::object();
+        q["exceptIds"] = exceptIds;
+        auto res = select("SELECT " + rs.selectColumns() + " FROM " + rs.table + " " + rs.alias + " " +
+                          cm::web::crud::buildWhere(rs, q) + " ORDER BY " + rs.orderBy).rows;
+        if (res.empty()) return BaseController::ok(AjaxResult::error("异常车辆流水不存在！"));
+
+        std::vector<std::string> carNos, epsIds;
+        for (const auto& row : res) {
+            const std::string carNo = row.str("car_no");
+            if (std::find(carNos.begin(), carNos.end(), carNo) == carNos.end()) carNos.push_back(carNo);
+            const std::string eps = row.get("eps_id") ? row.str("eps_id") : std::string("<null>");
+            if (std::find(epsIds.begin(), epsIds.end(), eps) == epsIds.end()) epsIds.push_back(eps);
+        }
+        if (carNos.size() > 1) return BaseController::ok(AjaxResult::error("请勿选择多辆车！"));
+        if (epsIds.size() > 1)
+            return BaseController::ok(AjaxResult::error("选择的异常流水存在多个录入单位，请确认！"));
+
+        // Java 在这些分支上都会早退，只有"已追缴"检查还要再查一次 confim_free
+        std::string in;
+        size_t pos = 0;
+        while (true) {
+            size_t comma = exceptIds.find(',', pos);
+            std::string item = exceptIds.substr(pos, comma == std::string::npos ? std::string::npos : comma - pos);
+            if (!in.empty()) in += " OR ";
+            in += "find_in_set(" + Db::lit(StringUtils::trim(item)) + ", t.except_ids) > 0";
+            if (comma == std::string::npos) break;
+            pos = comma + 1;
+        }
+        const auto& cs = specCarConfimFree();
+        if (!select(std::string("SELECT t.ID FROM ") + cs.table + " t WHERE t.del_flag = '0' and (" + in + ")")
+                        .rows.empty())
+            return BaseController::ok(AjaxResult::error("车辆补缴单已追缴，请勿重复补缴！"));
+
+        const auto& first = res.front();
+        Json vo = cm::web::crud::rowToJson(cs, cm::db::Row{});  // 骨架：全部键在、值 null
+        vo["carId"] = first.get("car_id") ? Json(first.str("car_id")) : Json(nullptr);
+        vo["carNo"] = first.get("car_no") ? Json(first.str("car_no")) : Json(nullptr);
+        vo["carType"] = first.get("car_type") ? Json(first.str("car_type")) : Json(nullptr);
+        vo["carVehicle"] = first.get("car_vehicle") ? Json(first.str("car_vehicle")) : Json(nullptr);
+        vo["exceptIds"] = exceptIds;
+        if (!epsIds.empty() && epsIds.front() != "<null>") vo["orgId"] = epsIds.front();
+        // Java: epsList 里有 null 时 setOrgId(null+"") —— 得到字符串 "null"
+        if (!epsIds.empty() && epsIds.front() == "<null>") vo["orgId"] = "null";
+
+        double dif = 0.0;
+        for (const auto& row : res)
+            if (row.get("dif_amount")) dif += row.dbl("dif_amount");
+        if (dif != 0.0) dif = std::round(dif * 100.0) / 100.0;  // setScale(2, HALF_UP)
+        vo["difAmount"] = Json(dif);
+        vo["backCol1"] = "0.3";  // Java: new BigDecimal("0.3") + ""
+        vo["amount"] = Json(std::round(dif * 0.3 * 100.0) / 100.0);
+        return BaseController::ok(AjaxResult::success(vo));
     });
 
     // GET /manager/aduitfree/incomeDetailList
