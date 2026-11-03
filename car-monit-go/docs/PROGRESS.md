@@ -4,7 +4,7 @@
 > 分页语义与 PageHelper 5.3.3 源码逐条对齐（`SkipQuery` 照抄 `afterCount` 的 `pageNum>0 && count>startRow`、
 > `Clamp` 的 reasonable 两界、`startRow`、`OrderBy` 原样拼接、`reasonable` 的 `Convert.toBool` 词表）、
 > 补齐漏掉客户端排序的端点（car_free/car_track 手拼 SQL、ops 两个日志 List、systemaux queryPage/indexmenu）、
-> 校验矩阵从 11 种组合扩到 22 种并修掉脚本自身的 rows 盲区；1617 组合 0 差异（豁免白名单已删）；新增 `check_startpage_map.py` 静态核对补回 28 处空表掩盖的分页缺失；`StartPageError` 复刻 `escapeOrderBySql` 的两条拒绝，
+> 校验矩阵从 11 种组合扩到 22 种并修掉脚本自身的 rows 盲区；1617 组合 0 差异（豁免白名单已删）；新增 `check_startpage_map.py` 静态核对（四类检查；以 Java 的 94 条分页路由为基准，100% 匹配到 Go 注册）补回 28 处空表掩盖的分页缺失；`StartPageError` 复刻 `escapeOrderBySql` 的两条拒绝，
 > 单测 `internal/web/pagination_test.go` 钉住语义（`pagination.go` 语句覆盖 100%）。
 >
 > **第三轮（2026-11-02）另见 `docs/PARITY-2026-11-02.md`**：共用 MySQL、**两端使用不同 Redis DB
