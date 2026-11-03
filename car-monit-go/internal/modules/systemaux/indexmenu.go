@@ -87,9 +87,11 @@ func (s *indexMenuService) selectList(ctx context.Context, pd web.PageDomain, q 
 		where += " and t2.menu_name like concat('%', ?, '%')"
 		args = append(args, v)
 	}
-	listSQL := indexMenuListVo + where + " order by t2.parent_id,t2.order_num,t1.order_num,t1.menu_id"
+	listSQL := indexMenuListVo + where
 	countSQL := "select count(1) from (" + indexMenuListVo + where + ") table_count"
-	return queryPage[model.SysIndexMenu](ctx, s.app.DB, pd, countSQL, args, listSQL, "")
+	// JAVA 对照: OrderByParser 会替换语句自带的 order by，故把它作为默认排序传入。
+	return queryPage[model.SysIndexMenu](ctx, s.app.DB, pd, countSQL, args, listSQL,
+		"t2.parent_id,t2.order_num,t1.order_num,t1.menu_id")
 }
 
 // getList 对应 getList：我常用的菜单（SQL 自带 limit 9）。

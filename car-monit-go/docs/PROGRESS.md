@@ -1,5 +1,9 @@
 # 迁移工作进度（接口返回逐一对比阶段）
 
+> **2026-11-03 批次收口见 `docs/PARITY-SUMMARY-2026-11-03.md`**：分页语义与 PageHelper 5.3.3 源码
+> 逐条对齐（`SkipQuery`/`Clamp`/`startRow`/`OrderBy`）、手拼 SQL 与 ops/systemaux 的客户端排序覆盖补齐、
+> 校验矩阵从 11 种组合扩到 16 种并修掉脚本自身的 rows 盲区；1155 组合 0 差异，单测 `internal/web/pagination_test.go` 钉住语义。
+>
 > **第三轮（2026-11-02）另见 `docs/PARITY-2026-11-02.md`**：共用 MySQL、**两端使用不同 Redis DB
 > （Java=db0 / Go=db2）**重做全量校验，校验脚本进仓库（`scripts/parity/`）。
 > 该轮结果：路由 Java 有/Go 没有 **0** 条；GET 288 条中 **250** 条逐字段一致、14 条差异全部定性为
@@ -160,14 +164,24 @@ Java 的分页是 PageHelper 拦截器行为，前两轮「固定带 `?pageNum=1
 - **参数取值**：照抄 `Convert.toInt(参数, 默认)` —— 只有没传/解析不出数字才回落默认，
   显式 `pageSize=0/-1` 是合法入参；删掉 Go 自造的 `MaxPageSize=500`
 - **`reasonable` 越界回末页**：`PageDomain.getReasonable()` null → TRUE ⇒ 新增 `Clamp(total)`/`LimitOffset(total)`，
-  16 处分页点接上 total
+  分页点全部接上 total
 - **客户端排序优先**：`startPage` 的 orderBy **覆盖** mapper XML 的 order by ⇒ `manager.orderFor`、
-  `base.orderByFor`、`generator.selectGenTableList` 统一这个优先级
-- **count=0 短路**：PageHelper 在总数为 0 时不再执行数据查询，因此「空结果 + 非法排序列」在 Java 侧不报错 ⇒
-  新增 `web.PageDomain.SkipQuery(total)`，9 个「客户端排序能进 SQL」的分页执行器接上（696 组合 → 0 差异）
+  `base.orderByFor`、`generator.selectGenTableList` 统一这个优先级；
+  后续补齐手拼 SQL 与漏网端点（`car_free` 4 处、`car_track` 1 处、`ops` 两个日志 List 新增 `orderFor`、
+  `systemaux.queryPage` 去掉「语句里有 order by 就不追加」、`indexmenu` 把语句排序移进 defaultOrder）
+- **`afterCount` 放行条件**：`SkipQuery` 不写成「count=0」而是照抄
+  `pageNum > 0 && count > startRow`（`AbstractHelperDialect.afterCount` + `Page.calculateStartAndEndRow`），
+  且 `Clamp` 的下界钳位只在 `reasonable` 为真时发生（`reasonable=false&pageNum=0` 时 Java 返回空页）
+- **空结果短路**：PageHelper 在不放行时 `return afterPage(new ArrayList())`，数据查询一次都不执行，
+  因此「空结果 + 非法排序列」在 Java 侧不报错 ⇒ `web.PageDomain.SkipQuery(total)`，
+  15 处分页执行器（11 个文件）先问这一句（1155 组合 → 0 差异）
+- **`isAsc` 原样拼接**：`getOrderBy()` 不校验方向值，`isAsc=bogus` 就是让 MySQL 报错；
+  别名 `ascending/descending` 在 `setIsAsc` 里转 ⇒ `web.OrderBy` 去掉「非 desc 即 asc」兜底
 - **代理 JSON 形态**：hutool `JSONUtil.toBean(..., TableDataInfo.class)` 默认丢 null 成员，
   Forest+Jackson 保留 —— 按端点区分（`renderRemoteTable(c, table, dropNull)`），
   上游响应 `UseNumber` 解码以原样透传数字字面量（`0` 不会变成 `0.0`）
+- 以上语义由 `internal/web/pagination_test.go` 钉住（12 组钳位/短路 + 8 组排序拼接），
+  依据逐条来自 `pagehelper-5.3.3-sources.jar`，见 `docs/PARITY-SUMMARY-2026-11-03.md` §3
 
 ## 4. 剩余差异
 

@@ -190,7 +190,7 @@ func (h *handler) pcIncomeStatics(c *gin.Context, page web.PageDomain) ([]*pcInc
 		" UNION ALL " +
 		"SELECT ifnull(a.amount, 0) amount, a.car_no, a.org_id, d.dept_name orgName FROM car_confim_free a " +
 		"LEFT JOIN sys_dept d ON d.dept_id = a.org_id WHERE a.del_flag = '0'" + f2 +
-		") t GROUP BY t.org_id, t.orgName ORDER BY amount DESC"
+		") t GROUP BY t.org_id, t.orgName"
 	args := append(append([]any{}, a1...), a2...)
 
 	var total int64
@@ -200,7 +200,11 @@ func (h *handler) pcIncomeStatics(c *gin.Context, page web.PageDomain) ([]*pcInc
 			return nil, 0, err
 		}
 	}
-	sqlStr := base
+	if page.SkipQuery(total) {
+		return make([]*pcIncomeStaticsVO, 0), total, nil
+	}
+	// JAVA 对照: PageHelper 的 orderBy 会替换语句自带的 order by（amount 是聚合别名）。
+	sqlStr := base + " ORDER BY " + orderFor("amount DESC", page)
 	queryArgs := args
 	if page.HasPage {
 		sqlStr += " LIMIT ? OFFSET ?"
@@ -260,7 +264,7 @@ func (h *handler) incomeDetailList(c *gin.Context) ([]*carConfimFree, int64, err
 		" UNION ALL " +
 		"SELECT ifnull(a.amount, 0) amount, a.car_no, a.org_id, d.dept_name AS org_name, a.create_time FROM car_confim_free a " +
 		"LEFT JOIN sys_dept d ON d.dept_id = a.org_id WHERE a.del_flag = '0'" + f2 +
-		") t ORDER BY t.create_time DESC"
+		") t"
 	args := append(append([]any{}, a1...), a2...)
 	page := web.Page(c)
 	var total int64
@@ -270,7 +274,11 @@ func (h *handler) incomeDetailList(c *gin.Context) ([]*carConfimFree, int64, err
 			return nil, 0, err
 		}
 	}
-	sqlStr := base
+	if page.SkipQuery(total) {
+		return make([]*carConfimFree, 0), total, nil
+	}
+	// JAVA 对照: startPage 的 orderBy 覆盖 incomeDetailList 自带的 order by。
+	sqlStr := base + " ORDER BY " + orderFor("t.create_time DESC", page)
 	queryArgs := args
 	if page.HasPage {
 		sqlStr += " LIMIT ? OFFSET ?"
@@ -813,6 +821,13 @@ func (h *handler) concernedList(c *gin.Context, page web.PageDomain) ([]*carConf
 			return nil, 0, err
 		}
 	}
+	if page.SkipQuery(total) {
+		return make([]*carConfimFree, 0), total, nil
+	}
+	// JAVA 对照: selectConcernedList 语句本身不带 order by，客户端给了才追加。
+	if o := page.OrderBy(); o != "" {
+		sqlStr += " ORDER BY " + o
+	}
 	if page.HasPage {
 		sqlStr += " LIMIT ? OFFSET ?"
 		lim, off := page.LimitOffset(total)
@@ -922,6 +937,14 @@ func (h *handler) pcCarStatistics(c *gin.Context) ([]*pcCarStatisticsVO, int64, 
 			Raw("SELECT COUNT(0) FROM ("+sqlStr+") table_count", args...).Scan(&total).Error; err != nil {
 			return nil, 0, err
 		}
+	}
+	if page.SkipQuery(total) {
+		// total 与语句末尾一致地取「聚合后的列表长度」，跳过查询时就是 0（Java 原样）
+		return make([]*pcCarStatisticsVO, 0), 0, nil
+	}
+	// JAVA 对照: 语句本身不写 order by，客户端给了才追加（聚合在服务层重排，顺序仍会受影响）。
+	if o := page.OrderBy(); o != "" {
+		sqlStr += " ORDER BY " + o
 	}
 	queryArgs := args
 	if page.HasPage {

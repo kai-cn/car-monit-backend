@@ -194,11 +194,10 @@ func queryPage[T any](ctx context.Context, db *gorm.DB, pd web.PageDomain,
 		return []T{}, total, nil
 	}
 	sql := listSQL
-	// JAVA 对照: PageHelper 对已带 ORDER BY 的语句不再追加客户端排序。
-	if !strings.Contains(strings.ToLower(sql), " order by ") {
-		if order := pd.OrderByWithDefault(defaultOrder); order != "" {
-			sql += " order by " + order
-		}
+	// JAVA 对照: OrderByParser.converToOrderBySql —— 客户端给了 orderByColumn 就**替换**语句
+	// 自带的 order by；没给则沿用 defaultOrder。所以语句本身的排序一律由调用方放进 defaultOrder。
+	if order := pd.OrderByWithDefault(defaultOrder); order != "" {
+		sql += " order by " + order
 	}
 	var rows []T
 	q := db.WithContext(ctx)

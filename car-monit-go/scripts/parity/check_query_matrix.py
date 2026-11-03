@@ -55,7 +55,17 @@ VARIANTS = [
     "?pageNum=1&pageSize=3&orderByColumn=1%3Bdrop&isAsc=desc",
     "?pageNum=1&pageSize=3&isAsc=bogus",
     "?pageNum=1&pageSize=3&reasonable=false",
+    # 第二轮补充：reasonable=false 的两个越界角、只给排序列、非法方向值
+    "?pageNum=0&pageSize=3&reasonable=false",
+    "?pageNum=9999&pageSize=3&reasonable=false",
+    "?pageNum=1&pageSize=3&orderByColumn=createTime",
+    "?pageNum=1&pageSize=3&orderByColumn=createTime&isAsc=bogus",
 ]
+
+# 已定性的有意差异（不计入失败，单独报告）：
+# orderByColumn 含非法字符时 Java 的 SqlUtil.escapeOrderBySql 抛 UtilException → code=500
+# 「参数不符合规范，不能进行查询」；Go 忽略该排序正常返回（不注入、不报错）。
+KNOWN_JAVA_REJECTS_ORDER = "orderByColumn=1%3Bdrop"
 
 
 def brief(a, b):
@@ -64,9 +74,19 @@ def brief(a, b):
         a.get("code"), a.get("total"), rows(a), b.get("code"), b.get("total"), rows(b))
 
 
+def compare(a, b):
+    """两端都返回 TableDataInfo 时逐字段比；否则只比信封（错误文本按设计不同，见 PARITY §8.2）。"""
+    if isinstance(a, dict) and isinstance(b, dict) and "rows" in a and "rows" in b:
+        return pp.diff(pp.norm(a), pp.norm(b))
+    same = (isinstance(a, dict) and isinstance(b, dict)
+            and a.get("code") == b.get("code") and ("rows" in a) == ("rows" in b))
+    return [] if same else [["/code", a.get("code") if isinstance(a, dict) else a,
+                             b.get("code") if isinstance(b, dict) else b]]
+
+
 def main():
     tk_j, tk_g = pp.login_java(), pp.login_go()
-    bad, checked = [], 0
+    bad, known, checked = [], 0, 0
     for base, filters in ENDPOINTS:
         for extra in [""] + filters:
             for variant in VARIANTS:
@@ -75,14 +95,16 @@ def main():
                     query += "&" + extra.lstrip("&")
                 url = base + "?" + query
                 a, b = pp.req(pp.JAVA, url, tk_j), pp.req(pp.GO, url, tk_g)
-                if not isinstance(a, dict) or not isinstance(b, dict) or "rows" not in a:
-                    continue
                 checked += 1
-                d = pp.diff(pp.norm(a), pp.norm(b))
+                d = compare(a, b)
+                if not d:
+                    continue
+                if KNOWN_JAVA_REJECTS_ORDER in query:
+                    known += 1
+                    continue
                 # 排序差异表现为 rows 内容不同；分页/转义差异表现为 code、total、rows 长度
-                if d:
-                    bad.append((url, len(d), brief(a, b), str(d[0])[:120]))
-    print("\n矩阵校验：比对 %d 个组合，存在差异 %d 个" % (checked, len(bad)))
+                bad.append((url, len(d), brief(a, b), str(d[0])[:120]))
+    print("\n矩阵校验：比对 %d 个组合，存在差异 %d 个，已知有意差异 %d 个" % (checked, len(bad), known))
     for url, n, shape, first in bad:
         print("  %-64s 差异%3d %s" % (url[:64], n, shape))
         print("      首条: %s" % first)

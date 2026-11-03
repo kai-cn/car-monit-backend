@@ -85,13 +85,15 @@ func PageAlways(c *gin.Context) PageDomain {
 	return pd
 }
 
-// Clamp 对应 PageHelper 的 reasonable：页码小于 1 回到第一页，超过总页数回到最后一页。
-// reasonable=false 时不钳（此时越界页返回空，与 Java 一致）。
+// Clamp 对应 PageHelper 的两处页码修正：
+//   - Page.setReasonable / Page.pageNum：`reasonable && pageNum<=0` 才回到第一页
+//     （reasonable=false 时不钳，Java 之后会因 `pageNum > 0` 不成立而直接返回空）；
+//   - Page.setTotal：`reasonable && pageNum > pages` 回到最后一页（pages=0 时不改页码）。
 func (p PageDomain) Clamp(total int64) PageDomain {
 	if !p.HasPage {
 		return p
 	}
-	if p.PageNum < 1 {
+	if p.Reasonable && p.PageNum <= 0 {
 		p.PageNum = 1
 	}
 	if !p.Reasonable || p.PageSize <= 0 || total <= 0 {
@@ -104,12 +106,27 @@ func (p PageDomain) Clamp(total int64) PageDomain {
 	return p
 }
 
-// SkipQuery 对应 PageHelper 的空结果短路：count=0 时拦截器不再执行分页查询。
+// SkipQuery 复刻 PageHelper 的 afterCount：先 setTotal(count)，只有
+// `pageNum > 0 && count > startRow` 才继续执行数据查询，否则拦截器直接交回空 List。
 //
-// DIFF: 因此 Java 在「总数为 0 + 非法排序列」时根本不解析 ORDER BY，不会报错；
-// Go 若照常执行就会把 SQL 错误暴露出来。所有分页查询都先问这一句。
+// 这不只是性能短路，而是可观测的行为差异：Java 在 count=0 或页码越界（reasonable=false）
+// 时**根本不执行**分页语句，客户端给的非法排序列因此不会报错。
+// DIFF: Java 另有 pageSizeZero 分支（pageSize<0 时跳过查询）；Go 在 Page() 里把负数归一成 0，
+// 执行 `LIMIT 0` 得到同样的空结果，仅「负 pageSize + 非法排序列」这一角仍会报错。
 func (p PageDomain) SkipQuery(total int64) bool {
-	return p.HasPage && total == 0
+	if !p.HasPage {
+		return false
+	}
+	c := p.Clamp(total)
+	return !(c.PageNum > 0 && total > int64(c.startRow()))
+}
+
+// startRow 对应 Page.calculateStartAndEndRow：pageNum<=0 时起始行为 0。
+func (p PageDomain) startRow() int {
+	if p.PageNum > 0 {
+		return (p.PageNum - 1) * p.PageSize
+	}
+	return 0
 }
 
 // LimitOffset 是调用方该用的入口：先按总条数做 reasonable 钳位再算 LIMIT/OFFSET。
@@ -122,11 +139,7 @@ func (p PageDomain) Offset() int {
 	if !p.HasPage {
 		return 0
 	}
-	page := p.PageNum
-	if page < 1 {
-		page = 1
-	}
-	return (page - 1) * p.PageSize
+	return p.startRow()
 }
 
 func (p PageDomain) Limit() int {
@@ -139,17 +152,21 @@ func (p PageDomain) Limit() int {
 var orderByPattern = regexp.MustCompile(`^[a-zA-Z0-9_\ \,\.]+$`)
 
 // OrderBy 对应 PageDomain.getOrderBy + SqlUtil.escapeOrderBySql。
-// 返回空串表示不排序。非法列名会被忽略（Java 侧抛异常，此处保守降级并记录 DIFF）。
+// 返回空串表示不排序。
+//
+// 方向值**原样拼接**（Java 就是 `列名 + " " + isAsc`）：`isAsc=bogus` 这类合法字符但非法的
+// 方向会进到 SQL 里让 MySQL 报语法错，两端都是 code=500（仅错误文本形态不同）。
+// DIFF: 校验不通过时 Java 抛 UtilException("参数不符合规范，不能进行查询")，Go 忽略该排序
+// 继续正常返回 —— 这类入参基本都是注入探测，不返回 500 更安全，也不影响合法请求。
 func (p PageDomain) OrderBy() string {
-	if p.OrderByColumn == "" || !orderByPattern.MatchString(p.OrderByColumn) {
+	if p.OrderByColumn == "" {
 		return ""
 	}
-	col := toUnderScoreCase(p.OrderByColumn)
-	dir := strings.ToLower(p.IsAsc)
-	if dir != "desc" {
-		dir = "asc"
+	order := toUnderScoreCase(p.OrderByColumn) + " " + p.IsAsc
+	if !orderByPattern.MatchString(order) {
+		return ""
 	}
-	return col + " " + dir
+	return order
 }
 
 // OrderByWithDefault 在客户端未指定排序列时使用服务端默认排序。
