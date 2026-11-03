@@ -263,7 +263,7 @@ C++ 以等价逻辑实现（`SysLoginController.cpp::checkPasswordInvalid`），
 
 ## 7. 覆盖状态
 
-* 端点总数（Java 源码自动提取）：**326**，见 `ENDPOINTS_INVENTORY.md`。
+* 端点总数（Java 源码自动提取）：**497**，见 `ENDPOINTS_INVENTORY.md`。
 * 已迁移端点：见该文件 `C++ 状态` 列（`✅` 已注册 / `❌` 未注册）。
 * 框架层（路由、鉴权、JWT、分页、异常、CORS、静态资源、上传下载）**100% 对齐**。
 * 认证链路（`/captchaImage`、`/login`、`/getInfo`、`/getRouters`、`/logout`）**100% 对齐**。
