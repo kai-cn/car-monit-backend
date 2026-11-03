@@ -107,6 +107,12 @@ struct Constants {
     static constexpr const char* STATION_CAPTURE = "StationCapture";
     static constexpr const char* GANTRY_CAPTURE = "GantryCapture";
     static constexpr const char* SERVICE_AREA_CAPTURE = "ServiceAreaCapture";
+    /** 预警车辆列表缓存（Java setCacheObject 不带过期时间） */
+    static constexpr const char* car_warning_list = "car_warning_list";
+    /** 车辆语音提醒规则缓存前缀：car_warning_rule:{userId}type{noticeType} */
+    static constexpr const char* CAR_WARNING_RULE = "car_warning_rule:";
+    /** 预警触发时间间隔（sys_config 的缓存键，单位分钟） */
+    static constexpr const char* WARNING_TRIGGER_TIMESPAN = "sys_config:warning_trigger_timespan";
 };
 
 } // namespace cm::constant

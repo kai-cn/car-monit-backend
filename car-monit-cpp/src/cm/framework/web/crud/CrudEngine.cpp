@@ -232,11 +232,27 @@ Json bindQuery(const Spec& spec, RequestContext& ctx) {
 
 std::string buildInsert(const Spec& spec, const Json& body) {
     std::string cols, vals;
+    // MyBatis-Plus 的 IdType.ASSIGN_UUID（BasePlusEntity / BasePlusEntityNew / BaseUuidEntity 都是）
+    // 在**客户端**生成 32 位无横线小写 UUID：请求没带 id 时也必须补上，否则 INSERT 直接缺主键列。
+    const std::string generatedPk = (spec.pkIsString() && !findField(body, spec.pkJson()))
+                                        ? cm::utils::simpleUuid()
+                                        : std::string();
     for (const auto& f : spec.fields) {
         if (!f.insertable) continue;
         if (f.pk && f.autoIncrement) continue;  // 自增主键交给数据库
         const Json* v = findField(body, f.json);
-        if (v == nullptr || v->is_null()) continue;  // MyBatis-Plus 默认 NOT_NULL 策略
+        if (v == nullptr || v->is_null()) {
+            if (f.pk && !generatedPk.empty()) {
+                if (!cols.empty()) {
+                    cols += ", ";
+                    vals += ", ";
+                }
+                cols += f.column;
+                vals += Db::lit(generatedPk);
+                continue;
+            }
+            continue;  // MyBatis-Plus 默认 NOT_NULL 策略
+        }
         if (!cols.empty()) {
             cols += ", ";
             vals += ", ";

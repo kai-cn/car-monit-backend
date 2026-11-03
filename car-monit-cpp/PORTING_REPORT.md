@@ -20,12 +20,15 @@
 | 指标 | 数值 |
 |---|---|
 | Java 端点（按 @*Mapping 注解逐条统计） | **497** |
-| C++ 已注册路由（源码枚举，`方法+路径` 去重） | **510** |
-| 已覆盖 | **439** |
-| 未覆盖 | **58** |
-| 机器校验 | `python scripts/verify_generated_sql.py` → 实体 59，异常 0 |
+| C++ 已注册路由（源码枚举，`方法+路径` 去重） | **519** |
+| 已覆盖 | **448** |
+| 未覆盖 | **49** |
+| 机器校验 | `python scripts/verify_generated_sql.py` → 实体 59，异常 0；`scripts/audit_spec_keys.py` → 缺失 JSON 键 0 |
 | 实机校验 | `python scripts/live_probe.py --port 9990 <路径…>`（复用 Redis 现存会话签发 token） |
 | 审批流校验 | `python scripts/verify_flow_approval.py --port 9990` → 27 项断言全过 |
+| 导出/下载校验 | `verify_cn_export.py` 16 项、`verify_user_excel.py` 14 项 |
+| 操作日志校验 | `verify_operlog.py` 18 项 |
+| 大屏校验 | `verify_bigscreen.py` 22 项（自带夹具并复原） |
 
 三个口径要分清，不要用其中一个去否定另一个：
 `endpoint_coverage.py` 按注解统计 Java 侧真实分母（497）；
@@ -33,23 +36,25 @@
 分母停在 326，漏掉 ruoyi-quartz/ruoyi-generator 与 `GET /{id}` 形态，属于工具缺陷，已修）；
 `verify_generated_sql.py` 证明的是“生成的 SQL 在真实库上跑得通”，不等于响应体一致。
 
-### 尚未迁移（58 条，逐条给出障碍）
+### 尚未迁移（49 条，逐条给出障碍）
 
 | 控制器 | 条数 | 障碍 |
 |---|---|---|
 | GenController | 15 | 28 份 Velocity 模板 + zip 下载；C++ 侧没有模板引擎 |
 | SysFileController | 9 | S3/MinIO 上传（SigV4）、`uploadFileEnc` 加解密、bucket 视图 |
-| BigScreenController | 8 | 其中 4 条其实只走库/Redis，是可直接补的存量（`carLocation` 读 Redis 车辆列表 + DB 回源；`topTen`、`incomeStatistic`、`carVoList` 是 Mapper 里的多表统计）；其余 4 条依赖外部定位与路网服务，逐条边界见 `COMPATIBILITY.md` §5.1 |
 | CarSuspiciousController | 7 | 逐行二次查询、docx/xlsx 模板导出、外部同步任务与签名校验 |
 | CarTrackInfoController | 4 | 轨迹来自外部 HTTP（`httpSysUtilApiService`），非本地库 |
 | GeometryController | 3 | GeoServer 外部 HTTP |
-| CarConfimFreeController | 3 | 模板导出 + `except/{id}` 组合查询 |
 | CarExceptRecordController | 3 | ListNew 是 join 派生查询；import 需 POI |
-| CarAduitFreeController | 2 | 模板导出 |
+| CarAduitFreeController | 2 | 模板导出（poi-tl 的 `TemplateExportParams`） |
+| CarConfimFreeController | 2 | 模板导出 |
 | 其它（earliest-time / tbFlow / busstest / carinfo.import） | 4 | 外部 HTTP、跨租户批量同步、POI 解析 |
 
 已经落地的"硬骨头"（不再列为障碍，只剩实现细节）：
 flow 审批三件套（跨 6 张表 + 事务，夹具实测）、CDC 8 条（只读 Redis 队列）、
+大屏 8 条全部落地（`carLocation`/`carVoList`/`topTen`/`incomeStatistic` 之外，本轮又补了
+`carStatistics`/`carWarning`/`exceptRecordList`，剩下的只有依赖外部服务的）、
+@Log 操作日志切面（234 条规则异步落库）、
 quartz 的 changeStatus/jobLog clean（DB 语义一致）与 run（❌ 明确拒绝，见下）。
 
 > 原则：没做完的接口不会静默返回假数据。已实现的降级点都在 `COMPATIBILITY.md` 里
@@ -181,6 +186,36 @@ Jackson 就输出 `"0"`，**不能退化成 null**；只有真的没有初值时
 `/system/role/list` 出现 `flag:false, menuIds:null, deptIds:null`，
 `/manager/exceptrecord/list` 出现 `supplementaryStatus:"0"`，
 `/manager/confimfree/list` 出现 `number:0, escapedAmount:0`；分页 total 与修复前一致（18/3/273/3/83）。
+
+## 4.4 大屏最后 3 条（顺带挖出两个跨接口的引擎缺陷）
+
+`carStatistics` / `carWarning` / `exceptRecordList` 落地后，大屏 8 条全部覆盖，覆盖率 445 → **448**。
+为造夹具而走的写路径，暴露了两个影响面远大于这 3 条接口的问题：
+
+**① `IdType.ASSIGN_UUID` 的主键从来没被生成过。**
+`BasePlusEntity` / `BasePlusEntityNew` / `BaseUuidEntity` 的 `id` 都是
+`@TableId(value="id", type=IdType.ASSIGN_UUID)`，MP 在**客户端**生成 32 位无横线小写 UUID。
+而 `buildInsert` 的规矩是"body 里没有就跳过"，于是 INSERT 少了主键列，
+`POST /manager/carwarning` 直接 500。这不是这 3 条接口的问题——**所有 uuid 主键表的 add 接口都是坏的**
+（此前没有任何实机写请求打到它们，所以没暴露）。修法：字符串主键且 body 未带 id 时补 `simpleUuid()`，
+带了就照用户的值（对应 MP 只在 id 为 null 时生成的行为）。
+
+**② 大屏的设备编码过滤只认 `type`，把调用方直传的 `gantryCode`/`tollCode`/`fwqbm` 丢了。**
+Spring 是先按参数名绑到 `CarLocationParam`，`type` 分支只是**覆盖**其中一路。
+我此前实现成"只有 type 存在时才有这三个变量"，导致 `?gantryCode=xxx` 这种直接过滤完全无效。
+`carLocation`（早已"验证过"的那条）同样有此缺陷，一并修。
+
+其余逐条对齐的点：
+- `carWarning` 走 `car_warning_list` 缓存（不设 TTL），没有才按 `trackId = 今天 yyyyMMdd` 回源并写回；
+  缓存里是 fastjson2 形态（日期是毫秒数），必须按实体声明序重排、日期改回 Jackson 形态再输出，
+  否则键序和形态都会跟 Java 不一致。
+- 告警规则链路照抄：`car_warning_rule:{userId}type1` 命中门架 + `sys_config:warning_trigger_timespan`
+  分钟内 ⇒ `needToWarnStr="1"`，间隔解析失败按 Java 抛 `NumberFormatException`。
+- `exceptRecordList` 每行补 `orgId`（Java 的 `find_in_set(列, 传入值)` 顺序反直觉，照抄）
+  与 `supplementaryStatus`（MP 的 `@TableLogic` 会给 count 自动加 `del_flag='0'`）。
+
+验证：`scripts/verify_bigscreen.py` 22 条断言，自带夹具（临时把一台车置在线、造一条今日预警行、
+写两个缓存键），跑完全部复原，并额外断言"清理已完成 + 车辆状态已复原"。
 
 ## 5. 已知行为差异（完整清单见 COMPATIBILITY.md）
 

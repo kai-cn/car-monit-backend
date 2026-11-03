@@ -164,6 +164,33 @@ static void testBuildInsert() {
     b5["name"] = "x";
     CK_EQ(buildInsert(s5, b5),
           std::string("INSERT INTO demo_table (agent_pk, name) VALUES ('PK-1', 'x')"));
+
+    // IdType.ASSIGN_UUID（BasePlusEntity / BasePlusEntityNew / BaseUuidEntity 都是）：
+    // MP 在客户端生成主键，请求没带 id 时也必须补，否则 INSERT 少了主键列直接报错
+    Spec s6 = demoSpec();
+    s6.fields[0].fmt = Fmt::Str;
+    Json b6 = Json::object();
+    b6["name"] = "x";
+    const std::string sql6 = buildInsert(s6, b6);
+    CK(sql6.rfind("INSERT INTO demo_table (id, name) VALUES ('", 0) == 0);
+    CK(sql6.find("', 'x')") != std::string::npos);
+    const size_t head = sql6.find("('") + 2;
+    const size_t tail = sql6.find('\'', head);
+    CK_EQ(tail - head, static_cast<size_t>(32));   // 32 位无横线
+    for (size_t i = head; i < tail; ++i) {
+        const char c = sql6[i];
+        CK((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'));   // 小写十六进制
+    }
+    // 请求带了主键就照用户的值，不覆盖
+    Json b7 = Json::object();
+    b7["id"] = "FIXED";
+    b7["name"] = "x";
+    CK_EQ(buildInsert(s6, b7), std::string("INSERT INTO demo_table (id, name) VALUES ('FIXED', 'x')"));
+
+    // 数值主键（自增以外的 INPUT）不生成 UUID
+    Json b8 = Json::object();
+    b8["name"] = "x";
+    CK_EQ(buildInsert(demoSpec(), b8), std::string("INSERT INTO demo_table (name) VALUES ('x')"));
 }
 
 static void testBuildUpdate() {
