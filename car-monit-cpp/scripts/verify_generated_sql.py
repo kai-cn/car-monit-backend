@@ -69,6 +69,7 @@ def parse_spec(path):
             continue
         fields = [m.groupdict() for m in FIELD_RE.finditer(b)]
         order = re.search(r's\.orderBy = "([^"]*)";', b)
+        alias = re.search(r's\.alias = "([^"]*)";', b)
         specs.append({
             "file": os.path.basename(path),
             "table": table.group(1),
@@ -76,6 +77,8 @@ def parse_spec(path):
             "pkvar": base.group(2),
             "fields": fields,
             "orderBy": order.group(1) if order else "",
+            # 别名跟 spec 一致（sys_role 用 r、…），否则测出来的 SQL 与引擎拼的不是一回事
+            "alias": (alias.group(1) if alias and alias.group(1) else "t"),
         })
     return specs
 
@@ -95,10 +98,11 @@ EXPECTED_SQL_ERRORS = {
 def check_sql(spec):
     """跑投影/计数/条件三类 SQL，返回问题列表"""
     problems = []
-    cols = ", ".join("t." + f["col"] for f in spec["fields"])
+    a = spec["alias"]
+    cols = ", ".join(a + "." + f["col"] for f in spec["fields"])
     if not cols:
         return ["没有字段"]
-    q = "SELECT %s FROM %s t WHERE 1=1" % (cols, spec["table"])
+    q = "SELECT %s FROM %s %s WHERE 1=1" % (cols, spec["table"], a)
     if spec["orderBy"]:
         q += " ORDER BY " + spec["orderBy"]
     q += " LIMIT 0,1"
@@ -108,27 +112,27 @@ def check_sql(spec):
     if not ok:
         problems.append("投影 SQL 失败: " + out.strip().splitlines()[0][:140])
         return problems
-    ok, out = mysql("SELECT COUNT(1) %s FROM %s t" % ("", spec["table"]))
+    ok, out = mysql("SELECT COUNT(1) FROM %s %s" % (spec["table"], a))
     if not ok:
         problems.append("COUNT 失败: " + out.strip().splitlines()[0][:140])
     # 条件片段：用第一个条件字段造一个不可能的值，验证语法而非结果
     conds = [f for f in spec["fields"] if f["cond"] != "None"]
     for f in conds[:4]:
         if f["cond"] == "Like":
-            frag = "and t.%s like concat('%%', 'zz', '%%')" % f["col"]
+            frag = "and %s.%s like concat('%%', 'zz', '%%')" % (a, f["col"])
         elif f["cond"] == "DateRange":
-            frag = (" and date_format(t.%s, '%%Y%%m%%d') >= date_format('2024-01-01', '%%Y%%m%%d')"
-                    % f["col"])
+            frag = (" and date_format(%s.%s, '%%Y%%m%%d') >= date_format('2024-01-01', '%%Y%%m%%d')"
+                    % (a, f["col"]))
         elif f["cond"] == "FindInSet":
-            frag = "and find_in_set('1', t.%s)" % f["col"]
+            frag = "and find_in_set('1', %s.%s)" % (a, f["col"])
         elif f["fmt"] in ("DateYmd", "DateYmdHms", "DateIso", "DateTimeIso"):
             # 日期列要用合法日期做哨兵，否则 MySQL 报 Incorrect DATETIME（那是校验脚本的问题）
-            frag = "and t.%s = '2024-01-01 00:00:00'" % f["col"]
+            frag = "and %s.%s = '2024-01-01 00:00:00'" % (a, f["col"])
         elif f["fmt"] in ("Int", "Long"):
-            frag = "and t.%s = 0" % f["col"]
+            frag = "and %s.%s = 0" % (a, f["col"])
         else:
-            frag = "and t.%s = 'zz'" % f["col"]
-        ok, out = mysql("SELECT COUNT(1) FROM %s t WHERE 1=1 %s" % (spec["table"], frag))
+            frag = "and %s.%s = 'zz'" % (a, f["col"])
+        ok, out = mysql("SELECT COUNT(1) FROM %s %s WHERE 1=1 %s" % (spec["table"], a, frag))
         if not ok:
             problems.append("条件片段失败 [%s %s]: %s" % (f["cond"], f["col"],
                                                         out.strip().splitlines()[0][:120]))

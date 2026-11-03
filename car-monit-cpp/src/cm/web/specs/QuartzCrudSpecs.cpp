@@ -17,6 +17,11 @@ void registerQuartzArea(Router& r) {
         s.table = "sys_job";
         s.alias = "t";
         s.fields = {
+            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, nullptr, false, false, false, false},
             {"jobId", "job_id", Fmt::Long, Cond::None, "任务序号", false, false},
             {"jobName", "job_name", Fmt::Str, Cond::Eq, "任务名称", false, false},
             {"jobGroup", "job_group", Fmt::Str, Cond::Eq, "任务组名", false, false},
@@ -38,6 +43,11 @@ void registerQuartzArea(Router& r) {
         s.table = "sys_job_log";
         s.alias = "t";
         s.fields = {
+            {"createBy", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", nullptr, Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"remark", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
             {"jobLogId", "job_log_id", Fmt::Long, Cond::None, "日志序号", false, false},
             {"jobName", "job_name", Fmt::Str, Cond::Like, "任务名称", false, false},
             {"jobGroup", "job_group", Fmt::Str, Cond::Eq, "任务组名", false, false},

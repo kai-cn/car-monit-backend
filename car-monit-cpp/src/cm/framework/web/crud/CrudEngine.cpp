@@ -43,9 +43,12 @@ bool Spec::pkIsString() const {
 std::string Spec::selectColumns() const {
     std::string out;
     const std::string prefix = alias.empty() ? std::string() : (alias + ".");
-    for (size_t i = 0; i < fields.size(); ++i) {
-        if (i) out += ", ";
-        out += prefix + fields[i].column;
+    for (const auto& f : fields) {
+        // column == nullptr：Java 里是父类的非列字段（如 BaseUuidEntity.deptSubCode），
+        // MyBatis 不填、Jackson 输出 null，所以只进 JSON 不进 SELECT
+        if (f.column == nullptr) continue;
+        if (!out.empty()) out += ", ";
+        out += prefix + f.column;
     }
     return out;
 }
@@ -116,7 +119,7 @@ std::string rangeExpr(const Spec& s, const Field& f, const std::string& op, cons
 Json rowToJson(const Spec& spec, const cm::db::Row& row) {
     Json j = Json::object();
     for (const auto& f : spec.fields) {
-        auto v = row.get(f.column);
+        auto v = f.column ? row.get(f.column) : std::nullopt;
         if (!v) {
             j[f.json] = nullptr;
             continue;

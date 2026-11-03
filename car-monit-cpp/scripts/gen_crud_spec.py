@@ -59,6 +59,65 @@ TYPE_MAP = {
     "LocalDate": "DateYmd",
 }
 
+# C++ 侧 Fmt 枚举的全部取值，用来校验父类字段表里的类型名
+FMT_NAMES = {"Str", "Int", "Long", "Double", "Bool",
+             "DateYmd", "DateYmdHms", "DateIso", "DateTimeIso"}
+
+# Jackson 序列化 POJO 时先输出父类字段、再输出子类字段，且不过滤 null。
+# RuoYi 的两个父类字段多、多数还不是本表的列（MyBatis 填不到就保持 null → JSON 里输出 null），
+# 但键一个都不能少，否则 C++ 的 rows 少一整排键。
+#   column=None：只进 JSON、不进 SELECT。
+#   真正是否 SELECT，由 resultMap 有没有映射这个 property 决定（见 gen_entity）。
+BASE_FIELDS = {
+    "BaseEntity": [
+        ("createBy", "create_by", "Str"),
+        ("createTime", "create_time", "DateYmdHms"),
+        ("updateBy", "update_by", "Str"),
+        ("updateTime", "update_time", "DateYmdHms"),
+        ("remark", "remark", "Str"),
+        # searchValue 是 @JsonIgnore；params 的 getter 懒加载空 Map 且 @JsonInclude(NON_EMPTY)
+        # ——两者在 Java 响应里都不出现，所以这里也不列
+    ],
+    "BaseUuidEntity": [
+        ("id", "id", "Str"),
+        ("epsId", "eps_id", "Long"),
+        ("delFlag", "del_flag", "Str"),
+        ("createBy", "create_by", "Long"),
+        ("createTime", "create_time", "DateYmdHms"),
+        ("updateBy", "update_by", "Long"),
+        ("updateTime", "update_time", "DateYmdHms"),
+        ("sort", "sort", "Int"),
+        ("remark", "remark", "Str"),
+        ("tenantId", "tenant_id", "Long"),
+        ("deptSubCode", "dept_sub_code", "Str"),
+        ("flag", "flag", "Str"),
+        ("searchValue", "search_value", "Str"),
+        ("params", None, "Map"),
+    ],
+}
+
+# BasePlusEntity / …New / …Input / …InputNew / …Long 五个变体的字段与声明序完全相同
+# （manager 域大量实体用它），统一成一份表，避免各写一遍再抄错。
+_BASE_PLUS = [
+    ("id", "id", "Str"),
+    ("epsId", "eps_id", "Long"),
+    ("delFlag", "del_flag", "Str"),
+    ("createBy", "create_by", "Long"),
+    ("createTime", "create_time", "DateYmdHms"),
+    ("updateBy", "update_by", "Long"),
+    ("updateTime", "update_time", "DateYmdHms"),
+    ("sort", "sort", "Int"),
+    ("tenantId", "tenant_id", "Long"),
+]
+for _name in ("BasePlusEntity", "BasePlusEntityNew", "BasePlusEntityInput",
+              "BasePlusEntityInputNew", "BasePlusEntityLong"):
+    BASE_FIELDS[_name] = _BASE_PLUS
+
+# 这些父类的 id 就是主键（实体自己不再声明 @TableId）
+_PK_ID_BASES = {"BaseUuidEntity"} | {n for n in (
+    "BasePlusEntity", "BasePlusEntityNew", "BasePlusEntityInput",
+    "BasePlusEntityInputNew", "BasePlusEntityLong")}
+
 
 def rel(path):
     """把绝对路径缩写成相对 Java 仓库根的路径，便于在生成的 C++ 里对照源码"""
@@ -142,6 +201,10 @@ def parse_domain(entity):
 
     m = re.search(r'@TableId\((?:value\s*=\s*)?"?([A-Za-z0-9_]*)"?,?\s*(?:type\s*=\s*IdType\.(\w+))?', src)
     pk_field, pk_auto = (m.group(1) if m and m.group(1) else None), bool(m and m.group(2) == "AUTO")
+    # 父类决定 JSON 里那一批前缀字段（BaseEntity 的 createBy 是 String，
+    # BaseUuidEntity 的 createBy 是 Long，输出形态不同，不能混用）
+    bm = re.search(r'\bclass\s+\w+\s+extends\s+(\w+)', src)
+    base_cls = bm.group(1) if bm else None
 
     fields = []
     # 逐个 private 字段，带它上面的注解
@@ -170,7 +233,7 @@ def parse_domain(entity):
         if jtype in ("Date", "LocalDateTime", "LocalDate") and fmt:
             mapped = fmt
         fields.append((name, jtype, mapped, excel, bool(re.search(r'@JsonIgnore', annos))))
-    return table, pk_field, pk_auto, fields, path
+    return table, pk_field, pk_auto, fields, path, base_cls
 
 
 def parse_xml_columns(entity):
@@ -249,7 +312,7 @@ def gen_entity(entity, ctrl_path):
     parsed = parse_domain(entity)
     if not parsed:
         return None
-    table, pk_field, pk_auto, fields, dpath = parsed
+    table, pk_field, pk_auto, fields, dpath, base_cls = parsed
     colmap, xml_src, xpath = parse_xml_columns(entity)
     if not table:
         fm = re.search(r'from\s+([a-z_][a-z0-9_]*)\s+t', xml_src, re.I)
@@ -288,8 +351,42 @@ def gen_entity(entity, ctrl_path):
         L.append("        // %s" % rel(xpath))
     L.append("        Spec s;")
     L.append('        s.table = "%s";' % table)
-    L.append('        s.alias = "t";')
+    # 表别名以 XML 为准（sys_role 的 selectRoleVo 用的是 `from sys_role r`，
+    # 而 XML 里写死的 order by / where 都带 r. 前缀，硬编码 t 会拼出非法 SQL）。
+    # 只看主查询的 FROM：`(select x from tbl t1 ...)` 这种子查询别名要排除。
+    cands = []
+    for am in re.finditer(r'\bfrom\s+' + re.escape(table) + r'\s+([A-Za-z_]\w*)\b', xml_src, re.I):
+        line_start = xml_src.rfind("\n", 0, am.start()) + 1
+        if re.search(r'\bselect\b', xml_src[line_start:am.start()], re.I):
+            continue
+        a = am.group(1)
+        if a.lower() not in ("where", "left", "inner", "right", "join", "on", "order",
+                             "group", "as", "limit", "having", "set"):
+            cands.append(a)
+    # XML 里 order by 的前缀就是那条 list 语句的别名，优先与它一致
+    ob_prefix = (order_by or "").split(".")[0].strip() if order_by else ""
+    alias = ob_prefix if ob_prefix in cands else (cands[0] if cands else "t")
+    L.append('        s.alias = "%s";' % alias)
     L.append("        s.fields = {")
+    # 1) 父类字段先输出（Jackson 的声明序），列以 resultMap 为准；
+    #    resultMap 没映射的保持“只进 JSON 的 null”，与 MyBatis 不填的行为一致。
+    own_names = {n for n, _jt, _fmt, _ex, _ig in fields}
+    for name, _fallback, bfmt in BASE_FIELDS.get(base_cls or "", []):
+        if name in own_names:
+            continue  # 子类自己声明了同名字段，以子类为准
+        col = colmap.get(name)
+        if col and cols is not None and col.lower() not in cols:
+            sys.stderr.write("  %s.%s: resultMap 声明的列 %s 在表 %s 里不存在，按 null 输出%s"
+                             % (entity, name, col, table, chr(10)))
+            col = None
+        # BaseUuidEntity / BasePlus* 的 id 没有 @TableId 注解，但确实是主键
+        is_pk = name == pk_field or (base_cls in _PK_ID_BASES and name == "id"
+                                     and not pk_field and col is not None)
+        cpp_fmt = bfmt if bfmt in FMT_NAMES else "Str"
+        L.append('            {"%s", %s, Fmt::%s, Cond::None, nullptr, %s, false, false, false},'
+                 % (name, ('"%s"' % col) if col else "nullptr", cpp_fmt,
+                    "true" if is_pk else "false"))
+    # 2) 子类自有字段
     for name, jtype, fmt, excel, ignored in fields:
         if ignored:
             continue
@@ -380,7 +477,7 @@ def main():
     content = (content.replace("@@AREA@@", args.area)
                       .replace("@@PREFIX@@", ns_prefix)
                       .replace("@@BODY@@", chr(10).join(generated)))
-    io.open(path, "w", encoding="utf-8", newline="\n").write(content)
+    io.open(path, "w", encoding="utf-8", newline="\r\n").write(content)
     print("生成 %s：%d 个实体" % (path, len(bases)))
     for e, b in bases:
         print("   %-45s %s" % (e, b))

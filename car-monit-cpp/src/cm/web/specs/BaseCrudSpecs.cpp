@@ -17,6 +17,15 @@ void registerBaseArea(Router& r) {
         s.table = "base_config_service_area";
         s.alias = "t";
         s.fields = {
+            {"id", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"epsId", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", nullptr, Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", nullptr, Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"fwqbm", "fwqbm", Fmt::Str, Cond::Eq, "判定进入的服务区编码", false, false},
             {"fwqmc", "fwqmc", Fmt::Str, Cond::Eq, "判定进入的服务区名称", false, false},
             {"lon", "lon", Fmt::Str, Cond::Eq, "经度", false, false},

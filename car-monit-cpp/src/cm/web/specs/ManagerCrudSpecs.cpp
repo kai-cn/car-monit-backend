@@ -17,6 +17,15 @@ void registerManagerArea(Router& r) {
         s.table = "buss_test";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"billName", "bill_name", Fmt::Str, Cond::Like, "业务名称", false, false},
             {"billType", "bill_type", Fmt::Str, Cond::Eq, nullptr, false, false},
             {"amount", "amount", Fmt::Double, Cond::Eq, "金额", false, false},
@@ -48,6 +57,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_aduit_free";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"confirmId", "confirm_id", Fmt::Str, Cond::Eq, "确认补缴id", false, false},
             {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Like, "车牌号", false, false},
@@ -76,6 +94,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_confim_free";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
             {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
@@ -109,6 +136,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_except_record";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
             {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
@@ -142,6 +178,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_fee_record";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
             {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
@@ -173,6 +218,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_info";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
             {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
             {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
@@ -244,6 +298,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_query_log";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"userId", "user_id", Fmt::Str, Cond::Eq, "用户ID", false, false},
             {"userName", "user_name", Fmt::Str, Cond::Like, "用户名称", false, false},
             {"userIp", "user_ip", Fmt::Str, Cond::Eq, "用户IP", false, false},
@@ -268,6 +331,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_route_detail";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"routeId", "route_id", Fmt::Str, Cond::Eq, "路线d", false, false},
             {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
@@ -307,6 +379,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_route_info";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
             {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
@@ -337,6 +418,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_split_record";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
             {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
@@ -366,6 +456,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_suspicious_back";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"plateColor", "plate_color", Fmt::Str, Cond::Eq, "车牌颜色", false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
             {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
@@ -423,6 +522,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_suspicious_check";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
             {"suspicousFlag", "suspicous_flag", Fmt::Str, Cond::Eq, "是否为可疑车辆", false, false},
@@ -449,6 +557,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_suspicious";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"plateColor", "plate_color", Fmt::Str, Cond::Eq, "车牌颜色", false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
             {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
@@ -507,6 +624,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_track_info";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
             {"longitude", "longitude", Fmt::Str, Cond::Eq, "经度", false, false},
@@ -539,6 +665,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_warning_info";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"carId", "car_id", Fmt::Str, Cond::Eq, "车辆id", false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Like, "车牌号", false, false},
             {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
@@ -580,6 +715,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_warning_rule";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"ruleName", "rule_name", Fmt::Str, Cond::Like, "规则名称", false, false},
             {"noticeRangeId", "notice_range_id", Fmt::Str, Cond::Eq, nullptr, false, false},
             {"noticeRangeAnme", "notice_range_anme", Fmt::Str, Cond::Like, nullptr, false, false},
@@ -607,6 +751,15 @@ void registerManagerArea(Router& r) {
         s.table = "car_white_info";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"plateColor", "plate_color", Fmt::Str, Cond::Eq, "车牌颜色", false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
             {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
@@ -631,6 +784,15 @@ void registerManagerArea(Router& r) {
         s.table = "gantry_car";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
             {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
             {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
@@ -660,6 +822,15 @@ void registerManagerArea(Router& r) {
         s.table = "gantry_trade_info";
         s.alias = "t";
         s.fields = {
+            {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, false, false},
+            {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"sort", "sort", Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
             {"carNo", "car_no", Fmt::Str, Cond::Eq, "车牌号", false, false},
             {"carType", "car_type", Fmt::Str, Cond::Eq, "车型", false, false},
             {"carVehicle", "car_vehicle", Fmt::Str, Cond::Eq, "车种", false, false},
