@@ -7,6 +7,7 @@
 #include <fstream>
 #include <regex>
 
+#include "cm/common/compat/Path.hpp"
 #include "cm/common/exception/Exceptions.hpp"
 #include "cm/common/utils/DateUtils.hpp"
 #include "cm/common/utils/IdUtils.hpp"
@@ -134,11 +135,11 @@ std::string FileUpload::upload(const std::string& baseDir,
     std::string newFileName = datePath() + "/" + uniqueId() + "." + extension;
 
     // 构造完整路径
-    std::filesystem::path absPath = std::filesystem::path(baseDir) / newFileName;
+    std::filesystem::path absPath = cm::compat::fsPath(baseDir) / cm::compat::fsPath(newFileName);
 
-    // 路径穿越防护
-    std::string absStr = absPath.string();
-    std::string baseStr = std::filesystem::path(baseDir).string();
+    // 路径穿越防护：比较 UTF-8 形式，不要用 path::string()（MinGW 按 GBK 转，中文会毁掉）
+    std::string absStr = cm::compat::fsUtf8(absPath);
+    std::string baseStr = cm::compat::fsUtf8(cm::compat::fsPath(baseDir));
     if (absStr.find(baseStr) != 0) {
         throw cm::exception::FileException("文件路径非法");
     }

@@ -7,6 +7,8 @@
 
 #include "cm/common/constant/UserConstants.hpp"
 #include "cm/common/core/domain/AjaxResult.hpp"
+#include "cm/common/utils/DateUtils.hpp"
+#include "cm/common/utils/Excel.hpp"
 #include "cm/common/core/domain/entity/SysRole.hpp"
 #include "cm/common/exception/Exceptions.hpp"
 #include "cm/common/utils/IdUtils.hpp"
@@ -32,6 +34,138 @@ using cm::utils::StringUtils;
 
 constexpr const char* PASSWORD_POLICY_MSG =
     "对不起，密码长度8-20位且至少包含大写字母、小写字母、数字和特殊符号";
+
+/** SysUser 的 @Excel 元数据（列序 = 字段声明序，@Excel.sort 全部是默认值 1）
+ *  type: "ALL" 两者都出；"IMPORT" 只进 importTemplate；"EXPORT" 只进导出 */
+struct UserExcelField {
+    const char* name;
+    const char* field;
+    const char* conv;   // readConverterExp，空串表示无
+    int width;
+    bool numeric;       // cellType = ColumnType.NUMERIC
+    const char* type;
+};
+
+const std::vector<UserExcelField>& userExcelFields() {
+    static const std::vector<UserExcelField> fields = {
+        {"用户序号", "userId", "", 16, true, "ALL"},
+        {"用户编码", "userNo", "", 16, true, "ALL"},
+        {"部门编号", "deptId", "", 16, false, "IMPORT"},
+        {"登录名称", "userName", "", 16, false, "ALL"},
+        {"用户名称", "nickName", "", 16, false, "ALL"},
+        {"用户类型", "userType", "1=机构用户2专家3供应商", 16, false, "ALL"},
+        {"用户邮箱", "email", "", 16, false, "ALL"},
+        {"手机号码", "phonenumber", "", 16, false, "ALL"},
+        {"用户性别", "sex", "0=男,1=女,2=未知", 16, false, "ALL"},
+        {"帐号状态", "status", "0=正常,1=停用", 16, false, "ALL"},
+        {"最后登录IP", "loginIp", "", 16, false, "EXPORT"},
+        {"最后登录时间", "loginDate", "", 30, false, "EXPORT"},
+        {"证书Id", "certId", "", 16, false, "ALL"},
+        {"证书实体Id", "certEntityId", "", 16, false, "ALL"},
+        {"业务id", "bussId", "", 16, false, "ALL"},
+        {"业务名称", "bussName", "", 16, false, "ALL"},
+        {"单位名称", "epsName", "", 16, false, "ALL"},
+        {"租户单位id", "tenantId", "", 16, false, "ALL"},
+        {"租户单位名称", "tenantName", "", 16, false, "ALL"},
+        {"角色编码", "roleCode", "", 16, false, "ALL"},
+        {"部门名称", "dept.deptName", "", 16, false, "EXPORT"},
+        {"部门负责人", "dept.leader", "", 16, false, "EXPORT"},
+    };
+    return fields;
+}
+
+/** 对应 ExcelUtil.convertByExp：先按 ',' 分段，段内按 '=' 取前两段；不命中返回原值。
+ *  Java 的 split("=") 会丢掉尾部空串，所以 "a=" 这种会抛越界并被 catch 掉 -> 返回原值。 */
+std::string convertByExp(const std::string& value, const std::string& exp) {
+    size_t pos = 0;
+    while (pos <= exp.size()) {
+        const size_t comma = exp.find(',', pos);
+        const std::string item = exp.substr(pos, comma == std::string::npos ? std::string::npos : comma - pos);
+        const size_t eq = item.find('=');
+        if (eq != std::string::npos) {
+            const size_t eq2 = item.find('=', eq + 1);
+            const std::string mapped = item.substr(eq + 1, eq2 == std::string::npos ? std::string::npos : eq2 - eq - 1);
+            if (item.substr(0, eq) == value && !mapped.empty()) return mapped;
+        }
+        if (comma == std::string::npos) break;
+        pos = comma + 1;
+    }
+    return value;
+}
+
+bool userExcelTake(const UserExcelField& f, bool forExport) {
+    const std::string t = f.type;
+    if (t == "ALL") return true;
+    return forExport ? t == "EXPORT" : t == "IMPORT";
+}
+
+/** 取实体值；null -> Json null（对应 Java "字段为 null 就留空格"） */
+Json userExcelValue(const cm::domain::SysUser& u, const UserExcelField& f) {
+    auto s = [](const std::optional<std::string>& v) { return v ? Json(*v) : Json(nullptr); };
+    auto n = [](const std::optional<long long>& v) { return v ? Json(*v) : Json(nullptr); };
+    // 非 NUMERIC 列 Java 走 cellType=STRING：Long 也写成文本
+    auto t = [](const std::optional<long long>& v) {
+        return v ? Json(std::to_string(*v)) : Json(nullptr);
+    };
+    const std::string k = f.field;
+    if (k == "userId") return f.numeric ? n(u.userId) : t(u.userId);
+    if (k == "userNo") return f.numeric ? n(u.userNo) : t(u.userNo);
+    if (k == "deptId") return t(u.deptId);
+    if (k == "tenantId") return t(u.tenantId);
+    if (k == "userName") return s(u.userName);
+    if (k == "nickName") return s(u.nickName);
+    if (k == "userType") return s(u.userType);
+    if (k == "email") return s(u.email);
+    if (k == "phonenumber") return s(u.phonenumber);
+    if (k == "sex") return s(u.sex);
+    if (k == "status") return s(u.status);
+    if (k == "loginIp") return s(u.loginIp);
+    if (k == "loginDate")
+        return u.loginDate ? Json(cm::utils::DateUtils::formatJsonDate(*u.loginDate)) : Json(nullptr);
+    if (k == "certId") return s(u.certId);
+    if (k == "certEntityId") return s(u.certEntityId);
+    if (k == "bussId") return s(u.bussId);
+    if (k == "bussName") return s(u.bussName);
+    if (k == "epsName") return s(u.epsName);
+    if (k == "tenantName") return s(u.tenantName);
+    if (k == "roleCode") return s(u.roleCode);
+    if (k == "dept.deptName") return u.dept ? s(u.dept->deptName) : Json(nullptr);
+    if (k == "dept.leader") return u.dept ? s(u.dept->leader) : Json(nullptr);
+    return Json(nullptr);
+}
+
+std::vector<cm::common::utils::ExcelColumn> userExcelColumns(bool forExport) {
+    std::vector<cm::common::utils::ExcelColumn> cols;
+    for (const auto& f : userExcelFields()) {
+        if (!userExcelTake(f, forExport)) continue;
+        cols.push_back({f.name, f.field, f.numeric, f.width});
+    }
+    return cols;
+}
+
+std::vector<Json> userExcelRows(const std::vector<cm::domain::SysUser>& list, bool forExport) {
+    std::vector<Json> rows;
+    for (const auto& u : list) {
+        Json row = Json::object();
+        for (const auto& f : userExcelFields()) {
+            if (!userExcelTake(f, forExport)) continue;
+            Json v = userExcelValue(u, f);
+            if (*f.conv && v.is_string()) v = Json(convertByExp(v.get<std::string>(), f.conv));
+            row[f.field] = std::move(v);
+        }
+        rows.push_back(std::move(row));
+    }
+    return rows;
+}
+
+/** 对应 ExcelUtil.exportExcel：落盘 + 返回 AjaxResult.success(filename)（msg 重载，没有 data） */
+cm::http::ApiResponse exportUserExcel(const std::vector<cm::domain::SysUser>& list) {
+    const std::string filename = cm::common::utils::Excel::encodingFilename("用户数据");
+    cm::common::utils::Excel::writeDownloadFile(
+        filename,
+        cm::common::utils::Excel::exportXlsx(userExcelColumns(true), userExcelRows(list, true), "用户数据"));
+    return cm::http::ApiResponse::json(AjaxResult::success(filename).toJson());
+}
 
 std::optional<long long> asLong(const std::optional<std::string>& v) {
     if (!v || v->empty()) return std::nullopt;  // Spring 把空串绑成 null
@@ -153,23 +287,22 @@ void registerSysUserController(Router& r) {
 
     // GET /system/user/export
     r.get("/system/user/export", [](RequestContext& ctx) -> cm::http::ApiResponse {
-        auto list = SysUserService::selectUserList(bindUserQuery(ctx));
-        (void)list;
-        // ⚠️ Java 用 POI 产出 .xlsx；这里返回同样的响应形态（data = 文件名）
-        return BaseController::ok(AjaxResult::success(
-            "操作成功", Json(cm::utils::simpleUuid() + ".xlsx")));
+        return exportUserExcel(SysUserService::selectUserList(bindUserQuery(ctx)));
     }).permi("system:user:export");
 
-    // POST /system/user/importData、GET /system/user/importTemplate
-    // ❌ 需要 Apache POI 的 xlsx 解析/模板生成，C++ 侧未实现。
+    // POST /system/user/importData
+    // ❌ 需要读 xlsx（POI XSSF：sharedStrings + 表头反查 @Excel 名称），C++ 侧未实现。
     //     按“未完成的接口不会静默返回假数据”的原则显式报错，不伪装成功。
     r.post("/system/user/importData", [](RequestContext&) -> cm::http::ApiResponse {
         return BaseController::ok(
             AjaxResult::error("导入功能依赖 Excel 解析（Java: ExcelUtil.importExcel），C++ 侧尚未实现"));
     }).permi("system:user:import");
     r.get("/system/user/importTemplate", [](RequestContext&) -> cm::http::ApiResponse {
-        return BaseController::ok(
-            AjaxResult::error("导入模板生成依赖 Excel（Java: ExcelUtil.importTemplateExcel），C++ 侧尚未实现"));
+        // 对应 ExcelUtil.importTemplateExcel("用户数据")：Type.IMPORT 的列，只有表头那一行
+        const std::string filename = cm::common::utils::Excel::encodingFilename("用户数据");
+        cm::common::utils::Excel::writeDownloadFile(
+            filename, cm::common::utils::Excel::exportXlsx(userExcelColumns(false), {}, "用户数据"));
+        return cm::http::ApiResponse::json(AjaxResult::success(filename).toJson());
     });
 
     // GET /system/user 与 GET /system/user/{userId}

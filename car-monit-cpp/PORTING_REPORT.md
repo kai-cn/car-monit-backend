@@ -117,28 +117,60 @@ MSYS_NO_PATHCONV=1 python scripts/live_probe.py --port 9990 /base/cdc/status /sy
 夹具自动清理；其中回滚一项验证的正是 `cm::db::Transaction` —— 把业务表名改成不存在的表之后，
 先前“删节点 + 写消息 + 写申请单”必须整体撤销（前后计数一致）。
 
+## 4.1 导出链路的实机验证（本轮，又发现 4 个"看代码不会发现"的问题）
+
+`scripts/verify_cn_export.py`（16 条断言）与 `scripts/verify_user_excel.py`（14 条）是把
+导出的 xlsx 真下载回来、用 `zipfile` 解析后再逐列比对的，因此暴露的是数据面而非形态面的问题：
+
+| 症状 | 根因 | 结论 |
+|---|---|---|
+| 中文文件名导出后下载 404/`文件不存在` | MinGW `std::filesystem` 按 GBK 解释 UTF-8 路径，写盘与判存在的两条转换路径不一致 | 新增 `cm::compat::fsPath/fsUtf8`，所有落盘点统一 UTF-16（§2.11） |
+| 带 token 下载 `/common/download` 403 | 这不是 bug：Java `.anonymous()` == `access("isAnonymous()")` | 保留 403，并补断言；同时把 URL 层规则的**优先级**改成 Spring 的"先命中先生效" |
+| `GET /druid/index.html` 竟然放行 | `/**/*.html` permitAll 注册在 `/druid/**` denyAll 之前 | 顺序照抄 Java，单元测试固化（含 `datasource.json` 才 403） |
+| `user/export` 列头是"用户昵称/用户账号" | 列名是手写猜测的，没回到 `@Excel(name=)`；`type=IMPORT/EXPORT` 也没过滤 | 22 个 `@Excel` 字段按声明序 + type 过滤重写，`readConverterExp`、`cellType=NUMERIC`、`width=16`、`dateFormat` 全部照抄 |
+| `/system/user/list` 的 `dept` 恒为 null | MyBatis `<association property="dept">` 会把 `dept_id/dept_name/leader` 组装成嵌套对象，C++ 的 `mapUser` 漏了 | 按"结果集里存在的列才填"实现（`parent_id/order_num/dept_status` 在 list SQL 里没有，保持 null） |
+
+顺带纠正一条**差点改错**的结论：无 `@JsonFormat` 的 `java.util.Date`，裸 Jackson 默认输出 epoch
+毫秒，但 Spring Boot 的 `StandardJackson2ObjectMapperBuilderCustomizer` 关掉了
+`WRITE_DATES_AS_TIMESTAMPS`，所以真实输出是 `2024-05-17T14:15:52.000+08:00`。
+这一点用本机 `~/.m2` 里的 jackson-databind 2.11.4 + spring-web 5.3.6 +
+spring-boot-autoconfigure 2.4.5 实跑确认（见 COMPATIBILITY.md §4.6），C++ 现有实现是对的。
+
 ## 5. 已知行为差异（完整清单见 COMPATIBILITY.md）
 
-- ⚠️ Excel 导出：响应形态与 Java 一致（`data = "<uuid>.xlsx"`），文件内容当前是 CSV。
+- ✅ Excel **导出**已是真 `.xlsx`（自研 OOXML，`python zipfile` 独立校验过），响应形态、文件名
+  规则、列集合（`@Excel(type=)`）、列序、列宽、数字/文本单元格、`readConverterExp` 全部对齐 Java；
+  模板导出（`importTemplate`）同样落真文件。
+- ❌ Excel **导入**仍未实现：`POST /system/user/importData` 一类接口显式返回错误，不伪装成功。
+- ❌ **操作日志切面（`@Log`）未实现**：Java 侧所有带 `@Log` 的写接口都会异步插一条
+  `sys_oper_log`（`LogAspect` + `AsyncManager`），C++ 目前只读不写，
+  所以 `/monitor/operlog/list` 里看不到 C++ 自己产生的操作记录。这是当前最大的行为缺口。
 - ⚠️ 无 zlib 时验证码 PNG 不压缩（约 10KB），解码结果一致。
+- ⚠️ Windows 本地开发机上 `std::filesystem` 按 GBK 解释窄路径，中文文件名会失败；
+  已由 `cm::compat::fsPath/fsUtf8` 在所有落盘点解决（COMPATIBILITY.md §2.11）。
 - ❌ Kafka/CDC、Elasticsearch、MinIO、Quartz 集群锁：C++ 侧无对应实现。
 - ❌ 未迁移接口按 §2 表列出，**不会静默返回假数据**（未注册即 404）。
 - ✅ 照抄的 Java 缺陷：`GET /base/tollStationIp/list` 因 XML `order by t.big_id`（列不存在）在 Java 侧本来就 500，C++ 保持一致；出处记在 `scripts/verify_generated_sql.py` 的 `EXPECTED_SQL_ERRORS`。
+- ✅ 照抄的 Java 安全语义：`anonymous()` == `isAnonymous()`，带 token 访问 `/common/download**`
+  与 `/system/notice/view/**` 是真实 HTTP 403（容器 `/error` 形状），不带 token 才放行。
 
 ## 6. 下一步（按性价比排序）
 
-1. SysFileController 9：S3 SigV4 上传（HMAC-SHA256 已具备），再做 `uploadFileEnc`。
-2. GenController 15：先做只读的 list/db/list/column/getTableDetail，代码生成部分需要一个
-   Velocity 等价模板渲染器 + zip（DEFLATE 已在库内，可凑 OOXML/zip 容器）。
-3. 真 `.xlsx` 写出器（复用已有 DEFLATE 做 OOXML zip），一次性解掉 6 条模板导出接口的
-   “形态一致、内容不一致”。
-4. 大屏剩余 8 条里，`carLocation`（Redis 车辆列表 + DB 回源）与 `topTen` / `incomeStatistic` /
+1. **`@Log` 操作日志切面**：给 `RouteBuilder` 增加 `log(title, businessType, saveData...)` 元数据，
+   在鉴权+处理之后按 `LogAspect` 的规则拼 `SysOperLog`（param/jsonResult/errorMsg 截 2000、
+   `IP 归属地`、operatorType）并异步落库；再逐控制器回填 Java 的 `@Log` 标注。
+   做完之后 `/monitor/operlog/*` 才算真正闭环，`flow` 审批的 `sh_time` 类副作用也已单独验证过。
+2. SysFileController 9：S3 SigV4 上传（HMAC-SHA256 已具备），再做 `uploadFileEnc`。
+3. GenController 15：先做只读的 list/db/list/column/getTableDetail，代码生成部分需要一个
+   Velocity 等价模板渲染器 + zip（DEFLATE 已在库内，zip 写出器本轮已为 xlsx 落地）。
+4. xlsx **读取器** + `importUser` 校验，解掉 `importData` 一类导入接口。
+5. 大屏剩余 8 条里，`carLocation`（Redis 车辆列表 + DB 回源）与 `topTen` / `incomeStatistic` /
    `carVoList`（Mapper 里的统计 SQL）共 4 条不需要外部依赖，应先补这 4 条；另 4 条才真正受
    外部服务限制，逐条异常边界见 `COMPATIBILITY.md` §5.1。
-5. 要让外部 HTTP 类接口可用，缺的只是一个出站 HTTP/1.1 客户端：`cm::net` 已有
+6. 要让外部 HTTP 类接口可用，缺的只是一个出站 HTTP/1.1 客户端：`cm::net` 已有
    `connectTcp(host, port, connect_timeout)` / `setTimeout` / `readSome` / `writeAll`，
    足够实现带超时与响应上限的 GET/POST，不必引 libcurl。
-6. quartz 的 `run` 与 `changeStatus` 的调度侧效应：需要一张”任务名 → C++ 函数”的注册表，
+7. quartz 的 `run` 与 `changeStatus` 的调度侧效应：需要一张"任务名 → C++ 函数"的注册表，
    否则反射调 bean 这条路在 C++ 里无法等价（当前 run 明确返回未实现，不假装成功）。
-7. 把 `Transaction` 用到已有的多表写路径上：sys_user 新增/修改（user_role）、
+8. 把 `Transaction` 用到已有的多表写路径上：sys_user 新增/修改（user_role）、
    sys_role 修改（role_menu）、sys_dept/menu 的级联，Java 都是 @Transactional。

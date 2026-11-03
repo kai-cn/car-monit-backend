@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 
+#include "cm/common/compat/Path.hpp"
 #include "cm/common/constant/Constants.hpp"
 #include "cm/common/core/domain/AjaxResult.hpp"
 #include "cm/common/exception/Exceptions.hpp"
@@ -60,12 +61,14 @@ void registerCommonController(Router& r) {
 
             auto& cfg = cm::config::AppConfig::instance();
             std::string downloadPath = cfg.profile + "/download/" + fileName;
+            // 落盘路径必须是 UTF-8 语义：Windows 的 std::filesystem 默认按本地码页解释窄字符串
+            const std::filesystem::path file = cm::compat::fsPath(downloadPath);
 
-            if (!std::filesystem::exists(downloadPath)) {
+            if (!std::filesystem::exists(file)) {
                 throw cm::exception::ServiceException("文件不存在: " + fileName);
             }
 
-            std::ifstream in(downloadPath, std::ios::binary);
+            std::ifstream in(file, std::ios::binary);
             if (!in) {
                 throw cm::exception::ServiceException("无法读取文件: " + fileName);
             }
@@ -76,7 +79,7 @@ void registerCommonController(Router& r) {
             in.close();
 
             if (deleteFile) {
-                std::filesystem::remove(downloadPath);
+                std::filesystem::remove(file);
             }
 
             std::string realFileName = getRealFileName(fileName);
@@ -96,7 +99,9 @@ void registerCommonController(Router& r) {
             auto a = BaseController::error(e.what());
             return cm::http::ApiResponse::json(a.toJson());
         }
-    }).anonymous(); // Java: @Anonymous 白名单
+    }).anonymous();
+    // ↑ SecurityConfig: .antMatchers("/common/download**").anonymous() == access("isAnonymous()")，
+    //   带合法 token 的请求会拿到容器级 403；浏览器 <a href> 下载不带 Authorization 头，因此正常。
 
     // POST /common/upload
     r.post("/common/upload", [](RequestContext& ctx) -> cm::http::ApiResponse {
@@ -181,17 +186,18 @@ void registerCommonController(Router& r) {
             std::string localPath = cfg.profile;
             std::string relPath = cm::utils::StringUtils::substringAfter(resource, cm::constant::Constants::RESOURCE_PREFIX);
             std::string downloadPath = localPath + "/" + relPath;
+            const std::filesystem::path file = cm::compat::fsPath(downloadPath);
 
             // 路径穿越防护
             if (downloadPath.find("..") != std::string::npos) {
                 throw cm::exception::ServiceException("非法的资源路径");
             }
 
-            if (!std::filesystem::exists(downloadPath)) {
+            if (!std::filesystem::exists(file)) {
                 throw cm::exception::ServiceException("资源文件不存在: " + resource);
             }
 
-            std::ifstream in(downloadPath, std::ios::binary);
+            std::ifstream in(file, std::ios::binary);
             if (!in) {
                 throw cm::exception::ServiceException("无法读取资源文件: " + resource);
             }
@@ -218,7 +224,7 @@ void registerCommonController(Router& r) {
             auto a = BaseController::error(e.what());
             return cm::http::ApiResponse::json(a.toJson());
         }
-    }); // 默认 Authenticated（Java 无 @Anonymous）
+    }); // SecurityConfig: .antMatchers("/common/download/resource**").authenticated()
 }
 
 } // namespace cm::web

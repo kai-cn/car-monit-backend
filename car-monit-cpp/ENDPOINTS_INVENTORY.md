@@ -2,9 +2,9 @@
 
 口径：Java 侧按 @*Mapping 注解逐条统计，覆盖 ruoyi-admin / ruoyi-quartz / ruoyi-generator。
 
-Java 端点总数：**497**；C++ 已注册并匹配：**439**；未匹配：**58**。
+Java 端点总数：**497**；C++ 已注册并匹配：**445**；未匹配：**52**。
 
-C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**510**。
+C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**516**。
 
 | 控制器 | HTTP | 路径 | Java 方法 | @PreAuthorize | C++ 状态 |
 |---|---|---|---|---|---|
@@ -202,7 +202,7 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | CarConfimFreeController | POST | `/manager/confimfree` | add |  | ✅ |
 | CarConfimFreeController | PUT | `/manager/confimfree` | edit |  | ✅ |
 | CarConfimFreeController | DELETE | `/manager/confimfree/{*}` | remove |  | ✅ |
-| CarConfimFreeController | GET | `/manager/confimfree/except/{*}` | getExceptIds |  | ❌ |
+| CarConfimFreeController | GET | `/manager/confimfree/except/{*}` | getExceptIds |  | ✅ |
 | CarConfimFreeController | GET | `/manager/confimfree/concernedList` | concernedList |  | ✅ |
 | CarConfimFreeController | GET | `/manager/confimfree/exportConcernedList` | exportConcernedList |  | ❌ |
 | CarConfimFreeController | GET | `/manager/confimfree/carStatics` | getCarStatics |  | ✅ |
@@ -326,16 +326,16 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | GantryTradeInfoController | PUT | `/manager/gantrytrade` | edit |  | ✅ |
 | GantryTradeInfoController | DELETE | `/manager/gantrytrade/{*}` | remove |  | ✅ |
 | BigScreenController | GET | `/manager/bigScreen/carStatistics` | getCarStatistics |  | ❌ |
-| BigScreenController | GET | `/manager/bigScreen/carLocation` | getCarLocation |  | ❌ |
+| BigScreenController | GET | `/manager/bigScreen/carLocation` | getCarLocation |  | ✅ |
 | BigScreenController | GET | `/manager/bigScreen/sectionList` | getSectionList |  | ✅ |
 | BigScreenController | GET | `/manager/bigScreen/tollGantryFwqList` | getTollList |  | ✅ |
-| BigScreenController | GET | `/manager/bigScreen/carVoList` | carVoList |  | ❌ |
-| BigScreenController | GET | `/manager/bigScreen/carAudit` | getCarAudit |  | ❌ |
+| BigScreenController | GET | `/manager/bigScreen/carVoList` | carVoList |  | ✅ |
+| BigScreenController | GET | `/manager/bigScreen/carAudit` | getCarAudit |  | ✅ |
 | BigScreenController | GET | `/manager/bigScreen/carWarning` | getCarWarning |  | ❌ |
 | BigScreenController | GET | `/manager/bigScreen/exceptionCar` | getExceptionCar |  | ✅ |
-| BigScreenController | GET | `/manager/bigScreen/topTen` | topTen |  | ❌ |
+| BigScreenController | GET | `/manager/bigScreen/topTen` | topTen |  | ✅ |
 | BigScreenController | GET | `/manager/bigScreen/orgList` | getOrgList |  | ✅ |
-| BigScreenController | GET | `/manager/bigScreen/incomeStatistic` | incomeStatistic |  | ❌ |
+| BigScreenController | GET | `/manager/bigScreen/incomeStatistic` | incomeStatistic |  | ✅ |
 | BigScreenController | GET | `/manager/bigScreen/exceptRecordList` | list |  | ❌ |
 | CacheController | GET | `/monitor/cache` | getInfo |  | ✅ |
 | ServerController | GET | `/monitor/server` | getInfo |  | ✅ |

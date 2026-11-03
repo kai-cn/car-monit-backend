@@ -15,6 +15,7 @@
 #include <unistd.h>
 #endif
 
+#include "cm/common/compat/Path.hpp"
 #include "cm/common/core/domain/AjaxResult.hpp"
 #include "cm/common/utils/DateUtils.hpp"
 #include "cm/common/utils/StringUtils.hpp"
@@ -254,7 +255,7 @@ Json getSysInfo() {
 
     sys["osName"] = osName;
     sys["osArch"] = osArch;
-    sys["userDir"] = std::filesystem::current_path().string();
+    sys["userDir"] = cm::compat::fsUtf8(std::filesystem::current_path());
 #else
     sys["computerName"] = "localhost";
     sys["computerIp"] = "127.0.0.1";

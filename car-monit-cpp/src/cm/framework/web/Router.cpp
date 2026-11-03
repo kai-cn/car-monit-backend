@@ -237,7 +237,7 @@ bool Router::anyRouteMatches(const std::string& path) const {
     return false;
 }
 
-AuthType Router::securityRule(const std::string& method, const std::string& path) {
+std::optional<AuthType> Router::urlRule(const std::string& method, const std::string& path) {
     // 顺序严格对应 SecurityConfig：先匹配者生效
     if (path == "/login" || path == "/captchaImage") return AuthType::PermitAll;
     if (method == "GET") {
@@ -259,7 +259,12 @@ AuthType Router::securityRule(const std::string& method, const std::string& path
     if (antMatch("/system/file/view/**", path)) return AuthType::Anonymous;
     if (antMatch("/system/notice/view/**", path)) return AuthType::Anonymous;
     if (path == "/manager/suspicious/syncSuspiciousCarTask") return AuthType::PermitAll;
-    return AuthType::Authenticated;
+    // 没有任何 antMatchers 命中：交给 anyRequest().authenticated()（Server 侧再回落到路由级标记）
+    return std::nullopt;
+}
+
+AuthType Router::securityRule(const std::string& method, const std::string& path) {
+    return urlRule(method, path).value_or(AuthType::Authenticated);
 }
 
 Router& router() {

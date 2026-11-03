@@ -135,7 +135,20 @@ cm::domain::SysUser SysUserMapper::mapUser(const cm::db::Row& row) {
     u.bussName = row.get("buss_name");
     u.epsName = row.get("eps_name");
     u.tenantId = row.optI64("tenant_id");
+    u.tenantName = row.get("tenant_name");
+    u.subCode = row.get("sub_code");
     u.imageId = row.get("image_id");
+    // MyBatis <association property="dept" resultMap="deptResult">：映射列里只要有一个非空就建对象。
+    // selectUserList 只带 dept_id/dept_name/leader，parent_id/order_num/dept_status 只有 selectUserVo 才有，
+    // 缺列时 Row::get 返回 nullopt，与 MyBatis "结果集里没有该列就不填" 的行为一致。
+    cm::domain::SysDept d;
+    d.deptId = row.optI64("dept_id");
+    d.parentId = row.optI64("parent_id");
+    d.deptName = row.get("dept_name");
+    d.orderNum = row.get("order_num");
+    d.leader = row.get("leader");
+    d.status = row.get("dept_status");
+    if (d.deptId || d.parentId || d.deptName || d.orderNum || d.leader || d.status) u.dept = d;
     return u;
 }
 

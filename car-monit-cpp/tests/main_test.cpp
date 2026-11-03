@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <string>
 
+#include "cm/common/compat/Path.hpp"
 #include "cm/common/constant/Constants.hpp"
 #include "cm/common/core/domain/AjaxResult.hpp"
 #include "cm/common/core/domain/R.hpp"
@@ -10,6 +11,7 @@
 #include "cm/common/utils/CaptchaUtil.hpp"
 #include "cm/common/utils/DateUtils.hpp"
 #include "cm/common/utils/FastJson2Compat.hpp"
+#include "cm/common/utils/Excel.hpp"
 #include "cm/common/utils/IdUtils.hpp"
 #include "cm/common/utils/JavaCollections.hpp"
 #include "cm/common/utils/StringUtils.hpp"
@@ -18,6 +20,7 @@
 #include "cm/framework/http/HttpRequest.hpp"
 #include "cm/framework/security/Jwt.hpp"
 #include "cm/framework/security/SecurityUtils.hpp"
+#include "cm/framework/web/Router.hpp"
 
 // 各测试文件共用的失败计数（tests/*.cpp 通过 extern 引用）
 int g_fails = 0;
@@ -246,8 +249,81 @@ static void testUrlDecode() {
     CHECK_EQ(params[1].second, std::string("0"));
 }
 
+/** xlsx 写出器：必须是合法 zip + 合法 OOXML，不能只是"名字叫 .xlsx 的 CSV" */
+static void testXlsxWriter() {
+    std::vector<cm::common::utils::ExcelColumn> cols = {
+        {"名称", "name"}, {"数量", "count", true},
+    };
+    std::vector<cm::Json> rows;
+    cm::Json r1 = cm::Json::object();
+    r1["name"] = "云A<>&\"1";  // XML 转义 + 引号
+    r1["count"] = 7;
+    rows.push_back(r1);
+    cm::Json r2 = cm::Json::object();
+    r2["name"] = nullptr;
+    r2["count"] = 1.25;
+    rows.push_back(r2);
+
+    const std::string zip = cm::common::utils::Excel::exportXlsx(cols, rows, "测试表");
+    CHECK(zip.size() > 400);
+    CHECK_EQ(zip.substr(0, 2), std::string("PK"));
+    // 每个本地文件头都以 PK\x03\x04 开头，末尾必须有 EOCD (PK\005\006)
+    CHECK(zip.find(std::string("PK\x03\x04", 4)) != std::string::npos);
+    CHECK(zip.find(std::string("PK\x05\x06", 4)) != std::string::npos);
+    for (const char* part : {"[Content_Types].xml", "xl/workbook.xml", "xl/worksheets/sheet1.xml"})
+        CHECK(zip.find(part) != std::string::npos);
+    // store 条目里数据是原样存放的，可直接断言 sheet 内容
+    CHECK(zip.find("<t>云A&lt;&gt;&amp;&quot;1</t>") != std::string::npos);
+    CHECK(zip.find("<v>7</v>") != std::string::npos);
+    CHECK(zip.find("<v>1.25</v>") != std::string::npos);
+    CHECK(zip.find("name=\"测试表\"") != std::string::npos);
+
+    // 文件名规则：带横线的 36 位 UUID + "_" + 表名 + ".xlsx"（Java 用 UUID.randomUUID()）
+    const std::string fn = cm::common::utils::Excel::encodingFilename("登录日志");
+    CHECK_EQ(fn.size(), std::string("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx_登录日志.xlsx").size());
+    CHECK_EQ(fn.substr(8, 1), std::string("-"));
+    CHECK_EQ(fn.substr(36, 1), std::string("_"));
+    CHECK(fn.size() > 40 && fn.substr(fn.size() - 5) == ".xlsx");
+}
+
 void run_crypto_tests();
 void run_crud_engine_tests();
+
+/** Spring URL 层规则的顺序与语义（SecurityConfig 是逐条 antMatchers，先命中先生效） */
+static void testSecurityUrlRules() {
+    using Rule = cm::web::AuthType;
+    // .antMatchers("/common/download**").anonymous() == access("isAnonymous()")
+    //  ⇒ 带合法 token 反而 403，未登录才放行
+    CHECK_EQ(cm::web::Router::securityRule("GET", "/common/download"), Rule::Anonymous);
+    // AntPathMatcher 逐段匹配：download** 不会吞掉 /common/download/resource
+    CHECK_EQ(cm::web::Router::securityRule("GET", "/common/download/resource"), Rule::Authenticated);
+    CHECK_EQ(cm::web::Router::securityRule("GET", "/system/notice/view/1"), Rule::Anonymous);
+    CHECK_EQ(cm::web::Router::securityRule("GET", "/system/file/view/1"), Rule::Anonymous);
+    CHECK_EQ(cm::web::Router::securityRule("POST", "/login"), Rule::PermitAll);
+    CHECK_EQ(cm::web::Router::securityRule("GET", "/captchaImage"), Rule::PermitAll);
+    // 静态资源那条规则带 HttpMethod.GET 限定
+    CHECK_EQ(cm::web::Router::securityRule("GET", "/profile/x.png"), Rule::PermitAll);
+    CHECK_EQ(cm::web::Router::securityRule("POST", "/profile/x.png"), Rule::Authenticated);
+    CHECK_EQ(cm::web::Router::securityRule("GET", "/druid/index.html"), Rule::PermitAll);  // 被 /**/*.html 抢先命中
+    CHECK_EQ(cm::web::Router::securityRule("GET", "/druid/datasource.json"), Rule::DenyAll);
+    CHECK_EQ(cm::web::Router::securityRule("GET", "/system/user/list"), Rule::Authenticated);
+    // 未命中任何 antMatchers ⇒ 交回路由级标记（C++ 扩展端点靠这个保持 permitAll）
+    CHECK(!cm::web::Router::urlRule("GET", "/health").has_value());
+}
+
+/** Windows 下 UTF-8 路径必须能往返：窄字符串会被 std::filesystem 按 GBK 解释 */
+static void testUtf8PathCompat() {
+    const std::string utf8 = std::string("D:/ruoyi/uploadPath/download/")
+        + "\xE4\xB8\xAD\xE6\x96\x87"  // 中文
+        + "_a.xlsx";
+    CHECK_EQ(cm::compat::fsUtf8(cm::compat::fsPath(utf8)), utf8);
+    CHECK_EQ(cm::compat::fsUtf8(cm::compat::fsPath("")), std::string());
+    // 目录 + 中文文件名拼接后，最后一段仍要原样取回（导出链路就靠这一步）
+    const std::string cn = "\xE6\x93\x8D\xE4\xBD\x9C\xE6\x97\xA5\xE5\xBF\x97.xlsx";  // 操作日志.xlsx
+    auto joined = cm::compat::fsPath("D:/ruoyi/uploadPath/download") / cm::compat::fsPath(cn);
+    CHECK_EQ(cm::compat::fsUtf8(joined.filename()), cn);
+    CHECK(cm::compat::fsUtf8(joined).rfind("D:/ruoyi/uploadPath/download", 0) == 0);
+}
 
 int main() {
     testAjaxResultOrder();
@@ -265,6 +341,9 @@ int main() {
     testCaptcha();
     testStringUtils();
     testUrlDecode();
+    testXlsxWriter();
+    testSecurityUrlRules();
+    testUtf8PathCompat();
     run_crypto_tests();
     run_crud_engine_tests();
     if (fails == 0) {

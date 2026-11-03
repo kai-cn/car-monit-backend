@@ -17,7 +17,7 @@ namespace cm::web {
 enum class AuthType {
     Authenticated, // anyRequest().authenticated()
     PermitAll,     // permitAll()
-    Anonymous,     // anonymous()：已登录反而 403
+    Anonymous,     // anonymous() == access("isAnonymous()")：只有未登录才放行，带 token 反而 403
     DenyAll        // denyAll()
 };
 
@@ -103,7 +103,9 @@ public:
     /** 仅按路径匹配（用于 Security 先于 404 判定） */
     bool anyRouteMatches(const std::string& path) const;
 
-    /** 对应 SecurityConfig 的静态规则；返回该路径的安全策略 */
+    /** 对应 SecurityConfig 的静态规则；返回该路径的安全策略（未命中任何 antMatchers 时返回 nullopt） */
+    static std::optional<AuthType> urlRule(const std::string& method, const std::string& path);
+    /** urlRule 的兜底版本：未命中即 anyRequest().authenticated() */
     static AuthType securityRule(const std::string& method, const std::string& path);
 
     const std::vector<Route>& routes() const { return routes_; }

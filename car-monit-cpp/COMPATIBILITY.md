@@ -81,12 +81,24 @@ C++ 对应实现位置：
 
 ### ⚠️ 2.3 Excel 导入导出
 
-* Java：Apache POI，支持多 sheet、样式、公式、日期格式、`@Excel` 注解驱动的列顺序。
-* C++：`cm::utils::Excel` 自研最小 XLSX（zip + SpreadsheetML），支持单 sheet、字符串/数字、
-  列宽与表头；不支持样式/公式/多 sheet/图片。
-* 补偿：导出文件可被 Excel/WPS 正常打开；列头与 Java `@Excel(name=...)` 一致；`export`
-  端点的文件名规则（`<业务名>_yyyyMMddHHmmss.xlsx`）一致。
-* 导入：支持读取第一个 sheet 的字符串/数字单元格；日期单元格按文本解析。
+* Java：Apache POI 全功能（多 sheet、样式、公式、下拉校验、图片、`@Excel` 注解驱动列序）。
+* C++：`cm::common::utils::Excel` 自研最小 OOXML（zip + SpreadsheetML）：单 sheet、
+  inline string / 数字单元格、列宽、表头。**导出已经是真 .xlsx**（此前是"CSV 字节改名 .xlsx"），
+  用 `python zipfile` 独立校验过 CRC 与部件表。
+* 文件名与返回形态与 Java 一致：`ExcelUtil.encodingFilename` = `UUID.randomUUID() + "_" + sheetName + ".xlsx"`，
+  响应 `{"msg":"<uuid>_操作日志.xlsx","code":200}` —— String 命中 `AjaxResult.success` 的 **msg 重载**，
+  所以**没有 `data` 键**；文件写到 `profile/download/`，前端再走
+  `GET /common/download?fileName=..&delete=true`（该 URL 是 `anonymous()`，见 §4）。
+* 列的取舍照抄 `@Excel(type=...)`：`ALL` 两边都出，`IMPORT` 只进模板，`EXPORT` 只进导出；
+  列序 = 字段声明序（本项目 `@Excel.sort` 全是默认值）；列宽取 `@Excel.width()`（`default 16`）。
+* 单元格类型照抄：只有 `cellType=NUMERIC` 才是数字单元格，其余（含 `Long`/`BigDecimal`）
+  Java 走 `ColumnType.STRING` 分支写成文本；`dateFormat` 先格式化再写文本；字段为 `null` 留空格。
+* `readConverterExp` 的解析规则也照抄：先按 `,` 分段，段内按第一个 `=` 拆分，值取到第二个 `=`
+  之前，不命中返回原值。因此 `userType` 的 `"1=机构用户2专家3供应商"` 只在值为 `1` 时整串替换。
+* ❌ **导入仍未实现**：`POST /system/user/importData` 等显式返回错误，不伪装成功。
+  缺的是 xlsx 读取（sharedStrings / inlineStr → 表头反查 `@Excel(name)`）加 `importUser` 的逐行校验。
+* ❌ 未复刻：单元格样式、合并标题行、下拉校验（POI `createCombobox` 会多写一个隐藏 sheet），
+  只影响观感，不影响数据与接口响应。
 
 ### ⚠️ 2.4 定时任务（Quartz）
 
@@ -140,6 +152,20 @@ C++ 对应实现位置：
 * 影响：日志格式为 `yyyy-MM-dd HH:mm:ss.SSS [LEVEL] logger - msg`，与 Logback pattern 接近
   但非逐字节一致；无 MDC/traceId 自动注入（monitor 的 traceId 需显式传递）。
 
+### ⚠️ 2.11 Windows 下的文件路径编码（仅影响本地开发机，Linux/Docker 无此问题）
+
+* 现象：`MinGW` 的 `std::filesystem` / `std::ofstream` 把窄字符串按**本地 ANSI 码页（GBK）**解释，
+  而项目里所有路径片段（`profile` 目录、上传文件名、导出文件名）都是 UTF-8。
+  结果是任何含中文的路径都"文件不存在"，而这套系统的导出名/头像目录名恰好全是中文
+  （`<uuid>_操作日志.xlsx`）。写进去的是 GBK 码页下的乱码名，读的时候按 UTF-8 字节再转一遍，
+  两边对不上。Java/JDK 不受影响（NIO 内部是 UTF-16）。
+* 处理：`cm/common/compat/Path.hpp` 提供 `fsPath`（CP_UTF8 → UTF-16）与 `fsUtf8`（反向），
+  所有落盘点（`Excel::writeDownloadFile`、`FileUpload::upload`、`CommonController` 两个下载、
+  `Server` 的 `/profile/**` 静态服务）统一走这一层；路径穿越校验也改成比较 `fsUtf8` 结果，
+  不再用 `path::string()`（它会按 ANSI 码页回转，中文直接毁掉）。
+* 回归：`tests/main_test.cpp::testUtf8PathCompat` 校验往返，
+  `scripts/verify_cn_export.py` 校验中文导出→下载的整条链路。
+
 ---
 
 ## 3. 序列化契约细节（✅ 已复刻）
@@ -152,7 +178,7 @@ C++ 对应实现位置：
 | `TableDataInfo` | `total, rows, code, msg` | 同 |
 | `R` | `code, msg, data`（data=null 也输出） | 同 |
 | `LoginUser` 缓存 | 含 `permissions`、`user`、`token`、`expireTime` | 同 |
-| `Date`（无注解） | ISO-8601 带 `+08:00` | `formatIsoDate` |
+| `Date`（无注解） | ISO-8601 带 `+08:00`（Spring Boot 关了 `WRITE_DATES_AS_TIMESTAMPS`，见 §4.6） | `formatIsoDate` |
 | `@JsonFormat` | `yyyy-MM-dd HH:mm:ss` | `formatJsonDate` |
 | `null` 字段 | Jackson 默认输出 `null` | `putStr/putI64` 输出 `null` |
 | `@JsonInclude(NON_EMPTY)` VO | 空串/null/空集合不输出 | `RouterVo` 等按此实现 |
@@ -165,16 +191,36 @@ C++ 对应实现位置：
 1. **`AuthenticationEntryPointImpl` 的 Content-Type 是小写 `utf-8`**，不是大写。
 2. **`/logout` 在 JWT 过滤器之前**，无需有效 token，且始终返回 200 + `退出成功`。
 3. **非法 JWT 会返回真实 HTTP 500**（过滤器异常无法被 `@ControllerAdvice` 捕获）。
-4. **`anonymous()` 是“仅匿名可访问”**：已登录用户访问返回真实 HTTP 403。
-5. **未匹配路由且无 token → 401**（Security 先于 DispatcherServlet 的 404）。
-6. **`CustomException` / `UserException` / `BaseException` 不是 `ServiceException`**，
+4. **`anonymous()` 不是"允许匿名"，而是 `access("isAnonymous()")`——"只有没登录才放行"**。
+   带合法 token 访问 `/common/download**`、`/system/notice/view/**`、`/system/file/view/**`
+   会被 `AccessDeniedHandler` 判**真实 HTTP 403**，响应体是容器 `/error` 的
+   `{"timestamp":..,"status":403,"error":"Forbidden","path":..}`，不是 `AjaxResult`。
+   前端用 `<a href>` / `window.open` 下载，浏览器不会带 `Authorization` 头，所以能正常拿到文件。
+5. **URL 层规则优先于控制器**，而且是 `antMatchers` 的**注册顺序**决定命中：
+   * `/common/download**` 不会吞掉 `/common/download/resource`（AntPathMatcher 逐段匹配，
+     段内通配 `download**` 不跨 `/`），所以后者仍走 `.authenticated()`；
+   * 但 `/**/*.html`（静态资源 permitAll）注册在 `/druid/**` denyAll **之前**，
+     于是 `GET /druid/index.html` 实际是 permitAll，而 `GET /druid/datasource.json` 才是 403；
+   * `@Anonymous` 注解在本项目里**一个都没用**（`PermitAllUrlProperties` 收集到空集合），
+     所以别把 `permitAll` 当成注解白名单的等价物。
+6. **无 `@JsonFormat` 的 `java.util.Date` 输出 ISO-8601 带偏移文本**（`2024-05-17T14:15:52.000+08:00`），
+   不是 epoch 毫秒。用真实依赖跑过：jackson-databind 2.11.4 + spring-web 5.3.6 +
+   spring-boot-autoconfigure 2.4.5，按 Spring Boot 的 `StandardJackson2ObjectMapperBuilderCustomizer`
+   再加 RuoYi 的 `timeZone(...)` 定制 → `WRITE_DATES_AS_TIMESTAMPS=false` → ISO 文本；
+   而**裸** `new Jackson2ObjectMapperBuilder().build()` 会给 `1715926552000`。
+   也就是说：这个形状是 Spring Boot 的默认值给的，别照 Jackson 自身默认值改。
+7. **未匹配路由且无 token → 401**（Security 先于 DispatcherServlet 的 404）。
+8. **`CustomException` / `UserException` / `BaseException` 不是 `ServiceException`**，
    一律被 `RuntimeException` 兜底为 code 500。
-7. **`SysUser` 的校验注解被注释掉**，`POST /system/user {}` 是 NPE（`msg:null`），
-   不要“顺手补校验”。
-8. **PageHelper 在 count=0 时不执行数据查询**；`pageNum<=0` 时 offset=0；`reasonable=true`
-   会把页码夹到有效范围。
-9. **`AjaxResult` 是 HashMap**，`put` 顺序不等于输出顺序。
-10. **`jjwt` 的 secret 先做 Base64 解码**，默认 26 字符 → 18 字节，见 §6。
+9. **`SysUser` 的校验注解被注释掉**，`POST /system/user {}` 是 NPE（`msg:null`），
+   不要"顺手补校验"。
+10. **PageHelper 在 count=0 时不执行数据查询**；`pageNum<=0` 时 offset=0；`reasonable=true`
+    会把页码夹到有效范围。
+11. **`AjaxResult` 是 HashMap**，`put` 顺序不等于输出顺序。
+12. **`jjwt` 的 secret 先做 Base64 解码**，默认 26 字符 → **19 字节**（末尾不完整组补零），见 §6.1。
+13. **MyBatis 的 `<association>` 只填结果集里存在的列**：`selectUserList` 没 join
+    `parent_id/order_num/dept_status`，所以 `dept` 对象里这几项是 `null`，而 `deptId`
+    取的是 `u.dept_id`；扁平的 `SysUser.deptName` 属性 resultMap 里根本没映射，恒为 `null`。
 
 ---
 
@@ -323,4 +369,16 @@ curl -s http://127.0.0.1:9989/getInfo -H "Authorization: Bearer $TOKEN"
 #    （Windows 下必须关掉 MSYS 的路径转换，否则 /base/cdc 会变成 D:/base/cdc）
 MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' \
   python scripts/live_probe.py --port 9990 /base/cdc/status /system/user/list
+
+# 9. 中文导出文件名的端到端回归（xlsx 落盘 + UTF-8 路径 + anonymous()/authenticated() 规则）
+python scripts/verify_cn_export.py "$TOKEN"          # 16 条断言，含"带 token 下载 403"这条 Java 语义
+
+# 10. SysUser 的 @Excel 列集合/列序/单元格类型/转换器/dept 关联
+python scripts/verify_user_excel.py "$TOKEN"         # 14 条断言，直接解析下载的 xlsx
+
+# 11. 生成的 59 份 CRUD Spec：逐条把 SQL 打到真实库上跑，报告异常
+python scripts/verify_generated_sql.py
+
+# 12. flow 审批三件套（多表事务 + 失败回滚，27 条断言）
+python scripts/verify_flow_approval.py --port 9991
 ```

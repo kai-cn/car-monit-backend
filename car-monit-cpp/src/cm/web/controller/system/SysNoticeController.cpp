@@ -49,7 +49,9 @@ void registerSysNoticeController(cm::web::Router& r) {
             return BaseController::ok(BaseController::success(notice->toJson()));
         }
         return BaseController::ok(BaseController::error("公告不存在"));
-    }).permitAll();
+    // SecurityConfig: .antMatchers("/system/notice/view/**").anonymous() == isAnonymous()
+    // 带 token 访问会 403（Server 侧按 URL 规则裁决，这里只是标注意图）
+    }).anonymous();
 
     r.post("/system/notice", [](RequestContext& ctx) -> cm::http::ApiResponse {
         auto body = ctx.body();

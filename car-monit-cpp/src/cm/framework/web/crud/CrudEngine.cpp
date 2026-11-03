@@ -277,10 +277,12 @@ cm::http::ApiResponse exportExcel(const Spec& spec, const Json& rows, const std:
     if (rows.is_array()) {
         for (const auto& r : rows) items.push_back(r);
     }
-    cm::common::utils::Excel::exportCsv(cols, items, sheetName);
-    // ⚠️ 返回值形态与 Java 一致（data = 文件名），但文件内容当前是 CSV（见 COMPATIBILITY.md）
-    return cm::http::ApiResponse::json(
-        AjaxResult::success("操作成功", Json(utils::simpleUuid() + ".xlsx")).toJson());
+    // 对应 ExcelUtil.exportExcel：写出真 xlsx 到 profile/download，
+    // 返回值是 AjaxResult.success(filename) —— String 命中 msg 重载，所以没有 data
+    const std::string filename = cm::common::utils::Excel::encodingFilename(sheetName);
+    cm::common::utils::Excel::writeDownloadFile(
+        filename, cm::common::utils::Excel::exportXlsx(cols, items, sheetName));
+    return cm::http::ApiResponse::json(AjaxResult::success(filename).toJson());
 }
 
 namespace {

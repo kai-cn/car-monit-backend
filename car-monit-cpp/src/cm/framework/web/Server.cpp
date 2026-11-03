@@ -12,6 +12,7 @@
 #include <queue>
 #include <sstream>
 
+#include "cm/common/compat/Path.hpp"
 #include "cm/common/constant/Constants.hpp"
 #include "cm/common/exception/Exceptions.hpp"
 #include "cm/common/core/domain/AjaxResult.hpp"
@@ -127,15 +128,15 @@ bool serveStatic(const std::string& method, const std::string& path, cm::http::A
     if (path.rfind("/profile/", 0) == 0) {
         std::string rel = path.substr(std::strlen("/profile/"));
         if (!safePath(rel)) return false;
-        file = std::filesystem::path(cfg.profile) / rel;
+        file = cm::compat::fsPath(cfg.profile) / cm::compat::fsPath(rel);
         // RuoYi 的 uploadPath 已经是 /profile 的根
         if (!std::filesystem::exists(file)) {
-            file = std::filesystem::path(cfg.profile) / "profile" / rel;
+            file = cm::compat::fsPath(cfg.profile) / "profile" / cm::compat::fsPath(rel);
         }
     } else {
         std::string rel = path == "/" ? "index.html" : path.substr(1);
         if (!safePath(rel)) return false;
-        file = std::filesystem::path("config/static") / rel;
+        file = cm::compat::fsPath("config/static") / cm::compat::fsPath(rel);
     }
     if (!std::filesystem::is_regular_file(file)) return false;
     std::ifstream in(file, std::ios::binary);
@@ -327,7 +328,10 @@ cm::http::ApiResponse Server::dispatch(cm::http::HttpRequest& req) {
     bool authenticated = cm::security::SecurityUtils::isAuthenticated();
 
     RouteMatch m = router().match(req.method, req.path);
-    AuthType rule = m.matched ? m.route->auth : Router::securityRule(req.method, req.path);
+    // Spring 的顺序：URL 层 antMatchers 规则先裁决，命中即生效；未命中才轮到路由级标记
+    //（@PreAuthorize 是之后的方法层，另说）。
+    AuthType rule = Router::urlRule(req.method, req.path).value_or(
+        m.matched ? m.route->auth : AuthType::Authenticated);
 
     if (rule == AuthType::Authenticated && !authenticated) {
         cm::http::ApiResponse r = unauthorized(req.path);

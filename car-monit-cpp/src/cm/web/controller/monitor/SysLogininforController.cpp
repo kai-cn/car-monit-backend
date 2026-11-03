@@ -93,14 +93,11 @@ void registerSysLogininforController(Router& r) {
         auto columns = logininforColumns();
         std::vector<Json> jsonRows;
         for (const auto& item : list) jsonRows.push_back(item.toJson());
-        std::string csv = cm::common::utils::Excel::exportCsv(columns, jsonRows, "登录日志");
-
-        cm::http::ApiResponse resp;
-        resp.status = 200;
-        resp.content_type = "text/csv;charset=UTF-8";
-        resp.body = std::move(csv);
-        resp.headers["Content-Disposition"] = "attachment; filename=logininfor.csv";
-        return resp;
+        // 对应 ExcelUtil.exportExcel：落盘真 xlsx，响应是 success(filename) —— String 走 msg 重载
+        const std::string filename = cm::common::utils::Excel::encodingFilename("登录日志");
+        cm::common::utils::Excel::writeDownloadFile(
+            filename, cm::common::utils::Excel::exportXlsx(columns, jsonRows, "登录日志"));
+        return BaseController::ok(cm::core::domain::AjaxResult::success(filename));
     }).permi("monitor:logininfor:export");
 
     // DELETE /monitor/logininfor/{infoIds}
