@@ -20,11 +20,12 @@
 | 指标 | 数值 |
 |---|---|
 | Java 端点（按 @*Mapping 注解逐条统计） | **497** |
-| C++ 已注册路由（源码枚举，`方法+路径` 去重） | **504** |
-| 已覆盖 | **433** |
-| 未覆盖 | **64** |
+| C++ 已注册路由（源码枚举，`方法+路径` 去重） | **510** |
+| 已覆盖 | **439** |
+| 未覆盖 | **58** |
 | 机器校验 | `python scripts/verify_generated_sql.py` → 实体 59，异常 0 |
 | 实机校验 | `python scripts/live_probe.py --port 9990 <路径…>`（复用 Redis 现存会话签发 token） |
+| 审批流校验 | `python scripts/verify_flow_approval.py --port 9990` → 27 项断言全过 |
 
 三个口径要分清，不要用其中一个去否定另一个：
 `endpoint_coverage.py` 按注解统计 Java 侧真实分母（497）；
@@ -32,22 +33,24 @@
 分母停在 326，漏掉 ruoyi-quartz/ruoyi-generator 与 `GET /{id}` 形态，属于工具缺陷，已修）；
 `verify_generated_sql.py` 证明的是“生成的 SQL 在真实库上跑得通”，不等于响应体一致。
 
-### 尚未迁移（64 条，逐条给出障碍）
+### 尚未迁移（58 条，逐条给出障碍）
 
 | 控制器 | 条数 | 障碍 |
 |---|---|---|
 | GenController | 15 | 28 份 Velocity 模板 + zip 下载；C++ 侧没有模板引擎 |
 | SysFileController | 9 | S3/MinIO 上传（SigV4）、`uploadFileEnc` 加解密、bucket 视图 |
-| BigScreenController | 8 | carLocation 实时定位、raodTrail 路网最短路、topTen/incomeStatistic 多表统计 |
+| BigScreenController | 8 | carLocation 实时定位、topTen/incomeStatistic/carVoList 等多表统计与外部定位 |
 | CarSuspiciousController | 7 | 逐行二次查询、docx/xlsx 模板导出、外部同步任务与签名校验 |
 | CarTrackInfoController | 4 | 轨迹来自外部 HTTP（`httpSysUtilApiService`），非本地库 |
 | GeometryController | 3 | GeoServer 外部 HTTP |
-| FlowCurrentNodeController | 3 | `saveFlowAuit`/`submitReturn`/`submitEntrustFlow`：多表事务 + 审批人解析 |
 | CarConfimFreeController | 3 | 模板导出 + `except/{id}` 组合查询 |
 | CarExceptRecordController | 3 | ListNew 是 join 派生查询；import 需 POI |
 | CarAduitFreeController | 2 | 模板导出 |
-| SysJobController / SysJobLogController | 3 | Quartz：`run` 走反射调 bean、`changeStatus` 需自建 cron 调度器 |
 | 其它（earliest-time / tbFlow / busstest / carinfo.import） | 4 | 外部 HTTP、跨租户批量同步、POI 解析 |
+
+已经落地的"硬骨头"（不再列为障碍，只剩实现细节）：
+flow 审批三件套（跨 6 张表 + 事务，夹具实测）、CDC 8 条（只读 Redis 队列）、
+quartz 的 changeStatus/jobLog clean（DB 语义一致）与 run（❌ 明确拒绝，见下）。
 
 > 原则：没做完的接口不会静默返回假数据。已实现的降级点都在 `COMPATIBILITY.md` 里
 > 用 ⚠️/❌ 标注并给了补偿方案，未实现的端点直接 404（而不是注册一个空壳路由）。
@@ -103,6 +106,17 @@ MSYS_NO_PATHCONV=1 python scripts/live_probe.py --port 9990 /base/cdc/status /sy
 `find_in_set(值, 列)`，且该属性因“不是表列”被整个丢掉条件 —— 实测 `/manager/exceptrecord/list?exceptIds=…`
 从 304 条（不过滤）纠正为 1 条。
 
+同样在这一轮补上的还有两处只有跑数据才会显形的语义缺口：
+`spec` 的 insertable/updatable 原先把父类审计列一律禁写（Java 的 `insertFlowXxx` 明明写
+`create_by/create_time/eps_id/del_flag`），以及列表 SQL 漏掉 XML 里 `<if>` 之外的
+`where t.del_flag = '0'`（实测 `/manager/exceptrecord/list` 304→273、carinfo 248→203）。
+前者是 flow 审批落库的前置条件，后者影响所有列表接口。
+
+审批三件套另外由 `scripts/verify_flow_approval.py` 做端到端验证：造一套两节点流程
+（`QODER_FLOW_` 前缀）跑完 一审→委托→二审→重复审核→撤销→中途失败回滚，27 项断言全过，
+夹具自动清理；其中回滚一项验证的正是 `cm::db::Transaction` —— 把业务表名改成不存在的表之后，
+先前“删节点 + 写消息 + 写申请单”必须整体撤销（前后计数一致）。
+
 ## 5. 已知行为差异（完整清单见 COMPATIBILITY.md）
 
 - ⚠️ Excel 导出：响应形态与 Java 一致（`data = "<uuid>.xlsx"`），文件内容当前是 CSV。
@@ -116,9 +130,11 @@ MSYS_NO_PATHCONV=1 python scripts/live_probe.py --port 9990 /base/cdc/status /sy
 1. SysFileController 9：S3 SigV4 上传（HMAC-SHA256 已具备），再做 `uploadFileEnc`。
 2. GenController 15：先做只读的 list/db/list/column/getTableDetail，代码生成部分需要一个
    Velocity 等价模板渲染器 + zip（DEFLATE 已在库内，可凑 OOXML/zip 容器）。
-3. flow 审批三件套：多表事务，建议先加一个最小的事务包装再逐个实现，比“半个审批流”更安全。
-4. quartz：`changeStatus`/`jobLog/clean` 只动库可以先做；`run` 需要 Java 那套反射调 bean 的白名单，
-   C++ 侧要么固定任务表 + 函数指针注册，要么明确不做。
-5. BigScreen 剩余 8 条里，topTen / incomeStatistic / carVoList 是纯 SQL，可继续按 §2 的方式补；
-   carLocation / raodTrail 依赖外部服务，属于 ❌ 类。
-6. 真 `.xlsx` 写出器（复用已有 DEFLATE 做 OOXML zip），一次性解掉 6 条模板导出接口的“形态一致、内容不一致”。
+3. 真 `.xlsx` 写出器（复用已有 DEFLATE 做 OOXML zip），一次性解掉 6 条模板导出接口的
+   “形态一致、内容不一致”。
+4. BigScreen 剩余 8 条里，topTen / incomeStatistic / carVoList 是纯 SQL，可继续按 §2 的方式补；
+   carLocation 依赖外部定位服务，属于 ❌ 类。
+5. quartz 的 `run` 与 `changeStatus` 的调度侧效应：需要一张”任务名 → C++ 函数”的注册表，
+   否则反射调 bean 这条路在 C++ 里无法等价（当前 run 明确返回未实现，不假装成功）。
+6. 把 `Transaction` 用到已有的多表写路径上：sys_user 新增/修改（user_role）、
+   sys_role 修改（role_menu）、sys_dept/menu 的级联，Java 都是 @Transactional。

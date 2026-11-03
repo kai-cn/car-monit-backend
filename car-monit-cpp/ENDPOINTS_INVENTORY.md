@@ -2,9 +2,9 @@
 
 口径：Java 侧按 @*Mapping 注解逐条统计，覆盖 ruoyi-admin / ruoyi-quartz / ruoyi-generator。
 
-Java 端点总数：**497**；C++ 已注册并匹配：**433**；未匹配：**64**。
+Java 端点总数：**497**；C++ 已注册并匹配：**439**；未匹配：**58**。
 
-C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**504**。
+C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**510**。
 
 | 控制器 | HTTP | 路径 | Java 方法 | @PreAuthorize | C++ 状态 |
 |---|---|---|---|---|---|
@@ -134,9 +134,9 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | FlowCurrentNodeController | POST | `/flow/currentnode` | add |  | ✅ |
 | FlowCurrentNodeController | PUT | `/flow/currentnode` | edit |  | ✅ |
 | FlowCurrentNodeController | DELETE | `/flow/currentnode/{*}` | remove |  | ✅ |
-| FlowCurrentNodeController | PUT | `/flow/currentnode/saveFlowAuit` | saveFlowAuit |  | ❌ |
-| FlowCurrentNodeController | POST | `/flow/currentnode/submitReturn` | submitReturn |  | ❌ |
-| FlowCurrentNodeController | POST | `/flow/currentnode/submitEntrustFlow` | submitEntrustFlow |  | ❌ |
+| FlowCurrentNodeController | PUT | `/flow/currentnode/saveFlowAuit` | saveFlowAuit |  | ✅ |
+| FlowCurrentNodeController | POST | `/flow/currentnode/submitReturn` | submitReturn |  | ✅ |
+| FlowCurrentNodeController | POST | `/flow/currentnode/submitEntrustFlow` | submitEntrustFlow |  | ✅ |
 | FlowListController | GET | `/flow/flowlist/list` | list |  | ✅ |
 | FlowListController | GET | `/flow/flowlist/listnew` | listnew |  | ✅ |
 | FlowListController | GET | `/flow/flowlist/export` | export |  | ✅ |
@@ -482,14 +482,14 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | SysJobController | GET | `/monitor/job/{*}` | getInfo |  | ✅ |
 | SysJobController | POST | `/monitor/job` | add |  | ✅ |
 | SysJobController | PUT | `/monitor/job` | edit |  | ✅ |
-| SysJobController | PUT | `/monitor/job/changeStatus` | changeStatus |  | ❌ |
-| SysJobController | PUT | `/monitor/job/run` | run |  | ❌ |
+| SysJobController | PUT | `/monitor/job/changeStatus` | changeStatus |  | ✅ |
+| SysJobController | PUT | `/monitor/job/run` | run |  | ✅ |
 | SysJobController | DELETE | `/monitor/job/{*}` | remove |  | ✅ |
 | SysJobLogController | GET | `/monitor/jobLog/list` | list |  | ✅ |
 | SysJobLogController | GET | `/monitor/jobLog/export` | export |  | ✅ |
 | SysJobLogController | GET | `/monitor/jobLog/{*}` | getInfo |  | ✅ |
 | SysJobLogController | DELETE | `/monitor/jobLog/{*}` | remove |  | ✅ |
-| SysJobLogController | DELETE | `/monitor/jobLog/clean` | clean |  | ❌ |
+| SysJobLogController | DELETE | `/monitor/jobLog/clean` | clean |  | ✅ |
 | GenController | GET | `/tool/gen/list` | genList |  | ❌ |
 | GenController | GET | `/tool/gen/all/list` | getAllGenerateTableList |  | ❌ |
 | GenController | GET | `/tool/gen/{*}` | getInfo |  | ❌ |
