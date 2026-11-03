@@ -1,6 +1,8 @@
 #pragma once
 // 对应 Java: com.ruoyi.system.mapper.SysDictDataMapper
 #include <optional>
+#include <utility>
+#include "cm/framework/db/Db.hpp"
 #include <string>
 #include <vector>
 
@@ -11,6 +13,9 @@ namespace cm::system::mapper {
 
 class SysDictDataMapper {
 public:
+        static std::string selectDictDataListSql(const cm::domain::SysDictData& dictData);
+static std::pair<std::vector<cm::domain::SysDictData>, long long> selectDictDataListEntityPage(
+            const cm::domain::SysDictData& dictData, const cm::db::PageRequest& page);
     static std::vector<cm::domain::SysDictData> selectDictDataList(const cm::domain::SysDictData& dictData);
     static std::vector<cm::domain::SysDictData> selectDictDataByType(const std::string& dictType);
     static std::vector<cm::domain::SysDictData> selectDictDataByTypeMore(const std::string& dictTypes);

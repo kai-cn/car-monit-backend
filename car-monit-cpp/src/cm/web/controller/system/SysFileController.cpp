@@ -17,13 +17,10 @@ void registerSysFileController(cm::web::Router& r) {
         file.type = ctx.optParam("type");
         file.bussType = ctx.optParam("bussType");
         file.bussName = ctx.optParam("bussName");
-        auto list = cm::system::service::SysFileService::selectSysFileList(file);
+        auto [list, total] = cm::system::service::SysFileService::selectSysFileListEntityPage(file, page);
         Json rowsArr = Json::array();
         for (const auto& f : list) rowsArr.push_back(f.toJson());
-        auto countSql = "select count(1) from sys_file where del_flag='0'";
-        auto dataSql = "select * from sys_file where del_flag='0'";
-        auto result = cm::db::queryPage(countSql, dataSql, page);
-        return BaseController::ok(BaseController::dataTable(rowsArr, result.total));
+        return BaseController::ok(BaseController::dataTable(rowsArr, total));
     }).permi("base:sysflie:list");
 
     r.get("/system/file/getInfoById/{id}", [](RequestContext& ctx) -> cm::http::ApiResponse {

@@ -7,6 +7,11 @@
 
 namespace cm::system::service {
 
+std::pair<std::vector<cm::domain::SysFile>, long long> SysFileService::selectSysFileListEntityPage(const cm::domain::SysFile& file,
+        const cm::db::PageRequest& page) {
+    return cm::system::mapper::SysFileMapper::selectSysFileListEntityPage(file, page);
+}
+
 std::vector<cm::domain::SysFile> SysFileService::selectSysFileList(const cm::domain::SysFile& file) {
     return cm::system::mapper::SysFileMapper::selectSysFileList(file);
 }

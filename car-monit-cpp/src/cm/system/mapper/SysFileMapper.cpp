@@ -35,7 +35,7 @@ cm::domain::SysFile SysFileMapper::mapSysFile(const cm::db::Row& row) {
     return f;
 }
 
-std::vector<cm::domain::SysFile> SysFileMapper::selectSysFileList(const cm::domain::SysFile& q) {
+std::string SysFileMapper::selectSysFileListSql(const cm::domain::SysFile& q) {
     std::string sql = "select " + std::string(kSelectVo) + " from sys_file t where t.del_flag = '0'";
     if (q.id) sql += " and t.id = " + cm::db::Db::lit(*q.id);
     if (q.fileName && !q.fileName->empty()) sql += " and t.file_name like " + cm::db::Db::lit("%" + *q.fileName + "%");
@@ -49,6 +49,21 @@ std::vector<cm::domain::SysFile> SysFileMapper::selectSysFileList(const cm::doma
     if (q.updateUser && !q.updateUser->empty()) sql += " and t.update_user = " + cm::db::Db::lit(*q.updateUser);
     if (q.tenantId) sql += " and t.tenant_id = " + cm::db::Db::lit(*q.tenantId);
     sql += " order by t.create_time desc, t.id";
+    return sql;
+}
+
+std::pair<std::vector<cm::domain::SysFile>, long long> SysFileMapper::selectSysFileListEntityPage(const cm::domain::SysFile& q,
+                                                   const cm::db::PageRequest& page) {
+    const std::string sql = selectSysFileListSql(q);
+    // PageHelper 语义：count 包住与列表完全同一条 SQL，rows 与 total 不会各算一份
+    auto pr = cm::db::queryPage("select count(1) from (" + sql + ") page_count", sql, page);
+    std::vector<cm::domain::SysFile> out;
+    for (const auto& row : pr.rows.rows) out.push_back(mapSysFile(row));
+    return {std::move(out), pr.total};
+}
+
+std::vector<cm::domain::SysFile> SysFileMapper::selectSysFileList(const cm::domain::SysFile& q) {
+    const std::string sql = selectSysFileListSql(q);
     cm::db::Result res;
     std::vector<cm::domain::SysFile> list;
     if (!cm::db::Db::instance().query(sql, res)) return list;

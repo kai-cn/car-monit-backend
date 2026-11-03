@@ -1,6 +1,8 @@
 #pragma once
 // 对应 Java: com.ruoyi.system.mapper.SysUpgradeInfoMapper
 #include <optional>
+#include <utility>
+#include "cm/framework/db/Db.hpp"
 #include <string>
 #include <vector>
 
@@ -11,6 +13,9 @@ namespace cm::system::mapper {
 
 class SysUpgradeInfoMapper {
 public:
+        static std::string selectSysUpgradeInfoListSql(const cm::domain::SysUpgradeInfo& info);
+static std::pair<std::vector<cm::domain::SysUpgradeInfo>, long long> selectSysUpgradeInfoListEntityPage(
+            const cm::domain::SysUpgradeInfo& info, const cm::db::PageRequest& page);
     static std::vector<cm::domain::SysUpgradeInfo> selectSysUpgradeInfoList(const cm::domain::SysUpgradeInfo& info);
     static std::optional<cm::domain::SysUpgradeInfo> selectSysUpgradeInfoById(const std::string& id);
     static std::optional<cm::domain::SysUpgradeInfo> selectSysUpgradeInfoNewest(const cm::domain::SysUpgradeInfo& info);

@@ -13,13 +13,10 @@ void registerSysUpgradeInfoController(cm::web::Router& r) {
         info.id = ctx.optParam("id");
         info.ver = ctx.optParam("ver");
         info.tenantId = cm::security::SecurityUtils::getTenantId();
-        auto list = cm::system::service::SysUpgradeInfoService::selectSysUpgradeInfoList(info);
+        auto [list, total] = cm::system::service::SysUpgradeInfoService::selectSysUpgradeInfoListEntityPage(info, page);
         Json rowsArr = Json::array();
         for (const auto& i : list) rowsArr.push_back(i.toJson());
-        auto countSql = "select count(1) from sys_upgrade_info where del_flag='0'";
-        auto dataSql = "select * from sys_upgrade_info where del_flag='0'";
-        auto result = cm::db::queryPage(countSql, dataSql, page);
-        return BaseController::ok(BaseController::dataTable(rowsArr, result.total));
+        return BaseController::ok(BaseController::dataTable(rowsArr, total));
     });
 
     r.get("/system/upgradeInfo/newest", [](RequestContext& ctx) -> cm::http::ApiResponse {

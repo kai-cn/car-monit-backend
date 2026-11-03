@@ -16,13 +16,10 @@ void registerSysConfigController(cm::web::Router& r) {
         config.configName = ctx.optParam("configName");
         config.configKey = ctx.optParam("configKey");
         config.configType = ctx.optParam("configType");
-        auto list = cm::system::service::SysConfigService::selectConfigList(config);
+        auto [list, total] = cm::system::service::SysConfigService::selectConfigListEntityPage(config, page);
         Json rowsArr = Json::array();
         for (const auto& c : list) rowsArr.push_back(c.toJson());
-        auto countSql = "select count(1) from sys_config where 1=1";
-        auto dataSql = "select * from sys_config where 1=1";
-        auto result = cm::db::queryPage(countSql, dataSql, page);
-        return BaseController::ok(BaseController::dataTable(rowsArr, result.total));
+        return BaseController::ok(BaseController::dataTable(rowsArr, total));
     }).permi("system:config:list");
 
     // GET /system/config/export

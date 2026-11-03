@@ -1,6 +1,8 @@
 #pragma once
 // 对应 Java: com.ruoyi.system.mapper.SysConfigMapper
 #include <optional>
+#include <utility>
+#include "cm/framework/db/Db.hpp"
 #include <string>
 #include <vector>
 
@@ -11,6 +13,9 @@ namespace cm::system::mapper {
 
 class SysConfigMapper {
 public:
+        static std::string selectConfigListSql(const cm::domain::SysConfig& config);
+static std::pair<std::vector<cm::domain::SysConfig>, long long> selectConfigListEntityPage(
+            const cm::domain::SysConfig& config, const cm::db::PageRequest& page);
     static std::vector<cm::domain::SysConfig> selectConfigList(const cm::domain::SysConfig& config);
     static std::optional<cm::domain::SysConfig> selectConfig(const cm::domain::SysConfig& config);
     static std::optional<cm::domain::SysConfig> selectConfigById(long long configId);

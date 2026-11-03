@@ -34,7 +34,7 @@ cm::domain::SysNotice SysNoticeMapper::mapNotice(const cm::db::Row& row) {
     return n;
 }
 
-std::vector<cm::domain::SysNotice> SysNoticeMapper::selectNoticeList(const cm::domain::SysNotice& notice) {
+std::string SysNoticeMapper::selectNoticeListSql(const cm::domain::SysNotice& notice) {
     std::string sql = std::string(kSelectNoticeVo) + " where 1=1";
     if (notice.noticeTitle && !notice.noticeTitle->empty())
         sql += " AND t.notice_title like " + cm::db::Db::lit("%" + *notice.noticeTitle + "%");
@@ -53,6 +53,21 @@ std::vector<cm::domain::SysNotice> SysNoticeMapper::selectNoticeList(const cm::d
     if (notice.noticeContent && !notice.noticeContent->empty())
         sql += " AND (t.notice_content = " + cm::db::Db::lit(*notice.noticeContent) + ")";
     sql += " order by t.create_time desc";
+    return sql;
+}
+
+std::pair<std::vector<cm::domain::SysNotice>, long long> SysNoticeMapper::selectNoticeListEntityPage(const cm::domain::SysNotice& notice,
+                                                   const cm::db::PageRequest& page) {
+    const std::string sql = selectNoticeListSql(notice);
+    // PageHelper 语义：count 包住与列表完全同一条 SQL，rows 与 total 不会各算一份
+    auto pr = cm::db::queryPage("select count(1) from (" + sql + ") page_count", sql, page);
+    std::vector<cm::domain::SysNotice> out;
+    for (const auto& row : pr.rows.rows) out.push_back(mapNotice(row));
+    return {std::move(out), pr.total};
+}
+
+std::vector<cm::domain::SysNotice> SysNoticeMapper::selectNoticeList(const cm::domain::SysNotice& notice) {
+    const std::string sql = selectNoticeListSql(notice);
     cm::db::Result res;
     std::vector<cm::domain::SysNotice> list;
     if (!cm::db::Db::instance().query(sql, res)) return list;

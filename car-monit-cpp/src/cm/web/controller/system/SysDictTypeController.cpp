@@ -14,13 +14,10 @@ void registerSysDictTypeController(cm::web::Router& r) {
         dictType.dictName = ctx.optParam("dictName");
         dictType.dictType = ctx.optParam("dictType");
         dictType.status = ctx.optParam("status");
-        auto list = cm::system::service::SysDictTypeService::selectDictTypeList(dictType);
+        auto [list, total] = cm::system::service::SysDictTypeService::selectDictTypeListEntityPage(dictType, page);
         Json rowsArr = Json::array();
         for (const auto& d : list) rowsArr.push_back(d.toJson());
-        auto countSql = "select count(1) from sys_dict_type where 1=1";
-        auto dataSql = "select * from sys_dict_type where 1=1";
-        auto result = cm::db::queryPage(countSql, dataSql, page);
-        return BaseController::ok(BaseController::dataTable(rowsArr, result.total));
+        return BaseController::ok(BaseController::dataTable(rowsArr, total));
     }).permi("system:dict:list");
 
     r.get("/system/dict/type/export", [](RequestContext& ctx) -> cm::http::ApiResponse {

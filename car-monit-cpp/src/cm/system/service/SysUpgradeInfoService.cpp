@@ -9,6 +9,11 @@
 
 namespace cm::system::service {
 
+std::pair<std::vector<cm::domain::SysUpgradeInfo>, long long> SysUpgradeInfoService::selectSysUpgradeInfoListEntityPage(const cm::domain::SysUpgradeInfo& info,
+        const cm::db::PageRequest& page) {
+    return cm::system::mapper::SysUpgradeInfoMapper::selectSysUpgradeInfoListEntityPage(info, page);
+}
+
 std::vector<cm::domain::SysUpgradeInfo> SysUpgradeInfoService::selectSysUpgradeInfoList(const cm::domain::SysUpgradeInfo& info) {
     return cm::system::mapper::SysUpgradeInfoMapper::selectSysUpgradeInfoList(info);
 }

@@ -5,6 +5,11 @@
 
 namespace cm::system::service {
 
+std::pair<std::vector<cm::domain::SysNotice>, long long> SysNoticeService::selectNoticeListEntityPage(const cm::domain::SysNotice& notice,
+        const cm::db::PageRequest& page) {
+    return cm::system::mapper::SysNoticeMapper::selectNoticeListEntityPage(notice, page);
+}
+
 std::vector<cm::domain::SysNotice> SysNoticeService::selectNoticeList(const cm::domain::SysNotice& notice) {
     return cm::system::mapper::SysNoticeMapper::selectNoticeList(notice);
 }

@@ -14,13 +14,10 @@ void registerSysNoticeController(cm::web::Router& r) {
         notice.noticeType = ctx.optParam("noticeType");
         notice.createBy = ctx.optParam("createBy");
         notice.status = ctx.optParam("status");
-        auto list = cm::system::service::SysNoticeService::selectNoticeList(notice);
+        auto [list, total] = cm::system::service::SysNoticeService::selectNoticeListEntityPage(notice, page);
         Json rowsArr = Json::array();
         for (const auto& n : list) rowsArr.push_back(n.toJson());
-        auto countSql = "select count(1) from sys_notice where 1=1";
-        auto dataSql = "select * from sys_notice where 1=1";
-        auto result = cm::db::queryPage(countSql, dataSql, page);
-        return BaseController::ok(BaseController::dataTable(rowsArr, result.total));
+        return BaseController::ok(BaseController::dataTable(rowsArr, total));
     });
 
     r.get("/system/notice/listquery", [](RequestContext& ctx) -> cm::http::ApiResponse {
@@ -30,13 +27,10 @@ void registerSysNoticeController(cm::web::Router& r) {
         notice.noticeType = ctx.optParam("noticeType");
         notice.createBy = ctx.optParam("createBy");
         notice.status = "0";
-        auto list = cm::system::service::SysNoticeService::selectNoticeList(notice);
+        auto [list, total] = cm::system::service::SysNoticeService::selectNoticeListEntityPage(notice, page);
         Json rowsArr = Json::array();
         for (const auto& n : list) rowsArr.push_back(n.toJson());
-        auto countSql = "select count(1) from sys_notice where 1=1";
-        auto dataSql = "select * from sys_notice where 1=1";
-        auto result = cm::db::queryPage(countSql, dataSql, page);
-        return BaseController::ok(BaseController::dataTable(rowsArr, result.total));
+        return BaseController::ok(BaseController::dataTable(rowsArr, total));
     });
 
     r.get("/system/notice/{noticeId}", [](RequestContext& ctx) -> cm::http::ApiResponse {

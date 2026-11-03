@@ -31,7 +31,7 @@ cm::domain::SysUpgradeInfo SysUpgradeInfoMapper::mapSysUpgradeInfo(const cm::db:
     return info;
 }
 
-std::vector<cm::domain::SysUpgradeInfo> SysUpgradeInfoMapper::selectSysUpgradeInfoList(const cm::domain::SysUpgradeInfo& q) {
+std::string SysUpgradeInfoMapper::selectSysUpgradeInfoListSql(const cm::domain::SysUpgradeInfo& q) {
     std::string sql = std::string(kSelectVo) + " where t.del_flag = '0'";
     if (q.id && !q.id->empty()) sql += " and t.id = " + cm::db::Db::lit(*q.id);
     if (q.ver && !q.ver->empty()) sql += " and t.ver = " + cm::db::Db::lit(*q.ver);
@@ -41,6 +41,21 @@ std::vector<cm::domain::SysUpgradeInfo> SysUpgradeInfoMapper::selectSysUpgradeIn
     if (q.tenantId) sql += " and t.tenant_id = " + cm::db::Db::lit(*q.tenantId);
     if (q.createBy && !q.createBy->empty()) sql += " and t.create_by = " + cm::db::Db::lit(*q.createBy);
     sql += " order by t.create_time desc, t.id";
+    return sql;
+}
+
+std::pair<std::vector<cm::domain::SysUpgradeInfo>, long long> SysUpgradeInfoMapper::selectSysUpgradeInfoListEntityPage(const cm::domain::SysUpgradeInfo& q,
+                                                   const cm::db::PageRequest& page) {
+    const std::string sql = selectSysUpgradeInfoListSql(q);
+    // PageHelper 语义：count 包住与列表完全同一条 SQL，rows 与 total 不会各算一份
+    auto pr = cm::db::queryPage("select count(1) from (" + sql + ") page_count", sql, page);
+    std::vector<cm::domain::SysUpgradeInfo> out;
+    for (const auto& row : pr.rows.rows) out.push_back(mapSysUpgradeInfo(row));
+    return {std::move(out), pr.total};
+}
+
+std::vector<cm::domain::SysUpgradeInfo> SysUpgradeInfoMapper::selectSysUpgradeInfoList(const cm::domain::SysUpgradeInfo& q) {
+    const std::string sql = selectSysUpgradeInfoListSql(q);
     cm::db::Result res;
     std::vector<cm::domain::SysUpgradeInfo> list;
     if (!cm::db::Db::instance().query(sql, res)) return list;

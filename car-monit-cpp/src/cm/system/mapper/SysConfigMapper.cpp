@@ -38,7 +38,7 @@ cm::domain::SysConfig SysConfigMapper::mapConfig(const cm::db::Row& row) {
     return c;
 }
 
-std::vector<cm::domain::SysConfig> SysConfigMapper::selectConfigList(const cm::domain::SysConfig& config) {
+std::string SysConfigMapper::selectConfigListSql(const cm::domain::SysConfig& config) {
     std::string sql = std::string(kSelectConfigVo) + " where 1=1";
     if (config.configName && !config.configName->empty()) {
         sql += " AND config_name like " + cm::db::Db::lit("%" + *config.configName + "%");
@@ -62,6 +62,21 @@ std::vector<cm::domain::SysConfig> SysConfigMapper::selectConfigList(const cm::d
             sql += " AND date_format(create_time,'%y%m%d') <= date_format(" + cm::db::Db::lit(et) + ",'%y%m%d')";
         }
     }
+    return sql;
+}
+
+std::pair<std::vector<cm::domain::SysConfig>, long long> SysConfigMapper::selectConfigListEntityPage(const cm::domain::SysConfig& config,
+                                                   const cm::db::PageRequest& page) {
+    const std::string sql = selectConfigListSql(config);
+    // PageHelper 语义：count 包住与列表完全同一条 SQL，rows 与 total 不会各算一份
+    auto pr = cm::db::queryPage("select count(1) from (" + sql + ") page_count", sql, page);
+    std::vector<cm::domain::SysConfig> out;
+    for (const auto& row : pr.rows.rows) out.push_back(mapConfig(row));
+    return {std::move(out), pr.total};
+}
+
+std::vector<cm::domain::SysConfig> SysConfigMapper::selectConfigList(const cm::domain::SysConfig& config) {
+    const std::string sql = selectConfigListSql(config);
     cm::db::Result res;
     std::vector<cm::domain::SysConfig> list;
     if (!cm::db::Db::instance().query(sql, res)) return list;

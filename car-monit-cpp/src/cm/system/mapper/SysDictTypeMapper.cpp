@@ -26,7 +26,7 @@ cm::domain::SysDictType SysDictTypeMapper::mapDictType(const cm::db::Row& row) {
     return d;
 }
 
-std::vector<cm::domain::SysDictType> SysDictTypeMapper::selectDictTypeList(const cm::domain::SysDictType& dt) {
+std::string SysDictTypeMapper::selectDictTypeListSql(const cm::domain::SysDictType& dt) {
     std::string sql = std::string(kSelectDictTypeVo) + " where 1=1";
     if (dt.dictName && !dt.dictName->empty())
         sql += " AND dict_name like " + cm::db::Db::lit("%" + *dt.dictName + "%");
@@ -43,6 +43,21 @@ std::vector<cm::domain::SysDictType> SysDictTypeMapper::selectDictTypeList(const
         if (!et.empty()) sql += " AND date_format(create_time,'%y%m%d') <= date_format(" + cm::db::Db::lit(et) + ",'%y%m%d')";
     }
     sql += " order by create_time desc";
+    return sql;
+}
+
+std::pair<std::vector<cm::domain::SysDictType>, long long> SysDictTypeMapper::selectDictTypeListEntityPage(const cm::domain::SysDictType& dt,
+                                                   const cm::db::PageRequest& page) {
+    const std::string sql = selectDictTypeListSql(dt);
+    // PageHelper 语义：count 包住与列表完全同一条 SQL，rows 与 total 不会各算一份
+    auto pr = cm::db::queryPage("select count(1) from (" + sql + ") page_count", sql, page);
+    std::vector<cm::domain::SysDictType> out;
+    for (const auto& row : pr.rows.rows) out.push_back(mapDictType(row));
+    return {std::move(out), pr.total};
+}
+
+std::vector<cm::domain::SysDictType> SysDictTypeMapper::selectDictTypeList(const cm::domain::SysDictType& dt) {
+    const std::string sql = selectDictTypeListSql(dt);
     cm::db::Result res;
     std::vector<cm::domain::SysDictType> list;
     if (!cm::db::Db::instance().query(sql, res)) return list;

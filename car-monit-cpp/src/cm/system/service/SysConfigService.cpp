@@ -13,6 +13,11 @@ namespace cm::system::service {
 using cm::constant::Constants;
 using cm::constant::UserConstants;
 
+std::pair<std::vector<cm::domain::SysConfig>, long long> SysConfigService::selectConfigListEntityPage(const cm::domain::SysConfig& config,
+        const cm::db::PageRequest& page) {
+    return cm::system::mapper::SysConfigMapper::selectConfigListEntityPage(config, page);
+}
+
 std::vector<cm::domain::SysConfig> SysConfigService::selectConfigList(const cm::domain::SysConfig& config) {
     return cm::system::mapper::SysConfigMapper::selectConfigList(config);
 }

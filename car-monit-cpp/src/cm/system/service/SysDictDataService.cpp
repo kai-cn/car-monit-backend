@@ -5,6 +5,11 @@
 
 namespace cm::system::service {
 
+std::pair<std::vector<cm::domain::SysDictData>, long long> SysDictDataService::selectDictDataListEntityPage(const cm::domain::SysDictData& dictData,
+        const cm::db::PageRequest& page) {
+    return cm::system::mapper::SysDictDataMapper::selectDictDataListEntityPage(dictData, page);
+}
+
 std::vector<cm::domain::SysDictData> SysDictDataService::selectDictDataList(const cm::domain::SysDictData& dictData) {
     return cm::system::mapper::SysDictDataMapper::selectDictDataList(dictData);
 }

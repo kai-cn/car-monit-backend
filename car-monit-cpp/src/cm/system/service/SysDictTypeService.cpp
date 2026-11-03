@@ -48,6 +48,11 @@ std::optional<std::vector<cm::domain::SysDictData>> getDictCache(const std::stri
 }
 } // namespace
 
+std::pair<std::vector<cm::domain::SysDictType>, long long> SysDictTypeService::selectDictTypeListEntityPage(const cm::domain::SysDictType& dictType,
+        const cm::db::PageRequest& page) {
+    return cm::system::mapper::SysDictTypeMapper::selectDictTypeListEntityPage(dictType, page);
+}
+
 std::vector<cm::domain::SysDictType> SysDictTypeService::selectDictTypeList(const cm::domain::SysDictType& dictType) {
     return cm::system::mapper::SysDictTypeMapper::selectDictTypeList(dictType);
 }
