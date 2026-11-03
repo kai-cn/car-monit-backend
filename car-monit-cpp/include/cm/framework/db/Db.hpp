@@ -27,6 +27,10 @@ public:
     std::optional<std::string> scalar(const std::string& sql);
     long long count(const std::string& sql);
 
+    /** 当前线程绑定的事务连接；为空表示不在事务中。
+     *  Db::query/execute 有它就直接用，不再从池里另借一条。 */
+    static std::shared_ptr<MySqlConnection>& txConn();
+
     /** MySQL 字符串字面量转义（含引号） */
     static std::string lit(const std::string& value);
     static std::string lit(const std::optional<std::string>& value);
@@ -44,6 +48,52 @@ public:
 private:
     Db() = default;
     std::unique_ptr<ConnectionPool> pool_;
+};
+
+/** 对应 Spring 的 @Transactional(rollbackFor = Exception.class)。
+ *  作用域内 Db::query/execute 复用同一条连接；没走到 commit() 就离开作用域
+ *  （包括异常向上抛出）一律 ROLLBACK —— 与 Java 的回滚语义一致。
+ *  嵌套时按 PROPAGATION_REQUIRED 并入外层事务：内层既不 BEGIN 也不 ROLLBACK。 */
+class Transaction {
+public:
+    Transaction() {
+        outer_ = Db::instance().ready() ? Db::txConn() : nullptr;
+        if (outer_) {  // 已在事务里，直接并入
+            joined_ = true;
+            return;
+        }
+        conn_ = Db::instance().pool().borrow();
+        if (!conn_ || !conn_->begin()) {
+            if (conn_) Db::instance().pool().release(conn_);
+            conn_.reset();
+            return;
+        }
+        Db::txConn() = conn_;
+    }
+    ~Transaction() {
+        if (joined_) return;  // 外层决定提交还是回滚
+        if (conn_) {
+            if (!committed_) conn_->rollback();
+            Db::txConn().reset();
+            Db::instance().pool().release(conn_);
+        }
+    }
+    Transaction(const Transaction&) = delete;
+    Transaction& operator=(const Transaction&) = delete;
+
+    /** 拿不到连接或 BEGIN 失败时为 false；调用方据此决定降级行为 */
+    bool ok() const { return joined_ || conn_ != nullptr; }
+    void commit() {
+        if (joined_ || !conn_ || committed_) return;
+        conn_->commit();
+        committed_ = true;
+    }
+
+private:
+    std::shared_ptr<MySqlConnection> outer_;
+    std::shared_ptr<MySqlConnection> conn_;
+    bool joined_{false};
+    bool committed_{false};
 };
 
 /** 分页上下文（对应 PageHelper 的 ThreadLocal） */

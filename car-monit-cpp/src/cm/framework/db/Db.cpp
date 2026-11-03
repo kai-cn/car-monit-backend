@@ -26,6 +26,12 @@ bool Db::query(const std::string& sql, Result& out) {
         out = Result{};
         return false;
     }
+    // 事务作用域内：必须用同一条连接，否则 BEGIN/ROLLBACK 看到的是别的会话
+    if (auto& tx = txConn(); tx) {
+        if (tx->query(sql, out)) return true;
+        LOG_WARN("Db", "查询失败: " + sql);
+        return false;
+    }
     bool ok = pool_->query(sql, out);
     if (!ok) LOG_WARN("Db", "查询失败: " + sql);
     return ok;
@@ -33,9 +39,20 @@ bool Db::query(const std::string& sql, Result& out) {
 
 bool Db::execute(const std::string& sql, long long* affected, long long* insertId) {
     if (!pool_) return false;
+    if (auto& tx = txConn(); tx) {
+        if (tx->execute(sql, affected, insertId)) return true;
+        LOG_WARN("Db", "执行失败: " + sql);
+        return false;
+    }
     bool ok = pool_->execute(sql, affected, insertId);
     if (!ok) LOG_WARN("Db", "执行失败: " + sql);
     return ok;
+}
+
+std::shared_ptr<MySqlConnection>& Db::txConn() {
+    // 每个工作线程一条事务连接（对应 Spring 的 TransactionSynchronizationManager）
+    static thread_local std::shared_ptr<MySqlConnection> current;
+    return current;
 }
 
 std::optional<std::string> Db::scalar(const std::string& sql) {
