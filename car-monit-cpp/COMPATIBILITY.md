@@ -166,6 +166,17 @@ C++ 对应实现位置：
 * 回归：`tests/main_test.cpp::testUtf8PathCompat` 校验往返，
   `scripts/verify_cn_export.py` 校验中文导出→下载的整条链路。
 
+### ⚠️ 2.12 SQL 执行失败的降级
+
+* Java：MyBatis 把 `BadSqlGrammarException` / `SQLException` 抛到 `GlobalExceptionHandler` →
+  `{"msg":"...","code":500}`，请求以业务错误码结束。
+* C++：CRUD 引擎与多数手写控制器的 `run()` 是 `Db::query(sql, res)` 忽略返回值 ——
+  **失败被降级成"空结果"**，于是接口返回 `{"total":0,"rows":[]}` 或 `data:[]`，看起来像"没数据"而不是出错。
+  本轮已在模板导出这条路径改成失败即抛（`ManagerTemplateExportControllers.cpp::run`），
+  其余路径尚未统一（改动面覆盖全部手写控制器，需要单独一轮 + 全量回归）。
+* 影响与规避：排查"接口返回空"时不要假定是没数据 —— 先看 `logs/carmonit.log` 里的
+  `[WARN] Db - 查询失败: <SQL>`；该日志行就是被吞掉的那次失败。
+
 ---
 
 ## 3. 序列化契约细节（✅ 已复刻）

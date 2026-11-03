@@ -19,11 +19,11 @@ const Spec& specSysJob() {
         s.table = "sys_job";
         s.alias = "t";
         s.fields = {
-            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, true, false},
-            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, true},
-            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"remark", "remark", Fmt::Str, Cond::None, nullptr, false, false, true, true},
+            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, true, false, nullptr},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false, nullptr},
+            {"updateBy", "update_by", Fmt::Str, Cond::Eq, nullptr, false, false, false, true, nullptr},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false, nullptr},
+            {"remark", "remark", Fmt::Str, Cond::Eq, nullptr, false, false, true, true, nullptr},
             {"jobId", "job_id", Fmt::Long, Cond::None, "任务序号", false, false, true, false},
             {"jobName", "job_name", Fmt::Str, Cond::Eq, "任务名称", false, false, true, true},
             {"jobGroup", "job_group", Fmt::Str, Cond::Eq, "任务组名", false, false, true, true},
@@ -45,11 +45,11 @@ const Spec& specSysJobLog() {
         s.table = "sys_job_log";
         s.alias = "t";
         s.fields = {
-            {"createBy", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, true},
-            {"updateBy", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"updateTime", nullptr, Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"remark", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::DateRange, nullptr, false, false, false, true, nullptr},
+            {"updateBy", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr},
+            {"updateTime", nullptr, Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false, nullptr},
+            {"remark", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr},
             {"jobLogId", "job_log_id", Fmt::Long, Cond::None, "日志序号", false, false, true, true},
             {"jobName", "job_name", Fmt::Str, Cond::Like, "任务名称", false, false, true, true},
             {"jobGroup", "job_group", Fmt::Str, Cond::Eq, "任务组名", false, false, true, true},

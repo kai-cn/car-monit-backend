@@ -2,9 +2,9 @@
 
 口径：Java 侧按 @*Mapping 注解逐条统计，覆盖 ruoyi-admin / ruoyi-quartz / ruoyi-generator。
 
-Java 端点总数：**497**；C++ 已注册并匹配：**456**；未匹配：**41**。
+Java 端点总数：**497**；C++ 已注册并匹配：**462**；未匹配：**35**。
 
-C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**527**。
+C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**533**。
 
 | 控制器 | HTTP | 路径 | Java 方法 | @PreAuthorize | C++ 状态 |
 |---|---|---|---|---|---|
@@ -191,9 +191,9 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | CarAduitFreeController | PUT | `/manager/aduitfree` | edit |  | ✅ |
 | CarAduitFreeController | DELETE | `/manager/aduitfree/{*}` | remove |  | ✅ |
 | CarAduitFreeController | GET | `/manager/aduitfree/incomeStatics` | incomeStatics |  | ✅ |
-| CarAduitFreeController | GET | `/manager/aduitfree/exportIncomeStatics` | exportIncomeStatics |  | ❌ |
+| CarAduitFreeController | GET | `/manager/aduitfree/exportIncomeStatics` | exportIncomeStatics |  | ✅ |
 | CarAduitFreeController | GET | `/manager/aduitfree/incomeDetailList` | incomeDetailList |  | ✅ |
-| CarAduitFreeController | GET | `/manager/aduitfree/exportIncomeDetailList` | exportIncomeDetailList |  | ❌ |
+| CarAduitFreeController | GET | `/manager/aduitfree/exportIncomeDetailList` | exportIncomeDetailList |  | ✅ |
 | CarConfimFreeController | GET | `/manager/confimfree/list` | list |  | ✅ |
 | CarConfimFreeController | GET | `/manager/confimfree/listCarNo` | listCarNo |  | ✅ |
 | CarConfimFreeController | GET | `/manager/confimfree/listCount` | listCount |  | ✅ |
@@ -204,13 +204,13 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | CarConfimFreeController | DELETE | `/manager/confimfree/{*}` | remove |  | ✅ |
 | CarConfimFreeController | GET | `/manager/confimfree/except/{*}` | getExceptIds |  | ✅ |
 | CarConfimFreeController | GET | `/manager/confimfree/concernedList` | concernedList |  | ✅ |
-| CarConfimFreeController | GET | `/manager/confimfree/exportConcernedList` | exportConcernedList |  | ❌ |
+| CarConfimFreeController | GET | `/manager/confimfree/exportConcernedList` | exportConcernedList |  | ✅ |
 | CarConfimFreeController | GET | `/manager/confimfree/carStatics` | getCarStatics |  | ✅ |
-| CarConfimFreeController | GET | `/manager/confimfree/exportCarStatics` | exportCarStatics |  | ❌ |
+| CarConfimFreeController | GET | `/manager/confimfree/exportCarStatics` | exportCarStatics |  | ✅ |
 | CarExceptRecordController | GET | `/manager/exceptrecord/list` | list |  | ✅ |
 | CarExceptRecordController | GET | `/manager/exceptrecord/listCarNo` | listCarNo |  | ✅ |
-| CarExceptRecordController | GET | `/manager/exceptrecord/listCarOrgId` | listCarOrgId |  | ❌ |
-| CarExceptRecordController | GET | `/manager/exceptrecord/exportOrgId` | exportOrgId |  | ❌ |
+| CarExceptRecordController | GET | `/manager/exceptrecord/listCarOrgId` | listCarOrgId |  | ✅ |
+| CarExceptRecordController | GET | `/manager/exceptrecord/exportOrgId` | exportOrgId |  | ✅ |
 | CarExceptRecordController | GET | `/manager/exceptrecord/listExceptId` | listExceptId |  | ✅ |
 | CarExceptRecordController | GET | `/manager/exceptrecord/exceptRecordCount` | exceptRecordCount |  | ✅ |
 | CarExceptRecordController | GET | `/manager/exceptrecord/export` | export |  | ✅ |

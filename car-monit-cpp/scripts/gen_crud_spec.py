@@ -317,7 +317,8 @@ def parse_conditions(xml_src):
             if "params.beginTime" in test or "params.endTime" in test:
                 col = re.search(r'date_format\((?:\w+\.)?(\w+)', body)
                 if col:
-                    conds[("range", camelize(col.group(1)))] = "range"
+                    # 键必须是字段名：conds 是按属性名查的，之前用元组当键 => 区间条件永远没生效
+                    conds.setdefault(camelize(col.group(1)), "range")
             continue
         name = prop.group(1)
         low = body.lower()
@@ -478,10 +479,25 @@ def gen_entity(entity, ctrl_path):
                                      and not pk_field and col is not None)
         cpp_fmt = bfmt if bfmt in FMT_NAMES else "Str"
         ins, upd = write_flags(name, col is not None)
-        L.append('            {"%s", %s, Fmt::%s, Cond::None, nullptr, %s, false, %s, %s},'
-                 % (name, ('"%s"' % col) if col else "nullptr", cpp_fmt,
+        # 父类字段同样可能是 XML 里的查询条件（epsId / tenantId / createBy / createTime 的
+        # params.beginTime|endTime 区间…）。以前这里写死 Cond::None，条件被静默丢掉 =>
+        # 前端传了过滤参数却返回全量（实测 /manager/exceptrecord/list?epsId=... 273 行应为 249 行）。
+        cond_kind = conds.get(name, "None")
+        cond_cpp = {
+            "eq": "Cond::Eq", "like": "Cond::Like", "eq_notnull": "Cond::EqNotNull",
+            "find_in_set": "Cond::FindInSet", "find_in_set_col": "Cond::FindInSetCol",
+            "range": "Cond::DateRange",
+        }.get(cond_kind, "Cond::None")
+        cond_col = "nullptr"
+        if cond_kind == "find_in_set_col" and name in cond_cols:
+            left = cond_cols[name]
+            if left.startswith(alias + "."):
+                left = left[len(alias) + 1:]
+            cond_col = '\"%s\"' % left
+        L.append('            {"%s", %s, Fmt::%s, %s, nullptr, %s, false, %s, %s, %s},'
+                 % (name, ('"%s"' % col) if col else "nullptr", cpp_fmt, cond_cpp,
                     "true" if is_pk else "false",
-                    "true" if ins else "false", "true" if upd else "false"))
+                    "true" if ins else "false", "true" if upd else "false", cond_col))
     # 2) 子类自有字段
     for name, jtype, fmt, excel, ignored, dflt in fields:
         if ignored:

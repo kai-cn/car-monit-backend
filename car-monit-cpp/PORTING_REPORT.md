@@ -20,16 +20,17 @@
 | 指标 | 数值 |
 |---|---|
 | Java 端点（按 @*Mapping 注解逐条统计） | **497** |
-| C++ 已注册路由（源码枚举，`方法+路径` 去重） | **527** |
-| 已覆盖 | **456** |
-| 未覆盖 | **41** |
+| C++ 已注册路由（源码枚举，`方法+路径` 去重） | **533** |
+| 已覆盖 | **462** |
+| 未覆盖 | **35** |
 | 机器校验 | `python scripts/verify_generated_sql.py` → 实体 59，异常 0；`scripts/audit_spec_keys.py` → 缺失 JSON 键 0 |
 | 实机校验 | `python scripts/live_probe.py --port 9990 <路径…>`（复用 Redis 现存会话签发 token） |
 | 审批流校验 | `python scripts/verify_flow_approval.py --port 9990` → 27 项断言全过 |
 | 导出/下载校验 | `verify_cn_export.py` 16 项、`verify_user_excel.py` 14 项 |
 | 操作日志校验 | `verify_operlog.py` 18 项 |
 | 大屏校验 | `verify_bigscreen.py` 22 项（自带夹具并复原） |
-| 代码生成校验 | `verify_gen.py` 31 项 —— **待补跑**：本机 MySQL(3307)/Redis(6379) 已停，最后一轮修复未实机复验（见 §4.5） |
+| 代码生成校验 | `verify_gen.py` 31 项全过（环境恢复后已复验） |
+| 模板导出校验 | `verify_template_export.py` 22 项全过（解开 xlsx 比对表头与行数） |
 
 三个口径要分清，不要用其中一个去否定另一个：
 `endpoint_coverage.py` 按注解统计 Java 侧真实分母（497）；
@@ -37,19 +38,16 @@
 分母停在 326，漏掉 ruoyi-quartz/ruoyi-generator 与 `GET /{id}` 形态，属于工具缺陷，已修）；
 `verify_generated_sql.py` 证明的是“生成的 SQL 在真实库上跑得通”，不等于响应体一致。
 
-### 尚未迁移（41 条，逐条给出障碍）
+### 尚未迁移（35 条，逐条给出障碍）
 
 | 控制器 | 条数 | 障碍 |
 |---|---|---|
 | SysFileController | 9 | S3/MinIO 上传（SigV4）、`uploadFileEnc` 加解密、bucket 视图 |
-| GenController | 7 | 剩下的是 preview / download / genCode / batchGenCode 等，需要 28 份 Velocity 模板的等价渲染 + zip 打包 |
-| CarSuspiciousController | 7 | 逐行二次查询、docx/xlsx 模板导出、外部同步任务与签名校验 |
-| CarTrackInfoController | 4 | 轨迹来自外部 HTTP（`httpSysUtilApiService`），非本地库 |
-| GeometryController | 3 | GeoServer 外部 HTTP |
-| CarExceptRecordController | 3 | ListNew 是 join 派生查询；import 需 POI |
-| CarAduitFreeController | 2 | 模板导出（poi-tl 的 `TemplateExportParams`） |
-| CarConfimFreeController | 2 | 模板导出 |
-| 其它（earliest-time / tbFlow / busstest / carinfo.import） | 4 | 外部 HTTP、跨租户批量同步、POI 解析 |
+| CarSuspiciousController | 7 | 逐行二次查询、docx/xlsx 模板导出、外部同步任务与 SHA1 签名 |
+| GenController | 7 | importTable/editSave/synchDb 需 GenUtils 全量移植；preview/download/genCode/batchGenCode 需 28 份 Velocity 模板 + zip |
+| CarTrackInfoController | 4 | 轨迹来自外部 HTTP（`httpSysUtilApiService`，`baseUrl=http://127.0.0.1:9901`），本机该服务未运行 |
+| GeometryController | 3 | GeoServer 外部 HTTP（`hendaUrl`，公网地址不可达） |
+| 3 条 import（carinfo / exceptrecord / user）+ earliest-time + tbFlow + busstest | 6 | 前 3 条需 xlsx 读取（要 INFLATE）；earliest-time/tbFlow/busstest 需外部 HTTP 或跨租户批量同步 |
 
 已经落地的"硬骨头"（不再列为障碍，只剩实现细节）：
 flow 审批三件套（跨 6 张表 + 事务，夹具实测）、CDC 8 条（只读 Redis 队列）、
@@ -253,6 +251,38 @@ Row 现在"先精确、再小写"匹配（同名冲突保留第一个）。
 编译与 34 项单测通过，`verify_generated_sql`/`audit_spec_keys` 不依赖这些接口。
 环境恢复后要做的：`python scripts/verify_gen.py 9991 "$TOKEN"`（31 项断言，只读 + 一次打不存在 id 的
 DELETE，不会破坏数据），以及重跑 `verify_bigscreen.py` / `verify_cn_export.py` 全量回归。
+
+✅ **已闭环**：MySQL(`mysql8` 服务 / 3307) 与 Redis(6379) 恢复后重跑 `verify_gen.py` → 31 项断言全过，
+两处修复（大小写列名匹配、按 table_id 折叠）实机确认。
+
+## 4.6 生成器丢掉两类 WHERE 条件（影响所有 CRUD 列表）
+
+做 `listCarOrgId` 时用真实数据交叉对比才发现：`/manager/exceptrecord/list?epsId=25367` 返回 273 行，
+而按 eps_id 过滤应是 249 行 —— **过滤条件被静默丢掉了**。根因有两条，都在 `gen_crud_spec.py`：
+
+1. **父类字段一律写死 `Cond::None`**。`epsId / tenantId / createBy / createTime / delFlag / sort`
+   这些来自 `BasePlusEntity*` 的列在 XML 里明明有 `<if>`，生成时被当成"父类字段不过滤"处理掉了。
+   现在父类字段与自有字段走同一套条件解析（eq / like / eq_notnull / find_in_set / find_in_set_col / range）。
+2. **`params.beginTime` / `params.endTime` 区间条件的键写成了元组**
+   （`conds[("range", "createTime")] = "range"`），而查条件时用的是 `conds.get(字段名)` —— 永远取不到，
+   于是所有列表的时间区间过滤都没生效（全库 `Cond::DateRange` 出现 0 次）。改为按字段名登记。
+
+重新生成 5 个 area 后：新增 **166 个 Eq + 2 个 EqNotNull + 4 个 DateRange** 条件；
+`verify_generated_sql` 59/59 仍全通过，实机核对 `list?epsId=25367` 249 行、不带条件 273 行，
+`listCarOrgId` 与 `list` 在同一 epsId 下总数一致。
+
+顺带一条本轮新代码里就暴露的问题：新写的手写 SQL 少拼了一个空格（`...dept_idWHERE 1=1`），
+`verify_template_export.py` 直接把 0 行抓了出来 —— 但**为什么是 0 行而不是 500**？因为引擎与多数手写
+控制器的 `run()` 把"查询失败"吞成空结果，而 Java 是 `BadSqlGrammarException` → code 500。
+本轮把模板导出这条路径改成失败即抛（与 Java 一致）；引擎级别的同一偏离记在 COMPATIBILITY.md §2.12，
+待后续统一处理（改动面波及所有手写控制器，需要单独一轮）。
+
+新增 6 条端点：`GET /manager/exceptrecord/listCarOrgId`、`GET /manager/exceptrecord/exportOrgId`、
+`GET /manager/confimfree/exportConcernedList`、`GET /manager/confimfree/exportCarStatics`、
+`GET /manager/aduitfree/exportIncomeStatics`、`GET /manager/aduitfree/exportIncomeDetailList`。
+模板导出按 easypoi 的 `{{$fe:entitylist ...}}` 标记行取列，响应是
+`application/octet-stream;charset=UTF-8` + `Content-Disposition: attachment` 的裸 xlsx 字节
+（Java 方法 `return null`，所以不包 AjaxResult）；⚠️ 模板的标题行/两级表头/合并单元格/样式不复刻。
 
 ## 5. 已知行为差异（完整清单见 COMPATIBILITY.md）
 
