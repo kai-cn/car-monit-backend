@@ -97,11 +97,16 @@ struct Constants {
     static constexpr const char* FLOW_RESULT_CONTEXT_PREFIX = "委托";
     static constexpr const char* FLOW_RESULT_CONTEXT_SUFFIX = "办理";
     /** 部门领导角色 key（审批人解析用） */
-    static constexpr const char* dept_manager_role = "dept_manager";
-    /** 科室值班人角色 key */
+    static constexpr const char* dept_manager_role = "dept_manager";    /** 科室值班人角色 key */
     static constexpr const char* dept_duty_emp_role = "dept_duty_emp";
     /** 分管领导角色 key（Java 里是散在代码里的字面量） */
     static constexpr const char* dept_fg_manager_role = "fg_manager";
+    /** 大屏"全部"路段的哨兵编码 */
+    static constexpr const char* section_all = "all";
+    /** 抓拍来源：收费站 / 门架 / 服务区 */
+    static constexpr const char* STATION_CAPTURE = "StationCapture";
+    static constexpr const char* GANTRY_CAPTURE = "GantryCapture";
+    static constexpr const char* SERVICE_AREA_CAPTURE = "ServiceAreaCapture";
 };
 
 } // namespace cm::constant
