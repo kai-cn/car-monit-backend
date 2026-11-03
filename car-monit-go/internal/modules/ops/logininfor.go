@@ -97,8 +97,9 @@ func bindLogininforQuery(c *gin.Context) *logininforQuery {
 func (h *logininforHandler) List(c *gin.Context) {
 	q := bindLogininforQuery(c)
 	baseSQL, args := buildLogininforSQL(q)
+	page := web.PageAlways(c)
 	rows, total, err := queryPage[model.SysLogininfor](c.Request.Context(), h.app.DB, baseSQL, args,
-		"order by info_id desc", web.PageAlways(c))
+		orderFor("order by info_id desc", page), page)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

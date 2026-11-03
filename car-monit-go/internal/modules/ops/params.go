@@ -111,6 +111,15 @@ func springBool(raw string, present bool) (*bool, error) {
 	return nil, typeMismatch("delete", "java.lang.Boolean", raw)
 }
 
+// orderFor 对应 PageHelper：客户端给了 orderByColumn 就覆盖语句自带的排序
+// （startPage(pageNum, pageSize, orderBy) 的 orderBy 会替换 XML 里的 order by）。
+func orderFor(defaultOrder string, pd web.PageDomain) string {
+	if o := pd.OrderBy(); o != "" {
+		return "order by " + o
+	}
+	return defaultOrder
+}
+
 // queryPage 等价于 PageHelper.startPage(...) + PageInfo.getTotal():
 //   - 不分页时（pageNum/pageSize 缺任一）直接返回全部行，total = 行数；
 //   - 分页时先 `select count(0) from (原语句) table_count`，再追加 limit/offset。

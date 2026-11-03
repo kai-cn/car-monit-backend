@@ -331,7 +331,7 @@ func (h *handler) trackQuery(c *gin.Context) ([]*zdataTrailTracks, int64, error)
 	if page.SkipQuery(total) {
 		return []*zdataTrailTracks{}, total, nil
 	}
-	sqlStr := "SELECT " + zdataTrailTracksColumns + base + " ORDER BY t.enter_time DESC"
+	sqlStr := "SELECT " + zdataTrailTracksColumns + base + " ORDER BY " + orderFor("t.enter_time DESC", page)
 	queryArgs := args
 	if page.HasPage {
 		sqlStr += " LIMIT ? OFFSET ?"
