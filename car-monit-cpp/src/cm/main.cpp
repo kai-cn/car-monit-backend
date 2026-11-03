@@ -16,6 +16,7 @@
 #include <thread>
 
 #include "cm/common/utils/Logger.hpp"
+#include "cm/framework/aspect/OperLogAspect.hpp"
 #include "cm/framework/config/AppConfig.hpp"
 #include "cm/framework/db/Db.hpp"
 #include "cm/framework/http/HttpResponse.hpp"
@@ -119,8 +120,11 @@ int main(int argc, char** argv) {
     const int port = envInt("CM_SERVER_PORT", cfg.port);
     const int workers = envInt("CM_WORKERS", 32);
     cm::web::Server server("0.0.0.0", port, workers, cfg.acceptCount);
+    // 对应 AsyncManager 的单线程定时器：@Log 命中的请求异步落 sys_oper_log
+    cm::aspect::OperLogAspect::instance().start();
     if (!server.start()) {
         LOG_ERROR("main", "HTTP 服务启动失败，端口=" + std::to_string(port));
+        cm::aspect::OperLogAspect::instance().stop();
         return 1;
     }
     std::signal(SIGINT, onSignal);
@@ -135,5 +139,7 @@ int main(int argc, char** argv) {
 
     LOG_INFO("main", "收到退出信号，正在关闭...");
     server.stop();
+    // 先停接收再排空操作日志队列（对应 Java 的 ShutterManager 顺序）
+    cm::aspect::OperLogAspect::instance().stop();
     return 0;
 }

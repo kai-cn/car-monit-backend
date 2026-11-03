@@ -136,15 +136,44 @@ MSYS_NO_PATHCONV=1 python scripts/live_probe.py --port 9990 /base/cdc/status /sy
 这一点用本机 `~/.m2` 里的 jackson-databind 2.11.4 + spring-web 5.3.6 +
 spring-boot-autoconfigure 2.4.5 实跑确认（见 COMPATIBILITY.md §4.6），C++ 现有实现是对的。
 
+## 4.2 `@Log` 操作日志切面（补齐 Java 最大的静默缺口）
+
+C++ 此前**只读不写** `sys_oper_log`：Java 侧每个带 `@Log` 的写接口都会异步落一行，
+缺了它，`/monitor/operlog/*` 看到的永远只是 Java 时代的旧数据。本轮补完：
+
+- `scripts/gen_operlog_table.py` 从 Java 控制器抽取 **234** 条规则（title / `businessType`
+  与 `operatorType` 的 **ordinal** / `isSave*` / `excludeParamNames` / `类全名.方法()`），
+  产出 `src/cm/web/specs/OperLogTable.cpp`。解析按"方法签名 + 上方注解块"而不是固定顺序，
+  因为 `SysFileController` 把 `@PostMapping` 写在 `@Log` 之上；注释掉的 `@Log`（4 处）不计。
+- `cm::aspect::OperLogAspect`：在派发层的 handler 正常返回与抛异常两条路径上调用，
+  单线程队列串行落库（对应 `AsyncManager` 的单线程定时器）。
+  未登录与权限不足**不写**（Java 的 `getLoginUser()` 抛异常被 `handleLog` 吞掉；
+  `@PreAuthorize` 在切面外层，方法根本没执行）。
+- 逐条语义见 COMPATIBILITY.md §6.6；其中三处刻意偏离（入参分支记请求体而非绑定后的实体、
+  multipart 记空串、异步队列有界）已标明原因。
+- 踩到的两个真问题：
+  1. `error_msg` 原本写入字符串 `"null"` —— Java 的 `NullPointerException#getMessage()` 是
+     `null`，`StringUtils.substring(null,..)` 还是 `null`，DB 里必须是 NULL。改成
+     `Failure{std::optional<std::string>}`，把"抛了异常"和"异常有没有消息"分开。
+  2. 规则匹配最初是"表里第一条命中即用"，`DELETE /monitor/jobLog/clean` 会被
+     `/{jobLogIds}` 抢走（Java 的 `RequestMappingHandlerMapping` 是字面量优先）。
+     改为两趟：先字面量、再带 `{var}` 的模式。
+- 验证：`scripts/verify_operlog.py` 做真实的新增/删除/失败三类请求再从 `/monitor/operlog/list`
+  读回，18 条断言覆盖 `status/business_type/operator_type/method/oper_url/oper_ip/
+  oper_location/oper_name/dept_name/oper_param(排除 password)/json_result(丢 null)`；
+  另有 2 组单测（`testOperLogHelpers` / `testOperLogBuild`）覆盖纯函数与 `build()` 全分支。
+
 ## 5. 已知行为差异（完整清单见 COMPATIBILITY.md）
 
 - ✅ Excel **导出**已是真 `.xlsx`（自研 OOXML，`python zipfile` 独立校验过），响应形态、文件名
   规则、列集合（`@Excel(type=)`）、列序、列宽、数字/文本单元格、`readConverterExp` 全部对齐 Java；
   模板导出（`importTemplate`）同样落真文件。
+- ✅ **操作日志切面（`@Log`）已实现**：234 条规则由 `scripts/gen_operlog_table.py` 从 Java 源码抽取，
+  `cm::aspect::OperLogAspect` 按 `LogAspect` 的语义（枚举 ordinal、`getRequestURI` 不含 query、
+  `IpUtils.getIpAddr` 口径、参数三分支、fastjson2 丢 null、按字符截断、未登录不写、
+  权限不足不写）在派发层记录，单线程异步落 `sys_oper_log`。逐条对照与三处刻意偏离见
+  COMPATIBILITY.md §6.6。
 - ❌ Excel **导入**仍未实现：`POST /system/user/importData` 一类接口显式返回错误，不伪装成功。
-- ❌ **操作日志切面（`@Log`）未实现**：Java 侧所有带 `@Log` 的写接口都会异步插一条
-  `sys_oper_log`（`LogAspect` + `AsyncManager`），C++ 目前只读不写，
-  所以 `/monitor/operlog/list` 里看不到 C++ 自己产生的操作记录。这是当前最大的行为缺口。
 - ⚠️ 无 zlib 时验证码 PNG 不压缩（约 10KB），解码结果一致。
 - ⚠️ Windows 本地开发机上 `std::filesystem` 按 GBK 解释窄路径，中文文件名会失败；
   已由 `cm::compat::fsPath/fsUtf8` 在所有落盘点解决（COMPATIBILITY.md §2.11）。
@@ -156,21 +185,17 @@ spring-boot-autoconfigure 2.4.5 实跑确认（见 COMPATIBILITY.md §4.6），C
 
 ## 6. 下一步（按性价比排序）
 
-1. **`@Log` 操作日志切面**：给 `RouteBuilder` 增加 `log(title, businessType, saveData...)` 元数据，
-   在鉴权+处理之后按 `LogAspect` 的规则拼 `SysOperLog`（param/jsonResult/errorMsg 截 2000、
-   `IP 归属地`、operatorType）并异步落库；再逐控制器回填 Java 的 `@Log` 标注。
-   做完之后 `/monitor/operlog/*` 才算真正闭环，`flow` 审批的 `sh_time` 类副作用也已单独验证过。
-2. SysFileController 9：S3 SigV4 上传（HMAC-SHA256 已具备），再做 `uploadFileEnc`。
-3. GenController 15：先做只读的 list/db/list/column/getTableDetail，代码生成部分需要一个
+1. SysFileController 9：S3 SigV4 上传（HMAC-SHA256 已具备），再做 `uploadFileEnc`。
+2. GenController 15：先做只读的 list/db/list/column/getTableDetail，代码生成部分需要一个
    Velocity 等价模板渲染器 + zip（DEFLATE 已在库内，zip 写出器本轮已为 xlsx 落地）。
-4. xlsx **读取器** + `importUser` 校验，解掉 `importData` 一类导入接口。
-5. 大屏剩余 8 条里，`carLocation`（Redis 车辆列表 + DB 回源）与 `topTen` / `incomeStatistic` /
+3. xlsx **读取器** + `importUser` 校验，解掉 `importData` 一类导入接口。
+4. 大屏剩余 8 条里，`carLocation`（Redis 车辆列表 + DB 回源）与 `topTen` / `incomeStatistic` /
    `carVoList`（Mapper 里的统计 SQL）共 4 条不需要外部依赖，应先补这 4 条；另 4 条才真正受
    外部服务限制，逐条异常边界见 `COMPATIBILITY.md` §5.1。
-6. 要让外部 HTTP 类接口可用，缺的只是一个出站 HTTP/1.1 客户端：`cm::net` 已有
+5. 要让外部 HTTP 类接口可用，缺的只是一个出站 HTTP/1.1 客户端：`cm::net` 已有
    `connectTcp(host, port, connect_timeout)` / `setTimeout` / `readSome` / `writeAll`，
    足够实现带超时与响应上限的 GET/POST，不必引 libcurl。
-7. quartz 的 `run` 与 `changeStatus` 的调度侧效应：需要一张"任务名 → C++ 函数"的注册表，
+6. quartz 的 `run` 与 `changeStatus` 的调度侧效应：需要一张"任务名 → C++ 函数"的注册表，
    否则反射调 bean 这条路在 C++ 里无法等价（当前 run 明确返回未实现，不假装成功）。
-8. 把 `Transaction` 用到已有的多表写路径上：sys_user 新增/修改（user_role）、
+7. 把 `Transaction` 用到已有的多表写路径上：sys_user 新增/修改（user_role）、
    sys_role 修改（role_menu）、sys_dept/menu 的级联，Java 都是 @Transactional。

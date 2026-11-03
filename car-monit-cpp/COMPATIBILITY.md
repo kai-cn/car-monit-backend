@@ -239,6 +239,7 @@ C++ 对应实现位置：
 | Swagger / springfox | API 文档 | ❌ | 以 `ENDPOINTS_INVENTORY.md` 取代 |
 | Actuator | 健康检查 | ⚠️ | 新增 `GET /health`（C++ 扩展，Java 无此端点） |
 | JVM `ThreadLocal` | 当前登录用户 | ⚠️ | C++ 使用 `thread_local`（`SecurityUtils`），同一 worker 内有效 |
+| `LogAspect` + `AsyncManager` | `@Log` 写操作日志 | ✅ | 234 条规则由 `scripts/gen_operlog_table.py` 从 Java 源码抽取，`cm::aspect::OperLogAspect` 单线程异步落库，细节见 §6.6 |
 
 ### 5.1 外部 HTTP 调用的异常边界（逐条读 Java 源码所得，移植时按此对齐）
 
@@ -323,6 +324,43 @@ Java `SysLoginController.login` 在调用登录服务前执行 `CommonUtil.check
 C++ 以等价逻辑实现（`SysLoginController.cpp::checkPasswordInvalid`），包含：
 下划线不允许（属 `\w` 但不在字符类内）、非 ASCII 字符视为 `\W`（Java 默认 ASCII 口径）。
 
+### 6.6 操作日志切面（`@Log` → `sys_oper_log`）
+
+Java：`LogAspect` 以 `@annotation(Log)` 为切点，`@AfterReturning` / `@AfterThrowing` 各记一次，
+经 `AsyncManager`（单线程定时器）异步 `insertOperlog`。共 **234** 个端点带 `@Log`
+（`scripts/gen_operlog_table.py` 从 Java 源码抽取；注释掉的 `@Log` 不算，`SysFileController`
+那种 `@PostMapping` 写在 `@Log` 之上的顺序也能解析）。
+
+C++：`cm::aspect::OperLogAspect` 在派发层的 handler 前后各调一次 `record()`，
+单线程队列串行落库，规则表 `src/cm/web/specs/OperLogTable.cpp`。逐条对齐的细节：
+
+| 字段 | Java 取值 | C++ |
+|---|---|---|
+| `status` | `BusinessStatus.SUCCESS/FAIL.ordinal()` = 0 / 1 | 同 |
+| `business_type` / `operator_type` | 枚举 **ordinal**（`OTHER0 INSERT1 UPDATE2 DELETE3 GRANT4 EXPORT5 IMPORT6 FORCE7 GENCODE8 CLEAN9`；operatorType 默认 `MANAGE`=1） | 同（表里存的是数字） |
+| `method` | `joinPoint.getTarget().getClass().getName() + "." + name + "()"` | 生成器按 `package + 类名 + 方法名` 拼 |
+| `oper_url` | `getRequestURI()`，**不含 query、不解码**，截 255 | 取 `req.target` 的 `?` 前段（保持百分号形态） |
+| `oper_ip` | `IpUtils.getIpAddr()`：`x-forwarded-for`→`Proxy-Client-IP`→`X-Forwarded-For`→`WL-Proxy-Client-IP`→`X-Real-IP`→`remoteAddr`，`0:0:0:0:0:0:0:1`→`127.0.0.1`，多级代理取第一段 | 复用 `cm::utils::ipAddr` |
+| `oper_location` | `AddressUtils.getRealAddressByIP(ip)`；`ruoyi.addressEnabled=false` ⇒ 内网 `内网IP`，其余 `XX XX`；解析不出来的串（如 `unknown`）也算内网 | 同，且**不发外部定位请求** |
+| `oper_name` / `dept_name` | `loginUser.getUsername()` / `loginUser.user.dept.deptName` | 同（取自 Redis 里的 Java 会话） |
+| `oper_param` | 参数表为空 **且** PUT/POST ⇒ 序列化方法入参（`argsArrayToString`，空格分隔）；否则 ⇒ `JSON.toJSONString(paramMap)`，其中同名多值按 `,` 合并、键序是 **HashMap 桶序**、DELETE 只有路径变量时是 `{}` | 同（桶序复用 `javaMapOrder`） |
+| `json_result` | `JSON.toJSONString(返回值)`，**fastjson2 默认丢 null**（与 HTTP 响应的 Jackson 相反） | 同（`fastJsonCompact`） |
+| 截断 | `StringUtils.substring(s,0,2000)`（`oper_param`/`json_result`/`error_msg`），`oper_url` 255 —— 按**字符**不按字节 | `subAtMost` 按码点截断且不切断 UTF-8 序列 |
+| 敏感字段 | `EXCLUDE_PROPERTIES = password/oldPassword/newPassword/confirmPassword` + `excludeParamNames` | 同 |
+| `oper_time` | SQL 里写死 `sysdate()`（DB 时钟，不是应用时钟） | 同 |
+| 未登录 | `SecurityUtils.getLoginUser()` 抛 `CustomException`，被 `handleLog` 的 `catch` 吞掉 ⇒ **整行不写** | `build()` 返回 `nullopt`，同 |
+| 权限不足 | `@PreAuthorize` 在切面外层，方法根本没执行 ⇒ **不写** | 只在 handler 前后调用，同 |
+| 异常消息 | `e.getMessage()`；`NullPointerException` 的消息是 **null** ⇒ `error_msg` 写 NULL | `Failure{std::optional<std::string>}` 区分"无消息"与"空串" |
+
+⚠️ 三处不可完全等价，已按最小偏离处理：
+
+1. **入参分支记录的是请求体本身**（丢掉 null 与敏感键后的紧凑 JSON），Java 序列化的是**绑定后的实体**
+   —— 字段顺序（声明序 vs 请求顺序）与未知键的取舍会不同。值集合一致，形态可能不同。
+2. **multipart 上传类接口 `oper_param` 记空串**：Java 的 `isFilterObject` 会跳过 `MultipartFile`
+   只留其余标量入参，而 C++ 侧不掌握方法签名，无法区分哪些参数是文件。
+3. **异步队列有界**（5 万条）：Java 的 timer 队列无界。溢出时丢日志并打本地错误，
+   避免内存被拖垮——这是刻意偏离，不改（生产上宁可降级）。
+
 ---
 
 ## 7. 覆盖状态
@@ -381,4 +419,9 @@ python scripts/verify_generated_sql.py
 
 # 12. flow 审批三件套（多表事务 + 失败回滚，27 条断言）
 python scripts/verify_flow_approval.py --port 9991
+
+# 13. @Log 操作日志切面：做真实新增/删除/失败请求，再读回 sys_oper_log 的字段
+python scripts/verify_operlog.py 9991 "$TOKEN"       # 18 条断言
+# 规则表（234 条）由 Java 源码生成，改动 Java 控制器后重新执行：
+python scripts/gen_operlog_table.py
 ```

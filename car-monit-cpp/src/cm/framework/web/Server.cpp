@@ -12,6 +12,7 @@
 #include <queue>
 #include <sstream>
 
+#include "cm/framework/aspect/OperLogAspect.hpp"
 #include "cm/common/compat/Path.hpp"
 #include "cm/common/constant/Constants.hpp"
 #include "cm/common/exception/Exceptions.hpp"
@@ -32,6 +33,20 @@ namespace {
 std::string lower(std::string s) {
     for (char& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     return s;
+}
+
+/** 对应 Java 的 e.getMessage()：可能真的是 null（如 NullPointerException），
+ *  用 optional 区分 "没有消息" 与 "消息是空串"，LogAspect 的 error_msg 要写 NULL。 */
+std::optional<std::string> exceptionMessage(std::exception_ptr ep) {
+    try {
+        std::rethrow_exception(ep);
+    } catch (const cm::exception::NullPointerException&) {
+        return std::nullopt;
+    } catch (const std::exception& e) {
+        return std::string(e.what());
+    } catch (...) {
+        return std::nullopt;
+    }
 }
 
 std::string trimCr(std::string s) {
@@ -398,13 +413,19 @@ cm::http::ApiResponse Server::dispatch(cm::http::HttpRequest& req) {
     ctx.path_vars = m.path_vars;
     try {
         cm::http::ApiResponse r = m.route->handler(ctx);
+        // LogAspect 的 @AfterReturning：只对真正进入控制器的请求生效
+        cm::aspect::OperLogAspect::instance().record(ctx, r, nullptr);
         // handler 可能改写过 req
         req = std::move(ctx.req);
         applyCors(req, r);
         return r;
     } catch (...) {
+        // LogAspect 的 @AfterThrowing：status=1，异常消息进 error_msg（NPE 时为 NULL）
+        const std::exception_ptr ep = std::current_exception();
+        cm::aspect::Failure failure{exceptionMessage(ep)};
+        cm::http::ApiResponse r = ExceptionMapper::map(ep);
+        cm::aspect::OperLogAspect::instance().record(ctx, r, &failure);
         req = std::move(ctx.req);
-        cm::http::ApiResponse r = ExceptionMapper::map(std::current_exception());
         applyCors(req, r);
         return r;
     }

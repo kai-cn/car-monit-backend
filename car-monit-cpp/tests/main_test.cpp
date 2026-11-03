@@ -4,6 +4,7 @@
 #include <string>
 
 #include "cm/common/compat/Path.hpp"
+#include "cm/common/core/domain/model/LoginUser.hpp"
 #include "cm/common/constant/Constants.hpp"
 #include "cm/common/core/domain/AjaxResult.hpp"
 #include "cm/common/core/domain/R.hpp"
@@ -16,6 +17,7 @@
 #include "cm/common/utils/JavaCollections.hpp"
 #include "cm/common/utils/StringUtils.hpp"
 #include "cm/common/utils/sql/SqlUtil.hpp"
+#include "cm/framework/aspect/OperLogAspect.hpp"
 #include "cm/framework/db/Db.hpp"
 #include "cm/framework/http/HttpRequest.hpp"
 #include "cm/framework/security/Jwt.hpp"
@@ -325,6 +327,177 @@ static void testUtf8PathCompat() {
     CHECK(cm::compat::fsUtf8(joined).rfind("D:/ruoyi/uploadPath/download", 0) == 0);
 }
 
+/** @Log 切面的纯函数语义（枚举序数、按字符截断、路径匹配、IP 归属、fastjson2 丢 null） */
+static void testOperLogHelpers() {
+    using namespace cm::aspect;
+    // StringUtils.substring(s,0,n) 按字符数，不按字节
+    const std::string cn = "\xE4\xB8\xAD\xE6\x96\x87\xE5\x90\x8D";  // 中文名
+    CHECK_EQ(subAtMost(cn, 2), std::string("\xE4\xB8\xAD\xE6\x96\x87"));
+    CHECK_EQ(subAtMost(cn, 99), cn);
+    CHECK_EQ(subAtMost("", 5), std::string());
+    // ruoyi.addressEnabled=false：只有两种结果，不发外部请求
+    CHECK_EQ(realAddressByIP("127.0.0.1"), std::string("\xE5\x86\x85\xE7\xBD\x91IP"));  // 内网IP
+    CHECK_EQ(realAddressByIP("192.168.1.9"), std::string("\xE5\x86\x85\xE7\xBD\x91IP"));
+    CHECK_EQ(realAddressByIP("8.8.8.8"), std::string("XX XX"));
+    CHECK_EQ(realAddressByIP("unknown"), std::string("\xE5\x86\x85\xE7\xBD\x91IP"));  // 解析不出来也算内网
+
+    // 规则表来自 Java 的 @Log：GET 列表没有 @Log，POST 新增才是 INSERT(1)
+    CHECK(matchLogRule("GET", "/system/config/list") == nullptr);
+    const cm::aspect::LogRule* add = matchLogRule("POST", "/system/config");
+    CHECK(add != nullptr);
+    if (add) {
+        CHECK_EQ(add->title, std::string("\xE5\x8F\x82\xE6\x95\xB0\xE7\xAE\xA1\xE7\x90\x86"));  // 参数管理
+        CHECK_EQ(add->businessType, 1);   // INSERT
+        CHECK_EQ(add->operatorType, 1);   // MANAGE（@Log 默认值）
+        CHECK(add->classMethod.find("SysConfigController.add()") != std::string::npos);
+    }
+    // {var} 只吃一个路径段
+    const cm::aspect::LogRule* rm = matchLogRule("DELETE", "/monitor/job/1,2");
+    CHECK(rm != nullptr);
+    if (rm) {
+        CHECK_EQ(rm->businessType, 3);  // DELETE
+        CHECK(rm->classMethod.find("SysJobController.remove()") != std::string::npos);
+    }
+    CHECK(matchLogRule("DELETE", "/monitor/job/1/2") == nullptr);
+    // 反例：SysOperlogController.remove 上没有 @Log（只有 clean 有），所以删日志不记操作日志
+    CHECK(matchLogRule("DELETE", "/monitor/operlog/1,2") == nullptr);
+    const cm::aspect::LogRule* clean = matchLogRule("DELETE", "/monitor/operlog/clean");
+    CHECK(clean != nullptr);
+    if (clean) CHECK_EQ(clean->businessType, 9);  // CLEAN
+    // 字面量优先于 {var}（Spring 的映射优先级），否则 /clean 会被 /{jobLogIds} 抢走
+    const cm::aspect::LogRule* jobClean = matchLogRule("DELETE", "/monitor/jobLog/clean");
+    CHECK(jobClean != nullptr);
+    if (jobClean) {
+        CHECK_EQ(jobClean->businessType, 9);  // CLEAN，不是 {jobLogIds} 的 DELETE(3)
+        CHECK(jobClean->classMethod.find("SysJobLogController.clean()") != std::string::npos);
+    }
+    const cm::aspect::LogRule* jobRm = matchLogRule("DELETE", "/monitor/jobLog/12,13");
+    CHECK(jobRm != nullptr);
+    if (jobRm) CHECK(jobRm->classMethod.find("SysJobLogController.remove()") != std::string::npos);
+
+    // fastjson2 默认丢 null（与 Jackson 的 HTTP 响应相反），并排除敏感属性
+    cm::Json j = cm::Json::object();
+    j["a"] = nullptr;
+    j["password"] = "secret";
+    j["b"] = cm::Json::object();
+    j["b"]["c"] = nullptr;
+    j["b"]["d"] = 1;
+    CHECK_EQ(fastJsonCompact(j, {"confirmPassword"}), std::string("{\"b\":{\"d\":1}}"));
+
+    // 参数表：同名多值按 ',' 合并，键序是 Java HashMap 桶序
+    cm::http::HttpRequest req;
+    req.method = "GET";
+    req.query_params = {{"pageSize", "10"}, {"pageNum", "1"}, {"title", "a"}, {"title", "b"}};
+    const std::string params = paramMapJson(req, {});
+    CHECK(params.find("\"title\":\"a,b\"") != std::string::npos);
+    CHECK(params.find("\"pageNum\":\"1\"") != std::string::npos);
+    const size_t posPageNum = params.find("pageNum");
+    const size_t posPageSize = params.find("pageSize");
+    CHECK(posPageNum != std::string::npos && posPageSize != std::string::npos);
+    // 桶序小者在前（与插入顺序无关；javaBucketIndex 本身已有用例）
+    CHECK_EQ(cm::utils::javaBucketIndex("pageNum") < cm::utils::javaBucketIndex("pageSize"),
+             posPageNum < posPageSize);
+    // 空参数表 -> "{}"（DELETE 只有路径变量时 Java 走的就是这个分支）
+    cm::http::HttpRequest del;
+    del.method = "DELETE";
+    CHECK_EQ(paramMapJson(del, {}), std::string("{}"));
+    CHECK(paramMapEmpty(del));
+}
+
+/** build() 对齐 handleLog：无登录用户不写库；参数三分支、URL 去 query、异常分支 status=1 */
+static void testOperLogBuild() {
+    using namespace cm::aspect;
+    cm::security::SecurityUtils::clear();
+    cm::http::HttpRequest req;
+    req.method = "POST";
+    req.target = "/system/config?x=1";
+    req.path = "/system/config";
+    req.remote_addr = "127.0.0.1";
+    req.body = "{\"configName\":\"n\",\"password\":\"p\",\"configKey\":null}";
+    cm::http::ApiResponse resp =
+        cm::http::ApiResponse::json(cm::Json::parse("{\"msg\":\"操作成功\",\"code\":200,\"data\":null}"));
+    cm::aspect::LogRule rule;
+    rule.http = "POST";
+    rule.pattern = "/system/config";
+    rule.title = "\xE5\x8F\x82\xE6\x95\xB0\xE7\xAE\xA1\xE7\x90\x86";
+    rule.businessType = 1;
+    rule.operatorType = 1;
+    rule.classMethod = "com.ruoyi.web.controller.system.SysConfigController.add()";
+
+    // 未登录：Java 的 SecurityUtils.getLoginUser() 抛 CustomException 被 handleLog 吞掉 -> 不写库
+    CHECK(!OperLogAspect::build(req, resp, nullptr, rule).has_value());
+
+    cm::domain::LoginUser lu;
+    lu.user.userName = "admin";
+    cm::domain::SysDept d;
+    d.deptName = "\xE8\xBF\x90\xE8\x90\xA5\xE9\x83\xA8";  // 运营部
+    lu.user.dept = d;
+    cm::security::SecurityUtils::setLoginUser(lu);
+
+    auto row = OperLogAspect::build(req, resp, nullptr, rule);
+    CHECK(row.has_value());
+    if (row) {
+        CHECK_EQ(row->status, 0LL);
+        CHECK_EQ(row->businessType, 1LL);
+        CHECK_EQ(row->operatorType, 1LL);
+        CHECK_EQ(row->operName.value_or(""), std::string("admin"));
+        CHECK_EQ(row->deptName.value_or(""), std::string("\xE8\xBF\x90\xE8\x90\xA5\xE9\x83\xA8"));
+        CHECK_EQ(row->operUrl.value_or(""), std::string("/system/config"));  // getRequestURI 不含 query
+        CHECK_EQ(row->operIp.value_or(""), std::string("127.0.0.1"));
+        CHECK_EQ(row->operLocation.value_or(""), std::string("\xE5\x86\x85\xE7\xBD\x91IP"));
+        CHECK_EQ(row->method.value_or(""), rule.classMethod);
+        CHECK_EQ(row->requestMethod.value_or(""), std::string("POST"));
+        // POST + 空参数表 -> 序列化入参：丢 null、排除 password
+        CHECK_EQ(row->operParam.value_or(""), std::string("{\"configName\":\"n\"}"));
+        // jsonResult 同样丢 null
+        CHECK_EQ(row->jsonResult.value_or(""), std::string("{\"msg\":\"\xE6\x93\x8D\xE4\xBD\x9C\xE6\x88\x90\xE5\x8A\x9F\",\"code\":200}"));
+        // 列名与顺序照抄 insertOperlog
+        CHECK(row->toInsertSql().rfind(
+            "insert into sys_oper_log(title, business_type, method, request_method, operator_type,"
+            " oper_name, dept_name, oper_url, oper_ip, oper_location, oper_param, json_result,"
+            " status, error_msg, oper_time)", 0) == 0);
+        CHECK(row->toInsertSql().find("sysdate()") != std::string::npos);
+    }
+
+    // 异常分支：status=1 + error_msg，且不写 jsonResult
+    const cm::aspect::Failure err{"\xE5\xAF\xBC\xE5\x85\xA5\xE5\xA4\xB1\xE8\xB4\xA5"};  // 导入失败
+    auto bad = OperLogAspect::build(req, resp, &err, rule);
+    CHECK(bad.has_value());
+    if (bad) {
+        CHECK_EQ(bad->status, 1LL);
+        CHECK_EQ(bad->errorMsg.value_or(""), std::string("\xE5\xAF\xBC\xE5\x85\xA5\xE5\xA4\xB1\xE8\xB4\xA5"));
+        CHECK(!bad->jsonResult.has_value());
+    }
+
+    // Java 的 NullPointerException#getMessage() 是 null -> error_msg 写 NULL，但 status 仍是 1
+    const cm::aspect::Failure nullMsg{std::nullopt};
+    auto npe = OperLogAspect::build(req, resp, &nullMsg, rule);
+    CHECK(npe.has_value());
+    if (npe) {
+        CHECK_EQ(npe->status, 1LL);
+        CHECK(!npe->errorMsg.has_value());
+    }
+
+    // multipart：Java 的 isFilterObject 跳过文件参数，C++ 侧记空串
+    cm::http::HttpRequest up = req;
+    up.headers["content-type"] = "multipart/form-data; boundary=x";
+    auto mrow = OperLogAspect::build(up, resp, nullptr, rule);
+    CHECK(mrow.has_value());
+    if (mrow) CHECK_EQ(mrow->operParam.value_or("?"), std::string(""));
+
+    // isSaveRequestData/isSaveResponseData=false 时对应列保持 NULL（Java 根本不 set）
+    cm::aspect::LogRule noSave = rule;
+    noSave.saveRequest = false;
+    noSave.saveResponse = false;
+    auto nr = OperLogAspect::build(req, resp, nullptr, noSave);
+    CHECK(nr.has_value());
+    if (nr) {
+        CHECK(!nr->operParam.has_value());
+        CHECK(!nr->jsonResult.has_value());
+    }
+    cm::security::SecurityUtils::clear();
+}
+
 int main() {
     testAjaxResultOrder();
     testTableDataInfoOrder();
@@ -344,6 +517,8 @@ int main() {
     testXlsxWriter();
     testSecurityUrlRules();
     testUtf8PathCompat();
+    testOperLogHelpers();
+    testOperLogBuild();
     run_crypto_tests();
     run_crud_engine_tests();
     if (fails == 0) {
