@@ -39,7 +39,7 @@
 |---|---|---|
 | GenController | 15 | 28 份 Velocity 模板 + zip 下载；C++ 侧没有模板引擎 |
 | SysFileController | 9 | S3/MinIO 上传（SigV4）、`uploadFileEnc` 加解密、bucket 视图 |
-| BigScreenController | 8 | carLocation 实时定位、topTen/incomeStatistic/carVoList 等多表统计与外部定位 |
+| BigScreenController | 8 | 其中 4 条其实只走库/Redis，是可直接补的存量（`carLocation` 读 Redis 车辆列表 + DB 回源；`topTen`、`incomeStatistic`、`carVoList` 是 Mapper 里的多表统计）；其余 4 条依赖外部定位与路网服务，逐条边界见 `COMPATIBILITY.md` §5.1 |
 | CarSuspiciousController | 7 | 逐行二次查询、docx/xlsx 模板导出、外部同步任务与签名校验 |
 | CarTrackInfoController | 4 | 轨迹来自外部 HTTP（`httpSysUtilApiService`），非本地库 |
 | GeometryController | 3 | GeoServer 外部 HTTP |
@@ -132,9 +132,13 @@ MSYS_NO_PATHCONV=1 python scripts/live_probe.py --port 9990 /base/cdc/status /sy
    Velocity 等价模板渲染器 + zip（DEFLATE 已在库内，可凑 OOXML/zip 容器）。
 3. 真 `.xlsx` 写出器（复用已有 DEFLATE 做 OOXML zip），一次性解掉 6 条模板导出接口的
    “形态一致、内容不一致”。
-4. BigScreen 剩余 8 条里，topTen / incomeStatistic / carVoList 是纯 SQL，可继续按 §2 的方式补；
-   carLocation 依赖外部定位服务，属于 ❌ 类。
-5. quartz 的 `run` 与 `changeStatus` 的调度侧效应：需要一张”任务名 → C++ 函数”的注册表，
+4. 大屏剩余 8 条里，`carLocation`（Redis 车辆列表 + DB 回源）与 `topTen` / `incomeStatistic` /
+   `carVoList`（Mapper 里的统计 SQL）共 4 条不需要外部依赖，应先补这 4 条；另 4 条才真正受
+   外部服务限制，逐条异常边界见 `COMPATIBILITY.md` §5.1。
+5. 要让外部 HTTP 类接口可用，缺的只是一个出站 HTTP/1.1 客户端：`cm::net` 已有
+   `connectTcp(host, port, connect_timeout)` / `setTimeout` / `readSome` / `writeAll`，
+   足够实现带超时与响应上限的 GET/POST，不必引 libcurl。
+6. quartz 的 `run` 与 `changeStatus` 的调度侧效应：需要一张”任务名 → C++ 函数”的注册表，
    否则反射调 bean 这条路在 C++ 里无法等价（当前 run 明确返回未实现，不假装成功）。
-6. 把 `Transaction` 用到已有的多表写路径上：sys_user 新增/修改（user_role）、
+7. 把 `Transaction` 用到已有的多表写路径上：sys_user 新增/修改（user_role）、
    sys_role 修改（role_menu）、sys_dept/menu 的级联，Java 都是 @Transactional。

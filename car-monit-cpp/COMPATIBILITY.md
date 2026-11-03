@@ -188,11 +188,29 @@ C++ 对应实现位置：
 | Quartz | 定时任务调度 | ❌ | 见 §2.4 |
 | Apache POI | Excel | ⚠️ | 自研最小 XLSX |
 | MinIO / 阿里云 OSS | 对象存储 | ❌ | 本地磁盘 `ruoyi.profile`；如需 OSS，可在 `FileUpload` 层加适配器 |
-| Forest（HTTP 客户端） | 调用第三方（恒达、腾讯地图、车辆监控） | ❌ | 未实现调用侧；相关控制器如迁移需补 HTTP 客户端（libcurl 或自研） |
+| Forest（HTTP 客户端） | 调用第三方（恒达、腾讯地图、车辆监控） | ❌ | 见 §5.1：调用侧的异常边界已逐条分析；C++ 有 `cm::net` 传输原语，缺一个 HTTP/1.1 客户端 |
 | Druid 控制台 `/druid/**` | SQL 监控台 | ❌ | SecurityConfig 中本来就是 `denyAll()`，C++ 直接返回 403 |
 | Swagger / springfox | API 文档 | ❌ | 以 `ENDPOINTS_INVENTORY.md` 取代 |
 | Actuator | 健康检查 | ⚠️ | 新增 `GET /health`（C++ 扩展，Java 无此端点） |
 | JVM `ThreadLocal` | 当前登录用户 | ⚠️ | C++ 使用 `thread_local`（`SecurityUtils`），同一 worker 内有效 |
+
+### 5.1 外部 HTTP 调用的异常边界（逐条读 Java 源码所得，移植时按此对齐）
+
+Java 侧配置（`application.yml:182-193`）：Forest + httpclient，`timeout=60s`、
+`connect-timeout=60s`、`BackOffRetryer`、`retry-count=2`、`max-retry-interval=1s`。
+即**一次外部调用最坏可占住请求线程约 3×60s**；C++ 的 worker 池同样有限（32），
+所以这些接口一旦上游抖动就是整站排队，移植时必须显式设超时而不是沿用 60s。
+
+| 调用点 | 失败时的 Java 行为 | 移植要点 |
+|---|---|---|
+| `HenDaServiceImpl.getPileToLonLat`（GeoServer CQL） | 整个方法 `try/catch(Exception) → return null`：连不上、非 2xx、返回非 JSON、缺 `data` 键、`data` 里没有 `x/y` —— 全部塌缩成同一个 null，调用方无法区分"查不到"与"服务挂了" | 返回值必须保持 null 语义，不能改成抛异常；另外 `filter=lxbh='<用户输入>'` 是拼进远端 CQL 的，移植时不得原样拼接（Java 没做转义，属于其缺陷） |
+| 同上，`data` 存在但 `x/y` 为空 | `getDoubleValue` 把 null 变成 **0.0** → `syncAllGeometry` 会写入 (0,0) 坐标 | 照抄该行为才算一致；修复要单独标注为"偏离 Java" |
+| `GeometryController.syncAllGeometry / syncAllGeometry1` | 立即 `return success()`，真正的工作在 `executor` 线程池里 fire-and-forget；lambda 里抛异常只会打到默认 uncaught handler，**响应已经发出去了** | 移植成"同步执行"会改变响应时延与语义；要保持异步 + 响应先行，并明确失败不可见 |
+| 同上的循环条件 `while (count >= 7)` + 每 10 个桩号取 1 个点 | 上游半路超时会让 `doubleList` 填不满 → 静默少写数据（源码注释自己写了"跑到一半 hengda 接口批量超时"）；重复调用同一 (lxbh,lxfx,qdzh) 会插入重复行 | 幂等性由调用方负责，C++ 不额外加去重（加了就和 Java 结果不同） |
+| `LonLatPathsUtils`（腾讯地图 direction） | 同样 `catch(Exception) → return null`；`status!=0` 只 `System.err` 打印；polyline 少于 2 个点会 AIOOBE 也被吞掉 | 注意它做的是 gcj02→wgs84 转换并**交换经纬度**，移植时坐标顺序极易抄反 |
+| `CarSuspiciousController.syncSuspiciousCarTask`（permitAll） | 签名 = `SHA1(signatureKey + timeStamp)`；两者都由请求方提供 ⇒ 任何人都能自证；没有时间窗（可无限重放）；拼接有歧义（"a1"+2 与 "a"+12 同号） | 这是 Java 的既有安全缺陷，按"照抄不擅自修正"处理，但要写进安全评审；C++ 已有 `sha1` 原语，可实现 |
+| `OdsRtSzdnSnapshotFlowAddcodeController` 的 `/earliest-time` | 通过 Forest 取 GaussDB 的 `Date`，**没有 try/catch** ⇒ 上游失败直接 500；成功时 `data` 是 ISO-8601 字符串，失败无数据时是字面量 `"暂无数据"` | 响应体类型会在"日期串"和"中文提示串"之间切换，前端按字符串处理；移植别统一成 null |
+| `carInfoService.getRedisCarList`（大屏 `carLocation` 的数据源） | 走 **Redis + DB 回源**，不是外部 HTTP；`setCacheObject(key, list)` **不带过期时间** ⇒ 永久缓存；缓存里若是别的类型，`(List) obj` 强转抛 ClassCastException → 500 | C++ 可直接实现（Redis + 同一 DB 查询）；但必须同样不设 TTL，否则数据新鲜度行为与 Java 不同 |
 
 ---
 
