@@ -4,14 +4,14 @@
 > 分页语义与 PageHelper 5.3.3 源码逐条对齐（`SkipQuery` 照抄 `afterCount` 的 `pageNum>0 && count>startRow`、
 > `Clamp` 的 reasonable 两界、`startRow`、`OrderBy` 原样拼接、`reasonable` 的 `Convert.toBool` 词表）、
 > 补齐漏掉客户端排序的端点（car_free/car_track 手拼 SQL、ops 两个日志 List、systemaux queryPage/indexmenu）、
-> 校验矩阵从 11 种组合扩到 18 种并修掉脚本自身的 rows 盲区；1309 组合 0 差异，
+> 校验矩阵从 11 种组合扩到 20 种并修掉脚本自身的 rows 盲区；1463 组合 0 差异，
 > 单测 `internal/web/pagination_test.go` 钉住语义（`pagination.go` 语句覆盖 100%）。
 >
 > **第三轮（2026-11-02）另见 `docs/PARITY-2026-11-02.md`**：共用 MySQL、**两端使用不同 Redis DB
 > （Java=db0 / Go=db2）**重做全量校验，校验脚本进仓库（`scripts/parity/`）。
 > 该轮结果：路由 Java 有/Go 没有 **0** 条；GET 288 条中 **250** 条逐字段一致、14 条差异全部定性为
 > 环境设定或 Java 侧缺陷；写接口 32 资源中 24 个四步全一致；Redis 双 DB 隔离 24 项断言全通过；
-> 查询参数矩阵（起步 696 组合，后扩到 1309 组合）**0** 差异。
+> 查询参数矩阵（起步 696 组合，后扩到 1463 组合）**0** 差异。
 > 新发现并修复 9 类问题：登录审计 `status` 写错导致整行丢失、`GET /system/user/` 缺失、
 > 根路径只注册 GET、`/oss/**` 九个端点未迁移、MinIO 建连超时、
 > **45 个列表端点在请求不带分页参数时未按 Java 默认 `pageSize=10` 分页**、
@@ -180,7 +180,7 @@ Java 的分页是 PageHelper 拦截器行为，前两轮「固定带 `?pageNum=1
   且 `Clamp` 的下界钳位只在 `reasonable` 为真时发生（`reasonable=false&pageNum=0` 时 Java 返回空页）
 - **空结果短路**：PageHelper 在不放行时 `return afterPage(new ArrayList())`，数据查询一次都不执行，
   因此「空结果 + 非法排序列」在 Java 侧不报错 ⇒ `web.PageDomain.SkipQuery(total)`，
-  15 处分页执行器（11 个文件）先问这一句（1309 组合 → 0 差异）
+  15 处分页执行器（11 个文件）先问这一句（1463 组合 → 0 差异）
 - **`isAsc` 原样拼接**：`getOrderBy()` 不校验方向值，`isAsc=bogus` 就是让 MySQL 报错；
   别名 `ascending/descending` 在 `setIsAsc` 里转 ⇒ `web.OrderBy` 去掉「非 desc 即 asc」兜底
 - **代理 JSON 形态**：hutool `JSONUtil.toBean(..., TableDataInfo.class)` 默认丢 null 成员，
