@@ -132,3 +132,49 @@ MSYS2_ARG_CONV_EXCL='*' PYTHONIOENCODING=utf-8 python -u scripts/parity/check_os
 - 校验脚本：`scripts/parity/check_query_matrix.py`（组合扩到 18 种、修掉 rows 盲区、已知差异单列）
 - 文档：`docs/PARITY-2026-11-02.md`（§4 第 9–14 项、§4.2/§4.3、§5–§10）、
   `docs/PAGINATION-PARITY-2026-11-03.md`（分页专题）、`docs/PROGRESS.md`（§3.9）、本文
+
+## 9. 闭环核对表
+
+### 9.1 每个修复点 → 证据
+
+| # | 修复点 | 证据（脚本 / 单测 / 定点复测） | 最终状态 |
+|---|---|---|---|
+| 1 | 登录审计 `status` 映射 | `compare_write.py` 全周期 + 定点：Go 侧 `/monitor/logininfor/list` 最新行 `status='0' msg='登录成功'` | 闭环 |
+| 2 | `GET /system/user/` 与不带斜杠的 405 | `routes.py`（0 缺失）+ GET 专项该 URL 逐字段一致 | 闭环 |
+| 3 | 根路径不限方法 | `check_oss.py`：`POST/PUT/DELETE/PATCH /` 四条全 OK | 闭环 |
+| 4 | `/oss/**` 九个端点 | `routes.py` 0 缺失 + `check_oss.py` 不一致 0 | 闭环（成功形态仍待可用 MinIO，§7） |
+| 5 | MinIO 建连超时 | `check_oss.py`（失败信封一致；耗时 30s vs 11.5s 记为遗留） | 闭环（耗时差保留） |
+| 6 | 缺省也分页 | `check_default_page.py` 91 条 → 不一致 0；`TestPageAlwaysForcesPaging` | 闭环 |
+| 7 | `Convert.toInt` 取值 + 越界回末页 + 无 pageSize 上限 | `TestClampAndSkipQuery` 16 组 + `TestPageFromRequest` + 矩阵 | 闭环 |
+| 8 | 客户端排序覆盖 XML order by | 矩阵 0 差异 + 定点（`/manager/suspicious/list?orderByColumn=...`） | 闭环 |
+| 9 | `count=0` 不执行数据查询 | 矩阵 `/base/geometry/list?lxbh=G` 两组由差异转一致 | 闭环 |
+| 10 | `afterCount` 真实放行条件 | `TestClampAndSkipQuery` 的 4 组越界角 + 矩阵 `reasonable=false` 两组 | 闭环 |
+| 11 | 手拼 SQL 的排序覆盖 | 定点：`incomeStatics/concernedList/carStatics/cartrackinfo` 的 `asc` 与默认两路，Java/Go 行序一致 | 闭环 |
+| 12 | ops 与 systemaux 的排序覆盖 | 矩阵一次报出 24 组 → 修后 0；`/system/indexmenu/list` 定点一致 | 闭环 |
+| 13 | `isAsc` 原样拼接 | `TestOrderByMirrorsPageDomain`（`car_no bogus`）+ 定点：`/monitor/operlog/list?orderByColumn=costTime` 两端同 500 | 闭环 |
+| 14 | `reasonable` 词表 | `TestPageFromRequest` 9 组 + 矩阵 2 组 + 定点 10 种取值逐一对齐 | 闭环 |
+
+### 9.2 剩余差异台账（未归类数 0）
+
+| 类别 | 数量 | 明细位置 |
+|---|---|---|
+| GET：两端只看得见自己 Redis DB | 2 | `PARITY-2026-11-02.md` §8.1（`/monitor/online/list`、`/monitor/cache`） |
+| GET：Java 自身 500、Go 可用 | 7 | §8.2（`fitting/list`、`feeGantry/{id}`、`feerecords/{id}`、`snapshotflow/{id,earliest-time}`、`jobLog/{id}`、`server`） |
+| GET：两侧都 500，仅错误文本形态不同 | 5 | §8.2（`upgradeInfo/{list,newest,export,{id}}` 缺表、`geometry/syncAllGeometry` 缺表） |
+| GET 差异合计 | **14** | 与 `pG_<module>.json` 的 diff 计数逐条对齐 |
+| 非 JSON 附件流 | 24 | §8.3（POI/EasyPOI vs excelize） |
+| 写接口：Java 侧 insert/delete 缺陷 | 8 个资源（15 条差异） | §8.2 写部分；其余 24 个资源四步全一致 |
+| 参数组合：有意不报错（注入探测） | 73 组 | §5 第 1 行，矩阵脚本单列，不计失败 |
+| 金额标度 / 别名差异 | 数据相关，0~1 条 | §5 第 2、3 行 |
+
+### 9.3 复核方式
+
+```bash
+# 修复点锚点是否存在（全部应命中，MaxPageSize 应不存在）
+grep -rn "func (p PageDomain) SkipQuery\|func PageAlways\|func orderFor\|func orderByFor" internal
+grep -rn "\.SkipQuery(" internal --include=*.go | grep -v pagination.go | grep -vc _test   # 15
+grep -rn "MaxPageSize" internal || echo "MaxPageSize 已删除"
+# 断言
+go test ./internal/web/ && python scripts/parity/check_default_page.py && python scripts/parity/check_query_matrix.py
+```
+

@@ -1,6 +1,6 @@
 # 分页语义修复总结（2026-11-03）
 
-> 专题范围：只讲分页。双端整体校验见 [`PARITY-2026-11-02.md`](./PARITY-2026-11-02.md)（§4 第 6–13 项、§4.2、§4.3），
+> 专题范围：只讲分页。双端整体校验见 [`PARITY-2026-11-02.md`](./PARITY-2026-11-02.md)（§4 第 6–14 项、§4.2、§4.3），
 > 全批次收口见 [`PARITY-SUMMARY-2026-11-03.md`](./PARITY-SUMMARY-2026-11-03.md)。
 > 依据来源：本地 Maven 仓库 `pagehelper-5.3.3-sources.jar`（`pagehelper-spring-boot-starter 1.4.7`）
 > 与 RuoYi `ruoyi-common` 的 `TableSupport` / `PageDomain` / `PageUtils` / `SqlUtil`，逐行核对，不是凭记忆。

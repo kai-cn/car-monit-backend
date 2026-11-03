@@ -180,7 +180,7 @@ Java 的分页是 PageHelper 拦截器行为，前两轮「固定带 `?pageNum=1
   且 `Clamp` 的下界钳位只在 `reasonable` 为真时发生（`reasonable=false&pageNum=0` 时 Java 返回空页）
 - **空结果短路**：PageHelper 在不放行时 `return afterPage(new ArrayList())`，数据查询一次都不执行，
   因此「空结果 + 非法排序列」在 Java 侧不报错 ⇒ `web.PageDomain.SkipQuery(total)`，
-  15 处分页执行器（11 个文件）先问这一句（1155 组合 → 0 差异）
+  15 处分页执行器（11 个文件）先问这一句（1309 组合 → 0 差异）
 - **`isAsc` 原样拼接**：`getOrderBy()` 不校验方向值，`isAsc=bogus` 就是让 MySQL 报错；
   别名 `ascending/descending` 在 `setIsAsc` 里转 ⇒ `web.OrderBy` 去掉「非 desc 即 asc」兜底
 - **代理 JSON 形态**：hutool `JSONUtil.toBean(..., TableDataInfo.class)` 默认丢 null 成员，
