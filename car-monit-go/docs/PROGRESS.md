@@ -1,14 +1,17 @@
 # 迁移工作进度（接口返回逐一对比阶段）
 
-> **2026-11-03 批次收口见 `docs/PARITY-SUMMARY-2026-11-03.md`**：分页语义与 PageHelper 5.3.3 源码
-> 逐条对齐（`SkipQuery`/`Clamp`/`startRow`/`OrderBy`）、手拼 SQL 与 ops/systemaux 的客户端排序覆盖补齐、
-> 校验矩阵从 11 种组合扩到 16 种并修掉脚本自身的 rows 盲区；1155 组合 0 差异，单测 `internal/web/pagination_test.go` 钉住语义。
+> **2026-11-03 批次收口见 `docs/PARITY-SUMMARY-2026-11-03.md`，分页专题见 `docs/PAGINATION-PARITY-2026-11-03.md`**：
+> 分页语义与 PageHelper 5.3.3 源码逐条对齐（`SkipQuery` 照抄 `afterCount` 的 `pageNum>0 && count>startRow`、
+> `Clamp` 的 reasonable 两界、`startRow`、`OrderBy` 原样拼接、`reasonable` 的 `Convert.toBool` 词表）、
+> 补齐漏掉客户端排序的端点（car_free/car_track 手拼 SQL、ops 两个日志 List、systemaux queryPage/indexmenu）、
+> 校验矩阵从 11 种组合扩到 18 种并修掉脚本自身的 rows 盲区；1309 组合 0 差异，
+> 单测 `internal/web/pagination_test.go` 钉住语义（`pagination.go` 语句覆盖 100%）。
 >
 > **第三轮（2026-11-02）另见 `docs/PARITY-2026-11-02.md`**：共用 MySQL、**两端使用不同 Redis DB
 > （Java=db0 / Go=db2）**重做全量校验，校验脚本进仓库（`scripts/parity/`）。
 > 该轮结果：路由 Java 有/Go 没有 **0** 条；GET 288 条中 **250** 条逐字段一致、14 条差异全部定性为
 > 环境设定或 Java 侧缺陷；写接口 32 资源中 24 个四步全一致；Redis 双 DB 隔离 24 项断言全通过；
-> 查询参数矩阵 696 组合 **0** 差异。
+> 查询参数矩阵（起步 696 组合，后扩到 1309 组合）**0** 差异。
 > 新发现并修复 9 类问题：登录审计 `status` 写错导致整行丢失、`GET /system/user/` 缺失、
 > 根路径只注册 GET、`/oss/**` 九个端点未迁移、MinIO 建连超时、
 > **45 个列表端点在请求不带分页参数时未按 Java 默认 `pageSize=10` 分页**、
@@ -163,6 +166,9 @@ Java 的分页是 PageHelper 拦截器行为，前两轮「固定带 `?pageNum=1
   所有 Java 侧调过 `startPage()` 的列表路径都改用它（45 个端点，42 → 0）
 - **参数取值**：照抄 `Convert.toInt(参数, 默认)` —— 只有没传/解析不出数字才回落默认，
   显式 `pageSize=0/-1` 是合法入参；删掉 Go 自造的 `MaxPageSize=500`
+- **`reasonable` 词表**：`TableSupport` 走 `Convert.toBool(值, null)` —— `true/yes/ok/1` 真、
+  `false/no/0` 假、空值与乱值 null，再由 `PageDomain.getReasonable()` 回落 TRUE ⇒
+  `web.Page` 原来「只认 `"true"`」会把 `reasonable=1` 误判成 false（越界页少返回一页数据）
 - **`reasonable` 越界回末页**：`PageDomain.getReasonable()` null → TRUE ⇒ 新增 `Clamp(total)`/`LimitOffset(total)`，
   分页点全部接上 total
 - **客户端排序优先**：`startPage` 的 orderBy **覆盖** mapper XML 的 order by ⇒ `manager.orderFor`、

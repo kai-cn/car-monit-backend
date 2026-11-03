@@ -60,7 +60,15 @@ func Page(c *gin.Context) PageDomain {
 		}
 	}
 	if v := c.Query("reasonable"); v != "" {
-		pd.Reasonable = v == "true"
+		// JAVA 对照: TableSupport → ServletUtils.getParameterToBool → Convert.toBool(值, null)，
+		// 再由 PageDomain.getReasonable() 把 null 回落成 TRUE；PageHelper 的全局默认也是 TRUE。
+		switch strings.ToLower(strings.TrimSpace(v)) {
+		case "false", "no", "0":
+			pd.Reasonable = false
+		default:
+			// true/yes/ok/1 为真；空、乱值 → Convert 给 null → getReasonable() 给 TRUE
+			pd.Reasonable = true
+		}
 	}
 	return pd
 }

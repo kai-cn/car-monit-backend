@@ -11,13 +11,14 @@
 |---|---|---|---|
 | 路由清单（Java 控制器 vs Go 注册表） | Java 511 条 | 13 条 Go 缺失 | **0** |
 | 默认分页专项（不带任何分页参数） | 91 条 | 42 条不一致 | **0** |
-| 查询参数矩阵（25 端点 × 16 组合） | 1155 组合 | 183 组合有差异 | **0**（另 73 组为有意差异） |
+| 查询参数矩阵（25 端点 × 18 组合） | 1309 组合 | 183 组合有差异 | **0**（另 73 组为有意差异） |
 | 全量 GET 逐字段 | 288 条 URL | 15 条差异 | **14**，全部定性为隔离设定或 Java 侧缺陷 |
-| 写接口生命周期（POST→详情→PUT→DELETE） | 32 个资源 | — | 23 个四步全一致；8 个卡在 Java 侧写入缺陷；1 条金额标度差异 |
+| 写接口生命周期（POST→详情→PUT→DELETE） | 32 个资源 | — | 24 个四步全一致；8 个卡在 Java 侧写入缺陷；金额标度差异随测试数据而现 |
 | Redis 双 DB 隔离断言 | 24 项 | — | **全部通过**，测试数据零残留 |
 
-Go 侧共 13 项修复，其中 **8 项属于分页语义**——这一类在「固定带 `?pageNum=1&pageSize=3` 的对比」里
-完全隐形，只有把参数面单独铺开才暴露。
+Go 侧共 14 项修复，其中 **9 项属于分页语义**——这一类在「固定带 `?pageNum=1&pageSize=3` 的对比」里
+完全隐形，只有把参数面单独铺开才暴露。分页专题的独立总结见
+[`PAGINATION-PARITY-2026-11-03.md`](./PAGINATION-PARITY-2026-11-03.md)。
 
 ## 2. 修复清单
 
@@ -36,6 +37,7 @@ Go 侧共 13 项修复，其中 **8 项属于分页语义**——这一类在「
 | 11 | `reasonable=false` 且 `pageNum<=0`/越界时，Go 返回一整页而 Java 返回空 | `AbstractHelperDialect.java:86-107` 放行条件是 `pageNum > 0 && count > startRow`；`Page.java:245-256/365-369` 的下界钳位**只在 reasonable 为真**时发生 | `Clamp` 下界加 `Reasonable` 条件；`SkipQuery` 改成照抄放行条件；`Offset()` 复用 `startRow()`（`Page.java:345-348`） | 扩写矩阵组合 |
 | 12 | 手拼 SQL 的端点忽略客户端排序（`incomeStatics` 等）、ops 两个日志端点完全不认 `orderByColumn`、`/system/indexmenu/list` 语句自带 order by 时不认 | 同 #8（PageHelper 替换语义） | `manager/car_free.go`（4 处）、`manager/car_track.go`（1 处）、`ops/params.go: orderFor()` + 两个 List、`systemaux/common.go: queryPage` 去掉 Contains 判断、`systemaux/indexmenu.go` 把语句排序移进 defaultOrder | 扩写矩阵组合 + 定点复测 |
 | 13 | `isAsc=bogus` 时 Go 按 asc 正常返回，Java 500 | `PageDomain.getOrderBy()` 是 `toUnderScoreCase(col) + " " + isAsc`，方向值**不校验**，交给 MySQL 报错；别名 `ascending/descending` 是在 `setIsAsc` 里转的 | `web.OrderBy` 去掉「非 desc 即 asc」兜底，原样拼接（非法字符仍按白名单拦掉） | 扩写矩阵组合 |
+| 14 | `reasonable=1/yes/ok/bogus` Go 当 false（越界页返回空），Java 仍回末页 | `TableSupport` → `getParameterToBool` → `Convert.toBool(值, null)`：`true/yes/ok/1` 真、`false/no/0` 假、空与乱值 null → `PageDomain.getReasonable()` 回落 TRUE | `web.Page` 用同一套词表 + 默认回落真 | 补单测时逐行读源码发现；矩阵新增 2 组 `reasonable` 用例 |
 
 ## 3. 分页语义对齐的取证方式
 
@@ -51,8 +53,9 @@ Go 侧共 13 项修复，其中 **8 项属于分页语义**——这一类在「
 | `Page.java:345-348` | `startRow = pageNum>0 ? (pageNum-1)*pageSize : 0` | `startRow()` / `Offset()` |
 | `OrderByParser.java:54-73` | 剥掉最外层 order by，再拼客户端 orderBy；原 order by 含 `?` 抛 `PageException` | `orderFor` / `orderByFor` / `queryPage(defaultOrder 形参)` |
 | `PageDomain.setIsAsc` / `getOrderBy` / `SqlUtil.escapeOrderBySql` | 别名转换、方向值原样、字符白名单 | `web.Page()` switch、`web.OrderBy`、`web.orderByPattern` |
+| `ServletUtils.getParameterToBool` → `Convert.toBool(值, null)` → `PageDomain.getReasonable()` | `reasonable` 词表 `true/yes/ok/1` 真、`false/no/0` 假、空与乱值 → null → 回落 TRUE | `web.Page` 的 reasonable switch |
 
-## 4. 校验脚本自身的两处盲区（方法论）
+## 4. 校验脚本自身的盲区与方法论
 
 1. **固定参数掩盖参数面**：前两轮 GET 对比一律带 `?pageNum=1&pageSize=3`，
    「不带参数也分页」「越界页」「排序覆盖」三类差异结构性不可见。
@@ -62,6 +65,12 @@ Go 侧共 13 项修复，其中 **8 项属于分页语义**——这一类在「
    `if "rows" not in a: continue`，于是 Java 返回错误信封的组合被静默跳过 ——
    ops 两个日志端点的排序缺陷正是改完之后才现形（一次报出 24 组）。
    现在：两边都是 TableDataInfo 就逐字段比，否则只比信封；已知有意差异单独计数，不混进失败。
+3. **组合表要成对覆盖参数**：`isAsc=bogus` 以前从不与 `orderByColumn` 同时出现、
+   `reasonable=false` 从不与越界页码同时出现 —— 两个单参数都「正常」，组合起来才暴露差异。
+4. **把语义钉成单测时，要顺着一行行读 Java**：第 14 项（`reasonable` 词表）不是跑出来的，
+   是写 `TestPageFromRequest` 时读 `Convert.toBool` 才发现 Go 只认 `"true"`；
+   实测 `reasonable=1/yes/ok/bogus` 四种取值 Java 都按 TRUE 处理，Go 当时会给空页。
+   读源码的成本低于在灰度后被用户发现的成本。
 
 其它环境层面的坑（写在这里避免重复踩）：Git Bash 会把 `/manager` 之类参数改写成交付路径，
 必须 `MSYS2_ARG_CONV_EXCL='*'`；控制台需要 `PYTHONIOENCODING=utf-8`；
@@ -112,12 +121,14 @@ MSYS2_ARG_CONV_EXCL='*' PYTHONIOENCODING=utf-8 python -u scripts/parity/check_os
 
 ## 8. 本批次改动的文件
 
-- 分页语义：`internal/web/pagination.go`（`PageAlways`/`paramInt`/`Clamp`/`SkipQuery`/`startRow`/`Offset`/`OrderBy`）、
-  新增 `internal/web/pagination_test.go`
+- 分页语义：`internal/web/pagination.go`（`PageAlways`/`paramInt`/`Page` 的 reasonable 词表/
+  `Clamp`/`SkipQuery`/`startRow`/`Offset`/`OrderBy`）、新增 `internal/web/pagination_test.go`
+  （16 组钳位/短路 + 21 组参数解析 + 8 组排序 + 3 组 LIMIT）
 - 执行器接短路：`base/support.go`、`manager/support.go`、`system/common.go`、`systemaux/common.go`、
   `flow/handler.go`、`flow/repo_messageinfo.go`、`quartz/service.go`（2 处）、`generator/sql.go`、`ops/params.go`、
   `manager/car_track.go`、`manager/car_free.go`（4 处）
 - 排序覆盖：`ops/{params,logininfor,operlog}.go`、`systemaux/{common,indexmenu}.go`、
   `manager/{car_free,car_track}.go`、`base/crud.go`、`manager/support.go`
-- 校验脚本：`scripts/parity/check_query_matrix.py`（组合扩到 16 种、修掉 rows 盲区、已知差异单列）
-- 文档：`docs/PARITY-2026-11-02.md`（§4 第 9–13 项、§4.2/§4.3、§5–§10）、`docs/PROGRESS.md`（§3.9）、本文
+- 校验脚本：`scripts/parity/check_query_matrix.py`（组合扩到 18 种、修掉 rows 盲区、已知差异单列）
+- 文档：`docs/PARITY-2026-11-02.md`（§4 第 9–14 项、§4.2/§4.3、§5–§10）、
+  `docs/PAGINATION-PARITY-2026-11-03.md`（分页专题）、`docs/PROGRESS.md`（§3.9）、本文
