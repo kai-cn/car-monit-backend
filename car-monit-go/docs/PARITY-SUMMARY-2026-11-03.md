@@ -10,7 +10,7 @@
 | 校验面 | 覆盖量 | 起点 | 现在 |
 |---|---|---|---|
 | 路由清单（Java 控制器 vs Go 注册表） | Java 511 条 | 13 条 Go 缺失 | **0** |
-| startPage 静态核对（新增 `check_startpage_map.py`） | Go 注册 501 条 | 28 条 Go 少分页 | **0**（两个方向都查；负向验证：故意退化一处即报一处） |
+| startPage 静态核对（新增 `check_startpage_map.py`） | Java 94 条分页路由（Go 侧 501 条注册参与） | 28 条 Go 少分页 | **0**（四类问题全 0；负向验证：故意退化一处即报一处） |
 | 默认分页专项（不带任何分页参数） | 91 条 | 42 条不一致 | **0** |
 | 查询参数矩阵（25 端点 × 22 组合） | 1617 组合 | 183 组合有差异 | **0**，且已删掉「有意差异」白名单 |
 | 全量 GET 逐字段 | 288 条 URL | 15 条差异 | **14**，全部定性为隔离设定或 Java 侧缺陷 |
@@ -167,7 +167,7 @@ MSYS2_ARG_CONV_EXCL='*' PYTHONIOENCODING=utf-8 python -u scripts/parity/check_os
 | 13 | `isAsc` 原样拼接 | `TestOrderByMirrorsPageDomain`（`car_no bogus`）+ 定点：`/monitor/operlog/list?orderByColumn=costTime` 两端同 500 | 闭环 |
 | 14 | `reasonable` 词表 | `TestPageFromRequest` 9 组 + 矩阵 2 组 + 定点 10 种取值逐一对齐 | 闭环 |
 | 15 | `pageSize<=0` 不放行（`pageSizeZero=false`） | `TestClampAndSkipQuery` 3 组期望翻转 + 矩阵 2 组（1463 组合 0 差异）+ 定点 10 条（geometry 非法排序列、carinfo/dict/logininfor/gen 的正常零页长） | 闭环 |
-| 16 | startPage 覆盖面 | `check_startpage_map.py` 两个方向 0 条（501 条注册纳入）+ 负向验证 + sys_post 造 11 行的前后实测（10 vs 11 → 两端都 10），测试数据已清理 | 闭环 |
+| 16 | startPage 覆盖面 | `check_startpage_map.py` 四类检查全 0；以 Java 为基准：94 条分页路由 100% 匹配到 Go 注册；负向验证 + sys_post 造 11 行的前后实测（10 vs 11 → 两端都 10），测试数据已清理 | 闭环 |
 | 17 | `escapeOrderBySql` 拒绝 | 10 端点 × 4 种非法排序 = 40 组 `code`+`msg` 逐字一致；`TestStartPageError` 9 组；矩阵取消白名单后 1617 组 0 差异 | 闭环 |
 
 ### 9.2 剩余差异台账（未归类数 0）

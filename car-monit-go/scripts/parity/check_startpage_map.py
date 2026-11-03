@@ -327,29 +327,45 @@ def main():
     java = scan_java()
     funcs, regs, by_name = parse_go_files()
     pages = resolve_pages(funcs, by_name)
-    seen, missing, extra, unknown, ambiguous = set(), [], [], [], []
+    seen, missing, extra, unknown, ambiguous, absent, nopage = set(), [], [], [], [], [], []
     for verb, path, pkg, recv, fn in regs:
         if (verb, path) in seen:
             continue
         seen.add((verb, path))
+        jp = java.get((verb, path)) or java.get(("ANY", path))
         page, amb = lookup(pages, by_name, pkg, recv, fn)
-        if not page:
-            continue
         if amb:
             ambiguous.append((verb, path, fn))
-        jp = java.get((verb, path)) or java.get(("ANY", path))
         if jp is None:
-            unknown.append((verb, path, fn, page))
+            if page:
+                unknown.append((verb, path, fn, page))
             continue
         table, paged = jp
-        if paged and page == "Page":
+        if not table:
+            continue                     # 不返回 TableDataInfo 的方法与分页无关
+        if not page:
+            # 关键盲区：处理函数存在、但整条链路上没有任何分页构造。
+            # 只有 Java 侧确实 startPage 时才是缺陷；像 gen/columnList 那样
+            # 手工拼 TableDataInfo（total=list.size()）的端点本来就不该分页。
+            if paged:
+                absent.append((verb, path, fn))
+        elif paged and page == "Page":
             missing.append((verb, path, fn))
         elif not paged and page == "PageAlways":
             extra.append((verb, path, fn))
 
-    print("Java 路由 %d 条；Go 分页处理函数 %d 个；Go 注册 %d 条" % (len(java), len(pages), len(seen)))
-    print("\n== Java 调 startPage，Go 却用 web.Page(c)（空表时数据比对看不出来）: %d 条 ==" % len(missing))
+    # Java 分页路由里，Go 侧压根没注册到的（由 routes.py 负责路由缺失，这里只提示数量）
+    paged_java = {k for k, v in java.items() if v[0] and v[1]}
+    unregistered = sorted(paged_java - seen)
+
+    print("Java 路由 %d 条（其中返回 TableDataInfo 且 startPage 的 %d 条）；"
+          "Go 分页处理函数 %d 个；Go 注册 %d 条"
+          % (len(java), len(paged_java), len(pages), len(seen)))
+    print("\n== Java 调 startPage，Go 用 web.Page(c)（空表时数据比对看不出来）: %d 条 ==" % len(missing))
     for verb, path, fn in missing:
+        print("  %-6s %-46s %s" % (verb, path, fn))
+    print("\n== Java 分页路由在 Go 里有注册但整条链路不分页（Go 直接返回全量）: %d 条 ==" % len(absent))
+    for verb, path, fn in absent:
         print("  %-6s %-46s %s" % (verb, path, fn))
     print("\n== Java 没调 startPage，Go 却用 web.PageAlways(c): %d 条 ==" % len(extra))
     for verb, path, fn in extra:
@@ -360,7 +376,10 @@ def main():
     print("\n== Java 侧找不到同名路由（Go 专有或路径写法差异）: %d 条 ==" % len(unknown))
     for verb, path, fn, page in unknown[:25]:
         print("  %-6s %-46s %s(%s)" % (verb, path, fn, page))
-    return 1 if missing or extra else 0
+    print("\n== Java 分页但 Go 未注册该路由（路由缺失由 routes.py 判定）: %d 条 ==" % len(unregistered))
+    for verb, path in unregistered[:25]:
+        print("  %-6s %s" % (verb, path))
+    return 1 if missing or extra or absent else 0
 
 
 if __name__ == "__main__":
