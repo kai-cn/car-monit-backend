@@ -84,10 +84,17 @@ func TestPageFromRequest(t *testing.T) {
 		{"?pageNum=-5&pageSize=3", PageDomain{PageNum: -5, PageSize: 3, HasPage: true, IsAsc: "asc", Reasonable: true}},
 		// Java 的 pageSizeZero=true 让 pageSize<0 得到空结果，这里归一成 LIMIT 0 等价
 		{"?pageNum=1&pageSize=-1", PageDomain{PageNum: 1, PageSize: 0, HasPage: true, IsAsc: "asc", Reasonable: true}},
-		// PageDomain.setReasonable：Boolean.valueOf，只有 "true" 才是真；不传保持默认 TRUE
+		// Convert.toBool(值, null) + getReasonable() 的 null→TRUE：
+		// true/yes/ok/1 为真，false/no/0 为假，空值与乱值回落成真的默认值
 		{"?pageNum=1&pageSize=3&reasonable=false", PageDomain{PageNum: 1, PageSize: 3, HasPage: true, IsAsc: "asc"}},
+		{"?pageNum=1&pageSize=3&reasonable=no", PageDomain{PageNum: 1, PageSize: 3, HasPage: true, IsAsc: "asc"}},
+		{"?pageNum=1&pageSize=3&reasonable=0", PageDomain{PageNum: 1, PageSize: 3, HasPage: true, IsAsc: "asc"}},
 		{"?pageNum=1&pageSize=3&reasonable=true", PageDomain{PageNum: 1, PageSize: 3, HasPage: true, IsAsc: "asc", Reasonable: true}},
-		{"?pageNum=1&pageSize=3&reasonable=1", PageDomain{PageNum: 1, PageSize: 3, HasPage: true, IsAsc: "asc"}},
+		{"?pageNum=1&pageSize=3&reasonable=1", PageDomain{PageNum: 1, PageSize: 3, HasPage: true, IsAsc: "asc", Reasonable: true}},
+		{"?pageNum=1&pageSize=3&reasonable=yes", PageDomain{PageNum: 1, PageSize: 3, HasPage: true, IsAsc: "asc", Reasonable: true}},
+		{"?pageNum=1&pageSize=3&reasonable=ok", PageDomain{PageNum: 1, PageSize: 3, HasPage: true, IsAsc: "asc", Reasonable: true}},
+		{"?pageNum=1&pageSize=3&reasonable=bogus", PageDomain{PageNum: 1, PageSize: 3, HasPage: true, IsAsc: "asc", Reasonable: true}},
+		{"?pageNum=1&pageSize=3&reasonable=", PageDomain{PageNum: 1, PageSize: 3, HasPage: true, IsAsc: "asc", Reasonable: true}},
 		// PageDomain.setIsAsc：兼容前端的排序别名
 		{"?pageNum=1&pageSize=3&orderByColumn=createTime&isAsc=descending",
 			PageDomain{PageNum: 1, PageSize: 3, HasPage: true, IsAsc: "desc", Reasonable: true, OrderByColumn: "createTime"}},

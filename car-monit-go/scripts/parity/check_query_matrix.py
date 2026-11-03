@@ -60,6 +60,9 @@ VARIANTS = [
     "?pageNum=9999&pageSize=3&reasonable=false",
     "?pageNum=1&pageSize=3&orderByColumn=createTime",
     "?pageNum=1&pageSize=3&orderByColumn=createTime&isAsc=bogus",
+    # reasonable 的取值语义（Convert.toBool：1/yes/ok 为真，乱值回落默认 TRUE）
+    "?pageNum=9999&pageSize=3&reasonable=1",
+    "?pageNum=9999&pageSize=3&reasonable=bogus",
 ]
 
 # 已定性的有意差异（不计入失败，单独报告）：
