@@ -11,12 +11,12 @@
 |---|---|---|---|
 | 路由清单（Java 控制器 vs Go 注册表） | Java 511 条 | 13 条 Go 缺失 | **0** |
 | 默认分页专项（不带任何分页参数） | 91 条 | 42 条不一致 | **0** |
-| 查询参数矩阵（25 端点 × 18 组合） | 1309 组合 | 183 组合有差异 | **0**（另 73 组为有意差异） |
+| 查询参数矩阵（25 端点 × 20 组合） | 1463 组合 | 183 组合有差异 | **0**（另 73 组为有意差异） |
 | 全量 GET 逐字段 | 288 条 URL | 15 条差异 | **14**，全部定性为隔离设定或 Java 侧缺陷 |
 | 写接口生命周期（POST→详情→PUT→DELETE） | 32 个资源 | — | 24 个四步全一致；8 个卡在 Java 侧写入缺陷；金额标度差异随测试数据而现 |
 | Redis 双 DB 隔离断言 | 24 项 | — | **全部通过**，测试数据零残留 |
 
-Go 侧共 14 项修复，其中 **9 项属于分页语义**——这一类在「固定带 `?pageNum=1&pageSize=3` 的对比」里
+Go 侧共 15 项修复，其中 **10 项属于分页语义**——这一类在「固定带 `?pageNum=1&pageSize=3` 的对比」里
 完全隐形，只有把参数面单独铺开才暴露。分页专题的独立总结见
 [`PAGINATION-PARITY-2026-11-03.md`](./PAGINATION-PARITY-2026-11-03.md)。
 
@@ -38,6 +38,7 @@ Go 侧共 14 项修复，其中 **9 项属于分页语义**——这一类在「
 | 12 | 手拼 SQL 的端点忽略客户端排序（`incomeStatics` 等）、ops 两个日志端点完全不认 `orderByColumn`、`/system/indexmenu/list` 语句自带 order by 时不认 | 同 #8（PageHelper 替换语义） | `manager/car_free.go`（4 处）、`manager/car_track.go`（1 处）、`ops/params.go: orderFor()` + 两个 List、`systemaux/common.go: queryPage` 去掉 Contains 判断、`systemaux/indexmenu.go` 把语句排序移进 defaultOrder | 扩写矩阵组合 + 定点复测 |
 | 13 | `isAsc=bogus` 时 Go 按 asc 正常返回，Java 500 | `PageDomain.getOrderBy()` 是 `toUnderScoreCase(col) + " " + isAsc`，方向值**不校验**，交给 MySQL 报错；别名 `ascending/descending` 是在 `setIsAsc` 里转的 | `web.OrderBy` 去掉「非 desc 即 asc」兜底，原样拼接（非法字符仍按白名单拦掉） | 扩写矩阵组合 |
 | 14 | `reasonable=1/yes/ok/bogus` Go 当 false（越界页返回空），Java 仍回末页 | `TableSupport` → `getParameterToBool` → `Convert.toBool(值, null)`：`true/yes/ok/1` 真、`false/no/0` 假、空与乱值 null → `PageDomain.getReasonable()` 回落 TRUE | `web.Page` 用同一套词表 + 默认回落真 | 补单测时逐行读源码发现；矩阵新增 2 组 `reasonable` 用例 |
+| 15 | `pageSize=0/-1` 且排序列非法：Java `200/rows=0`，Go `500` | `pagehelper` 未配置 `pageSizeZero`（默认 false）⇒ `afterCount` 对 `pageSize<=0` 一律不放行，数据查询不执行，非法 ORDER BY 因此不被解析 | `web.PageDomain.SkipQuery` 增加 `PageSize<=0` 分支；负页长归一仅作 `LIMIT ?` 保险 | 再读一遍 `AbstractHelperDialect` 时发现原注释把 Java 默认值写反；矩阵新增 2 组、单测翻转 3 组、10 条定点 |
 
 ## 3. 分页语义对齐的取证方式
 
@@ -47,7 +48,7 @@ Go 侧共 14 项修复，其中 **9 项属于分页语义**——这一类在「
 | Java 源码 | 语义 | Go 对应 |
 |---|---|---|
 | `PageInterceptor.java:137-145` | count 后 `afterCount` 为 false 直接返回空 List | `PageDomain.SkipQuery` |
-| `AbstractHelperDialect.java:86-107` | 放行条件 `pageNum>0 && count>startRow`；`pageSizeZero` 分支 | `SkipQuery`（`pageSize<0` 由 `Page()` 归一为 0，等价空结果） |
+| `AbstractHelperDialect.java:86-107` | `pageSizeZero=false`（本工程未配置）⇒ `pageSize<=0` 不放行；否则 `pageNum>0 && count>startRow` | `SkipQuery` 两条都照抄 |
 | `Page.java:221-239` | `setTotal` 内 `reasonable && pageNum>pages` 回末页，`pages==0` 不改页码 | `Clamp` 上界 |
 | `Page.java:245-256`、`365-369` | `pageNum<=0` 只在 reasonable 为真时拉回 1 | `Clamp` 下界 |
 | `Page.java:345-348` | `startRow = pageNum>0 ? (pageNum-1)*pageSize : 0` | `startRow()` / `Offset()` |
@@ -130,7 +131,7 @@ MSYS2_ARG_CONV_EXCL='*' PYTHONIOENCODING=utf-8 python -u scripts/parity/check_os
 - 排序覆盖：`ops/{params,logininfor,operlog}.go`、`systemaux/{common,indexmenu}.go`、
   `manager/{car_free,car_track}.go`、`base/crud.go`、`manager/support.go`
 - 校验脚本：`scripts/parity/check_query_matrix.py`（组合扩到 18 种、修掉 rows 盲区、已知差异单列）
-- 文档：`docs/PARITY-2026-11-02.md`（§4 第 9–14 项、§4.2/§4.3、§5–§10）、
+- 文档：`docs/PARITY-2026-11-02.md`（§4 第 9–15 项、§4.2/§4.3、§5–§10）、
   `docs/PAGINATION-PARITY-2026-11-03.md`（分页专题）、`docs/PROGRESS.md`（§3.9）、本文
 
 ## 9. 闭环核对表
@@ -153,6 +154,7 @@ MSYS2_ARG_CONV_EXCL='*' PYTHONIOENCODING=utf-8 python -u scripts/parity/check_os
 | 12 | ops 与 systemaux 的排序覆盖 | 矩阵一次报出 24 组 → 修后 0；`/system/indexmenu/list` 定点一致 | 闭环 |
 | 13 | `isAsc` 原样拼接 | `TestOrderByMirrorsPageDomain`（`car_no bogus`）+ 定点：`/monitor/operlog/list?orderByColumn=costTime` 两端同 500 | 闭环 |
 | 14 | `reasonable` 词表 | `TestPageFromRequest` 9 组 + 矩阵 2 组 + 定点 10 种取值逐一对齐 | 闭环 |
+| 15 | `pageSize<=0` 不放行（`pageSizeZero=false`） | `TestClampAndSkipQuery` 3 组期望翻转 + 矩阵 2 组（1463 组合 0 差异）+ 定点 10 条（geometry 非法排序列、carinfo/dict/logininfor/gen 的正常零页长） | 闭环 |
 
 ### 9.2 剩余差异台账（未归类数 0）
 

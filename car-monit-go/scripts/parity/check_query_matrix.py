@@ -63,6 +63,9 @@ VARIANTS = [
     # reasonable 的取值语义（Convert.toBool：1/yes/ok 为真，乱值回落默认 TRUE）
     "?pageNum=9999&pageSize=3&reasonable=1",
     "?pageNum=9999&pageSize=3&reasonable=bogus",
+    # pageSizeZero=false：pageSize<=0 时 Java 不放行数据查询（非法排序列也被掩盖）
+    "?pageNum=1&pageSize=0&orderByColumn=createTime",
+    "?pageNum=1&pageSize=-1&orderByColumn=createTime",
 ]
 
 # 已定性的有意差异（不计入失败，单独报告）：

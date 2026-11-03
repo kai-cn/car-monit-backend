@@ -114,18 +114,24 @@ func (p PageDomain) Clamp(total int64) PageDomain {
 	return p
 }
 
-// SkipQuery 复刻 PageHelper 的 afterCount：先 setTotal(count)，只有
-// `pageNum > 0 && count > startRow` 才继续执行数据查询，否则拦截器直接交回空 List。
+// SkipQuery 复刻 PageHelper 的 afterCount：先 setTotal(count)，再决定要不要执行数据查询。
+// Java 的放行条件是
+//   - `pageSizeZero=false`（本工程 pagehelper 没配这个属性，默认就是 false）⇒ `pageSize<=0` 一律不放行；
+//   - 否则 `pageNum > 0 && count > startRow`。
 //
-// 这不只是性能短路，而是可观测的行为差异：Java 在 count=0 或页码越界（reasonable=false）
-// 时**根本不执行**分页语句，客户端给的非法排序列因此不会报错。
-// DIFF: Java 另有 pageSizeZero 分支（pageSize<0 时跳过查询）；Go 在 Page() 里把负数归一成 0，
-// 执行 `LIMIT 0` 得到同样的空结果，仅「负 pageSize + 非法排序列」这一角仍会报错。
+// 不放行时拦截器直接 `afterPage(new ArrayList())`，数据查询一次都不执行，
+// 因此「空结果/零页长 + 非法排序列」在 Java 侧不会报错。
+//
+// 实测依据：`/base/geometry/list?pageNum=1&pageSize=0&orderByColumn=createTime`
+// Java 是 200/total=11106/rows=0，若照常执行 `LIMIT 0` 就会把 MySQL 的未知列错误暴露出来。
 func (p PageDomain) SkipQuery(total int64) bool {
 	if !p.HasPage {
 		return false
 	}
 	c := p.Clamp(total)
+	if c.PageSize <= 0 {
+		return true
+	}
 	return !(c.PageNum > 0 && total > int64(c.startRow()))
 }
 
