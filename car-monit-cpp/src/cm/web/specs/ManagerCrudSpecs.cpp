@@ -4,15 +4,17 @@
 // 只覆盖同构 CRUD：list / export / getInfo / add / edit / remove。
 // 非 CRUD 接口、唯一性校验、tenant 过滤、软删除、外部服务依赖等仍由手写控制器负责
 // （src/cm/web/controller/**）。解析不到的控制器整只跳过，见生成器输出。
+//
+// 每个实体的 Spec 通过 spec<Entity>() 暴露（声明见 ManagerCrudSpecs.hpp），
+// 手写控制器可以复用同一份列定义，避免把几十个字段再抄一遍。
 #include "cm/framework/web/Router.hpp"
 #include "cm/framework/web/crud/CrudSpec.hpp"
+#include "cm/web/specs/ManagerCrudSpecs.hpp"
 
 namespace cm::web::crud {
 
-void registerManagerArea(Router& r) {
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/BussTest.java
-        // ruoyi-system/src/main/resources/mapper/manager/BussTestMapper.xml
+const Spec& specBussTest() {
+    static const Spec s = [] {
         Spec s;
         s.table = "buss_test";
         s.alias = "t";
@@ -46,13 +48,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "业务测试";
-        Perms p;
-        p.list = "manager:busstest:list";
-        registerCrud(r, "/manager/busstest", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarAduitFree.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarAduitFreeMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarAduitFree() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_aduit_free";
         s.alias = "t";
@@ -85,13 +87,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time,t.id";
         s.excelSheetName = "补缴处理";
-        Perms p;
-        registerCrud(r, "/manager/aduitfree", s, p, "id");
-        registerListVariant(r, "/manager/aduitfree/incomeStatics", s, ListKind::Paged);
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarConfimFree.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarConfimFreeMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarConfimFree() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_confim_free";
         s.alias = "t";
@@ -140,14 +142,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "确认补缴";
-        Perms p;
-        registerCrud(r, "/manager/confimfree", s, p, "exceptIds");
-        registerListVariant(r, "/manager/confimfree/concernedList", s, ListKind::Paged);
-        registerListVariant(r, "/manager/confimfree/carStatics", s, ListKind::Paged);
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarExceptRecord.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarExceptRecordMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarExceptRecord() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_except_record";
         s.alias = "t";
@@ -197,12 +198,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "异常车辆流水";
-        Perms p;
-        registerCrud(r, "/manager/exceptrecord", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarFeeRecord.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarFeeRecordMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarFeeRecord() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_fee_record";
         s.alias = "t";
@@ -238,13 +240,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "收费流水";
-        Perms p;
-        p.list = "manager:feerecord:list";
-        registerCrud(r, "/manager/feerecord", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarInfo.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarInfoMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarInfo() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_info";
         s.alias = "t";
@@ -324,14 +326,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "车辆信息";
-        Perms p;
-        p.list = "manager:carinfo:list";
-        registerCrud(r, "/manager/carinfo", s, p, "id");
-        registerListVariant(r, "/manager/carinfo/listAll", s, ListKind::Paged);
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarQueryLog.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarQueryLogMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarQueryLog() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_query_log";
         s.alias = "t";
@@ -360,13 +361,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "查询日志";
-        Perms p;
-        p.list = "manager:querylog:list";
-        registerCrud(r, "/manager/querylog", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarRouteDetail.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarRouteDetailMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarRouteDetail() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_route_detail";
         s.alias = "t";
@@ -410,13 +411,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "常用路线明细";
-        Perms p;
-        p.list = "manager:routedetail:list";
-        registerCrud(r, "/manager/routedetail", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarRouteInfo.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarRouteInfoMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarRouteInfo() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_route_info";
         s.alias = "t";
@@ -452,13 +453,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "常用路线";
-        Perms p;
-        p.list = "manager:routeinfo:list";
-        registerCrud(r, "/manager/routeinfo", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarSplitRecord.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarSplitRecordMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarSplitRecord() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_split_record";
         s.alias = "t";
@@ -493,13 +494,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "拆分流水";
-        Perms p;
-        p.list = "manager:splitrecord:list";
-        registerCrud(r, "/manager/splitrecord", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarSuspiciousBack.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarSuspiciousBackMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarSuspiciousBack() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_suspicious_back";
         s.alias = "t";
@@ -559,13 +560,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "可疑车辆备份";
-        Perms p;
-        p.list = "manager:carsuspiciousback:list";
-        registerCrud(r, "/manager/carsuspiciousback", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarSuspiciousCheck.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarSuspiciousCheckMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarSuspiciousCheck() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_suspicious_check";
         s.alias = "t";
@@ -597,13 +598,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time,t.id";
         s.excelSheetName = "可疑车辆人工核实";
-        Perms p;
-        p.list = "manager:suspiciouscheck:list";
-        registerCrud(r, "/manager/suspiciouscheck", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarSuspicious.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarSuspiciousMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarSuspicious() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_suspicious";
         s.alias = "t";
@@ -681,14 +682,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.out_time desc,t.id";
         s.excelSheetName = "可疑车辆";
-        Perms p;
-        p.list = "manager:suspicious:list";
-        registerCrud(r, "/manager/suspicious", s, p, "id");
-        registerListVariant(r, "/manager/suspicious/listAll", s, ListKind::Paged);
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarTrackInfo.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarTrackInfoMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarTrackInfo() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_track_info";
         s.alias = "t";
@@ -729,13 +729,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time,t.id";
         s.excelSheetName = "车辆行驶轨迹";
-        Perms p;
-        p.list = "manager:cartrackinfo:list";
-        registerCrud(r, "/manager/cartrackinfo", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarWarningInfo.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarWarningInfoMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarWarningInfo() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_warning_info";
         s.alias = "t";
@@ -799,13 +799,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.gantry_time desc,t.id";
         s.excelSheetName = "预警车辆";
-        Perms p;
-        p.list = "manager:carwarning:list";
-        registerCrud(r, "/manager/carwarning", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarWarningRule.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarWarningRuleMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarWarningRule() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_warning_rule";
         s.alias = "t";
@@ -838,13 +838,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "预警规则";
-        Perms p;
-        p.list = "manager:warningrule:list";
-        registerCrud(r, "/manager/warningrule", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarWhiteInfo.java
-        // ruoyi-system/src/main/resources/mapper/manager/CarWhiteInfoMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarWhiteInfo() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_white_info";
         s.alias = "t";
@@ -874,13 +874,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "车俩白名单";
-        Perms p;
-        p.list = "manager:whiteinfo:list";
-        registerCrud(r, "/manager/whiteinfo", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/GantryCar.java
-        // ruoyi-system/src/main/resources/mapper/manager/GantryCarMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specGantryCar() {
+    static const Spec s = [] {
         Spec s;
         s.table = "gantry_car";
         s.alias = "t";
@@ -915,13 +915,13 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "门架拍识查询";
-        Perms p;
-        p.list = "manager:gantrycar:list";
-        registerCrud(r, "/manager/gantrycar", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/GantryTradeInfo.java
-        // ruoyi-system/src/main/resources/mapper/manager/GantryTradeInfoMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specGantryTradeInfo() {
+    static const Spec s = [] {
         Spec s;
         s.table = "gantry_trade_info";
         s.alias = "t";
@@ -957,9 +957,146 @@ void registerManagerArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "门架交易查询";
+        return s;
+    }();
+    return s;
+}
+
+void registerManagerArea(Router& r) {
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/BussTest.java
+        // ruoyi-system/src/main/resources/mapper/manager/BussTestMapper.xml
+        Perms p;
+        p.list = "manager:busstest:list";
+        registerCrud(r, "/manager/busstest", specBussTest(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarAduitFree.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarAduitFreeMapper.xml
+        Perms p;
+        registerCrud(r, "/manager/aduitfree", specCarAduitFree(), p, "id");
+        registerListVariant(r, "/manager/aduitfree/incomeStatics", specCarAduitFree(), ListKind::Paged);
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarConfimFree.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarConfimFreeMapper.xml
+        Perms p;
+        registerCrud(r, "/manager/confimfree", specCarConfimFree(), p, "exceptIds");
+        registerListVariant(r, "/manager/confimfree/concernedList", specCarConfimFree(), ListKind::Paged);
+        registerListVariant(r, "/manager/confimfree/carStatics", specCarConfimFree(), ListKind::Paged);
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarExceptRecord.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarExceptRecordMapper.xml
+        Perms p;
+        registerCrud(r, "/manager/exceptrecord", specCarExceptRecord(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarFeeRecord.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarFeeRecordMapper.xml
+        Perms p;
+        p.list = "manager:feerecord:list";
+        registerCrud(r, "/manager/feerecord", specCarFeeRecord(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarInfo.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarInfoMapper.xml
+        Perms p;
+        p.list = "manager:carinfo:list";
+        registerCrud(r, "/manager/carinfo", specCarInfo(), p, "id");
+        registerListVariant(r, "/manager/carinfo/listAll", specCarInfo(), ListKind::Paged);
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarQueryLog.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarQueryLogMapper.xml
+        Perms p;
+        p.list = "manager:querylog:list";
+        registerCrud(r, "/manager/querylog", specCarQueryLog(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarRouteDetail.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarRouteDetailMapper.xml
+        Perms p;
+        p.list = "manager:routedetail:list";
+        registerCrud(r, "/manager/routedetail", specCarRouteDetail(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarRouteInfo.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarRouteInfoMapper.xml
+        Perms p;
+        p.list = "manager:routeinfo:list";
+        registerCrud(r, "/manager/routeinfo", specCarRouteInfo(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarSplitRecord.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarSplitRecordMapper.xml
+        Perms p;
+        p.list = "manager:splitrecord:list";
+        registerCrud(r, "/manager/splitrecord", specCarSplitRecord(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarSuspiciousBack.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarSuspiciousBackMapper.xml
+        Perms p;
+        p.list = "manager:carsuspiciousback:list";
+        registerCrud(r, "/manager/carsuspiciousback", specCarSuspiciousBack(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarSuspiciousCheck.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarSuspiciousCheckMapper.xml
+        Perms p;
+        p.list = "manager:suspiciouscheck:list";
+        registerCrud(r, "/manager/suspiciouscheck", specCarSuspiciousCheck(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarSuspicious.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarSuspiciousMapper.xml
+        Perms p;
+        p.list = "manager:suspicious:list";
+        registerCrud(r, "/manager/suspicious", specCarSuspicious(), p, "id");
+        registerListVariant(r, "/manager/suspicious/listAll", specCarSuspicious(), ListKind::Paged);
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarTrackInfo.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarTrackInfoMapper.xml
+        Perms p;
+        p.list = "manager:cartrackinfo:list";
+        registerCrud(r, "/manager/cartrackinfo", specCarTrackInfo(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarWarningInfo.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarWarningInfoMapper.xml
+        Perms p;
+        p.list = "manager:carwarning:list";
+        registerCrud(r, "/manager/carwarning", specCarWarningInfo(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarWarningRule.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarWarningRuleMapper.xml
+        Perms p;
+        p.list = "manager:warningrule:list";
+        registerCrud(r, "/manager/warningrule", specCarWarningRule(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarWhiteInfo.java
+        // ruoyi-system/src/main/resources/mapper/manager/CarWhiteInfoMapper.xml
+        Perms p;
+        p.list = "manager:whiteinfo:list";
+        registerCrud(r, "/manager/whiteinfo", specCarWhiteInfo(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/GantryCar.java
+        // ruoyi-system/src/main/resources/mapper/manager/GantryCarMapper.xml
+        Perms p;
+        p.list = "manager:gantrycar:list";
+        registerCrud(r, "/manager/gantrycar", specGantryCar(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/manager/domain/GantryTradeInfo.java
+        // ruoyi-system/src/main/resources/mapper/manager/GantryTradeInfoMapper.xml
         Perms p;
         p.list = "manager:gantrytrade:list";
-        registerCrud(r, "/manager/gantrytrade", s, p, "id");
+        registerCrud(r, "/manager/gantrytrade", specGantryTradeInfo(), p, "id");
     }
 }
 

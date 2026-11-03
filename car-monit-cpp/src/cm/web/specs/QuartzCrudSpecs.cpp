@@ -4,15 +4,17 @@
 // 只覆盖同构 CRUD：list / export / getInfo / add / edit / remove。
 // 非 CRUD 接口、唯一性校验、tenant 过滤、软删除、外部服务依赖等仍由手写控制器负责
 // （src/cm/web/controller/**）。解析不到的控制器整只跳过，见生成器输出。
+//
+// 每个实体的 Spec 通过 spec<Entity>() 暴露（声明见 QuartzCrudSpecs.hpp），
+// 手写控制器可以复用同一份列定义，避免把几十个字段再抄一遍。
 #include "cm/framework/web/Router.hpp"
 #include "cm/framework/web/crud/CrudSpec.hpp"
+#include "cm/web/specs/QuartzCrudSpecs.hpp"
 
 namespace cm::web::crud {
 
-void registerQuartzArea(Router& r) {
-    {
-        // ruoyi-quartz/src/main/java/com/ruoyi/quartz/domain/SysJob.java
-        // ruoyi-quartz/src/main/resources/mapper/quartz/SysJobMapper.xml
+const Spec& specSysJob() {
+    static const Spec s = [] {
         Spec s;
         s.table = "sys_job";
         s.alias = "t";
@@ -31,14 +33,13 @@ void registerQuartzArea(Router& r) {
             {"status", "status", Fmt::Str, Cond::Eq, "任务状态", false, false},
         };
         s.excelSheetName = "定时任务";
-        Perms p;
-        p.list = "monitor:job:list";
-        p.query = "monitor:job:query";
-        registerCrud(r, "/monitor/job", s, p, "jobId");
-    }
-    {
-        // ruoyi-quartz/src/main/java/com/ruoyi/quartz/domain/SysJobLog.java
-        // ruoyi-quartz/src/main/resources/mapper/quartz/SysJobLogMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specSysJobLog() {
+    static const Spec s = [] {
         Spec s;
         s.table = "sys_job_log";
         s.alias = "t";
@@ -60,10 +61,27 @@ void registerQuartzArea(Router& r) {
         };
         s.orderBy = "create_time desc";
         s.excelSheetName = "任务调度日志";
+        return s;
+    }();
+    return s;
+}
+
+void registerQuartzArea(Router& r) {
+    {
+        // ruoyi-quartz/src/main/java/com/ruoyi/quartz/domain/SysJob.java
+        // ruoyi-quartz/src/main/resources/mapper/quartz/SysJobMapper.xml
         Perms p;
         p.list = "monitor:job:list";
         p.query = "monitor:job:query";
-        registerCrud(r, "/monitor/jobLog", s, p, "id");
+        registerCrud(r, "/monitor/job", specSysJob(), p, "jobId");
+    }
+    {
+        // ruoyi-quartz/src/main/java/com/ruoyi/quartz/domain/SysJobLog.java
+        // ruoyi-quartz/src/main/resources/mapper/quartz/SysJobLogMapper.xml
+        Perms p;
+        p.list = "monitor:job:list";
+        p.query = "monitor:job:query";
+        registerCrud(r, "/monitor/jobLog", specSysJobLog(), p, "id");
     }
 }
 

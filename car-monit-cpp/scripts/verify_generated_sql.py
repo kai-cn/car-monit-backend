@@ -57,24 +57,41 @@ NL = chr(10)
 
 
 def parse_spec(path):
+    """新结构：每个实体是文件级的 const Spec& specXxx() {...}，
+    注册块里只留 Perms 与 registerCrud(r, "<base>", specXxx(), p, "<pk>")。
+    两边按函数名配对后再拼 SQL 去真实库跑。"""
     src = io.open(path, encoding="utf-8").read()
+    bodies = {}
+    for m in re.finditer(r'const Spec& (spec\w+)\(\) \{', src):
+        name = m.group(1)
+        start = m.end()
+        depth, i = 1, start
+        while i < len(src) and depth:
+            if src[i] == "{":
+                depth += 1
+            elif src[i] == "}":
+                depth -= 1
+            i += 1
+        bodies[name] = src[start:i]
+
     specs = []
-    # 每个 { ... } 块：table / orderBy / registerCrud(r, "<base>", ...)
-    # 相邻块共用 "    }}"+"{" 边界，正则会把一半块吃掉，所以按 split 取块
-    for b in src.split(NL + "    {" + NL)[1:]:
-        b = b.split(NL + "    }" + NL)[0]
+    for rm in re.finditer(r'registerCrud\(r, "([^"]+)", (spec\w+)\(\), p, "([^"]+)"\);', src):
+        base, name, pkvar = rm.group(1), rm.group(2), rm.group(3)
+        b = bodies.get(name)
+        if not b:
+            continue
         table = re.search(r's\.table = "([^"]+)";', b)
-        base = re.search(r'registerCrud\(r, "([^"]+)", s, p, "([^"]+)"\);', b)
-        if not table or not base:
+        if not table:
             continue
         fields = [m.groupdict() for m in FIELD_RE.finditer(b)]
         order = re.search(r's\.orderBy = "([^"]*)";', b)
         alias = re.search(r's\.alias = "([^"]*)";', b)
         specs.append({
             "file": os.path.basename(path),
+            "name": name,
             "table": table.group(1),
-            "base": base.group(1),
-            "pkvar": base.group(2),
+            "base": base,
+            "pkvar": pkvar,
             "fields": fields,
             "orderBy": order.group(1) if order else "",
             # 别名跟 spec 一致（sys_role 用 r、…），否则测出来的 SQL 与引擎拼的不是一回事

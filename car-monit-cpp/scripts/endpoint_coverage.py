@@ -43,7 +43,8 @@ PERMI_RE = re.compile(r"@PreAuthorize\(\"@ss\.has(?:Any)?Permi\('([^']+)'\)\"\)"
 # C++ 侧：手写路由 + 生成器 spec
 CPP_ROUTE_RE = re.compile(r'\br\.(get|post|put|del|patch)\(\s*"([^"]+)"')
 LISTV_RE = re.compile(r'registerListVariant\(\s*\w+,\s*"([^"]+)"')
-SPEC_RE = re.compile(r'register(?:Crud|ReadOnly)\(\s*\w+,\s*"([^"]+)",\s*s,\s*p,\s*"([^"]+)"\)')
+SPEC_RE = re.compile(
+    r'register(?:Crud|ReadOnly)\(\s*\w+,\s*"([^"]+)",\s*(?:s|spec\w+)\(\),\s*p,\s*"([^"]+)"\)')
 
 
 def read(path):

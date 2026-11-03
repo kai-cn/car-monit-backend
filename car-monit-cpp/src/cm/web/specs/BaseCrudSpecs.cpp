@@ -4,15 +4,17 @@
 // 只覆盖同构 CRUD：list / export / getInfo / add / edit / remove。
 // 非 CRUD 接口、唯一性校验、tenant 过滤、软删除、外部服务依赖等仍由手写控制器负责
 // （src/cm/web/controller/**）。解析不到的控制器整只跳过，见生成器输出。
+//
+// 每个实体的 Spec 通过 spec<Entity>() 暴露（声明见 BaseCrudSpecs.hpp），
+// 手写控制器可以复用同一份列定义，避免把几十个字段再抄一遍。
 #include "cm/framework/web/Router.hpp"
 #include "cm/framework/web/crud/CrudSpec.hpp"
+#include "cm/web/specs/BaseCrudSpecs.hpp"
 
 namespace cm::web::crud {
 
-void registerBaseArea(Router& r) {
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/BaseConfigServiceArea.java
-        // ruoyi-system/src/main/resources/mapper/base/BaseConfigServiceAreaMapper.xml
+const Spec& specBaseConfigServiceArea() {
+    static const Spec s = [] {
         Spec s;
         s.table = "base_config_service_area";
         s.alias = "t";
@@ -35,14 +37,13 @@ void registerBaseArea(Router& r) {
             {"pileNo", "pile_no", Fmt::Str, Cond::Eq, "桩号", false, false},
         };
         s.excelSheetName = "服务区";
-        Perms p;
-        p.list = "base:configServiceArea:list";
-        registerCrud(r, "/base/configServiceArea", s, p, "fwqbm");
-        registerListVariant(r, "/base/configServiceArea/listQuery", s, ListKind::Plain);
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/CarWarningConfig.java
-        // ruoyi-system/src/main/resources/mapper/base/CarWarningConfigMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specCarWarningConfig() {
+    static const Spec s = [] {
         Spec s;
         s.table = "car_warning_config";
         s.alias = "t";
@@ -63,13 +64,13 @@ void registerBaseArea(Router& r) {
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
         };
         s.excelSheetName = "服务区判定规则";
-        Perms p;
-        p.list = "base:config:list";
-        registerCrud(r, "/base/config", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/DwdLcztFwqjcxx.java
-        // ruoyi-system/src/main/resources/mapper/base/DwdLcztFwqjcxxMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specDwdLcztFwqjcxx() {
+    static const Spec s = [] {
         Spec s;
         s.table = "dwd_lczt_fwqjcxx";
         s.alias = "t";
@@ -110,12 +111,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.fwqmc";
         s.excelSheetName = "服务区基础信息";
-        Perms p;
-        registerCrud(r, "/base/fwqjcxx", s, p, "agentPk");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/DwdLcztSfsjcxx.java
-        // ruoyi-system/src/main/resources/mapper/base/DwdLcztSfsjcxxMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specDwdLcztSfsjcxx() {
+    static const Spec s = [] {
         Spec s;
         s.table = "dwd_lczt_sfsjcxx";
         s.alias = "t";
@@ -140,12 +142,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.agent_pk";
         s.excelSheetName = "收费所基础信息";
-        Perms p;
-        registerCrud(r, "/base/sfsjcxx", s, p, "agentPk");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/DwdLcztSfzjcxx.java
-        // ruoyi-system/src/main/resources/mapper/base/DwdLcztSfzjcxxMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specDwdLcztSfzjcxx() {
+    static const Spec s = [] {
         Spec s;
         s.table = "dwd_lczt_sfzjcxx";
         s.alias = "t";
@@ -170,12 +173,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.agent_pk";
         s.excelSheetName = "收费站基础信息";
-        Perms p;
-        registerCrud(r, "/base/sfzjcxx", s, p, "agentPk");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/Geometry.java
-        // ruoyi-system/src/main/resources/mapper/base/GeometryMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specGeometry() {
+    static const Spec s = [] {
         Spec s;
         s.table = "geometry";
         s.alias = "t";
@@ -190,13 +194,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "lxbh,t.qdzh";
         s.excelSheetName = "车辆信息";
-        Perms p;
-        p.list = "base:geometry:list";
-        registerCrud(r, "/base/geometry", s, p, "ID");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsCxztFwqclls.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsCxztFwqcllsMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsCxztFwqclls() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_cxzt_fwqclls";
         s.alias = "t";
@@ -221,13 +225,13 @@ void registerBaseArea(Router& r) {
             {"gradeLevel", "grade_level", Fmt::Str, Cond::Eq, "分类分级", false, false},
         };
         s.excelSheetName = "OdsCxztFwqclls";
-        Perms p;
-        p.list = "manager:fwqclls:list";
-        registerCrud(r, "/manager/fwqclls", s, p, "bigId");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsLwzxsfsjFeeGantryFusion01.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsLwzxsfsjFeeGantryFusion01Mapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsLwzxsfsjFeeGantryFusion01() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_lwzxsfsj_fee_gantry_fusion_01";
         s.alias = "t";
@@ -314,13 +318,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "交易流水";
-        Perms p;
-        p.list = "base:feeGantry:list";
-        registerCrud(r, "/base/feeGantry", s, p, "bigId");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsLwzxsfsjFeeRecords01.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsLwzxsfsjFeeRecords01Mapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsLwzxsfsjFeeRecords01() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_lwzxsfsj_fee_records_01";
         s.alias = "t";
@@ -480,14 +484,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "基础-收费流水";
-        Perms p;
-        p.list = "base:feerecords:list";
-        p.exportList = "base:feerecords:list";
-        registerCrud(r, "/base/feerecords", s, p, "bigId");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsLwzxsfsjFeeStationEnter01.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsLwzxsfsjFeeStationEnter01Mapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsLwzxsfsjFeeStationEnter01() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_lwzxsfsj_fee_station_enter_01";
         s.alias = "t";
@@ -529,12 +532,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "OdsLwzxsfsjFeeStationEnter01";
-        Perms p;
-        registerCrud(r, "/base/feeStationEnter", s, p, "bigId");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsLwzxsfsjFeeStationExit01.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsLwzxsfsjFeeStationExit01Mapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsLwzxsfsjFeeStationExit01() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_lwzxsfsj_fee_station_exit_01";
         s.alias = "t";
@@ -610,13 +614,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "收费站出口流水";
-        Perms p;
-        p.list = "base:feestationexit:list";
-        registerCrud(r, "/base/feestationexit", s, p, "bigId");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsRtSzdnSnapshotFlowAddcode.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsRtSzdnSnapshotFlowAddcodeMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsRtSzdnSnapshotFlowAddcode() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_rt_szdn_snapshot_flow_addcode";
         s.alias = "t";
@@ -677,14 +681,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "门架抓拍流水";
-        Perms p;
-        p.list = "base:snapshotflow:list";
-        p.exportList = "base:snapshotflow:list";
-        registerCrud(r, "/base/snapshotflow", s, p, "bigId");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsRtSzdnSnapshotFlowProvcaptureAddcode.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsRtSzdnSnapshotFlowProvcaptureAddcodeMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsRtSzdnSnapshotFlowProvcaptureAddcode() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_rt_szdn_snapshot_flow_provcapture_addcode";
         s.alias = "t";
@@ -774,12 +777,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "OdsRtSzdnSnapshotFlowProvcaptureAddcode";
-        Perms p;
-        registerCrud(r, "/base/provcapture", s, p, "bigId");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsRtSzdnSnapshotFlowStationcaptureAddcode.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsRtSzdnSnapshotFlowStationcaptureAddcodeMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsRtSzdnSnapshotFlowStationcaptureAddcode() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_rt_szdn_snapshot_flow_stationcapture_addcode";
         s.alias = "t";
@@ -821,12 +825,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "OdsRtSzdnSnapshotFlowStationcaptureAddcode";
-        Perms p;
-        registerCrud(r, "/base/stationcapture", s, p, "bigId");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnGantry.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsSzdnGantryMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsSzdnGantry() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_szdn_gantry";
         s.alias = "t";
@@ -861,13 +866,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.gantry_name";
         s.excelSheetName = "门架信息";
-        Perms p;
-        registerCrud(r, "/base/gantry", s, p, "id");
-        registerListVariant(r, "/base/gantry/listAll", s, ListKind::Paged);
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnGantryIp.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsSzdnGantryIpMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsSzdnGantryIp() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_szdn_gantry_ip";
         s.alias = "t";
@@ -883,12 +888,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.id";
         s.excelSheetName = "OdsSzdnGantryIp";
-        Perms p;
-        registerCrud(r, "/base/gantryIp", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnProvinceBorderVehicleWeightNewstructure.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsSzdnProvinceBorderVehicleWeightNewstructureMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsSzdnProvinceBorderVehicleWeightNewstructure() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_szdn_province_border_vehicle_weight_newstructure";
         s.alias = "t";
@@ -927,12 +933,13 @@ void registerBaseArea(Router& r) {
             {"reserve3", "reserve3", Fmt::Str, Cond::Eq, nullptr, false, false},
         };
         s.excelSheetName = "OdsSzdnProvinceBorderVehicleWeightNewstructure";
-        Perms p;
-        registerCrud(r, "/base/vehicleweight", s, p, "dataSource");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnSection.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsSzdnSectionMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsSzdnSection() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_szdn_section";
         s.alias = "t";
@@ -953,13 +960,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.road_code,t.section_code";
         s.excelSheetName = "路段信息";
-        Perms p;
-        registerCrud(r, "/base/section", s, p, "id");
-        registerListVariant(r, "/base/section/listAll", s, ListKind::Paged);
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnToll.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsSzdnTollMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsSzdnToll() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_szdn_toll";
         s.alias = "t";
@@ -992,13 +999,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.toll_name";
         s.excelSheetName = "收费站基础信息";
-        Perms p;
-        registerCrud(r, "/base/toll", s, p, "id");
-        registerListVariant(r, "/base/toll/listAll", s, ListKind::Paged);
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnTollStationIp.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsSzdnTollStationIpMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsSzdnTollStationIp() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_szdn_toll_station_ip";
         s.alias = "t";
@@ -1013,12 +1020,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "OdsSzdnTollStationIp";
-        Perms p;
-        registerCrud(r, "/base/tollStationIp", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsYhglVBaseOrg.java
-        // ruoyi-system/src/main/resources/mapper/base/OdsYhglVBaseOrgMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specOdsYhglVBaseOrg() {
+    static const Spec s = [] {
         Spec s;
         s.table = "ods_yhgl_v_base_org";
         s.alias = "t";
@@ -1044,12 +1052,13 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.big_id";
         s.excelSheetName = "机构信息";
-        Perms p;
-        registerCrud(r, "/base/org", s, p, "bigId");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/ZdataLocationDict.java
-        // ruoyi-system/src/main/resources/mapper/base/ZdataLocationDictMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specZdataLocationDict() {
+    static const Spec s = [] {
         Spec s;
         s.table = "zdata_location_dict";
         s.alias = "t";
@@ -1071,12 +1080,13 @@ void registerBaseArea(Router& r) {
             {"updatedAt", "updated_at", Fmt::DateYmd, Cond::Eq, "修改时间", false, false},
         };
         s.excelSheetName = "ZdataLocationDict";
-        Perms p;
-        registerCrud(r, "/base/location", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/ZdataTrailFitting.java
-        // ruoyi-system/src/main/resources/mapper/base/ZdataTrailFittingMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specZdataTrailFitting() {
+    static const Spec s = [] {
         Spec s;
         s.table = "zdata_trail_fitting";
         s.alias = "t";
@@ -1102,12 +1112,13 @@ void registerBaseArea(Router& r) {
             {"trailpoints", "trailpoints", Fmt::Str, Cond::Eq, "拟合轨迹点集合", false, false},
         };
         s.excelSheetName = "ZdataTrailFitting";
-        Perms p;
-        registerCrud(r, "/base/fitting", s, p, "cid");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/base/domain/ZdataTrailTracks.java
-        // ruoyi-system/src/main/resources/mapper/base/ZdataTrailTracksMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specZdataTrailTracks() {
+    static const Spec s = [] {
         Spec s;
         s.table = "zdata_trail_tracks";
         s.alias = "t";
@@ -1166,8 +1177,169 @@ void registerBaseArea(Router& r) {
         };
         s.orderBy = "t.enter_time desc";
         s.excelSheetName = "ZdataTrailTracks";
+        return s;
+    }();
+    return s;
+}
+
+void registerBaseArea(Router& r) {
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/BaseConfigServiceArea.java
+        // ruoyi-system/src/main/resources/mapper/base/BaseConfigServiceAreaMapper.xml
         Perms p;
-        registerCrud(r, "/base/trailtracks", s, p, "uuid");
+        p.list = "base:configServiceArea:list";
+        registerCrud(r, "/base/configServiceArea", specBaseConfigServiceArea(), p, "fwqbm");
+        registerListVariant(r, "/base/configServiceArea/listQuery", specBaseConfigServiceArea(), ListKind::Plain);
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/CarWarningConfig.java
+        // ruoyi-system/src/main/resources/mapper/base/CarWarningConfigMapper.xml
+        Perms p;
+        p.list = "base:config:list";
+        registerCrud(r, "/base/config", specCarWarningConfig(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/DwdLcztFwqjcxx.java
+        // ruoyi-system/src/main/resources/mapper/base/DwdLcztFwqjcxxMapper.xml
+        Perms p;
+        registerCrud(r, "/base/fwqjcxx", specDwdLcztFwqjcxx(), p, "agentPk");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/DwdLcztSfsjcxx.java
+        // ruoyi-system/src/main/resources/mapper/base/DwdLcztSfsjcxxMapper.xml
+        Perms p;
+        registerCrud(r, "/base/sfsjcxx", specDwdLcztSfsjcxx(), p, "agentPk");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/DwdLcztSfzjcxx.java
+        // ruoyi-system/src/main/resources/mapper/base/DwdLcztSfzjcxxMapper.xml
+        Perms p;
+        registerCrud(r, "/base/sfzjcxx", specDwdLcztSfzjcxx(), p, "agentPk");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/Geometry.java
+        // ruoyi-system/src/main/resources/mapper/base/GeometryMapper.xml
+        Perms p;
+        p.list = "base:geometry:list";
+        registerCrud(r, "/base/geometry", specGeometry(), p, "ID");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsCxztFwqclls.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsCxztFwqcllsMapper.xml
+        Perms p;
+        p.list = "manager:fwqclls:list";
+        registerCrud(r, "/manager/fwqclls", specOdsCxztFwqclls(), p, "bigId");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsLwzxsfsjFeeGantryFusion01.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsLwzxsfsjFeeGantryFusion01Mapper.xml
+        Perms p;
+        p.list = "base:feeGantry:list";
+        registerCrud(r, "/base/feeGantry", specOdsLwzxsfsjFeeGantryFusion01(), p, "bigId");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsLwzxsfsjFeeRecords01.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsLwzxsfsjFeeRecords01Mapper.xml
+        Perms p;
+        p.list = "base:feerecords:list";
+        p.exportList = "base:feerecords:list";
+        registerCrud(r, "/base/feerecords", specOdsLwzxsfsjFeeRecords01(), p, "bigId");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsLwzxsfsjFeeStationEnter01.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsLwzxsfsjFeeStationEnter01Mapper.xml
+        Perms p;
+        registerCrud(r, "/base/feeStationEnter", specOdsLwzxsfsjFeeStationEnter01(), p, "bigId");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsLwzxsfsjFeeStationExit01.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsLwzxsfsjFeeStationExit01Mapper.xml
+        Perms p;
+        p.list = "base:feestationexit:list";
+        registerCrud(r, "/base/feestationexit", specOdsLwzxsfsjFeeStationExit01(), p, "bigId");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsRtSzdnSnapshotFlowAddcode.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsRtSzdnSnapshotFlowAddcodeMapper.xml
+        Perms p;
+        p.list = "base:snapshotflow:list";
+        p.exportList = "base:snapshotflow:list";
+        registerCrud(r, "/base/snapshotflow", specOdsRtSzdnSnapshotFlowAddcode(), p, "bigId");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsRtSzdnSnapshotFlowProvcaptureAddcode.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsRtSzdnSnapshotFlowProvcaptureAddcodeMapper.xml
+        Perms p;
+        registerCrud(r, "/base/provcapture", specOdsRtSzdnSnapshotFlowProvcaptureAddcode(), p, "bigId");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsRtSzdnSnapshotFlowStationcaptureAddcode.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsRtSzdnSnapshotFlowStationcaptureAddcodeMapper.xml
+        Perms p;
+        registerCrud(r, "/base/stationcapture", specOdsRtSzdnSnapshotFlowStationcaptureAddcode(), p, "bigId");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnGantry.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsSzdnGantryMapper.xml
+        Perms p;
+        registerCrud(r, "/base/gantry", specOdsSzdnGantry(), p, "id");
+        registerListVariant(r, "/base/gantry/listAll", specOdsSzdnGantry(), ListKind::Paged);
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnGantryIp.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsSzdnGantryIpMapper.xml
+        Perms p;
+        registerCrud(r, "/base/gantryIp", specOdsSzdnGantryIp(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnProvinceBorderVehicleWeightNewstructure.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsSzdnProvinceBorderVehicleWeightNewstructureMapper.xml
+        Perms p;
+        registerCrud(r, "/base/vehicleweight", specOdsSzdnProvinceBorderVehicleWeightNewstructure(), p, "dataSource");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnSection.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsSzdnSectionMapper.xml
+        Perms p;
+        registerCrud(r, "/base/section", specOdsSzdnSection(), p, "id");
+        registerListVariant(r, "/base/section/listAll", specOdsSzdnSection(), ListKind::Paged);
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnToll.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsSzdnTollMapper.xml
+        Perms p;
+        registerCrud(r, "/base/toll", specOdsSzdnToll(), p, "id");
+        registerListVariant(r, "/base/toll/listAll", specOdsSzdnToll(), ListKind::Paged);
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnTollStationIp.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsSzdnTollStationIpMapper.xml
+        Perms p;
+        registerCrud(r, "/base/tollStationIp", specOdsSzdnTollStationIp(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsYhglVBaseOrg.java
+        // ruoyi-system/src/main/resources/mapper/base/OdsYhglVBaseOrgMapper.xml
+        Perms p;
+        registerCrud(r, "/base/org", specOdsYhglVBaseOrg(), p, "bigId");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/ZdataLocationDict.java
+        // ruoyi-system/src/main/resources/mapper/base/ZdataLocationDictMapper.xml
+        Perms p;
+        registerCrud(r, "/base/location", specZdataLocationDict(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/ZdataTrailFitting.java
+        // ruoyi-system/src/main/resources/mapper/base/ZdataTrailFittingMapper.xml
+        Perms p;
+        registerCrud(r, "/base/fitting", specZdataTrailFitting(), p, "cid");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/base/domain/ZdataTrailTracks.java
+        // ruoyi-system/src/main/resources/mapper/base/ZdataTrailTracksMapper.xml
+        Perms p;
+        registerCrud(r, "/base/trailtracks", specZdataTrailTracks(), p, "uuid");
     }
 }
 

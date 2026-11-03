@@ -4,15 +4,17 @@
 // 只覆盖同构 CRUD：list / export / getInfo / add / edit / remove。
 // 非 CRUD 接口、唯一性校验、tenant 过滤、软删除、外部服务依赖等仍由手写控制器负责
 // （src/cm/web/controller/**）。解析不到的控制器整只跳过，见生成器输出。
+//
+// 每个实体的 Spec 通过 spec<Entity>() 暴露（声明见 SystemCrudSpecs.hpp），
+// 手写控制器可以复用同一份列定义，避免把几十个字段再抄一遍。
 #include "cm/framework/web/Router.hpp"
 #include "cm/framework/web/crud/CrudSpec.hpp"
+#include "cm/web/specs/SystemCrudSpecs.hpp"
 
 namespace cm::web::crud {
 
-void registerSystemArea(Router& r) {
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/system/domain/SysConfig.java
-        // ruoyi-system/src/main/resources/mapper/system/SysConfigMapper.xml
+const Spec& specSysConfig() {
+    static const Spec s = [] {
         Spec s;
         s.table = "sys_config";
         s.alias = "t";
@@ -29,15 +31,13 @@ void registerSystemArea(Router& r) {
             {"configType", "config_type", Fmt::Str, Cond::Eq, "系统内置", false, false},
         };
         s.excelSheetName = "参数管理";
-        Perms p;
-        p.list = "system:config:list";
-        p.exportList = "system:config:export";
-        p.query = "system:config:query";
-        registerCrud(r, "/system/config", s, p, "id");
-    }
-    {
-        // ruoyi-common/src/main/java/com/ruoyi/common/core/domain/entity/SysDictData.java
-        // ruoyi-system/src/main/resources/mapper/system/SysDictDataMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specSysDictData() {
+    static const Spec s = [] {
         Spec s;
         s.table = "sys_dict_data";
         s.alias = "t";
@@ -59,15 +59,13 @@ void registerSystemArea(Router& r) {
         };
         s.orderBy = "dict_sort asc";
         s.excelSheetName = "字典数据";
-        Perms p;
-        p.list = "system:dict:list";
-        p.exportList = "system:dict:export";
-        p.query = "system:dict:query";
-        registerCrud(r, "/system/dict/data", s, p, "id");
-    }
-    {
-        // ruoyi-common/src/main/java/com/ruoyi/common/core/domain/entity/SysDictType.java
-        // ruoyi-system/src/main/resources/mapper/system/SysDictTypeMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specSysDictType() {
+    static const Spec s = [] {
         Spec s;
         s.table = "sys_dict_type";
         s.alias = "t";
@@ -84,15 +82,13 @@ void registerSystemArea(Router& r) {
         };
         s.orderBy = "create_time desc";
         s.excelSheetName = "字典类型";
-        Perms p;
-        p.list = "system:dict:list";
-        p.exportList = "system:dict:export";
-        p.query = "system:dict:query";
-        registerCrud(r, "/system/dict/type", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/system/domain/SysFile.java
-        // ruoyi-system/src/main/resources/mapper/system/SysFileMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specSysFile() {
+    static const Spec s = [] {
         Spec s;
         s.table = "sys_file";
         s.alias = "t";
@@ -116,13 +112,13 @@ void registerSystemArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "文件";
-        Perms p;
-        p.list = "base:sysflie:list";
-        registerCrud(r, "/system/file", s, p, "ids");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/system/domain/SysNotice.java
-        // ruoyi-system/src/main/resources/mapper/system/SysNoticeMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specSysNotice() {
+    static const Spec s = [] {
         Spec s;
         s.table = "sys_notice";
         s.alias = "t";
@@ -143,14 +139,13 @@ void registerSystemArea(Router& r) {
         };
         s.orderBy = "t.create_time desc";
         s.excelSheetName = "通知公告";
-        Perms p;
-        p.list = "system:notice:list";
-        registerCrud(r, "/system/notice", s, p, "id");
-        registerListVariant(r, "/system/notice/listquery", s, ListKind::Paged);
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/system/domain/SysPost.java
-        // ruoyi-system/src/main/resources/mapper/system/SysPostMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specSysPost() {
+    static const Spec s = [] {
         Spec s;
         s.table = "sys_post";
         s.alias = "p";
@@ -167,15 +162,13 @@ void registerSystemArea(Router& r) {
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
         };
         s.excelSheetName = "岗位管理";
-        Perms p;
-        p.list = "system:post:list";
-        p.exportList = "system:post:export";
-        p.query = "system:post:query";
-        registerCrud(r, "/system/post", s, p, "id");
-    }
-    {
-        // ruoyi-common/src/main/java/com/ruoyi/common/core/domain/entity/SysRole.java
-        // ruoyi-system/src/main/resources/mapper/system/SysRoleMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specSysRole() {
+    static const Spec s = [] {
         Spec s;
         s.table = "sys_role";
         s.alias = "r";
@@ -197,11 +190,71 @@ void registerSystemArea(Router& r) {
         };
         s.orderBy = "r.role_sort";
         s.excelSheetName = "角色管理";
+        return s;
+    }();
+    return s;
+}
+
+void registerSystemArea(Router& r) {
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/system/domain/SysConfig.java
+        // ruoyi-system/src/main/resources/mapper/system/SysConfigMapper.xml
+        Perms p;
+        p.list = "system:config:list";
+        p.exportList = "system:config:export";
+        p.query = "system:config:query";
+        registerCrud(r, "/system/config", specSysConfig(), p, "id");
+    }
+    {
+        // ruoyi-common/src/main/java/com/ruoyi/common/core/domain/entity/SysDictData.java
+        // ruoyi-system/src/main/resources/mapper/system/SysDictDataMapper.xml
+        Perms p;
+        p.list = "system:dict:list";
+        p.exportList = "system:dict:export";
+        p.query = "system:dict:query";
+        registerCrud(r, "/system/dict/data", specSysDictData(), p, "id");
+    }
+    {
+        // ruoyi-common/src/main/java/com/ruoyi/common/core/domain/entity/SysDictType.java
+        // ruoyi-system/src/main/resources/mapper/system/SysDictTypeMapper.xml
+        Perms p;
+        p.list = "system:dict:list";
+        p.exportList = "system:dict:export";
+        p.query = "system:dict:query";
+        registerCrud(r, "/system/dict/type", specSysDictType(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/system/domain/SysFile.java
+        // ruoyi-system/src/main/resources/mapper/system/SysFileMapper.xml
+        Perms p;
+        p.list = "base:sysflie:list";
+        registerCrud(r, "/system/file", specSysFile(), p, "ids");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/system/domain/SysNotice.java
+        // ruoyi-system/src/main/resources/mapper/system/SysNoticeMapper.xml
+        Perms p;
+        p.list = "system:notice:list";
+        registerCrud(r, "/system/notice", specSysNotice(), p, "id");
+        registerListVariant(r, "/system/notice/listquery", specSysNotice(), ListKind::Paged);
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/system/domain/SysPost.java
+        // ruoyi-system/src/main/resources/mapper/system/SysPostMapper.xml
+        Perms p;
+        p.list = "system:post:list";
+        p.exportList = "system:post:export";
+        p.query = "system:post:query";
+        registerCrud(r, "/system/post", specSysPost(), p, "id");
+    }
+    {
+        // ruoyi-common/src/main/java/com/ruoyi/common/core/domain/entity/SysRole.java
+        // ruoyi-system/src/main/resources/mapper/system/SysRoleMapper.xml
         Perms p;
         p.list = "system:role:list";
         p.exportList = "system:role:export";
         p.query = "system:role:query";
-        registerCrud(r, "/system/role", s, p, "id");
+        registerCrud(r, "/system/role", specSysRole(), p, "id");
     }
 }
 

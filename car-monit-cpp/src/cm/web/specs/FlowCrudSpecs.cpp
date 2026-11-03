@@ -4,15 +4,17 @@
 // 只覆盖同构 CRUD：list / export / getInfo / add / edit / remove。
 // 非 CRUD 接口、唯一性校验、tenant 过滤、软删除、外部服务依赖等仍由手写控制器负责
 // （src/cm/web/controller/**）。解析不到的控制器整只跳过，见生成器输出。
+//
+// 每个实体的 Spec 通过 spec<Entity>() 暴露（声明见 FlowCrudSpecs.hpp），
+// 手写控制器可以复用同一份列定义，避免把几十个字段再抄一遍。
 #include "cm/framework/web/Router.hpp"
 #include "cm/framework/web/crud/CrudSpec.hpp"
+#include "cm/web/specs/FlowCrudSpecs.hpp"
 
 namespace cm::web::crud {
 
-void registerFlowArea(Router& r) {
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowApplyInfo.java
-        // ruoyi-system/src/main/resources/mapper/flow/FlowApplyInfoMapper.xml
+const Spec& specFlowApplyInfo() {
+    static const Spec s = [] {
         Spec s;
         s.table = "flow_apply_info";
         s.alias = "t";
@@ -50,14 +52,13 @@ void registerFlowArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "我的申请";
-        Perms p;
-        p.query = "flow:applyinfo:query";
-        registerCrud(r, "/flow/applyinfo", s, p, "id");
-        registerListVariant(r, "/flow/applyinfo/listAll", s, ListKind::Paged, "flow:applyinfo:list");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowCurrentNode.java
-        // ruoyi-system/src/main/resources/mapper/flow/FlowCurrentNodeMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specFlowCurrentNode() {
+    static const Spec s = [] {
         Spec s;
         s.table = "flow_current_node";
         s.alias = "t";
@@ -106,14 +107,13 @@ void registerFlowArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "流程_当前节点";
-        Perms p;
-        p.list = "flow:currentnode:list";
-        p.query = "flow:currentnode:query";
-        registerCrud(r, "/flow/currentnode", s, p, "billOid");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowList.java
-        // ruoyi-system/src/main/resources/mapper/flow/FlowListMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specFlowList() {
+    static const Spec s = [] {
         Spec s;
         s.table = "flow_list";
         s.alias = "t";
@@ -147,14 +147,13 @@ void registerFlowArea(Router& r) {
         };
         s.orderBy = "t.create_time ASC ,t.id";
         s.excelSheetName = "审核历史记录";
-        Perms p;
-        p.list = "flow:flowlist:list";
-        p.query = "flow:flowlist:query";
-        registerCrud(r, "/flow/flowlist", s, p, "id");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowMessageDispose.java
-        // ruoyi-system/src/main/resources/mapper/flow/FlowMessageDisposeMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specFlowMessageDispose() {
+    static const Spec s = [] {
         Spec s;
         s.table = "flow_message_dispose";
         s.alias = "t";
@@ -182,14 +181,13 @@ void registerFlowArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "系统消息处理人";
-        Perms p;
-        p.list = "flow:messagedispose:list";
-        p.query = "flow:messagedispose:query";
-        registerCrud(r, "/flow/messagedispose", s, p, "mid");
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowMessageInfo.java
-        // ruoyi-system/src/main/resources/mapper/flow/FlowMessageInfoMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specFlowMessageInfo() {
+    static const Spec s = [] {
         Spec s;
         s.table = "flow_message_info";
         s.alias = "t";
@@ -229,16 +227,13 @@ void registerFlowArea(Router& r) {
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "系统内部消息";
-        Perms p;
-        p.query = "flow:messageinfo:query";
-        registerCrud(r, "/flow/messageinfo", s, p, "id");
-        registerListVariant(r, "/flow/messageinfo/listyb", s, ListKind::Paged);
-        registerListVariant(r, "/flow/messageinfo/listyj", s, ListKind::Paged);
-        registerListVariant(r, "/flow/messageinfo/listxx", s, ListKind::Paged);
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowName.java
-        // ruoyi-system/src/main/resources/mapper/flow/FlowNameMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specFlowName() {
+    static const Spec s = [] {
         Spec s;
         s.table = "flow_name";
         s.alias = "t";
@@ -266,15 +261,13 @@ void registerFlowArea(Router& r) {
         };
         s.orderBy = "t.tenant_id,t.flow_key,t.id";
         s.excelSheetName = "流程名称";
-        Perms p;
-        p.list = "flow:flowname:list";
-        p.query = "flow:flowname:query";
-        registerCrud(r, "/flow/flowname", s, p, "id");
-        registerListVariant(r, "/flow/flowname/listQuery", s, ListKind::Paged);
-    }
-    {
-        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowTemplate.java
-        // ruoyi-system/src/main/resources/mapper/flow/FlowTemplateMapper.xml
+        return s;
+    }();
+    return s;
+}
+
+const Spec& specFlowTemplate() {
+    static const Spec s = [] {
         Spec s;
         s.table = "flow_template";
         s.alias = "t";
@@ -309,10 +302,70 @@ void registerFlowArea(Router& r) {
         };
         s.orderBy = "t.NODE_ORDER ,t.id";
         s.excelSheetName = "流程节点";
+        return s;
+    }();
+    return s;
+}
+
+void registerFlowArea(Router& r) {
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowApplyInfo.java
+        // ruoyi-system/src/main/resources/mapper/flow/FlowApplyInfoMapper.xml
+        Perms p;
+        p.query = "flow:applyinfo:query";
+        registerCrud(r, "/flow/applyinfo", specFlowApplyInfo(), p, "id");
+        registerListVariant(r, "/flow/applyinfo/listAll", specFlowApplyInfo(), ListKind::Paged, "flow:applyinfo:list");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowCurrentNode.java
+        // ruoyi-system/src/main/resources/mapper/flow/FlowCurrentNodeMapper.xml
+        Perms p;
+        p.list = "flow:currentnode:list";
+        p.query = "flow:currentnode:query";
+        registerCrud(r, "/flow/currentnode", specFlowCurrentNode(), p, "billOid");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowList.java
+        // ruoyi-system/src/main/resources/mapper/flow/FlowListMapper.xml
+        Perms p;
+        p.list = "flow:flowlist:list";
+        p.query = "flow:flowlist:query";
+        registerCrud(r, "/flow/flowlist", specFlowList(), p, "id");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowMessageDispose.java
+        // ruoyi-system/src/main/resources/mapper/flow/FlowMessageDisposeMapper.xml
+        Perms p;
+        p.list = "flow:messagedispose:list";
+        p.query = "flow:messagedispose:query";
+        registerCrud(r, "/flow/messagedispose", specFlowMessageDispose(), p, "mid");
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowMessageInfo.java
+        // ruoyi-system/src/main/resources/mapper/flow/FlowMessageInfoMapper.xml
+        Perms p;
+        p.query = "flow:messageinfo:query";
+        registerCrud(r, "/flow/messageinfo", specFlowMessageInfo(), p, "id");
+        registerListVariant(r, "/flow/messageinfo/listyb", specFlowMessageInfo(), ListKind::Paged);
+        registerListVariant(r, "/flow/messageinfo/listyj", specFlowMessageInfo(), ListKind::Paged);
+        registerListVariant(r, "/flow/messageinfo/listxx", specFlowMessageInfo(), ListKind::Paged);
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowName.java
+        // ruoyi-system/src/main/resources/mapper/flow/FlowNameMapper.xml
+        Perms p;
+        p.list = "flow:flowname:list";
+        p.query = "flow:flowname:query";
+        registerCrud(r, "/flow/flowname", specFlowName(), p, "id");
+        registerListVariant(r, "/flow/flowname/listQuery", specFlowName(), ListKind::Paged);
+    }
+    {
+        // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowTemplate.java
+        // ruoyi-system/src/main/resources/mapper/flow/FlowTemplateMapper.xml
         Perms p;
         p.list = "flow:flowtemplate:list";
         p.query = "flow:flowtemplate:query";
-        registerCrud(r, "/flow/flowtemplate", s, p, "id");
+        registerCrud(r, "/flow/flowtemplate", specFlowTemplate(), p, "id");
     }
 }
 

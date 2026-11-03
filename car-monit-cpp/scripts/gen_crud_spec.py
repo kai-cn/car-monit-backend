@@ -344,11 +344,11 @@ def gen_entity(entity, ctrl_path):
                              % (entity, table, ",".join(bad), chr(10)))
             return None
 
+    fn = "spec%s" % entity
     L = []
-    L.append("    {")
-    L.append("        // %s" % rel(dpath))
-    if xpath:
-        L.append("        // %s" % rel(xpath))
+    # Spec 以文件级函数暴露，手写控制器可复用同一份列定义
+    L.append("const Spec& %s() {" % fn)
+    L.append("    static const Spec s = [] {")
     L.append("        Spec s;")
     L.append('        s.table = "%s";' % table)
     # 表别名以 XML 为准（sys_role 的 selectRoleVo 用的是 `from sys_role r`，
@@ -414,22 +414,33 @@ def gen_entity(entity, ctrl_path):
     if ctrl.get("range_column"):
         L.append('        s.rangeColumn = "%s";' % ctrl["range_column"])
     perms = ctrl["perms"]
-    L.append("        Perms p;")
+    # 注册部分单独成块：Spec 已经是函数，Perms 与路由留在 registerXxxArea 里
+    L.append("        return s;")
+    L.append("    }();")
+    L.append("    return s;")
+    L.append("}")
+    L.append("")
+    R = []
+    R.append("    {")
+    R.append("        // %s" % rel(dpath))
+    if xpath:
+        R.append("        // %s" % rel(xpath))
+    R.append("        Perms p;")
     for key, field in (("list", "list"), ("export", "exportList"), ("query", "query"),
                        ("add", "add"), ("edit", "edit"), ("remove", "remove")):
         if key in perms:
-            L.append('        p.%s = "%s";' % (field, perms[key]))
-    L.append('        registerCrud(r, "%s", s, p, "%s");' % (ctrl["base"], ctrl["pathvar"]))
+            R.append('        p.%s = "%s";' % (field, perms[key]))
+    R.append('        registerCrud(r, "%s", %s(), p, "%s");' % (ctrl["base"], fn, ctrl["pathvar"]))
     for vpath, vkind, vperm in spec_variants.classify_variants(
             spec_variants.method_bodies(read(ctrl_path)), entity):
         if vperm:
-            L.append("        registerListVariant(r, \"%s%s\", s, %s, \"%s\");"
-                    % (ctrl["base"], vpath, vkind, vperm))
+            R.append("        registerListVariant(r, \"%s%s\", %s(), %s, \"%s\");"
+                     % (ctrl["base"], vpath, fn, vkind, vperm))
         else:
-            L.append("        registerListVariant(r, \"%s%s\", s, %s);"
-                    % (ctrl["base"], vpath, vkind))
-    L.append("    }")
-    return "\n".join(L), ctrl["base"], entity
+            R.append("        registerListVariant(r, \"%s%s\", %s(), %s);"
+                     % (ctrl["base"], vpath, fn, vkind))
+    R.append("    }")
+    return "\n".join(L), "\n".join(R), ctrl["base"], entity, fn
 
 
 def main():
@@ -454,7 +465,7 @@ def main():
         return
 
     ns_suffix, ns_prefix = AREAS[args.area]
-    generated, bases = [], []
+    specs, generated, bases = [], [], []
     allow = set((args.only_entities or "").split(",")) if args.only_entities else None
     for f in sorted(os.listdir(area_dir)):
         if not f.endswith("Controller.java"):
@@ -466,13 +477,14 @@ def main():
         if out is None:
             print("!! 无法解析: " + entity, file=sys.stderr)
             continue
-        body, base, _ = out
+        spec_src, body, base, _, fn = out
+        specs.append(spec_src)
         generated.append(body)
-        bases.append((entity, base))
+        bases.append((entity, base, fn))
 
-    out_default = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                              "src", "cm", "web", "specs",
-                              "%sCrudSpecs.cpp" % ns_prefix)
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    out_default = os.path.join(root, "src", "cm", "web", "specs",
+                               "%sCrudSpecs.cpp" % ns_prefix)
     path = args.out or out_default
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmpl_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -480,10 +492,30 @@ def main():
     content = io.open(tmpl_path, encoding="utf-8").read()
     content = (content.replace("@@AREA@@", args.area)
                       .replace("@@PREFIX@@", ns_prefix)
+                      .replace("@@SPECS@@", chr(10).join(specs))
                       .replace("@@BODY@@", chr(10).join(generated)))
     io.open(path, "w", encoding="utf-8", newline="\r\n").write(content)
+
+    # 声明文件：手写控制器 include 它即可复用同一个 Spec
+    hdr_path = os.path.join(root, "include", "cm", "web", "specs",
+                            "%sCrudSpecs.hpp" % ns_prefix)
+    os.makedirs(os.path.dirname(hdr_path), exist_ok=True)
+    hdr = [
+        "// 由 scripts/gen_crud_spec.py 生成，与 src/cm/web/specs/%sCrudSpecs.cpp 成对。" % ns_prefix,
+        "// 手写控制器通过这里复用同一份列定义，不要再抄一遍字段表。",
+        "#pragma once",
+        '#include "cm/framework/web/crud/CrudSpec.hpp"',
+        "",
+        "namespace cm::web::crud {",
+        "",
+    ]
+    for _e, _b, fn in bases:
+        hdr.append("const Spec& %s();" % fn)
+    hdr += ["", "} // namespace cm::web::crud", ""]
+    io.open(hdr_path, "w", encoding="utf-8", newline="\r\n").write(chr(10).join(hdr))
+
     print("生成 %s：%d 个实体" % (path, len(bases)))
-    for e, b in bases:
+    for e, b, _fn in bases:
         print("   %-45s %s" % (e, b))
 
 
