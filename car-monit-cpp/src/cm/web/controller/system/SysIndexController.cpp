@@ -18,6 +18,7 @@
 #include "cm/web/controller/monitor/SysLogininforController.hpp"
 #include "cm/web/controller/monitor/SysOperlogController.hpp"
 #include "cm/web/controller/monitor/SysUserOnlineController.hpp"
+#include "cm/web/controller/quartz/QuartzExtraControllers.hpp"
 #include "cm/web/controller/system/SysAuxControllers.hpp"
 #include "cm/web/controller/tool/TestController.hpp"
 
@@ -72,6 +73,7 @@ void registerControllers(Router& r) {
     registerFlowExtraControllers(r);
     registerManagerExtraControllers(r);
     registerBigScreenController(r);
+    registerQuartzExtraControllers(r);
     registerTestController(r);
     // 业务域（base / manager / flow）：同构 CRUD 由 spec 引擎批量注册
     crud::registerBaseArea(r);
