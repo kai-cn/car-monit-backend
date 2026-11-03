@@ -19,18 +19,18 @@ const Spec& specSysJob() {
         s.table = "sys_job";
         s.alias = "t";
         s.fields = {
-            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, true, false},
             {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, true},
             {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"remark", "remark", Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"jobId", "job_id", Fmt::Long, Cond::None, "任务序号", false, false},
-            {"jobName", "job_name", Fmt::Str, Cond::Eq, "任务名称", false, false},
-            {"jobGroup", "job_group", Fmt::Str, Cond::Eq, "任务组名", false, false},
-            {"invokeTarget", "invoke_target", Fmt::Str, Cond::Eq, "调用目标字符串", false, false},
-            {"cronExpression", "cron_expression", Fmt::Str, Cond::Eq, "执行表达式 ", false, false},
-            {"concurrent", "concurrent", Fmt::Str, Cond::Eq, "并发执行", false, false},
-            {"status", "status", Fmt::Str, Cond::Eq, "任务状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, nullptr, false, false, true, true},
+            {"jobId", "job_id", Fmt::Long, Cond::None, "任务序号", false, false, true, false},
+            {"jobName", "job_name", Fmt::Str, Cond::Eq, "任务名称", false, false, true, true},
+            {"jobGroup", "job_group", Fmt::Str, Cond::Eq, "任务组名", false, false, true, true},
+            {"invokeTarget", "invoke_target", Fmt::Str, Cond::Eq, "调用目标字符串", false, false, true, true},
+            {"cronExpression", "cron_expression", Fmt::Str, Cond::Eq, "执行表达式 ", false, false, true, true},
+            {"concurrent", "concurrent", Fmt::Str, Cond::Eq, "并发执行", false, false, true, true},
+            {"status", "status", Fmt::Str, Cond::Eq, "任务状态", false, false, true, true},
         };
         s.excelSheetName = "定时任务";
         return s;
@@ -45,17 +45,17 @@ const Spec& specSysJobLog() {
         s.alias = "t";
         s.fields = {
             {"createBy", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, true},
             {"updateBy", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
             {"updateTime", nullptr, Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
             {"remark", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"jobLogId", "job_log_id", Fmt::Long, Cond::None, "日志序号", false, false},
-            {"jobName", "job_name", Fmt::Str, Cond::Like, "任务名称", false, false},
-            {"jobGroup", "job_group", Fmt::Str, Cond::Eq, "任务组名", false, false},
-            {"invokeTarget", "invoke_target", Fmt::Str, Cond::Like, "调用目标字符串", false, false},
-            {"jobMessage", "job_message", Fmt::Str, Cond::None, "日志信息", false, false},
-            {"status", "status", Fmt::Str, Cond::Eq, "执行状态", false, false},
-            {"exceptionInfo", "exception_info", Fmt::Str, Cond::None, "异常信息", false, false},
+            {"jobLogId", "job_log_id", Fmt::Long, Cond::None, "日志序号", false, false, true, true},
+            {"jobName", "job_name", Fmt::Str, Cond::Like, "任务名称", false, false, true, true},
+            {"jobGroup", "job_group", Fmt::Str, Cond::Eq, "任务组名", false, false, true, true},
+            {"invokeTarget", "invoke_target", Fmt::Str, Cond::Like, "调用目标字符串", false, false, true, true},
+            {"jobMessage", "job_message", Fmt::Str, Cond::None, "日志信息", false, false, true, true},
+            {"status", "status", Fmt::Str, Cond::Eq, "执行状态", false, false, true, true},
+            {"exceptionInfo", "exception_info", Fmt::Str, Cond::None, "异常信息", false, false, true, true},
             {"startTime", nullptr, Fmt::DateIso, Cond::None, nullptr, false, false, false, false},
             {"stopTime", nullptr, Fmt::DateIso, Cond::None, nullptr, false, false, false, false},
         };

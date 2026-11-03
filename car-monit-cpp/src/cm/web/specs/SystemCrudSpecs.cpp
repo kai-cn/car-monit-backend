@@ -19,16 +19,16 @@ const Spec& specSysConfig() {
         s.table = "sys_config";
         s.alias = "t";
         s.fields = {
-            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, true, false},
             {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, true},
             {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
             {"remark", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"configId", "config_id", Fmt::Long, Cond::Eq, "参数主键", false, false},
-            {"configName", "config_name", Fmt::Str, Cond::Eq, "参数名称", false, false},
-            {"configKey", "config_key", Fmt::Str, Cond::Eq, "参数键名", false, false},
-            {"configValue", "config_value", Fmt::Str, Cond::Eq, "参数键值", false, false},
-            {"configType", "config_type", Fmt::Str, Cond::Eq, "系统内置", false, false},
+            {"configId", "config_id", Fmt::Long, Cond::Eq, "参数主键", false, false, false, false},
+            {"configName", "config_name", Fmt::Str, Cond::Eq, "参数名称", false, false, true, true},
+            {"configKey", "config_key", Fmt::Str, Cond::Eq, "参数键名", false, false, true, true},
+            {"configValue", "config_value", Fmt::Str, Cond::Eq, "参数键值", false, false, true, true},
+            {"configType", "config_type", Fmt::Str, Cond::Eq, "系统内置", false, false, true, true},
         };
         s.excelSheetName = "参数管理";
         return s;
@@ -42,20 +42,20 @@ const Spec& specSysDictData() {
         s.table = "sys_dict_data";
         s.alias = "t";
         s.fields = {
-            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, true, false},
             {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, true},
             {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
             {"remark", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"dictCode", "dict_code", Fmt::Long, Cond::None, "字典编码", false, false},
-            {"dictSort", "dict_sort", Fmt::Long, Cond::Eq, "字典排序", false, false},
-            {"dictLabel", "dict_label", Fmt::Str, Cond::Eq, "字典标签", false, false},
-            {"dictValue", "dict_value", Fmt::Str, Cond::Eq, "字典键值", false, false},
-            {"dictType", "dict_type", Fmt::Str, Cond::Eq, "字典类型", false, false},
-            {"cssClass", "css_class", Fmt::Str, Cond::Eq, nullptr, false, false},
-            {"listClass", "list_class", Fmt::Str, Cond::Eq, nullptr, false, false},
-            {"isDefault", "is_default", Fmt::Str, Cond::Eq, "是否默认", false, false},
-            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"dictCode", "dict_code", Fmt::Long, Cond::None, "字典编码", false, false, false, false},
+            {"dictSort", "dict_sort", Fmt::Long, Cond::Eq, "字典排序", false, false, true, true},
+            {"dictLabel", "dict_label", Fmt::Str, Cond::Eq, "字典标签", false, false, true, true},
+            {"dictValue", "dict_value", Fmt::Str, Cond::Eq, "字典键值", false, false, true, true},
+            {"dictType", "dict_type", Fmt::Str, Cond::Eq, "字典类型", false, false, true, true},
+            {"cssClass", "css_class", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
+            {"listClass", "list_class", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
+            {"isDefault", "is_default", Fmt::Str, Cond::Eq, "是否默认", false, false, true, true},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false, true, true},
         };
         s.orderBy = "dict_sort asc";
         s.excelSheetName = "字典数据";
@@ -70,15 +70,15 @@ const Spec& specSysDictType() {
         s.table = "sys_dict_type";
         s.alias = "t";
         s.fields = {
-            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, true, false},
             {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, true},
             {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
             {"remark", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"dictId", "dict_id", Fmt::Long, Cond::None, "字典主键", false, false},
-            {"dictName", "dict_name", Fmt::Str, Cond::Eq, "字典名称", false, false},
-            {"dictType", "dict_type", Fmt::Str, Cond::Eq, "字典类型", false, false},
-            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"dictId", "dict_id", Fmt::Long, Cond::None, "字典主键", false, false, false, false},
+            {"dictName", "dict_name", Fmt::Str, Cond::Eq, "字典名称", false, false, true, true},
+            {"dictType", "dict_type", Fmt::Str, Cond::Eq, "字典类型", false, false, true, true},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false, true, true},
         };
         s.orderBy = "create_time desc";
         s.excelSheetName = "字典类型";
@@ -93,20 +93,20 @@ const Spec& specSysFile() {
         s.table = "sys_file";
         s.alias = "t";
         s.fields = {
-            {"id", "id", Fmt::Long, Cond::Eq, nullptr, false, false},
-            {"fileName", "file_name", Fmt::Str, Cond::Eq, "文件名称", false, false},
-            {"bucketName", "bucket_name", Fmt::Str, Cond::Eq, "上传包名", false, false},
-            {"original", "original", Fmt::Str, Cond::Eq, "上传文件名称", false, false},
-            {"type", "type", Fmt::Str, Cond::Eq, "文件类型", false, false},
-            {"fileSize", "file_size", Fmt::Long, Cond::Eq, "文件大小", false, false},
-            {"bussType", "buss_type", Fmt::Str, Cond::Eq, "业务类型", false, false},
-            {"bussName", "buss_name", Fmt::Str, Cond::Eq, "业务名称", false, false},
-            {"createTime", "create_time", Fmt::DateYmdHms, Cond::Eq, nullptr, false, false},
-            {"createUser", "create_user", Fmt::Str, Cond::Eq, "文件大小", false, false},
-            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::Eq, nullptr, false, false},
-            {"updateUser", "update_user", Fmt::Str, Cond::Eq, "文件大小", false, false},
-            {"delFlag", "del_flag", Fmt::Str, Cond::Eq, nullptr, false, false},
-            {"tenantId", "tenant_id", Fmt::Long, Cond::Eq, "所属租户", false, false},
+            {"id", "id", Fmt::Long, Cond::Eq, nullptr, false, false, true, false},
+            {"fileName", "file_name", Fmt::Str, Cond::Eq, "文件名称", false, false, true, true},
+            {"bucketName", "bucket_name", Fmt::Str, Cond::Eq, "上传包名", false, false, true, true},
+            {"original", "original", Fmt::Str, Cond::Eq, "上传文件名称", false, false, true, true},
+            {"type", "type", Fmt::Str, Cond::Eq, "文件类型", false, false, true, true},
+            {"fileSize", "file_size", Fmt::Long, Cond::Eq, "文件大小", false, false, true, true},
+            {"bussType", "buss_type", Fmt::Str, Cond::Eq, "业务类型", false, false, true, true},
+            {"bussName", "buss_name", Fmt::Str, Cond::Eq, "业务名称", false, false, true, true},
+            {"createTime", "create_time", Fmt::DateYmdHms, Cond::Eq, nullptr, false, false, true, true},
+            {"createUser", "create_user", Fmt::Str, Cond::Eq, "文件大小", false, false, true, true},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::Eq, nullptr, false, false, true, true},
+            {"updateUser", "update_user", Fmt::Str, Cond::Eq, "文件大小", false, false, true, true},
+            {"delFlag", "del_flag", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::Eq, "所属租户", false, false, true, true},
             {"files", nullptr, Fmt::Str, Cond::None, "文件s", false, false, false, false},
             {"createUserName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
@@ -123,19 +123,19 @@ const Spec& specSysNotice() {
         s.table = "sys_notice";
         s.alias = "t";
         s.fields = {
-            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, true, false},
             {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, true},
             {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"remark", "remark", Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"noticeId", "notice_id", Fmt::Long, Cond::None, nullptr, false, false},
-            {"noticeTitle", "notice_title", Fmt::Str, Cond::Eq, nullptr, false, false},
-            {"noticeType", "notice_type", Fmt::Str, Cond::Eq, nullptr, false, false},
-            {"noticeContent", "notice_content", Fmt::Str, Cond::Eq, nullptr, false, false},
-            {"status", "status", Fmt::Str, Cond::Eq, nullptr, false, false},
-            {"bussId", "buss_id", Fmt::Str, Cond::Eq, nullptr, false, false},
-            {"bussName", "buss_name", Fmt::Str, Cond::Eq, nullptr, false, false},
-            {"tenantId", "tenant_id", Fmt::Long, Cond::Eq, nullptr, false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, nullptr, false, false, true, false},
+            {"noticeId", "notice_id", Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"noticeTitle", "notice_title", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
+            {"noticeType", "notice_type", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
+            {"noticeContent", "notice_content", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
+            {"status", "status", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
+            {"bussId", "buss_id", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
+            {"bussName", "buss_name", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::Eq, nullptr, false, false, true, false},
         };
         s.orderBy = "t.create_time desc";
         s.excelSheetName = "通知公告";
@@ -150,16 +150,16 @@ const Spec& specSysPost() {
         s.table = "sys_post";
         s.alias = "p";
         s.fields = {
-            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, true, false},
             {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, true},
             {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"remark", "remark", Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"postId", "post_id", Fmt::Long, Cond::None, "岗位序号", false, false},
-            {"postCode", "post_code", Fmt::Str, Cond::Eq, "岗位编码", false, false},
-            {"postName", "post_name", Fmt::Str, Cond::Eq, "岗位名称", false, false},
-            {"postSort", "post_sort", Fmt::Str, Cond::Eq, "岗位排序", false, false},
-            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, nullptr, false, false, true, true},
+            {"postId", "post_id", Fmt::Long, Cond::None, "岗位序号", false, false, true, false},
+            {"postCode", "post_code", Fmt::Str, Cond::Eq, "岗位编码", false, false, true, true},
+            {"postName", "post_name", Fmt::Str, Cond::Eq, "岗位名称", false, false, true, true},
+            {"postSort", "post_sort", Fmt::Str, Cond::Eq, "岗位排序", false, false, true, true},
+            {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false, true, true},
         };
         s.excelSheetName = "岗位管理";
         return s;
@@ -173,20 +173,20 @@ const Spec& specSysRole() {
         s.table = "sys_role";
         s.alias = "r";
         s.fields = {
-            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, true, false},
             {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"updateBy", "update_by", Fmt::Str, Cond::None, nullptr, false, false, false, true},
             {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
-            {"remark", "remark", Fmt::Str, Cond::None, nullptr, false, false, false, false},
-            {"roleId", "role_id", Fmt::Long, Cond::None, "角色序号", false, false},
-            {"roleName", "role_name", Fmt::Str, Cond::Eq, "角色名称", false, false},
-            {"roleKey", "role_key", Fmt::Str, Cond::Eq, "角色权限", false, false},
-            {"roleSort", "role_sort", Fmt::Str, Cond::Eq, "角色排序", false, false},
-            {"dataScope", "data_scope", Fmt::Str, Cond::Eq, "数据范围", false, false},
-            {"menuCheckStrictly", "menu_check_strictly", Fmt::Bool, Cond::Eq, nullptr, false, false},
-            {"deptCheckStrictly", "dept_check_strictly", Fmt::Bool, Cond::Eq, nullptr, false, false},
-            {"status", "status", Fmt::Str, Cond::Eq, "角色状态", false, false},
-            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false},
+            {"remark", "remark", Fmt::Str, Cond::None, nullptr, false, false, true, true},
+            {"roleId", "role_id", Fmt::Long, Cond::None, "角色序号", false, false, true, false},
+            {"roleName", "role_name", Fmt::Str, Cond::Eq, "角色名称", false, false, true, true},
+            {"roleKey", "role_key", Fmt::Str, Cond::Eq, "角色权限", false, false, true, true},
+            {"roleSort", "role_sort", Fmt::Str, Cond::Eq, "角色排序", false, false, true, true},
+            {"dataScope", "data_scope", Fmt::Str, Cond::Eq, "数据范围", false, false, true, true},
+            {"menuCheckStrictly", "menu_check_strictly", Fmt::Bool, Cond::Eq, nullptr, false, false, true, true},
+            {"deptCheckStrictly", "dept_check_strictly", Fmt::Bool, Cond::Eq, nullptr, false, false, true, true},
+            {"status", "status", Fmt::Str, Cond::Eq, "角色状态", false, false, true, true},
+            {"delFlag", "del_flag", Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "r.role_sort";
         s.excelSheetName = "角色管理";

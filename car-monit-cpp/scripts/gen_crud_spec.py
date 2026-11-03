@@ -250,6 +250,24 @@ def parse_xml_columns(entity):
     return mapping, src, path
 
 
+def parse_write_columns(xml_src):
+    """返回 (可 INSERT 的属性集合, 可 UPDATE 的属性集合)，取自 generator 风格的
+    insertXxx / updateXxx 语句里的 <if test="prop != null">。
+
+    为什么要管：这些 XML 决定了 Java 侧落库到底写哪些列 —— 父类的
+    create_by/create_time/eps_id/del_flag 都在 insert 里，update 里带 update_by/update_time。
+    实体没有这种语句（走 MyBatis-Plus BaseMapper）时返回空集，调用方按"全部可写"处理。
+    """
+    ins, upd = set(), set()
+    for m in re.finditer(r"<insert\b[^>]*id=\"insert\w*\".*?</insert>", xml_src, re.S):
+        for im in re.finditer(r'<if test="(\w+)\s*!=\s*null[^"]*">', m.group(0)):
+            ins.add(im.group(1))
+    for m in re.finditer(r'<update\b[^>]*id="update\w*".*?</update>', xml_src, re.S):
+        for um in re.finditer(r'<if test="(\w+)\s*!=\s*null[^"]*">', m.group(0)):
+            upd.add(um.group(1))
+    return ins, upd
+
+
 def parse_conditions(xml_src):
     """从 selectList 的 <if> 抽条件：
     返回 (property -> 条件形态, order by, property -> 条件左值列名)"""
@@ -337,6 +355,15 @@ def gen_entity(entity, ctrl_path):
                            entity)
             table = table[0].lower() + table[1:]
     conds, order_by, cond_cols = parse_conditions(xml_src)
+    w_ins, w_upd = parse_write_columns(xml_src)
+
+    def write_flags(name, has_col):
+        """insertable/updatable：没有 generator 风格的 insertXxx/updateXxx 时按 MP 语义全可写"""
+        ins = (name in w_ins) if w_ins else True
+        upd = (name in w_upd) if w_upd else True
+        if not has_col:  # 不是表列，任何写语句都不该带上它
+            return False, False
+        return ins, upd
     known = xml_known_columns(xml_src)
     ctrl = parse_controller(ctrl_path)
 
@@ -396,9 +423,11 @@ def gen_entity(entity, ctrl_path):
         is_pk = name == pk_field or (base_cls in _PK_ID_BASES and name == "id"
                                      and not pk_field and col is not None)
         cpp_fmt = bfmt if bfmt in FMT_NAMES else "Str"
-        L.append('            {"%s", %s, Fmt::%s, Cond::None, nullptr, %s, false, false, false},'
+        ins, upd = write_flags(name, col is not None)
+        L.append('            {"%s", %s, Fmt::%s, Cond::None, nullptr, %s, false, %s, %s},'
                  % (name, ('"%s"' % col) if col else "nullptr", cpp_fmt,
-                    "true" if is_pk else "false"))
+                    "true" if is_pk else "false",
+                    "true" if ins else "false", "true" if upd else "false"))
     # 2) 子类自有字段
     for name, jtype, fmt, excel, ignored in fields:
         if ignored:
@@ -427,16 +456,17 @@ def gen_entity(entity, ctrl_path):
             "find_in_set": "Cond::FindInSet", "find_in_set_col": "Cond::FindInSetCol",
             "range": "Cond::DateRange",
         }.get(cond_kind, "Cond::None")
+        ins, upd = write_flags(name, True)
         tail = ""
         if cond_kind == "find_in_set_col" and name in cond_cols:
             left = cond_cols[name]
             if left.startswith(alias + "."):
                 left = left[len(alias) + 1:]
-            # Field 的字段序：... insertable, updatable, condColumn —— 先把两个 bool 补齐
-            tail = ', true, true, "%s"' % left
-        L.append('            {"%s", "%s", Fmt::%s, %s, %s, %s, %s%s},' % (
+            tail = ', "%s"' % left  # Field 的最后一位是 condColumn（条件左值列）
+        L.append('            {"%s", "%s", Fmt::%s, %s, %s, %s, %s, %s, %s%s},' % (
             name, col, fmt, cond_cpp, ex, "true" if is_pk else "false",
-            "true" if (is_pk and pk_auto) else "false", tail))
+            "true" if (is_pk and pk_auto) else "false",
+            "true" if ins else "false", "true" if upd else "false", tail))
     L.append("        };")
     if order_by:
         L.append('        s.orderBy = "%s";' % c_escape(order_by))

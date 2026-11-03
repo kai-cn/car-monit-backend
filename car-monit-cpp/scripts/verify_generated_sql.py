@@ -35,8 +35,10 @@ DB = dict(
 )
 
 FIELD_RE = re.compile(
-    r'\{"(?P<json>[^"]+)",\s*"(?P<col>[^"]+)",\s*Fmt::(?P<fmt>\w+),\s*Cond::(?P<cond>\w+),'
-    r'\s*(?P<excel>"[^"]*"|nullptr),\s*(?P<pk>true|false),\s*(?P<auto>true|false)\}')
+    r'\{"(?P<json>[^"]+)",\s*(?:"(?P<col>[^"]+)"|nullptr),\s*Fmt::(?P<fmt>\w+),\s*Cond::(?P<cond>\w+),'
+    r'\s*(?P<excel>"[^"]*"|nullptr),\s*(?P<pk>true|false),\s*(?P<auto>true|false)'
+    r'(?:\s*,\s*(?P<ins>true|false),\s*(?P<upd>true|false)'
+    r'(?:\s*,\s*"(?P<condcol>[^"]*)")?)?\}')
 
 
 def mysql(sql):
@@ -116,7 +118,9 @@ def check_sql(spec):
     """跑投影/计数/条件三类 SQL，返回问题列表"""
     problems = []
     a = spec["alias"]
-    cols = ", ".join(a + "." + f["col"] for f in spec["fields"])
+    # column 为 nullptr 的字段（派生属性 / 父类非列字段）不进 SELECT，跳过
+    sel_fields = [f for f in spec["fields"] if f["col"]]
+    cols = ", ".join(a + "." + f["col"] for f in sel_fields)
     if not cols:
         return ["没有字段"]
     q = "SELECT %s FROM %s %s WHERE 1=1" % (cols, spec["table"], a)
@@ -133,22 +137,25 @@ def check_sql(spec):
     if not ok:
         problems.append("COUNT 失败: " + out.strip().splitlines()[0][:140])
     # 条件片段：用第一个条件字段造一个不可能的值，验证语法而非结果
-    conds = [f for f in spec["fields"] if f["cond"] != "None"]
+    conds = [f for f in sel_fields if f["cond"] != "None"]
     for f in conds[:4]:
+        col = f["condcol"] if f["cond"] == "FindInSetCol" and f["condcol"] else f["col"]
         if f["cond"] == "Like":
-            frag = "and %s.%s like concat('%%', 'zz', '%%')" % (a, f["col"])
+            frag = "and %s.%s like concat('%%', 'zz', '%%')" % (a, col)
         elif f["cond"] == "DateRange":
             frag = (" and date_format(%s.%s, '%%Y%%m%%d') >= date_format('2024-01-01', '%%Y%%m%%d')"
-                    % (a, f["col"]))
+                    % (a, col))
         elif f["cond"] == "FindInSet":
-            frag = "and find_in_set('1', %s.%s)" % (a, f["col"])
+            frag = "and find_in_set('1', %s.%s)" % (a, col)
+        elif f["cond"] == "FindInSetCol":
+            frag = "and find_in_set(%s.%s, 'zz')" % (a, col)
         elif f["fmt"] in ("DateYmd", "DateYmdHms", "DateIso", "DateTimeIso"):
             # 日期列要用合法日期做哨兵，否则 MySQL 报 Incorrect DATETIME（那是校验脚本的问题）
-            frag = "and %s.%s = '2024-01-01 00:00:00'" % (a, f["col"])
+            frag = "and %s.%s = '2024-01-01 00:00:00'" % (a, col)
         elif f["fmt"] in ("Int", "Long"):
-            frag = "and %s.%s = 0" % (a, f["col"])
+            frag = "and %s.%s = 0" % (a, col)
         else:
-            frag = "and %s.%s = 'zz'" % (a, f["col"])
+            frag = "and %s.%s = 'zz'" % (a, col)
         ok, out = mysql("SELECT COUNT(1) FROM %s %s WHERE 1=1 %s" % (spec["table"], a, frag))
         if not ok:
             problems.append("条件片段失败 [%s %s]: %s" % (f["cond"], f["col"],
