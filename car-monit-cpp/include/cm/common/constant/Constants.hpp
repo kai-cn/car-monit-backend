@@ -88,6 +88,20 @@ struct Constants {
     static constexpr const char* SYS_CONFIG_KEY = "sys_config:";
     /** 字典管理 cache key */
     static constexpr const char* SYS_DICT_KEY = "sys_dict:";
+
+    /** 流程审核结论：委托（Java Constants.FLOW_RESULT_ENTRUST_KEY） */
+    static constexpr const char* FLOW_RESULT_ENTRUST_KEY = "entrust";
+    /** 委托的显示名（flow_list.SH_VALUE） */
+    static constexpr const char* FLOW_ENTRUST_NAME = "委托";
+    /** 委托语句前后缀：委托<姓名>办理 */
+    static constexpr const char* FLOW_RESULT_CONTEXT_PREFIX = "委托";
+    static constexpr const char* FLOW_RESULT_CONTEXT_SUFFIX = "办理";
+    /** 部门领导角色 key（审批人解析用） */
+    static constexpr const char* dept_manager_role = "dept_manager";
+    /** 科室值班人角色 key */
+    static constexpr const char* dept_duty_emp_role = "dept_duty_emp";
+    /** 分管领导角色 key（Java 里是散在代码里的字面量） */
+    static constexpr const char* dept_fg_manager_role = "fg_manager";
 };
 
 } // namespace cm::constant

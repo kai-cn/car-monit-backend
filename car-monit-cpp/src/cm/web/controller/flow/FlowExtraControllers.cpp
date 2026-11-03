@@ -15,6 +15,7 @@
 
 #include "cm/common/core/domain/AjaxResult.hpp"
 #include "cm/common/exception/Exceptions.hpp"
+#include "cm/flow/service/FlowApprovalService.hpp"
 #include "cm/common/utils/DateUtils.hpp"
 #include "cm/common/utils/StringUtils.hpp"
 #include "cm/framework/db/Db.hpp"
@@ -308,8 +309,7 @@ void registerFlowExtraControllers(Router& r) {
         return BaseController::ok(AjaxResult::success(Json(affected)));
     });
 
-    // GET /flow/messageinfo/exportShrz —— 模板 export/exportShrz.xlsx 在 Java 仓库里并不存在，
-    // ExcelExportUtil 抛异常被 catch 后 printStackTrace，方法 `return null` => 200 + 空 body。
+    // GET /flow/messageinfo/exportShrz —— 模板 export/exportShrz.xlsx 在 Java 仓库里并不存在，    // ExcelExportUtil 抛异常被 catch 后 printStackTrace，方法 `return null` => 200 + 空 body。
     // 这里保持同样的可观测行为：照常执行两条查询（查不到消息体会 NPE -> 500），然后回空。
     r.get("/flow/messageinfo/exportShrz", [](RequestContext& ctx) -> cm::http::ApiResponse {
         const auto& ms = flowMessageInfoSpec();
@@ -348,6 +348,24 @@ void registerFlowExtraControllers(Router& r) {
         cm::http::ApiResponse empty = cm::http::ApiResponse::text("", "");
         (void)map;
         return empty;
+    });
+
+    // ---- 审批三件套：实现在 src/cm/flow/service/FlowApprovalService.cpp ----
+    // Java 侧这三个方法都没有 @PreAuthorize，靠全局 authenticated 兜底
+
+    // PUT /flow/currentnode/saveFlowAuit
+    r.put("/flow/currentnode/saveFlowAuit", [](RequestContext& ctx) -> cm::http::ApiResponse {
+        return BaseController::ok(cm::flow::service::saveFlowAuit(ctx.body()));
+    });
+
+    // POST /flow/currentnode/submitReturn
+    r.post("/flow/currentnode/submitReturn", [](RequestContext& ctx) -> cm::http::ApiResponse {
+        return BaseController::ok(cm::flow::service::submitReturn(ctx.body()));
+    });
+
+    // POST /flow/currentnode/submitEntrustFlow
+    r.post("/flow/currentnode/submitEntrustFlow", [](RequestContext& ctx) -> cm::http::ApiResponse {
+        return BaseController::ok(cm::flow::service::submitEntrustFlow(ctx.body()));
     });
 }
 
