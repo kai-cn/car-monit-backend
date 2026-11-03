@@ -13,39 +13,11 @@
 #include "cm/framework/web/service/LoginServices.hpp"
 #include "cm/system/service/SysMenuService.hpp"
 #include "cm/web/controller/Controllers.hpp"
+#include "cm/web/util/CommonUtil.hpp"
 
 namespace cm::web {
 
 namespace {
-
-/**
- * 对应 com.ruoyi.web.util.CommonUtil.checkPassword：
- * 返回 true 表示**不合法**（与 Java 方法语义一致）。
- * 正则：^(?![A-Za-z0-9]+$)(?![a-z0-9\W]+$)(?![A-Za-z\W]+$)(?![A-Z0-9\W]+$)[a-zA-Z0-9\W]{8,20}$
- * 即 8-20 位，且必须同时包含大写、小写、数字、特殊符号（\W，Java 默认 ASCII 口径）。
- */
-bool checkPasswordInvalid(const std::string& password) {
-    size_t len = 0;
-    for (unsigned char c : password) {
-        if ((c & 0xC0) != 0x80) ++len; // UTF-8 码点计数（近似 Java char 数）
-    }
-    if (len < 8 || len > 20) return true;
-
-    bool lower = false, upper = false, digit = false, special = false;
-    for (unsigned char c : password) {
-        if (c == '_') return true; // 下划线属于 \w，但不在 [a-zA-Z0-9\W] 内
-        if (c >= 'a' && c <= 'z') {
-            lower = true;
-        } else if (c >= 'A' && c <= 'Z') {
-            upper = true;
-        } else if (c >= '0' && c <= '9') {
-            digit = true;
-        } else {
-            special = true;
-        }
-    }
-    return !(lower && upper && digit && special);
-}
 
 Json toJsonArray(const std::vector<std::string>& ordered) {
     Json arr = Json::array();
@@ -69,7 +41,7 @@ void registerLoginController(Router& r) {
         loginBody.fromJson(body);
 
         const std::string curPassword = loginBody.password.value_or("");
-        if (checkPasswordInvalid(curPassword)) {
+        if (cm::web::util::CommonUtil::checkPassword(curPassword)) {
             auto a = cm::core::domain::AjaxResult::error(
                 "对不起，密码长度8-20位且至少包含大写字母、小写字母、数字和特殊符号！");
             return cm::http::ApiResponse::json(a.toJson());

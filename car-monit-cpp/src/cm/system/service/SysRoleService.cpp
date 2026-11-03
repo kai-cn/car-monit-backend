@@ -8,6 +8,12 @@
 
 namespace cm::system::service {
 
+std::pair<std::vector<cm::domain::SysRole>, long long>
+SysRoleService::selectRoleEntityPage(const cm::domain::SysRole& role,
+                                     const cm::db::PageRequest& page) {
+    return cm::system::mapper::SysRoleMapper::selectRoleEntityPage(role, page);
+}
+
 std::vector<cm::domain::SysRole> SysRoleService::selectRoleList(const cm::domain::SysRole& role) {
     return cm::system::mapper::SysRoleMapper::selectRoleList(role);
 }

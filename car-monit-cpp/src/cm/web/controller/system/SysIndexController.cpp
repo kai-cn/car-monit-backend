@@ -4,6 +4,8 @@
 #include "cm/framework/config/AppConfig.hpp"
 #include "cm/framework/web/Router.hpp"
 #include "cm/web/controller/Controllers.hpp"
+#include "cm/web/controller/system/SysAuthControllers.hpp"
+#include "cm/system/service/SysIndexMenuService.hpp"
 #include "cm/framework/web/crud/CrudSpec.hpp"
 #include "cm/web/controller/common/CommonController.hpp"
 #include "cm/web/controller/common/DownTemplateController.hpp"
@@ -54,6 +56,14 @@ void registerControllers(Router& r) {
     registerSysUpgradeInfoController(r);
     registerSysFileController(r);
     // tool
+    // system 权限域：树形构建 / 数据范围 / 密码策略 / UUID 主键等均非同构 CRUD，逐个手写
+    registerSysUserController(r);
+    registerSysProfileController(r);
+    registerSysRoleController(r);
+    registerSysDeptController(r);
+    registerSysMenuController(r);
+    registerSysPostExtraController(r);
+    registerSysIndexMenuController(r);
     registerTestController(r);
     // 业务域（base / manager / flow）：同构 CRUD 由 spec 引擎批量注册
     crud::registerBaseArea(r);

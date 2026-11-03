@@ -33,7 +33,7 @@ cm::domain::SysRole SysRoleMapper::mapRole(const cm::db::Row& row) {
     return r;
 }
 
-std::vector<cm::domain::SysRole> SysRoleMapper::selectRoleList(const cm::domain::SysRole& role) {
+std::string SysRoleMapper::selectRoleListSql(const cm::domain::SysRole& role) {
     std::string sql = "select distinct r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope,"
                       " r.menu_check_strictly, r.dept_check_strictly, r.status, r.del_flag, r.create_time, r.remark"
                       " from sys_role r"
@@ -51,9 +51,24 @@ std::vector<cm::domain::SysRole> SysRoleMapper::selectRoleList(const cm::domain:
         sql += " AND r.role_key = " + cm::db::Db::lit(*role.roleKey);
     }
     sql += " order by r.role_sort";
+    return sql;
+}
+
+std::pair<std::vector<cm::domain::SysRole>, long long>
+SysRoleMapper::selectRoleEntityPage(const cm::domain::SysRole& role,
+                                    const cm::db::PageRequest& page) {
+    const std::string dataSql = selectRoleListSql(role);
+    // PageHelper 的 count 语义：把原 SQL 整体包一层，distinct / join 都不会算错
+    auto pr = cm::db::queryPage("select count(1) from (" + dataSql + ") page_count", dataSql, page);
+    std::vector<cm::domain::SysRole> roles;
+    for (const auto& row : pr.rows.rows) roles.push_back(mapRole(row));
+    return {std::move(roles), pr.total};
+}
+
+std::vector<cm::domain::SysRole> SysRoleMapper::selectRoleList(const cm::domain::SysRole& role) {
     cm::db::Result res;
     std::vector<cm::domain::SysRole> roles;
-    if (!cm::db::Db::instance().query(sql, res)) return roles;
+    if (!cm::db::Db::instance().query(selectRoleListSql(role), res)) return roles;
     for (const auto& row : res.rows) roles.push_back(mapRole(row));
     return roles;
 }

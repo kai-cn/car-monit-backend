@@ -62,6 +62,15 @@ std::vector<cm::domain::SysDept> SysDeptMapper::selectDeptList(const cm::domain:
     if (dept.subCode && !dept.subCode->empty()) sql += " and d.sub_code = " + cm::db::Db::lit(*dept.subCode);
     if (dept.deptJc && !dept.deptJc->empty()) sql += " and d.dept_jc = " + cm::db::Db::lit(*dept.deptJc);
     if (dept.tenantId) sql += " and d.tenant_id = " + cm::db::Db::lit(*dept.tenantId);
+    // SysDeptMapper.xml: <if test="flag != null and flag == 'sjzbDept'"> —— 只对精确值
+    // "sjzbDept" 生效；控制器里 sjzbDeptCg 分支同样只设置 dataId，条件不成立，
+    // 这是 Java 原样行为，不做“顺手修正”
+    if (dept.flag && *dept.flag == "sjzbDept") {
+        sql += " and exists ( select 1 from sys_dept tb,sys_dept tb1"
+               " where tb.del_flag = '0' and  tb.del_flag = '0' and tb1.dept_id = tb.parent_id"
+               " and tb.dept_id = " + cm::db::Db::lit(dept.dataId.value_or("")) +
+               "  and tb1.dept_id = d.tenant_id )";
+    }
     if (dept.leaderId) sql += " and d.leader_id = " + cm::db::Db::lit(*dept.leaderId);
     if (dept.leader && !dept.leader->empty()) sql += " and d.leader = " + cm::db::Db::lit(*dept.leader);
     if (dept.fgldId) sql += " and d.fgld_id = " + cm::db::Db::lit(*dept.fgldId);

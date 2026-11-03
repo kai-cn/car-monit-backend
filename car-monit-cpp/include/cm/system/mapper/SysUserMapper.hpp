@@ -1,10 +1,12 @@
 #pragma once
 // 对应 Java: com.ruoyi.system.mapper.SysUserMapper（登录/权限所需部分）
 #include <optional>
+#include <utility>
 #include <string>
 #include <vector>
 
 #include "cm/common/core/domain/entity/SysUser.hpp"
+#include "cm/framework/db/Db.hpp"
 #include "cm/framework/db/Row.hpp"
 
 namespace cm::system::mapper {
@@ -35,6 +37,11 @@ public:
     static cm::domain::SysUser mapUser(const cm::db::Row& row);
 
     // --- CRUD additions (SysUserController / SysUserServiceImpl) ---
+    /** 与 SysUserMapper.xml 的 selectUserList 等价的 SQL（不含 LIMIT），供分页复用 */
+    static std::string selectUserListSql(const cm::domain::SysUser& user);
+    /** PageHelper 语义：count 包住同一条 dataSql，返回映射后的实体 + total */
+    static std::pair<std::vector<cm::domain::SysUser>, long long>
+    selectUserEntityPage(const cm::domain::SysUser& user, const cm::db::PageRequest& page);
     static std::vector<cm::domain::SysUser> selectUserList(const cm::domain::SysUser& user);
     static int checkUserNameUnique(const std::string& userName);
     static std::optional<cm::domain::SysUser> checkPhoneUnique(const std::string& phonenumber);

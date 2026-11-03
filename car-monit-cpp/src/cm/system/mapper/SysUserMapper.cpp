@@ -240,7 +240,7 @@ void SysUserMapper::insertLogininfor(const std::string& userName, const std::str
 
 // --- CRUD additions ---
 
-std::vector<cm::domain::SysUser> SysUserMapper::selectUserList(const cm::domain::SysUser& user) {
+std::string SysUserMapper::selectUserListSql(const cm::domain::SysUser& user) {
     std::string sql = "select u.user_id, u.user_no, u.dept_id, u.nick_name, u.user_name, u.email, u.avatar, u.phonenumber, u.password,"
                       " u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark,"
                       " u.user_type, u.cert_entity_id, u.cert_id, u.buss_id, u.buss_name, u.eps_name, ifnull(d.tenant_id, -1) tenant_id,"
@@ -267,9 +267,24 @@ std::vector<cm::domain::SysUser> SysUserMapper::selectUserList(const cm::domain:
     }
     if (user.queryNickName && !user.queryNickName->empty()) sql += " AND u.nick_name LIKE " + cm::db::Db::lit("%" + *user.queryNickName + "%");
     if (user.excludeId) sql += " AND u.user_id != " + cm::db::Db::lit(*user.excludeId);
+    return sql;
+}
+
+std::pair<std::vector<cm::domain::SysUser>, long long>
+SysUserMapper::selectUserEntityPage(const cm::domain::SysUser& user,
+                                    const cm::db::PageRequest& page) {
+    const std::string dataSql = selectUserListSql(user);
+    // PageHelper 语义：count 包住同一条 dataSql（distinct / join 都不会算错）
+    auto pr = cm::db::queryPage("select count(1) from (" + dataSql + ") page_count", dataSql, page);
+    std::vector<cm::domain::SysUser> users;
+    for (const auto& row : pr.rows.rows) users.push_back(mapUser(row));
+    return {std::move(users), pr.total};
+}
+
+std::vector<cm::domain::SysUser> SysUserMapper::selectUserList(const cm::domain::SysUser& user) {
     cm::db::Result res;
     std::vector<cm::domain::SysUser> users;
-    if (!cm::db::Db::instance().query(sql, res)) return users;
+    if (!cm::db::Db::instance().query(selectUserListSql(user), res)) return users;
     for (const auto& row : res.rows) users.push_back(mapUser(row));
     return users;
 }

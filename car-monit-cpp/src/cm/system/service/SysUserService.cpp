@@ -11,6 +11,11 @@
 
 namespace cm::system::service {
 
+std::pair<std::vector<cm::domain::SysUser>, long long> SysUserService::selectUserEntityPage(
+        const cm::domain::SysUser& user, const cm::db::PageRequest& page) {
+    return cm::system::mapper::SysUserMapper::selectUserEntityPage(user, page);
+}
+
 std::vector<cm::domain::SysUser> SysUserService::selectUserList(const cm::domain::SysUser& user) {
     return cm::system::mapper::SysUserMapper::selectUserList(user);
 }
@@ -101,6 +106,10 @@ int SysUserService::updateUserProfile(const cm::domain::SysUser& user) {
 
 int SysUserService::resetPwd(const cm::domain::SysUser& user) {
     return cm::system::mapper::SysUserMapper::updateUser(user);
+}
+
+bool SysUserService::updateUserAvatar(const std::string& userName, const std::string& avatar) {
+    return cm::system::mapper::SysUserMapper::updateUserAvatar(userName, avatar);
 }
 
 int SysUserService::resetUserPwd(const std::string& userName, const std::string& password) {
