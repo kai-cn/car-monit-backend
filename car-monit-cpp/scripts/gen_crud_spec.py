@@ -18,6 +18,9 @@ import re
 import sys
 
 # Java 仓库根：本脚本在 <repo>/car-monit-cpp/scripts/ 下，向上两级即 Java 工程根
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import spec_variants  # noqa: E402  list 变体识别
+
 REPO = os.environ.get("CM_JAVA_ROOT") or os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 JAVA_ROOT = os.path.join(REPO, "ruoyi-admin/src/main/java/com/ruoyi/web/controller")
@@ -290,6 +293,14 @@ def gen_entity(entity, ctrl_path):
         if key in perms:
             L.append('        p.%s = "%s";' % (field, perms[key]))
     L.append('        registerCrud(r, "%s", s, p, "%s");' % (ctrl["base"], ctrl["pathvar"]))
+    for vpath, vkind, vperm in spec_variants.classify_variants(
+            spec_variants.method_bodies(read(ctrl_path)), entity):
+        if vperm:
+            L.append("        registerListVariant(r, \"%s%s\", s, %s, \"%s\");"
+                    % (ctrl["base"], vpath, vkind, vperm))
+        else:
+            L.append("        registerListVariant(r, \"%s%s\", s, %s);"
+                    % (ctrl["base"], vpath, vkind))
     L.append("    }")
     return "\n".join(L), ctrl["base"], entity
 
@@ -342,3 +353,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

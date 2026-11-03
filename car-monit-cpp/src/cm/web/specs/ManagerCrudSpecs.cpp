@@ -67,6 +67,7 @@ void registerManagerArea(Router& r) {
         s.excelSheetName = "补缴处理";
         Perms p;
         registerCrud(r, "/manager/aduitfree", s, p, "id");
+        registerListVariant(r, "/manager/aduitfree/incomeStatics", s, ListKind::Paged);
     }
     {
         // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarConfimFree.java
@@ -98,6 +99,8 @@ void registerManagerArea(Router& r) {
         s.excelSheetName = "确认补缴";
         Perms p;
         registerCrud(r, "/manager/confimfree", s, p, "exceptIds");
+        registerListVariant(r, "/manager/confimfree/concernedList", s, ListKind::Paged);
+        registerListVariant(r, "/manager/confimfree/carStatics", s, ListKind::Paged);
     }
     {
         // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarExceptRecord.java
@@ -232,6 +235,7 @@ void registerManagerArea(Router& r) {
         Perms p;
         p.list = "manager:carinfo:list";
         registerCrud(r, "/manager/carinfo", s, p, "id");
+        registerListVariant(r, "/manager/carinfo/listAll", s, ListKind::Paged);
     }
     {
         // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarQueryLog.java
@@ -494,6 +498,7 @@ void registerManagerArea(Router& r) {
         Perms p;
         p.list = "manager:suspicious:list";
         registerCrud(r, "/manager/suspicious", s, p, "id");
+        registerListVariant(r, "/manager/suspicious/listAll", s, ListKind::Paged);
     }
     {
         // ruoyi-system/src/main/java/com/ruoyi/manager/domain/CarTrackInfo.java

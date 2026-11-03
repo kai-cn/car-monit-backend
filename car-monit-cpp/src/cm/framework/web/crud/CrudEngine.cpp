@@ -377,6 +377,31 @@ cm::http::ApiResponse runRemove(const Spec& spec, RequestContext& ctx, const std
 
 } // namespace
 
+void registerListVariant(Router& router, const std::string& path, const Spec& spec, ListKind kind,
+                         const char* perm) {
+    auto sp = std::make_shared<Spec>(spec);
+    auto b = router.get(path, [sp, kind](RequestContext& ctx) -> cm::http::ApiResponse {
+        Json query = bindQuery(*sp, ctx);
+        if (sp->hooks.beforeQuery) sp->hooks.beforeQuery(ctx, query);
+        const std::string where = buildWhere(*sp, query);
+        const auto page = ctx.pageRequest();
+        const std::string order = orderSqlOf(*sp, page);
+        if (kind == ListKind::Paged && page.enabled) {
+            auto pr = cm::db::queryPage("SELECT COUNT(1) " + fromClause(*sp) + " " + where,
+                                        selectSql(*sp, where, order), page);
+            return BaseController::ok(BaseController::dataTable(fetchRows(*sp, pr.rows), pr.total));
+        }
+        cm::db::Result res;
+        Json arr = Json::array();
+        if (Db::instance().query(selectSql(*sp, where, order), res)) arr = fetchRows(*sp, res);
+        if (kind == ListKind::Counted)
+            return BaseController::ok(BaseController::dataTable(arr, static_cast<long long>(arr.size())));
+        // Plain：对应 Java 的 return AjaxResult.success(list)
+        return BaseController::ok(AjaxResult::success(arr));
+    });
+    if (perm) b.permi(perm);
+}
+
 void registerCrud(Router& router, const std::string& base, const Spec& spec, const Perms& perms,
                   const std::string& pkVar) {
     auto sp = std::make_shared<Spec>(spec);

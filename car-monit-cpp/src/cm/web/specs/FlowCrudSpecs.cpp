@@ -38,6 +38,7 @@ void registerFlowArea(Router& r) {
         Perms p;
         p.query = "flow:applyinfo:query";
         registerCrud(r, "/flow/applyinfo", s, p, "id");
+        registerListVariant(r, "/flow/applyinfo/listAll", s, ListKind::Paged, "flow:applyinfo:list");
     }
     {
         // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowCurrentNode.java
@@ -142,6 +143,9 @@ void registerFlowArea(Router& r) {
         Perms p;
         p.query = "flow:messageinfo:query";
         registerCrud(r, "/flow/messageinfo", s, p, "id");
+        registerListVariant(r, "/flow/messageinfo/listyb", s, ListKind::Paged);
+        registerListVariant(r, "/flow/messageinfo/listyj", s, ListKind::Paged);
+        registerListVariant(r, "/flow/messageinfo/listxx", s, ListKind::Paged);
     }
     {
         // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowName.java
@@ -162,6 +166,7 @@ void registerFlowArea(Router& r) {
         p.list = "flow:flowname:list";
         p.query = "flow:flowname:query";
         registerCrud(r, "/flow/flowname", s, p, "id");
+        registerListVariant(r, "/flow/flowname/listQuery", s, ListKind::Paged);
     }
     {
         // ruoyi-system/src/main/java/com/ruoyi/flow/domain/FlowTemplate.java

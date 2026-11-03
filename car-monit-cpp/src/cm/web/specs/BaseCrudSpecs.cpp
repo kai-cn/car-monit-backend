@@ -29,6 +29,7 @@ void registerBaseArea(Router& r) {
         Perms p;
         p.list = "base:configServiceArea:list";
         registerCrud(r, "/base/configServiceArea", s, p, "fwqbm");
+        registerListVariant(r, "/base/configServiceArea/listQuery", s, ListKind::Plain);
     }
     {
         // ruoyi-system/src/main/java/com/ruoyi/base/domain/CarWarningConfig.java
@@ -808,6 +809,7 @@ void registerBaseArea(Router& r) {
         s.excelSheetName = "门架信息";
         Perms p;
         registerCrud(r, "/base/gantry", s, p, "id");
+        registerListVariant(r, "/base/gantry/listAll", s, ListKind::Paged);
     }
     {
         // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnGantryIp.java
@@ -898,6 +900,7 @@ void registerBaseArea(Router& r) {
         s.excelSheetName = "路段信息";
         Perms p;
         registerCrud(r, "/base/section", s, p, "id");
+        registerListVariant(r, "/base/section/listAll", s, ListKind::Paged);
     }
     {
         // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnToll.java
@@ -935,6 +938,7 @@ void registerBaseArea(Router& r) {
         s.excelSheetName = "收费站基础信息";
         Perms p;
         registerCrud(r, "/base/toll", s, p, "id");
+        registerListVariant(r, "/base/toll/listAll", s, ListKind::Paged);
     }
     {
         // ruoyi-system/src/main/java/com/ruoyi/base/domain/OdsSzdnTollStationIp.java

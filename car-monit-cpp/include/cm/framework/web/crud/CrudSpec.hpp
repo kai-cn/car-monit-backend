@@ -141,6 +141,18 @@ std::string pkLiteral(const Spec& spec, const std::string& raw);
 void registerCrud(Router& router, const std::string& base, const Spec& spec, const Perms& perms,
                   const std::string& pkVar = "id");
 
+/**
+ * 注册一个“list 的变体路径”，对应 Java 控制器里那些复制粘贴出来的
+ * /listAll、/listQuery、/listnew 等方法。kind 决定返回形态：
+ *   Paged   —— startPage() + getDataTable(list)（与 /list 一致）
+ *   Plain   —— 不分页，AjaxResult.success(list)（Java 里常见于 /listQuery）
+ *   Counted —— 不分页，但 TableDataInfo(total = 条数)
+ */
+enum class ListKind { Paged, Plain, Counted };
+
+void registerListVariant(Router& router, const std::string& path, const Spec& spec,
+                         ListKind kind, const char* perm = nullptr);
+
 /** 只注册 list + getInfo（部分模块只有查询接口） */
 void registerReadOnly(Router& router, const std::string& base, const Spec& spec,
                       const Perms& perms, const std::string& pkVar = "id");
