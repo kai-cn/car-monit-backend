@@ -1090,6 +1090,7 @@ const Spec& specZdataTrailFitting() {
         Spec s;
         s.table = "zdata_trail_fitting";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"cid", "cid", Fmt::Str, Cond::None, nullptr, false, false, true, true},
             {"enaxlecount", "enaxlecount", Fmt::Int, Cond::Eq, "入口车轴数", false, false, true, true},

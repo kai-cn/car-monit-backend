@@ -18,6 +18,7 @@ const Spec& specFlowApplyInfo() {
         Spec s;
         s.table = "flow_apply_info";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "ID", Fmt::Str, Cond::None, nullptr, true, false, true, false},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -62,6 +63,7 @@ const Spec& specFlowCurrentNode() {
         Spec s;
         s.table = "flow_current_node";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "ID", Fmt::Str, Cond::None, nullptr, true, false, true, false},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -117,6 +119,7 @@ const Spec& specFlowList() {
         Spec s;
         s.table = "flow_list";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "ID", Fmt::Str, Cond::None, nullptr, true, false, true, false},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -157,6 +160,7 @@ const Spec& specFlowMessageDispose() {
         Spec s;
         s.table = "flow_message_dispose";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "ID", Fmt::Str, Cond::None, nullptr, true, false, true, false},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -191,6 +195,7 @@ const Spec& specFlowMessageInfo() {
         Spec s;
         s.table = "flow_message_info";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "ID", Fmt::Str, Cond::None, nullptr, true, false, true, false},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -237,6 +242,7 @@ const Spec& specFlowName() {
         Spec s;
         s.table = "flow_name";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "ID", Fmt::Str, Cond::None, nullptr, true, false, true, false},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -271,6 +277,7 @@ const Spec& specFlowTemplate() {
         Spec s;
         s.table = "flow_template";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "ID", Fmt::Str, Cond::None, nullptr, true, false, true, false},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},

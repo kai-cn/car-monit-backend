@@ -407,6 +407,23 @@ def gen_entity(entity, ctrl_path):
     ob_prefix = (order_by or "").split(".")[0].strip() if order_by else ""
     alias = ob_prefix if ob_prefix in cands else (cands[0] if cands else "t")
     L.append('        s.alias = "%s";' % alias)
+    # XML 的 selectList 里写死在 <if> 之外的 where 片段（几乎必然是逻辑删除过滤）。
+    # 丢了它就等于把 del_flag='1' 的行也返回给前端，与 Java 结果集不同；
+    # 只看 <if> 之外的部分，否则会把"用户传了 status 才生效"的条件误当成恒定过滤。
+    list_stmt = re.search(r'<select\b[^>]*id="select\w*(?:List|Vo)?"[^>]*>(.*?)</select>', xml_src, re.S)
+    probe = list_stmt.group(1) if list_stmt else xml_src
+    probe = re.sub(r"<if\b[^>]*>.*?</if>", " ", probe, flags=re.S)
+    probe += re.sub(r"<if\b[^>]*>.*?</if>", " ",
+                    re.search(r'<sql id="select\w*Vo">(.*?)</sql>', xml_src, re.S).group(1)
+                    if re.search(r'<sql id="select\w*Vo">(.*?)</sql>', xml_src, re.S) else "",
+                    flags=re.S)
+    fixed = []
+    if re.search(r"(?:\b%s\.|\b)del_flag\s*=\s*'0'" % re.escape(alias), probe, re.I):
+        fixed.append(" and %s.del_flag = '0'" % alias)
+    if re.search(r"(?:\b%s\.|\b)status\s*=\s*'0'" % re.escape(alias), probe, re.I):
+        fixed.append(" and %s.status = '0'" % alias)
+    if fixed:
+        L.append('        s.extraWhere = "%s";' % "".join(fixed))
     L.append("        s.fields = {")
     # 1) 父类字段先输出（Jackson 的声明序），列以 resultMap 为准；
     #    resultMap 没映射的保持“只进 JSON 的 null”，与 MyBatis 不填的行为一致。

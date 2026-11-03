@@ -18,6 +18,7 @@ const Spec& specBussTest() {
         Spec s;
         s.table = "buss_test";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -58,6 +59,7 @@ const Spec& specCarAduitFree() {
         Spec s;
         s.table = "car_aduit_free";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -97,6 +99,7 @@ const Spec& specCarConfimFree() {
         Spec s;
         s.table = "car_confim_free";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -152,6 +155,7 @@ const Spec& specCarExceptRecord() {
         Spec s;
         s.table = "car_except_record";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -208,6 +212,7 @@ const Spec& specCarFeeRecord() {
         Spec s;
         s.table = "car_fee_record";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -250,6 +255,7 @@ const Spec& specCarInfo() {
         Spec s;
         s.table = "car_info";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0' and t.status = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -336,6 +342,7 @@ const Spec& specCarQueryLog() {
         Spec s;
         s.table = "car_query_log";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -371,6 +378,7 @@ const Spec& specCarRouteDetail() {
         Spec s;
         s.table = "car_route_detail";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -421,6 +429,7 @@ const Spec& specCarRouteInfo() {
         Spec s;
         s.table = "car_route_info";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -463,6 +472,7 @@ const Spec& specCarSplitRecord() {
         Spec s;
         s.table = "car_split_record";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -504,6 +514,7 @@ const Spec& specCarSuspiciousBack() {
         Spec s;
         s.table = "car_suspicious_back";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -570,6 +581,7 @@ const Spec& specCarSuspiciousCheck() {
         Spec s;
         s.table = "car_suspicious_check";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -608,6 +620,7 @@ const Spec& specCarSuspicious() {
         Spec s;
         s.table = "car_suspicious";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -692,6 +705,7 @@ const Spec& specCarTrackInfo() {
         Spec s;
         s.table = "car_track_info";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -739,6 +753,7 @@ const Spec& specCarWarningInfo() {
         Spec s;
         s.table = "car_warning_info";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -809,6 +824,7 @@ const Spec& specCarWarningRule() {
         Spec s;
         s.table = "car_warning_rule";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -848,6 +864,7 @@ const Spec& specCarWhiteInfo() {
         Spec s;
         s.table = "car_white_info";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -884,6 +901,7 @@ const Spec& specGantryCar() {
         Spec s;
         s.table = "gantry_car";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},
@@ -925,6 +943,7 @@ const Spec& specGantryTradeInfo() {
         Spec s;
         s.table = "gantry_trade_info";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::None, nullptr, true, false, true, true},
             {"epsId", "eps_id", Fmt::Long, Cond::None, nullptr, false, false, true, true},

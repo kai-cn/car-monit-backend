@@ -92,6 +92,7 @@ const Spec& specSysFile() {
         Spec s;
         s.table = "sys_file";
         s.alias = "t";
+        s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
             {"id", "id", Fmt::Long, Cond::Eq, nullptr, false, false, true, false},
             {"fileName", "file_name", Fmt::Str, Cond::Eq, "文件名称", false, false, true, true},
@@ -172,6 +173,7 @@ const Spec& specSysRole() {
         Spec s;
         s.table = "sys_role";
         s.alias = "r";
+        s.extraWhere = " and r.del_flag = '0'";
         s.fields = {
             {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, true, false},
             {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false},
