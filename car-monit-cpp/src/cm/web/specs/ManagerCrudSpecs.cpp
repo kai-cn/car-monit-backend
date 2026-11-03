@@ -80,6 +80,8 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time,t.id";
         s.excelSheetName = "补缴处理";
@@ -121,6 +123,20 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"carAduitFreeList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"carExceptRecordList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"totalAmount", nullptr, Fmt::Double, Cond::None, "应缴金额", false, false, false, false},
+            {"chargeAmount", nullptr, Fmt::Double, Cond::None, "收费金额", false, false, false, false},
+            {"difAmount", nullptr, Fmt::Double, Cond::None, "差额", false, false, false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime3", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime4", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"carNoQuery", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"confimFreeNum", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"confimFreeAmount", nullptr, Fmt::Double, Cond::None, nullptr, false, false, false, false},
+            {"escapedType", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"comfimFreeType", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "确认补缴";
@@ -165,6 +181,19 @@ void registerManagerArea(Router& r) {
             {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime3", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime4", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"orgId", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"exceptIds", nullptr, Fmt::Str, Cond::None, "异常流水ids", false, false, false, false},
+            {"carNoQuery", nullptr, Fmt::Str, Cond::None, "车俩查询", false, false, false, false},
+            {"createInfo", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"exceptNum", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"exceptAmount", nullptr, Fmt::Double, Cond::None, nullptr, false, false, false, false},
+            {"inTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"outTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "异常车辆流水";
@@ -204,6 +233,8 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "收费流水";
@@ -283,6 +314,13 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"carNoQuery", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createInfo", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"trailList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"flag", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "车辆信息";
@@ -317,6 +355,8 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::None, nullptr, false, false},
             {"status", "status", Fmt::Str, Cond::None, nullptr, false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "查询日志";
@@ -365,6 +405,8 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "常用路线明细";
@@ -404,6 +446,9 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "常用路线";
@@ -442,6 +487,9 @@ void registerManagerArea(Router& r) {
             {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "拆分流水";
@@ -543,6 +591,9 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time,t.id";
         s.excelSheetName = "可疑车辆人工核实";
@@ -609,6 +660,24 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"carNoQuery", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"checkList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"trailList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"gantryCode", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"tollCode", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"fwqbm", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"type", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"code", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"chargeAmount", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"totalAmount", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"difAmount", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"mjTime", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"mjAddress", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"txTime", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"txAddress", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.out_time desc,t.id";
         s.excelSheetName = "可疑车辆";
@@ -651,6 +720,12 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"longitudeDec", nullptr, Fmt::Double, Cond::None, "经度", false, false, false, false},
+            {"latitudeDec", nullptr, Fmt::Double, Cond::None, "维度", false, false, false, false},
+            {"pageNum", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
+            {"pageSize", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time,t.id";
         s.excelSheetName = "车辆行驶轨迹";
@@ -701,6 +776,26 @@ void registerManagerArea(Router& r) {
             {"backCol1", "back_col1", Fmt::Str, Cond::Eq, "同步日期", false, false},
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
+            {"gantryTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"escapedType", nullptr, Fmt::Str, Cond::None, "逃费类型", false, false, false, false},
+            {"escapedAmount", nullptr, Fmt::Double, Cond::None, "逃费金额", false, false, false, false},
+            {"carNoQuery", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"inTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"flag", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"flagTime", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"queryRante", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"gantryCode", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"tollCode", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"fwqbm", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"type", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"code", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"plateColor", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"trailFwqList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"needToWarnStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"nextPassTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.gantry_time desc,t.id";
         s.excelSheetName = "预警车辆";
@@ -737,6 +832,9 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "预警规则";
@@ -770,6 +868,9 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createInfo", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"carNoQuery", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "车俩白名单";
@@ -808,6 +909,9 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "门架拍识查询";
@@ -847,6 +951,9 @@ void registerManagerArea(Router& r) {
             {"backCol2", "back_col2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false},
+            {"applyTime1", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"applyTime2", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "门架交易查询";

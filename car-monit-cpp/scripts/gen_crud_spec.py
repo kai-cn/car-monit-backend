@@ -227,8 +227,8 @@ def parse_domain(entity):
         if jm:
             pat = jm.group(1)
             fmt = "DateYmd" if pat == "yyyy-MM-dd" else ("DateYmdHms" if "HH" in pat else None)
-        if re.search(r'@TableField\(\s*exist\s*=\s*false', annos):
-            continue
+        # @TableField(exist=false) 不是表列，但仍然是实体的字段：
+        # Jackson 会输出这个键（值多为 null），所以这里不跳过，交给 gen_entity 降级成 nullptr 列
         mapped = TYPE_MAP.get(jtype, "Str")
         if jtype in ("Date", "LocalDateTime", "LocalDate") and fmt:
             mapped = fmt
@@ -392,13 +392,17 @@ def gen_entity(entity, ctrl_path):
             continue
         is_pk = (name == pk_field)
         col = colmap.get(name) or snake_case(name)
+        ex = '\"%s\"' % c_escape(excel) if excel else "nullptr"
         if known and col.lower() not in known and not is_pk:
-            continue  # 派生属性：XML 里没有这一列，跳过（对齐 MP @TableField(exist=false)）
+            # 派生属性 / @TableField(exist=false)：MyBatis 不填值，但 Jackson 照样输出键（值为 null）。
+            # 所以不能丢掉这个字段，只是不能进 SELECT、也不能当查询条件。
+            L.append('            {"%s", nullptr, Fmt::%s, Cond::None, %s, false, false, false, false},'
+                     % (name, fmt if fmt in FMT_NAMES else "Str", ex))
+            continue
         cond_cpp = {
             "eq": "Cond::Eq", "like": "Cond::Like", "eq_notnull": "Cond::EqNotNull",
             "find_in_set": "Cond::FindInSet", "range": "Cond::DateRange",
         }.get(conds.get(name, "None"), "Cond::None")
-        ex = '\"%s\"' % c_escape(excel) if excel else "nullptr"
         L.append('            {"%s", "%s", Fmt::%s, %s, %s, %s, %s},' % (
             name, col, fmt, cond_cpp, ex, "true" if is_pk else "false",
             "true" if (is_pk and pk_auto) else "false"))

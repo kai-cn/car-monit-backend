@@ -45,6 +45,7 @@ void registerFlowArea(Router& r) {
             {"backCol2", "BACK_COL2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"backCol3", "BACK_COL3", Fmt::Str, Cond::Eq, "备用字段3", false, false},
             {"flowStatus", "FLOW_STATUS", Fmt::Str, Cond::Eq, nullptr, false, false},
+            {"auitEmpName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
             {"entrustInfo", "entrust_info", Fmt::Str, Cond::Eq, nullptr, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
@@ -89,6 +90,19 @@ void registerFlowArea(Router& r) {
             {"backCol1", "BACK_COL1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
             {"backCol2", "BACK_COL2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"backCol3", "BACK_COL3", Fmt::Str, Cond::Eq, "备用字段3", false, false},
+            {"roleId", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"tableName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"projectId", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"flowKey", nullptr, Fmt::Str, Cond::None, "流程key", false, false, false, false},
+            {"flowRuid", nullptr, Fmt::Str, Cond::None, "流程实例ID", false, false, false, false},
+            {"flowApplyOid", nullptr, Fmt::Str, Cond::None, "流程申请ID", false, false, false, false},
+            {"flowStatus", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"shValue", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"shContext", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"entrustUserId", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"entrustUserName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"roleKey", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"deptId", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "流程_当前节点";
@@ -207,6 +221,11 @@ void registerFlowArea(Router& r) {
             {"backCol1", "BACK_COL1", Fmt::Str, Cond::Eq, "备用字段1", false, false},
             {"backCol2", "BACK_COL2", Fmt::Str, Cond::Eq, "备用字段2", false, false},
             {"backCol3", "BACK_COL3", Fmt::Str, Cond::Eq, "备用字段3", false, false},
+            {"userId", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false},
+            {"msgStatus", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"flowStatus", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"curEmpNames", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
+            {"disposeList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "系统内部消息";
@@ -242,6 +261,7 @@ void registerFlowArea(Router& r) {
             {"flowTitle", "FLOW_TITLE", Fmt::Str, Cond::Eq, "流程名称", false, false},
             {"flowContext", "FLOW_CONTEXT", Fmt::Str, Cond::Eq, "内容", false, false},
             {"bussName", "BUSS_NAME", Fmt::Str, Cond::Eq, "业务名称", false, false},
+            {"tenantName", nullptr, Fmt::Str, Cond::None, "单位名称", false, false, false, false},
             {"flowBusinessType", "flow_business_type", Fmt::Str, Cond::Eq, nullptr, false, false},
         };
         s.orderBy = "t.tenant_id,t.flow_key,t.id";

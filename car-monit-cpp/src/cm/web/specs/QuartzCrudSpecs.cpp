@@ -55,6 +55,8 @@ void registerQuartzArea(Router& r) {
             {"jobMessage", "job_message", Fmt::Str, Cond::None, "日志信息", false, false},
             {"status", "status", Fmt::Str, Cond::Eq, "执行状态", false, false},
             {"exceptionInfo", "exception_info", Fmt::Str, Cond::None, "异常信息", false, false},
+            {"startTime", nullptr, Fmt::DateIso, Cond::None, nullptr, false, false, false, false},
+            {"stopTime", nullptr, Fmt::DateIso, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "create_time desc";
         s.excelSheetName = "任务调度日志";

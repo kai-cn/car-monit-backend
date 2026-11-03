@@ -111,6 +111,8 @@ void registerSystemArea(Router& r) {
             {"updateUser", "update_user", Fmt::Str, Cond::Eq, "文件大小", false, false},
             {"delFlag", "del_flag", Fmt::Str, Cond::Eq, nullptr, false, false},
             {"tenantId", "tenant_id", Fmt::Long, Cond::Eq, "所属租户", false, false},
+            {"files", nullptr, Fmt::Str, Cond::None, "文件s", false, false, false, false},
+            {"createUserName", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false},
         };
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "文件";
