@@ -59,6 +59,8 @@ void registerControllers(Router& r) {
     crud::registerBaseArea(r);
     crud::registerManagerArea(r);
     crud::registerFlowArea(r);
+    crud::registerSystemArea(r);   // SysPost / SysIndexMenu
+    crud::registerQuartzArea(r);   // SysJob / SysJobLog
 }
 
 } // namespace cm::web

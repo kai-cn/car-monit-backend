@@ -20,6 +20,7 @@ import sys
 # Java 仓库根：本脚本在 <repo>/car-monit-cpp/scripts/ 下，向上两级即 Java 工程根
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import spec_variants  # noqa: E402  list 变体识别
+from db_cols import real_columns  # noqa: E402  生成前核对真实列
 
 REPO = os.environ.get("CM_JAVA_ROOT") or os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -35,6 +36,8 @@ QUARTZ_MAPPER_ROOT = os.path.join(REPO, "ruoyi-quartz/src/main/resources/mapper"
 
 AREAS = {
     "base": ("base", "Base"),
+    "system": ("system", "System"),
+    "quartz": ("quartz", "Quartz"),
     "manager": ("manager", "Manager"),
     "flow": ("flow", "Flow"),
 }
@@ -88,9 +91,13 @@ def find_domain_class(entity):
 
 
 def find_mapper_xml(entity):
-    for dirpath, _dirs, files in os.walk(MAPPER_ROOT):
-        if entity + "Mapper.xml" in files:
-            return os.path.join(dirpath, entity + "Mapper.xml")
+    # quartz / generator 的 XML 不在 ruoyi-system 下，必须一起找
+    for root in (MAPPER_ROOT, QUARTZ_MAPPER_ROOT):
+        if not os.path.isdir(root):
+            continue
+        for dirpath, _dirs, files in os.walk(root):
+            if entity + "Mapper.xml" in files:
+                return os.path.join(dirpath, entity + "Mapper.xml")
     return None
 
 
@@ -169,6 +176,8 @@ def parse_domain(entity):
 def parse_xml_columns(entity):
     """resultMap: property -> column"""
     path = find_mapper_xml(entity)
+    if path is None:
+        return {}, "", None
     src = read(path)
     mapping = {}
     for m in re.finditer(r'<result\s+property="(\w+)"\s+column="(\w+)"', src):
@@ -255,6 +264,23 @@ def gen_entity(entity, ctrl_path):
     known = xml_known_columns(xml_src)
     ctrl = parse_controller(ctrl_path)
 
+    # 生成前先用真实库核对列：对不上说明这不是单表同构 CRUD，直接跳过
+    cols = real_columns(table)
+    if cols is not None:
+        bad = []
+        for _n, _t, _f, _e, _ig in fields:
+            if _ig:
+                continue
+            _col = (colmap.get(_n) or snake_case(_n)).lower()
+            if known and _col not in known and _n != pk_field:
+                continue  # 派生属性，本来就不会进 spec
+            if _col not in cols:
+                bad.append(_col)
+        if bad:
+            sys.stderr.write("跳过 %s：表 %s 不存在列 %s（多半是 join 派生字段，需手写）%s"
+                             % (entity, table, ",".join(bad), chr(10)))
+            return None
+
     L = []
     L.append("    {")
     L.append("        // %s" % rel(dpath))
@@ -310,9 +336,15 @@ def main():
     ap.add_argument("--area", required=False, choices=list(AREAS))
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--only-entities", default=None, help="逗号分隔的实体白名单，例如 SysPost,SysIndexMenu")
     args = ap.parse_args()
 
-    area_dir = os.path.join(JAVA_ROOT, AREAS[args.area][0]) if args.area else None
+    CTRL_ROOTS = {
+        "quartz": os.path.join(REPO, "ruoyi-quartz/src/main/java/com/ruoyi/quartz/controller"),
+        "generator": os.path.join(REPO, "ruoyi-generator/src/main/java/com/ruoyi/generator/controller"),
+    }
+    sub, _pfx = AREAS[args.area]
+    area_dir = CTRL_ROOTS.get(args.area, os.path.join(JAVA_ROOT, sub)) if args.area else None
     if args.list or not args.area:
         for d in ([area_dir] if area_dir else []):
             for f in sorted(os.listdir(d)):
@@ -322,10 +354,13 @@ def main():
 
     ns_suffix, ns_prefix = AREAS[args.area]
     generated, bases = [], []
+    allow = set((args.only_entities or "").split(",")) if args.only_entities else None
     for f in sorted(os.listdir(area_dir)):
         if not f.endswith("Controller.java"):
             continue
         entity = f[:-len("Controller.java")]
+        if allow is not None and entity not in allow:
+            continue
         out = gen_entity(entity, os.path.join(area_dir, f))
         if out is None:
             print("!! 无法解析: " + entity, file=sys.stderr)

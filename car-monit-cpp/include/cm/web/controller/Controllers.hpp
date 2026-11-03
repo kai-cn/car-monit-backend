@@ -21,6 +21,8 @@ namespace crud {
 void registerBaseArea(Router& r);
 void registerManagerArea(Router& r);
 void registerFlowArea(Router& r);
+void registerSystemArea(Router& r);
+void registerQuartzArea(Router& r);
 } // namespace crud
 
 /** 汇总注册（main.cpp 调用） */
