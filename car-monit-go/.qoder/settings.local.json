@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"D:/work/IdeaProjects/car-monit-backend-new\" && sed -n '1,70p' ruoyi-common/src/main/java/com/ruoyi/common/utils/sql/SqlUtil.java; echo \"=== hasChar ===\"; grep -n -A8 \"public static boolean hasChar\" ruoyi-common/src/main/java/com/ruoyi/common/utils/StringUtils.java)"
+    ]
+  }
+}
