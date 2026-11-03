@@ -148,7 +148,7 @@ func isExitsStr(source, para any) bool {
 func (h *handler) warningInfoList(c *gin.Context) {
 	clause, args := warningClause(c)
 	dest := newSliceOf(&carWarningInfo{})
-	page := web.Page(c)
+	page := web.PageAlways(c)
 	total, err := h.list(c.Request.Context(), listQuery{
 		SelectSQL: warningInfoSpec.selectSQL,
 		FromSQL:   warningInfoSpec.from(),

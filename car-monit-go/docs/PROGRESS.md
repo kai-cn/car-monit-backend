@@ -4,7 +4,7 @@
 > 分页语义与 PageHelper 5.3.3 源码逐条对齐（`SkipQuery` 照抄 `afterCount` 的 `pageNum>0 && count>startRow`、
 > `Clamp` 的 reasonable 两界、`startRow`、`OrderBy` 原样拼接、`reasonable` 的 `Convert.toBool` 词表）、
 > 补齐漏掉客户端排序的端点（car_free/car_track 手拼 SQL、ops 两个日志 List、systemaux queryPage/indexmenu）、
-> 校验矩阵从 11 种组合扩到 20 种并修掉脚本自身的 rows 盲区；1463 组合 0 差异，
+> 校验矩阵从 11 种组合扩到 22 种并修掉脚本自身的 rows 盲区；1617 组合 0 差异（豁免白名单已删）；新增 `check_startpage_map.py` 静态核对补回 28 处空表掩盖的分页缺失；`StartPageError` 复刻 `escapeOrderBySql` 的两条拒绝，
 > 单测 `internal/web/pagination_test.go` 钉住语义（`pagination.go` 语句覆盖 100%）。
 >
 > **第三轮（2026-11-02）另见 `docs/PARITY-2026-11-02.md`**：共用 MySQL、**两端使用不同 Redis DB
@@ -183,6 +183,16 @@ Java 的分页是 PageHelper 拦截器行为，前两轮「固定带 `?pageNum=1
   15 处分页执行器（11 个文件）先问这一句（1463 组合 → 0 差异）
 - **`isAsc` 原样拼接**：`getOrderBy()` 不校验方向值，`isAsc=bogus` 就是让 MySQL 报错；
   别名 `ascending/descending` 在 `setIsAsc` 里转 ⇒ `web.OrderBy` 去掉「非 desc 即 asc」兜底
+- **`pageSizeZero=false`**：本工程 pagehelper 没配这项 ⇒ `afterCount` 对 `pageSize<=0` 一律不放行；
+  `SkipQuery` 补上该分支（原来靠「负数归一成 LIMIT 0」近似，遇非法排序列会比 Java 多报一个 500）
+- **startPage 覆盖面（静态核对补回 28 处）**：flow 9 个列表、system user×7 + role + post、
+  manager carwarning/listFileCarNo/incomeDetailList/carStatics、`system/file/getNewCa`、
+  `system/upgradeInfo/list`、`tool/gen/getColumnList` 改用 `web.PageAlways(c)`。
+  这类差异数据比对看不见（表为空或行数 ≤10），只能靠 `check_startpage_map.py`；
+  已用「sys_post 造到 11 行 → 修复前 Java 10 / Go 11 → 修复后两端一致 → 清理」坐实
+- **`escapeOrderBySql` 的拒绝语义**：`PageDomain` 加 `startPage` 标记（`PageAlways` 置位）与
+  `StartPageError()`，16 处在跑 SQL 前给出 `{code:500, msg:"参数不符合规范，不能进行查询"}`
+  或 `"参数已超过最大限制，不能进行查询"`；导出/listAll 这些 Java 不校验的端点不拒绝
 - **代理 JSON 形态**：hutool `JSONUtil.toBean(..., TableDataInfo.class)` 默认丢 null 成员，
   Forest+Jackson 保留 —— 按端点区分（`renderRemoteTable(c, table, dropNull)`），
   上游响应 `UseNumber` 解码以原样透传数字字面量（`0` 不会变成 `0.0`）

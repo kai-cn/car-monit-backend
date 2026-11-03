@@ -5,6 +5,7 @@ package web
 
 import (
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -128,6 +129,59 @@ func TestPageAlwaysForcesPaging(t *testing.T) {
 	if got := PageAlways(c); !got.HasPage || got.PageNum != 1 || got.PageSize != 10 {
 		t.Errorf("PageAlways(无参数) = %+v，期望 HasPage=true、1/10", got)
 	}
+}
+
+// TestStartPageError 对应 SqlUtil.escapeOrderBySql 的两条拒绝规则。
+// 关键点是「只有 startPage 端点才校验」：导出/listAll 那类 Java 不读排序参数，也不能报 500。
+func TestStartPageError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	long := "c" + strings.Repeat("d", 600)
+	cases := []struct {
+		query string
+		want  string
+	}{
+		{"", ""},
+		{"?orderByColumn=createTime&isAsc=desc", ""},
+		{"?isAsc=desc", ""},
+		// 方向值合法字符但非法（交给 SQL 报错，Java 也是这样）
+		{"?orderByColumn=carNo&isAsc=bogus", ""},
+		// 白名单外的字符 → 「参数不符合规范，不能进行查询」（注意 `=` 也不在白名单里）
+		{"?orderByColumn=carNo&isAsc=or%201%3D1", "参数不符合规范，不能进行查询"},
+		{"?orderByColumn=1%3Bdrop&isAsc=desc", "参数不符合规范，不能进行查询"},
+		{"?orderByColumn=carNo&isAsc=desc%3Bdrop", "参数不符合规范，不能进行查询"},
+		{"?orderByColumn=car%20no%27&isAsc=desc", "参数不符合规范，不能进行查询"},
+		// 长度 > 500 → 「参数已超过最大限制，不能进行查询」（字符本身合规）
+		{"?orderByColumn=" + long + "&isAsc=desc", "参数已超过最大限制，不能进行查询"},
+	}
+	for _, c := range cases {
+		if got := startPageErrorFromQuery(c.query); got != c.want {
+			t.Errorf("startPage %q 拒绝信息 = %q，期望 %q", c.query, got, c.want)
+		}
+	}
+	// 同一批请求走 web.Page(c)（Java 没调 startPage 的端点）时一律不拒绝
+	for _, c := range cases {
+		if got := pageErrorFromQuery(c.query); got != "" {
+			t.Errorf("Page(非 startPage) %q 不该拒绝，却得到 %q", c.query, got)
+		}
+	}
+}
+
+func startPageErrorFromQuery(query string) string {
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest("GET", "/x"+query, nil)
+	if err := PageAlways(c).StartPageError(); err != nil {
+		return err.Error()
+	}
+	return ""
+}
+
+func pageErrorFromQuery(query string) string {
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest("GET", "/x"+query, nil)
+	if err := Page(c).StartPageError(); err != nil {
+		return err.Error()
+	}
+	return ""
 }
 
 func TestOrderByMirrorsPageDomain(t *testing.T) {

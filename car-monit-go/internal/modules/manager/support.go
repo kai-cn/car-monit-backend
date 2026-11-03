@@ -203,6 +203,9 @@ type listQuery struct {
 //
 // DIFF: Java 由 PageHelper 在拦截器里生成 count 语句；这里显式拼 COUNT(1)，JOIN 与 WHERE 与主查询完全一致。
 func (h *handler) list(ctx context.Context, q listQuery, dest any) (int64, error) {
+	if err := q.Page.StartPageError(); err != nil {
+		return 0, err
+	}
 	base := q.FromSQL + q.Where.SQL()
 	var total int64
 	if q.Page.HasPage {

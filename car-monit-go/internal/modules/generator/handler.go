@@ -258,7 +258,12 @@ func (h *genHandler) getColumnList(c *gin.Context) {
 		return
 	}
 	// JAVA 对照: startPage() + getDataTable(list)；Go 统一在 SQL 层分页。
-	rows, total := pageColumns(rows, web.Page(c))
+	page := web.PageAlways(c)
+	if err := page.StartPageError(); err != nil {
+		renderError(c, err)
+		return
+	}
+	rows, total := pageColumns(rows, page)
 	web.JSON(c, web.Table(rows, total))
 }
 

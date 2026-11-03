@@ -44,7 +44,7 @@ func validateRole(b *roleBody) string {
 
 // List 对应 SysRoleController.list（@PreAuthorize 被注释，登录即可）。
 func (h *roleHandler) List(c *gin.Context) {
-	rows, total, err := h.svc.selectRoleListPaged(c.Request.Context(), parseRoleQuery(c), auth.CurrentUser(c), web.Page(c))
+	rows, total, err := h.svc.selectRoleListPaged(c.Request.Context(), parseRoleQuery(c), auth.CurrentUser(c), web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

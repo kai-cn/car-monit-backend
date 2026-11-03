@@ -248,7 +248,7 @@ func (h *upgradeHandler) List(c *gin.Context) {
 	q := bindUpgradeQuery(c)
 	lu := auth.CurrentUser(c)
 	q.TenantID = lu.User.TenantID
-	rows, total, err := h.svc.selectUpgradeList(c.Request.Context(), web.Page(c), q)
+	rows, total, err := h.svc.selectUpgradeList(c.Request.Context(), web.PageAlways(c), q)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

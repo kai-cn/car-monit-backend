@@ -26,7 +26,7 @@ func newPostHandler(a *app.App, svc *service) *postHandler {
 
 // List 对应 SysPostController.list（PageHelper 分页）。
 func (h *postHandler) List(c *gin.Context) {
-	rows, total, err := h.svc.selectPostList(c.Request.Context(), parsePostQuery(c), web.Page(c))
+	rows, total, err := h.svc.selectPostList(c.Request.Context(), parsePostQuery(c), web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

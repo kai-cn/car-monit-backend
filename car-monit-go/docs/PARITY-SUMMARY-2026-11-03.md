@@ -10,14 +10,15 @@
 | 校验面 | 覆盖量 | 起点 | 现在 |
 |---|---|---|---|
 | 路由清单（Java 控制器 vs Go 注册表） | Java 511 条 | 13 条 Go 缺失 | **0** |
+| startPage 静态核对（新增 `check_startpage_map.py`） | Go 注册 501 条 | 28 条 Go 少分页 | **0**（两个方向都查；负向验证：故意退化一处即报一处） |
 | 默认分页专项（不带任何分页参数） | 91 条 | 42 条不一致 | **0** |
-| 查询参数矩阵（25 端点 × 20 组合） | 1463 组合 | 183 组合有差异 | **0**（另 73 组为有意差异） |
+| 查询参数矩阵（25 端点 × 22 组合） | 1617 组合 | 183 组合有差异 | **0**，且已删掉「有意差异」白名单 |
 | 全量 GET 逐字段 | 288 条 URL | 15 条差异 | **14**，全部定性为隔离设定或 Java 侧缺陷 |
 | 写接口生命周期（POST→详情→PUT→DELETE） | 32 个资源 | — | 24 个四步全一致；8 个卡在 Java 侧写入缺陷；金额标度差异随测试数据而现 |
 | Redis 双 DB 隔离断言 | 24 项 | — | **全部通过**，测试数据零残留 |
 
-Go 侧共 15 项修复，其中 **10 项属于分页语义**——这一类在「固定带 `?pageNum=1&pageSize=3` 的对比」里
-完全隐形，只有把参数面单独铺开才暴露。分页专题的独立总结见
+Go 侧共 17 项修复，其中 **12 项属于分页语义**——这一类在「固定带 `?pageNum=1&pageSize=3` 的对比」里
+完全隐形，只有把参数面单独铺开、再叠一个静态核对才暴露。分页专题的独立总结见
 [`PAGINATION-PARITY-2026-11-03.md`](./PAGINATION-PARITY-2026-11-03.md)。
 
 ## 2. 修复清单
@@ -39,6 +40,8 @@ Go 侧共 15 项修复，其中 **10 项属于分页语义**——这一类在�
 | 13 | `isAsc=bogus` 时 Go 按 asc 正常返回，Java 500 | `PageDomain.getOrderBy()` 是 `toUnderScoreCase(col) + " " + isAsc`，方向值**不校验**，交给 MySQL 报错；别名 `ascending/descending` 是在 `setIsAsc` 里转的 | `web.OrderBy` 去掉「非 desc 即 asc」兜底，原样拼接（非法字符仍按白名单拦掉） | 扩写矩阵组合 |
 | 14 | `reasonable=1/yes/ok/bogus` Go 当 false（越界页返回空），Java 仍回末页 | `TableSupport` → `getParameterToBool` → `Convert.toBool(值, null)`：`true/yes/ok/1` 真、`false/no/0` 假、空与乱值 null → `PageDomain.getReasonable()` 回落 TRUE | `web.Page` 用同一套词表 + 默认回落真 | 补单测时逐行读源码发现；矩阵新增 2 组 `reasonable` 用例 |
 | 15 | `pageSize=0/-1` 且排序列非法：Java `200/rows=0`，Go `500` | `pagehelper` 未配置 `pageSizeZero`（默认 false）⇒ `afterCount` 对 `pageSize<=0` 一律不放行，数据查询不执行，非法 ORDER BY 因此不被解析 | `web.PageDomain.SkipQuery` 增加 `PageSize<=0` 分支；负页长归一仅作 `LIMIT ?` 保险 | 再读一遍 `AbstractHelperDialect` 时发现原注释把 Java 默认值写反；矩阵新增 2 组、单测翻转 3 组、10 条定点 |
+| 16 | 28 个端点 Java 调 `startPage()` 而 Go 用 `web.Page(c)`：不带参数时 Go 返回全量。**数据比对看不见**——flow 全空表、sys_user 6 行、sys_post 3 行都跨不过一页 | `PageUtils.startPage()` 无条件分页 | 新增静态核对 `scripts/parity/check_startpage_map.py`；据此把 flow×9、system user×7 + role + post、manager carwarning/listFileCarNo/incomeDetailList/carStatics、file/getNewCa、upgradeInfo/list、gen/getColumnList 改为 `web.PageAlways` | 实测把 sys_post 造到 11 行：修复前 Java 10 行/Go 11 行，修复后两端都 10 行；随后清理（回到 3 行，`PARITY` 残留 0） |
+| 17 | `orderByColumn=1;drop` 这类非法排序参数：Java `code=500 msg="参数不符合规范，不能进行查询"`，Go 忽略排序返回 200 | `PageUtils.startPage` 里的 `SqlUtil.escapeOrderBySql`：白名单不过 → `UtilException`；长度 >500 → `UtilException("参数已超过最大限制，不能进行查询")`（本工程的 `escapeOrderBySql` 没有关键字黑名单/`hasChar`，那是更高版本 RuoYi 的补丁） | `PageDomain` 加未导出标记 `startPage`（`PageAlways` 置位）+ `StartPageError()`，15 处分页执行器在 SQL 前拒绝；非 startPage 端点不校验 | 10 端点 × 4 种注入探测 = 40 组，`code` 与 `msg` 逐字一致；矩阵删掉白名单后 1617 组 0 差异 |
 
 ## 3. 分页语义对齐的取证方式
 
@@ -65,13 +68,20 @@ Go 侧共 15 项修复，其中 **10 项属于分页语义**——这一类在�
 2. **不要把「响应没有 rows」当作跳过条件**：`check_query_matrix.py` 原来是
    `if "rows" not in a: continue`，于是 Java 返回错误信封的组合被静默跳过 ——
    ops 两个日志端点的排序缺陷正是改完之后才现形（一次报出 24 组）。
-   现在：两边都是 TableDataInfo 就逐字段比，否则只比信封；已知有意差异单独计数，不混进失败。
+   现在：两边都是 TableDataInfo 就逐字段比，否则只比信封。（曾短暂保留过「已知有意差异」白名单，
+   第 17 项把注入探测也对齐成 500 之后，白名单整个删除 —— 豁免越少，盲区越少。）
 3. **组合表要成对覆盖参数**：`isAsc=bogus` 以前从不与 `orderByColumn` 同时出现、
    `reasonable=false` 从不与越界页码同时出现 —— 两个单参数都「正常」，组合起来才暴露差异。
 4. **把语义钉成单测时，要顺着一行行读 Java**：第 14 项（`reasonable` 词表）不是跑出来的，
    是写 `TestPageFromRequest` 时读 `Convert.toBool` 才发现 Go 只认 `"true"`；
    实测 `reasonable=1/yes/ok/bogus` 四种取值 Java 都按 TRUE 处理，Go 当时会给空页。
    读源码的成本低于在灰度后被用户发现的成本。
+
+5. **数据比对有前提：表里得有数据**。第 16 项那 28 处分页缺失，`check_default_page.py` 跑了两轮都报 0——
+   因为 flow 的表全空、`sys_user` 6 行、`sys_post` 3 行，跨不过「Java 给一页 / Go 给全量」的边界。
+   这类只能**静态核对**（读 Java 方法体有没有 `startPage(`，看 Go 处理函数用的是哪个 page 构造函数），
+   于是补了 `check_startpage_map.py`；并用「造数据 → 复现 → 修复 → 清理」把它坐实成实测结论。
+   工具自身也要做负向验证：故意把一处退回 `web.Page(c)`，确认它只报那一条。
 
 其它环境层面的坑（写在这里避免重复踩）：Git Bash 会把 `/manager` 之类参数改写成交付路径，
 必须 `MSYS2_ARG_CONV_EXCL='*'`；控制台需要 `PYTHONIOENCODING=utf-8`；
@@ -81,7 +91,6 @@ Go 侧共 15 项修复，其中 **10 项属于分页语义**——这一类在�
 
 | 场景 | Java | Go | 理由 |
 |---|---|---|---|
-| `orderByColumn=1;drop` 等非法字符 | `UtilException` → `code=500`、`msg="参数不符合规范，不能进行查询"` | 拦掉非法字符后忽略排序，正常返回 | 两边都注入不成功；不让探测请求把列表打成 500。矩阵里计为「已知有意差异」（73 组） |
 | `/manager/confimfree/concernedList?orderByColumn=totalAmount` | `500 Unknown column 'total_amount'`（select 别名写成 camelCase `total_amount totalAmount`，外层 order by 认不到） | `200` 正常排序（Go 别名是 `AS total_amount`） | 对齐要改 Go 的列别名，牵动 GORM 列映射；两端响应字段名本来就一致，风险大于收益 |
 | `DECIMAL(m,2)` 金额字面量 | `67.00`、`111.00`（BigDecimal 保留标度） | `67`、`111`（`0.33` 这类非整值两边一致） | 数值相等。逐字面对齐需给每个金额字段保留原始标度，涉及上百字段与扫描层 |
 | Redis 运行态可见性 | `/monitor/online/list`、`/monitor/cache` 只看得见自己 DB | 同左 | 就是「两端不同 DB」这一设定本身要的效果，隔离断言已验证互不写入 |
@@ -130,7 +139,10 @@ MSYS2_ARG_CONV_EXCL='*' PYTHONIOENCODING=utf-8 python -u scripts/parity/check_os
   `manager/car_track.go`、`manager/car_free.go`（4 处）
 - 排序覆盖：`ops/{params,logininfor,operlog}.go`、`systemaux/{common,indexmenu}.go`、
   `manager/{car_free,car_track}.go`、`base/crud.go`、`manager/support.go`
-- 校验脚本：`scripts/parity/check_query_matrix.py`（组合扩到 18 种、修掉 rows 盲区、已知差异单列）
+- 校验脚本：`scripts/parity/check_query_matrix.py`（组合扩到 22 种、修掉 rows 盲区、取消有意差异白名单）、
+  新增 `scripts/parity/check_startpage_map.py`（Java startPage × Go 分页方式静态核对）
+- startPage 覆盖面：`flow/handler_*.go`（9 处）、`system/{user,role,post}_handler.go`（9 处）、
+  `manager/{car_warning,car_suspicious,car_free}.go`、`systemaux/{file,upgrade}.go`、`generator/handler.go`
 - 文档：`docs/PARITY-2026-11-02.md`（§4 第 9–15 项、§4.2/§4.3、§5–§10）、
   `docs/PAGINATION-PARITY-2026-11-03.md`（分页专题）、`docs/PROGRESS.md`（§3.9）、本文
 
@@ -155,6 +167,8 @@ MSYS2_ARG_CONV_EXCL='*' PYTHONIOENCODING=utf-8 python -u scripts/parity/check_os
 | 13 | `isAsc` 原样拼接 | `TestOrderByMirrorsPageDomain`（`car_no bogus`）+ 定点：`/monitor/operlog/list?orderByColumn=costTime` 两端同 500 | 闭环 |
 | 14 | `reasonable` 词表 | `TestPageFromRequest` 9 组 + 矩阵 2 组 + 定点 10 种取值逐一对齐 | 闭环 |
 | 15 | `pageSize<=0` 不放行（`pageSizeZero=false`） | `TestClampAndSkipQuery` 3 组期望翻转 + 矩阵 2 组（1463 组合 0 差异）+ 定点 10 条（geometry 非法排序列、carinfo/dict/logininfor/gen 的正常零页长） | 闭环 |
+| 16 | startPage 覆盖面 | `check_startpage_map.py` 两个方向 0 条（501 条注册纳入）+ 负向验证 + sys_post 造 11 行的前后实测（10 vs 11 → 两端都 10），测试数据已清理 | 闭环 |
+| 17 | `escapeOrderBySql` 拒绝 | 10 端点 × 4 种非法排序 = 40 组 `code`+`msg` 逐字一致；`TestStartPageError` 9 组；矩阵取消白名单后 1617 组 0 差异 | 闭环 |
 
 ### 9.2 剩余差异台账（未归类数 0）
 
@@ -166,7 +180,7 @@ MSYS2_ARG_CONV_EXCL='*' PYTHONIOENCODING=utf-8 python -u scripts/parity/check_os
 | GET 差异合计 | **14** | 与 `pG_<module>.json` 的 diff 计数逐条对齐 |
 | 非 JSON 附件流 | 24 | §8.3（POI/EasyPOI vs excelize） |
 | 写接口：Java 侧 insert/delete 缺陷 | 8 个资源（15 条差异） | §8.2 写部分；其余 24 个资源四步全一致 |
-| 参数组合：有意不报错（注入探测） | 73 组 | §5 第 1 行，矩阵脚本单列，不计失败 |
+| 参数组合：注入探测类有意差异 | 0 组（原 73 组已按 §2 第 17 项对齐） | — |
 | 金额标度 / 别名差异 | 数据相关，0~1 条 | §5 第 2、3 行 |
 
 ### 9.3 复核方式

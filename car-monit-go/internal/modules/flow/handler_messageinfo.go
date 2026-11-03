@@ -20,7 +20,7 @@ func (h *handler) messageInfoListWithFlag(c *gin.Context, flag string) {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
-	rows, total, err := h.svc.selectMessageInfoList(c.Request.Context(), h.svc.db, q, flag, actorFrom(c).UserID, web.Page(c))
+	rows, total, err := h.svc.selectMessageInfoList(c.Request.Context(), h.svc.db, q, flag, actorFrom(c).UserID, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

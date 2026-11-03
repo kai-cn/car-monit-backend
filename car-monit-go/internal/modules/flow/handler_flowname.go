@@ -18,7 +18,7 @@ func (h *handler) flowNameList(c *gin.Context) {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
-	rows, total, err := h.svc.selectFlowNameList(c.Request.Context(), h.svc.db, q, web.Page(c))
+	rows, total, err := h.svc.selectFlowNameList(c.Request.Context(), h.svc.db, q, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -35,7 +35,7 @@ func (h *handler) flowNameListQuery(c *gin.Context) {
 	}
 	a := actorFrom(c)
 	q.TenantID = i64Ptr(a.TenantID) // 查询单位自己的流程
-	rows, total, err := h.svc.selectFlowNameList(c.Request.Context(), h.svc.db, q, web.Page(c))
+	rows, total, err := h.svc.selectFlowNameList(c.Request.Context(), h.svc.db, q, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

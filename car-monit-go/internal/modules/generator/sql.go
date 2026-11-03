@@ -226,6 +226,9 @@ func execSQL(ctx context.Context, db *gorm.DB, query string, args ...any) (sql.R
 
 // queryPagedTables 按工程统一分页约定执行查询（HasPage 才 COUNT + LIMIT）。
 func queryPagedTables(ctx context.Context, db *gorm.DB, pd web.PageDomain, base string, args []any, orderBy string) ([]map[string]any, int64, error) {
+	if err := pd.StartPageError(); err != nil {
+		return nil, 0, err
+	}
 	query := base
 	if orderBy != "" {
 		query += "\n\t\t" + orderBy

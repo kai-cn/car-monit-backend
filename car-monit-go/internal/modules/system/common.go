@@ -184,6 +184,9 @@ func nonNilSlice[T any](in []T) []T {
 // JAVA 对照: com/ruoyi/common/utils/PageUtils.java:startPage + PageInfo.getTotal()
 // DIFF: Java PageHelper 通过 ThreadLocal 改写 SQL；Go 显式拼接 limit/offset。
 func queryPaged[T any](ctx context.Context, db *gorm.DB, pd web.PageDomain, base string, args []any, orderBy string) ([]T, int64, error) {
+	if err := pd.StartPageError(); err != nil {
+		return nil, 0, err
+	}
 	sql := base
 	if orderBy != "" {
 		sql += " order by " + orderBy

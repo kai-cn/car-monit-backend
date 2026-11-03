@@ -19,7 +19,7 @@ func (h *handler) flowListList(c *gin.Context) {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
-	rows, total, err := h.svc.selectFlowListList(c.Request.Context(), h.svc.db, q, web.Page(c))
+	rows, total, err := h.svc.selectFlowListList(c.Request.Context(), h.svc.db, q, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

@@ -69,6 +69,9 @@ func ptrTrim(v *string) string {
 // DIFF: PageHelper 在拦截器里隐式生成 count 与 limit；这里显式拼装。
 func queryList(ctx context.Context, db *gorm.DB, selectSQL, fromSQL, cond, order string,
 	args []any, pd web.PageDomain, dest any) (int64, error) {
+	if err := pd.StartPageError(); err != nil {
+		return 0, err
+	}
 	if pd.HasPage {
 		total, err := countRows(ctx, db, fromSQL, cond, args)
 		if err != nil {

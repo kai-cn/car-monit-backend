@@ -44,6 +44,9 @@ func NewService(a *app.App) *Service {
 
 // ListJobs 对应 SysJobServiceImpl.selectJobList（+ startPage）。
 func (s *Service) ListJobs(ctx context.Context, f JobFilter, p web.PageDomain) ([]*SysJob, int64, error) {
+	if err := p.StartPageError(); err != nil {
+		return nil, 0, err
+	}
 	q := s.jobQuery(ctx, f)
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
@@ -388,6 +391,9 @@ func normalizeJobDefaults(job *SysJob, old *SysJob) {
 
 // ListJobLogs 对应 SysJobLogServiceImpl.selectJobLogList。
 func (s *Service) ListJobLogs(ctx context.Context, f JobFilter, p web.PageDomain) ([]*SysJobLog, int64, error) {
+	if err := p.StartPageError(); err != nil {
+		return nil, 0, err
+	}
 	q := s.jobLogQuery(ctx, f)
 	var total int64
 	if err := q.Count(&total).Error; err != nil {

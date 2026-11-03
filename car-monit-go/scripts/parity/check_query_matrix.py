@@ -66,12 +66,10 @@ VARIANTS = [
     # pageSizeZero=false：pageSize<=0 时 Java 不放行数据查询（非法排序列也被掩盖）
     "?pageNum=1&pageSize=0&orderByColumn=createTime",
     "?pageNum=1&pageSize=-1&orderByColumn=createTime",
+    # SqlUtil.escapeOrderBySql 的两条拒绝规则（Java 与 Go 都应当 code=500）
+    "?pageNum=1&pageSize=3&orderByColumn=carNo%27&isAsc=desc",
+    "?pageNum=1&pageSize=3&orderByColumn=" + ("c" * 501) + "&isAsc=desc",
 ]
-
-# 已定性的有意差异（不计入失败，单独报告）：
-# orderByColumn 含非法字符时 Java 的 SqlUtil.escapeOrderBySql 抛 UtilException → code=500
-# 「参数不符合规范，不能进行查询」；Go 忽略该排序正常返回（不注入、不报错）。
-KNOWN_JAVA_REJECTS_ORDER = "orderByColumn=1%3Bdrop"
 
 
 def brief(a, b):
@@ -92,7 +90,7 @@ def compare(a, b):
 
 def main():
     tk_j, tk_g = pp.login_java(), pp.login_go()
-    bad, known, checked = [], 0, 0
+    bad, checked = [], 0
     for base, filters in ENDPOINTS:
         for extra in [""] + filters:
             for variant in VARIANTS:
@@ -105,12 +103,9 @@ def main():
                 d = compare(a, b)
                 if not d:
                     continue
-                if KNOWN_JAVA_REJECTS_ORDER in query:
-                    known += 1
-                    continue
                 # 排序差异表现为 rows 内容不同；分页/转义差异表现为 code、total、rows 长度
                 bad.append((url, len(d), brief(a, b), str(d[0])[:120]))
-    print("\n矩阵校验：比对 %d 个组合，存在差异 %d 个，已知有意差异 %d 个" % (checked, len(bad), known))
+    print("\n矩阵校验：比对 %d 个组合，存在差异 %d 个" % (checked, len(bad)))
     for url, n, shape, first in bad:
         print("  %-64s 差异%3d %s" % (url[:64], n, shape))
         print("      首条: %s" % first)
