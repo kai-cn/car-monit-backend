@@ -169,7 +169,11 @@ std::string buildWhere(const Spec& spec, const Json& query) {
     std::string where = "WHERE 1=1" + spec.extraWhere;
     for (const auto& f : spec.fields) {
         if (f.cond == Cond::None) continue;
-        const std::string col = qualified(spec, f.column);
+        // 查询辅助属性（如 exceptIds）本身不是列，条件左值来自 XML 里的另一个列
+        const std::string col = f.column ? qualified(spec, f.column)
+                                         : (f.condColumn ? qualified(spec, f.condColumn)
+                                                        : std::string());
+        if (col.empty()) continue;
         if (f.cond == Cond::DateRange) {
             const Json* params = findField(query, "params");
             if (params == nullptr) continue;
@@ -192,6 +196,13 @@ std::string buildWhere(const Spec& spec, const Json& query) {
             case Cond::FindInSet:
                 where += " and find_in_set(" + Db::lit(jsonAsString(*v)) + ", " + col + ")";
                 break;
+            case Cond::FindInSetCol: {
+                // XML 里写的是 find_in_set(t.id, #{exceptIds})：左值另有其列（通常是主键）
+                const std::string left =
+                    f.condColumn ? qualified(spec, f.condColumn) : col;
+                where += " and find_in_set(" + left + ", " + Db::lit(jsonAsString(*v)) + ")";
+                break;
+            }
             default:
                 where += " and " + col + " = " + Db::lit(jsonAsString(*v));
                 break;

@@ -111,6 +111,20 @@ static void testBuildWhere() {
     Spec s6 = demoSpec();
     s6.extraWhere = " and t.del_flag = '0'";
     CK_EQ(buildWhere(s6, Json::object()), std::string("WHERE 1=1 and t.del_flag = '0'"));
+
+    // FindInSetCol：XML 写 find_in_set(t.id, #{exceptIds})，左值另有其列
+    Spec s7 = demoSpec();
+    s7.fields[2].cond = Cond::FindInSetCol;
+    s7.fields[2].column = "except_ids";
+    s7.fields[2].condColumn = "id";
+    Json q7 = Json::object();
+    q7["status"] = "1,2";
+    CK_EQ(buildWhere(s7, q7),
+          std::string("WHERE 1=1 and find_in_set(t.id, '1,2')"));
+    // 没给 condColumn 时退化成取本列
+    Spec s8 = s7;
+    s8.fields[2].condColumn = nullptr;
+    CK(buildWhere(s8, q7).find("find_in_set(t.except_ids, '1,2')") != std::string::npos);
 }
 
 static void testBuildInsert() {

@@ -251,8 +251,10 @@ def parse_xml_columns(entity):
 
 
 def parse_conditions(xml_src):
-    """从 selectList 的 <if> 抽条件：property -> ('eq'|'like'|'range'|'find_in_set')"""
+    """从 selectList 的 <if> 抽条件：
+    返回 (property -> 条件形态, order by, property -> 条件左值列名)"""
     conds = {}
+    cond_cols = {}
     for m in re.finditer(r'<if test="([^"]+)">(.*?)</if>', xml_src, re.S):
         test, body = m.group(1), m.group(2)
         prop = re.match(r"(\w+)\s*!=\s*(null|'')", test)
@@ -267,7 +269,18 @@ def parse_conditions(xml_src):
         if "like concat" in low:
             conds[name] = "like"
         elif "find_in_set" in low:
-            conds[name] = "find_in_set"
+            # 参数顺序有两种写法，语义完全相反：
+            #   find_in_set(#{deptId}, ancestors)   值在列里   -> find_in_set
+            #   find_in_set(t.id, #{exceptIds})     列在值里   -> find_in_set_col
+            first = re.search(r'find_in_set\s*\(\s*([^,]+),', low)
+            arg = first.group(1).strip() if first else ""
+            if arg.startswith("#{"):
+                conds[name] = "find_in_set"
+            else:
+                conds[name] = "find_in_set_col"
+                left = re.search(r'find_in_set\s*\(\s*([\w.]+)\s*,', body, re.I)
+                if left:
+                    cond_cols[name] = left.group(1)
         elif "=" in low:
             conds[name] = "eq"
         elif "!=" in low:
@@ -276,7 +289,7 @@ def parse_conditions(xml_src):
     for m in re.finditer(r'<if test="(\w+)\s*!=\s*null\s*">', xml_src):
         conds.setdefault(m.group(1), "eq_notnull")
     order = re.search(r'order\s+by\s+([^<;]+)', xml_src, re.I)
-    return conds, (order.group(1).strip() if order else "")
+    return conds, (order.group(1).strip() if order else ""), cond_cols
 
 
 def parse_controller(ctrl_path):
@@ -323,7 +336,7 @@ def gen_entity(entity, ctrl_path):
             table = re.sub(r'([a-z0-9])([A-Z])', lambda m: m.group(1) + "_" + m.group(2).lower(),
                            entity)
             table = table[0].lower() + table[1:]
-    conds, order_by = parse_conditions(xml_src)
+    conds, order_by, cond_cols = parse_conditions(xml_src)
     known = xml_known_columns(xml_src)
     ctrl = parse_controller(ctrl_path)
 
@@ -395,17 +408,35 @@ def gen_entity(entity, ctrl_path):
         ex = '\"%s\"' % c_escape(excel) if excel else "nullptr"
         if known and col.lower() not in known and not is_pk:
             # 派生属性 / @TableField(exist=false)：MyBatis 不填值，但 Jackson 照样输出键（值为 null）。
-            # 所以不能丢掉这个字段，只是不能进 SELECT、也不能当查询条件。
-            L.append('            {"%s", nullptr, Fmt::%s, Cond::None, %s, false, false, false, false},'
-                     % (name, fmt if fmt in FMT_NAMES else "Str", ex))
+            # 所以不能丢掉这个字段，只是不能进 SELECT。
+            # 例外：XML 里仍然可能拿它当查询条件，且条件左值是别的列
+            #       （car_except_record 的 find_in_set(t.id, #{exceptIds})），这时要保住条件。
+            cond_cpp = "Cond::None"
+            tail = ""
+            if conds.get(name) == "find_in_set_col" and name in cond_cols:
+                left = cond_cols[name]
+                if left.startswith(alias + "."):
+                    left = left[len(alias) + 1:]
+                cond_cpp, tail = "Cond::FindInSetCol", ', "%s"' % left
+            L.append('            {"%s", nullptr, Fmt::%s, %s, %s, false, false, false, false%s},'
+                     % (name, fmt if fmt in FMT_NAMES else "Str", cond_cpp, ex, tail))
             continue
+        cond_kind = conds.get(name, "None")
         cond_cpp = {
             "eq": "Cond::Eq", "like": "Cond::Like", "eq_notnull": "Cond::EqNotNull",
-            "find_in_set": "Cond::FindInSet", "range": "Cond::DateRange",
-        }.get(conds.get(name, "None"), "Cond::None")
-        L.append('            {"%s", "%s", Fmt::%s, %s, %s, %s, %s},' % (
+            "find_in_set": "Cond::FindInSet", "find_in_set_col": "Cond::FindInSetCol",
+            "range": "Cond::DateRange",
+        }.get(cond_kind, "Cond::None")
+        tail = ""
+        if cond_kind == "find_in_set_col" and name in cond_cols:
+            left = cond_cols[name]
+            if left.startswith(alias + "."):
+                left = left[len(alias) + 1:]
+            # Field 的字段序：... insertable, updatable, condColumn —— 先把两个 bool 补齐
+            tail = ', true, true, "%s"' % left
+        L.append('            {"%s", "%s", Fmt::%s, %s, %s, %s, %s%s},' % (
             name, col, fmt, cond_cpp, ex, "true" if is_pk else "false",
-            "true" if (is_pk and pk_auto) else "false"))
+            "true" if (is_pk and pk_auto) else "false", tail))
     L.append("        };")
     if order_by:
         L.append('        s.orderBy = "%s";' % c_escape(order_by))

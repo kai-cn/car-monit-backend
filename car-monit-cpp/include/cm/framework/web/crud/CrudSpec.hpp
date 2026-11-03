@@ -44,6 +44,7 @@ enum class Cond {
     Like,        ///< and t.col like concat('%', #{field}, '%')
     DateRange,   ///< 需要携带 DateRangeStyle；使用 params.beginTime / params.endTime
     FindInSet,   ///< and find_in_set(#{field}, t.col)（祖级列表 ancestors 常见）
+    FindInSetCol,///< and find_in_set(t.col, #{field})（列在第一个参数，如 exceptIds）
 };
 
 /** params.beginTime / endTime 的比较粒度（对应 XML 里的 date_format 格式串） */
@@ -63,6 +64,9 @@ struct Field {
     bool autoIncrement{false};   ///< @TableId(type=IdType.AUTO)
     bool insertable{true};       ///< 生成的列不参与 INSERT/UPDATE（如 MP 的 fill 字段）
     bool updatable{true};
+    /** 仅作为 WHERE 左值的列名覆盖：XML 里条件列与该属性的取值列不同时用
+     *  （如 find_in_set(t.id, #{exceptIds}) —— 拿主键去匹配传入的 csv） */
+    const char* condColumn{nullptr};
 };
 
 /** 每个动作的 @PreAuthorize 权限串（nullptr 表示 Java 侧没有 @PreAuthorize） */
