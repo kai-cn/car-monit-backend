@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "cm/common/constant/Constants.hpp"
+#include "cm/common/utils/FastJson2Compat.hpp"
 #include "cm/common/utils/StringUtils.hpp"
 #include "cm/framework/redis/RedisClient.hpp"
 
@@ -35,7 +36,7 @@ std::vector<cm::domain::SysUserOnline> SysUserOnlineService::selectOnlineByInfo(
         auto jsonStr = cache.get(key);
         if (!jsonStr) continue;
         try {
-            auto j = cm::parse_json(*jsonStr);
+            auto j = cm::utils::parse_cached_json(*jsonStr);
             cm::domain::LoginUser user = cm::domain::LoginUser::fromJson(j);
             if (!user.user.userId) continue;
 

@@ -3,6 +3,7 @@
 #include <chrono>
 
 #include "cm/common/constant/Constants.hpp"
+#include "cm/common/utils/FastJson2Compat.hpp"
 #include "cm/common/utils/IdUtils.hpp"
 #include "cm/common/utils/Logger.hpp"
 #include "cm/common/utils/StringUtils.hpp"
@@ -75,7 +76,8 @@ std::optional<cm::domain::LoginUser> TokenService::getLoginUserByToken(const std
     auto cached = cm::redis::RedisCache::instance().get(getTokenKey(*uuid));
     if (!cached) return std::nullopt;
     try {
-        Json j = Json::parse(*cached);
+        // Java 写入的会话值带 fastjson2 类型标注（Set[...] / 25367L），必须先降级
+        Json j = cm::utils::parse_cached_json(*cached);
         return cm::domain::LoginUser::fromJson(j);
     } catch (const std::exception& e) {
         LOG_ERROR("TokenService", std::string("解析 LoginUser 缓存失败: ") + e.what());

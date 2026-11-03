@@ -86,23 +86,18 @@ std::optional<std::string> Jwt::base64UrlDecode(const std::string& in) {
 
 std::optional<std::string> Jwt::decodeJavaBase64(const std::string& in) {
     std::vector<int> vals;
-    bool padded = false;
     for (char c : in) {
         unsigned char u = static_cast<unsigned char>(c);
         if (std::isspace(u)) continue;
-        if (c == '=') {
-            padded = true;
-            break;
-        }
+        if (c == '=') break;  // 填充之后的内容一律忽略
         int v = b64Value(c);
         if (v < 0) return std::nullopt;
         vals.push_back(v);
     }
-    size_t usable = padded ? (vals.size() / 4) * 4 : (vals.size() / 4) * 4;
-    if (padded) {
-        // 有填充时，JAXB 会把最后不完整组按已有字符补零输出
-        usable = vals.size();
-    }
+    // Java 的 Base64 解码（java.util.Base64 / jjwt 的 codec）对末尾不完整组补零输出：
+    // 26 个字符（无填充）解出 19 字节，不是截断成 18。末尾只剩 1 个字符时按忽略处理。
+    size_t usable = vals.size();
+    if (usable % 4 == 1) usable -= 1;
     std::string out;
     for (size_t i = 0; i < usable; i += 4) {
         size_t n = std::min<size_t>(4, usable - i);

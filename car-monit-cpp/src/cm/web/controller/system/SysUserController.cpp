@@ -90,56 +90,52 @@ std::vector<long long> parseIds(const std::string& text) {
 void registerSysUserController(Router& r) {
     using cm::security::SecurityUtils;
 
-    // 这 6 个列表接口在 Java 侧都没有 @PreAuthorize，靠全局 authenticated 兜底
-    struct ListPreset {
-        const char* path;
-        std::function<void(cm::domain::SysUser&)> tweak;
+    // 这 6 个列表接口在 Java 侧都没有 @PreAuthorize，靠全局 authenticated 兜底，
+    // 差异只在进入分页前的查询条件，所以共用一个 handler 工厂、逐个显式注册路径。
+    auto userListHandler = [](std::function<void(cm::domain::SysUser&)> tweak) {
+        return [tweak](RequestContext& ctx) -> cm::http::ApiResponse {
+            cm::domain::SysUser query = bindUserQuery(ctx);
+            tweak(query);
+            auto [users, total] = SysUserService::selectUserEntityPage(query, ctx.pageRequest());
+            return BaseController::ok(BaseController::dataTable(userArray(users), total));
+        };
     };
-    const std::vector<ListPreset> presets = {
-        // GET /system/user/list —— Java: user.setUserType("1")
-        {"/list", [](cm::domain::SysUser& u) { u.userType = "1"; }},
-        // GET /system/user/listAll —— Java: 强制本租户
-        {"/listAll", [](cm::domain::SysUser& u) { u.tenantId = SecurityUtils::getTenantId(); }},
-        // GET /system/user/listTenantIdAll —— 未传 tenantId 时故意查不到（tenantId = -1）
-        {"/listTenantIdAll", [](cm::domain::SysUser& u) {
-             if (!u.tenantId) u.tenantId = -1LL;
-         }},
-        // GET /system/user/listutil —— 按 flag 切换数据范围（本 fork 特有）
-        {"/listutil", [](cm::domain::SysUser& u) {
-             const std::string flag = u.flag ? StringUtils::trim(*u.flag) : std::string();
-             if (flag == "myDept" || flag == "myDeptCg") {
-                 u.status = "0";
-                 u.userType = "1";
-                 u.tenantId = SecurityUtils::getTenantId();
-             } else if (flag == "sjzbDept" || flag == "sjzbDeptCg") {
-                 u.dataId = std::to_string(SecurityUtils::getTenantId());
-             } else if (flag == "allDept") {
-                 // 不加条件
-             } else {
-                 u.userId = -1LL;
-             }
-         }},
-        // GET /system/user/listSameUtil —— 本租户本部门的启用用户
-        {"/listSameUtil", [](cm::domain::SysUser& u) {
-             u.status = "0";
-             u.userType = "1";
-             u.tenantId = SecurityUtils::getTenantId();
-             u.deptId = SecurityUtils::getEpsId();
-         }},
-        // GET /system/user/listMy
-        {"/listMy", [](cm::domain::SysUser& u) { u.userId = SecurityUtils::getUserId(); }},
-    };
-    for (const auto& preset : presets) {
-        const auto tweak = preset.tweak;
-        r.get(std::string("/system/user") + preset.path,
-              [tweak](RequestContext& ctx) -> cm::http::ApiResponse {
-                  cm::domain::SysUser query = bindUserQuery(ctx);
-                  tweak(query);
-                  auto [users, total] =
-                      SysUserService::selectUserEntityPage(query, ctx.pageRequest());
-                  return BaseController::ok(BaseController::dataTable(userArray(users), total));
-              });
-    }
+    // GET /system/user/list —— Java: user.setUserType("1")
+    r.get("/system/user/list", userListHandler([](cm::domain::SysUser& u) { u.userType = "1"; }));
+    // GET /system/user/listAll —— Java: 强制本租户
+    r.get("/system/user/listAll", userListHandler([](cm::domain::SysUser& u) {
+        u.tenantId = SecurityUtils::getTenantId();
+    }));
+    // GET /system/user/listTenantIdAll —— 未传 tenantId 时故意查不到（tenantId = -1）
+    r.get("/system/user/listTenantIdAll", userListHandler([](cm::domain::SysUser& u) {
+        if (!u.tenantId) u.tenantId = -1LL;
+    }));
+    // GET /system/user/listutil —— 按 flag 切换数据范围（本 fork 特有）
+    r.get("/system/user/listutil", userListHandler([](cm::domain::SysUser& u) {
+        const std::string flag = u.flag ? StringUtils::trim(*u.flag) : std::string();
+        if (flag == "myDept" || flag == "myDeptCg") {
+            u.status = "0";
+            u.userType = "1";
+            u.tenantId = SecurityUtils::getTenantId();
+        } else if (flag == "sjzbDept" || flag == "sjzbDeptCg") {
+            u.dataId = std::to_string(SecurityUtils::getTenantId());
+        } else if (flag == "allDept") {
+            // 不加条件
+        } else {
+            u.userId = -1LL;
+        }
+    }));
+    // GET /system/user/listSameUtil —— 本租户本部门的启用用户
+    r.get("/system/user/listSameUtil", userListHandler([](cm::domain::SysUser& u) {
+        u.status = "0";
+        u.userType = "1";
+        u.tenantId = SecurityUtils::getTenantId();
+        u.deptId = SecurityUtils::getEpsId();
+    }));
+    // GET /system/user/listMy
+    r.get("/system/user/listMy", userListHandler([](cm::domain::SysUser& u) {
+        u.userId = SecurityUtils::getUserId();
+    }));
 
     // GET /system/user/list/dept —— 本部门用户，并把部门名回填到 deptName
     r.get("/system/user/list/dept", [](RequestContext& ctx) -> cm::http::ApiResponse {

@@ -3,3 +3,5 @@ build-*/
 logs/
 *.o
 *.a
+__pycache__/
+*.pyc

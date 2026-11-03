@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 
+#include "cm/common/constant/HttpStatus.hpp"
 #include "cm/common/utils/JsonUtils.hpp"
 
 namespace cm::core::page {
@@ -15,8 +16,12 @@ public:
     int code{0};
     std::optional<std::string> msg;
 
+    /** 对应 new TableDataInfo()：code/msg 都是默认值（Java 侧只有 getDataTable 会填） */
     TableDataInfo() = default;
-    TableDataInfo(Json list, long long total_) : total(total_), rows(std::move(list)) {}
+    /** 对应 BaseController.getDataTable：total/rows 之外，框架统一填 code=200、msg=查询成功 */
+    TableDataInfo(Json list, long long total_)
+        : total(total_), rows(std::move(list)), code(constant::HttpStatus::SUCCESS),
+          msg(std::string("查询成功")) {}
 
     Json toJson() const {
         Json j = Json::object();

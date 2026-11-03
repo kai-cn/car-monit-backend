@@ -7,6 +7,7 @@
 #include "cm/web/controller/system/SysAuthControllers.hpp"
 #include "cm/system/service/SysIndexMenuService.hpp"
 #include "cm/framework/web/crud/CrudSpec.hpp"
+#include "cm/web/controller/base/CdcController.hpp"
 #include "cm/web/controller/common/CommonController.hpp"
 #include "cm/web/controller/common/DownTemplateController.hpp"
 #include "cm/web/controller/monitor/CacheController.hpp"
@@ -64,6 +65,7 @@ void registerControllers(Router& r) {
     registerSysMenuController(r);
     registerSysPostExtraController(r);
     registerSysIndexMenuController(r);
+    registerCdcController(r);
     registerTestController(r);
     // 业务域（base / manager / flow）：同构 CRUD 由 spec 引擎批量注册
     crud::registerBaseArea(r);

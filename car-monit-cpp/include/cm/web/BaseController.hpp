@@ -50,9 +50,6 @@ public:
     static cm::core::page::TableDataInfo dataTable(Json rows, long long total) {
         return cm::core::page::TableDataInfo(std::move(rows), total);
     }
-    static cm::core::page::TableDataInfo dataTable(const cm::db::PageResult& page) {
-        return cm::core::page::TableDataInfo(Json::array(), page.total);
-    }
 
     /** 统一输出 */
     static cm::http::ApiResponse ok(const Ajax& a) {

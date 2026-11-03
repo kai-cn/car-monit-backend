@@ -3,6 +3,7 @@
 #include "cm/common/constant/Constants.hpp"
 #include "cm/common/constant/UserConstants.hpp"
 #include "cm/common/exception/Exceptions.hpp"
+#include "cm/common/utils/FastJson2Compat.hpp"
 #include "cm/common/utils/StringUtils.hpp"
 #include "cm/framework/redis/RedisClient.hpp"
 #include "cm/system/mapper/SysDictTypeMapper.hpp"
@@ -33,7 +34,7 @@ std::optional<std::vector<cm::domain::SysDictData>> getDictCache(const std::stri
     auto cached = cm::redis::RedisCache::instance().get(getCacheKey(dictType));
     if (!cached || cached->empty()) return std::nullopt;
     try {
-        Json arr = Json::parse(*cached);
+        Json arr = cm::utils::parse_cached_json(*cached);
         if (!arr.is_array()) return std::nullopt;
         std::vector<cm::domain::SysDictData> datas;
         for (const auto& e : arr) {

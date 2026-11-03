@@ -200,23 +200,54 @@ C++ 对应实现位置：
 
 ### 6.1 JWT（jjwt 0.9.1）密钥解码
 
-`Jwts.builder().signWith(SignatureAlgorithm.HS512, secret)` 内部用
-`TextCodec.BASE64.decode(secret)`，默认 `abcdefghijklmnopqrstuvwxyz` 解码为 **18 字节**：
+`Jwts.builder().signWith(SignatureAlgorithm.HS512, secret)` 内部把 secret 当作 **Base64 文本**解码。
+默认 `abcdefghijklmnopqrstuvwxyz`（26 个字符，无填充）解码为 **19 字节**：
 
 ```
-69 b7 1d 79 f8 21 8a 39 25 9a 7a 29 aa bb 2d ba fc 31
+69 b7 1d 79 f8 21 8a 39 25 9a 7a 29 aa bb 2d ba fc 31 cb
 ```
 
-C++ `Jwt::decodeJavaBase64` 完全复刻该行为（末尾不足 4 字符的组丢弃），已在
-`tests/main_test.cpp` 中断言。**若把 secret 换成合法的 32 字节 Base64（44 字符带 `=`），
-Java 与 C++ 会得到不同的 key 长度**——这是 jjwt 的既有行为，C++ 保持一致。
+> ✅ 本机用 JDK 1.8 实测：`Base64.getDecoder().decode("abcdefghijklmnopqrstuvwxyz")`
+> 返回 19 字节、末尾 `...31cb`；jjwt 0.9 内置的 Tomcat 派生 codec 同样按“末尾不完整组补零输出”。
+> ⚠️ 早期实现把不足 4 字符的尾组整组丢弃（得到 18 字节），Java 签发的 token 会被 C++ 判为签名不符，
+> 表现为“带着合法 token 仍然 401”。`tests/main_test.cpp::testJwt` 现固定断言 19 字节。
 
-### 6.2 BCrypt
+C++ `Jwt::decodeJavaBase64` 与上面保持一致。**若把 secret 换成合法的 44 字符 Base64（带 `=`），
+Java 与 C++ 仍解码一致**；换成非 Base64 字面量时两边都会退化，不要依赖。
+
+### 6.2 读取 Java 写入的 Redis 缓存值
+
+Java 侧 `FastJson2JsonRedisSerializer` 打开 `WriteClassName`，写出的值**不是严格 JSON**：
+
+```
+"permissions":Set["*:*:*"]     "deptId":25367L     "tenantId":-1L     "params":{"@type":"java.util.HashMap"}
+```
+
+Jackson / nlohmann 都读不了。C++ 侧用 `cm::utils::normalizeFastJson2` 把类型前缀与
+`L/F/D` 数值后缀降级成严格 JSON 后再解析（`parse_cached_json`），只用于**读缓存**：
+请求体解析仍走严格的 `cm::parse_json`，Java 会拒绝的非法入参 C++ 同样拒绝。
+
+> ✅ 实测依据：Redis db0 里由 Java 应用写入的会话（含 `Set[...]` / `25367L`）
+> 现在可被 C++ 解析并放行，`scripts/live_probe.py` 全链路可用。
+
+### 6.3 分页响应体的 code / msg
+
+`TableDataInfo` 的 `code`/`msg` 不是业务代码设置的，而是 `BaseController.getDataTable` 统一填的：
+
+```java
+rspData.setCode(HttpStatus.SUCCESS);   // 200
+rspData.setMsg("查询成功");
+```
+
+> ⚠️ 早期 C++ 实现只构造 `total/rows`，导致所有列表接口输出 `"code":0,"msg":null`
+> （HTTP 仍是 200，前端 `res.code !== 200` 会判失败）。现在 `TableDataInfo(list,total)` 构造即对齐。
+
+### 6.4 BCrypt
 
 Java `BCryptPasswordEncoder` 默认强度 10、前缀 `$2a$`。C++ 使用 libbcrypt
 `bcrypt_gensalt(10)` + `bcrypt_hashpw`，输出同格式 `$2a$10$...`，可互相校验。
 
-### 6.3 密码策略（登录入口）
+### 6.5 密码策略（登录入口）
 
 Java `SysLoginController.login` 在调用登录服务前执行 `CommonUtil.checkPassword`：
 
@@ -264,4 +295,14 @@ curl -s -X POST http://127.0.0.1:9989/login \
 
 # 6. 带 token 获取用户信息
 curl -s http://127.0.0.1:9989/getInfo -H "Authorization: Bearer $TOKEN"
+
+# 7. 不登录也能拿到可用 token：直接复用 Redis 里现存的 Java 会话
+#    （make_token.py 复刻 jjwt + HS512 + Base64 密钥解码，与 Java TokenService 等价）
+TOKEN=$(python scripts/make_token.py)
+curl -s http://127.0.0.1:9989/getInfo -H "Authorization: Bearer $TOKEN"
+
+# 8. 批量实机探针：逐条路径打印 HTTP 状态 + 业务 code，非 200 高亮
+#    （Windows 下必须关掉 MSYS 的路径转换，否则 /base/cdc 会变成 D:/base/cdc）
+MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' \
+  python scripts/live_probe.py --port 9990 /base/cdc/status /system/user/list
 ```

@@ -9,6 +9,7 @@
 #include "cm/common/core/page/TableDataInfo.hpp"
 #include "cm/common/utils/CaptchaUtil.hpp"
 #include "cm/common/utils/DateUtils.hpp"
+#include "cm/common/utils/FastJson2Compat.hpp"
 #include "cm/common/utils/IdUtils.hpp"
 #include "cm/common/utils/JavaCollections.hpp"
 #include "cm/common/utils/StringUtils.hpp"
@@ -70,6 +71,8 @@ static void testAjaxResultOrder() {
 static void testTableDataInfoOrder() {
     cm::core::page::TableDataInfo t(cm::Json::array(), 7);
     CHECK_EQ(keyOrder(t.toJson()), std::string("total,rows,code,msg"));
+    // Java BaseController.getDataTable 会统一填 code=200 / msg=查询成功
+    CHECK_EQ(t.toJson().dump(), std::string("{\"total\":7,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"));
 }
 
 static void testR() {
@@ -89,13 +92,14 @@ static void testJavaHashAndSetOrder() {
 }
 
 static void testJwt() {
-    // jjwt 把 secret 当作 Base64 解码：26 字符 -> 18 字节
+    // jjwt 把 secret 当作 Base64 解码：26 个字符（无填充）-> 19 字节，末尾组补零输出
     auto key = cm::security::Jwt::decodeJavaBase64("abcdefghijklmnopqrstuvwxyz");
     CHECK(key.has_value());
-    CHECK_EQ(key->size(), size_t(18));
-    static const unsigned char expect[18] = {0x69, 0xb7, 0x1d, 0x79, 0xf8, 0x21, 0x8a, 0x39, 0x25,
-                                             0x9a, 0x7a, 0x29, 0xaa, 0xbb, 0x2d, 0xba, 0xfc, 0x31};
-    CHECK(std::string(reinterpret_cast<const char*>(expect), 18) == *key);
+    CHECK_EQ(key->size(), size_t(19));
+    static const unsigned char expect[19] = {0x69, 0xb7, 0x1d, 0x79, 0xf8, 0x21, 0x8a, 0x39, 0x25,
+                                             0x9a, 0x7a, 0x29, 0xaa, 0xbb, 0x2d, 0xba, 0xfc, 0x31,
+                                             0xcb};
+    CHECK(std::string(reinterpret_cast<const char*>(expect), 19) == *key);
 
     cm::security::Jwt jwt("abcdefghijklmnopqrstuvwxyz");
     std::string token = jwt.createToken("6f9b3c0e-1d2a-4f3b-9c8d-0a1b2c3d4e5f");
@@ -157,6 +161,32 @@ static void testPasswordMatch() {
         "wrong", "$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2"));
 }
 
+static void testFastJson2Compat() {
+    // Java 侧 FastJson2JsonRedisSerializer(WriteClassName) 写出的会话值不是严格 JSON：
+    // 集合带 Set[] 前缀、Long 带 L 后缀、Map 带 @type。C++ 必须读得懂，否则 401。
+    const std::string java =
+        R"({"@type":"com.ruoyi.common.core.domain.model.LoginUser","permissions":Set["*:*:*"],)"
+        R"("deptId":25367L,"tenantId":-1L,"expireTime":1793674574544,)"
+        R"("password":"$2a$10$3ylyFvNhQQtBg/n2RkeT..B7RIm8vge70pOvZ.ZY15ZoNcfPiT1OK",)"
+        R"("params":{"@type":"java.util.HashMap"},"admin":true,"flag":false,"note":null})";
+    cm::Json j = cm::utils::parse_cached_json(java);
+    CHECK_EQ(j["permissions"].dump(), std::string("[\"*:*:*\"]"));
+    CHECK_EQ(j["deptId"].get<long long>(), 25367LL);
+    CHECK_EQ(j["tenantId"].get<long long>(), -1LL);
+    CHECK_EQ(j["expireTime"].get<long long>(), 1793674574544LL);
+    CHECK(j["admin"].get<bool>());
+    CHECK(!j["flag"].get<bool>());
+    CHECK(j["note"].is_null());
+    // 字符串字面量里的 1L / Set[ 一律不许动
+    CHECK_EQ(cm::utils::normalizeFastJson2(R"({"b":"1L","c":"Set[","a":1L})"),
+             std::string(R"({"b":"1L","c":"Set[","a":1})"));
+    // true/false/null 是 JSON 字面量，不能被当成类型前缀
+    CHECK_EQ(cm::utils::normalizeFastJson2("[true,false,null]"), std::string("[true,false,null]"));
+    // 已经是严格 JSON 时逐字节不变
+    CHECK_EQ(cm::utils::normalizeFastJson2(R"({"a":[1,2],"b":3.5})"),
+             std::string(R"({"a":[1,2],"b":3.5})"));
+}
+
 static void testSimpleMatch() {
     CHECK(cm::security::SecurityUtils::simpleMatch("system:user:*", "system:user:list"));
     // PatternMatchUtils 只做 * / ? 通配，不识别 ":"，故 "*:*:*" 不匹配无冒号串
@@ -211,6 +241,7 @@ int main() {
     testSqlEscape();
     testSqlUtil();
     testPasswordMatch();
+    testFastJson2Compat();
     testSimpleMatch();
     testIds();
     testCaptcha();
