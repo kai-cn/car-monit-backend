@@ -18,7 +18,7 @@ func (h *handler) applyInfoList(c *gin.Context) {
 	}
 	a := actorFrom(c)
 	q.CreateBy = i64Ptr(a.UserID) // 查询我的申请
-	rows, total, err := h.svc.selectApplyInfoList(c.Request.Context(), h.svc.db, q, web.Page(c))
+	rows, total, err := h.svc.selectApplyInfoList(c.Request.Context(), h.svc.db, q, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -33,7 +33,7 @@ func (h *handler) applyInfoListAll(c *gin.Context) {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
-	rows, total, err := h.svc.selectApplyInfoList(c.Request.Context(), h.svc.db, q, web.Page(c))
+	rows, total, err := h.svc.selectApplyInfoList(c.Request.Context(), h.svc.db, q, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

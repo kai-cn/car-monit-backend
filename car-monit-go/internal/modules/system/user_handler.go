@@ -38,7 +38,7 @@ func newUserHandler(a *app.App, svc *service) *userHandler {
 func (h *userHandler) List(c *gin.Context) {
 	q := parseUserQuery(c)
 	q.UserType = userTypeOrg
-	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.Page(c))
+	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -51,7 +51,7 @@ func (h *userHandler) ListAll(c *gin.Context) {
 	q := parseUserQuery(c)
 	tenant := currentTenantID(c)
 	q.TenantID = &tenant
-	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.Page(c))
+	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -66,7 +66,7 @@ func (h *userHandler) ListTenantIdAll(c *gin.Context) {
 		v := int64(-1)
 		q.TenantID = &v
 	}
-	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.Page(c))
+	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -91,7 +91,7 @@ func (h *userHandler) ListUtil(c *gin.Context) {
 		none := int64(-1)
 		q.UserID = &none
 	}
-	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.Page(c))
+	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -108,7 +108,7 @@ func (h *userHandler) ListSameUtil(c *gin.Context) {
 	q.TenantID = &tenant
 	dept := currentDeptID(c)
 	q.DeptID = &dept
-	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.Page(c))
+	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -121,7 +121,7 @@ func (h *userHandler) ListMy(c *gin.Context) {
 	q := parseUserQuery(c)
 	uid := auth.CurrentUserID(c)
 	q.UserID = &uid
-	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.Page(c))
+	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -141,7 +141,7 @@ func (h *userHandler) ListByDept(c *gin.Context) {
 		q.ExcludeID = &self
 	}
 	q.UserType = userTypeOrg
-	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.Page(c))
+	rows, total, err := h.svc.selectUserList(c.Request.Context(), q, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

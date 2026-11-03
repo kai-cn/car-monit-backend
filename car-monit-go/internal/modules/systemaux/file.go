@@ -901,7 +901,7 @@ func (h *fileHandler) GetInfoByID(c *gin.Context) {
 
 // GetNewCa 对应 GET /system/file/getNewCa：分页后取第一条。
 func (h *fileHandler) GetNewCa(c *gin.Context) {
-	rows, _, err := h.svc.selectSysFileList(c.Request.Context(), web.Page(c), bindSysFileQuery(c))
+	rows, _, err := h.svc.selectSysFileList(c.Request.Context(), web.PageAlways(c), bindSysFileQuery(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

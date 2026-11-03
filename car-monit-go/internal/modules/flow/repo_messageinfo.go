@@ -56,6 +56,9 @@ func messageInfoWhere(q MessageInfoQuery) *whereClause {
 // selectMessageInfoList 对应 selectFlowMessageInfoList：flag 驱动投影与 WHERE 变形。
 func (s *Service) selectMessageInfoList(ctx context.Context, db *gorm.DB, q MessageInfoQuery,
 	flag string, userID int64, pd web.PageDomain) ([]FlowMessageInfo, int64, error) {
+	if err := pd.StartPageError(); err != nil {
+		return nil, 0, err
+	}
 	w := messageInfoWhere(q)
 
 	selectSQL := messageInfoVo + ",app.FLOW_STATUS flow_status,app.BACK_COL1 cur_emp_names"

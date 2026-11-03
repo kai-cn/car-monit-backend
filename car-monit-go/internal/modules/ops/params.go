@@ -127,6 +127,9 @@ func orderFor(defaultOrder string, pd web.PageDomain) string {
 // DIFF: PageHelper 的 count 语句会去掉 ORDER BY（count 优化），这里同样只对 count 语句
 // 使用不含排序的 baseSQL；count=0 时同样跳过数据查询（web.PageDomain.SkipQuery）。
 func queryPage[T any](ctx context.Context, db *gorm.DB, baseSQL string, args []any, orderBy string, pd web.PageDomain) ([]T, int64, error) {
+	if err := pd.StartPageError(); err != nil {
+		return nil, 0, err
+	}
 	dataSQL := baseSQL
 	if strings.TrimSpace(orderBy) != "" {
 		dataSQL += " " + orderBy

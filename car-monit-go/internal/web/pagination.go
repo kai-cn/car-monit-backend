@@ -29,6 +29,10 @@ type PageDomain struct {
 	IsAsc         string
 	Reasonable    bool
 	HasPage       bool
+	// startPage 标记「Java 侧无条件调用 startPage()」的端点（由 PageAlways 置位）。
+	// 只有这类端点才会走 SqlUtil.escapeOrderBySql，非法排序参数在那里就被拒掉；
+	// 不分页的端点（导出、listAll）Java 根本不校验，所以 Go 也不能校验。
+	startPage bool
 }
 
 // Page 从请求参数读取分页信息，等价 TableSupport.buildPageRequest + PageUtils.startPage。
@@ -90,7 +94,40 @@ func paramInt(raw string, def int) int {
 func PageAlways(c *gin.Context) PageDomain {
 	pd := Page(c)
 	pd.HasPage = true
+	pd.startPage = true
 	return pd
+}
+
+// rawOrderBy 对应 PageDomain.getOrderBy：客户端给了排序列时拼成「列名 方向」。
+// 与 OrderBy() 的区别是不做校验 —— 校验结果要交给 StartPageError 决定报不报错。
+func (p PageDomain) rawOrderBy() string {
+	if p.OrderByColumn == "" {
+		return ""
+	}
+	return toUnderScoreCase(p.OrderByColumn) + " " + p.IsAsc
+}
+
+// StartPageError 复刻 SqlUtil.escapeOrderBySql 的两条拒绝规则（顺序也一致）：
+//   - 非空且字符不在白名单 `^[a-zA-Z0-9_ ,.]+$` → UtilException("参数不符合规范，不能进行查询")
+//   - 长度超过 500 → UtilException("参数已超过最大限制，不能进行查询")
+//
+// UtilException 经 GlobalExceptionHandler 变成 `{code:500, msg:上面那句}`。
+// 只对 Java 侧调过 startPage() 的端点生效：其余端点 Java 不读这两个参数，也不校验。
+func (p PageDomain) StartPageError() error {
+	if !p.startPage {
+		return nil
+	}
+	order := p.rawOrderBy()
+	if order == "" {
+		return nil
+	}
+	if !orderByPattern.MatchString(order) {
+		return NewServiceError("参数不符合规范，不能进行查询")
+	}
+	if len(order) > orderByMaxLength {
+		return NewServiceError("参数已超过最大限制，不能进行查询")
+	}
+	return nil
 }
 
 // Clamp 对应 PageHelper 的两处页码修正：
@@ -164,6 +201,9 @@ func (p PageDomain) Limit() int {
 }
 
 var orderByPattern = regexp.MustCompile(`^[a-zA-Z0-9_\ \,\.]+$`)
+
+// orderByMaxLength 对应 SqlUtil.ORDER_BY_MAX_LENGTH。
+const orderByMaxLength = 500
 
 // OrderBy 对应 PageDomain.getOrderBy + SqlUtil.escapeOrderBySql。
 // 返回空串表示不排序。

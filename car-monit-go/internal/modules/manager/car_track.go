@@ -250,6 +250,9 @@ func (h *handler) registerTrackInfo(reg *router.Registry) {
 // 两个调用方（listByCarId、listByCarByTime）在 Java 里都先 startPage() ⇒ 默认 1/10 分页。
 func (h *handler) trackQuery(c *gin.Context) ([]*zdataTrailTracks, int64, error) {
 	page := web.PageAlways(c)
+	if err := page.StartPageError(); err != nil {
+		return nil, 0, err
+	}
 	isCylx := isNull(queryParam(c, "isCylx"))
 	base := " FROM zdata_trail_tracks t WHERE 1 = 1"
 	var args []any

@@ -9,10 +9,10 @@
 
 | 项 | 数据 |
 |---|---|
-| 分页相关修复 | 10 项（§4 第 6–15 项） |
-| 受影响 Go 代码 | `internal/web/pagination.go` + 15 处分页执行器（11 个文件） |
+| 分页相关修复 | 12 项（§4 第 6–17 项） |
+| 受影响 Go 代码 | `internal/web/pagination.go` + 15 处分页执行器（11 个文件）+ 28 处端点的分页方式改正 |
 | 默认分页专项（不带参数） | 42 条不一致 → **0** |
-| 查询参数矩阵 | 1463 组合（25 端点 × 20 组合）：起点 183 → 中间 24 → **0**（另 73 组为有意差异） |
+| 查询参数矩阵 | 1617 组合（25 端点 × 22 组合）：起点 183 → 中间 24 → **0**，且已取消「有意差异」白名单 |
 | 全量 GET 回归 | 288 条 URL，250 逐字段一致 / 14 差异全部定性 / 24 非 JSON —— 与修复前逐格相同，无回归 |
 | 单测 | `internal/web/pagination_test.go`：16 组钳位/短路 + 21 组参数解析 + 8 组排序拼接 + 3 组 LIMIT；`pagination.go` 12 个函数语句覆盖 **100%** |
 
@@ -67,12 +67,13 @@ PageHelper 内部的关键决定点：
 | Go | 对应 Java | 说明 |
 |---|---|---|
 | `Page(c)` | `TableSupport.getPageDomain` + `PageDomain` setter | `paramInt` 复刻 `Convert.toInt`；负 `pageSize` 归一为 0；`reasonable` 用 `Convert.toBool` 的同一套词表（只有 `false/no/0` 置假，乱值回落真）；`HasPage` = `pageNum` 与 `pageSize` **都传了** |
-| `PageAlways(c)` | 无条件调过 `startPage()` 的端点 | 与 `Page(c)` 只差 `HasPage=true`（Java 缺省就是 1/10 一页） |
+| `PageAlways(c)` | 无条件调过 `startPage()` 的端点 | 与 `Page(c)` 差两件事：`HasPage=true`（Java 缺省就是 1/10 一页）+ 置未导出标记 `startPage`，表示「这个端点会走 `escapeOrderBySql` 校验」 |
 | `Clamp(total)` | `Page.setTotal` + `setReasonable` | 上下界钳位都受 `Reasonable` 约束 |
 | `startRow()` / `Offset()` | `Page.calculateStartAndEndRow` | `pageNum<=0` 时起始行是 0 |
 | `LimitOffset(total)` | — | 调用方唯一入口：先钳位再算 LIMIT/OFFSET |
 | `SkipQuery(total)` | `AbstractHelperDialect.afterCount` | `pageSize<=0` 一律跳过；否则 `!(pageNum>0 && total>startRow)`；15 处执行器先问这一句 |
-| `OrderBy()` / `OrderByWithDefault()` | `PageDomain.getOrderBy` + `SqlUtil.escapeOrderBySql` | 白名单不过 → 忽略排序（Java 是 500，见 §6） |
+| `OrderBy()` / `OrderByWithDefault()` | `PageDomain.getOrderBy` | 驼峰转下划线 + 方向值原样拼接 |
+| `StartPageError()` | `SqlUtil.escapeOrderBySql`（仅 `startPage` 标记为真时） | 白名单不过 → `参数不符合规范，不能进行查询`；长度 >500 → `参数已超过最大限制，不能进行查询`；16 处（15 个执行器 + `gen/getColumnList` 的内存分页）在跑 SQL 前拒绝 |
 
 排序覆盖统一成一个函数（避免每个包各写一套）：`base/crud.go:138 orderByFor`、
 `manager/support.go:306 orderFor`、`ops/params.go:116 orderFor`、`system/common.go:214 orderByOr`、
@@ -99,7 +100,7 @@ generator/sql.go           queryPagedTables()         1
 `base/snapshotflow.go` 分表遍历（Java 侧是 `SnapshotFlowEnhancedService` 自定义 `LIMIT #{offset},#{pageSize}`，
 不是 PageHelper；Go 已按同样的「`total<=offset` 直接空 + 单表失败 continue」复刻）。
 
-## 4. 八项修复逐条
+## 4. 十二项修复逐条
 
 | # | 现象 | 依据 | 落点 | 回归用例 |
 |---|---|---|---|---|
@@ -114,6 +115,8 @@ generator/sql.go           queryPagedTables()         1
 | 13 | `isAsc=bogus` Go 按 asc 正常返回，Java 500 | `getOrderBy()` 原样拼接方向值 | `web.OrderBy` 去掉「非 desc 即 asc」兜底 | `TestOrderByMirrorsPageDomain`（`car_no bogus`） |
 | 14 | `reasonable=1/yes/ok/bogus` 时 Go 当作 false（越界页返回空行），Java 仍回末页 | `Convert.toBool(值, null)` 的词表是 `true/yes/ok/1` 真、`false/no/0` 假、**空值与乱值 → null**，再由 `PageDomain.getReasonable()` 回落 TRUE | `web.Page` 的 reasonable 解析改成同一套词表 + 默认回落真 | `TestPageFromRequest` 9 组 reasonable + 矩阵 2 组（`reasonable=1`/`=bogus`） |
 | 15 | `pageSize=0/-1` 且排序列非法：Java `200/total=11106/rows=0`，Go `500` | `application.yml` 的 `pagehelper` 只配 `helperDialect/supportMethodsArguments/params`，**`pageSizeZero` 取默认 false** ⇒ `afterCount` 第一分支对 `pageSize<=0` 一律不放行（数据查询不执行，非法 ORDER BY 也就不会被解析）。原实现以为「`pageSize=0` 仍执行、`LIMIT 0` 等价」，是错的 | `web.SkipQuery` 增加 `c.PageSize <= 0 → true`；`Page()` 的负页长归一保留，仅作为 `LIMIT ?` 的保险（正常路径不再触达 SQL） | `TestClampAndSkipQuery` 里 3 组 `pageSize=0` 期望翻转 + 矩阵新增 2 组（`pageSize=0/-1` × `orderByColumn`）+ 10 条定点 |
+| 16 | 28 个端点 Java 调 `startPage()`、Go 却用 `web.Page(c)`：不带分页参数时 Go 返回全量。**数据比对看不见**（flow 表全空、sys_user 6 行、sys_post 3 行） | `PageUtils.startPage()` 无条件分页 | 改为 `web.PageAlways(c)`；`incomeDetailList`/`pcCarStatistics` 因列表与导出共用，改成把 page 作为参数传入（列表 PageAlways、导出 Page） | 新工具 `check_startpage_map.py` 两方向 0 条；负向验证（故意退化一处即报一处）；实测 sys_post 造到 11 行：修复前 Java 10 / Go 11，修复后两端都 10，随后清理回 3 行 |
+| 17 | `orderByColumn=1;drop` 等非法排序参数：Java `code=500`、`msg="参数不符合规范，不能进行查询"`，Go 忽略排序返回 200 | `SqlUtil.escapeOrderBySql`：白名单 `^[a-zA-Z0-9_ ,.]+$` 不过 → `UtilException`；长度 >500 → `UtilException("参数已超过最大限制，不能进行查询")`。本工程该方法**没有**关键字黑名单/`hasChar`（那是更高版本 RuoYi 的补丁），且只在 `startPage` 路径上调用 | `PageDomain` 加未导出 `startPage` 标记（`PageAlways` 置位）+ `StartPageError()`；15 处执行器在跑 SQL 前拒绝；导出/listAll 等非 startPage 端点不校验 | `TestStartPageError` 9 组 + 非 startPage 同样 9 组不得拒绝；10 端点 × 4 探测 = 40 组 `code`+`msg` 逐字一致；矩阵取消白名单后 1617 组 0 差异 |
 
 ## 5. 单测
 
@@ -126,15 +129,15 @@ generator/sql.go           queryPagedTables()         1
 | `TestPageAlwaysForcesPaging` | 1 | 无参数时 `PageAlways` 仍 1/10 且 `HasPage=true` |
 | `TestLimitOffsetKeepsLimit` | 3 | 越界钳位后 LIMIT 不变、`pageSize=0 → LIMIT 0`、不分页时不给 LIMIT |
 | `TestOrderByMirrorsPageDomain` | 8+2 | 驼峰转下划线、方向值原样、非法字符忽略、客户端排序覆盖默认排序 |
+| `TestStartPageError` | 9+9 | `escapeOrderBySql` 两条拒绝规则（白名单、500 长度）；同一批入参走 `web.Page(c)`（非 startPage 端点）时一律不得拒绝 |
 
-覆盖率：`go tool cover` 下 `pagination.go` 的 `Page/paramInt/PageAlways/Clamp/SkipQuery/startRow/LimitOffset/Offset/Limit/OrderBy/OrderByWithDefault/toUnderScoreCase`
+覆盖率：`go tool cover` 下 `pagination.go` 的 `Page/paramInt/PageAlways/rawOrderBy/StartPageError/Clamp/SkipQuery/startRow/LimitOffset/Offset/Limit/OrderBy/OrderByWithDefault/toUnderScoreCase` 共 14 个函数
 全部 **100%** 语句覆盖。
 
 ## 6. 有意不一致（不修）
 
 | 场景 | Java | Go | 理由 |
 |---|---|---|---|
-| `orderByColumn=1;drop` 等非法字符 | `UtilException` → `code=500` | 拦掉非法字符后忽略排序，正常返回 | 两边都注入不成功；不让探测请求把列表打成 500。矩阵单列为「已知有意差异」（73 组） |
 | ~~`pageSize<=0` 且排序列非法~~ | 不放行 → 不报错 | 已按 §4 第 15 项对齐（`SkipQuery` 的 `PageSize<=0` 分支） | 不再是差异 |
 | `/manager/confimfree/concernedList?orderByColumn=totalAmount` | `500`（select 别名 camelCase，外层 order by 认不到） | `200`（Go 别名是 `AS total_amount`） | 对齐要改列别名并牵动 GORM 列映射，收益不足 |
 | `DECIMAL(m,2)` 金额字面量 | `67.00` | `67` | 数值相等；逐字面对齐需保留原始标度，涉及上百字段 |
@@ -144,16 +147,17 @@ generator/sql.go           queryPagedTables()         1
 
 静态门：`go build ./... && go vet ./... && go test ./...` 全过；`pagination.go` 语句覆盖 100%。
 
-| 专项 | pF（分页批量+单测） | pG（含 §4 第 14 项） | pH（含 §4 第 15 项，矩阵 20 组） |
-|---|---|---|---|
-| 路由清单 | Java 511 全匹配；Go 注册 514（多出 `/healthz`、`HEAD /`、`OPTIONS /`） | 同（未改路由） | 同 |
-| 默认分页专项 | 比对 91 条，不一致 **0** | 91 条，不一致 **0** | 91 条，不一致 **0** |
-| 查询参数矩阵 | 1155 组合，差异 **0**，已知有意差异 73 | 1309 组合（18 种），差异 **0** | **1463 组合（20 种），差异 0**，已知有意差异 73 |
-| 全量 GET（六模块） | 288 / 250 一致 / 14 差异 / 24 非 JSON | 逐格相同 | 逐格相同（manager 99/80/0/19、base 70/60/6/4、flow 30/30/0/0、system 66/61/4/1、monitor 13/9/4/0、tool 10/10/0/0） |
-| 写生命周期（32 资源） | 16 条 = 15 条 Java 侧写入缺陷（8 资源）+ 1 条金额标度 | 15 条（全在 8 个 Java 缺陷资源；标度那条随测试数据而现，见 §6） | 15 条，同上 |
-| Redis 双 DB 隔离 | 24 项断言全通过 | 24 项全通过 | 24 项全通过（收尾 db0=4789、db2=24 键） |
-| `/oss` 与根路径端点 | 不一致项 **0** | 未改，沿用 pF | 不一致项 **0** |
-| 收尾清理 | `failures=0` | `failures=0` | `failures=0`（`PARITY*` 行与测试键两端都扫） |
+| 专项 | pF（分页批量+单测） | pG（第 14 项） | pH（第 15 项） | pJ（第 16/17 项，终轮） |
+|---|---|---|---|---|
+| 路由清单 | Java 511 全匹配；Go 注册 514（多出 `/healthz`、`HEAD /`、`OPTIONS /`） | 同（未改路由） | 同 | 511 全匹配，0 缺失 |
+| startPage 静态核对 | 未建 | 未建 | 未建 | 501 条注册纳入，两个方向均 **0** |
+| 默认分页专项 | 91 条，不一致 **0** | 91 条，不一致 **0** | 91 条，不一致 **0** | 91 条，不一致 **0** |
+| 查询参数矩阵 | 1155 组合，差异 **0**（白名单 73） | 1309 组合，差异 **0** | 1463 组合，差异 **0** | **1617 组合，差异 0，白名单已删除** |
+| 全量 GET（六模块） | 288 / 250 一致 / 14 差异 / 24 非 JSON | 逐格相同 | 逐格相同 | 逐格相同（manager 99/80/0/19、base 70/60/6/4、flow 30/30/0/0、system 66/61/4/1、monitor 13/9/4/0、tool 10/10/0/0） |
+| 写生命周期（32 资源） | 16 条 = 15 条 Java 侧写入缺陷 + 1 条金额标度 | 15 条（全在 8 个 Java 缺陷资源） | 15 条，同上 | 15 条，同上 |
+| Redis 双 DB 隔离 | 24 项断言全通过 | 24 项全通过 | 24 项全通过 | 24 项全通过（收尾 db0=5345、db2=30 键） |
+| `/oss` 与根路径端点 | 不一致项 **0** | 沿用 pF | 不一致项 **0** | 不一致项 **0** |
+| 收尾清理 | `failures=0` | `failures=0` | `failures=0` | `failures=0`（含 sys_post 造数实验的 8 行，已删除并复核残留 0） |
 
 14 条 GET 差异与 8 个写资源，逐条定性与清单见 `PARITY-2026-11-02.md` §8。
 

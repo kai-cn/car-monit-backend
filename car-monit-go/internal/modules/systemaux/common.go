@@ -184,6 +184,9 @@ func int64Args(ids []int64) []any {
 // web.PageDomain 的白名单校验结果或本包内的常量默认值。
 func queryPage[T any](ctx context.Context, db *gorm.DB, pd web.PageDomain,
 	countSQL string, args []any, listSQL, defaultOrder string) ([]T, int64, error) {
+	if err := pd.StartPageError(); err != nil {
+		return nil, 0, err
+	}
 	var total int64
 	if pd.HasPage {
 		if err := db.WithContext(ctx).Raw(countSQL, args...).Scan(&total).Error; err != nil {

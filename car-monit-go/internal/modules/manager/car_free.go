@@ -161,6 +161,9 @@ func (h *handler) aduitFreeExportIncomeStatics(c *gin.Context) {
 
 // pcIncomeStatics 对应 getPCIncomeStatics（SQL 两段 UNION ALL + 共同的 4 条 <if>）。
 func (h *handler) pcIncomeStatics(c *gin.Context, page web.PageDomain) ([]*pcIncomeStaticsVO, int64, error) {
+	if err := page.StartPageError(); err != nil {
+		return nil, 0, err
+	}
 	buildFilter := func() (string, []any) {
 		filter := ""
 		var args []any
@@ -231,7 +234,10 @@ type incomeDetailRow struct {
 }
 
 // incomeDetailList 返回 resultType 映射后的 CarConfimFree（只有 5 个字段有值）。
-func (h *handler) incomeDetailList(c *gin.Context) ([]*carConfimFree, int64, error) {
+func (h *handler) incomeDetailList(c *gin.Context, page web.PageDomain) ([]*carConfimFree, int64, error) {
+	if err := page.StartPageError(); err != nil {
+		return nil, 0, err
+	}
 	if isBlank(queryParam(c, "orgId")) {
 		setQueryOverride(c, "orgId", "-1")
 	}
@@ -266,7 +272,6 @@ func (h *handler) incomeDetailList(c *gin.Context) ([]*carConfimFree, int64, err
 		"LEFT JOIN sys_dept d ON d.dept_id = a.org_id WHERE a.del_flag = '0'" + f2 +
 		") t"
 	args := append(append([]any{}, a1...), a2...)
-	page := web.Page(c)
 	var total int64
 	if page.HasPage {
 		countSQL := "SELECT COUNT(0) FROM (" + base + ") table_count"
@@ -306,7 +311,7 @@ func (h *handler) incomeDetailList(c *gin.Context) ([]*carConfimFree, int64, err
 }
 
 func (h *handler) aduitFreeIncomeDetailList(c *gin.Context) {
-	rows, total, err := h.incomeDetailList(c)
+	rows, total, err := h.incomeDetailList(c, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -315,7 +320,7 @@ func (h *handler) aduitFreeIncomeDetailList(c *gin.Context) {
 }
 
 func (h *handler) aduitFreeExportIncomeDetailList(c *gin.Context) {
-	rows, _, err := h.incomeDetailList(c)
+	rows, _, err := h.incomeDetailList(c, web.Page(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -790,6 +795,9 @@ func (h *handler) confimFreeExportConcernedList(c *gin.Context) {
 }
 
 func (h *handler) concernedList(c *gin.Context, page web.PageDomain) ([]*carConfimFree, int64, error) {
+	if err := page.StartPageError(); err != nil {
+		return nil, 0, err
+	}
 	base := "SELECT t.id, t.car_no, t.car_type, t.car_vehicle, t.escaped_type, t.org_id, sd.dept_name AS org_name, " +
 		"k.total_amount AS total_amount, k.charge_amount AS charge_amount, k.dif_amount AS dif_amount, k.except_ids " +
 		"FROM car_info t JOIN (SELECT t1.car_no, sum(t1.total_amount) total_amount, sum(t1.charge_amount) charge_amount, " +
@@ -861,7 +869,7 @@ func (h *handler) concernedList(c *gin.Context, page web.PageDomain) ([]*carConf
 
 // confimFreeCarStatics 对应 getPCCarStatistics（按单位聚合 6 种逃费类型）。
 func (h *handler) confimFreeCarStatics(c *gin.Context) {
-	rows, total, err := h.pcCarStatistics(c)
+	rows, total, err := h.pcCarStatistics(c, web.PageAlways(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -870,7 +878,7 @@ func (h *handler) confimFreeCarStatics(c *gin.Context) {
 }
 
 func (h *handler) confimFreeExportCarStatics(c *gin.Context) {
-	rows, _, err := h.pcCarStatistics(c)
+	rows, _, err := h.pcCarStatistics(c, web.Page(c))
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -907,7 +915,10 @@ type pcStatRow struct {
 	Number        *int64   `gorm:"column:number"`
 }
 
-func (h *handler) pcCarStatistics(c *gin.Context) ([]*pcCarStatisticsVO, int64, error) {
+func (h *handler) pcCarStatistics(c *gin.Context, page web.PageDomain) ([]*pcCarStatisticsVO, int64, error) {
+	if err := page.StartPageError(); err != nil {
+		return nil, 0, err
+	}
 	sqlStr := "SELECT d.dept_id eps_id, d.dept_name org_name, a.escaped_type, " +
 		"sum(ifnull(a.dif_amount, 0)) escaped_amount, count(distinct a.car_no) number " +
 		"FROM car_except_record a INNER JOIN sys_dept d ON a.eps_id = d.dept_id AND d.del_flag = '0' " +
@@ -930,7 +941,6 @@ func (h *handler) pcCarStatistics(c *gin.Context) ([]*pcCarStatisticsVO, int64, 
 		args = append(args, v)
 	}
 	sqlStr += " GROUP BY d.dept_id,d.dept_name,a.escaped_type"
-	page := web.Page(c)
 	var total int64
 	if page.HasPage {
 		if err := h.app.DB.WithContext(c.Request.Context()).
