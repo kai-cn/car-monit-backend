@@ -182,6 +182,7 @@ C++ 对应实现位置：
 | `@JsonFormat` | `yyyy-MM-dd HH:mm:ss` | `formatJsonDate` |
 | `null` 字段 | Jackson 默认输出 `null` | `putStr/putI64` 输出 `null` |
 | `IdType.ASSIGN_UUID` 主键 | MP 在**客户端**生成 32 位无横线小写 UUID（`BasePlusEntity*`/`BaseUuidEntity` 的 `id`），请求没带 id 时 INSERT 仍带主键 | `buildInsert` 对字符串主键补 `simpleUuid()`；请求带了就照用户的值 |
+| 结果集列名匹配 | MyBatis / JDBC 不区分大小写（`information_schema` 返回 `TABLE_NAME`，XML 里写 `table_name`） | `cm::db::Row` 先精确匹配、再按小写匹配（同名取第一个） |
 | 实体字段**初始值** | `private String x = "0";` 未被 MyBatis 赋值时仍是 `"0"`；`flag = false`、`number = 0`、`children = new ArrayList<>()` 同理 | spec 的 `Field::dflt` 输出 JSON 字面量（不是 null）；无初值的非列属性才是 null |
 | 数组类型属性 | `private Long[] menuIds;` 也照样有序列化键 | 生成器的字段正则支持 `[]` 与泛型 |
 | `@JsonInclude(NON_EMPTY)` VO | 空串/null/空集合不输出 | `RouterVo` 等按此实现 |

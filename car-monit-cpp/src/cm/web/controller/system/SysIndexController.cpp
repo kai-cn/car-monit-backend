@@ -21,6 +21,7 @@
 #include "cm/web/controller/quartz/QuartzExtraControllers.hpp"
 #include "cm/web/controller/system/SysAuxControllers.hpp"
 #include "cm/web/controller/tool/TestController.hpp"
+#include "cm/web/controller/tool/GenController.hpp"
 
 namespace cm::web {
 
@@ -75,6 +76,7 @@ void registerControllers(Router& r) {
     registerBigScreenController(r);
     registerQuartzExtraControllers(r);
     registerTestController(r);
+    registerGenController(r);
     // 业务域（base / manager / flow）：同构 CRUD 由 spec 引擎批量注册
     crud::registerBaseArea(r);
     crud::registerManagerArea(r);

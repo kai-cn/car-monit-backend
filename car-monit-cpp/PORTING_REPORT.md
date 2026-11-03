@@ -20,15 +20,16 @@
 | 指标 | 数值 |
 |---|---|
 | Java 端点（按 @*Mapping 注解逐条统计） | **497** |
-| C++ 已注册路由（源码枚举，`方法+路径` 去重） | **519** |
-| 已覆盖 | **448** |
-| 未覆盖 | **49** |
+| C++ 已注册路由（源码枚举，`方法+路径` 去重） | **527** |
+| 已覆盖 | **456** |
+| 未覆盖 | **41** |
 | 机器校验 | `python scripts/verify_generated_sql.py` → 实体 59，异常 0；`scripts/audit_spec_keys.py` → 缺失 JSON 键 0 |
 | 实机校验 | `python scripts/live_probe.py --port 9990 <路径…>`（复用 Redis 现存会话签发 token） |
 | 审批流校验 | `python scripts/verify_flow_approval.py --port 9990` → 27 项断言全过 |
 | 导出/下载校验 | `verify_cn_export.py` 16 项、`verify_user_excel.py` 14 项 |
 | 操作日志校验 | `verify_operlog.py` 18 项 |
 | 大屏校验 | `verify_bigscreen.py` 22 项（自带夹具并复原） |
+| 代码生成校验 | `verify_gen.py` 31 项 —— **待补跑**：本机 MySQL(3307)/Redis(6379) 已停，最后一轮修复未实机复验（见 §4.5） |
 
 三个口径要分清，不要用其中一个去否定另一个：
 `endpoint_coverage.py` 按注解统计 Java 侧真实分母（497）；
@@ -36,12 +37,12 @@
 分母停在 326，漏掉 ruoyi-quartz/ruoyi-generator 与 `GET /{id}` 形态，属于工具缺陷，已修）；
 `verify_generated_sql.py` 证明的是“生成的 SQL 在真实库上跑得通”，不等于响应体一致。
 
-### 尚未迁移（49 条，逐条给出障碍）
+### 尚未迁移（41 条，逐条给出障碍）
 
 | 控制器 | 条数 | 障碍 |
 |---|---|---|
-| GenController | 15 | 28 份 Velocity 模板 + zip 下载；C++ 侧没有模板引擎 |
 | SysFileController | 9 | S3/MinIO 上传（SigV4）、`uploadFileEnc` 加解密、bucket 视图 |
+| GenController | 7 | 剩下的是 preview / download / genCode / batchGenCode 等，需要 28 份 Velocity 模板的等价渲染 + zip 打包 |
 | CarSuspiciousController | 7 | 逐行二次查询、docx/xlsx 模板导出、外部同步任务与签名校验 |
 | CarTrackInfoController | 4 | 轨迹来自外部 HTTP（`httpSysUtilApiService`），非本地库 |
 | GeometryController | 3 | GeoServer 外部 HTTP |
@@ -216,6 +217,42 @@ Spring 是先按参数名绑到 `CarLocationParam`，`type` 分支只是**覆盖
 
 验证：`scripts/verify_bigscreen.py` 22 条断言，自带夹具（临时把一台车置在线、造一条今日预警行、
 写两个缓存键），跑完全部复原，并额外断言"清理已完成 + 车辆状态已复原"。
+
+## 4.5 GenController 的 DB 侧 8 条（实机复验被环境中断，未完成）
+
+覆盖率 448 → **456**。已落地：`GET /tool/gen/list`、`/tool/gen/all/list`、`/tool/gen/db/list`、
+`/tool/gen/column/{talbleId}`、`/tool/gen/{talbleId}`、`POST /tool/gen/getColumnList`、
+`POST /tool/gen/getAllColumnList`、`DELETE /tool/gen/{tableIds}`。
+剩下 7 条（preview / download / genCode / batchGenCode / importTable / synchDb / editSave 之类
+需要模板引擎或 GenUtils 全量移植的）没有做，也不会在没做完时返回假数据。
+
+照源码抄的形态细节（都不是"看着合理"能推出来的）：
+- `GenTable` / `GenTableColumn` 都继承 BaseEntity ⇒ 父类 5 个可见字段先输出
+  （`searchValue` 是 `@JsonIgnore`、`params` 懒加载空 Map + `@JsonInclude(NON_EMPTY)`，两者都不出现）；
+  自有字段按声明序；再往后是**只有 getter 的派生属性**：
+  GenTable 的 `sub/tree/crud`，GenTableColumn 的 `capJavaField/pk/increment/required/insert/edit/
+  list/query/superColumn/usableColumn`。所以 `isPk`（String）和 `pk`（boolean）会同时出现在一行里。
+- `selectGenTableById / selectGenTableByName / selectGenTableAll` 与列 LEFT JOIN，而 resultMap 里
+  只有 `<id property="tableId">`、没有 `<collection>` ⇒ MyBatis 按 table_id 把多行折叠成一个对象，
+  列字段取首行；`getInfo` 的 `info.columnName` 因此等于第一列的名字，`columns` 恒为 null。
+- `columnList` 是 `new TableDataInfo()` 只 setRows/setTotal ⇒ `code:0 / msg:null`
+  （和走 `getDataTable` 的列表接口不同，那才是 200/查询成功）。
+- `selectGenTableColumnList` 的 `tableId != null and tableId != ''`：OGNL 把 `''` 转成 0，
+  所以 `tableId=0` 时条件不生效 —— 照抄。
+- `getInfo` 的返回 Map 是 `HashMap` ⇒ data 的键序是桶序，不是插入顺序 info,rows,tables。
+- `deleteGenTableByIds` 是硬删除，且先删 `gen_table` 再删 `gen_table_column`。
+
+**顺带修掉一个全局缺陷**：`information_schema` 的列标签是全大写（`TABLE_NAME`），
+而 resultMap / 代码里写的是 `table_name`；MyBatis 与 JDBC 的列名匹配本来不区分大小写，
+我的 `cm::db::Row` 却是精确匹配 ⇒ 所有读 information_schema 的接口拿到的是 null。
+Row 现在"先精确、再小写"匹配（同名冲突保留第一个）。
+
+⚠️ **状态未闭环**：`verify_gen.py` 首轮跑出 3 个 FAIL，定位到上面两处（大写列名、折叠逻辑）并修了，
+但修完这台机器的 MySQL(127.0.0.1:3307，服务名 mysql5/mysql8，Manual 启动) 与 Redis(6379) 停了，
+其余参考服务（9989/9990）也不在，**修改后没有实机复验过**。
+编译与 34 项单测通过，`verify_generated_sql`/`audit_spec_keys` 不依赖这些接口。
+环境恢复后要做的：`python scripts/verify_gen.py 9991 "$TOKEN"`（31 项断言，只读 + 一次打不存在 id 的
+DELETE，不会破坏数据），以及重跑 `verify_bigscreen.py` / `verify_cn_export.py` 全量回归。
 
 ## 5. 已知行为差异（完整清单见 COMPATIBILITY.md）
 

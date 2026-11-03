@@ -2,9 +2,9 @@
 
 口径：Java 侧按 @*Mapping 注解逐条统计，覆盖 ruoyi-admin / ruoyi-quartz / ruoyi-generator。
 
-Java 端点总数：**497**；C++ 已注册并匹配：**448**；未匹配：**49**。
+Java 端点总数：**497**；C++ 已注册并匹配：**456**；未匹配：**41**。
 
-C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**519**。
+C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**527**。
 
 | 控制器 | HTTP | 路径 | Java 方法 | @PreAuthorize | C++ 状态 |
 |---|---|---|---|---|---|
@@ -490,16 +490,16 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | SysJobLogController | GET | `/monitor/jobLog/{*}` | getInfo |  | ✅ |
 | SysJobLogController | DELETE | `/monitor/jobLog/{*}` | remove |  | ✅ |
 | SysJobLogController | DELETE | `/monitor/jobLog/clean` | clean |  | ✅ |
-| GenController | GET | `/tool/gen/list` | genList |  | ❌ |
-| GenController | GET | `/tool/gen/all/list` | getAllGenerateTableList |  | ❌ |
-| GenController | GET | `/tool/gen/{*}` | getInfo |  | ❌ |
-| GenController | GET | `/tool/gen/db/list` | dataList |  | ❌ |
-| GenController | GET | `/tool/gen/column/{*}` | columnList |  | ❌ |
-| GenController | POST | `/tool/gen/getColumnList` | getColumnList |  | ❌ |
-| GenController | POST | `/tool/gen/getAllColumnList` | getAllColumnList |  | ❌ |
+| GenController | GET | `/tool/gen/list` | genList |  | ✅ |
+| GenController | GET | `/tool/gen/all/list` | getAllGenerateTableList |  | ✅ |
+| GenController | GET | `/tool/gen/{*}` | getInfo |  | ✅ |
+| GenController | GET | `/tool/gen/db/list` | dataList |  | ✅ |
+| GenController | GET | `/tool/gen/column/{*}` | columnList |  | ✅ |
+| GenController | POST | `/tool/gen/getColumnList` | getColumnList |  | ✅ |
+| GenController | POST | `/tool/gen/getAllColumnList` | getAllColumnList |  | ✅ |
 | GenController | POST | `/tool/gen/importTable` | importTableSave |  | ❌ |
 | GenController | PUT | `/tool/gen` | editSave |  | ❌ |
-| GenController | DELETE | `/tool/gen/{*}` | remove |  | ❌ |
+| GenController | DELETE | `/tool/gen/{*}` | remove |  | ✅ |
 | GenController | GET | `/tool/gen/preview/{*}` | preview |  | ❌ |
 | GenController | GET | `/tool/gen/download/{*}` | download |  | ❌ |
 | GenController | GET | `/tool/gen/genCode/{*}` | genCode |  | ❌ |
