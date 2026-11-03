@@ -148,6 +148,20 @@ def main():
             print("%s   %s" % ("OK " if cond else "FAIL", name))
             fails += 0 if cond else 1
 
+        # 3.5) 委托：当前二审节点换人，并往 flow_apply_info.entrust_info 追加一条委托记录
+        r = call(base, "/flow/currentnode/submitEntrustFlow", token, "POST",
+                 {"billOid": BILL, "entrustUserId": str(user_id), "entrustUserName": "自测被委托人"})
+        info_col = mysql("select ifnull(entrust_info,'') from flow_apply_info where bill_oid='%s'" % BILL)
+        keys = mysql("select group_concat(sh_key order by id) from flow_list where bill_oid='%s'" % BILL)
+        checks = [("委托返回成功", r.get("code") == 200),
+                  ("委托记录 sh_key=entrust", "entrust" in (keys or "")),
+                  ("委托历史写入 entrust_info", info_col.startswith("[") and "自测被委托人" in info_col),
+                  ("委托前后节点仍指向二审", state()["node"] == NODE2 + "|" + str(user_id))]
+        for name, cond in checks:
+            print("%s   %s%s" % ("OK " if cond else "FAIL", name,
+                                 "" if cond else "  " + (info_col[:80] or "-")))
+            fails += 0 if cond else 1
+
         # 4) 第二次审核（同意，下一节点是 -1）：流程结束，状态 3，盖 sh_time，节点清空
         r = call(base, "/flow/currentnode/saveFlowAuit", token, "PUT",
                  {"billOid": BILL, "shValue": "1", "shContext": "领导同意"})
@@ -156,7 +170,9 @@ def main():
                   ("节点已全部处理完", s["node"] == ""),
                   ("业务状态=3", s["flow_status"] == "3"),
                   ("sh_time 已盖章", s["sh_time"] not in ("-", "", None)),
-                  ("审核记录 T,T（两次同意）", s["list_keys"] == "T,T"),
+                  # flow_list 主键是 UUID，按 id 排不等于按时间排，这里只比集合
+                  ("审核记录 = {T, T, entrust}",
+                   sorted((s["list_keys"] or "").split(",")) == sorted(["T", "T", "entrust"])),
                   ("通知消息 1 条", s["msg1"] == "1"),
                   ("申请单状态=3", s["apply_status"] == "3")]
         for name, cond in checks:
