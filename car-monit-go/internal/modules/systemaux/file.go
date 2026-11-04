@@ -1127,5 +1127,5 @@ func registerFile(reg *router.Registry) {
 
 	// JAVA 对照: SecurityConfig.antMatchers("/system/file/view/**").anonymous()
 	// DIFF: 没有“仅匿名”语义，登录用户同样可访问。
-	reg.Engine.GET("/system/file/view/:ids/:fileName", anonymousOnly(), h.View)
+	reg.Engine.GET("/system/file/view/:ids/:fileName", middleware.AnonymousOnly(reg.App), h.View)
 }

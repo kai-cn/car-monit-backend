@@ -430,50 +430,66 @@ func (h *handler) suspiciousHistoryGet(c *gin.Context) {
 	web.JSON(c, web.SuccessData(dest))
 }
 
+// suspiciousExportHistory 对应 GET /exportHistory。
 func (h *handler) suspiciousExportHistory(c *gin.Context) {
-	clause, args := suspiciousClause(c)
-	h.exportWithClause(c, suspiciousHistSpec, clause, args, "carSuspiciousHistory.xlsx", "可疑车辆历史", suspiciousExportCols(), false, nil)
+	h.suspiciousExportWith(c, suspiciousHistSpec, "carSuspiciousHistory.xlsx", "可疑车辆历史")
 }
 
 // ---------------------------------------------------------------- 导出
 
+// suspiciousExport 对应 GET /export。
 func (h *handler) suspiciousExport(c *gin.Context) {
-	clause, args := suspiciousClause(c)
-	dest := newSliceOf(&carSuspicious{})
-	if _, err := h.list(c.Request.Context(), listQuery{
-		SelectSQL: suspiciousSpec.selectSQL,
-		FromSQL:   suspiciousSpec.from(),
-		Where:     &whereClause{clause: clause, args: args},
-		OrderBy:   suspiciousSpec.orderBy,
-	}, dest); err != nil {
-		web.JSON(c, web.ErrorResult(err))
-		return
-	}
-	rows := *(dest.(*[]*carSuspicious))
-	plateColors, _ := h.dictValueLabel(c.Request.Context(), "plate_color")
-	carTypes, _ := h.dictValueLabel(c.Request.Context(), "car_type")
-	escapedTypes, _ := h.dictValueLabel(c.Request.Context(), "escaped_type")
-	isExcepts, _ := h.dictValueLabel(c.Request.Context(), "is_except")
-	checkStatuses, _ := h.dictValueLabel(c.Request.Context(), "check_status")
+	h.suspiciousExportWith(c, suspiciousSpec, "carSuspicious.xlsx", "可疑车辆")
+}
 
+// suspiciousExportWith 对应 CarSuspiciousController.export / exportHistory：
+// 两个方法都在导出前 startPage()（所以带默认 1/10 分页），再把出入口两端拼成「A至B」
+// 写回实体（模板打印的是 txTime/txAddress/mjTime/mjAddress/createTimeStr 这些派生字段）。
+//
+// JAVA 对照: CarSuspiciousController.java:272-368 / :506-603
+func (h *handler) suspiciousExportWith(c *gin.Context, spec *tableSpec, fileName, sheet string) {
+	clause, args := suspiciousClause(c)
 	cols := suspiciousExportCols()
-	out := make([][]any, 0, len(rows))
-	for _, row := range rows {
-		createTime := ""
-		if row.CreateTime != nil && !row.CreateTime.IsZero() {
-			createTime = row.CreateTime.String()
-		}
-		out = append(out, []any{plateColors[strOf(row.PlateColor)], row.CarNo, carTypes[strOf(row.CarType)],
-			plainValue(row.InTime), row.InStation, plainValue(row.GantryTime), row.GantrytStation,
-			plainValue(row.CarNum), row.PassType, escapedTypes[strOf(row.EscapedType)],
-			isExcepts[strOf(row.IsExcept)], checkStatuses[strOf(row.CheckStatus)], row.Remark, createTime})
-	}
-	data, err := buildWorkbook("可疑车辆", cols, out)
+	rows, err := h.exportQuery(c.Request.Context(), spec, clause, args, web.PageAlways(c), cols, nil,
+		func(dest any) {
+			for _, row := range *(dest.(*[]*carSuspicious)) {
+				row.TxTime = strPtr(suspiciousTimeRange(row.InTime, row.OutTime))
+				row.TxAddress = strPtr(suspiciousTextRange(row.InStation, row.OutStation))
+				row.MjTime = strPtr(suspiciousTimeRange(row.GantryTime, row.OutGantryTime))
+				row.MjAddress = strPtr(suspiciousTextRange(row.GantrytStation, row.OutGantrytStation))
+				if row.CreateTime != nil {
+					row.CreateTimeStr = strPtr(row.CreateTime.String())
+				}
+			}
+		})
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
-	downloadAttachment(c, "carSuspicious.xlsx", data)
+	h.writeExport(c, sheet, cols, rows, fileName, false)
+}
+
+// suspiciousTimeRange 对应 Java 的「in 非空则拼时间，out 非空再拼『至』+时间」两段式判断。
+func suspiciousTimeRange(start, end *web.DateTime) string {
+	out := ""
+	if start != nil {
+		out += start.String()
+	}
+	if end != nil {
+		out += "至" + end.String()
+	}
+	return out
+}
+
+func suspiciousTextRange(start, end *string) string {
+	out := ""
+	if !isBlank(strOf(start)) {
+		out += strOf(start)
+	}
+	if !isBlank(strOf(end)) {
+		out += "至" + strOf(end)
+	}
+	return out
 }
 
 // suspiciousExportAbnormalPassage 生成简化版 docx（Java 用 Word 模板）。

@@ -385,7 +385,7 @@ func registerNotice(reg *router.Registry) {
 	h := newNoticeHandler(reg.App)
 
 	// JAVA 对照: SecurityConfig.antMatchers("/system/notice/view/**").anonymous()
-	reg.Engine.GET("/system/notice/view/:noticeId", anonymousOnly(), h.ViewInfo)
+	reg.Engine.GET("/system/notice/view/:noticeId", middleware.AnonymousOnly(reg.App), h.ViewInfo)
 
 	g := reg.Authed.Group("/system/notice")
 	g.GET("/list", h.List)

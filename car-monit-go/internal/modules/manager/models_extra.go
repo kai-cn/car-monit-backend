@@ -659,8 +659,8 @@ type carWarningInfo struct {
 	GantryTimeStr   *string    `json:"gantryTimeStr" gorm:"-"`
 	ApplyTime1      *string    `json:"applyTime1" form:"applyTime1" gorm:"-"`
 	ApplyTime2      *string    `json:"applyTime2" form:"applyTime2" gorm:"-"`
-	EscapedType     *string    `json:"escapedType" form:"escapedType" gorm:"-"`
-	EscapedAmount   *float64   `json:"escapedAmount" gorm:"-"`
+	EscapedType     *string    `json:"escapedType" form:"escapedType" gorm:"column:escaped_type"`
+	EscapedAmount   *float64   `json:"escapedAmount" gorm:"column:escaped_amount"`
 	CarNoQuery      *string    `json:"carNoQuery" form:"carNoQuery" gorm:"-"`
 	CreateTimeStr   *string    `json:"createTimeStr" gorm:"-"`
 	InTimeStr       *string    `json:"inTimeStr" gorm:"-"`
@@ -672,7 +672,7 @@ type carWarningInfo struct {
 	Fwqbm           *string    `json:"fwqbm" form:"fwqbm" gorm:"-"`
 	Type            *string    `json:"type" form:"type" gorm:"-"`
 	Code            *string    `json:"code" form:"code" gorm:"-"`
-	PlateColor      *string    `json:"plateColor" form:"plateColor" gorm:"-"`
+	PlateColor      *string    `json:"plateColor" form:"plateColor" gorm:"column:plate_color"`
 	NeedToWarnStr   *string    `json:"needToWarnStr" gorm:"-"`
 	NextPassTimeStr *string    `json:"nextPassTimeStr" gorm:"-"`
 	TrailFwqList    []*trailBO `json:"trailFwqList" gorm:"-"`

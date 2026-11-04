@@ -1,5 +1,19 @@
 # 迁移工作进度（接口返回逐一对比阶段）
 
+> **2026-11-04 批次（api 联动 + 分层校验）见 `docs/PARITY-API-TIER-2026-11-04.md`**：
+> 按「backend→api 的接口 → 其它业务接口 → 框架接口」三档跑双端对比，api 双端（9902/9903）与
+> backend 双端共用 MySQL、Redis 各占不同 db；用**钉版接线**（两端同指一个 api）把残余差异归因到
+> api 双端自身：第 1 档 14 条 URL 在 A/B 两种钉版接线下**0 差异**，交付接线只剩 1 条（api Java
+> `/base/feerecords/*` 恒 500）。第 2 档 185 条 2 差异（均为已记录的 Java 侧缺陷），第 3 档 95 条
+> 11 差异（运行态 / Java 缺陷 / 同为 500 的错误文本）。
+> 本轮最大收获是补上**xlsx 附件流盲区**：新增 `compare_xlsx.py` 做单元格级对比、`dump_templates.py`
+> 打印 EasyPOI 模板真值，21 个导出端点修复前 18 个有差异（合计 19633 格）、修复后全部 0 格；
+> 顺带修掉 `/manager/carwarning/list` 的 8 个字段差异（列表被误做了字典翻译 + 缺 `car_info` 联表列）。
+> 另修 `/oss/object/*/*/*` 预签名（改用离线 SigV4，此前 MinIO 不可达时整条 500）、
+> `/common/download` 的 `anonymous()` 语义（有效 token 应 403、无效 token 应 200）。
+> 静态门禁：`build/vet/test` 通过、`check_startpage_map.py` 六类全 0、默认分页 91 条 0 差异、
+> 参数矩阵 1617 组合 0 差异、Redis 隔离 24 项全通过（清理 `failures=0`）。
+>
 > **2026-11-03 批次收口见 `docs/PARITY-SUMMARY-2026-11-03.md`，分页专题见 `docs/PAGINATION-PARITY-2026-11-03.md`**：
 > 分页语义与 PageHelper 5.3.3 源码逐条对齐（`SkipQuery` 照抄 `afterCount` 的 `pageNum>0 && count>startRow`、
 > `Clamp` 的 reasonable 两界、`startRow`、`OrderBy` 原样拼接、`reasonable` 的 `Convert.toBool` 词表）、

@@ -72,6 +72,18 @@ func (h *handler) forestGet(ctx context.Context, path string, params map[string]
 	if err != nil {
 		return nil, web.NewServiceError("读取车辆监测服务响应失败: %v", err)
 	}
+	// Forest 对非 2xx 直接抛异常（消息形如 `HTTP 500 ErrorContent={...}`），
+	// 控制器不接 ⇒ GlobalExceptionHandler 给出 {code:500, msg:那句话}。
+	// Go 原来只看 body 是否合法 JSON，会把上游 500 吞成一次成功响应。
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return nil, web.NewServiceError("HTTP %d ErrorContent=%s", resp.StatusCode,
+			strings.TrimSpace(string(body)))
+	}
+	// 上游返回 200 + 空 body（Spring 把 null 返回值写成空体）时，Jackson/Forest 读成 null；
+	// 这里同样按「无数据」处理，而不是报「不是合法 JSON」。
+	if len(strings.TrimSpace(string(body))) == 0 {
+		return nil, nil
+	}
 	// UseNumber：保持上游数字的字面量（Java 侧 hutool/Jackson 原样透传，
 	// feerate 是 0.0 而不是 0；大整数也不会被 float64 打回科学计数）。
 	var out any

@@ -24,9 +24,12 @@ import (
 )
 
 type ossStorage struct {
-	client *minio.Client
-	bucket string
-	err    error
+	client    *minio.Client
+	bucket    string
+	base      string // scheme://host[:port]，用于离线计算 presigned URL
+	accessKey string
+	secretKey string
+	err       error
 }
 
 // newOssStorage 对应 OssTemplate.afterPropertiesSet：启动时构建一次客户端。
@@ -41,6 +44,10 @@ func newOssStorage(cfg config.Oss) *ossStorage {
 		endpoint = strings.TrimPrefix(endpoint, "http://")
 	}
 	endpoint = strings.TrimSuffix(endpoint, "/")
+	scheme := "http://"
+	if secure {
+		scheme = "https://"
+	}
 
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.AccessKey, cfg.SecretKey, ""),
@@ -54,7 +61,8 @@ func newOssStorage(cfg config.Oss) *ossStorage {
 			MaxIdleConns:        8,
 		},
 	})
-	return &ossStorage{client: client, bucket: cfg.BucketName, err: err}
+	return &ossStorage{client: client, bucket: cfg.BucketName, base: scheme + endpoint,
+		accessKey: cfg.AccessKey, secretKey: cfg.SecretKey, err: err}
 }
 
 // putObject 对应 OssTemplate.putObject(bucketName, objectName, InputStream)：

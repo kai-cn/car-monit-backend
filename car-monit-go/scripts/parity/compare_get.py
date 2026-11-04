@@ -33,7 +33,29 @@ LIST_HINT = re.compile(r"/(list|listAll|listMy|listutil)$")
 SIDE_EFFECT = ("syncAllGeometry", "getHenDa", "sendSms", "cdc/", "snapshot")
 
 
-def load_routes(log_path, prefix):
+# 分层校验：按「响应是否来自 car-monit-api」划分，先易后难、先外后内
+#   api       —— 经 vehicleMonitor.baseUrl 转发到 car-monit-api 的接口
+#   business  —— 其余业务接口（/manager、/base、/flow 里读库的部分）
+#   framework —— 框架接口（/system、/monitor、/tool、/oss、登录验证码等）
+API_ROUTES = (
+    re.compile(r"^/base/(feeGantry|feerecords|feestationexit|snapshotflow)(/|$)"),
+    re.compile(r"^/manager/cartrackinfo/(listByCarId|listByCarByTime|carSnapShot)$"),
+)
+BUSINESS_ROOTS = ("/manager", "/base", "/flow")
+FRAMEWORK_ROOTS = ("/system", "/monitor", "/tool", "/oss", "/common", "/v3", "/swagger")
+
+
+def in_tier(path, tier):
+    if tier == "api":
+        return any(r.match(path) for r in API_ROUTES)
+    if tier == "business":
+        return path.startswith(BUSINESS_ROOTS) and not any(r.match(path) for r in API_ROUTES)
+    if tier == "framework":
+        return path.startswith(FRAMEWORK_ROOTS)
+    return True
+
+
+def load_routes(log_path, prefix, tier=""):
     text = open(log_path, encoding="utf-8", errors="ignore").read()
     out = []
     for m in GIN_RE.finditer(text):
@@ -42,6 +64,8 @@ def load_routes(log_path, prefix):
             continue
         path = norm(path)
         if prefix and not path.startswith(prefix):
+            continue
+        if tier and not in_tier(path, tier):
             continue
         if path in ("/", "/healthz"):
             continue
@@ -74,6 +98,9 @@ def harvest_samples(token, routes):
             low = key.lower()
             samples.setdefault(low, str(value))
             samples.setdefault(re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", key).lower(), str(value))
+            if low == "bigid":
+                # api 侧详情路径的占位符是 :id，但真实主键叫 bigId
+                samples.setdefault("id", str(value))
     return samples
 
 
@@ -117,13 +144,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--log", default=os.path.join(os.environ.get("TEMP", "/tmp"), "carmonit.log"))
     ap.add_argument("--prefix", default="")
+    ap.add_argument("--tier", default="", choices=["", "api", "business", "framework"],
+                    help="tier check: api / business / framework")
     ap.add_argument("--out", default="")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--limit", type=int, default=0)
     args = ap.parse_args()
 
     tk_j, tk_g = pp.login_java(), pp.login_go()
-    routes = load_routes(args.log, args.prefix)
+    routes = load_routes(args.log, args.prefix, args.tier)
     samples = harvest_samples(tk_j, routes)
     urls = []
     for p in routes:
@@ -148,6 +177,7 @@ def main():
 
     summary = {
         "prefix": args.prefix or "/",
+        "tier": args.tier or "all",
         "total": len(urls),
         "same": sum(1 for r in results if r["kind"] == "same"),
         "diff": sum(1 for r in results if r["kind"] == "diff"),

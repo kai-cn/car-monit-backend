@@ -7,13 +7,15 @@
 账号 admin / Admin@2025-；Java 登录需要验证码，答案从 db0 的 captcha_codes:<uuid> 读。
 """
 import json
+import os
 import re
 import subprocess
 import urllib.error
 import urllib.request
 
-JAVA = "http://127.0.0.1:9988"
-GO = "http://127.0.0.1:9989"
+# 共享开发机上 9988/9989 会被其它会话重启，故允许显式指定本次校验用的两端地址
+JAVA = os.environ.get("PARITY_JAVA", "http://127.0.0.1:9988")
+GO = os.environ.get("PARITY_GO", "http://127.0.0.1:9989")
 REDIS_CLI = "D:/work/Redis-8.10.2-Windows-x64-msys2/redis-cli.exe"
 MYSQL = "D:/work/mysql-8.0.30-winx64/bin/mysql.exe"
 JAVA_DB, GO_DB = 0, 2

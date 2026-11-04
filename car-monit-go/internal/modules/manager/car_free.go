@@ -141,15 +141,16 @@ func (h *handler) aduitFreeIncomeStatics(c *gin.Context) {
 
 // aduitFreeExportIncomeStatics 对应 exportIncomeStatics：Java 未 startPage，导出全量。
 func (h *handler) aduitFreeExportIncomeStatics(c *gin.Context) {
-	rows, _, err := h.pcIncomeStatics(c, web.Page(c))
+	rows, _, err := h.pcIncomeStatics(c, web.PageDomain{})
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
-	cols := []exportCol{{Title: "录入单位", Field: "orgName"}, {Title: "车辆数", Field: "carNum"}, {Title: "金额（元）", Field: "amount"}}
+	cols := []exportCol{{Title: "录入单位", Field: "orgName"}, {Title: "车辆数量", Field: "carNum"},
+		{Title: "逃费金额（元）", Field: "amount"}}
 	out := make([][]any, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, []any{plainValue(row.OrgName), plainValue(row.CarNum), plainValue(row.Amount)})
+		out = append(out, []any{row.OrgName, row.CarNum, moneySumText(row.Amount)})
 	}
 	data, err := buildWorkbook("堵漏增收", cols, out)
 	if err != nil {
@@ -320,7 +321,9 @@ func (h *handler) aduitFreeIncomeDetailList(c *gin.Context) {
 }
 
 func (h *handler) aduitFreeExportIncomeDetailList(c *gin.Context) {
-	rows, _, err := h.incomeDetailList(c, web.Page(c))
+	// JAVA 对照: CarAduitFreeController.exportIncomeDetailList 没有 startPage()（模板导出直接
+	// 把 service 返回的全量塞进 entitylist）
+	rows, _, err := h.incomeDetailList(c, web.PageDomain{})
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -329,7 +332,7 @@ func (h *handler) aduitFreeExportIncomeDetailList(c *gin.Context) {
 		{Title: "录入单位", Field: "orgName"}, {Title: "录入时间", Field: "createTime"}}
 	out := make([][]any, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, []any{row.CarNo, plainValue(row.Amount), row.OrgName, plainValue(row.CreateTime)})
+		out = append(out, []any{row.CarNo, moneyText(row.Amount), row.OrgName, stampOf(row.CreateTime)})
 	}
 	data, err := buildWorkbook("堵漏增收明细", cols, out)
 	if err != nil {
@@ -656,19 +659,16 @@ func (h *handler) confimFreeExport(c *gin.Context) {
 		return
 	}
 	rows := *(dest.(*[]*carConfimFree))
-	carTypes, _ := h.dictValueLabel(c.Request.Context(), "car_type")
-	carVehicles, _ := h.dictValueLabel(c.Request.Context(), "car_vehicle")
 	out := make([][]any, 0, len(rows))
 	for _, row := range rows {
-		carType := carTypes[strOf(row.CarType)]
-		carVehicle := carVehicles[strOf(row.CarVehicle)]
+		// JAVA 对照: carConfirm.xlsx 的 $fe 只引用这 9 个属性（车型/车种被控制器翻译了
+		// 但模板没打印）；金额是 BigDecimal ⇒ 两位小数，录入时间是 java.sql.Timestamp
+		// ⇒ toString() 带小数秒。
 		out = append(out, []any{row.CarNo, row.LinkName, row.LinkPhone, row.OrgName,
-			plainValue(row.Amount), plainValue(row.AduitAmount), row.Status, plainValue(row.CreateTime), row.Remark,
-			carType, carVehicle})
+			moneyText(row.Amount), moneyText(row.AduitAmount), row.Status, stampOf(row.CreateTime), row.Remark})
 	}
-	cols := []exportCol{{Title: "车牌号"}, {Title: "司机姓名"}, {Title: "联系方式"}, {Title: "录入单位"},
-		{Title: "补缴金额（元）"}, {Title: "处理金额（元）"}, {Title: "状态"}, {Title: "录入时间"}, {Title: "备注"},
-		{Title: "车型"}, {Title: "车种"}}
+	cols := []exportCol{{Title: "车牌号"}, {Title: "司机名称"}, {Title: "联系方式"}, {Title: "录入单位"},
+		{Title: "拆分金额（元）"}, {Title: "处理金额（元）"}, {Title: "状态"}, {Title: "录入时间"}, {Title: "备注"}}
 	data, err := buildWorkbook("确认补缴", cols, out)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
@@ -764,7 +764,8 @@ func (h *handler) confimFreeConcernedList(c *gin.Context) {
 
 // confimFreeExportConcernedList 对应导出：Java 未 startPage，导出全量。
 func (h *handler) confimFreeExportConcernedList(c *gin.Context) {
-	rows, _, err := h.concernedList(c, web.Page(c))
+	// JAVA 对照: CarConfimFreeController.exportConcernedList 没有 startPage()，导出全量
+	rows, _, err := h.concernedList(c, web.PageDomain{})
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
@@ -783,8 +784,8 @@ func (h *handler) confimFreeExportConcernedList(c *gin.Context) {
 			}
 		}
 		out = append(out, []any{row.CarNo, carTypes[strOf(row.CarType)], carVehicles[strOf(row.CarVehicle)],
-			strings.Join(names, ","), row.OrgName, plainValue(row.TotalAmount),
-			plainValue(row.ChargeAmount), plainValue(row.DifAmount), ""})
+			strings.Join(names, ","), row.OrgName, moneyText(row.TotalAmount),
+			moneyText(row.ChargeAmount), moneyText(row.DifAmount), ""})
 	}
 	data, err := buildWorkbook("待关注车辆", cols, out)
 	if err != nil {
@@ -878,14 +879,20 @@ func (h *handler) confimFreeCarStatics(c *gin.Context) {
 }
 
 func (h *handler) confimFreeExportCarStatics(c *gin.Context) {
-	rows, _, err := h.pcCarStatistics(c, web.Page(c))
+	// JAVA 对照: CarConfimFreeController.exportCarStatics 走的是不分页的 getPCCarStatistics
+	// （startPage() 只在 /carStatistics 列表方法里，见 :233）
+	rows, _, err := h.pcCarStatistics(c, web.PageDomain{})
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
-	headers := []string{"录入单位", "少轴车辆数", "少轴金额（元）", "屏蔽车辆数", "屏蔽金额（元）",
+	// JAVA 对照: templates/export/carStatistics.xlsx 第 1 行原文（口径来自 escaped_type 字典，
+	// 不是另一个词表）；合计列 Java 用 BigDecimal.ZERO 起算，未命中的桶打印 0，
+	// 所以这里保持数值原样、不做两位小数化。
+	headers := []string{"录入单位", "入口少轴车辆数", "入口少轴金额（元）", "屏蔽车辆数", "屏蔽金额（元）",
 		"货车客标车辆数", "货车客标金额（元）", "有入无出车辆数", "有入无出金额（元）",
-		"绿通换挂车辆数", "绿通换挂金额（元）", "假冒减免车辆数", "假冒减免金额（元）", "合计车辆数", "合计金额（元）"}
+		"大车小标车辆数", "大车小标金额（元）", "假冒其他优免车车辆数", "假冒其他优免车金额（元）",
+		"合计数量", "合计金额（元）"}
 	cols := make([]exportCol, len(headers))
 	for i, title := range headers {
 		cols[i] = exportCol{Title: title}

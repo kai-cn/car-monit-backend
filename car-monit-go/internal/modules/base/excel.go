@@ -267,6 +267,14 @@ func cellValue(m map[string]any, key string) any {
 	if !ok {
 		return ""
 	}
+	// 行里可能混入 GORM 模型的 *string 字段（enrich 直接 put 结构体字段），
+	// 不解引用会让单元格写成指针地址；JSON 编码会自动解引用，所以只有导出会暴露。
+	if rv := reflect.ValueOf(v); rv.Kind() == reflect.Ptr {
+		if rv.IsNil() {
+			return ""
+		}
+		v = rv.Elem().Interface()
+	}
 	switch x := v.(type) {
 	case nil:
 		return ""

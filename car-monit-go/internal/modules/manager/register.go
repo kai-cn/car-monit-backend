@@ -41,35 +41,45 @@ func Register(reg *router.Registry) {
 		"carSuspiciousBack.xlsx", "可疑车辆备份数据", true, suspiciousBackExportCols())
 	registerStandard(reg, h, "/manager/suspiciouscheck", "manager:suspiciouscheck", "人工核实", suspiciousCheckSpec,
 		"carSuspiciousCheck.xlsx", "人工核实", false, []exportCol{
-			{Title: "车牌号", Field: "carNo"}, {Title: "逃费类型", Field: "escapedType", Dict: "escaped_type"},
-			{Title: "应缴金额（元）", Field: "totalAmount"}, {Title: "收费金额（元）", Field: "chargeAmount"},
-			{Title: "差额（元）", Field: "difAmount"}, {Title: "备注", Field: "remark"},
+			// JAVA 对照: templates/export/carSuspiciousCheck.xlsx 的 $fe 引用里
+			// ruleName/noticeRangeAnme/notice/noticeType/noticeUserName/orgName 在
+			// CarSuspiciousCheck 与其父类上都不存在 ⇒ EasyPOI 写 String.valueOf(缺失) = 空串。
+			{Title: "车牌号", Field: "carNo"}, {Title: "规则名称"},
+			{Title: "预警范围"}, {Title: "通知"}, {Title: "通知方式"},
+			{Title: "通知人员"}, {Title: "所属站/所"}, {Title: "备注", Field: "remark"},
 		})
 	registerStandard(reg, h, "/manager/warningrule", "manager:warningrule", "预警规则", warningRuleSpec,
 		"carWarningRule.xlsx", "预警规则", false, []exportCol{
-			{Title: "预警规则", Field: "ruleName"}, {Title: "通知方式", Field: "noticeType", Dict: "notice_type"},
+			{Title: "预警对象", Field: "noticeRangeAnme"},
+			{Title: "通知方式", Field: "noticeType", Dict: "notice_type", BlankOnMiss: true},
 			{Title: "通知人员", Field: "noticeUserName"}, {Title: "备注", Field: "remark"},
 		})
 	registerStandard(reg, h, "/manager/querylog", "manager:querylog", "查询日志", queryLogSpec,
 		"queryLog.xlsx", "查询日志", false, []exportCol{
 			{Title: "用户名称", Field: "userName"}, {Title: "用户IP", Field: "userIp"},
-			{Title: "模块说明", Field: "modelType", Dict: "model_type"},
+			{Title: "模块菜单", Field: "modelType", Dict: "model_type"},
 			{Title: "模块功能", Field: "menuPoint", Dict: "menu_point"},
-			{Title: "查询时间", Field: "createTime"}, {Title: "查询条件", Field: "queryCondition"},
+			{Title: "创建时间", Field: "createTime", Stamp: true},
+			{Title: "查询条件", Field: "queryCondition"},
 		})
 	registerStandard(reg, h, "/manager/gantrycar", "manager:gantrycar", "门架车辆", gantryCarSpec,
 		"gantryCar.xlsx", "门架车辆", false, []exportCol{
-			{Title: "车牌号", Field: "carNo"}, {Title: "车型", Field: "carType", Dict: "car_type"},
-			{Title: "车种", Field: "carVehicle", Dict: "car_vehicle"}, {Title: "轴数", Field: "carNum"},
-			{Title: "入口站", Field: "inStation"}, {Title: "通行时间", Field: "inTime"},
-			{Title: "检测门架", Field: "gantrytStation"}, {Title: "经过时间", Field: "gantryTime"},
-			{Title: "抓拍图片", Field: "fileIds"}, {Title: "备注", Field: "remark"},
+			{Title: "车牌号", Field: "carNo"},
+			{Title: "车型", Field: "carType", Dict: "car_type", BlankOnMiss: true},
+			{Title: "车种", Field: "carVehicle", Dict: "car_vehicle", BlankOnMiss: true},
+			{Title: "轴数", Field: "carNum"}, {Title: "入口站", Field: "inStation"},
+			{Title: "通行时间", Field: "inTime", JavaDate: true},
+			// G~J：模板引用 t.outStation/t.outTime/t.chargeType/t.amount，GantryCar 上没有这些属性 ⇒ 空列
+			{Title: "出口门架"}, {Title: "出口时间"}, {Title: "交易类型"}, {Title: "收费金额"},
+			{Title: "备注", Field: "remark"},
 		})
 	registerStandard(reg, h, "/manager/whiteinfo", "manager:whiteinfo", "白名单", whiteInfoSpec,
 		"carWhiteInfo.xlsx", "白名单", false, []exportCol{
-			{Title: "车牌颜色", Field: "plateColor", Dict: "plate_color"},
-			{Title: "车牌号", Field: "carNo"}, {Title: "车型", Field: "carType", Dict: "car_type"},
-			{Title: "车种", Field: "carVehicle", Dict: "car_vehicle"}, {Title: "轴数", Field: "carNum"},
+			{Title: "车牌颜色", Field: "plateColor", Dict: "plate_color", BlankOnMiss: true},
+			{Title: "车牌号", Field: "carNo"},
+			{Title: "车型", Field: "carType", Dict: "car_type", BlankOnMiss: true},
+			{Title: "车种", Field: "carVehicle", Dict: "car_vehicle", BlankOnMiss: true},
+			{Title: "轴数", Field: "carNum"},
 			{Title: "备注", Field: "remark"},
 		})
 	registerStandard(reg, h, "/manager/routeinfo", "manager:routeinfo", "路线信息", routeInfoSpec,
@@ -81,19 +91,31 @@ func Register(reg *router.Registry) {
 		})
 	registerStandard(reg, h, "/manager/splitrecord", "manager:splitrecord", "拆分流水", splitRecordSpec,
 		"carSplitRecord.xlsx", "拆分流水", false, []exportCol{
-			{Title: "车牌号", Field: "carNo"}, {Title: "车型", Field: "carType", Dict: "car_type"},
-			{Title: "车种", Field: "carVehicle", Dict: "car_vehicle"}, {Title: "轴数", Field: "carNum"},
-			{Title: "通行标识", Field: "passType"}, {Title: "入口站", Field: "inStation"},
-			{Title: "出口站", Field: "outStation"}, {Title: "备注", Field: "remark"},
+			{Title: "车牌号", Field: "carNo"},
+			{Title: "车型", Field: "carType", Dict: "car_type", BlankOnMiss: true},
+			{Title: "车种", Field: "carVehicle", Dict: "car_vehicle", BlankOnMiss: true},
+			{Title: "轴数", Field: "carNum"},
+			// JAVA 对照: CarSplitRecordController:84 用 car_vehicle 去查 pass_type 字典
+			// （dp.setPassType(isNull(passTypeMap.get(dp.getCarVehicle())))），照抄这个错键。
+			{Title: "通信标识", Field: "carVehicle", Dict: "pass_type", BlankOnMiss: true},
+			{Title: "入口站", Field: "inStation"},
+			{Title: "出口站", Field: "outStation"},
+			// car_split_record 与其域对象都没有 remark 属性
+			{Title: "备注"},
 		})
 	registerStandard(reg, h, "/manager/gantrytrade", "manager:gantrytrade", "门架交易", gantryTradeSpec,
 		"gantryTrade.xlsx", "门架交易", false, []exportCol{
-			{Title: "车牌号", Field: "carNo"}, {Title: "车型", Field: "carType", Dict: "car_type"},
-			{Title: "车种", Field: "carVehicle", Dict: "car_vehicle"}, {Title: "轴数", Field: "carNum"},
-			{Title: "入口站", Field: "inStation"}, {Title: "入口时间", Field: "inTime"},
-			{Title: "出口站", Field: "outStation"}, {Title: "出口时间", Field: "outTime"},
-			{Title: "收费类型", Field: "chargeType"}, {Title: "金额", Field: "amount"},
-			{Title: "备注", Field: "remark"},
+			{Title: "车牌号", Field: "carNo"},
+			{Title: "车型", Field: "carType", Dict: "car_type", BlankOnMiss: true},
+			{Title: "车种", Field: "carVehicle", Dict: "car_vehicle", BlankOnMiss: true},
+			{Title: "轴数", Field: "carNum"},
+			// E/M/N/O：模板引用 t.passType/t.escapedType/t.orgName 等，域对象上没有 ⇒ 空列
+			{Title: "通行标识"}, {Title: "入口站", Field: "inStation"},
+			{Title: "入口时间", Field: "inTime", JavaDate: true},
+			{Title: "出口站", Field: "outStation"},
+			{Title: "出口时间", Field: "outTime", JavaDate: true},
+			{Title: "应缴金额"}, {Title: "收费金额"}, {Title: "差额"}, {Title: "逃费类型"},
+			{Title: "管理中心名称"}, {Title: "备注", Field: "remark"},
 		})
 	registerStandard(reg, h, "/manager/busstest", "manager:busstest", "业务测试", bussTestSpec,
 		"bussTest.xlsx", "业务测试数据", true, []exportCol{
@@ -181,22 +203,27 @@ func (h *handler) tableExport2(spec *tableSpec, fileName, sheet string, cols []e
 }
 
 // suspiciousExportCols 是可疑车辆（主表 / 历史表）共用的导出列。
+//
+// JAVA 对照: templates/export/carSuspicious.xlsx 的第 1 行标题与第 2 行 $fe 引用。
+// 模板打印的是控制器拼好的派生字段（txTime/txAddress/mjTime/mjAddress/createTimeStr），
+// 而不是原始 inTime/inStation 等；C 列是「车种」(carVehicle) 不是车型。
 func suspiciousExportCols() []exportCol {
 	return []exportCol{
-		{Title: "车牌颜色", Field: "plateColor", Dict: "plate_color"},
+		{Title: "车牌颜色", Field: "plateColor", Dict: "plate_color", BlankOnMiss: true},
 		{Title: "车牌号", Field: "carNo"},
-		{Title: "车型", Field: "carType", Dict: "car_type"},
-		{Title: "通行时间", Field: "inTime"},
-		{Title: "入口站", Field: "inStation"},
-		{Title: "经过门架时间", Field: "gantryTime"},
-		{Title: "起始门架至终止门架", Field: "gantrytStation"},
+		{Title: "车种", Field: "carVehicle", Dict: "car_vehicle", BlankOnMiss: true},
+		{Title: "通行时间", Field: "txTime"},
+		{Title: "入口站及出口站", Field: "txAddress"},
+		{Title: "经过门架时间", Field: "mjTime"},
+		{Title: "起始门架及终止门架", Field: "mjAddress"},
 		{Title: "轴数", Field: "carNum"},
-		{Title: "通行标识", Field: "passType", Dict: "pass_type"},
-		{Title: "逃费类型", Field: "escapedTypeName"},
-		{Title: "是否为可疑车辆", Field: "isExcept", Dict: "is_except"},
-		{Title: "核实状态", Field: "checkStatus", Dict: "check_status"},
+		// 通行标识：控制器里的 passType 翻译整段被注释掉了 ⇒ 原样输出
+		{Title: "通行标识", Field: "passType"},
+		{Title: "逃费类型", Field: "escapedType", Dict: "escaped_type", BlankOnMiss: true},
+		{Title: "是否为可疑车辆", Field: "isExcept", Dict: "is_except", BlankOnMiss: true},
+		{Title: "稽查状态", Field: "checkStatus", Dict: "check_status", BlankOnMiss: true},
 		{Title: "备注", Field: "remark"},
-		{Title: "录入时间", Field: "createTime"},
+		{Title: "录入时间", Field: "createTimeStr"},
 	}
 }
 

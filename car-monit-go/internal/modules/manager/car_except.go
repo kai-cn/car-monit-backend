@@ -157,29 +157,37 @@ func (h *handler) exceptExportWithSpec(c *gin.Context, spec *tableSpec) {
 	carTypes, _ := h.dictValueLabel(c.Request.Context(), "car_type")
 	carVehicles, _ := h.dictValueLabel(c.Request.Context(), "car_vehicle")
 	escapedTypes, _ := h.dictValueLabel(c.Request.Context(), "escaped_type")
-	statuses, _ := h.dictValueLabel(c.Request.Context(), "supplementary_status")
-	cols := []exportCol{{Title: "车牌号"}, {Title: "车型"}, {Title: "车种"}, {Title: "轴数"},
-		{Title: "入口站"}, {Title: "入口时间"}, {Title: "出口站"}, {Title: "出口时间"},
-		{Title: "应缴金额（元）"}, {Title: "收费金额（元）"}, {Title: "差额（元）"}, {Title: "逃费类型"},
-		{Title: "状态"}, {Title: "录入单位及用户"}, {Title: "录入时间"}, {Title: "备注"}}
+	// JAVA 对照: templates/export/exportCarExcept.xlsx —— 三行静态表头（报表标题、列名、副表头）
+	// + 21 列。控制器逐行 setSort(i+1)、setCarNoQuery("")，模板里凡是引用 carNoQuery 的格子
+	// 都是空串；车型/车种/逃费类型用 containsKey 守卫（未命中保留原码，与其它模板导出不同）。
+	titleRow := []any{"少交高速公路通行费流水明细表"}
+	headerRow := []any{"序号", "出口收费站", "出口时间", "通行PASSID", "车牌", "交易车型", "车种",
+		"入口站", "入口时间", "漏交通行费类型", "", "交易金额", "", "", "应交金额", "", "",
+		"实际追交金额", "", "", "备注"}
+	subRow := []any{"", "", "", "", "", "", "", "", "", "一级类型", "二级类型", "省内", "省外", "小计",
+		"省内", "省外", "小计", "省内", "省外", "小计", ""}
 	out := make([][]any, 0, len(rows))
-	for _, row := range rows {
-		status := statuses[strOf(row.Status)]
-		if status == "" {
-			status = strOf(row.Status)
-		}
-		out = append(out, []any{row.CarNo, carTypes[strOf(row.CarType)], carVehicles[strOf(row.CarVehicle)],
-			plainValue(row.CarNum), row.InStation, plainValue(row.InTime), row.OutStation,
-			plainValue(row.OutTime), plainValue(row.TotalAmount), plainValue(row.ChargeAmount),
-			plainValue(row.DifAmount), escapedTypes[strOf(row.EscapedType)], status, row.CreateInfo,
-			plainValue(row.CreateTime), row.Remark})
+	for i, row := range rows {
+		out = append(out, []any{i + 1, row.OutStation, plainValue(row.OutTime), row.PassType, row.CarNo,
+			dictOrRaw(carTypes, strOf(row.CarType)), dictOrRaw(carVehicles, strOf(row.CarVehicle)),
+			row.InStation, plainValue(row.InTime), "", dictOrRaw(escapedTypes, strOf(row.EscapedType)),
+			"", "", moneyText(row.ChargeAmount), "", "", moneyText(row.TotalAmount), "", "",
+			moneyText(row.DifAmount), row.Remark})
 	}
-	data, err := buildWorkbook("异常车辆流水", cols, out)
+	data, err := buildStaticWorkbook("异常车辆流水", [][]any{titleRow, headerRow, subRow}, out)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
 	downloadAttachment(c, "exportCarExcept.xlsx", data)
+}
+
+// dictOrRaw 复刻 Java 的 containsKey 守卫：命中字典取标签，未命中保留原值。
+func dictOrRaw(dict map[string]string, key string) string {
+	if label, ok := dict[key]; ok {
+		return label
+	}
+	return key
 }
 
 // exceptRecordCount 对应 GET /exceptRecordCount。

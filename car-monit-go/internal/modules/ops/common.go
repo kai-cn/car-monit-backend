@@ -25,6 +25,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"car-monit-go/internal/app"
+	"car-monit-go/internal/middleware"
 	"car-monit-go/internal/router"
 	"car-monit-go/internal/web"
 )
@@ -166,7 +167,9 @@ func serverBaseURL(c *gin.Context, a *app.App) string {
 func newCommonRoutes(reg *router.Registry, a *app.App) {
 	h := &commonHandler{app: a}
 	// JAVA 对照: SecurityConfig antMatchers("/common/download**").anonymous()
-	reg.Engine.GET("/common/download", h.Download)
+	// anonymous() 只放行匿名请求：带有效 token 的请求是 403，带无效 token 的按匿名放行。
+	// /common/download/resource 另有更宽的 authenticated() 规则（见下），不加这个钩子。
+	reg.Engine.GET("/common/download", middleware.AnonymousOnly(reg.App), h.Download)
 
 	authed := reg.Authed.Group("/common")
 	authed.POST("/upload", h.Upload)

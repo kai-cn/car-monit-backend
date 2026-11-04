@@ -9,6 +9,7 @@ package middleware
 
 import (
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -65,6 +66,27 @@ func Auth(a *app.App) gin.HandlerFunc {
 		}
 		auth.SetLoginUser(c, lu)
 		c.Next()
+	}
+}
+
+// AnonymousOnly 对应 SecurityConfig 里的 anonymous() 规则（不是 permitAll）。
+// Spring 的 AuthenticatedVoter 对 IS_AUTHENTICATED_ANONYMOUSLY 只在「匿名令牌」时放行：
+// 带着**有效** token 的请求反而 403，而无效 token 会被 JwtAuthenticationTokenFilter 忽略、
+// 按匿名放行 —— 所以判定条件是令牌能否解析出登录态，而不是有没有 Authorization 头。
+//
+// 这些路由挂在 reg.Engine（Auth 只挂在 reg.Authed 上），所以要自己解析一次。
+func AnonymousOnly(a *app.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if a.Tokens.GetLoginUser(c.Request.Context(), c) == nil {
+			c.Next()
+			return
+		}
+		c.AbortWithStatusJSON(403, gin.H{
+			"timestamp": time.Now().Format("2006-01-02T15:04:05.000-07:00"),
+			"status":    403,
+			"error":     "Forbidden",
+			"path":      c.Request.URL.Path,
+		})
 	}
 }
 
