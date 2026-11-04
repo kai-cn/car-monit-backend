@@ -290,6 +290,7 @@ static void testXlsxWriter() {
 
 void run_crypto_tests();
 void run_crud_engine_tests();
+void run_http_client_tests();
 
 /** Spring URL 层规则的顺序与语义（SecurityConfig 是逐条 antMatchers，先命中先生效） */
 static void testSecurityUrlRules() {
@@ -521,6 +522,7 @@ int main() {
     testOperLogBuild();
     run_crypto_tests();
     run_crud_engine_tests();
+    run_http_client_tests();
     if (fails == 0) {
         std::printf("ALL TESTS PASSED\n");
         return 0;
