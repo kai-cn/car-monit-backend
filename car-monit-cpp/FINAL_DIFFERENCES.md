@@ -14,13 +14,13 @@
 | 指标 | 数值 |
 |---|---|
 | Java 端点总数 | **497** |
-| 已迁移并路径匹配 | **465**（93.6%） |
-| 未迁移 | **32**（逐条见 §4） |
-| C++ 已注册路由（含 Java 没有的扩展） | **536** |
+| 已迁移并路径匹配 | **466**（93.8%） |
+| 未迁移 | **31**（逐条见 §4） |
+| C++ 已注册路由（含 Java 没有的扩展） | **537** |
 | CRUD Spec 覆盖实体 | 59，`verify_generated_sql` 在真实库 0 异常 |
 | 实体字段 ↔ JSON 键缺口 | `audit_spec_keys` 报告 **0** |
 | 单元测试 | 3 文件 / 32 组用例 / 286 处断言调用点 |
-| 端到端断言（实机，需 MySQL+Redis） | 9 个脚本共 **225** 项（16+14+18+22+31+22+41+34 + 审批 27），本轮全部通过 |
+| 端到端断言（实机，需 MySQL+Redis） | 11 个脚本共 **265** 项（16+14+18+22+31+22+41+34+20 + 审批 27），本轮全部通过 |
 | `@Log` 操作日志规则 | 234 条，C++ 已能写 `sys_oper_log` |
 
 一句话结论：**接口契约（路径、方法、状态码、错误码、JSON 结构与键序、分页与鉴权语义）已对齐到"拿真实数据回归"的程度；剩余差异集中在外部依赖（对象存储、外部 HTTP、模板引擎）与 Excel 读取，且全部是显式标注的缺口，没有静默假数据。**
@@ -78,7 +78,7 @@
 
 ---
 
-## 4. ❌ 未迁移的 32 条端点（按前置能力分组，分组计数与 32 对账）
+## 4. ❌ 未迁移的 31 条端点（按前置能力分组，分组计数与 31 对账）
 
 依据：逐条读 Java 源码（controller → service impl → mapper XML → application.yml/SecurityConfig），
 不靠猜。分组小计：9 + 7 + 7 + 4 + 3 + 1 + 2 + 2 = **35**。
@@ -122,23 +122,22 @@
 | `PUT /manager/cartrackinfo/changeTrailInfo` | 同上按 `sys_config:api_map` 分流 + `carQueryLogService.queryLog` 落日志 |
 | `GET /manager/cartrackinfo/carSnapShot` | 纯外部：`/base/sysutil/getByTrailBo`，整个 `TrailBo` 被拍平成 query string |
 
-### E/F/G/H. 其余 8 条
+### E/F/G/H. 其余 7 条
 
 | 端点 | 阻塞点 |
 |---|---|
 | `GET /base/geometry/getHenDa`、`/syncAllGeometry`、`/syncAllGeometry1` | Forest → GeoServer `http://36.200.20.14:7890/...`；签名是 `EncryptUtils.createSignature` 的 MD5 字典序拼接，**含 `append(publicStr)` 自拼接 quirk，必须逐字复刻**；两个 sync 是"先 `return success()` 再后台线程池跑"，失败不可见（§5.1） |
 | `GET /base/snapshotflow/earliest-time` | Forest → `127.0.0.1:9901`；无 try/catch ⇒ 上游失败直接 500；`data` 在"日期串"与 `"暂无数据"` 之间切换 |
 | `POST /manager/carinfo/import`、`POST /manager/exceptrecord/import` | 需 xlsx 读取（`ImportSysUtil` 只支持 xlsx；`ImportEntity` 中文列名→属性硬编码表；错误优先 `AjaxResult.error("error", errorList)`，msg 不是 500） |
-| `POST /flow/flowname/tbFlow` | **纯 DB**：模板流程(`create_by=-1`) × `sys_dept(is_unit=1)` 笛卡尔积、逐条判存后写 `flow_name`/`flow_template` 并重排节点，返回 `AjaxResult.success("同步成功！")` |
 | `POST /manager/busstest/syncCurrentTrack` | **纯 DB+Redis**；返回 `void` ⇒ 成功是 200 空体；`isLocalhost=="local"` 时直接不执行 |
 
 > 另注：`POST /system/user/importData` 已在路由表里（未计作"未覆盖"），但它同样缺 xlsx 读取器 —— 现在返回显式错误而不是假成功。
 
-### 小结：按"缺什么能力"重排（5 + 7 + 1 + 9 + 1 + 2 + 7 = 32）
+### 小结：按"缺什么能力"重排（4 + 7 + 1 + 9 + 1 + 2 + 7 = 31）
 
 | 缺的能力 | 条数 | 端点 |
 |---|---|---|
-| **无（纯移植工作量）** | **5** | `file/uploadFileEnc`、`suspicious/check`、`suspicious/syncSuspiciousCarTask`、`flowname/tbFlow`、`busstest/syncCurrentTrack` |
+| **无（纯移植工作量）** | **4** | `file/uploadFileEnc`、`suspicious/check`、`suspicious/syncSuspiciousCarTask`、`busstest/syncCurrentTrack` |
 | S3 / MinIO 客户端（SigV4） | 7 | `file/upload`、`uploadSupplier`、`uploadPdf`、`uploadFile`、`uploadFileId`、`GET /{bucket}/{obj}`、`GET /view/{bucket}/{obj}` |
 | S3 + 出站 HTTP | 1 | `file/uploadByUrl` |
 | 出站 HTTP（外部服务在场才能验） | 9 | `suspicious/listFileCarNo`、`suspicious/history/{id}`、`cartrackinfo/listByCarId`、`changeTrailInfo`、`carSnapShot`、`geometry/getHenDa`、`syncAllGeometry`、`syncAllGeometry1`、`snapshotflow/earliest-time`（其中 `listByCarByTime` 的远程分支在 Java 里整块被注释，故已作为纯本地端点落地） |

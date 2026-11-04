@@ -24,6 +24,7 @@
 #include "cm/framework/db/Db.hpp"
 #include "cm/framework/security/SecurityUtils.hpp"
 #include "cm/framework/web/crud/CrudSpec.hpp"
+#include "cm/system/service/SysDeptService.hpp"
 #include "cm/web/specs/FlowCrudSpecs.hpp"
 
 namespace cm::flow::service {
@@ -603,6 +604,103 @@ AjaxResult submitEntrustFlow(const Json& body) {
 
     tx.commit();
     return AjaxResult::success();
+}
+
+namespace {
+
+/** 对应 FlowTemplateServiceImpl.saveFlow(flowOid)：按 NODE_ORDER,id 重排每个节点的前后与退回指针。
+ *  注意 Java 复用同一个 queryBo —— 它既有 flowOid 又逐步被 setNodeOrder(returnNum)，
+ *  所以"退回节点"的查找始终限定在同一条流程内。 */
+void reorderFlowNodes(const std::string& flowOid) {
+    if (flowOid.empty()) return;
+    Json q = obj();
+    q["flowOid"] = flowOid;
+    const auto list = listBy(cm::web::crud::specFlowTemplate(), q);
+    std::string firstId = "-1";
+    for (size_t i = 0; i < list.size(); ++i) {
+        Json v = list[i];
+        std::string pre;
+        std::string next;
+        std::string ret;
+        if (i == 0) {
+            pre = "0";
+            ret = "0";
+            firstId = sOf(v, "id");
+        } else {
+            pre = sOf(list[i - 1], "id");
+            Json rq = obj();
+            rq["flowOid"] = flowOid;
+            rq["nodeOrder"] = v.contains("returnNum") ? v["returnNum"] : Json(nullptr);
+            const auto rl = listBy(cm::web::crud::specFlowTemplate(), rq);
+            ret = rl.empty() ? firstId : sOf(rl[0], "id");
+        }
+        next = (i + 1 == list.size()) ? "-1" : sOf(list[i + 1], "id");
+        v["previousNodeOid"] = Json(pre);
+        v["nextNodeOid"] = Json(next);
+        v["returnNodeOid"] = Json(ret);
+        mustExec(cm::web::crud::buildUpdate(cm::web::crud::specFlowTemplate(), v));
+    }
+}
+
+} // namespace
+
+AjaxResult tbFlow() {
+    // Java 的入参 flowName 从头到尾没被读过，所以这里不接任何参数
+    cm::db::Transaction tx;
+    const long long userId = SecurityUtils::getUserId();
+    const long long epsId = SecurityUtils::getEpsId();
+    const std::string ts = nowStamp();
+
+    // 模板流程：create_by = -1 的那批
+    Json probe = obj();
+    probe["createBy"] = Json(-1);
+    const auto templates = listBy(cm::web::crud::specFlowName(), probe);
+    // 要同步的单位：is_unit = '1'
+    cm::domain::SysDept dq;
+    dq.isUint = "1";
+    const auto depts = cm::system::service::SysDeptService::selectDeptList(dq);
+
+    for (const Json& tpl : templates) {
+        Json nq = obj();
+        nq["flowOid"] = tpl.contains("id") ? tpl["id"] : Json(nullptr);
+        const auto nodes = listBy(cm::web::crud::specFlowTemplate(), nq);
+        for (const auto& dept : depts) {
+            if (!dept.deptId) continue;
+            Json exist = obj();
+            exist["tenantId"] = Json(static_cast<long long>(*dept.deptId));
+            exist["flowKey"] = tpl.contains("flowKey") ? tpl["flowKey"] : Json(nullptr);
+            // 已经给这个单位建过同 flowKey 的流程就跳过（幂等，重复调用不会再插一遍）
+            if (!listBy(cm::web::crud::specFlowName(), exist).empty()) continue;
+
+            Json add = obj();
+            for (const char* k : {"flowKey", "flowTitle", "flowContext", "bussName", "sort"}) {
+                if (tpl.contains(k) && !tpl[k].is_null()) add[k] = tpl[k];
+            }
+            add["tenantId"] = Json(static_cast<long long>(*dept.deptId));
+            add["flowBusinessType"] = Json("1");
+            // saveEntity 负责 Java 在 insert 前手动补的那 6 个字段：UUID、del_flag=0、
+            // eps_id=当前人部门、create_by/update_by=当前人、create_time=update_time=同一个时间戳
+            const std::string newId = saveEntity(cm::web::crud::specFlowName(), add);
+
+            for (const Json& n : nodes) {
+                Json c = n;  // 整行照搬：buildInsert 会跳过 null，与 XML 的 <if test="x != null"> 一致
+                c["id"] = Json(cm::utils::simpleUuid());  // Java: setId("") 走新增分支，再换成新 UUID
+                c["flowOid"] = Json(newId);
+                c["nextNodeOid"] = Json("");              // 显式置空串（不是 null，所以照样落库）
+                c["previousNodeOid"] = Json("");
+                c["delFlag"] = Json("0");
+                c["epsId"] = Json(epsId);
+                c["createBy"] = Json(-2);  // Java 在这里硬编码 -2，而不是当前用户
+                c["createTime"] = Json(ts);
+                c["updateBy"] = Json(userId);
+                c["updateTime"] = Json(ts);
+                mustExec(cm::web::crud::buildInsert(cm::web::crud::specFlowTemplate(), c));
+            }
+            reorderFlowNodes(newId);
+        }
+    }
+    tx.commit();
+    return AjaxResult::success(std::string("同步成功！"));
 }
 
 } // namespace cm::flow::service

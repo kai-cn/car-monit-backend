@@ -367,6 +367,15 @@ void registerFlowExtraControllers(Router& r) {
     r.post("/flow/currentnode/submitEntrustFlow", [](RequestContext& ctx) -> cm::http::ApiResponse {
         return BaseController::ok(cm::flow::service::submitEntrustFlow(ctx.body()));
     });
+
+    // POST /flow/flowname/tbFlow —— 同步其他单位的工作流（有 @PreAuthorize + @Log）
+    r.post("/flow/flowname/tbFlow", [](RequestContext& ctx) -> cm::http::ApiResponse {
+        // Java 是 @RequestBody FlowName：请求体必须是合法 JSON（内容不参与逻辑），
+        // 所以这里照样先解析一次，缺体/坏体才能与 Java 一样报错。
+        const Json body = ctx.body();
+        (void)body;
+        return BaseController::ok(cm::flow::service::tbFlow());
+    }).permi("flow:flowname:edit");
 }
 
 } // namespace cm::web

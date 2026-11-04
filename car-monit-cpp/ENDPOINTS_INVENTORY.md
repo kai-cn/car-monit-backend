@@ -2,9 +2,9 @@
 
 口径：Java 侧按 @*Mapping 注解逐条统计，覆盖 ruoyi-admin / ruoyi-quartz / ruoyi-generator。
 
-Java 端点总数：**497**；C++ 已注册并匹配：**465**；未匹配：**32**。
+Java 端点总数：**497**；C++ 已注册并匹配：**466**；未匹配：**31**。
 
-C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**536**。
+C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**537**。
 
 | 控制器 | HTTP | 路径 | Java 方法 | @PreAuthorize | C++ 状态 |
 |---|---|---|---|---|---|
@@ -169,7 +169,7 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | FlowNameController | POST | `/flow/flowname` | add |  | ✅ |
 | FlowNameController | PUT | `/flow/flowname` | edit |  | ✅ |
 | FlowNameController | DELETE | `/flow/flowname/{*}` | remove |  | ✅ |
-| FlowNameController | POST | `/flow/flowname/tbFlow` | tbFlow |  | ❌ |
+| FlowNameController | POST | `/flow/flowname/tbFlow` | tbFlow |  | ✅ |
 | FlowTemplateController | GET | `/flow/flowtemplate/list` | list |  | ✅ |
 | FlowTemplateController | GET | `/flow/flowtemplate/flowlist` | flowlist |  | ✅ |
 | FlowTemplateController | GET | `/flow/flowtemplate/export` | export |  | ✅ |

@@ -20,4 +20,8 @@ cm::core::domain::AjaxResult submitReturn(const cm::Json& body);
 /** 委托-办理流程：把当前节点的审核人改成被委托人，并记一条委托历史 */
 cm::core::domain::AjaxResult submitEntrustFlow(const cm::Json& body);
 
+/** 对应 FlowNameServiceImpl.tbFlow：把 create_by=-1 的模板流程按 is_unit=1 的单位逐个补齐，
+ *  连带复制节点并把首尾/退回指针重排。Java 的入参没有被读取，且整个方法是 @Transactional。 */
+cm::core::domain::AjaxResult tbFlow();
+
 } // namespace cm::flow::service
