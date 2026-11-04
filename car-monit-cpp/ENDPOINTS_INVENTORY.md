@@ -2,9 +2,9 @@
 
 口径：Java 侧按 @*Mapping 注解逐条统计，覆盖 ruoyi-admin / ruoyi-quartz / ruoyi-generator。
 
-Java 端点总数：**497**；C++ 已注册并匹配：**466**；未匹配：**31**。
+Java 端点总数：**497**；C++ 已注册并匹配：**475**；未匹配：**22**。
 
-C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**537**。
+C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**546**。
 
 | 控制器 | HTTP | 路径 | Java 方法 | @PreAuthorize | C++ 状态 |
 |---|---|---|---|---|---|
@@ -387,20 +387,20 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | SysFileController | GET | `/system/file/list` | list |  | ✅ |
 | SysFileController | GET | `/system/file/getInfoById/{*}` | getInfoById |  | ✅ |
 | SysFileController | GET | `/system/file/{*}` | getInfo |  | ✅ |
-| SysFileController | POST | `/system/file/upload` | upload |  | ❌ |
-| SysFileController | POST | `/system/file/uploadByUrl` | uploadByUrl |  | ❌ |
-| SysFileController | POST | `/system/file/uploadSupplier` | uploadSupplier |  | ❌ |
-| SysFileController | POST | `/system/file/uploadPdf` | uploadPdf |  | ❌ |
-| SysFileController | GET | `/system/file/{*}/{*}` | file |  | ❌ |
-| SysFileController | GET | `/system/file/view/{*}/{*}` | fileview |  | ❌ |
+| SysFileController | POST | `/system/file/upload` | upload |  | ✅ |
+| SysFileController | POST | `/system/file/uploadByUrl` | uploadByUrl |  | ✅ |
+| SysFileController | POST | `/system/file/uploadSupplier` | uploadSupplier |  | ✅ |
+| SysFileController | POST | `/system/file/uploadPdf` | uploadPdf |  | ✅ |
+| SysFileController | GET | `/system/file/{*}/{*}` | file |  | ✅ |
+| SysFileController | GET | `/system/file/view/{*}/{*}` | fileview |  | ✅ |
 | SysFileController | DELETE | `/system/file/del/{*}` | removeById |  | ✅ |
 | SysFileController | DELETE | `/system/file/{*}` | remove |  | ✅ |
-| SysFileController | POST | `/system/file/uploadFileId` | uploadFileId |  | ❌ |
-| SysFileController | POST | `/system/file/uploadFileEnc` | uploadFileEnc |  | ❌ |
+| SysFileController | POST | `/system/file/uploadFileId` | uploadFileId |  | ✅ |
+| SysFileController | POST | `/system/file/uploadFileEnc` | uploadFileEnc |  | ✅ |
 | SysFileController | PUT | `/system/file` | edit |  | ✅ |
 | SysFileController | GET | `/system/file/getNewCa` | getNewCa |  | ✅ |
 | SysFileController | POST | `/system/file/updateCAFile` | updateCAFile |  | ✅ |
-| SysFileController | POST | `/system/file/uploadFile` | upload |  | ❌ |
+| SysFileController | POST | `/system/file/uploadFile` | upload |  | ✅ |
 | SysIndexMenuController | GET | `/system/indexmenu/list` | list |  | ✅ |
 | SysIndexMenuController | GET | `/system/indexmenu/mylist` | getSysIndexMenulist |  | ✅ |
 | SysIndexMenuController | GET | `/system/indexmenu/export` | export |  | ✅ |

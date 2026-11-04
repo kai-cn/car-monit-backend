@@ -201,6 +201,17 @@ bool writeLocalFile(const std::string& path, const std::string& data, std::strin
     return true;
 }
 
+/** 重复的普通表单字段（Java 的 String[] bussNames）。
+ *  multipart 里的非文件段不会进 form_params，所以要从 parts 里取，取不到再回落 query。 */
+std::vector<std::string> formValues(const RequestContext& ctx, const std::string& name) {
+    std::vector<std::string> out;
+    for (const auto& p : ctx.req.parts) {
+        if (!p.isFile() && p.name == name) out.push_back(p.data);
+    }
+    if (out.empty()) out = ctx.params(name);
+    return out;
+}
+
 const cm::http::MultipartPart* findFiles(const RequestContext& ctx, const std::string& name,
                                          std::vector<cm::http::MultipartPart>& out) {
     for (const auto& p : ctx.req.parts) {
@@ -229,7 +240,7 @@ void registerSysFileUploadController(Router& r) {
         if (files.empty())
             return BaseController::ok(AjaxResult::error(
                 "Required MultipartFile[] parameter 'files' is not present"));
-        std::vector<std::string> bussNames = ctx.params("bussNames");
+        std::vector<std::string> bussNames = formValues(ctx, "bussNames");
         return BaseController::ok(uploadFiles(files, &bussNames));
     });
 
