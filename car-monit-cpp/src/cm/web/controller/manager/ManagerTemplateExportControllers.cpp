@@ -28,6 +28,7 @@
 #include "cm/framework/web/Router.hpp"
 #include "cm/framework/web/crud/CrudSpec.hpp"
 #include "cm/web/BaseController.hpp"
+#include "cm/web/controller/manager/ManagerExtraControllers.hpp"
 #include "cm/web/specs/ManagerCrudSpecs.hpp"
 
 namespace cm::web {
@@ -384,6 +385,83 @@ void registerManagerTemplateExportControllers(Router& r) {
         };
         return streamTemplate(cols, list);
     });
+
+    // GET /manager/suspicious/exportHistory —— 历史可疑车辆（模板 carSuspicious.xlsx）
+    // 与 listHistory 同一份查询（selectCarSuspiciousListHistroy），只是导出的是"当前页"：
+    // Java 在导出前也调了 startPage()。
+    r.get("/manager/suspicious/exportHistory", [](RequestContext& ctx) -> cm::http::ApiResponse {
+        const auto& sp = cm::web::suspiciousHistorySpec();
+        Json query = cm::web::crud::bindQuery(sp, ctx);
+        if (sp.hooks.beforeQuery) sp.hooks.beforeQuery(ctx, query);
+        const std::string where = cm::web::crud::buildWhere(sp, query);
+        const auto page = ctx.pageRequest();
+        std::string order = " ORDER BY " + (!page.orderBy.empty() ? page.orderBy : sp.orderBy);
+        const std::string dataSql = "SELECT " + sp.selectColumns() + " FROM " + sp.table + " " +
+                                    sp.alias + " " + where + order;
+        std::vector<Json> list;
+        if (page.enabled) {
+            auto pr = cm::db::queryPage(
+                "SELECT COUNT(1) FROM " + std::string(sp.table) + " " + sp.alias + " " + where,
+                dataSql, page);
+            for (const auto& row : pr.rows.rows) list.push_back(cm::web::crud::rowToJson(sp, row));
+        } else {
+            for (const auto& row : run(dataSql).rows)
+                list.push_back(cm::web::crud::rowToJson(sp, row));
+        }
+
+        // Java 导出前把 7 个字典全查一遍：selectDictDataMap 走 Collectors.toMap，
+        // 同一个 dict_value 出现两次会抛 IllegalStateException -> 整个导出 500。
+        // 少查一个就变成“Java 500、C++ 成功”，所以这里连没用到的 run_type 也照查。
+        const auto plateColorMap = dictDataMap("plate_color");
+        const auto carTypeMap = dictDataMap("car_type");
+        const auto carVehicleMap = dictDataMap("car_vehicle");
+        const auto escapedTypeMap = dictDataMap("escaped_type");
+        const auto isExceptMap = dictDataMap("is_except");
+        const auto checkStatusMap = dictDataMap("check_status");
+        const auto passTypeMap = dictDataMap("run_type");  // 取而不用：Java 里那行被注释掉了
+        (void)passTypeMap;
+
+        // 字典标签是**无条件**覆盖（与 exportOrgId 的"有才覆盖"不同）：
+        // 码值不在字典里时 CommonUtil.isNull(null) 给出空串，单元格就是空的。
+        auto label = [](const std::map<std::string, std::string>& m, const std::string& code) {
+            auto it = m.find(code);
+            return it == m.end() ? std::string() : it->second;
+        };
+        for (Json& dp : list) {
+            const std::string createTime = cm::jstr(dp, "createTime");
+            if (!createTime.empty()) dp["createTimeStr"] = Json(createTime);
+            dp["plateColor"] = Json(label(plateColorMap, cm::jstr(dp, "plateColor")));
+            dp["carType"] = Json(label(carTypeMap, cm::jstr(dp, "carType")));
+            dp["carVehicle"] = Json(label(carVehicleMap, cm::jstr(dp, "carVehicle")));
+            dp["escapedType"] = Json(label(escapedTypeMap, cm::jstr(dp, "escapedType")));
+            dp["isExcept"] = Json(label(isExceptMap, cm::jstr(dp, "isExcept")));
+            dp["checkStatus"] = Json(label(checkStatusMap, cm::jstr(dp, "checkStatus")));
+
+            // 通行/门架的时间与地点各是"入口 + 至 + 出口"的两段拼接，缺一段就不出现"至"
+            auto joinRange = [&](const char* head, const char* tail) {
+                std::string out = cm::jstr(dp, head);
+                const std::string rhs = cm::jstr(dp, tail);
+                if (!rhs.empty()) out += "至" + rhs;
+                return out;
+            };
+            dp["txTime"] = Json(joinRange("inTime", "outTime"));
+            dp["mjTime"] = Json(joinRange("gantryTime", "outGantryTime"));
+            dp["txAddress"] = Json(joinRange("inStation", "outStation"));
+            dp["mjAddress"] = Json(joinRange("gantrytStation", "outGantrytStation"));
+        }
+
+        // 列集合与顺序由模板第二行的 {{$fe:entitylist t.plateColor | t.carNo | …}} 决定
+        static const std::vector<TplCol> cols = {
+            {"车牌颜色", "plateColor"},   {"车牌号", "carNo"},
+            {"车种", "carVehicle"},       {"通行时间", "txTime"},
+            {"入口站及出口站", "txAddress"}, {"经过门架时间", "mjTime"},
+            {"起始门架及终止门架", "mjAddress"}, {"轴数", "carNum", true},
+            {"通行标识", "passType"},     {"逃费类型", "escapedType"},
+            {"是否为可疑车辆", "isExcept"}, {"稽查状态", "checkStatus"},
+            {"备注", "remark"},           {"录入时间", "createTimeStr"},
+        };
+        return streamTemplate(cols, list);
+    }).permi("manager:suspicious:export");
 }
 
 } // namespace cm::web

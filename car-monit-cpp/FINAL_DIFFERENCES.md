@@ -1,6 +1,6 @@
 # 最终差异报告 —— Java(RuoYi/carmonit) ↔ C++(car-monit-cpp)
 
-生成时间：2026-11-04；分支 `car-monit-cpp-local`，末次提交 `5244dbf`。
+生成时间：2026-11-04；分支 `car-monit-cpp-local`，本报告之前的末次提交 `1bfe671`。
 口径：分母 497 = Java 侧按 `@*Mapping` 注解逐条统计（`ruoyi-admin` + `ruoyi-quartz` + `ruoyi-generator`），
 由 `scripts/endpoint_coverage.py` 生成，`scripts/gen_inventory.py` 渲染成 `ENDPOINTS_INVENTORY.md`。
 
@@ -14,13 +14,13 @@
 | 指标 | 数值 |
 |---|---|
 | Java 端点总数 | **497** |
-| 已迁移并路径匹配 | **462**（93.0%） |
-| 未迁移 | **35**（逐条见 §4） |
-| C++ 已注册路由（含 Java 没有的扩展） | **533** |
+| 已迁移并路径匹配 | **464**（93.4%） |
+| 未迁移 | **33**（逐条见 §4） |
+| C++ 已注册路由（含 Java 没有的扩展） | **535** |
 | CRUD Spec 覆盖实体 | 59，`verify_generated_sql` 在真实库 0 异常 |
 | 实体字段 ↔ JSON 键缺口 | `audit_spec_keys` 报告 **0** |
 | 单元测试 | 3 文件 / 32 组用例 / 286 处断言调用点 |
-| 端到端断言（实机，需 MySQL+Redis） | 7 个脚本共 **150** 项（16+14+18+22+31+22 + 审批 27），本轮全部通过 |
+| 端到端断言（实机，需 MySQL+Redis） | 8 个脚本共 **191** 项（16+14+18+22+31+22+41 + 审批 27），本轮全部通过 |
 | `@Log` 操作日志规则 | 234 条，C++ 已能写 `sys_oper_log` |
 
 一句话结论：**接口契约（路径、方法、状态码、错误码、JSON 结构与键序、分页与鉴权语义）已对齐到"拿真实数据回归"的程度；剩余差异集中在外部依赖（对象存储、外部 HTTP、模板引擎）与 Excel 读取，且全部是显式标注的缺口，没有静默假数据。**
@@ -43,13 +43,16 @@
 | 10 | XML 里 `<if>` 的全部条件都被移植，含**继承列**（epsId/tenantId/createBy/createTime 区间）与 `find_in_set` 的**参数方向**两种写法 | `PORTING_REPORT` §4.6 |
 | 11 | `@TableLogic` 使 MyBatis-Plus 的 `count()` 自动带 `del_flag='0'`；`insert/update` 的 NOT_NULL 策略、`ASSIGN_UUID` 客户端生成 32 位主键 | §3 |
 | 12 | PageHelper：`count(1)` 包同一条 dataSql、`total==0` 时不发数据查询、`pageNum<=0` → offset 0、`reasonable` 夹页、`order by` 前端优先回落 XML | §3.8、`verify_generated_sql.py` |
-| 13 | 鉴权语义：未登录 401（`{"msg":"...","code":401}` + `Content-Type` 小写 `utf-8`）、权限不足 `AjaxResult(403,"没有权限，请联系管理员授权")`、`anonymous()` == `isAnonymous()` ⇒ **带 token 反而容器级 403**、URL 规则按注册顺序先命中先生效、非法 JWT → 真 500 | §4.1/§4.4/§4.5 |
+| 13 | 鉴权语义：未登录 **HTTP 200** + body `{"msg":"请求访问：…，认证失败，无法访问系统资源","code":401}`（RuoYi 的 `ServletUtils.renderString` 写死 `setStatus(200)`，业务码在 body 里）+ `Content-Type: application/json;charset=utf-8`（小写）、方法级权限不足 HTTP 200 + `AjaxResult(403,"没有权限，请联系管理员授权")`、URL 级 `anonymous()` == `isAnonymous()` ⇒ **带 token 反而容器级 HTTP 403**、URL 规则按注册顺序先命中先生效、非法 JWT → 真 500 | §4.1/§4.4/§4.5 |
 | 14 | JWT：jjwt 0.9.1 secret 走 Base64 宽松解码（26 字符 → **19 字节**，尾组补零）、HS512、claim `login_user_key`；能直接复用 Java 写在 Redis db0 的会话 | §6.1 |
 | 15 | 能读 Java 写的 Redis 缓存：fastjson2 非严格 JSON（`Set[...]`、`25367L`、`@type`）由 `normalizeFastJson2` 归一 | §6.2 |
 | 16 | `@Log` 操作日志切面：枚举 ordinal、`getRequestURI` 不含 query、`IpUtils` 取 IP、`内网IP/XX XX`、参数三分支、fastjson2 丢 null、按**字符**截断、未登录/权限不足不写 | §6.6 |
 | 17 | 异常→响应映射逐条对齐（`ServiceException`/`CustomException`/`BaseException`/NPE/`MethodArgumentTypeMismatch`/404/405） | §3、§4.8 |
 | 18 | 结果集列名匹配不区分大小写（`information_schema` 的 `TABLE_NAME` 能落到 `table_name`） | §3 |
 | 19 | 上传/下载：`FileUploadUtils` 命名规则、`/common/download` 的毫秒名与 `filename*=utf-8''`、静态 `/profile/**` | §2.3、`verify_cn_export.py` |
+| 20 | **SELECT 投影 = `<sql id="selectXxxVo">` 的列清单**：MyBatis 只填结果集里出现的列，Vo 没写的属性在 Java 里保持字段声明初值（多为 null），但**照样能当 WHERE 条件的左值**。`car_suspicious` 的 `trackJosn/trackNames/epsId/sort/tenantId/createBy/updateBy/updateTime/delFlag` 9 个键即为此类（`scripts/audit_projection.py` 可逐实体复现） | `Field::inVo`、`verify_suspicious_history.py` |
+| 21 | **WHERE 左值列与运算符以 XML 为准**：`sectionCode`/`sectionName` 在 Java 里过滤的是 `t.track_names`（不是 `section_code`）、`carNoQuery`→`t.car_no like`、`applyTime1/2`→`t.in_time >= / <=`、`and t.id != #{id}` 是不等于；派生属性也能带条件（`condColumn`）。`scripts/audit_cond_columns.py` 逐条对拍 | `Field::condColumn`、`Cond::Gte/Lte/Ne/NotLike` |
+| 22 | 导出类接口一律先 `startPage()`：`exportHistory` 导的是**当前页**，不是全表；且 Java 导出前把 7 个字典全查一遍（`Collectors.toMap` 遇重复 `dict_value` 抛异常 → 整个导出 500），少查一个就变成"Java 500、C++ 成功" | §2.3、`verify_suspicious_history.py` |
 
 ---
 
@@ -75,7 +78,7 @@
 
 ---
 
-## 4. ❌ 未迁移的 35 条端点（按前置能力分组，分组计数与 35 对账）
+## 4. ❌ 未迁移的 33 条端点（按前置能力分组，分组计数与 33 对账）
 
 依据：逐条读 Java 源码（controller → service impl → mapper XML → application.yml/SecurityConfig），
 不靠猜。分组小计：9 + 7 + 7 + 4 + 3 + 1 + 2 + 2 = **35**。
@@ -94,13 +97,11 @@
 | `POST /system/file/uploadByUrl` | S3 + **Forest 下载任意 URL**（`FileApi.downloadImageToByteArray`）⇒ 还要出站 HTTP 客户端；单条异常被吞 |
 | `POST /system/file/uploadFileEnc` | **其实没有阻塞**：Java 里循环体与 `caService.encodeEnvelopedFile` 全是注释 ⇒ 恒返回 `AjaxResult.success([])`，不碰 S3、不加密。现在就能 1:1 复刻 |
 
-### B. CarSuspiciousController —— 7 条
+### B. CarSuspiciousController —— 5 条
 
 | 端点 | 阻塞点 |
 |---|---|
 | `PUT /manager/suspicious/check` | **纯本地事务，无外部 HTTP**：校验 status≠"1" → 删 check/`car_except_record` → 无车则插 `car_info` → 批量落库 → `check_status='1'` → 刷 Redis 车辆列表；返回 `AjaxResult.success("操作成功！",id)`；**`@PreAuthorize` 在 Java 里被注释掉**，不要顺手补 |
-| `GET /manager/suspicious/listHistory` | 纯本地：查 `car_suspicious_back` 的普通分页 |
-| `GET /manager/suspicious/exportHistory` | easypoi `TemplateExportParams` + `carSuspicious.xlsx`，裸字节 + `return null` ⇒ 与本轮已做的 5 条模板导出同一机制 |
 | `GET /manager/suspicious/listFileCarNo` | 本地 SQL，但每行调 `selectCarSuspiciousById` → 解析 `track_josn` → `getCarGeometryByPlanNew` → 受 Redis 开关 `sys_config:api_map` 分流（`"0"` 走本地几何，否则要外部路网） |
 | `GET /manager/suspicious/history/{id}` | 同上（同一套几何后处理） |
 | `GET /manager/suspicious/exportAbnormalPassage` | **docx** 模板：`WordExportUtil.exportWord07` + `ImageEntity` 图片嵌入 + S3 GetObject 取图 ⇒ 需 docx 填充能力 |
@@ -134,11 +135,11 @@
 
 > 另注：`POST /system/user/importData` 已在路由表里（未计作"未覆盖"），但它同样缺 xlsx 读取器 —— 现在返回显式错误而不是假成功。
 
-### 小结：按"缺什么能力"重排（8 + 7 + 1 + 9 + 1 + 2 + 7 = 35）
+### 小结：按"缺什么能力"重排（6 + 7 + 1 + 9 + 1 + 2 + 7 = 33）
 
 | 缺的能力 | 条数 | 端点 |
 |---|---|---|
-| **无（纯移植工作量）** | **8** | `file/uploadFileEnc`、`suspicious/listHistory`、`suspicious/check`、`suspicious/exportHistory`、`suspicious/syncSuspiciousCarTask`、`cartrackinfo/listByCarByTime`、`flowname/tbFlow`、`busstest/syncCurrentTrack` |
+| **无（纯移植工作量）** | **6** | `file/uploadFileEnc`、`suspicious/check`、`suspicious/syncSuspiciousCarTask`、`cartrackinfo/listByCarByTime`、`flowname/tbFlow`、`busstest/syncCurrentTrack` |
 | S3 / MinIO 客户端（SigV4） | 7 | `file/upload`、`uploadSupplier`、`uploadPdf`、`uploadFile`、`uploadFileId`、`GET /{bucket}/{obj}`、`GET /view/{bucket}/{obj}` |
 | S3 + 出站 HTTP | 1 | `file/uploadByUrl` |
 | 出站 HTTP（外部服务在场才能验） | 9 | `suspicious/listFileCarNo`、`suspicious/history/{id}`、`cartrackinfo/listByCarId`、`changeTrailInfo`、`carSnapShot`、`geometry/getHenDa`、`syncAllGeometry`、`syncAllGeometry1`、`snapshotflow/earliest-time` |

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "cm/common/core/domain/AjaxResult.hpp"
+#include "cm/common/constant/Constants.hpp"
 #include "cm/common/utils/CommonUtil.hpp"
 #include "cm/common/utils/StringUtils.hpp"
 #include "cm/framework/db/Db.hpp"
@@ -25,6 +26,7 @@ namespace {
 
 using cm::core::domain::AjaxResult;
 using cm::db::Db;
+using cm::utils::CommonUtil;
 using cm::utils::StringUtils;
 using namespace cm::web::crud;
 
@@ -57,8 +59,32 @@ cm::db::Result select(const std::string& sql) {
 
 } // namespace
 
+const Spec& suspiciousHistorySpec() {
+    static const Spec s = [] {
+        Spec s = specCarSuspicious();
+        s.table = "car_suspicious_back";
+        s.orderBy = "t.id";
+        s.hooks.beforeQuery = [](RequestContext&, Json& q) {
+            // Java: deleteEnd() 去掉一个结尾逗号后只用于判断，原值照样参与查询
+            const std::string probe = CommonUtil::deleteEnd(cm::jstr(q, "sectionCode"));
+            if (!StringUtils::isBlank(probe) &&
+                probe.find(cm::constant::Constants::section_all) != std::string::npos)
+                q["sectionCode"] = "";
+            // Java: “选择对象”传的是 code，落到 trackNames 这个 LIKE 条件上
+            const std::string code = cm::jstr(q, "code");
+            if (!StringUtils::isBlank(code)) q["trackNames"] = Json(code);
+        };
+        return s;
+    }();
+    return s;
+}
+
 void registerManagerExtraControllers(Router& r) {
     // ---- 车牌维度：Java 一律先把 carNo 兜成 "-1"，避免全表扫 ----
+
+    // GET /manager/suspicious/listHistory —— 备份表的历史可疑车辆
+    registerListVariant(r, "/manager/suspicious/listHistory", suspiciousHistorySpec(),
+                        ListKind::Paged, "manager:suspicious:list");
 
     // GET /manager/suspicious/listCarNo
     {

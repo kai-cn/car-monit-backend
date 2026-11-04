@@ -241,7 +241,9 @@ std::string buildWhere(const Spec& spec, const Json& query) {
 Json bindQuery(const Spec& spec, RequestContext& ctx) {
     Json q = Json::object();
     for (const auto& f : spec.fields) {
-        if (f.cond == Cond::None) continue;
+        // Spring 的参数绑定是把**所有**有 setter 的属性都填上，与它是不是查询条件无关。
+        // controller 里的前置处理常常读的就是非条件属性
+        // （listHistory 读 getCode() 再 setTrackNames()），只绑条件就会读到空。
         if (auto v = ctx.optParam(f.json)) q[f.json] = *v;
     }
     Json params = Json::object();
