@@ -45,6 +45,10 @@ enum class Cond {
     DateRange,   ///< 需要携带 DateRangeStyle；使用 params.beginTime / params.endTime
     FindInSet,   ///< and find_in_set(#{field}, t.col)（祖级列表 ancestors 常见）
     FindInSetCol,///< and find_in_set(t.col, #{field})（列在第一个参数，如 exceptIds）
+    Gte,         ///< and t.col >= #{field}（XML 里是 STR_TO_DATE(#{applyTime1},…) 之类的区间下界）
+    Lte,         ///< and t.col <= #{field}
+    Ne,          ///< and t.col != #{field}
+    NotLike,     ///< and t.col not like concat('%', #{field}, '%')
 };
 
 /** params.beginTime / endTime 的比较粒度（对应 XML 里的 date_format 格式串） */
@@ -70,6 +74,10 @@ struct Field {
     /** 非列属性（column==nullptr）在 Java 里的字段初始值，写成 JSON 字面量，
      *  如 "\"0\"" / "0" / "false" / "[]"。Jackson 会把它照样输出，所以不能退化成 null。 */
     const char* dflt{nullptr};
+    /** 该列是否出现在 Java 的 <sql id="selectXxxVo"> 里。
+     *  MyBatis 只填结果集里出现的列，Vo 没投影的属性在 Java 响应里是 null（或字段初始值），
+     *  但它照样可能是 WHERE 条件的左值 —— 所以"能当条件"与"要 SELECT 出来"必须分开表达。 */
+    bool inVo{true};
 };
 
 /** 每个动作的 @PreAuthorize 权限串（nullptr 表示 Java 侧没有 @PreAuthorize） */

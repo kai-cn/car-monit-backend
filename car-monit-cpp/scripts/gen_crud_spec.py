@@ -177,6 +177,44 @@ def xml_known_columns(xml_src):
     return known
 
 
+def vo_projection(xml_src, cols):
+    """实体自己的 Mapper XML 里，list 查询真正 SELECT 出来的列集合。
+
+    MyBatis 只填结果集里出现的列：Vo 没写的属性，Java 响应里是 null（或字段声明初值）。
+    C++ 的 Spec 同时驱动 WHERE 与 SELECT，不记录这件事就会把 track_josn / eps_id 这种
+    “能当条件但 Vo 不投影”的列查出来返回，凭空比 Java 多给数据
+    （实测 /manager/suspicious/list 的 9 个键）。
+    返回 None 表示无法确定（没有 Vo / Vo 里有 * 与动态标签 / 那是 join 出来的 Vo），
+    这时维持全投影，宁缺毋滥。
+    """
+    sqls = re.findall(r'<sql\s+id="(select\w*)">(.*?)</sql>', xml_src, re.S)
+    if len(sqls) != 1:
+        return None
+    vo_id, vo_body = sqls[0]
+    if re.search(r'\*|<include|<if\b|<choose|<where', vo_body, re.I):
+        return None
+    # Vo 必须真的被本 XML 的查询引用，否则这份列清单不属于这条 spec
+    if '<include refid="%s"' % vo_id not in xml_src:
+        return None
+    found = {c.lower() for _a, c in re.findall(r'\b(\w+)\.([a-zA-Z_]\w*)', vo_body)}
+    found |= {c.lower() for c in re.findall(r'^\s*`?([a-z_][a-z0-9_]*)`?\s*,?\s*$', vo_body, re.M)}
+    if not found:
+        return None
+    if cols:
+        # 超过三分之一不是本表的列 => 这是别的实体/多表 join 的 Vo，不可信
+        if len([c for c in found if c not in cols]) > len(found) // 3:
+            return None
+    return found
+
+
+def invo_tail(in_vo, written):
+    """Field 的第 12 位是 inVo；aggregate 初始化只能顺序补默认值，
+    所以要先按“已经写到第几位”把中间的空位填上。"""
+    if in_vo:
+        return ""
+    return ", nullptr" * max(0, 11 - written) + ", false"
+
+
 def snake_case(name):
     out = []
     for i, ch in enumerate(name):
@@ -322,9 +360,7 @@ def parse_conditions(xml_src):
             continue
         name = prop.group(1)
         low = body.lower()
-        if "like concat" in low:
-            conds[name] = "like"
-        elif "find_in_set" in low:
+        if "find_in_set" in low:
             # 参数顺序有两种写法，语义完全相反：
             #   find_in_set(#{deptId}, ancestors)   值在列里   -> find_in_set
             #   find_in_set(t.id, #{exceptIds})     列在值里   -> find_in_set_col
@@ -337,10 +373,22 @@ def parse_conditions(xml_src):
                 left = re.search(r'find_in_set\s*\(\s*([\w.]+)\s*,', body, re.I)
                 if left:
                     cond_cols[name] = left.group(1)
-        elif "=" in low:
-            conds[name] = "eq"
-        elif "!=" in low:
-            conds[name] = "eq"
+            continue
+        # “一列一参数”的简单比较：运算符决定条件形态，左边的列名可能并不是该属性自己的列
+        # （RuoYi 业务代码里改过条件的地方全靠这一步才不漏：<if test="sectionCode != ''">
+        #  实际过滤 t.track_names；<if test="applyTime1 != ''"> 过滤 t.in_time >=）
+        simple = re.match(r"\s*(?:and\s+)?(?:(\w+)\.)?([a-z_][a-z0-9_]*)\s*"
+                          r"(>=|<=|<>|!=|not\s+like|like|=|<|>)", body, re.I)
+        if not simple or len(re.findall(r"#\{\w+", body)) != 1:
+            if "like concat" in low:
+                conds[name] = "like"
+            continue
+        op = re.sub(r"\s+", " ", simple.group(3)).lower()
+        cond_cols.setdefault(name, simple.group(2))
+        conds[name] = {
+            "like": "like", "not like": "not_like", "=": "eq", "!=": "ne", "<>": "ne",
+            ">": "gte", ">=": "gte", "<": "lte", "<=": "lte",
+        }[op]
     # <if test="X != null"> 不判空串 -> eqNotNull
     for m in re.finditer(r'<if test="(\w+)\s*!=\s*null\s*">', xml_src):
         conds.setdefault(m.group(1), "eq_notnull")
@@ -423,6 +471,7 @@ def gen_entity(entity, ctrl_path):
             return None
 
     fn = "spec%s" % entity
+    vo = vo_projection(xml_src, cols)
     L = []
     # Spec 以文件级函数暴露，手写控制器可复用同一份列定义
     L.append("const Spec& %s() {" % fn)
@@ -463,6 +512,30 @@ def gen_entity(entity, ctrl_path):
     if fixed:
         L.append('        s.extraWhere = "%s";' % "".join(fixed))
     L.append("        s.fields = {")
+    COND_CPP = {
+        "eq": "Cond::Eq", "ne": "Cond::Ne", "like": "Cond::Like", "not_like": "Cond::NotLike",
+        "gte": "Cond::Gte", "lte": "Cond::Lte", "eq_notnull": "Cond::EqNotNull",
+        "find_in_set": "Cond::FindInSet", "find_in_set_col": "Cond::FindInSetCol",
+        "range": "Cond::DateRange",
+    }
+
+    def cond_col_for(name, own_col, kind):
+        """XML 里条件左值列与属性自身的列不一致时返回该列。
+        只认本表的真实列 —— 左值是函数（date_format(...)）或别的表的列时一律放弃覆盖，
+        宁可维持原有行为，也不把 WHERE 拼成非法 SQL。"""
+        if kind == "None" or name not in cond_cols:
+            return None
+        left = cond_cols[name]
+        if left.startswith(alias + "."):
+            left = left[len(alias) + 1:]
+        if "." in left:
+            left = left.split(".")[-1]
+        if own_col and left.lower() == own_col.lower():
+            return None
+        if cols is not None and left.lower() not in cols:
+            return None
+        return left
+
     # 1) 父类字段先输出（Jackson 的声明序），列以 resultMap 为准；
     #    resultMap 没映射的保持“只进 JSON 的 null”，与 MyBatis 不填的行为一致。
     own_names = {n for n, _jt, _fmt, _ex, _ig, _d in fields}
@@ -483,21 +556,15 @@ def gen_entity(entity, ctrl_path):
         # params.beginTime|endTime 区间…）。以前这里写死 Cond::None，条件被静默丢掉 =>
         # 前端传了过滤参数却返回全量（实测 /manager/exceptrecord/list?epsId=... 273 行应为 249 行）。
         cond_kind = conds.get(name, "None")
-        cond_cpp = {
-            "eq": "Cond::Eq", "like": "Cond::Like", "eq_notnull": "Cond::EqNotNull",
-            "find_in_set": "Cond::FindInSet", "find_in_set_col": "Cond::FindInSetCol",
-            "range": "Cond::DateRange",
-        }.get(cond_kind, "Cond::None")
-        cond_col = "nullptr"
-        if cond_kind == "find_in_set_col" and name in cond_cols:
-            left = cond_cols[name]
-            if left.startswith(alias + "."):
-                left = left[len(alias) + 1:]
-            cond_col = '\"%s\"' % left
-        L.append('            {"%s", %s, Fmt::%s, %s, nullptr, %s, false, %s, %s, %s},'
+        cond_cpp = COND_CPP.get(cond_kind, "Cond::None")
+        left = cond_col_for(name, col, cond_kind)
+        cond_col = '\"%s\"' % left if left else "nullptr"
+        in_vo = vo is None or col is None or col.lower() in vo
+        L.append('            {"%s", %s, Fmt::%s, %s, nullptr, %s, false, %s, %s, %s%s},'
                  % (name, ('"%s"' % col) if col else "nullptr", cpp_fmt, cond_cpp,
                     "true" if is_pk else "false",
-                    "true" if ins else "false", "true" if upd else "false", cond_col))
+                    "true" if ins else "false", "true" if upd else "false", cond_col,
+                    invo_tail(in_vo, 10)))
     # 2) 子类自有字段
     for name, jtype, fmt, excel, ignored, dflt in fields:
         if ignored:
@@ -510,35 +577,32 @@ def gen_entity(entity, ctrl_path):
             # 有 Java 字段初值的输出初值（如 supplementaryStatus = "0"、children = new ArrayList<>()），
             # 没有的才是 null。
             # 例外：XML 里仍然可能拿它当查询条件，且条件左值是别的列
-            #       （car_except_record 的 find_in_set(t.id, #{exceptIds})），这时要保住条件。
-            cond_cpp = "Cond::None"
-            cond_col = "nullptr"
-            if conds.get(name) == "find_in_set_col" and name in cond_cols:
-                left = cond_cols[name]
-                if left.startswith(alias + "."):
-                    left = left[len(alias) + 1:]
-                cond_cpp, cond_col = "Cond::FindInSetCol", '\"%s\"' % left
+            #       （car_except_record 的 find_in_set(t.id, #{exceptIds})、
+            #        car_suspicious 的 applyTime1 -> t.in_time >=、carNoQuery -> t.car_no like）
+            cond_kind = conds.get(name, "None")
+            cond_cpp = COND_CPP.get(cond_kind, "Cond::None")
+            if cond_kind == "range":
+                cond_cpp = "Cond::None"   # 区间条件必须有真实列可投，派生属性带不动
+            left = None if cond_cpp == "Cond::None" else cond_col_for(name, None, cond_kind)
+            if cond_cpp != "Cond::None" and left is None and cond_kind != "find_in_set":
+                cond_cpp = "Cond::None"   # 左值列不可信，宁可不加条件
+            cond_col = '\"%s\"' % left if left else "nullptr"
             dflt_cpp = '"%s"' % dflt.replace('"', '\\"') if dflt else "nullptr"
             L.append('            {"%s", nullptr, Fmt::%s, %s, %s, false, false, false, false, %s, %s},'
                      % (name, fmt if fmt in FMT_NAMES else "Str", cond_cpp, ex, cond_col, dflt_cpp))
             continue
         cond_kind = conds.get(name, "None")
-        cond_cpp = {
-            "eq": "Cond::Eq", "like": "Cond::Like", "eq_notnull": "Cond::EqNotNull",
-            "find_in_set": "Cond::FindInSet", "find_in_set_col": "Cond::FindInSetCol",
-            "range": "Cond::DateRange",
-        }.get(cond_kind, "Cond::None")
+        cond_cpp = COND_CPP.get(cond_kind, "Cond::None")
         ins, upd = write_flags(name, True)
         tail = ""
-        if cond_kind == "find_in_set_col" and name in cond_cols:
-            left = cond_cols[name]
-            if left.startswith(alias + "."):
-                left = left[len(alias) + 1:]
-            tail = ', "%s"' % left  # Field 的最后一位是 condColumn（条件左值列）
-        L.append('            {"%s", "%s", Fmt::%s, %s, %s, %s, %s, %s, %s%s},' % (
+        left = cond_col_for(name, col, cond_kind)
+        if left:
+            tail = ', "%s"' % left  # Field 的 condColumn：条件左值另有其列
+        L.append('            {"%s", "%s", Fmt::%s, %s, %s, %s, %s, %s, %s%s%s},' % (
             name, col, fmt, cond_cpp, ex, "true" if is_pk else "false",
             "true" if (is_pk and pk_auto) else "false",
-            "true" if ins else "false", "true" if upd else "false", tail))
+            "true" if ins else "false", "true" if upd else "false", tail,
+            invo_tail(vo is None or col.lower() in vo, 10 if tail else 9)))
     L.append("        };")
     if order_by:
         L.append('        s.orderBy = "%s";' % c_escape(order_by))

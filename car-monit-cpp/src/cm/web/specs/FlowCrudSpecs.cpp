@@ -74,9 +74,9 @@ const Spec& specFlowCurrentNode() {
             {"updateTime", "update_time", Fmt::DateYmdHms, Cond::Eq, nullptr, false, false, true, true, nullptr},
             {"sort", "sort", Fmt::Int, Cond::Eq, nullptr, false, false, true, true, nullptr},
             {"remark", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr},
-            {"tenantId", nullptr, Fmt::Long, Cond::Eq, nullptr, false, false, false, false, nullptr},
+            {"tenantId", nullptr, Fmt::Long, Cond::EqNotNull, nullptr, false, false, false, false, nullptr},
             {"deptSubCode", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr},
-            {"flag", nullptr, Fmt::Str, Cond::Eq, nullptr, false, false, false, false, nullptr},
+            {"flag", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr},
             {"searchValue", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr},
             {"params", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr},
             {"flowOid", "FLOW_OID", Fmt::Str, Cond::Eq, "流程OID", false, false, true, true},
@@ -208,7 +208,7 @@ const Spec& specFlowMessageInfo() {
             {"remark", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr},
             {"tenantId", nullptr, Fmt::Long, Cond::None, nullptr, false, false, false, false, nullptr},
             {"deptSubCode", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr},
-            {"flag", nullptr, Fmt::Str, Cond::Eq, nullptr, false, false, false, false, nullptr},
+            {"flag", nullptr, Fmt::Str, Cond::Eq, nullptr, false, false, false, false, "MSG_TYPE"},
             {"searchValue", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr},
             {"params", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr},
             {"messageNo", "message_no", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
@@ -244,7 +244,7 @@ const Spec& specFlowName() {
         s.alias = "t";
         s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
-            {"id", "ID", Fmt::Str, Cond::Eq, nullptr, true, false, true, false, nullptr},
+            {"id", "ID", Fmt::Str, Cond::Ne, nullptr, true, false, true, false, nullptr},
             {"epsId", "eps_id", Fmt::Long, Cond::Eq, nullptr, false, false, true, true, nullptr},
             {"delFlag", "del_flag", Fmt::Str, Cond::Eq, nullptr, false, false, true, true, nullptr},
             {"createBy", "create_by", Fmt::Long, Cond::Eq, nullptr, false, false, true, false, nullptr},
@@ -279,7 +279,7 @@ const Spec& specFlowTemplate() {
         s.alias = "t";
         s.extraWhere = " and t.del_flag = '0'";
         s.fields = {
-            {"id", "ID", Fmt::Str, Cond::Eq, nullptr, true, false, true, false, nullptr},
+            {"id", "ID", Fmt::Str, Cond::Ne, nullptr, true, false, true, false, nullptr},
             {"epsId", "eps_id", Fmt::Long, Cond::Eq, nullptr, false, false, true, true, nullptr},
             {"delFlag", "del_flag", Fmt::Str, Cond::Eq, nullptr, false, false, true, true, nullptr},
             {"createBy", "create_by", Fmt::Long, Cond::Eq, nullptr, false, false, true, false, nullptr},

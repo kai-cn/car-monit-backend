@@ -23,7 +23,7 @@ const Spec& specSysConfig() {
             {"createTime", "create_time", Fmt::DateYmdHms, Cond::DateRange, nullptr, false, false, false, false, nullptr},
             {"updateBy", "update_by", Fmt::Str, Cond::Eq, nullptr, false, false, false, true, nullptr},
             {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false, nullptr},
-            {"remark", nullptr, Fmt::Str, Cond::Eq, nullptr, false, false, false, false, nullptr},
+            {"remark", nullptr, Fmt::Str, Cond::Eq, nullptr, false, false, false, false, "remark"},
             {"configId", "config_id", Fmt::Long, Cond::Eq, "参数主键", false, false, false, false},
             {"configName", "config_name", Fmt::Str, Cond::Eq, "参数名称", false, false, true, true},
             {"configKey", "config_key", Fmt::Str, Cond::Eq, "参数键名", false, false, true, true},
@@ -46,7 +46,7 @@ const Spec& specSysDictData() {
             {"createTime", "create_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false, nullptr},
             {"updateBy", "update_by", Fmt::Str, Cond::Eq, nullptr, false, false, false, true, nullptr},
             {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false, nullptr},
-            {"remark", nullptr, Fmt::Str, Cond::Eq, nullptr, false, false, false, false, nullptr},
+            {"remark", nullptr, Fmt::Str, Cond::Eq, nullptr, false, false, false, false, "remark"},
             {"dictCode", "dict_code", Fmt::Long, Cond::None, "字典编码", false, false, false, false},
             {"dictSort", "dict_sort", Fmt::Long, Cond::Eq, "字典排序", false, false, true, true},
             {"dictLabel", "dict_label", Fmt::Str, Cond::Eq, "字典标签", false, false, true, true},
@@ -74,7 +74,7 @@ const Spec& specSysDictType() {
             {"createTime", "create_time", Fmt::DateYmdHms, Cond::DateRange, nullptr, false, false, false, false, nullptr},
             {"updateBy", "update_by", Fmt::Str, Cond::Eq, nullptr, false, false, false, true, nullptr},
             {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false, nullptr},
-            {"remark", nullptr, Fmt::Str, Cond::Eq, nullptr, false, false, false, false, nullptr},
+            {"remark", nullptr, Fmt::Str, Cond::Eq, nullptr, false, false, false, false, "remark"},
             {"dictId", "dict_id", Fmt::Long, Cond::None, "字典主键", false, false, false, false},
             {"dictName", "dict_name", Fmt::Str, Cond::Eq, "字典名称", false, false, true, true},
             {"dictType", "dict_type", Fmt::Str, Cond::Eq, "字典类型", false, false, true, true},
@@ -136,7 +136,7 @@ const Spec& specSysNotice() {
             {"status", "status", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
             {"bussId", "buss_id", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
             {"bussName", "buss_name", Fmt::Str, Cond::Eq, nullptr, false, false, true, true},
-            {"tenantId", "tenant_id", Fmt::Long, Cond::Eq, nullptr, false, false, true, false},
+            {"tenantId", "tenant_id", Fmt::Long, Cond::EqNotNull, nullptr, false, false, true, false},
         };
         s.orderBy = "t.create_time desc";
         s.excelSheetName = "通知公告";
@@ -176,10 +176,10 @@ const Spec& specSysRole() {
         s.alias = "r";
         s.extraWhere = " and r.del_flag = '0'";
         s.fields = {
-            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, true, false, nullptr},
+            {"createBy", "create_by", Fmt::Str, Cond::None, nullptr, false, false, true, false, nullptr, nullptr, false},
             {"createTime", "create_time", Fmt::DateYmdHms, Cond::DateRange, nullptr, false, false, false, false, nullptr},
-            {"updateBy", "update_by", Fmt::Str, Cond::Eq, nullptr, false, false, false, true, nullptr},
-            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false, nullptr},
+            {"updateBy", "update_by", Fmt::Str, Cond::Eq, nullptr, false, false, false, true, nullptr, nullptr, false},
+            {"updateTime", "update_time", Fmt::DateYmdHms, Cond::None, nullptr, false, false, false, false, nullptr, nullptr, false},
             {"remark", "remark", Fmt::Str, Cond::Eq, nullptr, false, false, true, true, nullptr},
             {"roleId", "role_id", Fmt::Long, Cond::None, "角色序号", false, false, true, false},
             {"roleName", "role_name", Fmt::Str, Cond::Eq, "角色名称", false, false, true, true},

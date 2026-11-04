@@ -47,6 +47,9 @@ std::string Spec::selectColumns() const {
         // column == nullptr：Java 里是父类的非列字段（如 BaseUuidEntity.deptSubCode），
         // MyBatis 不填、Jackson 输出 null，所以只进 JSON 不进 SELECT
         if (f.column == nullptr) continue;
+        // Java 的 Vo 没投影这一列：它能当 WHERE 条件，但结果集里没有，
+        // 照样 SELECT 出来就会凭空比 Java 多返回数据（实测 car_suspicious 的 track_josn）。
+        if (!f.inVo) continue;
         if (!out.empty()) out += ", ";
         out += prefix + f.column;
     }
@@ -127,7 +130,9 @@ Json rowToJson(const Spec& spec, const cm::db::Row& row) {
         }
         auto v = row.get(f.column);
         if (!v) {
-            j[f.json] = nullptr;
+            // “列不在结果集里”（Vo 没投影）与“列值为 NULL”是两回事：前者 MyBatis 根本不调
+            // setter，属性保持 Java 字段的声明初值；后者会被 setter 显式写成 null。
+            j[f.json] = (!row.has(f.column) && f.dflt) ? Json::parse(f.dflt) : Json(nullptr);
             continue;
         }
         switch (f.fmt) {
@@ -175,10 +180,12 @@ std::string buildWhere(const Spec& spec, const Json& query) {
     std::string where = "WHERE 1=1" + spec.extraWhere;
     for (const auto& f : spec.fields) {
         if (f.cond == Cond::None) continue;
-        // 查询辅助属性（如 exceptIds）本身不是列，条件左值来自 XML 里的另一个列
-        const std::string col = f.column ? qualified(spec, f.column)
-                                         : (f.condColumn ? qualified(spec, f.condColumn)
-                                                        : std::string());
+        // 条件左值以 XML 为准：RuoYi 里“属性自身列”和“条件实际过滤的列”并不总是一致
+        // （car_suspicious 的 sectionCode/sectionName 查的是 track_names，
+        //  car_except_record 的 exceptIds 是 find_in_set(t.id, …)）。
+        // 查询辅助属性（applyTime1 / carNoQuery）本身不是列，左值只能来自 condColumn。
+        const std::string col = f.condColumn ? qualified(spec, f.condColumn)
+                              : (f.column ? qualified(spec, f.column) : std::string());
         if (col.empty()) continue;
         if (f.cond == Cond::DateRange) {
             const Json* params = findField(query, "params");
@@ -198,6 +205,20 @@ std::string buildWhere(const Spec& spec, const Json& query) {
         switch (f.cond) {
             case Cond::Like:
                 where += " and " + col + " like concat('%', " + Db::lit(jsonAsString(*v)) + ", '%')";
+                break;
+            // XML 里写的是 col >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')。
+            // MySQL 对 DATETIME 与字符串常量做的隐式转换与 STR_TO_DATE 同格式，直接传字面量等价。
+            case Cond::Gte:
+                where += " and " + col + " >= " + Db::lit(jsonAsString(*v));
+                break;
+            case Cond::Lte:
+                where += " and " + col + " <= " + Db::lit(jsonAsString(*v));
+                break;
+            case Cond::Ne:
+                where += " and " + col + " != " + Db::lit(jsonAsString(*v));
+                break;
+            case Cond::NotLike:
+                where += " and " + col + " not like concat('%', " + Db::lit(jsonAsString(*v)) + ", '%')";
                 break;
             case Cond::FindInSet:
                 where += " and find_in_set(" + Db::lit(jsonAsString(*v)) + ", " + col + ")";
