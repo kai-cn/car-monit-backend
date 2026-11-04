@@ -9,7 +9,6 @@
 package manager
 
 import (
-	"context"
 	"math"
 	"strconv"
 	"strings"
@@ -30,9 +29,10 @@ const (
 )
 
 var warningInfoSpec = &tableSpec{
-	table:     carWarningInfoTable,
-	selectSQL: carWarningInfoSelectColumns,
-	fromSQL:   "car_warning_info t left join car_info c on t.car_id = c.id",
+	table:        carWarningInfoTable,
+	selectSQL:    carWarningInfoSelectColumns,
+	fromSQL:      "car_warning_info t left join car_info c on t.car_id = c.id",
+	selectSuffix: warningJoinColumns,
 	detailSuffix: ",t.track_josn, c.escaped_type AS escaped_type, c.escaped_amount AS escaped_amount," +
 		"c.plate_color AS plate_color",
 	orderBy:   "t.gantry_time desc,t.id",
@@ -144,13 +144,19 @@ func isExitsStr(source, para any) bool {
 	return false
 }
 
+// warningJoinColumns 是 selectCarWarningInfoList 相对本表多带的三个 car_info 联表列。
+//
+// JAVA 对照: CarWarningInfoMapper.xml:87（c.escaped_type / c.escaped_amount / c.plate_color）
+const warningJoinColumns = ", c.escaped_type AS escaped_type, c.escaped_amount AS escaped_amount," +
+	" c.plate_color AS plate_color"
+
 // warningInfoList 对应 GET /list（权限点被 Java 注释掉，仅需登录）。
 func (h *handler) warningInfoList(c *gin.Context) {
 	clause, args := warningClause(c)
 	dest := newSliceOf(&carWarningInfo{})
 	page := web.PageAlways(c)
 	total, err := h.list(c.Request.Context(), listQuery{
-		SelectSQL: warningInfoSpec.selectSQL,
+		SelectSQL: warningInfoSpec.selectSQL + warningInfoSpec.selectSuffix,
 		FromSQL:   warningInfoSpec.from(),
 		Where:     &whereClause{clause: clause, args: args},
 		OrderBy:   orderFor(warningInfoSpec.orderBy, page),
@@ -161,7 +167,9 @@ func (h *handler) warningInfoList(c *gin.Context) {
 		return
 	}
 	rows := *(dest.(*[]*carWarningInfo))
-	h.decorateWarningList(c, rows)
+	// DIFF: 列表不做字典/时间串翻译 —— Java 的 list 直接把实体交给 Jackson，
+	// carType/carVehicle/plateColor/escapedType 都是原始码，xxxStr 恒为 null。
+	// 那套翻译只出现在导出控制器里（见 warningInfoExport）。
 	web.JSON(c, web.Table(rows, total))
 }
 
@@ -210,69 +218,35 @@ func (h *handler) decorateWarningList(c *gin.Context, rows []*carWarningInfo) {
 }
 
 // warningInfoExport 对应 EasyPOI 模板 carWarningInfo.xlsx（附件流）。
+//
+// JAVA 对照: CarWarningInfoController.export —— 导出前逐行翻译字典与时间串，
+// 模板打印的是翻译后的值（列表接口不翻译，见 warningInfoList）。
 func (h *handler) warningInfoExport(c *gin.Context) {
 	clause, args := warningClause(c)
-	dest := newSliceOf(&carWarningInfo{})
-	if _, err := h.list(context.Background(), listQuery{
-		SelectSQL: warningInfoSpec.selectSQL,
-		FromSQL:   warningInfoSpec.from(),
-		Where:     &whereClause{clause: clause, args: args},
-		OrderBy:   warningInfoSpec.orderBy,
-	}, dest); err != nil {
-		web.JSON(c, web.ErrorResult(err))
-		return
-	}
-	h.decorateWarningList(c, *(dest.(*[]*carWarningInfo)))
 	cols := []exportCol{
 		{Title: "车牌颜色", Field: "plateColor"},
 		{Title: "车牌号", Field: "carNo"},
 		{Title: "车型", Field: "carType"},
 		{Title: "逃费类型", Field: "escapedType"},
-		{Title: "逃费金额（元）", Field: "escapedAmount"},
-		{Title: "最新经纬度", Field: "nextPassLongitude"},
+		{Title: "逃费金额（元）", Field: "escapedAmount", Money: true},
+		{Title: "最新经过位置", Field: "gantrytStation"},
 		{Title: "经过时间", Field: "gantryTimeStr"},
 		{Title: "入口站", Field: "inStation"},
 		{Title: "入口时间", Field: "inTimeStr"},
-		{Title: "预计下一次通行时间", Field: "nextPassTimeStr"},
-		{Title: "预计下一次通行地址", Field: "nextPassAddress"},
+		{Title: "预计下一个通行时间", Field: "nextPassTimeStr"},
+		{Title: "预计下一个通行地址", Field: "nextPassAddress"},
+		// t.remark：car_warning_info 没有 remark 列、实体里也没有该属性 ⇒ 模板只出表头
+		{Title: "备注"},
 	}
-	rows := make([][]any, 0, sliceLenOf(dest))
-	for _, row := range *(dest.(*[]*carWarningInfo)) {
-		values := make([]any, len(cols))
-		for i, col := range cols {
-			switch col.Field {
-			case "plateColor":
-				values[i] = row.PlateColor
-			case "carNo":
-				values[i] = row.CarNo
-			case "carType":
-				values[i] = row.CarType
-			case "escapedType":
-				values[i] = row.EscapedType
-			case "escapedAmount":
-				values[i] = plainValue(row.EscapedAmount)
-			case "nextPassLongitude":
-				values[i] = row.NextPassLongitude
-			case "gantryTimeStr":
-				values[i] = row.GantryTimeStr
-			case "inStation":
-				values[i] = row.InStation
-			case "inTimeStr":
-				values[i] = row.InTimeStr
-			case "nextPassTimeStr":
-				values[i] = row.NextPassTimeStr
-			case "nextPassAddress":
-				values[i] = row.NextPassAddress
-			}
-		}
-		rows = append(rows, values)
-	}
-	data, err := buildWorkbook("预警车辆", cols, rows)
+	rows, err := h.exportQuery(c.Request.Context(), warningInfoSpec, clause, args, web.PageDomain{},
+		cols, nil, func(dest any) {
+			h.decorateWarningList(c, *(dest.(*[]*carWarningInfo)))
+		})
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
-	downloadAttachment(c, "carWarningInfo.xlsx", data)
+	h.writeExport(c, "预警车辆", cols, rows, "carWarningInfo.xlsx", false)
 }
 
 // warningInfoGet 对应 GET /{id} —— 附带 trailFwqList。

@@ -6,16 +6,16 @@
 // 这组端点在 Java 里不是 AjaxResult 信封：成功时直接返回 SDK 对象的 JSON
 // （数组/对象/空体），异常才落到 GlobalExceptionHandler 的 {msg, code:500}。
 //
-// DIFF: Java 用 AWS SDK v1，Go 用 minio-go（同一 S3 协议）。
-// DIFF: expires 参数在 Java 里是「天」（Calendar.DAY_OF_MONTH 相加），超过 7 天报错；
-// Go 按 time.Duration(expires)*24h 传，minio 同样拒绝超过 7 天，错误文本不同。
+// DIFF: Java 用 AWS SDK v1（离线签名），Go 其余操作用 minio-go（同一 S3 协议）。
+// DIFF: expires 参数在 Java 里是「天」（Calendar.DAY_OF_MONTH 相加）；AWS SDK v1 的
+// 预签名不联网也不限 7 天，所以这里同样离线算签名、不做长度校验（minio-go 会先请求
+// ?location= 取区域，端点不可达时整条链路 500）。
 // DIFF: 上传成功后的返回值 Java 是 S3Object（含 objectMetadata 大对象），本环境
 // MinIO(oss.endpoint) 不可达，无法核对成功形态，这里返回与列表一致的摘要字段。
 package systemaux
 
 import (
 	"net/http"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -191,15 +191,14 @@ func (h *ossEndpointHandler) GetObjectURL(c *gin.Context) {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
-	// Java 的 generatePresignedUrl 不带额外查询参数
-	link, err := h.store.client.PresignedGetObject(c.Request.Context(), bucket, object,
-		time.Duration(days)*24*time.Hour, url.Values{})
+	// Java 的 generatePresignedUrl 不带额外查询参数，且完全不联网（AWS SDK v1 查询串签名）。
+	link, err := h.store.presign(bucket, object, days)
 	if err != nil {
 		ossFail(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, map[string]any{
-		"bucket": bucket, "object": object, "url": link.String(), "expires": days,
+		"bucket": bucket, "object": object, "url": link, "expires": days,
 	})
 }
 

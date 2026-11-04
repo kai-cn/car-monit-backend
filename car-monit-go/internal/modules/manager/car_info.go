@@ -196,13 +196,15 @@ func (h *handler) carInfoDelete(c *gin.Context) {
 func (h *handler) carInfoExport(c *gin.Context) {
 	clause, args := carInfoClause(c)
 	cols := []exportCol{
-		{Title: "车牌颜色", Field: "plateColor", Dict: "plate_color"},
+		{Title: "车牌颜色", Field: "plateColor", Dict: "plate_color", BlankOnMiss: true},
 		{Title: "车牌号", Field: "carNo"},
-		{Title: "车型", Field: "carType", Dict: "car_type"},
-		{Title: "车种", Field: "carVehicle", Dict: "car_vehicle"},
+		{Title: "车型", Field: "carType", Dict: "car_type", BlankOnMiss: true},
+		{Title: "车种", Field: "carVehicle", Dict: "car_vehicle", BlankOnMiss: true},
 		{Title: "轴数", Field: "carNum"},
-		{Title: "逃费类型", Field: "escapedType", Dict: "escaped_type"},
-		{Title: "逃费金额（元）", Field: "escapedAmount"},
+		// 逃费类型是多值串，只由下面的 transform 映射（这里挂 Dict 会让 transform
+		// 拿到的是标签而不是原码，二次映射必然落空）。
+		{Title: "逃费类型", Field: "escapedType"},
+		{Title: "逃费金额（元）", Field: "escapedAmount", Money: true},
 		{Title: "备注", Field: "remark"},
 	}
 	// 逃费类型是多值逗号串，需要逐项映射后再拼回。

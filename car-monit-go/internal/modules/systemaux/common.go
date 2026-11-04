@@ -489,22 +489,3 @@ func uploadTo(baseDir, profile string, fh *multipart.FileHeader, allowed []strin
 func javaArrayString(items []string) string {
 	return "[" + strings.Join(items, ", ") + "]"
 }
-
-// anonymousOnly 复刻 Spring Security 的 .anonymous()：
-// 带 Authorization 头的已认证请求会被拒绝（403 + Spring 默认错误页 JSON）。
-//
-// JAVA 对照: SecurityConfig.antMatchers("/system/file/view/**", "/system/notice/view/**").anonymous()
-func anonymousOnly() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if strings.TrimSpace(c.GetHeader("Authorization")) != "" {
-			c.AbortWithStatusJSON(403, gin.H{
-				"timestamp": time.Now().Format("2006-01-02T15:04:05.000-07:00"),
-				"status":    403,
-				"error":     "Forbidden",
-				"path":      c.Request.URL.Path,
-			})
-			return
-		}
-		c.Next()
-	}
-}
