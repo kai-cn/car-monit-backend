@@ -5,6 +5,7 @@
 #include "cm/framework/web/Router.hpp"
 #include "cm/web/controller/Controllers.hpp"
 #include "cm/web/controller/system/SysAuthControllers.hpp"
+#include "cm/web/controller/system/SysFileUploadController.hpp"
 #include "cm/system/service/SysIndexMenuService.hpp"
 #include "cm/framework/web/crud/CrudSpec.hpp"
 #include "cm/web/controller/base/CdcController.hpp"
@@ -62,6 +63,7 @@ void registerControllers(Router& r) {
     registerSysNoticeController(r);
     registerSysUpgradeInfoController(r);
     registerSysFileController(r);
+    registerSysFileUploadController(r);
     // tool
     // system 权限域：树形构建 / 数据范围 / 密码策略 / UUID 主键等均非同构 CRUD，逐个手写
     registerSysUserController(r);
