@@ -4,6 +4,7 @@
 目标不是“重写一个类似的服务”，而是让**同一个前端、同一套接口调用、同一个数据库**无感切换。
 
 * 行为/接口差异清单：`COMPATIBILITY.md`
+* 最终差异报告（含未迁移端点按能力对账）：`FINAL_DIFFERENCES.md`
 * 分层迁移说明（含 Java↔C++ 代码对照）：`MIGRATION_GUIDE.md`
 * 全部 497 个端点及其迁移状态：`ENDPOINTS_INVENTORY.md`
 * 一页纸速查（注解 → C++ 位置）：`QUICK_REFERENCE.md`
@@ -332,6 +333,8 @@ router.get("/system/user/list",
 | `README_CPP.md` | 本文：构建、配置、启动、排错 |
 | `MIGRATION_GUIDE.md` | 分层（运行时/路由/序列化/数据访问/横切）对照，10 类高风险差异 |
 | `COMPATIBILITY.md` | 实测基线、⚠️ 差异与补偿、❌ 未迁移清单、安全语义 |
+| `FINAL_DIFFERENCES.md` | **最终差异报告**：逐条 ✅/⚠️/❌ 汇总、35 条未迁移按"缺什么能力"对账、验证矩阵与复验步骤 |
+| `PORTING_REPORT.md` | 工程过程记录：每一轮改了什么、怎么发现的（含 §4.1–4.6 的实机发现） |
 | `ENDPOINTS_INVENTORY.md` | 497 个端点的路径/方法/权限/迁移状态 |
 | `QUICK_REFERENCE.md` | 一页纸：Spring 注解/类 → C++ 位置 |
 | `PORTING_GUIDE.md` | 内部约定（命名、SQL 转义、分页、异常） |
