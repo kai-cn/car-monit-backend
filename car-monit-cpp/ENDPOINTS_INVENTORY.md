@@ -2,9 +2,9 @@
 
 口径：Java 侧按 @*Mapping 注解逐条统计，覆盖 ruoyi-admin / ruoyi-quartz / ruoyi-generator。
 
-Java 端点总数：**497**；C++ 已注册并匹配：**464**；未匹配：**33**。
+Java 端点总数：**497**；C++ 已注册并匹配：**465**；未匹配：**32**。
 
-C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**535**。
+C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**536**。
 
 | 控制器 | HTTP | 路径 | Java 方法 | @PreAuthorize | C++ 状态 |
 |---|---|---|---|---|---|
@@ -287,7 +287,7 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | CarSuspiciousController | GET | `/manager/suspicious/exportHistory` | exportHistory |  | ✅ |
 | CarTrackInfoController | GET | `/manager/cartrackinfo/list` | list |  | ✅ |
 | CarTrackInfoController | GET | `/manager/cartrackinfo/listByCarId` | listByCarId |  | ❌ |
-| CarTrackInfoController | GET | `/manager/cartrackinfo/listByCarByTime` | listByCarByTime |  | ❌ |
+| CarTrackInfoController | GET | `/manager/cartrackinfo/listByCarByTime` | listByCarByTime |  | ✅ |
 | CarTrackInfoController | PUT | `/manager/cartrackinfo/changeTrailInfo` | changeTrailInfo |  | ❌ |
 | CarTrackInfoController | GET | `/manager/cartrackinfo/carSnapShot` | carSnapShot |  | ❌ |
 | CarTrackInfoController | GET | `/manager/cartrackinfo/export` | export |  | ✅ |
