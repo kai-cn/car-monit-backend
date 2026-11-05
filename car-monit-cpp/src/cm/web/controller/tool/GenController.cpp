@@ -741,6 +741,8 @@ void registerGenController(Router& r) {
                                       ? body["tableId"].get<long long>()
                                       : std::atoll(cm::jstr(body, "tableId").c_str());
         const long long affected = updateGenTableRow(tableId, body);
+        // Java 的 `if (row > 0)`：MyBatis 拿到的是 MySQL 的 changed-rows，
+        // 同一秒内提交完全相同的值会返回 0 ⇒ 整批列更新被静默跳过（照抄，不"修好"）
         if (affected > 0 && body.contains("columns") && body["columns"].is_array()) {
             for (const auto& c : body["columns"]) updateGenTableRowColumn(c);
         }

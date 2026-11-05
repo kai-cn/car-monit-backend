@@ -9,6 +9,7 @@
 #include "cm/system/service/SysIndexMenuService.hpp"
 #include "cm/framework/web/crud/CrudSpec.hpp"
 #include "cm/web/controller/base/CdcController.hpp"
+#include "cm/web/controller/base/GeometrySyncController.hpp"
 #include "cm/web/controller/common/CommonController.hpp"
 #include "cm/web/controller/common/DownTemplateController.hpp"
 #include "cm/web/controller/flow/FlowExtraControllers.hpp"
@@ -64,6 +65,7 @@ void registerControllers(Router& r) {
     registerSysUpgradeInfoController(r);
     registerSysFileController(r);
     registerSysFileUploadController(r);
+    registerGeometrySyncController(r);
     // tool
     // system 权限域：树形构建 / 数据范围 / 密码策略 / UUID 主键等均非同构 CRUD，逐个手写
     registerSysUserController(r);

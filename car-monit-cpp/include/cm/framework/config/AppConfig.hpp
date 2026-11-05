@@ -105,9 +105,9 @@ public:
 
     // ---- 外部服务 ----
     std::string vehicleMonitorBaseUrl{"http://127.0.0.1:9901"};
-    std::string hengdaUrl;
-    std::string hengdaAppid;
-    std::string hengdaSecret;
+    std::string hengdaUrl{"http://36.200.20.14:7890/8809/geoserver-pg/rest"};   // forest.variables.hendaUrl
+    std::string hengdaAppid{"YHZS"};
+    std::string hengdaSecret{"b48381c4b98311ea90b100155d14fa3b"};
     std::string txServiceUrl{"https://apis.map.qq.com"};
     std::string roadPathUrl{"http://36.200.30.117:8080"};
     bool isLocalhost{true};

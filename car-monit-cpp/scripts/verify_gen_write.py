@@ -19,6 +19,7 @@ import subprocess
 import sys
 import urllib.error
 import urllib.parse
+import time
 import urllib.request
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -237,9 +238,14 @@ try:
 
     one_col = mysql("select column_id, column_name from gen_table_column where table_id=%s"
                     " and column_name <> 'id' limit 1" % tid2)[0]
+    # 这个 body 必须真的改掉 gen_table 一行：Java 的 `if (row > 0)` 用的是 MySQL 的
+    # **changed-rows** 语义，同一秒内提交同样的值会返回 0 ⇒ 列的更新被整批静默跳过。
+    # 这里带一个每次不同的 tableComment，保证 row>0。
     js("/tool/gen", method=PUT,
-       body=json.dumps({"tableId": int(tid2), "columns": [
-           {"columnId": int(one_col[0]), "columnName": one_col[1], "javaField": "x"}]}),
+       body=json.dumps({"tableId": int(tid2), "tableComment": "wipe-%d" % int(time.time() * 1000),
+                        "columns": [
+                            {"columnId": int(one_col[0]), "columnName": one_col[1],
+                             "javaField": "x"}]}),
        ctype=JSON_CT)
     wiped = mysql("select column_comment, java_type, is_edit, dict_type, html_type"
                   " from gen_table_column where column_id=%s" % one_col[0])[0]

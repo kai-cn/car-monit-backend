@@ -2,9 +2,9 @@
 
 口径：Java 侧按 @*Mapping 注解逐条统计，覆盖 ruoyi-admin / ruoyi-quartz / ruoyi-generator。
 
-Java 端点总数：**497**；C++ 已注册并匹配：**475**；未匹配：**22**。
+Java 端点总数：**497**；C++ 已注册并匹配：**482**；未匹配：**15**。
 
-C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**546**。
+C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**553**。
 
 | 控制器 | HTTP | 路径 | Java 方法 | @PreAuthorize | C++ 状态 |
 |---|---|---|---|---|---|
@@ -47,9 +47,9 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | DwdLcztSfzjcxxController | POST | `/base/sfzjcxx` | add |  | ✅ |
 | DwdLcztSfzjcxxController | PUT | `/base/sfzjcxx` | edit |  | ✅ |
 | DwdLcztSfzjcxxController | DELETE | `/base/sfzjcxx/{*}` | remove |  | ✅ |
-| GeometryController | GET | `/base/geometry/getHenDa` | getHenDa |  | ❌ |
-| GeometryController | GET | `/base/geometry/syncAllGeometry` | syncAllGeometry |  | ❌ |
-| GeometryController | GET | `/base/geometry/syncAllGeometry1` | syncAllGeometry1 |  | ❌ |
+| GeometryController | GET | `/base/geometry/getHenDa` | getHenDa |  | ✅ |
+| GeometryController | GET | `/base/geometry/syncAllGeometry` | syncAllGeometry |  | ✅ |
+| GeometryController | GET | `/base/geometry/syncAllGeometry1` | syncAllGeometry1 |  | ✅ |
 | GeometryController | GET | `/base/geometry/list` | list |  | ✅ |
 | GeometryController | GET | `/base/geometry/export` | export |  | ✅ |
 | GeometryController | GET | `/base/geometry/{*}` | getInfo |  | ✅ |
@@ -70,7 +70,7 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | OdsRtSzdnSnapshotFlowAddcodeController | GET | `/base/snapshotflow/list` | list |  | ✅ |
 | OdsRtSzdnSnapshotFlowAddcodeController | GET | `/base/snapshotflow/export` | export |  | ✅ |
 | OdsRtSzdnSnapshotFlowAddcodeController | GET | `/base/snapshotflow/{*}` | getInfo |  | ✅ |
-| OdsRtSzdnSnapshotFlowAddcodeController | GET | `/base/snapshotflow/earliest-time` | getEarliestSnapshottime |  | ❌ |
+| OdsRtSzdnSnapshotFlowAddcodeController | GET | `/base/snapshotflow/earliest-time` | getEarliestSnapshottime |  | ✅ |
 | OdsRtSzdnSnapshotFlowProvcaptureAddcodeController | GET | `/base/provcapture/list` | list |  | ✅ |
 | OdsRtSzdnSnapshotFlowProvcaptureAddcodeController | GET | `/base/provcapture/{*}` | getInfo |  | ✅ |
 | OdsRtSzdnSnapshotFlowStationcaptureAddcodeController | GET | `/base/stationcapture/list` | list |  | ✅ |
@@ -497,11 +497,11 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | GenController | GET | `/tool/gen/column/{*}` | columnList |  | ✅ |
 | GenController | POST | `/tool/gen/getColumnList` | getColumnList |  | ✅ |
 | GenController | POST | `/tool/gen/getAllColumnList` | getAllColumnList |  | ✅ |
-| GenController | POST | `/tool/gen/importTable` | importTableSave |  | ❌ |
-| GenController | PUT | `/tool/gen` | editSave |  | ❌ |
+| GenController | POST | `/tool/gen/importTable` | importTableSave |  | ✅ |
+| GenController | PUT | `/tool/gen` | editSave |  | ✅ |
 | GenController | DELETE | `/tool/gen/{*}` | remove |  | ✅ |
 | GenController | GET | `/tool/gen/preview/{*}` | preview |  | ❌ |
 | GenController | GET | `/tool/gen/download/{*}` | download |  | ❌ |
 | GenController | GET | `/tool/gen/genCode/{*}` | genCode |  | ❌ |
-| GenController | GET | `/tool/gen/synchDb/{*}` | synchDb |  | ❌ |
+| GenController | GET | `/tool/gen/synchDb/{*}` | synchDb |  | ✅ |
 | GenController | GET | `/tool/gen/batchGenCode` | batchGenCode |  | ❌ |
