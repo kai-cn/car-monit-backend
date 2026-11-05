@@ -217,7 +217,7 @@ fn push_role_filters(builder: &mut QueryBuilder<'_, MySql>, params: &HashMap<Str
 }
 
 /// Java: selectRoleVo + 动态条件 + @DataScope（不分页）。
-async fn select_roles(
+pub(crate) async fn select_roles(
     state: &AppState,
     user: &LoginUser,
     params: &HashMap<String, String>,

@@ -195,6 +195,9 @@ SHAPE_ONLY = (
 # 同一时间窗口内双端逐字节一致，跨窗口取到的路线点数会差几个。只比结构不比这个标量。
 VALUE_FREE = {
     '/manager/suspicious/{id}': re.compile(r'\.paths$'),
+    # Redis 的 commandStats / INFO / dbSize 是整个实例与所在 db 的实时值：
+    # 两端各连自己的 db（db0 / db15），只有结构可比。
+    '/monitor/cache': re.compile(r'^data\.'),
 }
 
 SPECIAL_Q = {
@@ -235,7 +238,8 @@ def is_slow(pattern):
     return any(k in pattern for k in SLOW)
 
 
-DYN_KEYS = re.compile(r'(loginDate|loginIp|createTime|updateTime|token|uuid|img|pwdUpdateDate|online|lastLogin|nextValidTime)', re.I)
+DYN_KEYS = re.compile(r'(loginDate|loginIp|createTime|updateTime|token|uuid|img|pwdUpdateDate|online|lastLogin|nextValidTime'
+              r'|sessionId|loginTime|expireTime|total)', re.I)
 
 
 def compare_json(a, b, path='', issues=None, dyn=False, depth=0, cap=5, shape=False, free=None):
@@ -296,7 +300,8 @@ def compare_json(a, b, path='', issues=None, dyn=False, depth=0, cap=5, shape=Fa
         return issues
     if isinstance(a, list):
         if len(a) != len(b):
-            issues.append(('LEN-DIFF', path, len(a), len(b)))
+            # 动态端点（DYNAMIC 前缀）的行数本来就随两端各自的会话/日志增长，只记 WARN。
+            issues.append(('LEN-WARN' if dyn else 'LEN-DIFF', path, len(a), len(b)))
         for i in range(min(len(a), len(b), cap)):
             compare_json(a[i], b[i], '%s[%d]' % (path, i), issues, dyn, depth + 1, cap, shape, free)
         return issues

@@ -10,7 +10,7 @@ use axum::extract::{Multipart, Path, RawQuery, State};
 use axum::{Extension, Json, Router};
 use serde_json::{json, Map, Value};
 use sqlx::mysql::MySql;
-use sqlx::{MySqlPool, QueryBuilder};
+use sqlx::{MySqlPool, QueryBuilder, Row};
 
 use crate::api::meta::{self, BusinessType, LogSpec};
 use crate::api::support;
@@ -646,20 +646,102 @@ async fn list_by_dept(
     Ok(TableDataInfo::new(total, rows))
 }
 
-async fn current_user(Extension(user): Extension<LoginUser>) -> Result<AjaxResult, AppError> {
-    // Java: SecurityUtils.getLoginUser().getUser() —— 登录态里的 user 对象；
-    // dept/roles 未加载时为 null，password 有 @JsonIgnore 不输出。
-    let mut value = serde_json::to_value(user.user.for_http())?;
-    if let Some(object) = value.as_object_mut() {
-        object.remove("password");
-        object.remove("params");
-        let admin = user.user.is_admin();
-        object.insert("admin".to_string(), Value::Bool(admin));
-        object.insert("dept".to_string(), Value::Null);
-        object.insert("roles".to_string(), Value::Null);
+/// Java: `SysUserServiceImpl.selectCurrentUser()` —— **新建**一个 SysUser，只填
+/// userId / deptId(=`SecurityUtils.getEpsId()`) / headOffice / procurementManager，
+/// 其余字段全 null（`pjFlag` 是原始 int → 0，`admin` 由 userId 推）。
+async fn current_user(
+    State(state): State<AppState>,
+    Extension(user): Extension<LoginUser>,
+) -> Result<AjaxResult, AppError> {
+    let user_id = user.user.user_id;
+    // Java: getEpsId() 直接取登录用户的 deptId（principal 异常时为 -1）。
+    let dept_id = user.user.dept_id.unwrap_or(-1);
+    let head_office = head_office_dept_ids(&state, &user)
+        .await?
+        .contains(&dept_id);
+    let procurement_manager = procurement_manager(&state, &user).await?;
+
+    let mut object = Map::new();
+    for key in USER_KEYS {
+        // Java: BaseEntity.getParams() 是空 map，`@JsonInclude(NON_EMPTY)` 直接不写这个键；
+        // 列表/详情走 reorder_keys 时源数据里没有 params，这里也要跳过。
+        if *key == "params" {
+            continue;
+        }
+        object.insert((*key).to_string(), Value::Null);
     }
-    let value = support::reorder_keys(value, USER_KEYS);
-    Ok(AjaxResult::success_data(value))
+    object.insert("userId".to_string(), user_id.map(Value::from).unwrap_or(Value::Null));
+    object.insert("deptId".to_string(), json!(dept_id));
+    object.insert("headOffice".to_string(), json!(head_office));
+    object.insert("procurementManager".to_string(), json!(procurement_manager));
+    object.insert("pjFlag".to_string(), json!(0));
+    object.insert("admin".to_string(), json!(user_id == Some(1)));
+    Ok(AjaxResult::success_data(Value::Object(object)))
+}
+
+/// Java: `SysDeptServiceImpl.selectHeadOffice()` —— 先取 treeLeavel 为 1/2 的部门 id 集合，
+/// 再留下 tenantId 落在该集合里的部门，最后 **`filterSet.addAll(deptSet)`** 一起返回
+/// （即 tree 层级 1/2 的部门本身就是总公司，租户命中的那些也算）。
+async fn head_office_dept_ids(
+    state: &AppState,
+    user: &LoginUser,
+) -> Result<std::collections::HashSet<i64>, AppError> {
+    let depts = super::sys_dept::select_dept_list(state, user, &HashMap::new()).await?;
+    let mut level_ids: std::collections::HashSet<i64> = std::collections::HashSet::new();
+    for dept in &depts {
+        // Java: `dept.getTreeLeavel().equals(1)` —— treeLeavel 为 null 时是 NPE（msg 为 null 的 500）。
+        let level = dept
+            .get("treeLeavel")
+            .and_then(Value::as_i64)
+            .ok_or_else(|| AppError::Internal(None))?;
+        if level == 1 || level == 2 {
+            if let Some(dept_id) = dept.get("deptId").and_then(Value::as_i64) {
+                level_ids.insert(dept_id);
+            }
+        }
+    }
+    let mut out = level_ids.clone();
+    for dept in &depts {
+        let tenant_id = dept.get("tenantId").and_then(Value::as_i64);
+        if tenant_id.map(|value| level_ids.contains(&value)).unwrap_or(false) {
+            if let Some(dept_id) = dept.get("deptId").and_then(Value::as_i64) {
+                out.insert(dept_id);
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// Java: 先按 `roleKey=cgjl_manager` 查角色列表（带数据权限），非空时再看
+/// `selectRolesByUserName(userName)` 的结果里有没有它的 roleId。
+async fn procurement_manager(state: &AppState, user: &LoginUser) -> Result<bool, AppError> {
+    let mut params = HashMap::new();
+    // Java: Constants.PROCUREMENT_MANAGER_ROLE_KEY
+    params.insert("roleKey".to_string(), "cgjl_manager".to_string());
+    let roles = super::sys_role::select_roles(state, user, &params).await?;
+    let Some(role) = roles.first() else {
+        return Ok(false);
+    };
+    let Some(target_role_id) = role.get("roleId").and_then(Value::as_i64) else {
+        return Ok(false);
+    };
+    let user_name = match user.user.user_name.as_deref() {
+        Some(text) if !text.is_empty() => text.to_string(),
+        _ => return Ok(false),
+    };
+    let rows = sqlx::query(
+        "select distinct r.role_id from sys_role r \
+         left join sys_user_role ur on ur.role_id = r.role_id \
+         left join sys_user u on u.user_id = ur.user_id \
+         where r.del_flag = '0' and u.user_name = ?",
+    )
+    .bind(&user_name)
+    .fetch_all(&state.db)
+    .await?;
+    Ok(rows
+        .iter()
+        .filter_map(|row| row.try_get::<i64, _>("role_id").ok())
+        .any(|role_id| role_id == target_role_id))
 }
 
 async fn get_role_user(
