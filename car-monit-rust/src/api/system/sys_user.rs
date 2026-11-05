@@ -26,7 +26,17 @@ const USER_COLUMNS: &str = "u.user_id, u.user_no, u.dept_id, u.nick_name, u.user
      u.avatar, u.phonenumber, u.password, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, \
      u.create_by, u.create_time, u.remark, u.user_type, u.cert_entity_id, u.cert_id, u.buss_id, \
      u.buss_name, u.eps_name, ifnull(d.tenant_id, -1) tenant_id, d2.dept_name tenant_name, \
-     d.dept_name, d.leader, d.sub_code, u.image_id";
+     d.dept_name, d.leader, u.image_id";
+
+/// Java: `selectUserVo`（详情用）—— 比列表多 `d.sub_code`、`d.parent_id`、`d.order_num`、
+/// `d.status as dept_status`，这些列经 `deptResult` 落到 `dept` 里，`sub_code` 落到顶层 `subCode`。
+const USER_VO_COLUMNS: &str =
+    "u.user_id, u.user_no, u.dept_id, u.user_name, u.nick_name, u.email, \
+     u.avatar, u.phonenumber, u.password, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, \
+     u.create_by, u.create_time, u.remark, u.user_type, u.cert_entity_id, u.cert_id, \
+     ifnull(u.buss_id, u.user_name) buss_id, u.buss_name, u.eps_name, \
+     ifnull(d.tenant_id, -1) tenant_id, d.sub_code, d.dept_id, d.parent_id, d.dept_name, \
+     d.order_num, d.leader, d.status as dept_status, u.image_id";
 
 const USER_FROM: &str = "from sys_user u      left join sys_dept d on u.dept_id = d.dept_id      left join sys_dept d2 on d.tenant_id = d2.dept_id where u.del_flag = '0'";
 
@@ -201,7 +211,12 @@ pub fn routes() -> Router<AppState> {
 }
 
 fn push_user_filters(builder: &mut QueryBuilder<'_, MySql>, params: &HashMap<String, String>) {
-    let text = |key: &str| params.get(key).map(|value| value.trim()).filter(|value| !value.is_empty());
+    let text = |key: &str| {
+        params
+            .get(key)
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty())
+    };
     if let Some(value) = params.get("userId").filter(|value| !value.is_empty()) {
         builder.push(" and u.user_id = ");
         builder.push_bind(value.clone());
@@ -234,7 +249,10 @@ fn push_user_filters(builder: &mut QueryBuilder<'_, MySql>, params: &HashMap<Str
         builder.push_bind(value.to_string());
         builder.push(", '%y%m%d')");
     }
-    if let Some(value) = params.get("deptId").filter(|value| !value.is_empty() && *value != "0") {
+    if let Some(value) = params
+        .get("deptId")
+        .filter(|value| !value.is_empty() && *value != "0")
+    {
         builder.push(" and (u.dept_id = ");
         builder.push_bind(value.clone());
         builder.push(" or u.dept_id in (select t.dept_id from sys_dept t where find_in_set(");
@@ -304,10 +322,12 @@ async fn query_users(
     params: &HashMap<String, String>,
     page: Option<&crate::common::page::PageDomain>,
 ) -> Result<(i64, Vec<Value>), AppError> {
-    let mut count_builder =
-        QueryBuilder::<MySql>::new(format!("select count(0) {USER_FROM}"));
+    let mut count_builder = QueryBuilder::<MySql>::new(format!("select count(0) {USER_FROM}"));
     push_user_filters(&mut count_builder, params);
-    let total: i64 = count_builder.build_query_scalar().fetch_one(&state.db).await?;
+    let total: i64 = count_builder
+        .build_query_scalar()
+        .fetch_one(&state.db)
+        .await?;
 
     let mut builder = QueryBuilder::<MySql>::new(format!("select {USER_COLUMNS} {USER_FROM}"));
     push_user_filters(&mut builder, params);
@@ -402,22 +422,54 @@ fn shape_post_rows(mut rows: Vec<Value>) -> Vec<Value> {
 fn shape_user_rows(rows: &mut [Value]) {
     for row in rows {
         {
-            let Some(object) = row.as_object_mut() else { continue };
+            let Some(object) = row.as_object_mut() else {
+                continue;
+            };
             object.remove("password");
             let dept_id = object.get("deptId").cloned().unwrap_or(Value::Null);
-            let dept_name = object.get("deptName").cloned().unwrap_or(Value::Null);
+            let dept_name = object.remove("deptName").unwrap_or(Value::Null);
             let leader = object.remove("leader").unwrap_or(Value::Null);
+            // Java: deptResult 的 parent_id / order_num / dept_status 只进 dept，顶层没有这些属性。
+            let parent_id = object.remove("parentId").unwrap_or(Value::Null);
+            let order_num = object.remove("orderNum").unwrap_or(Value::Null);
+            let dept_status = object.remove("deptStatus").unwrap_or(Value::Null);
             let user_id = object.get("userId").and_then(Value::as_i64);
             for key in [
-                "updateBy", "updateTime", "confirmPassword", "salt", "roleCode", "roleIds",
-                "postIds", "flag", "dataId", "subCode", "queryNickName", "excludeSelf",
-                "excludeId", "headOffice", "procurementManager", "pjFlag",
+                "updateBy",
+                "updateTime",
+                "confirmPassword",
+                "salt",
+                "roleCode",
+                "roleIds",
+                "postIds",
+                "flag",
+                "dataId",
+                "subCode",
+                "tenantName",
+                "queryNickName",
+                "excludeSelf",
+                "excludeId",
+                "headOffice",
+                "procurementManager",
             ] {
                 object.entry(key).or_insert(Value::Null);
             }
-            object.entry("pjFlag").or_insert_with(|| json!(0));
+            // Java: SysUser.deptName 不在 resultMap 里，任何查询都是 null（值只进 dept.deptName）。
+            object.insert("deptName".to_string(), Value::Null);
+            // Java: `private int pjFlag`（原始类型）没有 setter 调用，出参恒为 0。
+            object.insert("pjFlag".to_string(), json!(0));
             object.insert("admin".to_string(), Value::Bool(user_id == Some(1)));
             object.entry("roles").or_insert_with(|| json!([]));
+            if let Some(text) = object
+                .get("loginDate")
+                .and_then(Value::as_str)
+                .map(str::to_string)
+            {
+                // Java: loginDate 是裸 `Date`，没有 @JsonFormat → Jackson 写 ISO 带毫秒与本机偏移。
+                if let Some(iso) = java_iso_datetime(&text) {
+                    object.insert("loginDate".to_string(), Value::String(iso));
+                }
+            }
             let mut dept = serde_json::to_value(SysDept::default()).unwrap_or(json!({}));
             if let Some(map) = dept.as_object_mut() {
                 if !dept_id.is_null() {
@@ -429,12 +481,33 @@ fn shape_user_rows(rows: &mut [Value]) {
                 if !leader.is_null() {
                     map.insert("leader".to_string(), leader);
                 }
+                if !parent_id.is_null() {
+                    map.insert("parentId".to_string(), parent_id);
+                }
+                if !order_num.is_null() {
+                    // Java: SysDept.orderNum 是 `String`，数字列也要按字符串出参。
+                    let order_num = match order_num {
+                        Value::Number(number) => Value::String(number.to_string()),
+                        other => other,
+                    };
+                    map.insert("orderNum".to_string(), order_num);
+                }
+                if !dept_status.is_null() {
+                    map.insert("status".to_string(), dept_status);
+                }
             }
             let dept = support::reorder_keys(dept, super::sys_dept::DEPT_KEYS);
             object.insert("dept".to_string(), dept);
         }
         *row = support::reorder_keys(row.take(), USER_KEYS);
     }
+}
+
+/// `yyyy-MM-dd HH:mm:ss`（rows.rs 的墙上时钟写法）→ Jackson 的 ISO 带毫秒与本机偏移。
+fn java_iso_datetime(text: &str) -> Option<String> {
+    let naive = chrono::NaiveDateTime::parse_from_str(text, "%Y-%m-%d %H:%M:%S").ok()?;
+    let local = chrono::TimeZone::from_local_datetime(&chrono::Local, &naive).earliest()?;
+    Some(local.to_rfc3339_opts(chrono::SecondsFormat::Millis, false))
 }
 
 async fn list(
@@ -557,7 +630,19 @@ async fn list_by_dept(
     }
     params.insert("userType".to_string(), "1".to_string());
     let page = support::page_domain(&raw);
-    let (total, rows) = query_users(&state, &params, Some(&page)).await?;
+    let (total, mut rows) = query_users(&state, &params, Some(&page)).await?;
+    // Java: listByDept 查完之后把 dept.deptName 回填到顶层 deptName（其它列表端点不回填）。
+    for row in rows.iter_mut() {
+        let name = row
+            .get("dept")
+            .and_then(|dept| dept.get("deptName"))
+            .and_then(Value::as_str)
+            .filter(|text| !text.trim().is_empty())
+            .map(str::to_string);
+        if let (Some(object), Some(name)) = (row.as_object_mut(), name) {
+            object.insert("deptName".to_string(), Value::String(name));
+        }
+    }
     Ok(TableDataInfo::new(total, rows))
 }
 
@@ -598,16 +683,52 @@ async fn export(
     let params = support::query_map(&raw);
     let (_, rows) = query_users(&state, &params, None).await?;
     let headers = [
-        "用户序号", "用户编码", "部门编号", "登录名称", "用户名称", "用户类型", "用户邮箱",
-        "手机号码", "用户性别", "帐号状态", "最后登录IP", "最后登录时间", "证书Id",
-        "证书实体Id", "业务id", "业务名称", "单位名称", "租户单位id", "租户单位名称", "角色编码",
-        "部门名称", "部门负责人",
+        "用户序号",
+        "用户编码",
+        "部门编号",
+        "登录名称",
+        "用户名称",
+        "用户类型",
+        "用户邮箱",
+        "手机号码",
+        "用户性别",
+        "帐号状态",
+        "最后登录IP",
+        "最后登录时间",
+        "证书Id",
+        "证书实体Id",
+        "业务id",
+        "业务名称",
+        "单位名称",
+        "租户单位id",
+        "租户单位名称",
+        "角色编码",
+        "部门名称",
+        "部门负责人",
     ]
     .map(str::to_string);
     let fields = [
-        "userId", "userNo", "deptId", "userName", "nickName", "userType", "email",
-        "phonenumber", "sex", "status", "loginIp", "loginDate", "certId", "certEntityId",
-        "bussId", "bussName", "epsName", "tenantId", "tenantName", "roleCode", "deptName",
+        "userId",
+        "userNo",
+        "deptId",
+        "userName",
+        "nickName",
+        "userType",
+        "email",
+        "phonenumber",
+        "sex",
+        "status",
+        "loginIp",
+        "loginDate",
+        "certId",
+        "certEntityId",
+        "bussId",
+        "bussName",
+        "epsName",
+        "tenantId",
+        "tenantName",
+        "roleCode",
+        "deptName",
         "leader",
     ];
     let data = rows
@@ -645,9 +766,24 @@ async fn export(
 
 async fn import_template(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
     let headers = [
-        "用户序号", "用户编码", "部门编号", "登录名称", "用户名称", "用户类型", "用户邮箱",
-        "手机号码", "用户性别", "帐号状态", "证书Id", "证书实体Id", "业务id", "业务名称",
-        "单位名称", "租户单位id", "租户单位名称", "角色编码",
+        "用户序号",
+        "用户编码",
+        "部门编号",
+        "登录名称",
+        "用户名称",
+        "用户类型",
+        "用户邮箱",
+        "手机号码",
+        "用户性别",
+        "帐号状态",
+        "证书Id",
+        "证书实体Id",
+        "业务id",
+        "业务名称",
+        "单位名称",
+        "租户单位id",
+        "租户单位名称",
+        "角色编码",
     ]
     .map(str::to_string);
     support::export_excel(&state, "用户数据", &headers, &[])
@@ -666,9 +802,8 @@ async fn get_info_root(State(state): State<AppState>) -> Result<AjaxResult, AppE
     .fetch_all(&state.db)
     .await?;
     let mut ajax = AjaxResult::success();
-    let mut role_values = crate::api::system::sys_role::role_rows(
-        crate::db::rows::rows_to_json(&roles),
-    );
+    let mut role_values =
+        crate::api::system::sys_role::role_rows(crate::db::rows::rows_to_json(&roles));
     role_values.retain(|role| role.get("roleId").and_then(Value::as_i64) != Some(1));
     ajax.insert_value("roles", json!(role_values));
     ajax.insert_value(
@@ -682,6 +817,13 @@ async fn get_info(
     State(state): State<AppState>,
     Path(user_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable(required = false) Long userId` —— 空串等价 null（跳过查用户），
+    // 非数字则先被 Spring 的类型转换拦下。
+    let user_id = if user_id.trim().is_empty() {
+        String::new()
+    } else {
+        support::path_long("userId", &user_id)?.to_string()
+    };
     let roles = sqlx::query(&format!(
         "select distinct {ROLE_COLUMNS} from sys_role r where r.del_flag = '0' order by r.role_sort"
     ))
@@ -692,19 +834,15 @@ async fn get_info(
         .await?;
 
     let mut ajax = AjaxResult::success();
-    let mut role_values =
-        crate::api::system::sys_role::role_rows(rows_to_json(&roles));
+    let mut role_values = crate::api::system::sys_role::role_rows(rows_to_json(&roles));
     if user_id.trim() != "1" {
         role_values.retain(|role| role.get("roleId").and_then(Value::as_i64) != Some(1));
     }
     ajax.insert_value("roles", json!(role_values));
-    ajax.insert_value(
-        "posts",
-        json!(shape_post_rows(rows_to_json(&posts))),
-    );
+    ajax.insert_value("posts", json!(shape_post_rows(rows_to_json(&posts))));
     if !user_id.is_empty() {
         let row = sqlx::query(&format!(
-            "select {USER_COLUMNS} from sys_user u \
+            "select {USER_VO_COLUMNS} from sys_user u \
              left join sys_dept d on u.dept_id = d.dept_id \
              left join sys_dept d2 on d.tenant_id = d2.dept_id where u.user_id = ?"
         ))
@@ -742,7 +880,14 @@ async fn get_info(
                 // Java RoleResult 只映射 6 个列，其余 SysRole 字段为默认值。
                 let mut role = serde_json::to_value(crate::domain::SysRole::default())?;
                 if let Some(map) = role.as_object_mut() {
-                    for key in ["roleId", "roleName", "roleKey", "roleSort", "dataScope", "status"] {
+                    for key in [
+                        "roleId",
+                        "roleName",
+                        "roleKey",
+                        "roleSort",
+                        "dataScope",
+                        "status",
+                    ] {
                         let mut value = row.get(key).cloned().unwrap_or(Value::Null);
                         if key == "roleSort" {
                             if let Some(text) = value.as_i64() {
@@ -779,7 +924,11 @@ async fn get_info(
 }
 
 fn text(body: &Value, key: &str) -> String {
-    body.get(key).and_then(Value::as_str).unwrap_or_default().trim().to_string()
+    body.get(key)
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim()
+        .to_string()
 }
 
 fn id_list(body: &Value, key: &str) -> Option<Vec<i64>> {
@@ -797,10 +946,31 @@ fn id_list(body: &Value, key: &str) -> Option<Vec<i64>> {
 /// Java: insert/update 的实体字段白名单（roleIds/postIds 等 @TableField(exist=false) 不入库）。
 fn entity_from_body(body: &Value) -> Value {
     const FIELDS: &[&str] = &[
-        "userNo", "deptId", "userName", "nickName", "password", "userType", "email",
-        "phonenumber", "sex", "avatar", "status", "remark", "certEntityId", "certId", "bussId",
-        "bussName", "epsName", "tenantId", "imageId", "createBy", "createTime", "updateBy",
-        "updateTime", "loginIp", "loginDate",
+        "userNo",
+        "deptId",
+        "userName",
+        "nickName",
+        "password",
+        "userType",
+        "email",
+        "phonenumber",
+        "sex",
+        "avatar",
+        "status",
+        "remark",
+        "certEntityId",
+        "certId",
+        "bussId",
+        "bussName",
+        "epsName",
+        "tenantId",
+        "imageId",
+        "createBy",
+        "createTime",
+        "updateBy",
+        "updateTime",
+        "loginIp",
+        "loginDate",
     ];
     let mut map = Map::new();
     for field in FIELDS {
@@ -813,17 +983,21 @@ fn entity_from_body(body: &Value) -> Value {
     Value::Object(map)
 }
 
-async fn apply_dept(state: &AppState, entity: &mut Value) -> Result<(), AppError> {
+/// Java: `insertUser`/`updateUser` 里的 `sysDept.getDeptName()`——部门行不存在时 Java 直接 NPE，
+/// 响应是 `{"msg":null,"code":500}`。返回 `false` 表示该情形，调用方据此回空 msg。
+async fn apply_dept(state: &AppState, entity: &mut Value) -> Result<bool, AppError> {
     let Some(dept_id) = entity.get("deptId").and_then(Value::as_i64) else {
-        return Ok(());
+        return Ok(true);
     };
     let dept: Option<(Option<String>, Option<i64>)> =
         sqlx::query_as("select dept_name, tenant_id from sys_dept where dept_id = ?")
             .bind(dept_id)
             .fetch_optional(&state.db)
             .await?;
-    if let Some((name, tenant_id)) = dept {
-        let Some(object) = entity.as_object_mut() else { return Ok(()) };
+    let Some((name, tenant_id)) = dept else {
+        return Ok(false);
+    };
+    if let Some(object) = entity.as_object_mut() {
         if let Some(name) = name {
             object.insert("bussName".to_string(), Value::String(name));
         }
@@ -831,7 +1005,7 @@ async fn apply_dept(state: &AppState, entity: &mut Value) -> Result<(), AppError
             object.insert("tenantId".to_string(), json!(tenant_id));
         }
     }
-    Ok(())
+    Ok(true)
 }
 
 async fn insert_relations(
@@ -844,7 +1018,8 @@ async fn insert_relations(
     if ids.is_empty() {
         return Ok(());
     }
-    let mut builder = QueryBuilder::<MySql>::new(format!("insert into {table}(user_id, {column}) "));
+    let mut builder =
+        QueryBuilder::<MySql>::new(format!("insert into {table}(user_id, {column}) "));
     builder.push_values(ids, |mut bind, id| {
         bind.push_bind(user_id).push_bind(*id);
     });
@@ -888,10 +1063,11 @@ async fn insert_user_row(
     }
     builder.push(", sysdate())");
     builder.build().execute(&mut **tx).await?;
-    let id: i64 = sqlx::query_scalar("select last_insert_id()")
+    // LAST_INSERT_ID() 的列元信息是 BIGINT UNSIGNED，只能按 u64 取回。
+    let id: u64 = sqlx::query_scalar("select last_insert_id()")
         .fetch_one(&mut **tx)
         .await?;
-    Ok(id)
+    Ok(id as i64)
 }
 
 async fn unique_value(
@@ -903,7 +1079,10 @@ async fn unique_value(
         return Ok(None);
     }
     let sql = format!("select user_id from sys_user where {column} = ? and del_flag = '0' limit 1");
-    Ok(sqlx::query_scalar(&sql).bind(value).fetch_optional(pool).await?)
+    Ok(sqlx::query_scalar(&sql)
+        .bind(value)
+        .fetch_optional(pool)
+        .await?)
 }
 
 async fn add(
@@ -913,7 +1092,10 @@ async fn add(
 ) -> Result<AjaxResult, AppError> {
     let user_name = text(&body, "userName");
     let verb = "新增用户";
-    if unique_value(&state.db, "user_name", &user_name).await?.is_some() {
+    if unique_value(&state.db, "user_name", &user_name)
+        .await?
+        .is_some()
+    {
         return Ok(AjaxResult::error(format!(
             "{verb}'{user_name}'失败，登录账号已存在"
         )));
@@ -952,7 +1134,9 @@ async fn add(
             Value::String(password::encode(&raw_password)?),
         );
     }
-    apply_dept(&state, &mut entity).await?;
+    if !apply_dept(&state, &mut entity).await? {
+        return Ok(AjaxResult::error_null_msg());
+    }
 
     let role_ids = id_list(&body, "roleIds").unwrap_or_default();
     let post_ids = id_list(&body, "postIds").unwrap_or_default();
@@ -1007,7 +1191,9 @@ async fn edit(
             Value::String(user.user.user_name.clone().unwrap_or_default()),
         );
     }
-    apply_dept(&state, &mut entity).await?;
+    if !apply_dept(&state, &mut entity).await? {
+        return Ok(AjaxResult::error_null_msg());
+    }
     let role_ids = id_list(&body, "roleIds");
     let post_ids = id_list(&body, "postIds");
 
@@ -1036,7 +1222,9 @@ async fn update_user_row(
     entity: &Value,
     user_id: i64,
 ) -> Result<u64, AppError> {
-    let Some(object) = entity.as_object() else { return Ok(0) };
+    let Some(object) = entity.as_object() else {
+        return Ok(0);
+    };
     let mut builder = QueryBuilder::<MySql>::new("update sys_user set ");
     let mut first = true;
     for (key, value) in object.iter() {
@@ -1062,7 +1250,11 @@ async fn remove(
     State(state): State<AppState>,
     Path(user_ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&user_ids);
+    // Java: `@PathVariable Long[] userIds` —— 任一段转不成 Long 就整体失败，文案带整段原文。
+    let ids = support::path_long_list("userIds", &user_ids)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     for id in &ids {
         if id == "1" {
             return Err(AppError::Service("不允许操作超级管理员用户".to_string()));
@@ -1083,7 +1275,8 @@ async fn remove(
     }
     builder.push(")");
     builder.build().execute(&mut *tx).await?;
-    let mut builder = QueryBuilder::<MySql>::new("update sys_user set del_flag = '1' where user_id in (");
+    let mut builder =
+        QueryBuilder::<MySql>::new("update sys_user set del_flag = '1' where user_id in (");
     let mut separated = builder.separated(", ");
     for id in &ids {
         separated.push_bind(id.clone());

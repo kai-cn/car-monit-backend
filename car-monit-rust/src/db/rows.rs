@@ -70,8 +70,8 @@ fn cell_to_json(row: &MySqlRow, index: usize, type_name: &str) -> Value {
                 return Value::Bool(value != 0);
             }
         }
-        "TINYINT UNSIGNED" | "SMALLINT UNSIGNED" | "MEDIUMINT UNSIGNED"
-        | "INT UNSIGNED" | "BIGINT UNSIGNED" => {
+        "TINYINT UNSIGNED" | "SMALLINT UNSIGNED" | "MEDIUMINT UNSIGNED" | "INT UNSIGNED"
+        | "BIGINT UNSIGNED" => {
             macro_rules! try_unum {
                 ($($ty:ty),*) => {$(
                     if let Ok(value) = row.try_get::<$ty, _>(index) {
@@ -105,6 +105,12 @@ fn cell_to_json(row: &MySqlRow, index: usize, type_name: &str) -> Value {
         "DATETIME" | "TIMESTAMP" => {
             if let Ok(value) = row.try_get::<chrono::NaiveDateTime, _>(index) {
                 return Value::String(value.format("%Y-%m-%d %H:%M:%S").to_string());
+            }
+            // sqlx 只给 TIMESTAMP 列认 `DateTime<Utc>`（`NaiveDateTime` 类型不匹配会走到
+            // 兜底分支变成 null）。会话时区已对齐 JDBC 的 `serverTimezone`，
+            // 这里的字面量就是 Java/Jackson 显示的值。
+            if let Ok(value) = row.try_get::<chrono::DateTime<chrono::Utc>, _>(index) {
+                return Value::String(value.naive_utc().format("%Y-%m-%d %H:%M:%S").to_string());
             }
         }
         "TIME" => {

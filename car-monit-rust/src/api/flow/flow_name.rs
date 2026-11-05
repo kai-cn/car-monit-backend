@@ -7,8 +7,8 @@ use axum::extract::{Path, RawQuery, State};
 use axum::{Extension, Json, Router};
 use serde_json::{json, Value};
 
-use crate::api::flow::shared;
 use crate::api::flow::flow_template::save_flow_order;
+use crate::api::flow::shared;
 use crate::api::meta::{self, BusinessType, LogSpec};
 use crate::api::support::{self, Filter, ListSpec};
 use crate::domain::LoginUser;
@@ -74,7 +74,12 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/flow/flowname/list",
-            meta::get_route("/flow/flowname/list", Some("flow:flowname:list"), None, list),
+            meta::get_route(
+                "/flow/flowname/list",
+                Some("flow:flowname:list"),
+                None,
+                list,
+            ),
         )
         .route(
             "/flow/flowname/listQuery",
@@ -189,8 +194,17 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = ["流程KEY", "流程名称", "内容", "业务名称", "单位名称"].map(str::to_string);
-    let fields = ["flowKey", "flowTitle", "flowContext", "bussName", "tenantName"];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let fields = [
+        "flowKey",
+        "flowTitle",
+        "flowContext",
+        "bussName",
+        "tenantName",
+    ];
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "流程名称数据", &headers, &data)
 }
 
@@ -212,12 +226,24 @@ async fn save_flow_name(
     user: &LoginUser,
     body: &Value,
 ) -> Result<AjaxResult, AppError> {
-    let flow_key = body.get("flowKey").and_then(Value::as_str).unwrap_or_default().to_string();
-    let id = body.get("id").and_then(Value::as_str).unwrap_or_default().to_string();
+    let flow_key = body
+        .get("flowKey")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let id = body
+        .get("id")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
     let mut sql = String::from(
         "select count(1) from flow_name t where t.del_flag = '0' and t.FLOW_KEY = ? and t.create_by = -1",
     );
-    if body.get("tenantId").map(|value| !value.is_null()).unwrap_or(false) {
+    if body
+        .get("tenantId")
+        .map(|value| !value.is_null())
+        .unwrap_or(false)
+    {
         sql.push_str(" and t.tenant_id = ?");
     }
     if !id.is_empty() {
@@ -287,14 +313,21 @@ async fn tb_flow(
     for flow_oid in templates {
         let mut params = std::collections::HashMap::new();
         params.insert("id".to_string(), flow_oid.clone());
-        let Some(source) = support::query_all(&state.db, &params, &SPEC).await?.into_iter().next()
+        let Some(source) = support::query_all(&state.db, &params, &SPEC)
+            .await?
+            .into_iter()
+            .next()
         else {
             continue;
         };
         let mut template_params = std::collections::HashMap::new();
         template_params.insert("flowOid".to_string(), flow_oid.clone());
-        let node_rows = support::query_all(&state.db, &template_params, &crate::api::flow::flow_template::SPEC)
-            .await?;
+        let node_rows = support::query_all(
+            &state.db,
+            &template_params,
+            &crate::api::flow::flow_template::SPEC,
+        )
+        .await?;
 
         let flow_key = source.get("flowKey").cloned().unwrap_or(Value::Null);
         for unit in &units {

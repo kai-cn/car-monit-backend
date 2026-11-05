@@ -48,8 +48,8 @@ const FORMATS: &[(&str, FieldFormat)] = &[("id", FieldFormat::String)];
 
 /// Java: fileLog/fileLogId 的扩展名白名单。
 const ALLOWED_EXT: &[&str] = &[
-    "doc", "docx", "pdf", "xls", "xlsx", "ppt", "pptx", "txt", "zip", "rar", "jpg", "jpeg",
-    "png", "gif", "mp3", "mp4", "flv", "3gp",
+    "doc", "docx", "pdf", "xls", "xlsx", "ppt", "pptx", "txt", "zip", "rar", "jpg", "jpeg", "png",
+    "gif", "mp3", "mp4", "flv", "3gp",
 ];
 
 static LOG_UPLOAD: LogSpec = LogSpec::new(
@@ -207,13 +207,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/system/file/{ids}",
-            meta::get_route("/system/file/{ids}", None, None, get_info)
-                .merge(meta::delete_route(
-                    "/system/file/{ids}",
-                    Some("base:supplier:remove"),
-                    Some(&LOG_DELETE),
-                    remove,
-                )),
+            meta::get_route("/system/file/{ids}", None, None, get_info).merge(meta::delete_route(
+                "/system/file/{ids}",
+                Some("base:supplier:remove"),
+                Some(&LOG_DELETE),
+                remove,
+            )),
         )
 }
 
@@ -223,12 +222,17 @@ fn upload_dir(profile: &str) -> std::path::PathBuf {
 
 /// Java: `IdUtil.simpleUUID() + "." + extName(original)`。
 fn stored_name(original: &str) -> String {
-    let ext = original.rsplit_once('.').map(|(_, ext)| ext).unwrap_or_default();
+    let ext = original
+        .rsplit_once('.')
+        .map(|(_, ext)| ext)
+        .unwrap_or_default();
     format!("{}.{}", uuid::Uuid::new_v4().simple(), ext)
 }
 
 fn ext_allowed(original: &str) -> Option<String> {
-    let ext = original.rsplit_once('.').map(|(_, ext)| ext.to_lowercase())?;
+    let ext = original
+        .rsplit_once('.')
+        .map(|(_, ext)| ext.to_lowercase())?;
     if ext.is_empty() {
         return None;
     }
@@ -257,7 +261,9 @@ async fn file_log(
         return Ok((-1, None));
     };
     let id = state.snowflake.next_id()?;
-    let user_id = user.and_then(|user| user.user.user_id).map(|id| id.to_string());
+    let user_id = user
+        .and_then(|user| user.user.user_id)
+        .map(|id| id.to_string());
     let now = support::now_string();
     let body = json!({
         "id": id,
@@ -330,6 +336,8 @@ async fn get_info_by_id(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long id`。
+    let id = support::path_long("id", &id)?.to_string();
     Ok(AjaxResult::success_data(
         support::query_by_id_fmt(&state.db, &SPEC, &id, FORMATS)
             .await?
@@ -449,7 +457,11 @@ async fn upload_file(
             .map_err(|err| AppError::BadRequest(err.to_string()))?;
         let ext = original.rsplit_once('.').map(|(_, ext)| ext.to_lowercase());
         match ext.as_deref() {
-            Some(ext) if ext.contains("jpg") || ext.contains("jpeg") || ext.contains("png") || ext.contains("gif") => {}
+            Some(ext)
+                if ext.contains("jpg")
+                    || ext.contains("jpeg")
+                    || ext.contains("png")
+                    || ext.contains("gif") => {}
             _ => return Ok(AjaxResult::error("上传失败,请上传照片格式的附件！")),
         }
         files.push((original, bytes.to_vec()));
@@ -505,8 +517,13 @@ async fn upload_by_url(
         .cloned()
         .unwrap_or_default();
     for item in items {
-        let Some(url) = item.get("url").and_then(Value::as_str) else { continue };
-        let name = item.get("fileName").and_then(Value::as_str).unwrap_or_default();
+        let Some(url) = item.get("url").and_then(Value::as_str) else {
+            continue;
+        };
+        let name = item
+            .get("fileName")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
         let original = format!("{name}.jpg");
         let bytes = match state.http.get(url).send().await {
             Ok(response) => response.bytes().await.map(|bytes| bytes.to_vec()),
@@ -517,7 +534,15 @@ async fn upload_by_url(
         };
         let Ok(bytes) = bytes else { continue };
         let file_name = stored_name(&original);
-        let (id, ext) = file_log(&state, Some(&user), &original, &file_name, bytes.len() as i64, None).await?;
+        let (id, ext) = file_log(
+            &state,
+            Some(&user),
+            &original,
+            &file_name,
+            bytes.len() as i64,
+            None,
+        )
+        .await?;
         if ext.is_some() {
             store_file(&state, &file_name, &bytes)?;
         }
@@ -532,11 +557,17 @@ async fn upload_file_id(
     Json(body): Json<Value>,
 ) -> Result<AjaxResult, AppError> {
     let id = body.get("id").and_then(Value::as_i64);
-    let encoded = body.get("files").and_then(Value::as_str).unwrap_or_default();
+    let encoded = body
+        .get("files")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
     if encoded.is_empty() {
         return Ok(AjaxResult::error("主键不能为空"));
     }
-    let raw = encoded.split_once(',').map(|(_, rest)| rest).unwrap_or(encoded);
+    let raw = encoded
+        .split_once(',')
+        .map(|(_, rest)| rest)
+        .unwrap_or(encoded);
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(raw)
         .or_else(|_| base64::engine::general_purpose::STANDARD_NO_PAD.decode(raw))
@@ -558,9 +589,7 @@ async fn upload_file_id(
     let ext = ext_allowed(&original);
     if ext.is_none() {
         return Ok(AjaxResult::success_data(vec![Value::Object(result_map(
-            &state,
-            &file_name,
-            id,
+            &state, &file_name, id,
         ))]));
     }
     let user_id = user.user.user_id.map(|id| id.to_string());
@@ -601,10 +630,15 @@ async fn view_file(
     let path = upload_dir(&state.settings.ruoyi.profile).join(&file_name);
     match std::fs::read(&path) {
         Ok(bytes) => {
-            let mime = mime_guess::from_path(&path).first_raw().unwrap_or("application/octet-stream");
+            let mime = mime_guess::from_path(&path)
+                .first_raw()
+                .unwrap_or("application/octet-stream");
             ([(header::CONTENT_TYPE, mime.to_string())], bytes).into_response()
         }
-        Err(_) => ([(header::CONTENT_TYPE, "application/octet-stream".to_string())], Vec::<u8>::new())
+        Err(_) => (
+            [(header::CONTENT_TYPE, "application/octet-stream".to_string())],
+            Vec::<u8>::new(),
+        )
             .into_response(),
     }
 }
@@ -637,8 +671,14 @@ async fn edit(
         object.insert("updateUser".to_string(), json!(user_id));
         object.insert("updateTime".to_string(), json!(now));
     }
-    support::update_entity_by_id(&state.db, "sys_file", "id", &entity, support::AutoFill::NONE)
-        .await?;
+    support::update_entity_by_id(
+        &state.db,
+        "sys_file",
+        "id",
+        &entity,
+        support::AutoFill::NONE,
+    )
+    .await?;
     Ok(AjaxResult::success_msg_data("操作成功！", id))
 }
 
@@ -646,6 +686,8 @@ async fn remove_by_id(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long id`（DELETE /system/file/del/{id}）。
+    let id = support::path_long("id", &id)?.to_string();
     let file_name: Option<String> =
         sqlx::query_scalar("select file_name from sys_file where id = ?")
             .bind(&id)
@@ -666,7 +708,11 @@ async fn remove(
     State(state): State<AppState>,
     Path(ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&ids);
+    // Java: `@PathVariable Long[] ids` —— 任一段转不成 Long 就整体失败，文案带整段原文。
+    let ids = support::path_long_list("ids", &ids)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     for id in &ids {
         let file_name: Option<String> =
             sqlx::query_scalar("select file_name from sys_file where id = ?")
@@ -699,8 +745,14 @@ async fn update_ca_file(
         );
         object.insert("updateTime".to_string(), json!(support::now_string()));
     }
-    support::update_entity_by_id(&state.db, "sys_file", "id", &entity, support::AutoFill::NONE)
-        .await?;
+    support::update_entity_by_id(
+        &state.db,
+        "sys_file",
+        "id",
+        &entity,
+        support::AutoFill::NONE,
+    )
+    .await?;
     sqlx::query("update sys_file set id = 3001 where id = ?")
         .bind(id.as_i64())
         .execute(&state.db)

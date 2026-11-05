@@ -5,6 +5,7 @@ use axum::Router;
 use crate::state::AppState;
 
 pub mod gen;
+pub mod gen_link;
 pub mod gen_render;
 pub mod gen_zip;
 

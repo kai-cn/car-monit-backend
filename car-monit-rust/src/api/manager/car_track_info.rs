@@ -13,10 +13,12 @@ use sqlx::QueryBuilder;
 
 use crate::api::meta::{self, BusinessType, LogSpec};
 use crate::api::support::{self, Filter, ListSpec};
+use crate::common::gps;
 use crate::db::rows::rows_to_json;
 use crate::domain::LoginUser;
 use crate::error::AppError;
 use crate::response::{AjaxResult, TableDataInfo};
+use crate::service::road_path;
 use crate::state::AppState;
 
 const SPEC: ListSpec = ListSpec {
@@ -139,7 +141,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/manager/cartrackinfo/carSnapShot",
-            meta::get_route("/manager/cartrackinfo/carSnapShot", None, None, car_snapshot),
+            meta::get_route(
+                "/manager/cartrackinfo/carSnapShot",
+                None,
+                None,
+                car_snapshot,
+            ),
         )
         .route(
             "/manager/cartrackinfo/export",
@@ -183,7 +190,9 @@ pub fn routes() -> Router<AppState> {
 /// Java CarTrackInfo.longitudeDec/latitudeDec：经纬度字符串转 BigDecimal。
 fn fill_decimals(rows: &mut [Value]) {
     for row in rows {
-        let Some(object) = row.as_object_mut() else { continue };
+        let Some(object) = row.as_object_mut() else {
+            continue;
+        };
         for (source, target) in [("longitude", "longitudeDec"), ("latitude", "latitudeDec")] {
             let parsed = object
                 .get(source)
@@ -199,11 +208,39 @@ fn fill_decimals(rows: &mut [Value]) {
 
 /// Java: CarTrackInfo extends BasePlusEntity 的 Jackson 键顺序。
 const CAR_TRACK_KEYS: &[&str] = &[
-    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
-    "tenantId", "carId", "carNo", "longitude", "latitude", "deviceType", "deviceNo", "laneNo",
-    "snapTime", "receiveTime", "snapPic", "roadSectionId", "roadSectionName", "trackId",
-    "trackJosn", "backCol1", "backCol2", "status", "remark", "applyTime1", "applyTime2",
-    "longitudeDec", "latitudeDec", "pageNum", "pageSize",
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "tenantId",
+    "carId",
+    "carNo",
+    "longitude",
+    "latitude",
+    "deviceType",
+    "deviceNo",
+    "laneNo",
+    "snapTime",
+    "receiveTime",
+    "snapPic",
+    "roadSectionId",
+    "roadSectionName",
+    "trackId",
+    "trackJosn",
+    "backCol1",
+    "backCol2",
+    "status",
+    "remark",
+    "applyTime1",
+    "applyTime2",
+    "longitudeDec",
+    "latitudeDec",
+    "pageNum",
+    "pageSize",
 ];
 
 async fn list(
@@ -225,17 +262,50 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = [
-        "车辆id", "车牌号", "经度", "维度", "设备类型", "设备编号", "车道编号", "抓拍时间",
-        "接收时间", "抓拍图片", "管理中心路段id", "管理中心路段名称", "行驶轨迹id",
-        "行驶轨迹josn", "备用字段1", "备用字段2", "状态", "备注",
+        "车辆id",
+        "车牌号",
+        "经度",
+        "维度",
+        "设备类型",
+        "设备编号",
+        "车道编号",
+        "抓拍时间",
+        "接收时间",
+        "抓拍图片",
+        "管理中心路段id",
+        "管理中心路段名称",
+        "行驶轨迹id",
+        "行驶轨迹josn",
+        "备用字段1",
+        "备用字段2",
+        "状态",
+        "备注",
     ]
     .map(str::to_string);
     let fields = [
-        "carId", "carNo", "longitude", "latitude", "deviceType", "deviceNo", "laneNo",
-        "snapTime", "receiveTime", "snapPic", "roadSectionId", "roadSectionName", "trackId",
-        "backCol2", "backCol1", "backCol2", "status", "remark",
+        "carId",
+        "carNo",
+        "longitude",
+        "latitude",
+        "deviceType",
+        "deviceNo",
+        "laneNo",
+        "snapTime",
+        "receiveTime",
+        "snapPic",
+        "roadSectionId",
+        "roadSectionName",
+        "trackId",
+        "backCol2",
+        "backCol1",
+        "backCol2",
+        "status",
+        "remark",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "车辆行驶轨迹数据", &headers, &data)
 }
 
@@ -300,26 +370,41 @@ fn build_trail_query(
         builder.push(" and t.plate_key = ");
         builder.push_bind(value.clone());
     }
-    if let Some(value) = params.get("plateKey").filter(|value| !value.trim().is_empty()) {
+    if let Some(value) = params
+        .get("plateKey")
+        .filter(|value| !value.trim().is_empty())
+    {
         builder.push(" and t.plate_key like concat('%', ");
         builder.push_bind(value.clone());
         builder.push(", '%')");
     }
-    if let Some(value) = params.get("applyTime1").filter(|value| !value.trim().is_empty()) {
+    if let Some(value) = params
+        .get("applyTime1")
+        .filter(|value| !value.trim().is_empty())
+    {
         builder.push(" and t.enter_time >= STR_TO_DATE(");
         builder.push_bind(value.clone());
         builder.push(", '%Y-%m-%d')");
     }
-    if let Some(value) = params.get("applyTime2").filter(|value| !value.trim().is_empty()) {
+    if let Some(value) = params
+        .get("applyTime2")
+        .filter(|value| !value.trim().is_empty())
+    {
         builder.push(" and t.enter_time < date_add(STR_TO_DATE(");
         builder.push_bind(value.clone());
         builder.push(", '%Y-%m-%d'), interval 1 day)");
     }
-    if let Some(value) = params.get("entollstationid").filter(|value| !value.trim().is_empty()) {
+    if let Some(value) = params
+        .get("entollstationid")
+        .filter(|value| !value.trim().is_empty())
+    {
         builder.push(" and t.entollstationid = ");
         builder.push_bind(value.clone());
     }
-    if let Some(value) = params.get("uuidList").filter(|value| !value.trim().is_empty()) {
+    if let Some(value) = params
+        .get("uuidList")
+        .filter(|value| !value.trim().is_empty())
+    {
         builder.push(" and uuid in (");
         let mut separated = builder.separated(", ");
         for id in value.split(',').filter(|item| !item.is_empty()) {
@@ -349,12 +434,18 @@ async fn frequent_uuids(
         builder.push(" and t.plate_key = ");
         builder.push_bind(value.clone());
     }
-    if let Some(value) = params.get("applyTime1").filter(|value| !value.trim().is_empty()) {
+    if let Some(value) = params
+        .get("applyTime1")
+        .filter(|value| !value.trim().is_empty())
+    {
         builder.push(" and t.enter_time >= STR_TO_DATE(");
         builder.push_bind(value.clone());
         builder.push(", '%Y-%m-%d')");
     }
-    if let Some(value) = params.get("applyTime2").filter(|value| !value.trim().is_empty()) {
+    if let Some(value) = params
+        .get("applyTime2")
+        .filter(|value| !value.trim().is_empty())
+    {
         builder.push(" and t.enter_time < date_add(STR_TO_DATE(");
         builder.push_bind(value.clone());
         builder.push(", '%Y-%m-%d'), interval 1 day)");
@@ -396,7 +487,10 @@ async fn car_track_rows(
     }
 
     let mut count_builder = build_trail_query(&effective, true);
-    let total: i64 = count_builder.build_query_scalar().fetch_one(&state.db).await?;
+    let total: i64 = count_builder
+        .build_query_scalar()
+        .fetch_one(&state.db)
+        .await?;
     let mut builder = build_trail_query(&effective, false);
     if let Some(page) = page {
         let (offset, limit) = page.resolve(total);
@@ -419,7 +513,10 @@ async fn car_track_rows(
                             .and_then(Value::as_str)
                             .unwrap_or_default()
                             .to_string();
-                        object.insert("plateKey".to_string(), json!(format!("{plate}(通行{count}次)")));
+                        object.insert(
+                            "plateKey".to_string(),
+                            json!(format!("{plate}(通行{count}次)")),
+                        );
                     }
                 }
             }
@@ -430,25 +527,93 @@ async fn car_track_rows(
 
 /// Java: ZdataTrailTracks 的声明顺序（51 键）。
 const TRACK_KEYS: &[&str] = &[
-    "uuid", "type", "pointCount", "plateKey", "enterTime", "exitTime", "trailPoints",
-    "enterLocationcode", "exitLocationcode", "trackJosn", "enaxlecount", "entolllaneid",
-    "entollstationid", "entollstationname", "envehicleclass", "envehicleid", "envehicletype",
-    "enweight", "extolllaneid", "extollstationid", "extollstationname", "exvehicleclass",
-    "exvehicleid", "exvehicletype", "exweight", "startLon", "stratLat", "endLon", "endLat",
-    "firtStationCode", "firtStationName", "firtStationTime", "plateColor", "carType", "carNo",
-    "carVehicle", "carNum", "escapedType", "passType", "escapedTypeRemark", "applyTime1",
-    "applyTime2", "isCylx", "flag", "startLonDec", "stratLatDec", "endLonDec", "endLatDec",
-    "uuidList", "passCount", "escapedTfcj",
+    "uuid",
+    "type",
+    "pointCount",
+    "plateKey",
+    "enterTime",
+    "exitTime",
+    "trailPoints",
+    "enterLocationcode",
+    "exitLocationcode",
+    "trackJosn",
+    "enaxlecount",
+    "entolllaneid",
+    "entollstationid",
+    "entollstationname",
+    "envehicleclass",
+    "envehicleid",
+    "envehicletype",
+    "enweight",
+    "extolllaneid",
+    "extollstationid",
+    "extollstationname",
+    "exvehicleclass",
+    "exvehicleid",
+    "exvehicletype",
+    "exweight",
+    "startLon",
+    "stratLat",
+    "endLon",
+    "endLat",
+    "firtStationCode",
+    "firtStationName",
+    "firtStationTime",
+    "plateColor",
+    "carType",
+    "carNo",
+    "carVehicle",
+    "carNum",
+    "escapedType",
+    "passType",
+    "escapedTypeRemark",
+    "applyTime1",
+    "applyTime2",
+    "isCylx",
+    "flag",
+    "startLonDec",
+    "stratLatDec",
+    "endLonDec",
+    "endLatDec",
+    "uuidList",
+    "passCount",
+    "escapedTfcj",
 ];
 
 /// Java: TrailBo 的声明顺序（32 键）。
 pub(crate) const TRAIL_BO_KEYS: &[&str] = &[
-    "pointUuid", "stateType", "pointFlag", "pointJosn", "borderWeighingCaptureBO",
-    "gantryCaptureBO", "provCaptureBO", "stationCapture", "feeRecord", "feeStationEnter",
-    "feeStationExit", "captureTime", "directionIn", "locationCode", "locationFlag", "ipType",
-    "locationJosn", "gantryIpBO", "stationIpBO", "devCode", "devName", "imagesArry", "lon",
-    "lat", "roadCode", "sectionCode", "direction", "pileno", "preCaptureTime", "countNum",
-    "pilenoDec", "isQuery",
+    "pointUuid",
+    "stateType",
+    "pointFlag",
+    "pointJosn",
+    "borderWeighingCaptureBO",
+    "gantryCaptureBO",
+    "provCaptureBO",
+    "stationCapture",
+    "feeRecord",
+    "feeStationEnter",
+    "feeStationExit",
+    "captureTime",
+    "directionIn",
+    "locationCode",
+    "locationFlag",
+    "ipType",
+    "locationJosn",
+    "gantryIpBO",
+    "stationIpBO",
+    "devCode",
+    "devName",
+    "imagesArry",
+    "lon",
+    "lat",
+    "roadCode",
+    "sectionCode",
+    "direction",
+    "pileno",
+    "preCaptureTime",
+    "countNum",
+    "pilenoDec",
+    "isQuery",
 ];
 
 /// Java: `new BigDecimal(String)` —— 整数字面量不会变成 x.0。
@@ -469,7 +634,10 @@ fn decimal_like(text: &str) -> Value {
 
 /// TrailInfo: tracks/trailList/trailUuid/raodTrailList/trailDevCountBO。
 fn wrap_trail(row: &Value) -> Value {
-    let track_json = row.get("trackJosn").and_then(Value::as_str).unwrap_or_default();
+    let track_json = row
+        .get("trackJosn")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
     let parsed: Value = serde_json::from_str(track_json).unwrap_or(Value::Null);
     let points = parsed
         .as_array()
@@ -596,7 +764,12 @@ fn json_array_elements(text: &str) -> Vec<String> {
         .strip_prefix('[')
         .and_then(|value| value.strip_suffix(']'))
         .unwrap_or(trimmed);
-    let compact = |value: &str| value.chars().filter(|ch| !ch.is_whitespace()).collect::<String>();
+    let compact = |value: &str| {
+        value
+            .chars()
+            .filter(|ch| !ch.is_whitespace())
+            .collect::<String>()
+    };
     let mut out: Vec<String> = Vec::new();
     let mut depth = 0i32;
     let mut current = String::new();
@@ -640,10 +813,7 @@ fn json_array_elements(text: &str) -> Vec<String> {
 }
 
 /// Java: CarTrackInfoServiceImpl.getCarGeometry —— 按路线编号 + 桩号区间拼本地路径点。
-async fn get_car_geometry(
-    state: &AppState,
-    points: &mut [Value],
-) -> Result<Vec<Value>, AppError> {
+async fn get_car_geometry(state: &AppState, points: &mut [Value]) -> Result<Vec<Value>, AppError> {
     // Java: LinkedHashMap 分组（首次出现顺序），并回填 pilenoDec。
     let mut roads: Vec<String> = Vec::new();
     let mut groups: HashMap<String, Vec<usize>> = HashMap::new();
@@ -678,9 +848,7 @@ async fn get_car_geometry(
         }
         let mut items: Vec<(rust_decimal::Decimal, usize)> = indexes
             .iter()
-            .filter_map(|index| {
-                dec_of(points[*index].get("pilenoDec")).map(|dec| (dec, *index))
-            })
+            .filter_map(|index| dec_of(points[*index].get("pilenoDec")).map(|dec| (dec, *index)))
             .collect();
         if items.is_empty() {
             continue;
@@ -740,8 +908,7 @@ async fn get_car_geometry(
     Ok(out)
 }
 
-/// Java: getCarGeometryByPlanNew + getCarGeometryByPlan。
-/// 外部路网/腾讯地图 API 不可用时与 Java 一致：视为返回 null，落到本地桩号兜底。
+/// Java: getCarGeometryByPlanNew —— 命中缓存或调本地路网规划接口，拿不到结果时落到腾讯路径。
 async fn get_car_geometry_by_plan(
     state: &AppState,
     tracks: &Value,
@@ -757,16 +924,6 @@ async fn get_car_geometry_by_plan(
         Some(value) => support::java_text(Some(&value)),
         None => "1".to_string(),
     };
-    let first_road_code = |points: &[Value]| -> Value {
-        let mut lxbh = Value::String(String::new());
-        for point in points {
-            let road = point.get("roadCode").cloned().unwrap_or(Value::Null);
-            if lxbh.as_str() == Some("") && road.as_str() != Some("") {
-                lxbh = road;
-            }
-        }
-        lxbh
-    };
     if api_map != "0" {
         let entoll = support::java_text(tracks.get("entollstationid"));
         let extoll = support::java_text(tracks.get("extollstationid"));
@@ -776,43 +933,124 @@ async fn get_car_geometry_by_plan(
                 support::java_text(tracks.get("plateKey")),
                 points.len()
             );
-            if let Some(paths) = cached_paths(state, &key).await {
-                return Ok(vec![geometry_row(first_road_code(points), paths)]);
+            // Java: nodeIds = 入口收费站 + 各轨迹点 devCode（非空才加） + 出口收费站。
+            let mut node_ids = vec![entoll.clone()];
+            let mut lxbh = Value::String(String::new());
+            for point in points.iter() {
+                let road = point.get("roadCode").cloned().unwrap_or(Value::Null);
+                if lxbh.as_str() == Some("") && road.as_str() != Some("") {
+                    lxbh = road;
+                }
+                let dev_code = support::java_text(point.get("devCode"));
+                if !dev_code.is_empty() {
+                    node_ids.push(dev_code);
+                }
             }
-            return get_car_geometry(state, points).await;
+            node_ids.push(extoll);
+
+            let paths = match cached_paths(state, &key).await {
+                Some(text) => Some(text),
+                None => {
+                    let text = road_path::get_shortest_road_path(state, &node_ids).await;
+                    if let Some(text) = &text {
+                        let _ = state.redis.set_object(&key, text).await;
+                    }
+                    text
+                }
+            };
+            return match paths {
+                Some(paths) => Ok(vec![geometry_row(lxbh, paths)]),
+                None => get_car_geometry_by_plan_tx(state, tracks, points).await,
+            };
         }
     }
+    get_car_geometry_by_plan_tx(state, tracks, points).await
+}
+
+/// Java: getCarGeometryByPlan —— 起终点桩号齐全时走腾讯 direction，拿不到才落本地桩号绘制。
+async fn get_car_geometry_by_plan_tx(
+    state: &AppState,
+    tracks: &Value,
+    points: &mut Vec<Value>,
+) -> Result<Vec<Value>, AppError> {
     let ends = ["startLonDec", "stratLatDec", "endLonDec", "endLatDec"];
-    if ends
-        .iter()
-        .all(|key| tracks.get(*key).map(|value| !value.is_null()).unwrap_or(false))
-    {
-        let key = format!(
-            "{ROAD_PATH_CACHE_PREFIX}{}{}{}{}{}{}",
-            support::java_text(tracks.get("plateKey")),
-            support::java_text(tracks.get("startLonDec")),
-            support::java_text(tracks.get("stratLatDec")),
-            support::java_text(tracks.get("endLonDec")),
-            support::java_text(tracks.get("endLatDec")),
-            points.len()
-        );
-        if let Some(paths) = cached_paths(state, &key).await {
-            return Ok(vec![geometry_row(first_road_code(points), paths)]);
-        }
+    if ends.iter().any(|key| {
+        tracks
+            .get(*key)
+            .map(|value| value.is_null())
+            .unwrap_or(true)
+    }) {
+        return get_car_geometry(state, points).await;
     }
-    get_car_geometry(state, points).await
+    let key = format!(
+        "{ROAD_PATH_CACHE_PREFIX}{}{}{}{}{}{}",
+        support::java_text(tracks.get("plateKey")),
+        support::java_text(tracks.get("startLonDec")),
+        support::java_text(tracks.get("stratLatDec")),
+        support::java_text(tracks.get("endLonDec")),
+        support::java_text(tracks.get("endLatDec")),
+        points.len()
+    );
+    // Java: wayPoints 取每个「lon/lat 都非空」的点，先转 GCJ-02，再原样 Double.toString。
+    let mut lxbh = Value::String(String::new());
+    let mut way_points: Vec<String> = Vec::new();
+    for point in points.iter() {
+        let lon = point.get("lon").filter(|value| !value.is_null());
+        let lat = point.get("lat").filter(|value| !value.is_null());
+        let (Some(lon), Some(lat)) = (lon, lat) else {
+            continue;
+        };
+        let road = point.get("roadCode").cloned().unwrap_or(Value::Null);
+        if lxbh.as_str() == Some("") && road.as_str() != Some("") {
+            lxbh = road;
+        }
+        let number = |value: &Value| -> Option<f64> {
+            match value {
+                Value::Number(number) => number.as_f64(),
+                other => other.as_str().and_then(|text| text.parse().ok()),
+            }
+        };
+        let (Some(lon), Some(lat)) = (number(lon), number(lat)) else {
+            continue;
+        };
+        let (lat, lon) = gps::gps84_to_gcj02(lat, lon);
+        way_points.push(format!(
+            "{},{}",
+            gps::java_double(lat),
+            gps::java_double(lon)
+        ));
+    }
+    let paths = match cached_paths(state, &key).await {
+        Some(text) => Some(text),
+        None => {
+            let text = road_path::calc_lon_and_lat_paths(
+                state,
+                &support::java_text(tracks.get("startLonDec")),
+                &support::java_text(tracks.get("stratLatDec")),
+                &support::java_text(tracks.get("endLonDec")),
+                &support::java_text(tracks.get("endLatDec")),
+                "",
+                &way_points.join(";"),
+            )
+            .await;
+            if let Some(text) = &text {
+                let _ = state.redis.set_object(&key, text).await;
+            }
+            text
+        }
+    };
+    match paths {
+        Some(paths) => Ok(vec![geometry_row(lxbh, paths)]),
+        None => get_car_geometry(state, points).await,
+    }
 }
 
 async fn cached_paths(state: &AppState, key: &str) -> Option<String> {
     let value = state.redis.get_object::<Value>(key).await.ok().flatten()?;
-    let text = match &value {
-        Value::String(text) => text.clone(),
-        other => other.to_string(),
-    };
-    if text.is_empty() {
-        None
-    } else {
-        Some(text)
+    // Java: paths = CommonUtil.isNull(obj) —— 字符串照抄，其他类型走 toString + trim。
+    match support::java_text(Some(&value)) {
+        text if text.is_empty() => None,
+        text => Some(text),
     }
 }
 
@@ -852,11 +1090,15 @@ fn get_trail_dev_bo(tracks: &Value, points: &[Value]) -> Value {
                 trail_list = group.iter().map(|item| points[*item].clone()).collect();
                 let count_gantry = group
                     .iter()
-                    .filter(|item| support::java_text(points[**item].get("stateType")) == GANTRY_CAPTURE)
+                    .filter(|item| {
+                        support::java_text(points[**item].get("stateType")) == GANTRY_CAPTURE
+                    })
                     .count();
                 let count_fee = group
                     .iter()
-                    .filter(|item| support::java_text(points[**item].get("stateType")) == FEE_RECORD)
+                    .filter(|item| {
+                        support::java_text(points[**item].get("stateType")) == FEE_RECORD
+                    })
                     .count();
                 if count_gantry > 0 && count_fee == 0 {
                     status = "1";
@@ -941,7 +1183,11 @@ async fn list_by_car_id(
 ) -> Result<TableDataInfo<Value>, AppError> {
     // Java listByCarId：carNo 为空时用 "-1"（查询不到数据）。
     let mut params = support::query_map(&raw);
-    if params.get("carNo").map(|value| value.trim().is_empty()).unwrap_or(true) {
+    if params
+        .get("carNo")
+        .map(|value| value.trim().is_empty())
+        .unwrap_or(true)
+    {
         params.insert("carNo".to_string(), "-1".to_string());
     }
     let page = support::page_domain(&raw);
@@ -974,9 +1220,9 @@ async fn change_trail(
         object
             .entry("raodTrailList".to_string())
             .or_insert_with(|| json!([]));
-        object.entry("trailDevCountBO".to_string()).or_insert_with(|| {
-            json!({ "exceptNum": 0, "TrailDevList": [] })
-        });
+        object
+            .entry("trailDevCountBO".to_string())
+            .or_insert_with(|| json!({ "exceptNum": 0, "TrailDevList": [] }));
     }
     Ok(AjaxResult::success_data(trail))
 }

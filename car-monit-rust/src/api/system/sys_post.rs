@@ -75,7 +75,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/system/post/{postIds}",
-            meta::get_route("/system/post/{postIds}", Some("system:post:query"), None, get_info),
+            meta::get_route(
+                "/system/post/{postIds}",
+                Some("system:post:query"),
+                None,
+                get_info,
+            ),
         )
         .route(
             "/system/post",
@@ -115,8 +120,7 @@ async fn export(
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
     let rows = support::query_all_fmt(&state.db, &params, &SPEC, FORMATS).await?;
-    let headers =
-        ["岗位序号", "岗位编码", "岗位名称", "岗位排序", "状态"].map(str::to_string);
+    let headers = ["岗位序号", "岗位编码", "岗位名称", "岗位排序", "状态"].map(str::to_string);
     let fields = ["postId", "postCode", "postName", "postSort", "status"];
     let data = rows
         .iter()
@@ -168,8 +172,8 @@ fn shape_post_rows(mut rows: Vec<Value>) -> Vec<Value> {
 }
 
 async fn optionselect(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
-    let rows =
-        support::query_all_fmt(&state.db, &std::collections::HashMap::new(), &SPEC, FORMATS).await?;
+    let rows = support::query_all_fmt(&state.db, &std::collections::HashMap::new(), &SPEC, FORMATS)
+        .await?;
     Ok(AjaxResult::success_data(shape_post_rows(rows)))
 }
 
@@ -177,6 +181,8 @@ async fn get_info(
     State(state): State<AppState>,
     Path(post_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long postId`。
+    let post_id = support::path_long("postId", &post_id)?.to_string();
     Ok(AjaxResult::success_data(
         support::query_by_id_fmt(&state.db, &SPEC, &post_id, FORMATS)
             .await?
@@ -185,7 +191,11 @@ async fn get_info(
 }
 
 fn text(body: &Value, key: &str) -> String {
-    body.get(key).and_then(Value::as_str).unwrap_or_default().trim().to_string()
+    body.get(key)
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim()
+        .to_string()
 }
 
 async fn ensure_unique(
@@ -200,11 +210,18 @@ async fn ensure_unique(
         return Ok(None);
     }
     let sql = format!("select post_id from sys_post where {column} = ? limit 1");
-    let found: Option<i64> = sqlx::query_scalar(&sql).bind(&value).fetch_optional(&state.db).await?;
+    let found: Option<i64> = sqlx::query_scalar(&sql)
+        .bind(&value)
+        .fetch_optional(&state.db)
+        .await?;
     let current = body.get("postId").and_then(Value::as_i64).unwrap_or(-1);
     if let Some(found) = found {
         if found != current {
-            let verb = if body.get("postId").is_some() { "修改" } else { "新增" };
+            let verb = if body.get("postId").is_some() {
+                "修改"
+            } else {
+                "新增"
+            };
             return Ok(Some(AjaxResult::error(format!(
                 "{verb}岗位'{}'失败，{label}已存在",
                 text(body, "postName")
@@ -226,10 +243,12 @@ async fn validate_and_save(
     if text(&body, "postName").is_empty() {
         return Ok(AjaxResult::error("岗位名称不能为空"));
     }
-    if let Some(error) = ensure_unique(state, &body, "post_name", "postName", "岗位名称").await? {
+    if let Some(error) = ensure_unique(state, &body, "post_name", "postName", "岗位名称").await?
+    {
         return Ok(error);
     }
-    if let Some(error) = ensure_unique(state, &body, "post_code", "postCode", "岗位编码").await? {
+    if let Some(error) = ensure_unique(state, &body, "post_code", "postCode", "岗位编码").await?
+    {
         return Ok(error);
     }
 
@@ -251,14 +270,9 @@ async fn validate_and_save(
             Value::String(user.user.user_name.clone().unwrap_or_default()),
         );
         object.insert("updateTime".to_string(), json!(support::now_string()));
-        let rows = support::update_entity_by_id(
-            &state.db,
-            "sys_post",
-            "post_id",
-            &entity,
-            AutoFill::NONE,
-        )
-        .await?;
+        let rows =
+            support::update_entity_by_id(&state.db, "sys_post", "post_id", &entity, AutoFill::NONE)
+                .await?;
         Ok(support::to_ajax(rows))
     }
 }
@@ -283,13 +297,16 @@ async fn remove(
     State(state): State<AppState>,
     Path(post_ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&post_ids);
+    // Java: `@PathVariable Long[] postIds` —— 任一段转不成 Long 就整体失败，文案带整段原文。
+    let ids = support::path_long_list("postIds", &post_ids)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     for id in &ids {
-        let count: i64 =
-            sqlx::query_scalar("select count(1) from sys_user_post where post_id = ?")
-                .bind(id)
-                .fetch_one(&state.db)
-                .await?;
+        let count: i64 = sqlx::query_scalar("select count(1) from sys_user_post where post_id = ?")
+            .bind(id)
+            .fetch_one(&state.db)
+            .await?;
         if count > 0 {
             let name: Option<String> =
                 sqlx::query_scalar("select post_name from sys_post where post_id = ?")

@@ -27,9 +27,5 @@ async fn index(state: axum::extract::State<AppState>) -> Response {
         "欢迎使用{}后台管理框架，请通过前端地址访问。",
         state.settings.ruoyi.name
     );
-    (
-        [(header::CONTENT_TYPE, "text/plain;charset=UTF-8")],
-        body,
-    )
-        .into_response()
+    ([(header::CONTENT_TYPE, "text/plain;charset=UTF-8")], body).into_response()
 }

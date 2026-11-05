@@ -201,12 +201,18 @@ fn build_query(
     eq(&mut builder, "t.eps_id", "epsId");
     eq(&mut builder, "t.tenant_id", "tenantId");
     eq(&mut builder, "t.create_by", "createBy");
-    if let Some(value) = params.get("applyTime1").filter(|value| !value.trim().is_empty()) {
+    if let Some(value) = params
+        .get("applyTime1")
+        .filter(|value| !value.trim().is_empty())
+    {
         builder.push(" and t.in_time >= STR_TO_DATE(");
         builder.push_bind(value.clone());
         builder.push(", '%Y-%m-%d %H:%i:%s')");
     }
-    if let Some(value) = params.get("applyTime2").filter(|value| !value.trim().is_empty()) {
+    if let Some(value) = params
+        .get("applyTime2")
+        .filter(|value| !value.trim().is_empty())
+    {
         builder.push(" and t.in_time <= STR_TO_DATE(");
         builder.push_bind(value.clone());
         builder.push(", '%Y-%m-%d %H:%i:%s')");
@@ -253,7 +259,10 @@ async fn query(
     page: Option<&crate::common::page::PageDomain>,
 ) -> Result<(i64, Vec<Value>), AppError> {
     let mut count_builder = build_query(params, false, true);
-    let total: i64 = count_builder.build_query_scalar().fetch_one(&state.db).await?;
+    let total: i64 = count_builder
+        .build_query_scalar()
+        .fetch_one(&state.db)
+        .await?;
     let mut builder = build_query(params, true, false);
     if let Some(page) = page {
         let (offset, limit) = page.resolve(total);
@@ -268,15 +277,64 @@ async fn query(
 
 /// Java Jackson 的 CarWarningInfo 键序（列表 VO 用查询列序，详情 VO 多了下面这些派生列）。
 const CAR_WARNING_KEYS: &[&str] = &[
-    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
-    "tenantId", "carId", "carNo", "carType", "carVehicle", "carNum", "inStationId", "inStation",
-    "inTime", "gantryStationId", "gantrytStation", "gantryTime", "fileIds", "nextPassTime",
-    "nextPassType", "nextPassAddress", "nextPassLongitude", "nextPassLatitude", "roadCode",
-    "roadName", "sectionCode", "sectionName", "trackId", "trackJosn", "trackNames", "backCol1",
-    "backCol2", "status", "gantryTimeStr", "applyTime1", "applyTime2", "escapedType",
-    "escapedAmount", "carNoQuery", "createTimeStr", "inTimeStr", "flag", "flagTime",
-    "queryRante", "gantryCode", "tollCode", "fwqbm", "type", "code", "plateColor",
-    "trailFwqList", "sectionCodeList", "codeList", "needToWarnStr", "nextPassTimeStr",
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "tenantId",
+    "carId",
+    "carNo",
+    "carType",
+    "carVehicle",
+    "carNum",
+    "inStationId",
+    "inStation",
+    "inTime",
+    "gantryStationId",
+    "gantrytStation",
+    "gantryTime",
+    "fileIds",
+    "nextPassTime",
+    "nextPassType",
+    "nextPassAddress",
+    "nextPassLongitude",
+    "nextPassLatitude",
+    "roadCode",
+    "roadName",
+    "sectionCode",
+    "sectionName",
+    "trackId",
+    "trackJosn",
+    "trackNames",
+    "backCol1",
+    "backCol2",
+    "status",
+    "gantryTimeStr",
+    "applyTime1",
+    "applyTime2",
+    "escapedType",
+    "escapedAmount",
+    "carNoQuery",
+    "createTimeStr",
+    "inTimeStr",
+    "flag",
+    "flagTime",
+    "queryRante",
+    "gantryCode",
+    "tollCode",
+    "fwqbm",
+    "type",
+    "code",
+    "plateColor",
+    "trailFwqList",
+    "sectionCodeList",
+    "codeList",
+    "needToWarnStr",
+    "nextPassTimeStr",
 ];
 
 async fn list(
@@ -304,19 +362,66 @@ async fn export(
     let escaped_type = support::dict_map(&state.db, "escaped_type").await?;
 
     let headers = [
-        "车辆id", "车牌号", "车型", "车种", "轴数", "入口站id", "入口站", "入口时间", "门架id",
-        "门架名称", "经过时间", "图片(附件ids)", "预计下一个通行时间", "预计下一个通行类型",
-        "预计下一个通行地址", "预计下一个通行经度", "预计下一个通行维度", "所属路线编码",
-        "所属路线名称", "所属路段编码", "所属路段名称", "行驶轨迹id", "行驶轨迹josn",
-        "轨迹点集合", "同步日期", "备用字段2", "状态", "逃费类型", "逃费金额",
+        "车辆id",
+        "车牌号",
+        "车型",
+        "车种",
+        "轴数",
+        "入口站id",
+        "入口站",
+        "入口时间",
+        "门架id",
+        "门架名称",
+        "经过时间",
+        "图片(附件ids)",
+        "预计下一个通行时间",
+        "预计下一个通行类型",
+        "预计下一个通行地址",
+        "预计下一个通行经度",
+        "预计下一个通行维度",
+        "所属路线编码",
+        "所属路线名称",
+        "所属路段编码",
+        "所属路段名称",
+        "行驶轨迹id",
+        "行驶轨迹josn",
+        "轨迹点集合",
+        "同步日期",
+        "备用字段2",
+        "状态",
+        "逃费类型",
+        "逃费金额",
     ]
     .map(str::to_string);
     let fields = [
-        "carId", "carNo", "carType", "carVehicle", "carNum", "inStationId", "inStation",
-        "inTime", "gantryStationId", "gantrytStation", "gantryTime", "fileIds",
-        "nextPassTime", "nextPassType", "nextPassAddress", "nextPassLongitude",
-        "nextPassLatitude", "roadCode", "roadName", "sectionCode", "sectionName", "trackId",
-        "backCol2", "trackNames", "backCol1", "backCol2", "status", "escapedType",
+        "carId",
+        "carNo",
+        "carType",
+        "carVehicle",
+        "carNum",
+        "inStationId",
+        "inStation",
+        "inTime",
+        "gantryStationId",
+        "gantrytStation",
+        "gantryTime",
+        "fileIds",
+        "nextPassTime",
+        "nextPassType",
+        "nextPassAddress",
+        "nextPassLongitude",
+        "nextPassLatitude",
+        "roadCode",
+        "roadName",
+        "sectionCode",
+        "sectionName",
+        "trackId",
+        "backCol2",
+        "trackNames",
+        "backCol1",
+        "backCol2",
+        "status",
+        "escapedType",
         "escapedAmount",
     ];
     let data = rows

@@ -26,7 +26,12 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/monitor/online/list",
-            meta::get_route("/monitor/online/list", Some("monitor:online:list"), None, list),
+            meta::get_route(
+                "/monitor/online/list",
+                Some("monitor:online:list"),
+                None,
+                list,
+            ),
         )
         .route(
             "/monitor/online/{tokenId}",

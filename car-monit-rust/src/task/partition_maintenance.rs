@@ -67,7 +67,10 @@ pub async fn check_partition_health(state: AppState) {
              FROM pg_inherits WHERE inhparent = '{table_name}'::regclass \
              ORDER BY partition_name"
         );
-        match sqlx::query_scalar::<_, String>(&sql).fetch_all(&state.db).await {
+        match sqlx::query_scalar::<_, String>(&sql)
+            .fetch_all(&state.db)
+            .await
+        {
             Ok(partitions) => {
                 for partition in partitions {
                     info!("[分区维护] {} 分区: {}", table_name, partition);

@@ -75,12 +75,8 @@ impl JobKind {
             JobKind::PartitionCreate => {
                 partition_maintenance::create_future_partitions(state).await
             }
-            JobKind::PartitionHealth => {
-                partition_maintenance::check_partition_health(state).await
-            }
-            JobKind::IncrementalSync => {
-                snapshot_flow_sync::sync_incremental_data(state).await
-            }
+            JobKind::PartitionHealth => partition_maintenance::check_partition_health(state).await,
+            JobKind::IncrementalSync => snapshot_flow_sync::sync_incremental_data(state).await,
             JobKind::FullSync => {
                 snapshot_flow_sync::manual_full_sync(state).await;
             }
@@ -146,7 +142,10 @@ async fn run_loop(state: Arc<AppState>, kind: JobKind, cron: CronExpression) {
     let mut after = chrono::Local::now().naive_local();
     loop {
         let Some(next) = cron.next_after(after) else {
-            error!("[定时任务] {} 无法计算下一次触发时间，循环结束", kind.name());
+            error!(
+                "[定时任务] {} 无法计算下一次触发时间，循环结束",
+                kind.name()
+            );
             return;
         };
         let now = chrono::Local::now().naive_local();
@@ -166,7 +165,8 @@ mod tests {
     #[test]
     fn all_java_cron_expressions_parse() {
         for kind in JobKind::ALL {
-            CronExpression::parse(kind.cron()).unwrap_or_else(|err| panic!("{}: {err}", kind.name()));
+            CronExpression::parse(kind.cron())
+                .unwrap_or_else(|err| panic!("{}: {err}", kind.name()));
         }
     }
 

@@ -45,7 +45,9 @@ pub async fn get_snapshot_flow_page(
 
     let value = get_json(state, LIST_PATH, &params).await?;
     serde_json::from_value(value).map_err(|err| {
-        AppError::Internal(Some(format!("解析 /base/snapshotflow/list 响应失败: {err}")))
+        AppError::Internal(Some(format!(
+            "解析 /base/snapshotflow/list 响应失败: {err}"
+        )))
     })
 }
 
@@ -62,9 +64,7 @@ pub async fn get_earliest_snapshottime(
         return Ok(None);
     }
     parse_json_datetime(&value).map(Some).ok_or_else(|| {
-        AppError::Internal(Some(format!(
-            "无法把最早 snapshottime 解析为日期: {value}"
-        )))
+        AppError::Internal(Some(format!("无法把最早 snapshottime 解析为日期: {value}")))
     })
 }
 
@@ -84,10 +84,16 @@ pub async fn select_snapshot_flow_by_id(
 }
 
 /// 把远端 `TableDataInfo` JSON 还原成本地结构。
-pub fn page_from_value(value: &serde_json::Value) -> crate::response::TableDataInfo<serde_json::Value> {
+pub fn page_from_value(
+    value: &serde_json::Value,
+) -> crate::response::TableDataInfo<serde_json::Value> {
     let total = value
         .get("total")
-        .and_then(|total| total.as_i64().or_else(|| total.as_str().and_then(|text| text.parse().ok())))
+        .and_then(|total| {
+            total
+                .as_i64()
+                .or_else(|| total.as_str().and_then(|text| text.parse().ok()))
+        })
         .unwrap_or(0);
     let rows = value
         .get("rows")
@@ -130,7 +136,11 @@ pub async fn get_json_owned(
     path: &str,
     params: &[(String, String)],
 ) -> Result<serde_json::Value, AppError> {
-    let base = state.settings.vehicle_monitor.base_url.trim_end_matches('/');
+    let base = state
+        .settings
+        .vehicle_monitor
+        .base_url
+        .trim_end_matches('/');
     let url = format!("{base}{path}");
     let attempts = state.settings.forest.retry_count + 1;
     let mut last_error = String::new();
@@ -142,6 +152,12 @@ pub async fn get_json_owned(
                 let status = response.status();
                 let body = response.text().await.unwrap_or_default();
                 if status.is_success() {
+                    // Java: Forest 遇到空响应体时把返回对象解成 null（不是空串），
+                    // 于是 `AjaxResult.success(null)` 连 `data` 键都不写、
+                    // `getEarliestSnapshottime` 走「暂无数据」分支。
+                    if body.trim().is_empty() {
+                        return Ok(serde_json::Value::Null);
+                    }
                     return Ok(serde_json::from_str(&body)
                         .unwrap_or_else(|_| serde_json::Value::String(body.trim().to_string())));
                 }
@@ -150,7 +166,10 @@ pub async fn get_json_owned(
             Err(err) => last_error = format!("{path} 请求失败: {err}"),
         }
         if attempt < attempts {
-            warn!("【Forest】{} 第 {} 次失败，准备重试: {}", path, attempt, last_error);
+            warn!(
+                "【Forest】{} 第 {} 次失败，准备重试: {}",
+                path, attempt, last_error
+            );
         }
     }
 

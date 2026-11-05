@@ -9,9 +9,7 @@ pub mod sys_user;
 
 pub use login_body::LoginBody;
 pub use login_user::LoginUser;
-pub use ods_rt_szdn_snapshot_flow_addcode::{
-    OdsRtSzdnSnapshotFlowAddcode, SnapshotFlowQuery,
-};
+pub use ods_rt_szdn_snapshot_flow_addcode::{OdsRtSzdnSnapshotFlowAddcode, SnapshotFlowQuery};
 pub use router_vo::{MetaVo, RouterVo};
 pub use sys_dept::SysDept;
 pub use sys_menu::SysMenu;

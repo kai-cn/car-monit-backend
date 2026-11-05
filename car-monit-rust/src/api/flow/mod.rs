@@ -5,13 +5,13 @@ use axum::Router;
 use crate::state::AppState;
 
 pub mod flow_apply_info;
-pub mod shared;
 pub mod flow_current_node;
 pub mod flow_list;
 pub mod flow_message_dispose;
 pub mod flow_message_info;
 pub mod flow_name;
 pub mod flow_template;
+pub mod shared;
 
 pub fn routes() -> Router<AppState> {
     let mut router = Router::new();

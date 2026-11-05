@@ -15,7 +15,12 @@ use crate::state::AppState;
 pub fn routes() -> Router<AppState> {
     Router::new().route(
         "/monitor/server",
-        meta::get_route("/monitor/server", Some("monitor:server:list"), None, get_info),
+        meta::get_route(
+            "/monitor/server",
+            Some("monitor:server:list"),
+            None,
+            get_info,
+        ),
     )
 }
 

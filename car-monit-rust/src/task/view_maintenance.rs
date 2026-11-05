@@ -85,7 +85,8 @@ async fn execute_view_maintenance(state: &AppState, is_manual: bool) -> String {
 
 /// Java: `buildViewSql(existingTables)` —— 主表在前，历史分表按名称升序。
 fn build_view_sql(existing_tables: &[String]) -> String {
-    let mut sql = format!("CREATE OR REPLACE VIEW {VIEW_NAME} AS\nSELECT * FROM {ACTIVE_TABLE_NAME}");
+    let mut sql =
+        format!("CREATE OR REPLACE VIEW {VIEW_NAME} AS\nSELECT * FROM {ACTIVE_TABLE_NAME}");
 
     let mut shards: Vec<&str> = existing_tables
         .iter()
@@ -134,7 +135,12 @@ fn update_metrics(duration_ms: i64, table_count: i32) {
         .store(table_count, Ordering::Relaxed);
 }
 
-fn log_performance_metrics(trigger_type: &str, duration_ms: i64, table_count: usize, success: bool) {
+fn log_performance_metrics(
+    trigger_type: &str,
+    duration_ms: i64,
+    table_count: usize,
+    success: bool,
+) {
     info!(
         "[视图维护任务] 性能指标 - 触发类型={}, 耗时={}ms, 表数量={}, 成功={}",
         trigger_type, duration_ms, table_count, success
@@ -188,11 +194,7 @@ fn next_schedule_time() -> i64 {
 /// Java: `needsUpdate()` —— 当月分表尚未创建时需要维护。
 pub async fn needs_update(state: &AppState) -> bool {
     // Java: TABLE_PREFIX + DateUtils.getYearMonth()，getYearMonth() 是 "yyyy-MM"。
-    let current_month_table = format!(
-        "{}{}",
-        TABLE_PREFIX,
-        chrono::Local::now().format("%Y-%m")
-    );
+    let current_month_table = format!("{}{}", TABLE_PREFIX, chrono::Local::now().format("%Y-%m"));
     match list_sharding_tables(&state.db, TABLE_PREFIX).await {
         Ok(tables) => !tables.contains(&current_month_table),
         Err(err) => {

@@ -204,7 +204,11 @@ async fn sync_snapshot_flow_by_date_range(
             ensure_table_exists(state, &table_name).await;
             insert_batch_to_table(&state.db, &table_name, &list).await?;
             total += list.len() as i64;
-            debug!("【全量同步任务】表 {} 插入 {} 条数据", table_name, list.len());
+            debug!(
+                "【全量同步任务】表 {} 插入 {} 条数据",
+                table_name,
+                list.len()
+            );
         }
 
         if row_count < PAGE_SIZE as usize {
@@ -239,7 +243,10 @@ pub async fn sync_incremental_data(state: AppState) {
         }
     };
     let end_date = Local::now().naive_local().format(TIME_FORMAT).to_string();
-    info!("【增量同步任务】同步时间范围: {} 至 {}", start_date, end_date);
+    info!(
+        "【增量同步任务】同步时间范围: {} 至 {}",
+        start_date, end_date
+    );
 
     match sync_snapshot_flow_by_date_range(&state, &start_date, &end_date).await {
         Ok(count) => info!(
@@ -251,13 +258,13 @@ pub async fn sync_incremental_data(state: AppState) {
     }
 }
 
-async fn query_last_sync_time(
-    state: &AppState,
-    table_name: &str,
-) -> Option<NaiveDateTime> {
+async fn query_last_sync_time(state: &AppState, table_name: &str) -> Option<NaiveDateTime> {
     match check_table_exists(&state.db, table_name).await {
         Ok(0) => {
-            warn!("【增量同步任务】表 {} 不存在，将从本月初开始同步", table_name);
+            warn!(
+                "【增量同步任务】表 {} 不存在，将从本月初开始同步",
+                table_name
+            );
             None
         }
         Ok(_) => match get_max_snapshottime(&state.db, table_name).await {
@@ -308,10 +315,7 @@ fn group_by_month(
         if let Some(snapshottime) = data.snapshottime {
             let table_name =
                 physical_table_name(table_prefix, snapshottime, ShardingStrategy::Monthly);
-            grouped
-                .entry(table_name)
-                .or_default()
-                .push(data.clone());
+            grouped.entry(table_name).or_default().push(data.clone());
         }
     }
     grouped
@@ -361,7 +365,10 @@ pub async fn pre_create_tables(state: AppState, months: usize) {
     for table_name in &table_names {
         ensure_table_exists(&state, table_name).await;
     }
-    info!("【分表同步任务】已提前创建 {} 个未来分表", table_names.len());
+    info!(
+        "【分表同步任务】已提前创建 {} 个未来分表",
+        table_names.len()
+    );
 }
 
 #[cfg(test)]

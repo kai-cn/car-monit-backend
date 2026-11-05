@@ -53,7 +53,12 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/monitor/operlog/list",
-            meta::get_route("/monitor/operlog/list", Some("monitor:operlog:list"), None, list),
+            meta::get_route(
+                "/monitor/operlog/list",
+                Some("monitor:operlog:list"),
+                None,
+                list,
+            ),
         )
         .route(
             "/monitor/operlog/export",
@@ -118,7 +123,10 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, support::reorder_rows(rows, OPERLOG_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::reorder_rows(rows, OPERLOG_KEYS),
+    ))
 }
 
 fn convert_business_type(text: &str) -> String {
@@ -145,15 +153,41 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = [
-        "操作序号", "操作模块", "业务类型", "请求方法", "请求方式", "操作类别", "操作人员",
-        "部门名称", "请求地址", "操作地址", "操作地点", "请求参数", "返回参数", "状态",
-        "错误消息", "操作时间",
+        "操作序号",
+        "操作模块",
+        "业务类型",
+        "请求方法",
+        "请求方式",
+        "操作类别",
+        "操作人员",
+        "部门名称",
+        "请求地址",
+        "操作地址",
+        "操作地点",
+        "请求参数",
+        "返回参数",
+        "状态",
+        "错误消息",
+        "操作时间",
     ]
     .map(str::to_string);
     let fields = [
-        "operId", "title", "businessType", "method", "requestMethod", "operatorType",
-        "operName", "deptName", "operUrl", "operIp", "operLocation", "operParam",
-        "jsonResult", "status", "errorMsg", "operTime",
+        "operId",
+        "title",
+        "businessType",
+        "method",
+        "requestMethod",
+        "operatorType",
+        "operName",
+        "deptName",
+        "operUrl",
+        "operIp",
+        "operLocation",
+        "operParam",
+        "jsonResult",
+        "status",
+        "errorMsg",
+        "operTime",
     ];
     let data = rows
         .iter()
@@ -193,12 +227,18 @@ async fn remove(
     State(state): State<AppState>,
     Path(oper_ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&oper_ids);
+    // Java: `@PathVariable Long[] operIds` —— 任一段转不成 Long 就整体失败，文案带整段原文。
+    let ids = support::path_long_list("operIds", &oper_ids)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     let rows = support::delete_by_ids(&state.db, "sys_oper_log", "oper_id", &ids).await?;
     Ok(support::to_ajax(rows))
 }
 
 async fn clean(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
-    sqlx::query("truncate table sys_oper_log").execute(&state.db).await?;
+    sqlx::query("truncate table sys_oper_log")
+        .execute(&state.db)
+        .await?;
     Ok(AjaxResult::success())
 }

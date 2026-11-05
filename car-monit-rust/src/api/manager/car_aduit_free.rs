@@ -83,7 +83,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/manager/aduitfree/incomeStatics",
-            meta::get_route("/manager/aduitfree/incomeStatics", None, None, income_statics),
+            meta::get_route(
+                "/manager/aduitfree/incomeStatics",
+                None,
+                None,
+                income_statics,
+            ),
         )
         .route(
             "/manager/aduitfree/exportIncomeStatics",
@@ -96,7 +101,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/manager/aduitfree/incomeDetailList",
-            meta::get_route("/manager/aduitfree/incomeDetailList", None, None, income_details),
+            meta::get_route(
+                "/manager/aduitfree/incomeDetailList",
+                None,
+                None,
+                income_details,
+            ),
         )
         .route(
             "/manager/aduitfree/exportIncomeDetailList",
@@ -125,9 +135,30 @@ pub fn routes() -> Router<AppState> {
 
 /// Java: CarAduitFree extends BasePlusEntity 的 Jackson 键顺序。
 pub(crate) const ADUIT_FREE_KEYS: &[&str] = &[
-    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
-    "tenantId", "confirmId", "carId", "carNo", "carType", "carVehicle", "orgId", "orgName",
-    "userIds", "userNames", "amount", "backCol1", "backCol2", "status", "remark", "applyTime1",
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "tenantId",
+    "confirmId",
+    "carId",
+    "carNo",
+    "carType",
+    "carVehicle",
+    "orgId",
+    "orgName",
+    "userIds",
+    "userNames",
+    "amount",
+    "backCol1",
+    "backCol2",
+    "status",
+    "remark",
+    "applyTime1",
     "applyTime2",
 ];
 
@@ -142,7 +173,10 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    let data = rows.into_iter().map(shape_aduit_free_row).collect::<Vec<_>>();
+    let data = rows
+        .into_iter()
+        .map(shape_aduit_free_row)
+        .collect::<Vec<_>>();
     Ok(TableDataInfo::new(total, data))
 }
 
@@ -153,15 +187,42 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = [
-        "确认补缴id", "车辆id", "车牌号", "车型", "车种", "处理单位id", "处理单位", "处理人员ids",
-        "处理人员", "拆分金额", "备用字段1", "备用字段2", "状态", "备注",
+        "确认补缴id",
+        "车辆id",
+        "车牌号",
+        "车型",
+        "车种",
+        "处理单位id",
+        "处理单位",
+        "处理人员ids",
+        "处理人员",
+        "拆分金额",
+        "备用字段1",
+        "备用字段2",
+        "状态",
+        "备注",
     ]
     .map(str::to_string);
     let fields = [
-        "confirmId", "carId", "carNo", "carType", "carVehicle", "orgId", "orgName", "userIds",
-        "userNames", "amount", "backCol1", "backCol2", "status", "remark",
+        "confirmId",
+        "carId",
+        "carNo",
+        "carType",
+        "carVehicle",
+        "orgId",
+        "orgName",
+        "userIds",
+        "userNames",
+        "amount",
+        "backCol1",
+        "backCol2",
+        "status",
+        "remark",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "补缴处理数据", &headers, &data)
 }
 
@@ -266,14 +327,14 @@ async fn export_income_statics(
     let data = crate::db::rows::rows_to_json(&rows);
     let headers = ["金额", "车辆数", "单位编码", "单位名称"].map(str::to_string);
     let fields = ["amount", "carNum", "orgId", "orgName"];
-    let data = data.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = data
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_download("收入统计", &headers, &data)
 }
 
-fn detail_sql(
-    params: &HashMap<String, String>,
-    count: bool,
-) -> QueryBuilder<'static, MySql> {
+fn detail_sql(params: &HashMap<String, String>, count: bool) -> QueryBuilder<'static, MySql> {
     let first_select = "select ifnull(a.amount, 0) amount, a.car_no, a.org_id, \
          d.dept_name orgName, a.create_time from car_aduit_free a \
          left join sys_dept d on d.dept_id = a.org_id \
@@ -311,7 +372,10 @@ async fn income_details(
         params.insert("orgId".to_string(), "-1".to_string());
     }
     let mut count_builder = detail_sql(&params, true);
-    let total: i64 = count_builder.build_query_scalar().fetch_one(&state.db).await?;
+    let total: i64 = count_builder
+        .build_query_scalar()
+        .fetch_one(&state.db)
+        .await?;
     if total == 0 {
         // Java: PageHelper 在 count=0 时不再执行列表查询。
         return Ok(TableDataInfo::new(0, Vec::new()));
@@ -336,11 +400,17 @@ async fn export_income_details(
     RawQuery(raw): RawQuery,
 ) -> Result<axum::response::Response, AppError> {
     let params = support::query_map(&raw);
-    let rows = detail_sql(&params, false).build().fetch_all(&state.db).await?;
+    let rows = detail_sql(&params, false)
+        .build()
+        .fetch_all(&state.db)
+        .await?;
     let data = crate::db::rows::rows_to_json(&rows);
     let headers = ["金额", "车牌号", "单位编码", "单位名称", "时间"].map(str::to_string);
     let fields = ["amount", "carNo", "orgId", "orgName", "createTime"];
-    let data = data.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = data
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_download("收入明细", &headers, &data)
 }
 

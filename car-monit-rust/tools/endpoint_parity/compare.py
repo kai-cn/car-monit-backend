@@ -191,6 +191,12 @@ SHAPE_ONLY = (
     '/base/snapshotflow/list',
 )
 
+# 外部实时路径服务（本地路网规划 / 腾讯 direction）的返回值随路网数据刷新变化：
+# 同一时间窗口内双端逐字节一致，跨窗口取到的路线点数会差几个。只比结构不比这个标量。
+VALUE_FREE = {
+    '/manager/suspicious/{id}': re.compile(r'\.paths$'),
+}
+
 SPECIAL_Q = {
     '/manager/suspicious/exportAbnormalPassage': {'carSuspiciousId': S['suspicious_id']},
     '/common/download': {'fileName': 'developer/' + S['file_name'], 'delete': 'false'},
@@ -232,8 +238,9 @@ def is_slow(pattern):
 DYN_KEYS = re.compile(r'(loginDate|loginIp|createTime|updateTime|token|uuid|img|pwdUpdateDate|online|lastLogin|nextValidTime)', re.I)
 
 
-def compare_json(a, b, path='', issues=None, dyn=False, depth=0, cap=5, shape=False):
+def compare_json(a, b, path='', issues=None, dyn=False, depth=0, cap=5, shape=False, free=None):
     # shape=True：上游随机生成的值只比结构，不比标量值（见 SHAPE_ONLY）。
+    # free=正则：命中的标量路径不比值（见 VALUE_FREE，外部实时路网结果）。
     if issues is None:
         issues = []
     if len(issues) > 60:
@@ -279,18 +286,21 @@ def compare_json(a, b, path='', issues=None, dyn=False, depth=0, cap=5, shape=Fa
                         issues.append(('EXTRA', path + '.' + k if path else k, '<absent>', b[k]))
         for k in ka:
             if k in b:
-                sub_dyn = dyn or bool(DYN_KEYS.search(str(k)))
+                # 只有**键名**命中 DYN_KEYS 才跳过标量值。
+                # 原先写成 `dyn or ...`，等于把整个动态端点的值比较全关了 —— /system/user/list
+                # 的 deptName/subCode/pjFlag 差异就是这样被漏掉的。
+                sub_dyn = bool(DYN_KEYS.search(str(k)))
                 if sub_dyn and not isinstance(a[k], (dict, list)) and not isinstance(b[k], (dict, list)):
                     continue
-                compare_json(a[k], b[k], path + '.' + k if path else k, issues, dyn, depth + 1, cap, shape)
+                compare_json(a[k], b[k], path + '.' + k if path else k, issues, dyn, depth + 1, cap, shape, free)
         return issues
     if isinstance(a, list):
         if len(a) != len(b):
             issues.append(('LEN-DIFF', path, len(a), len(b)))
         for i in range(min(len(a), len(b), cap)):
-            compare_json(a[i], b[i], '%s[%d]' % (path, i), issues, dyn, depth + 1, cap, shape)
+            compare_json(a[i], b[i], '%s[%d]' % (path, i), issues, dyn, depth + 1, cap, shape, free)
         return issues
-    if a != b and not shape:
+    if a != b and not shape and not (free is not None and free.search(path)):
         issues.append(('VALUE-DIFF', path, a, b))
     return issues
 
@@ -357,7 +367,7 @@ def compare_one(tokens, row, java_base=None, rust_base=None):
         issues.append(('STATUS-DIFF', '$status', sj, sr))
     if jjson and rjson:
         dyn = any(pattern.startswith(p) for p in DYNAMIC)
-        compare_json(jj, rj, '', issues, dyn, 0, 5, shape)
+        compare_json(jj, rj, '', issues, dyn, 0, 5, shape, VALUE_FREE.get(pattern))
         cj_code, cr_code = jj.get('code') if isinstance(jj, dict) else None, rj.get('code') if isinstance(rj, dict) else None
         if cj_code != cr_code:
             issues.append(('CODE-DIFF', '$.code', cj_code, cr_code))

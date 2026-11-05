@@ -43,7 +43,10 @@ async fn download(Path(template_type): Path<String>) -> Response {
             .into_response(),
         Err(err) => {
             tracing::error!("模板下载失败 {}: {err}", path.display());
-            ([(header::CONTENT_TYPE, "application/octet-stream")], Vec::<u8>::new())
+            (
+                [(header::CONTENT_TYPE, "application/octet-stream")],
+                Vec::<u8>::new(),
+            )
                 .into_response()
         }
     }

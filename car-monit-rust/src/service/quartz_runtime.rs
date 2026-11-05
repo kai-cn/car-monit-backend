@@ -1,148 +1,328 @@
-// 来源: ruoyi-quartz/src/main/java/com/ruoyi/quartz/util/JobInvokeUtil.java
+// 来源: ruoyi-quartz/src/main/java/com/ruoyi/quartz/util/ScheduleUtils.java
 //       ruoyi-quartz/src/main/java/com/ruoyi/quartz/util/AbstractQuartzJob.java
+//       ruoyi-quartz/src/main/java/com/ruoyi/quartz/util/QuartzJobExecution.java
 //       ruoyi-quartz/src/main/java/com/ruoyi/quartz/service/impl/SysJobServiceImpl.java
-// 职责: sys_job 的运行时调度（Quartz RAM -> tokio 循环）与执行日志。
-// 对应关系: Scheduler.scheduleJob/pauseJob/resumeJob/triggerJob -> registry + tokio::spawn。
+// 职责: sys_job 的运行时调度（Quartz RAMJobStore -> tokio 循环）与执行日志。
+// 对应关系: Scheduler.scheduleJob/pauseJob/resumeJob/deleteJob/triggerJob -> registry + 循环。
+//
+// 与 Java 的两处实现差异（行为等价，只有边界不同）：
+// 1. `concurrent = "0"`（允许并发）时 Java 会让同一任务的两次触发重叠，Rust 侧串行；
+//    本库现有 job 全是 `concurrent = '1'`，取不到差异。
+// 2. `exceptionInfo` Java 写完整栈（截断 2000 字符），Rust 只有异常首行。
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{LazyLock, Mutex};
 
-use serde_json::{json, Value};
+use serde_json::json;
 
 use crate::api::support;
-use crate::error::AppError;
+use crate::service::{job_invoke, quartz_cron};
 use crate::state::AppState;
-use crate::task;
 
 type JobHandle = tokio::task::JoinHandle<()>;
 
-static JOBS: LazyLock<Mutex<HashMap<i64, JobHandle>>> =
+/// Java: `ScheduleConstants.TASK_CLASS_NAME`，JobKey/TriggerKey 的名字前缀。
+pub const TASK_CLASS_NAME: &str = "TASK_CLASS_NAME";
+
+/// 已注册的 JobKey（RAMJobStore 里的 JobDetail），决定 `/monitor/job/run` 能否触发。
+static REGISTERED: LazyLock<Mutex<HashSet<(i64, String)>>> =
+    LazyLock::new(|| Mutex::new(HashSet::new()));
+
+/// 正在跑的触发循环；暂停 = 移除句柄但保留注册。
+static LOOPS: LazyLock<Mutex<HashMap<(i64, String), JobHandle>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
-/// Java: JobInvokeUtil 的 bean 白名单。
-pub const ALLOWED_BEANS: &[&str] = &[
-    "ryTask",
-    "vehicleMonitoringTask",
-    "orgTask",
-    "trackTask",
-    "partitionMaintenanceTask",
-    "snapshotFlowSyncTask",
-    "shardingTableTask",
-    "viewMaintenanceTask",
-];
-
-pub fn valid_target(target: &str) -> bool {
-    let bean = target
-        .split_once('.')
-        .map(|(bean, _)| bean)
-        .unwrap_or_default();
-    ALLOWED_BEANS.contains(&bean)
+/// Java: `KeyImpl` 的组缺省值——`group == null` 时保持字段初值 "DEFAULT"。
+pub fn normalize_group(group: &str) -> String {
+    if group.trim().is_empty() {
+        "DEFAULT".to_string()
+    } else {
+        group.to_string()
+    }
 }
 
-/// Java: SysJobServiceImpl.init —— 启动时把 status=0 的任务装入调度器。
+/// Java: `ScheduleUtils.getJobKey(jobId, jobGroup)`。
+pub fn key(job_id: i64, group: &str) -> (i64, String) {
+    (job_id, normalize_group(group))
+}
+
+/// Java: `scheduler.checkExists(jobKey)`。
+pub fn exists(job_id: i64, group: &str) -> bool {
+    REGISTERED.lock().unwrap().contains(&key(job_id, group))
+}
+
+/// Java: SysJob 实体（调度器真正用到的字段）。
+#[derive(Debug, Clone)]
+pub struct JobRow {
+    pub job_id: i64,
+    pub job_name: String,
+    pub job_group: String,
+    pub invoke_target: String,
+    pub cron_expression: String,
+    /// Java 实体初值是 "0"，但显式 null（请求体或库里）会覆盖成 null -> `switch` 抛 NPE。
+    pub misfire_policy: Option<String>,
+    pub concurrent: String,
+    /// Java: `SysJob.status` 可为 null；`createScheduleJob` 末尾 `getStatus().equals(PAUSE)`
+    /// 会因此抛 NPE，所以这里必须区分「没给」与「给了空串」。
+    pub status: Option<String>,
+}
+
+const ROW_SELECT: &str = "select job_id, job_name, job_group, invoke_target, cron_expression, \
+                          misfire_policy, concurrent, status from sys_job";
+
+/// `ROW_SELECT` 的解码元组；除主键与调用串外都允许 NULL。
+type JobTuple = (
+    i64,
+    Option<String>,
+    Option<String>,
+    String,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+);
+
+fn owned(value: Option<String>) -> String {
+    value.unwrap_or_default()
+}
+
+impl JobRow {
+    fn from_tuple(row: JobTuple) -> JobRow {
+        let (
+            job_id,
+            job_name,
+            job_group,
+            invoke_target,
+            cron_expression,
+            misfire_policy,
+            concurrent,
+            status,
+        ) = row;
+        JobRow {
+            job_id,
+            job_name: owned(job_name),
+            job_group: owned(job_group),
+            invoke_target,
+            cron_expression: owned(cron_expression),
+            // Java: MyBatis 会用列值调用 setter，库里是 NULL 就覆盖掉实体的 "0" 初值。
+            misfire_policy,
+            concurrent: owned(concurrent),
+            status,
+        }
+    }
+
+    /// Java: `jobMapper.selectJobById(jobId)`。
+    pub async fn load(pool: &sqlx::MySqlPool, job_id: i64) -> Option<JobRow> {
+        let row = sqlx::query_as::<_, JobTuple>(&format!("{ROW_SELECT} where job_id = ?"))
+            .bind(job_id)
+            .fetch_optional(pool)
+            .await
+            .ok()?;
+        row.map(JobRow::from_tuple)
+    }
+}
+
+/// Java: `SysJobServiceImpl.init()` —— `selectJobAll` 后逐条 createScheduleJob。
+/// 注意装载的是**全部**行（暂停的也在调度器里，所以「立即执行」照样能跑）。
 pub fn start_jobs(state: &AppState) {
     let state = state.clone();
     tokio::spawn(async move {
-        let rows = sqlx::query_as::<_, (i64, String, Option<String>, Option<String>)>(
-            "select job_id, invoke_target, cron_expression, job_name from sys_job where status = '0'",
-        )
-        .fetch_all(&state.db)
-        .await;
-        match rows {
-            Ok(rows) => {
-                for (job_id, invoke_target, cron, job_name) in rows {
-                    if let Some(cron) = cron {
-                        schedule(
-                            &state,
-                            job_id,
-                            &cron,
-                            &invoke_target,
-                            job_name.as_deref().unwrap_or_default(),
-                        );
-                    }
-                }
+        let rows = sqlx::query_as::<_, JobTuple>(ROW_SELECT)
+            .fetch_all(&state.db)
+            .await;
+        let rows = match rows {
+            Ok(rows) => rows,
+            Err(err) => {
+                tracing::warn!("[定时任务] 加载 sys_job 失败: {err}");
+                return;
             }
-            Err(err) => tracing::warn!("[定时任务] 加载 sys_job 失败: {err}"),
+        };
+        for row in rows {
+            let job = JobRow::from_tuple(row);
+            if let Err(err) = create_schedule_job(&state, &job).await {
+                // Java: @PostConstruct 抛出去就直接启动失败；Rust 侧记录后跳过，
+                // 否则一条脏数据会让整个服务起不来。
+                tracing::error!("[定时任务] 装载 job {} 失败: {}", job.job_id, err.message());
+            }
         }
     });
 }
 
-/// 注册/替换某个 sys_job。
-pub fn schedule(
-    state: &AppState,
-    job_id: i64,
-    cron: &str,
-    invoke_target: &str,
-    job_name: &str,
-) {
-    unschedule(job_id);
-    let Ok(expression) = crate::task::cron::CronExpression::parse(cron) else {
-        tracing::warn!("[定时任务] job {job_id} 的 cron 非法: {cron}");
-        return;
-    };
+/// Java: `SysJob` 实体的 misfirePolicy 初值是 `MISFIRE_DEFAULT("0")`，
+/// 但请求体显式发 null（或库里就是 NULL）会被覆盖成 null —— Java 的
+/// `switch (job.getMisfirePolicy())` 于是抛 NPE（RuntimeException，事务回滚）。
+pub enum ScheduleFailure {
+    /// TaskException / SchedulerException 都是 checked 异常，`@Transactional` 默认**不回滚**，
+    /// 行留在库里（实测 `misfire_policy = '9'` 与年份越界两种情况都留下了行）。
+    Checked(String),
+    /// NullPointerException 是 RuntimeException，事务回滚；文案无 message。
+    Rollback,
+}
+
+impl ScheduleFailure {
+    /// 日志用的一行描述。
+    pub fn message(&self) -> String {
+        match self {
+            ScheduleFailure::Checked(text) => text.clone(),
+            ScheduleFailure::Rollback => "java.lang.NullPointerException".to_string(),
+        }
+    }
+}
+
+/// Java: `ScheduleUtils.createScheduleJob`，按 Java 的先后顺序做三件校验：
+/// misfire 策略 -> trigger 首个触发时间 -> 暂停态。前两步失败不回滚，NPE 会。
+pub async fn create_schedule_job(state: &AppState, job: &JobRow) -> Result<(), ScheduleFailure> {
+    // Java: handleCronScheduleMisfirePolicy
+    match job.misfire_policy.as_deref() {
+        None => return Err(ScheduleFailure::Rollback),
+        Some("0") | Some("1") | Some("2") | Some("3") => {}
+        Some(policy) => {
+            return Err(ScheduleFailure::Checked(format!(
+                "The task misfire policy '{policy}' cannot be used in cron schedule tasks"
+            )));
+        }
+    }
+    // Java: CronTriggerImpl.validate() -> computeFirstFireTime
+    let expression = quartz_cron::QuartzCron::parse(&job.cron_expression)
+        .map_err(|_| ScheduleFailure::Checked(cron_trigger_message(&job.job_group, job.job_id)))?;
+    if expression
+        .next_after(chrono::Local::now().naive_local())
+        .is_none()
+    {
+        return Err(ScheduleFailure::Checked(cron_trigger_message(
+            &job.job_group,
+            job.job_id,
+        )));
+    }
+    register(state, job, expression);
+    // Java: `if (job.getStatus().equals(ScheduleConstants.Status.PAUSE.getValue()))`——
+    // 只有 "1" 会 pauseJob；status 为 null 时这一句本身就是 NPE（trigger 已经装进去了）。
+    match job.status.as_deref() {
+        Some("1") => pause(job.job_id, &job.job_group),
+        Some(_) => {}
+        None => return Err(ScheduleFailure::Rollback),
+    }
+    Ok(())
+}
+
+fn cron_trigger_message(group: &str, job_id: i64) -> String {
+    format!(
+        "Based on configured schedule, the given trigger '{}.{TASK_CLASS_NAME}{job_id}' will never fire.",
+        normalize_group(group)
+    )
+}
+
+fn register(state: &AppState, job: &JobRow, expression: quartz_cron::QuartzCron) {
+    let key = key(job.job_id, &job.job_group);
+    REGISTERED.lock().unwrap().insert(key.clone());
+    stop_loop(&key);
     let state = state.clone();
-    let invoke_target = invoke_target.to_string();
-    let job_name = job_name.to_string();
+    let job = job.clone();
     let handle = tokio::spawn(async move {
         let mut after = chrono::Local::now().naive_local();
         loop {
-            let Some(next) = expression.next_after(after) else { break };
+            let Some(next) = expression.next_after(after) else {
+                break;
+            };
             let wait = (next - chrono::Local::now().naive_local()).num_milliseconds();
             if wait > 0 {
                 tokio::time::sleep(std::time::Duration::from_millis(wait as u64)).await;
             }
-            run_job(&state, job_id, &job_name, &invoke_target).await;
+            run_job(&state, &job).await;
             after = next;
         }
     });
-    JOBS.lock().unwrap().insert(job_id, handle);
+    LOOPS.lock().unwrap().insert(key, handle);
 }
 
-pub fn unschedule(job_id: i64) {
-    if let Some(handle) = JOBS.lock().unwrap().remove(&job_id) {
+/// Java: `scheduler.pauseJob(jobKey)`——保留 JobDetail，只停 trigger。
+pub fn pause(job_id: i64, group: &str) {
+    stop_loop(&key(job_id, group));
+}
+
+/// Java: `scheduler.resumeJob(jobKey)`——按当前行重新启动 trigger。
+pub async fn resume(state: &AppState, job: &JobRow) -> Result<(), ScheduleFailure> {
+    create_schedule_job(state, job).await
+}
+
+/// Java: `scheduler.deleteJob(jobKey)`。
+pub fn delete(job_id: i64, group: &str) {
+    let key = key(job_id, group);
+    stop_loop(&key);
+    REGISTERED.lock().unwrap().remove(&key);
+}
+
+fn stop_loop(key: &(i64, String)) {
+    if let Some(handle) = LOOPS.lock().unwrap().remove(key) {
         handle.abort();
     }
 }
 
-/// Java: Scheduler.triggerJob —— 立即执行一次。
-pub fn run_once(state: &AppState, job_id: i64, job_name: &str, invoke_target: &str) {
+/// Java: `scheduler.triggerJob(jobKey, dataMap)`；`dataMap` 放的是刚查出来的行。
+/// 未注册时 Java 抛 `SchedulerException("The job (KEY) referenced by the trigger does not exist.")`。
+pub fn trigger(
+    state: &AppState,
+    job_id: i64,
+    group: &str,
+    row: Option<JobRow>,
+) -> Result<(), String> {
+    if !exists(job_id, group) {
+        return Err(format!(
+            "The job ({}.{TASK_CLASS_NAME}{job_id}) referenced by the trigger does not exist.",
+            normalize_group(group)
+        ));
+    }
     let state = state.clone();
-    let job_name = job_name.to_string();
-    let invoke_target = invoke_target.to_string();
+    let job = row.unwrap_or_else(|| JobRow {
+        job_id,
+        job_name: String::new(),
+        job_group: normalize_group(group),
+        invoke_target: String::new(),
+        cron_expression: String::new(),
+        misfire_policy: Some("0".to_string()),
+        concurrent: "1".to_string(),
+        status: Some("1".to_string()),
+    });
     tokio::spawn(async move {
-        run_job(&state, job_id, &job_name, &invoke_target).await;
+        run_job(&state, &job).await;
     });
+    Ok(())
 }
 
-async fn run_job(state: &AppState, job_id: i64, job_name: &str, invoke_target: &str) {
+/// Java: `AbstractQuartzJob.execute` -> `after(...)`，成功失败都写 sys_job_log。
+async fn run_job(state: &AppState, job: &JobRow) {
     let started = chrono::Local::now().naive_local();
-    let outcome = dispatch_job(state, invoke_target).await;
+    let outcome = job_invoke::invoke(state, &job.invoke_target).await;
     let stopped = chrono::Local::now().naive_local();
-    let (status, message, exception) = match &outcome {
-        Ok(()) => ("0", "任务执行成功", String::new()),
-        Err(err) => ("1", "任务执行失败", err.clone()),
+    let (status, exception) = match &outcome {
+        Ok(()) => ("0", String::new()),
+        Err(err) => ("1", err.clone()),
     };
-    if let Err(err) = outcome {
-        tracing::error!("[定时任务] job {job_id} ({job_name}) 执行失败: {err}");
+    if let Err(err) = &outcome {
+        tracing::error!(
+            "[定时任务] job {} ({}) 执行失败: {err}",
+            job.job_id,
+            job.job_name
+        );
     }
+    // Java: sysJobLog.getJobName() + " 总共耗时：" + runMs + "毫秒"
     let elapsed = (stopped - started).num_milliseconds();
-    let body = json!({
-        "jobName": job_name,
-        "jobGroup": "DEFAULT",
-        "invokeTarget": invoke_target,
-        "jobMessage": format!("{message}  共耗时：{elapsed} 毫秒"),
+    let mut body = json!({
+        "jobName": job.job_name,
+        "jobGroup": job.job_group,
+        "invokeTarget": job.invoke_target,
+        "jobMessage": format!("{} 总共耗时：{elapsed}毫秒", job.job_name),
         "status": status,
-        "exceptionInfo": if exception.is_empty() { Value::Null } else { json!(truncate(&exception, 2000)) },
+        "createTime": support::now_string(),
     });
-    if let Err(err) = support::insert_entity(&state.db, "sys_job_log", &body, support::AutoFill::NONE).await {
-        tracing::warn!("[定时任务] 写入 sys_job_log 失败: {err}");
+    if !exception.is_empty() {
+        // Java: StringUtils.substring(ExceptionUtil.getExceptionMessage(e), 0, 2000)
+        body["exceptionInfo"] = json!(truncate(&exception, 2000));
     }
-}
-
-fn log_count(label: &str, result: Result<usize, AppError>) {
-    match result {
-        Ok(count) => tracing::info!("[定时任务] {label}同步完成，共 {count} 条"),
-        Err(err) => tracing::error!("[定时任务] {label}同步失败: {err}"),
+    if let Err(err) =
+        support::insert_entity(&state.db, "sys_job_log", &body, support::AutoFill::NONE).await
+    {
+        tracing::warn!("[定时任务] 写入 sys_job_log 失败: {err}");
     }
 }
 
@@ -150,107 +330,7 @@ fn truncate(text: &str, max: usize) -> String {
     text.chars().take(max).collect()
 }
 
-/// Java: AbstractQuartzJob.execute -> JobInvokeUtil.invokeMethod —— 仅迁移本仓库内的任务 Bean。
+/// Java: `JobInvokeUtil.invokeMethod` —— 保留旧入口名，实现在 `service::job_invoke`。
 pub async fn dispatch_job(state: &AppState, target: &str) -> Result<(), String> {
-    let state = state.clone();
-    match target {
-        "partitionMaintenanceTask.createFuturePartitions" => {
-            task::run_partition_create(&state).await;
-        }
-        "partitionMaintenanceTask.checkPartitionHealth" => {
-            task::run_partition_health(&state).await;
-        }
-        "snapshotFlowSyncTask.syncIncrementalData" => {
-            task::run_incremental_sync(&state).await;
-        }
-        "snapshotFlowSyncTask.manualFullSync" => {
-            task::run_full_sync(&state).await;
-        }
-        "shardingTableTask.createShardingTables" => {
-            task::run_sharding_tables(&state).await;
-        }
-        "viewMaintenanceTask.scheduledViewMaintenance" => {
-            task::run_view_maintenance(&state).await;
-        }
-        "vehicleMonitoringTask.syncOrgInfo" => {
-            log_count("机构信息", crate::task::manager_sync::sync_org(&state).await);
-        }
-        "vehicleMonitoringTask.syncSectionInfo" => {
-            log_count("路段信息", crate::task::manager_sync::sync_section(&state).await);
-        }
-        "vehicleMonitoringTask.syncGantryInfo" => {
-            log_count("门架信息", crate::task::manager_sync::sync_gantry(&state).await);
-        }
-        "vehicleMonitoringTask.syncServiceAreaInfoInfo" => {
-            log_count(
-                "服务区信息",
-                crate::task::manager_sync::sync_service_area(&state).await,
-            );
-        }
-        "vehicleMonitoringTask.syncTollBoothInfoInfo" => {
-            log_count(
-                "收费所信息",
-                crate::task::manager_sync::sync_toll_booth(&state).await,
-            );
-        }
-        "vehicleMonitoringTask.syncSfzjcxxInfoInfo" => {
-            log_count(
-                "收费站基础信息位置",
-                crate::task::manager_sync::sync_sfzjcxx(&state).await,
-            );
-        }
-        "vehicleMonitoringTask.syncTollStationInfo" => {
-            log_count(
-                "收费站信息",
-                crate::task::manager_sync::sync_toll_station(&state).await,
-            );
-        }
-        // Java: OrgTask.syncOrgInfo 方法体全部注释，等价于空操作。
-        "orgTask.syncOrgInfo" => {
-            tracing::info!("[定时任务] orgTask.syncOrgInfo（Java 方法体已注释，跳过）");
-        }
-        "trackTask.syncCurrentTrack" => {
-            if let Err(err) = crate::task::manager_sync::sync_current_track(&state).await {
-                return Err(format!("实时轨迹同步失败: {err}"));
-            }
-        }
-        "trackTask.syncSuspiciousCar" => {
-            if let Err(err) = crate::task::manager_sync::sync_suspicious_car(&state, &[]).await {
-                return Err(format!("可疑车辆同步失败: {err}"));
-            }
-        }
-        "trackTask.syncHistoryTrack" => {
-            log_count(
-                "历史轨迹",
-                crate::task::manager_sync::sync_history_track(&state).await,
-            );
-        }
-        "trackTask.saveCarExcept" => {
-            log_count(
-                "逃费金额回写",
-                crate::task::manager_sync::save_car_except(&state).await,
-            );
-        }
-        // Java: TrackTask.syncHistoryTrackNoCar 方法体全部注释，等价于空操作。
-        "trackTask.syncHistoryTrackNoCar" => {
-            tracing::info!("[定时任务] trackTask.syncHistoryTrackNoCar（方法体已注释，跳过）");
-        }
-        "trackTask.changeCarSuspicious" => {
-            match crate::task::manager_sync::change_car_suspicious(&state).await {
-                Ok((moved, removed)) => {
-                    tracing::info!("[定时任务] 可疑车辆迁移完成，迁移 {} 条，删除 {} 条", moved, removed);
-                }
-                Err(err) => return Err(format!("可疑车辆迁移失败: {err}")),
-            }
-        }
-        other if other.starts_with("ryTask.") => {
-            tracing::info!("[定时任务] 执行演示任务: {other}");
-        }
-        other => {
-            return Err(format!(
-                "任务 {other} 尚未迁移（依赖远端 HttpBaseInfoApiService / 轨迹同步），已跳过"
-            ));
-        }
-    }
-    Ok(())
+    job_invoke::invoke(state, target).await
 }

@@ -28,25 +28,104 @@ pub(crate) const SUSPICIOUS_COLUMNS: &str = "t.id, t.plate_color, t.car_no, t.ca
 
 /// Java: CarSuspicious extends BasePlusEntityLong 的 Jackson 键顺序。
 const SUSPICIOUS_KEYS: &[&str] = &[
-    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
-    "tenantId", "plateColor", "carNo", "carType", "carVehicle", "carNum", "passType",
-    "inStationId", "inStation", "inTime", "outStationId", "outStation", "outTime",
-    "gantryStationId", "gantrytStation", "gantryTime", "fileIds", "outGantryStationId",
-    "outGantrytStation", "outGantryTime", "outFileIds", "escapedType", "escapedTypeName",
-    "escapedNum", "isExcept", "exceptRemark", "exceptFileIds", "checkStatus", "orgId", "orgName",
-    "isWhite", "whiteRemark", "whiteFileIds", "roadCode", "roadName", "sectionCode",
-    "sectionName", "trackId", "trackJosn", "trackNames", "backCol1", "backCol2", "status",
-    "remark", "carNoQuery", "applyTime1", "applyTime2", "createTimeStr", "checkList",
-    "trailList", "gantryCode", "tollCode", "fwqbm", "type", "code", "chargeAmount",
-    "totalAmount", "difAmount", "mjTime", "mjAddress", "txTime", "txAddress",
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "tenantId",
+    "plateColor",
+    "carNo",
+    "carType",
+    "carVehicle",
+    "carNum",
+    "passType",
+    "inStationId",
+    "inStation",
+    "inTime",
+    "outStationId",
+    "outStation",
+    "outTime",
+    "gantryStationId",
+    "gantrytStation",
+    "gantryTime",
+    "fileIds",
+    "outGantryStationId",
+    "outGantrytStation",
+    "outGantryTime",
+    "outFileIds",
+    "escapedType",
+    "escapedTypeName",
+    "escapedNum",
+    "isExcept",
+    "exceptRemark",
+    "exceptFileIds",
+    "checkStatus",
+    "orgId",
+    "orgName",
+    "isWhite",
+    "whiteRemark",
+    "whiteFileIds",
+    "roadCode",
+    "roadName",
+    "sectionCode",
+    "sectionName",
+    "trackId",
+    "trackJosn",
+    "trackNames",
+    "backCol1",
+    "backCol2",
+    "status",
+    "remark",
+    "carNoQuery",
+    "applyTime1",
+    "applyTime2",
+    "createTimeStr",
+    "checkList",
+    "trailList",
+    "gantryCode",
+    "tollCode",
+    "fwqbm",
+    "type",
+    "code",
+    "chargeAmount",
+    "totalAmount",
+    "difAmount",
+    "mjTime",
+    "mjAddress",
+    "txTime",
+    "txAddress",
 ];
 
 /// Java: CarSuspiciousCheck extends BasePlusEntity 的 Jackson 键顺序。
 const CHECK_KEYS: &[&str] = &[
-    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
-    "tenantId", "carId", "carNo", "suspicousFlag", "escapedType", "chargeAmount", "totalAmount",
-    "difAmount", "attachments", "backCol1", "backCol2", "status", "remark", "applyTime1",
-    "applyTime2", "createTimeStr",
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "tenantId",
+    "carId",
+    "carNo",
+    "suspicousFlag",
+    "escapedType",
+    "chargeAmount",
+    "totalAmount",
+    "difAmount",
+    "attachments",
+    "backCol1",
+    "backCol2",
+    "status",
+    "remark",
+    "applyTime1",
+    "applyTime2",
+    "createTimeStr",
 ];
 
 /// Java: track_josn 为空时 TrailInfo 的全部字段都是 null。
@@ -173,7 +252,12 @@ pub fn routes() -> Router<AppState> {
     let router = Router::new()
         .route(
             "/manager/suspicious/list",
-            meta::get_route("/manager/suspicious/list", Some("manager:suspicious:list"), None, list),
+            meta::get_route(
+                "/manager/suspicious/list",
+                Some("manager:suspicious:list"),
+                None,
+                list,
+            ),
         )
         .route(
             "/manager/suspicious/listCarNo",
@@ -181,7 +265,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/manager/suspicious/listFileCarNo",
-            meta::get_route("/manager/suspicious/listFileCarNo", None, None, list_file_car_no),
+            meta::get_route(
+                "/manager/suspicious/listFileCarNo",
+                None,
+                None,
+                list_file_car_no,
+            ),
         )
         .route(
             "/manager/suspicious/listAll",
@@ -189,23 +278,48 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/manager/suspicious/listHistory",
-            meta::get_route("/manager/suspicious/listHistory", Some("manager:suspicious:list"), None, list_history),
+            meta::get_route(
+                "/manager/suspicious/listHistory",
+                Some("manager:suspicious:list"),
+                None,
+                list_history,
+            ),
         )
         .route(
             "/manager/suspicious/export",
-            meta::get_route("/manager/suspicious/export", Some("manager:suspicious:export"), Some(&LOG_EXPORT), export),
+            meta::get_route(
+                "/manager/suspicious/export",
+                Some("manager:suspicious:export"),
+                Some(&LOG_EXPORT),
+                export,
+            ),
         )
         .route(
             "/manager/suspicious/exportHistory",
-            meta::get_route("/manager/suspicious/exportHistory", Some("manager:suspicious:export"), Some(&LOG_EXPORT_HIST), export_history),
+            meta::get_route(
+                "/manager/suspicious/exportHistory",
+                Some("manager:suspicious:export"),
+                Some(&LOG_EXPORT_HIST),
+                export_history,
+            ),
         )
         .route(
             "/manager/suspicious/exportAbnormalPassage",
-            meta::get_route("/manager/suspicious/exportAbnormalPassage", None, None, export_abnormal),
+            meta::get_route(
+                "/manager/suspicious/exportAbnormalPassage",
+                None,
+                None,
+                export_abnormal,
+            ),
         )
         .route(
             "/manager/suspicious/history/{id}",
-            meta::get_route("/manager/suspicious/history/{id}", None, None, get_history_info),
+            meta::get_route(
+                "/manager/suspicious/history/{id}",
+                None,
+                None,
+                get_history_info,
+            ),
         )
         .route(
             "/manager/suspicious/check",
@@ -213,7 +327,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/manager/suspicious/syncSuspiciousCarTask",
-            meta::post_route("/manager/suspicious/syncSuspiciousCarTask", None, None, sync_task),
+            meta::post_route(
+                "/manager/suspicious/syncSuspiciousCarTask",
+                None,
+                None,
+                sync_task,
+            ),
         )
         .route(
             "/manager/suspicious/{ids}",
@@ -221,12 +340,27 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/manager/suspicious",
-            meta::post_route("/manager/suspicious", Some("manager:suspicious:add"), Some(&LOG_ADD), add)
-                .merge(meta::put_route("/manager/suspicious", Some("manager:suspicious:edit"), Some(&LOG_EDIT), edit)),
+            meta::post_route(
+                "/manager/suspicious",
+                Some("manager:suspicious:add"),
+                Some(&LOG_ADD),
+                add,
+            )
+            .merge(meta::put_route(
+                "/manager/suspicious",
+                Some("manager:suspicious:edit"),
+                Some(&LOG_EDIT),
+                edit,
+            )),
         )
         .route(
             "/manager/suspicious/{ids}",
-            meta::delete_route("/manager/suspicious/{ids}", Some("manager:suspicious:remove"), Some(&LOG_REMOVE), remove),
+            meta::delete_route(
+                "/manager/suspicious/{ids}",
+                Some("manager:suspicious:remove"),
+                Some(&LOG_REMOVE),
+                remove,
+            ),
         );
     router
 }
@@ -239,7 +373,11 @@ fn normalize(params: &mut HashMap<String, String>, default_car_no: bool) {
     if !section.is_empty() && section.contains("all") {
         params.insert("sectionCode".to_string(), String::new());
     }
-    if params.get("code").map(|value| !value.trim().is_empty()).unwrap_or(false) {
+    if params
+        .get("code")
+        .map(|value| !value.trim().is_empty())
+        .unwrap_or(false)
+    {
         let code = params.get("code").cloned().unwrap_or_default();
         params.insert("trackNames".to_string(), code);
     }
@@ -261,7 +399,10 @@ async fn list(
     let mut params = support::query_map(&raw);
     normalize(&mut params, false);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, support::shape_rows(rows, SUSPICIOUS_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::shape_rows(rows, SUSPICIOUS_KEYS),
+    ))
 }
 
 async fn list_car_no(
@@ -272,7 +413,10 @@ async fn list_car_no(
     let mut params = support::query_map(&raw);
     normalize(&mut params, true);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, support::shape_rows(rows, SUSPICIOUS_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::shape_rows(rows, SUSPICIOUS_KEYS),
+    ))
 }
 
 async fn list_history(
@@ -283,7 +427,10 @@ async fn list_history(
     let mut params = support::query_map(&raw);
     normalize(&mut params, false);
     let (total, rows) = support::query_list(&state.db, &params, &HISTORY_SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, support::shape_rows(rows, SUSPICIOUS_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::shape_rows(rows, SUSPICIOUS_KEYS),
+    ))
 }
 
 async fn check_list(state: &AppState, car_id: &str) -> Result<Vec<Value>, AppError> {
@@ -351,15 +498,28 @@ async fn list_file_car_no(
     let escaped_map = support::dict_map(&state.db, "escaped_type").await?;
     let mut result = Vec::new();
     for mut row in rows {
-        let id = row.get("id").and_then(Value::as_str).unwrap_or_default().to_string();
+        let id = row
+            .get("id")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
         let checks = check_list(&state, &id).await?;
         let mut charge = 0.0;
         let mut total_amount = 0.0;
         let mut dif = 0.0;
         for check in &checks {
-            charge += check.get("chargeAmount").and_then(|v| v.as_f64()).unwrap_or(0.0);
-            total_amount += check.get("totalAmount").and_then(|v| v.as_f64()).unwrap_or(0.0);
-            dif += check.get("difAmount").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            charge += check
+                .get("chargeAmount")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            total_amount += check
+                .get("totalAmount")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            dif += check
+                .get("difAmount")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
         }
         if let Some(object) = row.as_object_mut() {
             object.insert("chargeAmount".to_string(), json!(charge.to_string()));
@@ -408,7 +568,11 @@ async fn export_history(
 }
 
 /// Java export 的字段翻译（车牌颜色/车型/车种/逃费类型/是否可疑/核实状态 + 通行/门架时间段）。
-async fn export_rows(state: &AppState, rows: &[Value], sheet: &str) -> Result<axum::response::Response, AppError> {
+async fn export_rows(
+    state: &AppState,
+    rows: &[Value],
+    sheet: &str,
+) -> Result<axum::response::Response, AppError> {
     let plate_color = support::dict_map(&state.db, "plate_color").await?;
     let car_type = support::dict_map(&state.db, "car_type").await?;
     let car_vehicle = support::dict_map(&state.db, "car_vehicle").await?;
@@ -417,23 +581,94 @@ async fn export_rows(state: &AppState, rows: &[Value], sheet: &str) -> Result<ax
     let check_status = support::dict_map(&state.db, "check_status").await?;
 
     let headers = [
-        "车牌颜色", "车牌号", "车型", "车种", "轴数", "通行标识", "入口站id", "入口站",
-        "通行时间", "出口站id", "出口站", "出口时间", "门架id", "门架名称", "经过时间",
-        "图片(附件ids)", "终止门架id", "终止门架名称", "终止经过时间", "终止图片(附件ids)",
-        "逃费类型", "逃费类型名称", "异常通行门架次数", "是否为可疑车辆", "可疑原因", "可疑材料",
-        "核实状态", "管理中心id", "管理中心名称", "是否在白名单", "白名单原因", "白名单材料",
-        "所属路线编码", "所属路线名称", "所属路段编码", "所属路段名称", "行驶轨迹id",
-        "行驶轨迹josn", "轨迹点集合", "逃费场景", "备用字段2", "状态", "备注",
+        "车牌颜色",
+        "车牌号",
+        "车型",
+        "车种",
+        "轴数",
+        "通行标识",
+        "入口站id",
+        "入口站",
+        "通行时间",
+        "出口站id",
+        "出口站",
+        "出口时间",
+        "门架id",
+        "门架名称",
+        "经过时间",
+        "图片(附件ids)",
+        "终止门架id",
+        "终止门架名称",
+        "终止经过时间",
+        "终止图片(附件ids)",
+        "逃费类型",
+        "逃费类型名称",
+        "异常通行门架次数",
+        "是否为可疑车辆",
+        "可疑原因",
+        "可疑材料",
+        "核实状态",
+        "管理中心id",
+        "管理中心名称",
+        "是否在白名单",
+        "白名单原因",
+        "白名单材料",
+        "所属路线编码",
+        "所属路线名称",
+        "所属路段编码",
+        "所属路段名称",
+        "行驶轨迹id",
+        "行驶轨迹josn",
+        "轨迹点集合",
+        "逃费场景",
+        "备用字段2",
+        "状态",
+        "备注",
     ]
     .map(str::to_string);
     let fields = [
-        "plateColor", "carNo", "carType", "carVehicle", "carNum", "passType", "inStationId",
-        "inStation", "inTime", "outStationId", "outStation", "outTime", "gantryStationId",
-        "gantrytStation", "gantryTime", "fileIds", "outGantryStationId", "outGantrytStation",
-        "outGantryTime", "outFileIds", "escapedType", "escapedTypeName", "escapedNum",
-        "isExcept", "exceptRemark", "exceptFileIds", "checkStatus", "orgId", "orgName",
-        "isWhite", "whiteRemark", "whiteFileIds", "roadCode", "roadName", "sectionCode",
-        "sectionName", "trackId", "backCol2", "trackNames", "backCol1", "backCol2", "status",
+        "plateColor",
+        "carNo",
+        "carType",
+        "carVehicle",
+        "carNum",
+        "passType",
+        "inStationId",
+        "inStation",
+        "inTime",
+        "outStationId",
+        "outStation",
+        "outTime",
+        "gantryStationId",
+        "gantrytStation",
+        "gantryTime",
+        "fileIds",
+        "outGantryStationId",
+        "outGantrytStation",
+        "outGantryTime",
+        "outFileIds",
+        "escapedType",
+        "escapedTypeName",
+        "escapedNum",
+        "isExcept",
+        "exceptRemark",
+        "exceptFileIds",
+        "checkStatus",
+        "orgId",
+        "orgName",
+        "isWhite",
+        "whiteRemark",
+        "whiteFileIds",
+        "roadCode",
+        "roadName",
+        "sectionCode",
+        "sectionName",
+        "trackId",
+        "backCol2",
+        "trackNames",
+        "backCol1",
+        "backCol2",
+        "status",
         "remark",
     ];
     let data = rows
@@ -455,18 +690,66 @@ async fn export_rows(state: &AppState, rows: &[Value], sheet: &str) -> Result<ax
                     .to_string();
                 values[index] = Value::String(map.get(&key).cloned().unwrap_or_default());
             }
-            let in_time = values.get(8).and_then(Value::as_str).unwrap_or_default().to_string();
-            let out_time = values.get(11).and_then(Value::as_str).unwrap_or_default().to_string();
-            let gantry_time = values.get(14).and_then(Value::as_str).unwrap_or_default().to_string();
-            let out_gantry_time = values.get(18).and_then(Value::as_str).unwrap_or_default().to_string();
-            let in_station = values.get(7).and_then(Value::as_str).unwrap_or_default().to_string();
-            let out_station = values.get(10).and_then(Value::as_str).unwrap_or_default().to_string();
-            let gantry_station = values.get(13).and_then(Value::as_str).unwrap_or_default().to_string();
-            let out_gantry_station = values.get(17).and_then(Value::as_str).unwrap_or_default().to_string();
-            values.push(Value::String(if out_time.is_empty() { in_time } else { format!("{in_time}至{out_time}") }));
-            values.push(Value::String(if out_station.is_empty() { in_station } else { format!("{in_station}至{out_station}") }));
-            values.push(Value::String(if out_gantry_time.is_empty() { gantry_time } else { format!("{gantry_time}至{out_gantry_time}") }));
-            values.push(Value::String(if out_gantry_station.is_empty() { gantry_station } else { format!("{gantry_station}至{out_gantry_station}") }));
+            let in_time = values
+                .get(8)
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let out_time = values
+                .get(11)
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let gantry_time = values
+                .get(14)
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let out_gantry_time = values
+                .get(18)
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let in_station = values
+                .get(7)
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let out_station = values
+                .get(10)
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let gantry_station = values
+                .get(13)
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let out_gantry_station = values
+                .get(17)
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            values.push(Value::String(if out_time.is_empty() {
+                in_time
+            } else {
+                format!("{in_time}至{out_time}")
+            }));
+            values.push(Value::String(if out_station.is_empty() {
+                in_station
+            } else {
+                format!("{in_station}至{out_station}")
+            }));
+            values.push(Value::String(if out_gantry_time.is_empty() {
+                gantry_time
+            } else {
+                format!("{gantry_time}至{out_gantry_time}")
+            }));
+            values.push(Value::String(if out_gantry_station.is_empty() {
+                gantry_station
+            } else {
+                format!("{gantry_station}至{out_gantry_station}")
+            }));
             values
         })
         .collect::<Vec<_>>();
@@ -507,7 +790,13 @@ async fn add(
         object.insert("isExcept".to_string(), json!("1"));
         object.insert("status".to_string(), json!("0"));
     }
-    support::insert_entity(&state.db, "car_suspicious", &entity, support::AutoFill::NONE).await?;
+    support::insert_entity(
+        &state.db,
+        "car_suspicious",
+        &entity,
+        support::AutoFill::NONE,
+    )
+    .await?;
     Ok(AjaxResult::success_msg_data("操作成功！", id))
 }
 
@@ -525,8 +814,14 @@ async fn edit(
         object.insert("updateBy".to_string(), json!(1));
         object.insert("updateTime".to_string(), json!(support::now_string()));
     }
-    support::update_entity_by_id(&state.db, "car_suspicious", "id", &entity, support::AutoFill::NONE)
-        .await?;
+    support::update_entity_by_id(
+        &state.db,
+        "car_suspicious",
+        "id",
+        &entity,
+        support::AutoFill::NONE,
+    )
+    .await?;
     Ok(AjaxResult::success_msg_data("操作成功！", id))
 }
 
@@ -558,7 +853,11 @@ async fn check(
     if existing.get("status").and_then(Value::as_str) == Some("1") {
         return Ok(AjaxResult::error("可疑车俩异常流水已追缴！"));
     }
-    let car_no = body.get("carNo").and_then(Value::as_str).unwrap_or_default().to_string();
+    let car_no = body
+        .get("carNo")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
     let is_except = body
         .get("isExcept")
         .and_then(Value::as_str)
@@ -584,7 +883,10 @@ async fn check(
 
     let mut escaped_amount = 0.0f64;
     for check in &check_list {
-        escaped_amount += check.get("difAmount").and_then(|v| v.as_f64()).unwrap_or(0.0);
+        escaped_amount += check
+            .get("difAmount")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
     }
 
     if is_except == "1" {
@@ -625,14 +927,16 @@ async fn check(
             object.insert("carNo".to_string(), json!(car_no));
             object.insert("suspicousFlag".to_string(), json!(is_except));
             object.insert("delFlag".to_string(), json!("0"));
-            object.insert(
-                "createBy".to_string(),
-                json!(user.user.user_id),
-            );
+            object.insert("createBy".to_string(), json!(user.user.user_id));
             object.insert("createTime".to_string(), json!(support::now_string()));
         }
-        support::insert_entity(&state.db, "car_suspicious_check", &row, support::AutoFill::NONE)
-            .await?;
+        support::insert_entity(
+            &state.db,
+            "car_suspicious_check",
+            &row,
+            support::AutoFill::NONE,
+        )
+        .await?;
         let except_id = uuid::Uuid::new_v4().simple().to_string();
         let except_row = json!({
             "id": except_id,
@@ -657,8 +961,13 @@ async fn check(
             "createBy": user.user.user_id,
             "createTime": support::now_string(),
         });
-        support::insert_entity(&state.db, "car_except_record", &except_row, support::AutoFill::NONE)
-            .await?;
+        support::insert_entity(
+            &state.db,
+            "car_except_record",
+            &except_row,
+            support::AutoFill::NONE,
+        )
+        .await?;
     }
 
     let mut update = Map::new();
@@ -700,8 +1009,14 @@ async fn sync_task(
     State(state): State<AppState>,
     Json(body): Json<Value>,
 ) -> Result<AjaxResult, AppError> {
-    let signature_key = body.get("signatureKey").and_then(Value::as_str).unwrap_or_default();
-    let signature = body.get("signature").and_then(Value::as_str).unwrap_or_default();
+    let signature_key = body
+        .get("signatureKey")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let signature = body
+        .get("signature")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
     let time_stamp = body.get("timeStamp").cloned().unwrap_or(Value::Null);
     if signature_key.is_empty() || signature.is_empty() || time_stamp.is_null() {
         return Ok(AjaxResult::error("参数错误"));

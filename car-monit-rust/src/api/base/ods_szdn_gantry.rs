@@ -131,12 +131,24 @@ async fn section_maps(state: &AppState) -> (HashMap<String, String>, HashMap<Str
     let mut section = HashMap::new();
     if let Ok(list) = state.redis.get_list::<Value>("section_list").await {
         for item in list {
-            let road_code = item.get("roadCode").and_then(Value::as_str).unwrap_or_default();
-            let road_name = item.get("roadName").and_then(Value::as_str).unwrap_or_default();
-            road.entry(road_code.to_string()).or_insert_with(|| road_name.to_string());
-            let section_code = item.get("sectionCode").and_then(Value::as_str).unwrap_or_default();
-            let section_name =
-                item.get("sectionName").and_then(Value::as_str).unwrap_or_default();
+            let road_code = item
+                .get("roadCode")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            let road_name = item
+                .get("roadName")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            road.entry(road_code.to_string())
+                .or_insert_with(|| road_name.to_string());
+            let section_code = item
+                .get("sectionCode")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            let section_name = item
+                .get("sectionName")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
             section
                 .entry(section_code.to_string())
                 .or_insert_with(|| section_name.to_string());
@@ -185,7 +197,9 @@ async fn list(
     let (total, mut rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
     let (road_map, section_map) = section_maps(&state).await;
     for row in &mut rows {
-        let Some(object) = row.as_object_mut() else { continue };
+        let Some(object) = row.as_object_mut() else {
+            continue;
+        };
         let road_name = object
             .get("roadCode")
             .and_then(Value::as_str)
@@ -201,7 +215,10 @@ async fn list(
         object.insert("roadName".to_string(), Value::String(road_name));
         object.insert("sectionName".to_string(), Value::String(section_name));
     }
-    Ok(TableDataInfo::new(total, support::reorder_rows(rows, GANTRY_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::reorder_rows(rows, GANTRY_KEYS),
+    ))
 }
 
 async fn list_all(
@@ -211,7 +228,10 @@ async fn list_all(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, support::reorder_rows(rows, GANTRY_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::reorder_rows(rows, GANTRY_KEYS),
+    ))
 }
 
 async fn export(
@@ -231,12 +251,18 @@ async fn export(
     }
 
     let (road_map, section_map) = section_maps(&state).await;
-    let toll_map = code_name_map(&state.db, "select toll_code, toll_name from ods_szdn_toll").await?;
-    let org_map =
-        code_name_map(&state.db, "select org_code, org_name from ods_yhgl_v_base_org").await?;
+    let toll_map =
+        code_name_map(&state.db, "select toll_code, toll_name from ods_szdn_toll").await?;
+    let org_map = code_name_map(
+        &state.db,
+        "select org_code, org_name from ods_yhgl_v_base_org",
+    )
+    .await?;
 
     for row in &mut rows {
-        let Some(object) = row.as_object_mut() else { continue };
+        let Some(object) = row.as_object_mut() else {
+            continue;
+        };
         let text = |key: &str| {
             object
                 .get(key)
@@ -245,7 +271,10 @@ async fn export(
                 .to_string()
         };
         let road_name = road_map.get(&text("roadCode")).cloned().unwrap_or_default();
-        let section_name = section_map.get(&text("sectionCode")).cloned().unwrap_or_default();
+        let section_name = section_map
+            .get(&text("sectionCode"))
+            .cloned()
+            .unwrap_or_default();
         let toll_name = toll_map.get(&text("tollCode")).cloned().unwrap_or_default();
         let org_name = org_map.get(&text("orgCode")).cloned().unwrap_or_default();
         let boundary = if text("boundaryGantryType") == "0" {
@@ -253,7 +282,11 @@ async fn export(
         } else {
             "边界出口门架"
         };
-        let virtual_text = if text("isVirtual") == "0" { "否" } else { "是" };
+        let virtual_text = if text("isVirtual") == "0" {
+            "否"
+        } else {
+            "是"
+        };
         let mut is_data = "否";
         let key = format!("gantry_list_data:{}", text("gantryCode"));
         if let Some(value) = state.redis.get_object::<Value>(&key).await? {
@@ -261,9 +294,10 @@ async fn export(
                 Value::String(text) => text.clone(),
                 other => other.to_string(),
             };
-            let count: i64 = raw.trim().parse().map_err(|_| {
-                AppError::Service(format!("gantry_list_data 缓存不是整数: {raw}"))
-            })?;
+            let count: i64 = raw
+                .trim()
+                .parse()
+                .map_err(|_| AppError::Service(format!("gantry_list_data 缓存不是整数: {raw}")))?;
             if count > 0 {
                 is_data = "是";
             }
@@ -272,8 +306,14 @@ async fn export(
         object.insert("sectionName".to_string(), Value::String(section_name));
         object.insert("tollName".to_string(), Value::String(toll_name));
         object.insert("orgName".to_string(), Value::String(org_name));
-        object.insert("boundaryGantryType".to_string(), Value::String(boundary.to_string()));
-        object.insert("isVirtual".to_string(), Value::String(virtual_text.to_string()));
+        object.insert(
+            "boundaryGantryType".to_string(),
+            Value::String(boundary.to_string()),
+        );
+        object.insert(
+            "isVirtual".to_string(),
+            Value::String(virtual_text.to_string()),
+        );
         object.insert("isData".to_string(), Value::String(is_data.to_string()));
     }
 
@@ -294,16 +334,42 @@ async fn export(
         )
     });
 
+    // 表头逐字取自 Java 的 EasyPOI 模板 `templates/export/gantry.xlsx` 第 1 行。
     let headers = [
-        "机构编码", "机构名称", "路线编号", "路线名称", "路段编码", "路段名称", "收费站编号",
-        "收费站名称", "门架编号", "门架名称", "边界门架类型", "是否虚门架", "是否有交易流水",
+        "所属管理中心编号",
+        "所属管理中心名称",
+        "所属路线编号",
+        "所属路线名称",
+        "所属路段编码",
+        "所属路段名称",
+        "收费站编号",
+        "收费站名称",
+        "门架编号",
+        "门架名称",
+        "边界门架类型",
+        "是否虚门架",
+        "是否有交易流水",
     ]
     .map(str::to_string);
     let fields = [
-        "orgCode", "orgName", "roadCode", "roadName", "sectionCode", "sectionName", "tollCode",
-        "tollName", "gantryCode", "gantryName", "boundaryGantryType", "isVirtual", "isData",
+        "orgCode",
+        "orgName",
+        "roadCode",
+        "roadName",
+        "sectionCode",
+        "sectionName",
+        "tollCode",
+        "tollName",
+        "gantryCode",
+        "gantryName",
+        "boundaryGantryType",
+        "isVirtual",
+        "isData",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_download("门架信息数据", &headers, &data)
 }
 
@@ -323,7 +389,8 @@ async fn get_info(
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &id).await?
+        support::query_by_id(&state.db, &SPEC, &id)
+            .await?
             .map(|row| support::reorder_keys(row, GANTRY_KEYS)),
     ))
 }

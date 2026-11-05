@@ -40,7 +40,11 @@ pub fn parse_json_datetime(value: &serde_json::Value) -> Option<NaiveDateTime> {
         serde_json::Value::Number(n) => {
             let raw = n.as_i64()?;
             // Java Date 的 JSON 值是毫秒；上游偶尔给秒，这里按量级区分。
-            let millis = if raw.abs() < 100_000_000_000 { raw * 1000 } else { raw };
+            let millis = if raw.abs() < 100_000_000_000 {
+                raw * 1000
+            } else {
+                raw
+            };
             Local
                 .timestamp_millis_opt(millis)
                 .single()

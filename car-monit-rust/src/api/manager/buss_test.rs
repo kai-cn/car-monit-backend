@@ -79,11 +79,21 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/manager/busstest/list",
-            meta::get_route("/manager/busstest/list", Some("manager:busstest:list"), None, list),
+            meta::get_route(
+                "/manager/busstest/list",
+                Some("manager:busstest:list"),
+                None,
+                list,
+            ),
         )
         .route(
             "/manager/busstest/export",
-            meta::get_route("/manager/busstest/export", Some("manager:busstest:export"), Some(&LOG_EXPORT), export),
+            meta::get_route(
+                "/manager/busstest/export",
+                Some("manager:busstest:export"),
+                Some(&LOG_EXPORT),
+                export,
+            ),
         )
         .route(
             "/manager/busstest/syncCurrentTrack",
@@ -107,17 +117,49 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/manager/busstest",
-            meta::post_route("/manager/busstest", Some("manager:busstest:add"), Some(&LOG_ADD), add)
-                .merge(meta::put_route("/manager/busstest", Some("manager:busstest:edit"), Some(&LOG_EDIT), edit)),
+            meta::post_route(
+                "/manager/busstest",
+                Some("manager:busstest:add"),
+                Some(&LOG_ADD),
+                add,
+            )
+            .merge(meta::put_route(
+                "/manager/busstest",
+                Some("manager:busstest:edit"),
+                Some(&LOG_EDIT),
+                edit,
+            )),
         )
 }
 
 /// Java Jackson 的 BussTest 键序（BaseEntity 组 + 业务列）。
 const BUSS_TEST_KEYS: &[&str] = &[
-    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
-    "tenantId", "billName", "billType", "amount", "deptId", "userId", "applyTime", "applyTime2",
-    "fileIds", "flowKey", "flowRuid", "flowApplyOid", "flowStatus", "shTime", "backCol1",
-    "backCol2", "status", "remark",
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "tenantId",
+    "billName",
+    "billType",
+    "amount",
+    "deptId",
+    "userId",
+    "applyTime",
+    "applyTime2",
+    "fileIds",
+    "flowKey",
+    "flowRuid",
+    "flowApplyOid",
+    "flowStatus",
+    "shTime",
+    "backCol1",
+    "backCol2",
+    "status",
+    "remark",
 ];
 
 async fn list(
@@ -127,7 +169,10 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
-    Ok(TableDataInfo::new(total, support::reorder_rows(rows, BUSS_TEST_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::reorder_rows(rows, BUSS_TEST_KEYS),
+    ))
 }
 
 async fn export(
@@ -137,18 +182,48 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = [
-        "业务名称", "业务名称(字典：1业务2其他)", "金额", "部门id", "人员id", "申请时间",
-        "时间时分秒", "附件(逗号多个分割)", "流程key", "流程实例ID", "流程申请ID",
-        "流程状态(1起草中2审批中3审批通过4退回修改5审批拒绝)", "审核时间", "备用字段1",
-        "备用字段2", "状态", "备注",
+        "业务名称",
+        "业务名称(字典：1业务2其他)",
+        "金额",
+        "部门id",
+        "人员id",
+        "申请时间",
+        "时间时分秒",
+        "附件(逗号多个分割)",
+        "流程key",
+        "流程实例ID",
+        "流程申请ID",
+        "流程状态(1起草中2审批中3审批通过4退回修改5审批拒绝)",
+        "审核时间",
+        "备用字段1",
+        "备用字段2",
+        "状态",
+        "备注",
     ]
     .map(str::to_string);
     let fields = [
-        "billName", "billType", "amount", "deptId", "userId", "applyTime", "applyTime2",
-        "fileIds", "flowKey", "flowRuid", "flowApplyOid", "flowStatus", "shTime", "backCol1",
-        "backCol2", "status", "remark",
+        "billName",
+        "billType",
+        "amount",
+        "deptId",
+        "userId",
+        "applyTime",
+        "applyTime2",
+        "fileIds",
+        "flowKey",
+        "flowRuid",
+        "flowApplyOid",
+        "flowStatus",
+        "shTime",
+        "backCol1",
+        "backCol2",
+        "status",
+        "remark",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "业务测试数据", &headers, &data)
 }
 

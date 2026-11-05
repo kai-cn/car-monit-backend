@@ -67,7 +67,12 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/system/dict/type/list",
-            meta::get_route("/system/dict/type/list", Some("system:dict:list"), None, list),
+            meta::get_route(
+                "/system/dict/type/list",
+                Some("system:dict:list"),
+                None,
+                list,
+            ),
         )
         .route(
             "/system/dict/type/export",
@@ -192,6 +197,8 @@ async fn get_info(
     State(state): State<AppState>,
     Path(dict_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long dictId`。
+    let dict_id = support::path_long("dictId", &dict_id)?.to_string();
     Ok(AjaxResult::success_data(
         support::query_by_id(&state.db, &SPEC, &dict_id)
             .await?
@@ -205,7 +212,10 @@ async fn save(
     body: Value,
     is_add: bool,
 ) -> Result<AjaxResult, AppError> {
-    for (key, message) in [("dictName", "字典名称不能为空"), ("dictType", "字典类型不能为空")] {
+    for (key, message) in [
+        ("dictName", "字典名称不能为空"),
+        ("dictType", "字典类型不能为空"),
+    ] {
         let value = body.get(key).and_then(Value::as_str).unwrap_or_default();
         if value.trim().is_empty() {
             return Ok(AjaxResult::error(message));
@@ -224,7 +234,10 @@ async fn save(
     let current = body.get("dictId").and_then(Value::as_i64).unwrap_or(-1);
     if let Some(found) = found {
         if found != current {
-            let name = body.get("dictName").and_then(Value::as_str).unwrap_or_default();
+            let name = body
+                .get("dictName")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
             let verb = if is_add { "新增" } else { "修改" };
             return Ok(AjaxResult::error(format!(
                 "{verb}字典'{name}'失败，字典类型已存在"
@@ -298,7 +311,11 @@ async fn remove(
     State(state): State<AppState>,
     Path(dict_ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&dict_ids);
+    // Java: `@PathVariable Long[] dictIds` —— 任一段转不成 Long 就整体失败，文案带整段原文。
+    let ids = support::path_long_list("dictIds", &dict_ids)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     for id in &ids {
         let dict_type: Option<String> =
             sqlx::query_scalar("select dict_type from sys_dict_type where dict_id = ?")

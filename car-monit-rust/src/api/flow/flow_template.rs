@@ -141,18 +141,40 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = [
-        "流程OID", "当前流程类型(字典：1正常流程2会签流程)", "节点顺序", "节点KEY", "节点名称",
-        "下一节点OID(-1为当前为最后一个节点)", "上一节点OID(0为开始节点)", "驳回到第几步 0 是发起人",
-        "驳回节点OID", "节点配置条件", "当前流程类型(字典：1人员2角色3其他)", "节点配置id",
+        "流程OID",
+        "当前流程类型(字典：1正常流程2会签流程)",
+        "节点顺序",
+        "节点KEY",
+        "节点名称",
+        "下一节点OID(-1为当前为最后一个节点)",
+        "上一节点OID(0为开始节点)",
+        "驳回到第几步 0 是发起人",
+        "驳回节点OID",
+        "节点配置条件",
+        "当前流程类型(字典：1人员2角色3其他)",
+        "节点配置id",
         "节点配置名称",
     ]
     .map(str::to_string);
     let fields = [
-        "flowOid", "flowType", "nodeOrder", "nodeKey", "nodeName", "nextNodeOid",
-        "previousNodeOid", "returnNum", "returnNodeOid", "configCondtion", "configType",
-        "configId", "configName",
+        "flowOid",
+        "flowType",
+        "nodeOrder",
+        "nodeKey",
+        "nodeName",
+        "nextNodeOid",
+        "previousNodeOid",
+        "returnNum",
+        "returnNodeOid",
+        "configCondtion",
+        "configType",
+        "configId",
+        "configName",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "流程节点数据", &headers, &data)
 }
 
@@ -165,14 +187,22 @@ async fn get_info(
     ))
 }
 
-async fn unique_count(state: &AppState, flow_oid: &str, column: &str, value: &str, id: &str) -> Result<i64, AppError> {
+async fn unique_count(
+    state: &AppState,
+    flow_oid: &str,
+    column: &str,
+    value: &str,
+    id: &str,
+) -> Result<i64, AppError> {
     let mut sql = format!(
         "select count(1) from flow_template t where t.del_flag = '0' and t.FLOW_OID = ? and t.{column} = ?"
     );
     if !id.is_empty() {
         sql.push_str(" and t.id != ?");
     }
-    let mut query = sqlx::query_scalar::<_, i64>(&sql).bind(flow_oid).bind(value);
+    let mut query = sqlx::query_scalar::<_, i64>(&sql)
+        .bind(flow_oid)
+        .bind(value);
     if !id.is_empty() {
         query = query.bind(id);
     }
@@ -184,9 +214,21 @@ async fn save_template(
     user: &LoginUser,
     body: Value,
 ) -> Result<AjaxResult, AppError> {
-    let flow_oid = body.get("flowOid").and_then(Value::as_str).unwrap_or_default().to_string();
-    let id = body.get("id").and_then(Value::as_str).unwrap_or_default().to_string();
-    let node_key = body.get("nodeKey").and_then(Value::as_str).unwrap_or_default().to_string();
+    let flow_oid = body
+        .get("flowOid")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let id = body
+        .get("id")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let node_key = body
+        .get("nodeKey")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
     let node_order = body
         .get("nodeOrder")
         .map(|value| value.to_string())
@@ -253,7 +295,9 @@ pub async fn save_flow_order(state: &AppState, flow_oid: &str) -> Result<(), App
                 .map(str::to_string)
                 .unwrap_or_else(|| first_id.clone())
         };
-        let Some(id) = current.get("id").and_then(Value::as_str) else { continue };
+        let Some(id) = current.get("id").and_then(Value::as_str) else {
+            continue;
+        };
         sqlx::query(
             "update flow_template set PREVIOUS_NODE_OID = ?, NEXT_NODE_OID = ?, \
              RETURN_NODE_OID = ? where ID = ?",
@@ -288,7 +332,10 @@ async fn remove(
     State(state): State<AppState>,
     Path(ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let first = support::ids_param(&ids).into_iter().next().unwrap_or_default();
+    let first = support::ids_param(&ids)
+        .into_iter()
+        .next()
+        .unwrap_or_default();
     let flow_oid: Option<String> =
         sqlx::query_scalar("select FLOW_OID from flow_template where ID = ?")
             .bind(&first)

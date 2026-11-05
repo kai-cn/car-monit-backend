@@ -21,7 +21,9 @@ use crate::state::AppState;
 /// Java 登录态 user 由 FastJson2 反序列化，params 字段里会残留 `@type` 键。
 fn shape_profile_user(value: &mut Value, admin: bool) {
     {
-        let Some(object) = value.as_object_mut() else { return };
+        let Some(object) = value.as_object_mut() else {
+            return;
+        };
         object.remove("password");
         object.insert("admin".to_string(), Value::Bool(admin));
         let params = json!({ "@type": "java.util.HashMap" });
@@ -31,7 +33,9 @@ fn shape_profile_user(value: &mut Value, admin: bool) {
         }
         if let Some(roles) = object.get_mut("roles").and_then(Value::as_array_mut) {
             for role in roles.iter_mut() {
-                let Some(role) = role.as_object_mut() else { continue };
+                let Some(role) = role.as_object_mut() else {
+                    continue;
+                };
                 role.insert("params".to_string(), params.clone());
                 let role_admin = role.get("roleId").and_then(Value::as_i64) == Some(1);
                 role.insert("admin".to_string(), Value::Bool(role_admin));
@@ -72,13 +76,12 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/system/user/profile",
-            meta::get_route("/system/user/profile", None, None, profile)
-                .merge(meta::put_route(
-                    "/system/user/profile",
-                    None,
-                    Some(&LOG_UPDATE),
-                    update_profile,
-                )),
+            meta::get_route("/system/user/profile", None, None, profile).merge(meta::put_route(
+                "/system/user/profile",
+                None,
+                Some(&LOG_UPDATE),
+                update_profile,
+            )),
         )
         .route(
             "/system/user/profile/updatePwd",
@@ -138,10 +141,22 @@ async fn update_profile(
     Extension(user): Extension<LoginUser>,
     Json(body): Json<Value>,
 ) -> Result<AjaxResult, AppError> {
-    let user_name = body.get("userName").and_then(Value::as_str).unwrap_or_default().to_string();
+    let user_name = body
+        .get("userName")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
     let user_id = body.get("userId").and_then(Value::as_i64);
-    let phone = body.get("phonenumber").and_then(Value::as_str).unwrap_or_default().to_string();
-    let email = body.get("email").and_then(Value::as_str).unwrap_or_default().to_string();
+    let phone = body
+        .get("phonenumber")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let email = body
+        .get("email")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
 
     if !phone.is_empty() {
         if let Some(found) = support::scalar_i64(
@@ -251,14 +266,13 @@ async fn update_pwd(
         ));
     }
     let new_encoded = password::encode(&new_password)?;
-    let rows = sqlx::query(
-        "update sys_user set password = ?, update_time = now() where user_name = ?",
-    )
-    .bind(&new_encoded)
-    .bind(&user.user.user_name)
-    .execute(&state.db)
-    .await?
-    .rows_affected();
+    let rows =
+        sqlx::query("update sys_user set password = ?, update_time = now() where user_name = ?")
+            .bind(&new_encoded)
+            .bind(&user.user.user_name)
+            .execute(&state.db)
+            .await?
+            .rows_affected();
     if rows == 0 {
         return Ok(AjaxResult::error("修改密码异常，请联系管理员"));
     }
@@ -297,7 +311,10 @@ async fn avatar(
 
     // Java: FileUploadUtils.upload(profile + "/avatar", file) -> /profile/avatar/yyyy/MM/dd/{name}.
     let date_path = chrono::Local::now().format("%Y/%m/%d").to_string();
-    let ext = original.rsplit_once('.').map(|(_, ext)| ext).unwrap_or("png");
+    let ext = original
+        .rsplit_once('.')
+        .map(|(_, ext)| ext)
+        .unwrap_or("png");
     let base = original
         .rsplit_once('.')
         .map(|(base, _)| base)

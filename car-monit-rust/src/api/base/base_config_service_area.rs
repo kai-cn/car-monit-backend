@@ -142,7 +142,10 @@ pub async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, support::reorder_rows(rows, SERVICE_AREA_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::reorder_rows(rows, SERVICE_AREA_KEYS),
+    ))
 }
 
 // Java: listQuery —— 不分页，直接 AjaxResult.success(list)
@@ -152,7 +155,10 @@ pub async fn list_query(
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
-    Ok(AjaxResult::success_data(support::reorder_rows(rows, SERVICE_AREA_KEYS)))
+    Ok(AjaxResult::success_data(support::reorder_rows(
+        rows,
+        SERVICE_AREA_KEYS,
+    )))
 }
 
 // Java: ExcelUtil.exportExcel(list, "服务区数据")
@@ -172,8 +178,19 @@ pub async fn export(
         "桩号",
     ]
     .map(str::to_string);
-    let fields = ["fwqbm", "fwqmc", "lon", "lat", "roadCode", "sectionCode", "pileNo"];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let fields = [
+        "fwqbm",
+        "fwqmc",
+        "lon",
+        "lat",
+        "roadCode",
+        "sectionCode",
+        "pileNo",
+    ];
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "服务区数据", &headers, &data)
 }
 
@@ -182,7 +199,8 @@ pub async fn get_info(
     Path(fwqbm): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &fwqbm).await?
+        support::query_by_id(&state.db, &SPEC, &fwqbm)
+            .await?
             .map(|row| support::reorder_keys(row, SERVICE_AREA_KEYS)),
     ))
 }
@@ -234,6 +252,7 @@ pub async fn remove(
     Path(fwqbms): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     let ids = support::ids_param(&fwqbms);
-    let count = support::delete_by_ids(&state.db, "base_config_service_area", "fwqbm", &ids).await?;
+    let count =
+        support::delete_by_ids(&state.db, "base_config_service_area", "fwqbm", &ids).await?;
     Ok(support::success_count(count))
 }

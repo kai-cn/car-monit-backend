@@ -5,7 +5,7 @@
 // 关键行为：除 404 外，所有业务/鉴权/校验/运行异常都返回 HTTP 200，
 // 401/403 只是 body 内的 code。
 
-use axum::http::{header, StatusCode};
+use axum::http::{header, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 
 use crate::response::AjaxResult;
@@ -111,6 +111,14 @@ impl IntoResponse for AppError {
                 .put("code", code),
         };
         let mut response = body.into_response();
+        // Java: 认证/授权失败由 Spring Security 的 EntryPoint/AccessDeniedHandler 直接写响应，
+        // Content-Type 是 `application/json;charset=utf-8`（小写），与 MVC 转换器的 `application/json` 不同。
+        if matches!(self, Self::Unauthorized(_) | Self::Forbidden(_)) {
+            response.headers_mut().insert(
+                header::CONTENT_TYPE,
+                HeaderValue::from_static("application/json;charset=utf-8"),
+            );
+        }
         response.extensions_mut().insert(ErrorResponseMarker);
         response
     }
@@ -154,19 +162,42 @@ impl From<anyhow::Error> for AppError {
     }
 }
 
-/// Java: Spring Boot 默认 /error（HTTP 404）。
-pub fn not_found_response(path: &str) -> Response {
+/// Java: Spring Boot 默认 `/error` 响应体 —— `{"timestamp","status","error","path"}`。
+/// 实测 charset 与请求方法有关：POST/PUT/PATCH 时是 `application/json;charset=UTF-8`，
+/// GET/DELETE 时是 `application/json`；授权失败（403）无论什么方法都不带 charset。
+fn spring_error_page(status: u16, error: &str, path: &str, charset: bool) -> Response {
     let now = chrono::Local::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
     let body = serde_json::json!({
         "timestamp": now,
-        "status": 404,
-        "error": "Not Found",
+        "status": status,
+        "error": error,
         "path": path,
     });
+    let content_type = if charset {
+        "application/json;charset=UTF-8"
+    } else {
+        "application/json"
+    };
     (
-        StatusCode::NOT_FOUND,
-        [(header::CONTENT_TYPE, "application/json")],
+        StatusCode::from_u16(status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+        [(header::CONTENT_TYPE, content_type)],
         serde_json::to_vec(&body).unwrap_or_default(),
     )
         .into_response()
+}
+
+/// Java: 路径没有处理器 -> DefaultHandlerExceptionResolver/无匹配 -> sendError(404) -> /error。
+pub fn not_found_response(method: &axum::http::Method, path: &str) -> Response {
+    let charset = matches!(
+        *method,
+        axum::http::Method::POST | axum::http::Method::PUT | axum::http::Method::PATCH
+    );
+    spring_error_page(404, "Not Found", path, charset)
+}
+
+/// Java: Spring Security 只定制了 authenticationEntryPoint（401 走 RuoYi 的 JSON），
+/// 授权失败仍用默认的 AccessDeniedHandlerImpl -> response.sendError(403) -> /error 的 JSON 错误页。
+/// 命中 `anonymous()` / `denyAll()` 这类 URL 规则时就是这一种，而不是 AjaxResult。
+pub fn forbidden_error_page(path: &str) -> Response {
+    spring_error_page(403, "Forbidden", path, false)
 }

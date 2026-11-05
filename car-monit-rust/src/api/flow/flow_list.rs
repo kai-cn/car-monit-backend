@@ -117,7 +117,11 @@ async fn list_new(
 ) -> Result<AjaxResult, AppError> {
     let mut params = support::query_map(&raw);
     let bill_oid = params.get("billOid").cloned().unwrap_or_default();
-    let bill_oid = if bill_oid.is_empty() { "-1".to_string() } else { bill_oid };
+    let bill_oid = if bill_oid.is_empty() {
+        "-1".to_string()
+    } else {
+        bill_oid
+    };
     params.insert("billOid".to_string(), bill_oid.clone());
     let mut rows = support::query_all(&state.db, &params, &SPEC).await?;
 
@@ -159,13 +163,33 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = [
-        "单据OID", "流程类型", "任务ID", "流程实例ID", "当前节点OID(流程节点OID)", "审核人",
-        "审核结论KEY", "审核结论", "内容", "备用字段1", "备用字段2", "备用字段3",
+        "单据OID",
+        "流程类型",
+        "任务ID",
+        "流程实例ID",
+        "当前节点OID(流程节点OID)",
+        "审核人",
+        "审核结论KEY",
+        "审核结论",
+        "内容",
+        "备用字段1",
+        "备用字段2",
+        "备用字段3",
     ]
     .map(str::to_string);
     let fields = [
-        "billOid", "bussType", "taskId", "flowRuid", "currentOid", "shUser", "shKey", "shValue",
-        "shContext", "backCol1", "backCol2", "backCol3",
+        "billOid",
+        "bussType",
+        "taskId",
+        "flowRuid",
+        "currentOid",
+        "shUser",
+        "shKey",
+        "shValue",
+        "shContext",
+        "backCol1",
+        "backCol2",
+        "backCol3",
     ];
     let data = rows
         .iter()

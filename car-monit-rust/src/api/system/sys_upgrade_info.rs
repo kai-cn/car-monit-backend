@@ -136,11 +136,7 @@ async fn get_info(
     ))
 }
 
-async fn save(
-    state: &AppState,
-    user: &LoginUser,
-    body: &Value,
-) -> Result<AjaxResult, AppError> {
+async fn save(state: &AppState, user: &LoginUser, body: &Value) -> Result<AjaxResult, AppError> {
     let id = body
         .get("id")
         .and_then(Value::as_str)
@@ -153,8 +149,13 @@ async fn save(
             object.insert("id".to_string(), Value::String(generated.clone()));
             object.insert("delFlag".to_string(), json!("0"));
         }
-        support::insert_entity(&state.db, "sys_upgrade_info", &entity, AutoFill::from_user(user))
-            .await?;
+        support::insert_entity(
+            &state.db,
+            "sys_upgrade_info",
+            &entity,
+            AutoFill::from_user(user),
+        )
+        .await?;
         Ok(AjaxResult::success_msg_data("操作成功！", generated))
     } else {
         let mut entity = body.clone();
@@ -162,14 +163,8 @@ async fn save(
             object.insert("updateBy".to_string(), json!(user.user.user_id));
             object.insert("updateTime".to_string(), json!(support::now_string()));
         }
-        support::update_entity_by_id(
-            &state.db,
-            "sys_upgrade_info",
-            "id",
-            &entity,
-            AutoFill::NONE,
-        )
-        .await?;
+        support::update_entity_by_id(&state.db, "sys_upgrade_info", "id", &entity, AutoFill::NONE)
+            .await?;
         Ok(AjaxResult::success_msg_data("操作成功！", id))
     }
 }

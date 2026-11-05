@@ -26,7 +26,9 @@ async fn get_info(State(state): State<AppState>) -> Result<AjaxResult, AppError>
     let info_map = parse_info(&info);
     let mut pie_list = Vec::new();
     for (key, value) in parse_info(&command_stats) {
-        let Some(name) = key.strip_prefix("cmdstat_") else { continue };
+        let Some(name) = key.strip_prefix("cmdstat_") else {
+            continue;
+        };
         let text = value.as_str().unwrap_or_default();
         let calls = text
             .split_once("calls=")
@@ -38,11 +40,13 @@ async fn get_info(State(state): State<AppState>) -> Result<AjaxResult, AppError>
 
     // Java 侧这两层都是 HashMap，键序按桶序而非构造序。
     let info_map = crate::response::java_hashtable_ordered(&Value::Object(info_map));
-    Ok(AjaxResult::success_data(crate::response::java_ordered(&json!({
-        "info": info_map,
-        "dbSize": db_size,
-        "commandStats": pie_list,
-    }))))
+    Ok(AjaxResult::success_data(crate::response::java_ordered(
+        &json!({
+            "info": info_map,
+            "dbSize": db_size,
+            "commandStats": pie_list,
+        }),
+    )))
 }
 
 fn parse_info(text: &str) -> Map<String, Value> {

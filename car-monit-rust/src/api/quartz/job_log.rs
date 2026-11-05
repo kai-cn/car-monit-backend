@@ -119,7 +119,10 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, support::reorder_rows(rows, JOB_LOG_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::reorder_rows(rows, JOB_LOG_KEYS),
+    ))
 }
 
 async fn export(
@@ -129,11 +132,22 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = [
-        "日志序号", "任务名称", "任务组名", "调用目标字符串", "日志信息", "执行状态", "异常信息",
+        "日志序号",
+        "任务名称",
+        "任务组名",
+        "调用目标字符串",
+        "日志信息",
+        "执行状态",
+        "异常信息",
     ]
     .map(str::to_string);
     let fields = [
-        "jobLogId", "jobName", "jobGroup", "invokeTarget", "jobMessage", "status",
+        "jobLogId",
+        "jobName",
+        "jobGroup",
+        "invokeTarget",
+        "jobMessage",
+        "status",
         "exceptionInfo",
     ];
     let data = rows
@@ -165,12 +179,18 @@ async fn remove(
     State(state): State<AppState>,
     Path(job_log_ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&job_log_ids);
+    // Java: `@PathVariable Long[] jobLogIds` —— 任一段转不成 Long 就整体失败，文案带整段原文。
+    let ids = support::path_long_list("jobLogIds", &job_log_ids)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     let rows = support::delete_by_ids(&state.db, "sys_job_log", "job_log_id", &ids).await?;
     Ok(support::to_ajax(rows))
 }
 
 async fn clean(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
-    sqlx::query("truncate table sys_job_log").execute(&state.db).await?;
+    sqlx::query("truncate table sys_job_log")
+        .execute(&state.db)
+        .await?;
     Ok(AjaxResult::success())
 }

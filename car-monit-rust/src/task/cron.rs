@@ -241,7 +241,9 @@ mod tests {
     fn hourly_and_every_five_minutes() {
         let hourly = CronExpression::parse("0 0 * * * ?").expect("cron");
         assert_eq!(
-            hourly.next_after(at(2026, 10, 31, 12, 34, 56)).expect("next"),
+            hourly
+                .next_after(at(2026, 10, 31, 12, 34, 56))
+                .expect("next"),
             at(2026, 10, 31, 13, 0, 0)
         );
 

@@ -34,7 +34,7 @@ const COLUMN_COLUMNS: &str = "column_id, table_id, column_name, column_comment, 
      dialog_search_column_ids, dialog_list_column_ids, field_map_string";
 
 /// Java: selectGenTableById 的列（不含审计字段）。
-const INFO_COLUMNS: &str = "table_id, table_name, table_comment, sub_table_name,      sub_table_fk_name, class_name, tpl_category, package_name, module_name, business_name,      function_name, function_author, gen_type, gen_path, options, remark";
+pub(crate) const INFO_COLUMNS: &str = "table_id, table_name, table_comment, sub_table_name,      sub_table_fk_name, class_name, tpl_category, package_name, module_name, business_name,      function_name, function_author, gen_type, gen_path, options, remark";
 
 const ALL_SPEC: ListSpec = ListSpec {
     select: TABLE_COLUMNS,
@@ -289,8 +289,8 @@ const GEN_TABLE_KEYS: &[&str] = &[
     "richTextInfo",
     "columnDialogInfo",
     "filterColumnList",
-    "crud",
     "sub",
+    "crud",
     "tree",
 ];
 
@@ -339,13 +339,16 @@ const GEN_COLUMN_KEYS: &[&str] = &[
     "list",
     "pk",
     "query",
-    "usableColumn",
-    "edit",
-    "superColumn",
     "insert",
+    "edit",
     "capJavaField",
+    "superColumn",
     "increment",
+    "usableColumn",
 ];
+
+/// Java: GenTableColumnMapper.xml 的 `selectGenTableColumnVo` —— 6 个关联列排在最前。
+pub(crate) const DIALOG_COLUMN_COLUMNS: &str = "field_map_string, link_table_id, single_selection,      multiple_selections, dialog_search_column_ids, dialog_list_column_ids, column_id, table_id,      column_name, column_comment, column_type, java_type, java_field, is_pk, is_increment,      is_required, is_insert, is_edit, is_list, is_query, query_type, html_type, dict_type, sort,      create_by, create_time, update_by, update_time";
 
 /// GenTableColumnResult 映射的属性（其余属性由 Jackson 输出为 null）。
 const COLUMN_MAPPED_KEYS: &[&str] = &[
@@ -438,7 +441,7 @@ fn is_one(src: &Map<String, Value>, key: &str) -> bool {
 }
 
 /// Java: GenTableColumn 实体（含 isPk()/isSuperColumn()/getCapJavaField() 等派生属性）。
-fn shape_column(src: &Map<String, Value>) -> Value {
+pub(crate) fn shape_column(src: &Map<String, Value>) -> Value {
     let java_field = src
         .get("javaField")
         .and_then(Value::as_str)
@@ -537,7 +540,7 @@ fn inherited_column(parent: Option<&Map<String, Value>>) -> Value {
 }
 
 /// 给 gen_table 行补齐派生键（columns / 未映射字段 / crud|sub|tree）。
-fn finish_gen_table_row(row: &mut Value, columns: Option<Vec<Value>>) {
+pub(crate) fn finish_gen_table_row(row: &mut Value, columns: Option<Vec<Value>>) {
     let parent = row.as_object().cloned();
     if let Some(object) = row.as_object_mut() {
         let columns_value = match columns {
@@ -732,7 +735,10 @@ fn bind_id(builder: &mut QueryBuilder<'_, MySql>, value: &str) {
     };
 }
 
-async fn select_columns(pool: &MySqlPool, table_id: &str) -> Result<Vec<Value>, AppError> {
+pub(crate) async fn select_columns(
+    pool: &MySqlPool,
+    table_id: &str,
+) -> Result<Vec<Value>, AppError> {
     let mut builder = QueryBuilder::<MySql>::new(format!(
         "select {COLUMN_COLUMNS} from gen_table_column where table_id = "
     ));
@@ -902,6 +908,8 @@ async fn get_info(
     State(state): State<AppState>,
     Path(table_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long talbleId`（拼写就是这样，报错文案里也是它）。
+    let table_id = support::path_long("talbleId", &table_id)?.to_string();
     let mut builder = QueryBuilder::<MySql>::new(format!(
         "select {INFO_COLUMNS} from gen_table where table_id = "
     ));
@@ -1112,17 +1120,20 @@ async fn import_table(
     let tables = params.get("tables").cloned().unwrap_or_default();
     let oper_name = user.user.user_name.clone().unwrap_or_default();
     for name in tables.split(',').filter(|name| !name.is_empty()) {
+        // information_schema 的列名在结果元信息里是大写（TABLE_NAME），必须像 Java 的
+        // mapper 那样起别名，否则按名字取不到值（先前静默取成空串，登记出一行脏数据）。
         let db_table = sqlx::query(
-            "select table_name, table_comment from information_schema.tables \
+            "select table_name as tableName, table_comment as tableComment \
+             from information_schema.tables \
              where table_schema = (select database()) and table_name = ?",
         )
         .bind(name)
         .fetch_optional(&state.db)
         .await?;
         let Some(db_table) = db_table else { continue };
-        let table_name: String = sqlx::Row::try_get(&db_table, "table_name").unwrap_or_default();
+        let table_name: String = sqlx::Row::try_get(&db_table, "tableName").unwrap_or_default();
         let table_comment: Option<String> =
-            sqlx::Row::try_get(&db_table, "table_comment").unwrap_or_default();
+            sqlx::Row::try_get(&db_table, "tableComment").unwrap_or_default();
         let comment = table_comment.unwrap_or_default();
 
         let mut entity = init_table_body(&table_name, &comment, &oper_name);
@@ -1149,16 +1160,18 @@ async fn import_table(
         }
         builder.push(")");
         builder.build().execute(&mut *tx).await?;
-        let table_id: i64 = sqlx::query_scalar("select last_insert_id()")
+        // LAST_INSERT_ID() 的列元信息是 BIGINT UNSIGNED，只能按 u64 取回。
+        let table_id: u64 = sqlx::query_scalar("select last_insert_id()")
             .fetch_one(&mut *tx)
             .await?;
 
         let columns = sqlx::query(
-            "select column_name, column_comment, column_type, \
-             (case when (is_nullable = 'no' && column_key != 'PRI') then '1' else null end) as is_required, \
-             (case when column_key = 'PRI' then '1' else '0' end) as is_pk, \
+            "select column_name as columnName, column_comment as columnComment, \
+             column_type as columnType, \
+             (case when (is_nullable = 'no' && column_key != 'PRI') then '1' else null end) as isRequired, \
+             (case when column_key = 'PRI' then '1' else '0' end) as isPk, \
              ordinal_position as sort, \
-             (case when extra = 'auto_increment' then '1' else '0' end) as is_increment \
+             (case when extra = 'auto_increment' then '1' else '0' end) as isIncrement \
              from information_schema.columns \
              where table_schema = (select database()) and table_name = ? order by ordinal_position",
         )
@@ -1167,7 +1180,7 @@ async fn import_table(
         .await?;
         for row in columns.iter() {
             let value = crate::db::rows::row_to_json(row);
-            let column = init_column(&value, table_id, &oper_name);
+            let column = init_column(&value, table_id as i64, &oper_name);
             let mut builder = QueryBuilder::<MySql>::new("insert into gen_table_column (");
             let mut first = true;
             for key in column.keys() {
@@ -1249,7 +1262,11 @@ async fn remove(
     State(state): State<AppState>,
     Path(table_ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&table_ids);
+    // Java: `@PathVariable Long[] tableIds` —— 任一段转不成 Long 就整体失败，文案带整段原文。
+    let ids = support::path_long_list("tableIds", &table_ids)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     for id in &ids {
         sqlx::query("delete from gen_table_column where table_id = ?")
             .bind(id)
@@ -1280,11 +1297,12 @@ async fn synch_db(
             .fetch_all(&state.db)
             .await?;
     let columns = sqlx::query(
-        "select column_name, column_comment, column_type, \
-         (case when (is_nullable = 'no' && column_key != 'PRI') then '1' else null end) as is_required, \
-         (case when column_key = 'PRI' then '1' else '0' end) as is_pk, \
+        "select column_name as columnName, column_comment as columnComment, \
+         column_type as columnType, \
+         (case when (is_nullable = 'no' && column_key != 'PRI') then '1' else null end) as isRequired, \
+         (case when column_key = 'PRI' then '1' else '0' end) as isPk, \
          ordinal_position as sort, \
-         (case when extra = 'auto_increment' then '1' else '0' end) as is_increment \
+         (case when extra = 'auto_increment' then '1' else '0' end) as isIncrement \
          from information_schema.columns \
          where table_schema = (select database()) and table_name = ? order by ordinal_position",
     )
@@ -1319,6 +1337,7 @@ async fn preview(
     Path(table_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     // Java: GenTableServiceImpl.previewCode —— selectGenTableById + 表信息加工 + 逐模板渲染。
+    let table_id = support::path_long("tableId", &table_id)?.to_string();
     let mut builder = QueryBuilder::<MySql>::new(format!(
         "select {INFO_COLUMNS} from gen_table where table_id = "
     ));
@@ -1337,11 +1356,13 @@ async fn preview(
     }
     let datetime = chrono::Local::now().format("%Y-%m-%d").to_string();
     let data = gen_render::render_preview(
+        &state.db,
         &info,
         &columns,
         &datetime,
         state.settings.generator_code.mybatis_plus.enable,
     )
+    .await
     .map_err(AppError::Service)?;
     Ok(AjaxResult::success_data(data))
 }
@@ -1364,11 +1385,13 @@ async fn gen_code(
         .ok_or_else(|| AppError::Service(format!("gen_table 不存在: {table_name}")))?;
     let datetime = chrono::Local::now().format("%Y-%m-%d").to_string();
     let rendered = gen_render::render_templates(
+        &state.db,
         &table,
         &columns,
         &datetime,
         state.settings.generator_code.mybatis_plus.enable,
     )
+    .await
     .map_err(AppError::Service)?;
     for (template, text) in rendered {
         // Java: 自定义路径生成跳过 sql.vm / api.js.vm / index.vue.vm / index-tree.vue.vm
@@ -1461,11 +1484,13 @@ async fn zip_entries(
             .ok_or_else(|| AppError::Service(format!("gen_table 不存在: {table_name}")))?;
         let datetime = chrono::Local::now().format("%Y-%m-%d").to_string();
         let rendered = gen_render::render_templates(
+            &state.db,
             &table,
             &columns,
             &datetime,
             state.settings.generator_code.mybatis_plus.enable,
         )
+        .await
         .map_err(AppError::Service)?;
         for (template, text) in rendered {
             let entry = gen_render::file_name(&template, &table).map_err(AppError::Service)?;

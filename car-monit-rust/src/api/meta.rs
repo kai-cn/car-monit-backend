@@ -62,7 +62,11 @@ pub struct LogSpec {
 }
 
 impl LogSpec {
-    pub const fn new(title: &'static str, business_type: BusinessType, method: &'static str) -> Self {
+    pub const fn new(
+        title: &'static str,
+        business_type: BusinessType,
+        method: &'static str,
+    ) -> Self {
         Self {
             title,
             business_type,
@@ -79,8 +83,7 @@ pub struct RouteMeta {
     pub log: Option<&'static LogSpec>,
 }
 
-static REGISTRY: LazyLock<DashMap<(String, String), RouteMeta>> =
-    LazyLock::new(DashMap::new);
+static REGISTRY: LazyLock<DashMap<(String, String), RouteMeta>> = LazyLock::new(DashMap::new);
 
 fn static_method(method: &Method) -> &'static str {
     match *method {
@@ -236,7 +239,12 @@ pub async fn meta_middleware(
     let error_msg = if is_error {
         serde_json::from_str::<serde_json::Value>(&body_text)
             .ok()
-            .and_then(|value| value.get("msg").and_then(|msg| msg.as_str()).map(str::to_string))
+            .and_then(|value| {
+                value
+                    .get("msg")
+                    .and_then(|msg| msg.as_str())
+                    .map(str::to_string)
+            })
             .map(|msg| truncate(&msg, LOG_TEXT_LIMIT))
     } else {
         None
@@ -275,8 +283,6 @@ pub async fn meta_middleware(
             json_result,
             status: if is_error { 1 } else { 0 },
             error_msg,
-            // Java 3.8.7 的 setCostTime 被注释，DB 中 cost_time 恒为 null。
-            cost_time: None,
         },
     );
 
@@ -284,7 +290,10 @@ pub async fn meta_middleware(
 }
 
 fn should_capture_body(method: &Method, content_type: &str) -> bool {
-    if matches!(*method, Method::GET | Method::DELETE | Method::HEAD | Method::OPTIONS) {
+    if matches!(
+        *method,
+        Method::GET | Method::DELETE | Method::HEAD | Method::OPTIONS
+    ) {
         return false;
     }
     // 文件上传的 body 不能缓存后重放（体积大且后续 extractor 需要流）。

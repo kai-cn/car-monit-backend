@@ -142,7 +142,10 @@ pub(crate) fn java_ordered(value: &Value) -> Value {
     let Some(object) = value.as_object() else {
         return value.clone();
     };
-    let indexed = object.clone().into_iter().collect::<IndexMap<String, Value>>();
+    let indexed = object
+        .clone()
+        .into_iter()
+        .collect::<IndexMap<String, Value>>();
     Value::Object(java_hashmap_ordered(&indexed).into_iter().collect())
 }
 
@@ -187,7 +190,7 @@ impl IntoResponse for AjaxResult {
         let body = serde_json::to_vec(&self).unwrap_or_else(|_| b"{}".to_vec());
         (
             StatusCode::OK,
-            [(header::CONTENT_TYPE, "application/json;charset=UTF-8")],
+            [(header::CONTENT_TYPE, "application/json")],
             body,
         )
             .into_response()
@@ -232,7 +235,7 @@ impl<T: DeriveSerialize> IntoResponse for TableDataInfo<T> {
         let body = serde_json::to_vec(&self).unwrap_or_else(|_| b"{}".to_vec());
         (
             StatusCode::OK,
-            [(header::CONTENT_TYPE, "application/json;charset=UTF-8")],
+            [(header::CONTENT_TYPE, "application/json")],
             body,
         )
             .into_response()
@@ -270,7 +273,7 @@ impl<T: DeriveSerialize> IntoResponse for R<T> {
         let body = serde_json::to_vec(&self).unwrap_or_else(|_| b"{}".to_vec());
         (
             StatusCode::OK,
-            [(header::CONTENT_TYPE, "application/json;charset=UTF-8")],
+            [(header::CONTENT_TYPE, "application/json")],
             body,
         )
             .into_response()
@@ -307,8 +310,24 @@ mod tests {
             vec!["msg", "img", "code", "uuid"]
         );
         assert_eq!(
-            keys(&["msg", "code", "pjFlag", "overdue", "permissions", "roles", "user"]),
-            vec!["msg", "code", "pjFlag", "overdue", "permissions", "roles", "user"]
+            keys(&[
+                "msg",
+                "code",
+                "pjFlag",
+                "overdue",
+                "permissions",
+                "roles",
+                "user"
+            ]),
+            vec![
+                "msg",
+                "code",
+                "pjFlag",
+                "overdue",
+                "permissions",
+                "roles",
+                "user"
+            ]
         );
         assert_eq!(
             keys(&["msg", "code", "roles", "posts", "postIds", "roleIds", "data"]),

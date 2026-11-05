@@ -38,11 +38,18 @@ impl AppState {
         url.set_password(Some(&settings.database.password))
             .map_err(|_| anyhow::anyhow!("database.password 非法"))?;
 
+        // Java: Druid/JDBC 用 URL 上的 `serverTimezone=GMT+8` 设置会话时区；
+        // SQLx 默认写死 `+00:00`，会让 `timestamp(3)` 列（car_* 全表）读写差 8 小时。
+        let mut connect_options: sqlx::mysql::MySqlConnectOptions = url.as_str().parse()?;
+        if let Some(timezone) = settings.mysql_session_timezone() {
+            connect_options = connect_options.timezone(timezone);
+        }
+
         let pool = MySqlPoolOptions::new()
             .max_connections(settings.database.pool.max_active)
             .min_connections(settings.database.pool.min_idle)
             .acquire_timeout(Duration::from_millis(settings.database.pool.max_wait))
-            .connect(url.as_str())
+            .connect_with(connect_options)
             .await?;
 
         let redis = RedisCache::connect(&settings.redis_url()).await?;

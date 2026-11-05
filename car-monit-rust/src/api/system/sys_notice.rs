@@ -71,14 +71,18 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/system/notice",
-            meta::post_route("/system/notice", Some("system:notice:add"), Some(&LOG_ADD), add).merge(
-                meta::put_route(
-                    "/system/notice",
-                    Some("system:notice:edit"),
-                    Some(&LOG_EDIT),
-                    edit,
-                ),
-            ),
+            meta::post_route(
+                "/system/notice",
+                Some("system:notice:add"),
+                Some(&LOG_ADD),
+                add,
+            )
+            .merge(meta::put_route(
+                "/system/notice",
+                Some("system:notice:edit"),
+                Some(&LOG_EDIT),
+                edit,
+            )),
         )
         .route(
             "/system/notice/{noticeIds}",
@@ -145,6 +149,8 @@ async fn get_info(
     State(state): State<AppState>,
     Path(notice_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long noticeId`（/{noticeId} 与 /view/{noticeId} 共用）。
+    let notice_id = support::path_long("noticeId", &notice_id)?.to_string();
     Ok(AjaxResult::success_data(
         support::query_by_id(&state.db, &SPEC, &notice_id)
             .await?
@@ -165,8 +171,7 @@ async fn add(
         );
         object.insert("createTime".to_string(), json!(support::now_string()));
     }
-    let rows =
-        support::insert_entity(&state.db, "sys_notice", &entity, AutoFill::NONE).await?;
+    let rows = support::insert_entity(&state.db, "sys_notice", &entity, AutoFill::NONE).await?;
     Ok(support::to_ajax(rows))
 }
 
@@ -198,7 +203,11 @@ async fn remove(
     State(state): State<AppState>,
     Path(notice_ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&notice_ids);
+    // Java: `@PathVariable Long[] noticeIds` —— 任一段转不成 Long 就整体失败，文案带整段原文。
+    let ids = support::path_long_list("noticeIds", &notice_ids)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     let rows = support::delete_by_ids(&state.db, "sys_notice", "notice_id", &ids).await?;
     Ok(support::to_ajax(rows))
 }

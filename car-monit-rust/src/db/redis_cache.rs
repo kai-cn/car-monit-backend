@@ -88,9 +88,11 @@ impl RedisCache {
         let items: Vec<String> = conn.lrange(key, 0, -1).await?;
         let mut values = Vec::with_capacity(items.len());
         for item in items {
-            values.push(serde_json::from_str::<T>(&sanitize_fastjson2(&item)).map_err(|err| {
-                AppError::Cache(format!("反序列化缓存列表 {key} 失败: {err}"))
-            })?);
+            values.push(
+                serde_json::from_str::<T>(&sanitize_fastjson2(&item)).map_err(|err| {
+                    AppError::Cache(format!("反序列化缓存列表 {key} 失败: {err}"))
+                })?,
+            );
         }
         Ok(values)
     }
@@ -215,7 +217,11 @@ fn sanitize_fastjson2(text: &str) -> std::borrow::Cow<'_, str> {
         }
         // FastJson2 WriteClassName 的容器字面量：Set[...] / List[...] / JSONArray[...]。
         if *byte == b'[' {
-            for prefix in [b"Set[".as_slice(), b"List[".as_slice(), b"JSONArray[".as_slice()] {
+            for prefix in [
+                b"Set[".as_slice(),
+                b"List[".as_slice(),
+                b"JSONArray[".as_slice(),
+            ] {
                 let start = index + 1;
                 if start >= prefix.len() && &bytes[start - prefix.len()..start] == prefix {
                     needs = true;

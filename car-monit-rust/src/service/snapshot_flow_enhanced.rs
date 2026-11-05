@@ -14,8 +14,8 @@ use sqlx::mysql::MySql;
 use sqlx::QueryBuilder;
 use tracing::{info, warn};
 
-use crate::db::sharding::{physical_table_name, table_names_by_date_range, ShardingStrategy};
 use crate::db::rows::rows_to_json;
+use crate::db::sharding::{physical_table_name, table_names_by_date_range, ShardingStrategy};
 use crate::response::TableDataInfo;
 use crate::state::AppState;
 use serde_json::Value;
@@ -48,7 +48,8 @@ pub async fn query_page(
         Some(range) => range,
         None => return result,
     };
-    let tables = table_names_by_date_range(TABLE_PREFIX, range.0, range.1, ShardingStrategy::Monthly);
+    let tables =
+        table_names_by_date_range(TABLE_PREFIX, range.0, range.1, ShardingStrategy::Monthly);
     match query_from_sharding_tables(state, params, &tables).await {
         Ok(page) => page,
         Err(err) => {
@@ -66,7 +67,8 @@ pub async fn query_list_for_export(
     params: &HashMap<String, String>,
 ) -> Result<Vec<Value>, String> {
     let range = time_range(params).ok_or_else(|| "时间范围缺失".to_string())?;
-    let tables = table_names_by_date_range(TABLE_PREFIX, range.0, range.1, ShardingStrategy::Monthly);
+    let tables =
+        table_names_by_date_range(TABLE_PREFIX, range.0, range.1, ShardingStrategy::Monthly);
     let mut all = Vec::new();
     for table in &tables {
         match select_list(state, table, params, 0, params_page_size(params)).await {
@@ -148,7 +150,11 @@ async fn query_from_sharding_tables(
     }
 
     sort_desc(&mut all);
-    info!("【分表查询完成】总记录数: {}, 当前页数据量: {}", total, all.len());
+    info!(
+        "【分表查询完成】总记录数: {}, 当前页数据量: {}",
+        total,
+        all.len()
+    );
     Ok(TableDataInfo {
         total,
         rows: all,
@@ -197,7 +203,9 @@ async fn select_count(
         .fetch_one(&state.db)
         .await
         .map_err(|err| err.to_string())?;
-    Ok(text.and_then(|value| value.parse::<i64>().ok()).unwrap_or(0))
+    Ok(text
+        .and_then(|value| value.parse::<i64>().ok())
+        .unwrap_or(0))
 }
 
 async fn select_list(
@@ -210,7 +218,8 @@ async fn select_list(
     if !valid_table(table) {
         return Err(format!("非法的分表名: {table}"));
     }
-    let mut builder = QueryBuilder::<MySql>::new(format!("SELECT {COLUMNS} FROM {table} t WHERE 1=1"));
+    let mut builder =
+        QueryBuilder::<MySql>::new(format!("SELECT {COLUMNS} FROM {table} t WHERE 1=1"));
     push_filters(&mut builder, params);
     builder.push(" ORDER BY t.snapshottime DESC LIMIT ");
     builder.push_bind(offset);
@@ -225,7 +234,12 @@ async fn select_list(
 }
 
 fn push_filters(builder: &mut QueryBuilder<MySql>, params: &HashMap<String, String>) {
-    let value = |key: &str| params.get(key).map(|value| value.trim()).filter(|value| !value.is_empty());
+    let value = |key: &str| {
+        params
+            .get(key)
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty())
+    };
     for (param, column) in [
         ("bigId", "big_id"),
         ("datasource", "datasource"),
@@ -289,7 +303,10 @@ fn has_extra_filters(params: &HashMap<String, String>) -> bool {
         || present("deviceid")
         || present("gantrycode")
         || present("sectionCodeStr")
-        || params.get("direction").map(|value| !value.is_empty()).unwrap_or(false)
+        || params
+            .get("direction")
+            .map(|value| !value.is_empty())
+            .unwrap_or(false)
         || present("platecolor")
         || present("cartype")
         || present("datasource")
@@ -305,13 +322,21 @@ fn params_page_size(params: &HashMap<String, String>) -> i64 {
 fn valid_table(table: &str) -> bool {
     !table.is_empty()
         && table.len() <= 64
-        && table.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+        && table
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
 }
 
 /// Java: `validateTimeRange` —— 空参数 true；格式非法/超过当前时间/起大于止 false。
 fn validate_time_range(params: &HashMap<String, String>) -> bool {
-    let start = params.get("applyTime1").map(|value| value.trim()).unwrap_or("");
-    let end = params.get("applyTime2").map(|value| value.trim()).unwrap_or("");
+    let start = params
+        .get("applyTime1")
+        .map(|value| value.trim())
+        .unwrap_or("");
+    let end = params
+        .get("applyTime2")
+        .map(|value| value.trim())
+        .unwrap_or("");
     if start.is_empty() && end.is_empty() {
         return true;
     }
@@ -326,8 +351,14 @@ fn validate_time_range(params: &HashMap<String, String>) -> bool {
 }
 
 fn time_range(params: &HashMap<String, String>) -> Option<(NaiveDateTime, NaiveDateTime)> {
-    let start = params.get("applyTime1").map(|value| value.trim()).unwrap_or("");
-    let end = params.get("applyTime2").map(|value| value.trim()).unwrap_or("");
+    let start = params
+        .get("applyTime1")
+        .map(|value| value.trim())
+        .unwrap_or("");
+    let end = params
+        .get("applyTime2")
+        .map(|value| value.trim())
+        .unwrap_or("");
     parse_range(start, end)
 }
 

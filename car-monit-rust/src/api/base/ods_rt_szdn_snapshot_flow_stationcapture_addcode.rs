@@ -96,6 +96,8 @@ async fn get_info(
     State(state): State<AppState>,
     Path(big_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long bigId` —— 非数字在进控制器前就被 Spring 拦下。
+    let big_id = support::path_long("bigId", &big_id)?.to_string();
     Ok(AjaxResult::success_data(
         support::query_by_id_fmt(&state.db, &SPEC, &big_id, FORMATS).await?,
     ))

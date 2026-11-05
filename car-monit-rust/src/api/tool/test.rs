@@ -11,6 +11,8 @@ use parking_lot::Mutex;
 use serde_json::{json, Value};
 
 use crate::api::meta;
+use crate::api::support;
+use crate::error::AppError;
 use crate::response::R;
 use crate::state::AppState;
 
@@ -46,13 +48,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/test/user/{userId}",
-            meta::get_route("/test/user/{userId}", None, None, get_user)
-                .merge(meta::delete_route(
-                    "/test/user/{userId}",
-                    None,
-                    None,
-                    delete_user,
-                )),
+            meta::get_route("/test/user/{userId}", None, None, get_user).merge(meta::delete_route(
+                "/test/user/{userId}",
+                None,
+                None,
+                delete_user,
+            )),
         )
 }
 
@@ -60,15 +61,20 @@ async fn list() -> R<Vec<Value>> {
     R::ok(Some(USERS.lock().values().cloned().collect()))
 }
 
-async fn get_user(Path(user_id): Path<i64>) -> R<Value> {
-    match USERS.lock().get(&user_id).cloned() {
+async fn get_user(Path(user_id): Path<String>) -> Result<R<Value>, AppError> {
+    // Java: `@PathVariable Integer userId` —— 非数字先被 Spring 的类型转换拦下。
+    let user_id = support::path_int("userId", &user_id)? as i64;
+    Ok(match USERS.lock().get(&user_id).cloned() {
         Some(user) => R::ok(Some(user)),
         None => R::fail(500, "用户不存在"),
-    }
+    })
 }
 
 async fn save(Query(params): Query<std::collections::HashMap<String, String>>) -> R<Value> {
-    let Some(user_id) = params.get("userId").and_then(|value| value.parse::<i64>().ok()) else {
+    let Some(user_id) = params
+        .get("userId")
+        .and_then(|value| value.parse::<i64>().ok())
+    else {
         return R::fail(500, "用户ID不能为空");
     };
     let entity = json!({
@@ -94,11 +100,13 @@ async fn update(Json(body): Json<Value>) -> R<Value> {
     R::ok(None)
 }
 
-async fn delete_user(Path(user_id): Path<i64>) -> R<Value> {
+async fn delete_user(Path(user_id): Path<String>) -> Result<R<Value>, AppError> {
+    // Java: `@PathVariable Integer userId`。
+    let user_id = support::path_int("userId", &user_id)? as i64;
     let mut users = USERS.lock();
     if users.shift_remove(&user_id).is_some() {
-        R::ok(None)
+        Ok(R::ok(None))
     } else {
-        R::fail(500, "用户不存在")
+        Ok(R::fail(500, "用户不存在"))
     }
 }
