@@ -27,7 +27,10 @@ static void testRawAndWrappers() {
     if (!rawOk) { std::fputs("  dynamic err: ", stdout); std::puts(err.c_str()); }
     CK(rawOk);
     CK(out == kInflateExpected());
-    // TODO 固定哈夫曼块（BTYPE=01）目前解不对，修好 Inflate.cpp 后再加回这条断言
+    const bool fixOk = inflateRaw(kInflateFixed(), out, &err);      // 固定哈夫曼
+    if (!fixOk) { std::fputs("  fixed err: ", stdout); std::puts(err.c_str()); }
+    CK(fixOk);
+    CK(out == kInflateExpected());
     CK(inflateZlib(kInflateZlib(), out, &err));
     CK(out == kInflateExpected());
     CK(inflateGzip(kInflateGzip(), out, &err));

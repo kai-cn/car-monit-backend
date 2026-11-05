@@ -1,11 +1,16 @@
 // 内置 INFLATE 解码器（RFC 1951）。实现取向：宁可写得直白，也不要为了省几行
 // 把位序/码表出错的风险留给"只有真实 xlsx 才能发现"的场景。
 //
-// ⚠️ KNOWN BUG（未完成，勿用于生产）：BTYPE=01（固定哈夫曼）的流会被解成
-// "距离超过已解出的数据"而报错 —— stored 块与动态块路径尚未分别验证。
-// 码表按教科书公式 next_code[len] = (next_code[len-1] + count[len-1]) << 1 生成，
-// C++ 与一份等价的 Python 参照实现给出**同样**的错误结果，说明问题在算法理解层面
-// 而不是某一处笔误；已排除 fixed 字面量表/距离表的长度分配。
+// ⚠️ KNOWN BUG（未完成，勿用于生产）：**BTYPE=01（固定哈夫曼）与 BTYPE=10（动态哈夫曼）
+// 都解不出第一个后向引用**，报"距离超过已解出的数据"；BTYPE=00（stored）能过。
+// 已排除的可能性：
+//   * 流本身是好的（scripts/gen_inflate_fixture.py 产出后用 zlib.decompressobj 原样验回）；
+//   * 不是 fixed 码表的长度分配 —— 换成动态块同样失败；
+//   * 不是查表法与 puff 法(first/index/count)的差异 —— 两种实现都试过，症状一致；
+//   * 头字段读取顺序 HLIT/HDIST/HCLEN 与 kOrder 重排表都对得上 RFC。
+// 症状指向"字面量之后的第一个距离"读错位，最可能是长度符号 257..285 的
+// 基值/附加位表与 EOB 边界在某处整体偏移一格。下一步该做的是：把解出的位流
+// 与 zlib 的 deflate 输出逐位比对（固定输入 + 只留 stored/一段动态），而不是再猜。
 // 因此 tests/inflate_test.cpp 与 tests/xlsx_test.cpp 暂未接进 main_test.cpp，
 // xlsx 读取器也还没有接进任何端点 —— 现在跑导入接口仍然是显式报错，不会返回假数据。
 #include "cm/common/utils/Inflate.hpp"

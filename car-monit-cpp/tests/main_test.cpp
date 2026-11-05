@@ -296,6 +296,9 @@ void run_gen_utils_tests();
 void run_encrypt_utils_tests();
 // INFLATE/xlsx 的单测暂不接入：固定哈夫曼块（BTYPE=01）还解不对，见
 // src/cm/common/utils/Inflate.cpp 顶部的 KNOWN BUG 说明。文件留在树里继续调。
+// INFLATE/xlsx 的单测暂不接入：BTYPE=01 与 BTYPE=10 都解不出第一个后向引用
+// （stored 块能过），参照数据与流本身已用 zlib 验过是好的 ⇒ 问题在解码器。
+// 见 src/cm/common/utils/Inflate.cpp 顶部说明。
 // void run_inflate_tests();
 // void run_xlsx_tests();
 
