@@ -3,6 +3,8 @@
 // 职责: 路线明细 CRUD 与导出（BasePlusEntity 通用逻辑）。
 // 对应关系: manager_crud! 宏生成 list/export/get/add/edit/remove。
 
+use crate::api::support::FieldFormat;
+
 crate::manager_crud! {
     route: "/manager/routedetail",
     perm: "manager:routedetail",
@@ -10,9 +12,52 @@ crate::manager_crud! {
     class: "com.ruoyi.web.controller.manager.CarRouteDetailController",
     sheet: "常用路线明细数据",
     table: "car_route_detail",
-    select: "t.id, t.route_id, t.car_id, t.car_no, t.data_source, t.data_source_name, t.last_pass_time, t.last_pass_picture, t.last_pass_type, t.last_pass_address, t.last_pass_longitude, t.last_pass_latitude, t.last_pass_cardirection, t.road_section_id, t.road_section_name, t.next_pass_time, t.next_pass_type, t.next_pass_address, t.next_pass_longitude, t.next_pass_latitude, t.org_id, t.org_name, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id",
+    select: "t.id, t.route_id, t.car_id, t.car_no, t.data_source, t.data_source_name, t.last_pass_time, t.last_pass_picture, t.last_pass_type, t.last_pass_address, t.last_pass_longitude, t.last_pass_latitude, t.last_pass_cardirection, t.road_section_id, t.road_section_name, t.next_pass_time, t.next_pass_type, t.next_pass_address, t.next_pass_longitude, t.next_pass_latitude, t.org_id, t.org_name, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id, \
+             null as applyTime1, null as applyTime2",
     from: "from car_route_detail t",
     order: "t.create_time desc,t.id",
+    dates: [
+        ("lastPassTime", FieldFormat::DateOnly),
+        ("nextPassTime", FieldFormat::DateOnly),
+    ],
+    keys: [
+        "id",
+        "epsId",
+        "delFlag",
+        "createBy",
+        "createTime",
+        "updateBy",
+        "updateTime",
+        "sort",
+        "tenantId",
+        "routeId",
+        "carId",
+        "carNo",
+        "dataSource",
+        "dataSourceName",
+        "lastPassTime",
+        "lastPassPicture",
+        "lastPassType",
+        "lastPassAddress",
+        "lastPassLongitude",
+        "lastPassLatitude",
+        "lastPassCardirection",
+        "roadSectionId",
+        "roadSectionName",
+        "nextPassTime",
+        "nextPassType",
+        "nextPassAddress",
+        "nextPassLongitude",
+        "nextPassLatitude",
+        "orgId",
+        "orgName",
+        "backCol1",
+        "backCol2",
+        "status",
+        "remark",
+        "applyTime1",
+        "applyTime2",
+    ],
     binary: false,
     filters: [
         Filter::eq("id", "t.id"),

@@ -489,56 +489,18 @@ pub fn rich_text_info(columns: &[Value]) -> Option<Value> {
     Some(json!({ "richTextCount": editors.len(), "columnList": editors }))
 }
 
-/// Java: initLinkTableInfo 的 GenColumnDialog 汇总。
-/// 有关联列（link_table_id + field_map_string）时还需按 column_id 回查字段与关联表，
-/// 那部分暂未迁移，这里显式报错，避免静默生成错误代码。
-pub fn column_dialog_info(columns: &[Value]) -> Result<Option<Value>, String> {
-    if columns.is_empty() {
-        return Ok(None);
-    }
-    let link_columns: Vec<&Value> = columns
-        .iter()
-        .filter(|column| {
-            let has_link = column
-                .get("linkTableId")
-                .map(|value| !value.is_null())
-                .unwrap_or(false);
-            let has_map = column
-                .get("fieldMapString")
-                .and_then(Value::as_str)
-                .map(|text| !text.trim().is_empty())
-                .unwrap_or(false);
-            has_link && has_map
-        })
-        .collect();
-    if !link_columns.is_empty() {
-        return Err(format!(
-            "该表配置了 {} 个关联表字段，其字段映射回查（LinkTableField/linkTable）暂未迁移",
-            link_columns.len()
-        ));
-    }
-    Ok(Some(json!({
-        "dialogNumber": 0,
-        "checkboxNumber": 0,
-        "radioNumber": 0,
-        "dialogColumnList": [],
-        "checkBoxColumnList": [],
-        "radioColumnList": [],
-        "tableFieldList": [],
-        "customFieldList": [],
-        "fieldList": [],
-    })))
-}
-
 /// Java: GenTableServiceImpl.previewCode —— 渲染该表需要的全部模板。
-pub fn render_preview(
+pub async fn render_preview(
+    pool: &sqlx::MySqlPool,
     table: &Value,
     raw_columns: &[Value],
     datetime: &str,
     is_mybatis_plus: bool,
 ) -> Result<Map<String, Value>, String> {
     let mut data = Map::new();
-    for (name, text) in render_templates(table, raw_columns, datetime, is_mybatis_plus)? {
+    for (name, text) in
+        render_templates(pool, table, raw_columns, datetime, is_mybatis_plus).await?
+    {
         data.insert(name, Value::String(text));
     }
     Ok(data)
@@ -546,15 +508,19 @@ pub fn render_preview(
 
 /// 逐模板渲染，按 Java `getTemplateList` 的顺序返回 (模板名, 内容)。
 /// previewCode 用它拼 LinkedHashMap，generatorCode 用它拼 zip 条目。
-pub fn render_templates(
+pub async fn render_templates(
+    pool: &sqlx::MySqlPool,
     table: &Value,
     raw_columns: &[Value],
     datetime: &str,
     is_mybatis_plus: bool,
 ) -> Result<Vec<(String, String)>, String> {
-    let (columns, dictionary_list, dictionary_info_string) = columns_with_dictionary(raw_columns);
+    let (mut columns, dictionary_list, dictionary_info_string) =
+        columns_with_dictionary(raw_columns);
+    // Java: dictionaryKeyToCamelCase 之后才跑 initLinkTableInfo，
+    // 所以关联列（含 dialog 列表里的同一批实例）已经带上 dictTypeCamelCase。
+    let dialog_info = crate::api::generator::gen_link::link_table_info(pool, &mut columns).await?;
     let pk = pk_column(&columns);
-    let dialog_info = column_dialog_info(&columns)?;
     let mut context_table = table.clone();
     if let Some(object) = context_table.as_object_mut() {
         // Java: previewCode 在 prepareContext 之前先跑这几步加工，结果都挂在 table 上。
@@ -572,10 +538,7 @@ pub fn render_templates(
             "richTextInfo".to_string(),
             rich_text_info(&columns).unwrap_or(Value::Null),
         );
-        object.insert(
-            "columnDialogInfo".to_string(),
-            dialog_info.unwrap_or(Value::Null),
-        );
+        object.insert("columnDialogInfo".to_string(), dialog_info);
     }
     let root = prepare_context(
         &context_table,

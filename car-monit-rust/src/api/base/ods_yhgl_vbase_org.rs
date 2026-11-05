@@ -134,9 +134,22 @@ async fn export(
     ]
     .map(str::to_string);
     let fields = [
-        "orgCode", "orgName", "orgShortName", "orgParentId", "orgLevelCode", "orgIsVirtual",
-        "orgMaintenance", "orgSequence", "orgIsManager", "orgIsDeleted", "orgCategory",
-        "orgIsAuthorized", "orgAddress", "orgIsYhAutarky", "loadTime", "gradeLevel",
+        "orgCode",
+        "orgName",
+        "orgShortName",
+        "orgParentId",
+        "orgLevelCode",
+        "orgIsVirtual",
+        "orgMaintenance",
+        "orgSequence",
+        "orgIsManager",
+        "orgIsDeleted",
+        "orgCategory",
+        "orgIsAuthorized",
+        "orgAddress",
+        "orgIsYhAutarky",
+        "loadTime",
+        "gradeLevel",
     ];
     let data = rows
         .iter()
@@ -170,8 +183,16 @@ async fn add(
     Extension(user): Extension<LoginUser>,
     Json(body): Json<Value>,
 ) -> Result<AjaxResult, AppError> {
-    support::save_or_update(&state, &user, &body, "ods_yhgl_v_base_org", "big_id", false, false)
-        .await
+    support::save_or_update(
+        &state,
+        &user,
+        &body,
+        "ods_yhgl_v_base_org",
+        "big_id",
+        false,
+        false,
+    )
+    .await
 }
 
 async fn edit(
@@ -179,8 +200,16 @@ async fn edit(
     Extension(user): Extension<LoginUser>,
     Json(body): Json<Value>,
 ) -> Result<AjaxResult, AppError> {
-    support::save_or_update(&state, &user, &body, "ods_yhgl_v_base_org", "big_id", false, false)
-        .await
+    support::save_or_update(
+        &state,
+        &user,
+        &body,
+        "ods_yhgl_v_base_org",
+        "big_id",
+        false,
+        false,
+    )
+    .await
 }
 
 async fn remove(

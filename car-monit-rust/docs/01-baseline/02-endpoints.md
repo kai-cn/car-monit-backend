@@ -1,4 +1,4 @@
-# 附录 B：HTTP 接口清单（501 条）
+# 附录 B：HTTP 接口清单（510 条）
 
 > 由 `tools/gen_baseline.py` 复用 `car-monit-py/scripts/audit_endpoints.py` 的 Java 解析器生成。
 > 与 Python 迁移的审计口径一致：类级前缀 + 方法级映射 + 权限点。
@@ -15,10 +15,11 @@
 | generator | 1 | 15 |
 | manager | 20 | 160 |
 | monitor | 5 | 12 |
+| oss | 1 | 9 |
 | quartz | 2 | 13 |
 | system | 15 | 129 |
 | tool | 1 | 5 |
-| **合计** | **79** | **501** |
+| **合计** | **80** | **510** |
 
 ## base
 
@@ -812,6 +813,33 @@
 |---:|---|---|---|---|---|---|---|
 | 1 | GET | `/monitor/online/list` | list → `list` | `monitor:online:list` | — | `ipaddr:String (query)`; `userName:String (query)` | `TableDataInfo` |
 | 2 | DELETE | `/monitor/online/{tokenId}` | forceLogout → `force_logout` | `monitor:online:forceLogout` | 在线用户 / FORCE | `tokenId:String (path)` | `AjaxResult` |
+
+## oss
+
+### OssEndpoint（9）
+
+`ruoyi-common/src/main/java/com/ruoyi/common/utils/http/OssEndpoint.java`
+
+这一节是本轮新补的：控制器不在 `ruoyi-admin` 的 controller 树下，早期生成清单的解析器只扫了
+`web/controller/**`（以及 quartz、generator 两个模块），所以整体漏掉了它。
+上游是本机的 MinIO（`oss.endpoint`），出参形态用 `tools/endpoint_parity/fake_s3_full.py` 实测。
+
+| # | Method | Path | Java 方法 → Rust handler | 权限点 | @Log | 参数 | 返回 |
+|---:|---|---|---|---|---|---|---|
+| 1 | GET | `/oss/bucket` | getBuckets → `list_buckets` | — | — | — | `List<Bucket>` |
+| 2 | GET | `/oss/bucket/{bucketName}` | getBucket → `get_bucket` | — | — | `bucketName:String (path)` | `Bucket` |
+| 3 | POST | `/oss/bucket/{bucketName}` | createBucker → `create_bucket` | — | — | `bucketName:String (path)` | `Bucket` |
+| 4 | DELETE | `/oss/bucket/{bucketName}` | deleteBucket → `delete_bucket` | — | — | `bucketName:String (path)` | `void`（202） |
+| 5 | POST | `/oss/object/{bucketName}` | createObject → `upload_named_by_path` | — | — | `object:MultipartFile (body)`; `bucketName:String (path)` | `S3Object` |
+| 6 | POST | `/oss/object/{bucketName}/{objectName}` | createObject → `upload_with_object_name` | — | — | `object:MultipartFile (body)`; `bucketName:String (path)`; `objectName:String (path)` | `S3Object` |
+| 7 | GET | `/oss/object/{bucketName}/{objectName}` | filterObject → `filter_object` | — | — | `bucketName:String (path)`; `objectName:String (path)` | `List<S3ObjectSummary>` |
+| 8 | GET | `/oss/object/{bucketName}/{objectName}/{expires}` | getObject → `presigned_url` | — | — | `bucketName:String (path)`; `objectName:String (path)`; `expires:Integer (path)` | `Map<String,Object>` |
+| 9 | DELETE | `/oss/object/{bucketName}/{objectName}/` | deleteObject → 未单独注册 | — | — | `bucketName:String (path)`; `objectName:String (path)` | `void`（202） |
+
+第 9 条的尾斜杠路径在 Java 里被 `useTrailingSlashMatch` 归一到第 7 条（只注册了 GET），
+所以实测响应是 `{"msg":"Request method 'DELETE' not supported","code":500}`；
+Rust 侧同样靠 `web_filter` 的尾斜杠归一 + 405 翻译层得到同一结果，不额外注册路由。
+`shape()` 因此会削掉结尾斜杠再比较。
 
 ## quartz
 

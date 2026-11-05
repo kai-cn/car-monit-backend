@@ -48,7 +48,12 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/manager/fwqclls/list",
-            meta::get_route("/manager/fwqclls/list", Some("manager:fwqclls:list"), None, list),
+            meta::get_route(
+                "/manager/fwqclls/list",
+                Some("manager:fwqclls:list"),
+                None,
+                list,
+            ),
         )
         .route(
             "/manager/fwqclls/{bigId}",
@@ -70,6 +75,8 @@ async fn get_info(
     State(state): State<AppState>,
     Path(big_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long bigId` —— 非数字在进控制器前就被 Spring 拦下。
+    let big_id = support::path_long("bigId", &big_id)?.to_string();
     Ok(AjaxResult::success_data(
         support::query_by_id(&state.db, &SPEC, &big_id).await?,
     ))

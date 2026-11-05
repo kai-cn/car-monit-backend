@@ -84,7 +84,10 @@ async fn fetch_list(state: &AppState, path: &str) -> Result<Vec<Value>, AppError
 }
 
 /// 读取表的真实列名（下划线），用于剔除缓存/远端返回里的非表字段（如 exist=false 字段）。
-async fn table_columns(state: &AppState, table: &str) -> Result<std::collections::HashSet<String>, AppError> {
+async fn table_columns(
+    state: &AppState,
+    table: &str,
+) -> Result<std::collections::HashSet<String>, AppError> {
     let rows: Vec<String> = sqlx::query_scalar(
         "select lower(column_name) from information_schema.columns          where table_schema = database() and table_name = ?",
     )
@@ -94,10 +97,7 @@ async fn table_columns(state: &AppState, table: &str) -> Result<std::collections
     Ok(rows.into_iter().collect())
 }
 
-fn filter_columns(
-    columns: &std::collections::HashSet<String>,
-    row: &Value,
-) -> Option<Value> {
+fn filter_columns(columns: &std::collections::HashSet<String>, row: &Value) -> Option<Value> {
     let object = row.as_object()?;
     let mut out = Map::new();
     for (key, value) in object {
@@ -125,7 +125,9 @@ async fn insert_filtered(
 }
 
 async fn replace_table(state: &AppState, table: &str, rows: &[Value]) -> Result<usize, AppError> {
-    sqlx::query(&format!("truncate table {table}")).execute(&state.db).await?;
+    sqlx::query(&format!("truncate table {table}"))
+        .execute(&state.db)
+        .await?;
     let columns = table_columns(state, table).await?;
     let mut count = 0;
     for row in rows {
@@ -213,13 +215,18 @@ pub async fn sync_history_track(state: &AppState) -> Result<usize, AppError> {
             continue;
         };
         for trail in trails {
-            let mut tracks = trail.get("tracks").cloned().unwrap_or(Value::Object(Map::new()));
+            let mut tracks = trail
+                .get("tracks")
+                .cloned()
+                .unwrap_or(Value::Object(Map::new()));
             let trail_list = trail
                 .get("trailList")
                 .and_then(Value::as_array)
                 .cloned()
                 .unwrap_or_default();
-            let Some(object) = tracks.as_object_mut() else { continue };
+            let Some(object) = tracks.as_object_mut() else {
+                continue;
+            };
             object.insert("plateKey".to_string(), json!(car_no));
             object.insert("pointCount".to_string(), json!(trail_list.len() as i64));
             object.insert(
@@ -272,10 +279,7 @@ async fn warning_configs(state: &AppState) -> Result<Vec<Value>, AppError> {
         crate::db::rows::rows_to_json(&rows),
         "com.ruoyi.base.domain.CarWarningConfig",
     );
-    state
-        .redis
-        .set_object(WARNING_CONFIG_LIST, &values)
-        .await?;
+    state.redis.set_object(WARNING_CONFIG_LIST, &values).await?;
     Ok(values)
 }
 
@@ -384,8 +388,9 @@ pub async fn sync_current_track(state: &AppState) -> Result<(), AppError> {
                         let mut dev_codes = String::new();
                         let mut last_bo: Option<&Value> = None;
                         for point in &trail_list {
-                            let has_position = point.get("lon").map(|v| !v.is_null()).unwrap_or(false)
-                                && point.get("lat").map(|v| !v.is_null()).unwrap_or(false);
+                            let has_position =
+                                point.get("lon").map(|v| !v.is_null()).unwrap_or(false)
+                                    && point.get("lat").map(|v| !v.is_null()).unwrap_or(false);
                             if has_position && !is_blank(&text(point, "devCode")) {
                                 last_bo = Some(point);
                             }
@@ -401,10 +406,13 @@ pub async fn sync_current_track(state: &AppState) -> Result<(), AppError> {
                             last_lon = opt_text(last_bo, "lon");
                             last_lat = opt_text(last_bo, "lat");
                             last_type = opt_text(last_bo, "stateType");
-                            track_json = Some(serde_json::to_string(&json!({
-                                "tracks": trail.get("tracks").cloned().unwrap_or(Value::Null),
-                                "trailList": trail_list,
-                            })).unwrap_or_default());
+                            track_json = Some(
+                                serde_json::to_string(&json!({
+                                    "tracks": trail.get("tracks").cloned().unwrap_or(Value::Null),
+                                    "trailList": trail_list,
+                                }))
+                                .unwrap_or_default(),
+                            );
 
                             if !is_blank(&text(last_bo, "devCode")) {
                                 dev_codes.push_str(&format!(
@@ -413,7 +421,9 @@ pub async fn sync_current_track(state: &AppState) -> Result<(), AppError> {
                                     text(last_bo, "devCode")
                                 ));
                             }
-                            for (kind, key) in [("roadCode", "roadCode"), ("sectionCode", "sectionCode")] {
+                            for (kind, key) in
+                                [("roadCode", "roadCode"), ("sectionCode", "sectionCode")]
+                            {
                                 let value = text(last_bo, key);
                                 if !is_blank(&value) {
                                     let token = format!("{kind}:{value}");
@@ -444,15 +454,25 @@ pub async fn sync_current_track(state: &AppState) -> Result<(), AppError> {
                             warning.insert("carId".to_string(), car_id.clone());
                             warning.insert("carNo".to_string(), json!(car_no));
                             warning.insert("carType".to_string(), json!(car_text(car, "carType")));
-                            warning.insert("carVehicle".to_string(), json!(car_text(car, "carVehicle")));
-                            warning.insert("carNum".to_string(), car.get("carNum").cloned().unwrap_or(Value::Null));
+                            warning.insert(
+                                "carVehicle".to_string(),
+                                json!(car_text(car, "carVehicle")),
+                            );
+                            warning.insert(
+                                "carNum".to_string(),
+                                car.get("carNum").cloned().unwrap_or(Value::Null),
+                            );
                             warning.insert("trackId".to_string(), json!(tracks_uuid));
                             warning.insert(
                                 "trackJosn".to_string(),
                                 json!(serde_json::to_string(last_bo).unwrap_or_default()),
                             );
-                            warning.insert("trackNames".to_string(), json!(dev_codes.trim_end_matches(',')));
-                            warning.insert("inStationId".to_string(), json!(text(&first, "devCode")));
+                            warning.insert(
+                                "trackNames".to_string(),
+                                json!(dev_codes.trim_end_matches(',')),
+                            );
+                            warning
+                                .insert("inStationId".to_string(), json!(text(&first, "devCode")));
                             warning.insert("inStation".to_string(), json!(text(&first, "devName")));
                             if let Some(capture) = parse_dt(&text(&first, "captureTime")) {
                                 warning.insert(
@@ -460,22 +480,33 @@ pub async fn sync_current_track(state: &AppState) -> Result<(), AppError> {
                                     json!(capture.format("%Y-%m-%d %H:%M:%S").to_string()),
                                 );
                             }
-                            warning.insert("gantryStationId".to_string(), json!(text(last_bo, "devCode")));
-                            warning.insert("gantrytStation".to_string(), json!(text(last_bo, "devName")));
+                            warning.insert(
+                                "gantryStationId".to_string(),
+                                json!(text(last_bo, "devCode")),
+                            );
+                            warning.insert(
+                                "gantrytStation".to_string(),
+                                json!(text(last_bo, "devName")),
+                            );
                             if let Some(capture) = parse_dt(&text(last_bo, "captureTime")) {
                                 warning.insert(
                                     "gantryTime".to_string(),
                                     json!(capture.format("%Y-%m-%d %H:%M:%S").to_string()),
                                 );
                             }
-                            warning.insert("fileIds".to_string(), json!(text(last_bo, "imagesArry")));
+                            warning
+                                .insert("fileIds".to_string(), json!(text(last_bo, "imagesArry")));
                             warning.insert("delFlag".to_string(), json!("0"));
                             warning.insert("createBy".to_string(), json!(1));
                             warning.insert("createTime".to_string(), json!(now_text()));
                             warning.insert("updateBy".to_string(), json!(1));
                             warning.insert("updateTime".to_string(), json!(now_text()));
-                            warning.insert("roadCode".to_string(), json!(text(last_bo, "roadCode")));
-                            warning.insert("sectionCode".to_string(), json!(text(last_bo, "sectionCode")));
+                            warning
+                                .insert("roadCode".to_string(), json!(text(last_bo, "roadCode")));
+                            warning.insert(
+                                "sectionCode".to_string(),
+                                json!(text(last_bo, "sectionCode")),
+                            );
 
                             let point_uuid = tracks_uuid.clone();
                             if !point_uuid.is_empty() {
@@ -583,13 +614,18 @@ async fn compute_next_pass(state: &AppState, warning: &mut Value) -> Result<(), 
             let state_type = text(point, "stateType");
             if !matches!(
                 state_type.as_str(),
-                BORDER_WEIGHING_CAPTURE | GANTRY_CAPTURE | PROV_CAPTURE | SERVICE_AREA_CAPTURE
+                BORDER_WEIGHING_CAPTURE
+                    | GANTRY_CAPTURE
+                    | PROV_CAPTURE
+                    | SERVICE_AREA_CAPTURE
                     | STATION_CAPTURE
             ) {
                 continue;
             }
             let capture = text(point, "captureTime");
-            let Some(capture_dt) = parse_dt(&capture) else { continue };
+            let Some(capture_dt) = parse_dt(&capture) else {
+                continue;
+            };
             let dev_code = text(point, "devCode");
             if let Some(previous) = dedup.get(&dev_code) {
                 if (capture_dt - *previous).num_minutes().abs() <= 3 {
@@ -631,10 +667,7 @@ async fn compute_next_pass(state: &AppState, warning: &mut Value) -> Result<(), 
     });
     let best = &candidates[0];
     if let Some(object) = warning.as_object_mut() {
-        object.insert(
-            "nextPassAddress".to_string(),
-            json!(text(best, "devName")),
-        );
+        object.insert("nextPassAddress".to_string(), json!(text(best, "devName")));
         if let (Some(gantry_time), Some(current), Some(previous)) = (
             gantry_time,
             parse_dt(&text(best, "captureTime")),
@@ -663,14 +696,16 @@ pub async fn sync_suspicious_car(state: &AppState, trails: &[Value]) -> Result<u
         .map(|car| (text(&car, "carNo"), car))
         .collect();
     let plate_color = support::dict_map(&state.db, "plate_color").await?;
-    let white: Vec<String> = sqlx::query_scalar(
-        "select car_no from car_white_info where del_flag = '0'",
-    )
-    .fetch_all(&state.db)
-    .await?;
+    let white: Vec<String> =
+        sqlx::query_scalar("select car_no from car_white_info where del_flag = '0'")
+            .fetch_all(&state.db)
+            .await?;
     let mut count = 0;
     for trail in trails {
-        let tracks = trail.get("tracks").cloned().unwrap_or(Value::Object(Map::new()));
+        let tracks = trail
+            .get("tracks")
+            .cloned()
+            .unwrap_or(Value::Object(Map::new()));
         let car_no = text(&tracks, "plateKey");
         let track_id = text(&tracks, "uuid");
         if car_no.is_empty() || track_id.is_empty() || white.contains(&car_no) {
@@ -684,18 +719,17 @@ pub async fn sync_suspicious_car(state: &AppState, trails: &[Value]) -> Result<u
         .bind(&track_id)
         .fetch_optional(&state.db)
         .await?;
-        if existing
-            .as_ref()
-            .and_then(|(_, status)| status.as_deref())
-            == Some("1")
-        {
+        if existing.as_ref().and_then(|(_, status)| status.as_deref()) == Some("1") {
             continue;
         }
         let mut row = Map::new();
         if let Some((id, _)) = &existing {
             row.insert("id".to_string(), json!(id));
         } else {
-            row.insert("id".to_string(), json!(uuid::Uuid::new_v4().simple().to_string()));
+            row.insert(
+                "id".to_string(),
+                json!(uuid::Uuid::new_v4().simple().to_string()),
+            );
             row.insert("carNo".to_string(), json!(car_no));
             row.insert("isExcept".to_string(), json!("1"));
             row.insert("checkStatus".to_string(), json!("0"));
@@ -719,7 +753,10 @@ pub async fn sync_suspicious_car(state: &AppState, trails: &[Value]) -> Result<u
             let plate = text(&tracks, "plateColor");
             row.insert(
                 "plateColor".to_string(),
-                json!(plate_color.get(&plate).cloned().unwrap_or_else(|| "9".to_string())),
+                json!(plate_color
+                    .get(&plate)
+                    .cloned()
+                    .unwrap_or_else(|| "9".to_string())),
             );
         }
         let axle = number(&tracks, "enaxlecount")

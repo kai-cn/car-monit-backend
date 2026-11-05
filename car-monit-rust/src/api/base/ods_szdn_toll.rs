@@ -128,9 +128,16 @@ async fn section_names(state: &AppState) -> std::collections::HashMap<String, St
     let mut map = std::collections::HashMap::new();
     if let Ok(list) = state.redis.get_list::<Value>("section_list").await {
         for section in list {
-            let code = section.get("sectionCode").and_then(Value::as_str).unwrap_or_default();
-            let name = section.get("sectionName").and_then(Value::as_str).unwrap_or_default();
-            map.entry(code.to_string()).or_insert_with(|| name.to_string());
+            let code = section
+                .get("sectionCode")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            let name = section
+                .get("sectionName")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            map.entry(code.to_string())
+                .or_insert_with(|| name.to_string());
         }
     }
     map
@@ -142,11 +149,15 @@ async fn list(
 ) -> Result<TableDataInfo<Value>, AppError> {
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
-    let (total, mut rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
+    let (total, mut rows) =
+        support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
     let names = section_names(&state).await;
     for row in &mut rows {
         if let Some(object) = row.as_object_mut() {
-            let code = object.get("sectionCode").and_then(Value::as_str).unwrap_or_default();
+            let code = object
+                .get("sectionCode")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
             let name = names.get(code).cloned().unwrap_or_default();
             object.insert("sectionName".to_string(), Value::String(name));
         }
@@ -171,19 +182,55 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all_fmt(&state.db, &params, &SPEC, FORMATS).await?;
     let headers = [
-        "路线编号", "收费站业务唯一编码", "收费站编号", "收费站名称", "桩号", "所属机构名称",
-        "收费站HEX编码", "国网编号", "机构编码", "经度", "纬度", "开通日期", "收费站别名",
-        "入口治超监控资源，多个以英文逗号分割", "车道抓拍监控资源，多个以英文逗号分割",
-        "广场监控资源，多个以英文逗号分割", "动环监控资源，多个以英文逗号分割", "收费站编号",
-        "国网编号", "收费站名称", "所属路段编码", "收费站对应机构编码", "流水是否接入",
+        "路线编号",
+        "收费站业务唯一编码",
+        "收费站编号",
+        "收费站名称",
+        "桩号",
+        "所属机构名称",
+        "收费站HEX编码",
+        "国网编号",
+        "机构编码",
+        "经度",
+        "纬度",
+        "开通日期",
+        "收费站别名",
+        "入口治超监控资源，多个以英文逗号分割",
+        "车道抓拍监控资源，多个以英文逗号分割",
+        "广场监控资源，多个以英文逗号分割",
+        "动环监控资源，多个以英文逗号分割",
+        "收费站编号",
+        "国网编号",
+        "收费站名称",
+        "所属路段编码",
+        "收费站对应机构编码",
+        "流水是否接入",
     ]
     .map(str::to_string);
     let fields = [
-        "roadCode", "idCard", "tollCode", "tollName", "pileNo", "orgName", "hexCode",
-        "stateCode", "orgCode", "longitude", "latitude", "openDate", "tollAliasName",
-        "inMonitorResource", "laneMonitorResource", "squareMonitorResource",
-        "dynamicMonitorResource", "tollCodeMerge", "stateCodeMerge", "tollNameMerge",
-        "sectionCode", "tollOrgCode", "isAccess",
+        "roadCode",
+        "idCard",
+        "tollCode",
+        "tollName",
+        "pileNo",
+        "orgName",
+        "hexCode",
+        "stateCode",
+        "orgCode",
+        "longitude",
+        "latitude",
+        "openDate",
+        "tollAliasName",
+        "inMonitorResource",
+        "laneMonitorResource",
+        "squareMonitorResource",
+        "dynamicMonitorResource",
+        "tollCodeMerge",
+        "stateCodeMerge",
+        "tollNameMerge",
+        "sectionCode",
+        "tollOrgCode",
+        "isAccess",
     ];
     let data = rows
         .iter()

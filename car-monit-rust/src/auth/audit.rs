@@ -73,8 +73,9 @@ pub struct OperRecord {
     pub oper_param: Option<String>,
     pub json_result: Option<String>,
     pub status: i32,
+    /// Java: SysOperLog 无 costTime 字段、`sys_oper_log` 表也没有 cost_time 列，
+    /// 本库的 insertOperlog 只写到 oper_time 为止。
     pub error_msg: Option<String>,
-    pub cost_time: Option<i64>,
 }
 
 /// Java: AsyncFactory.recordOper —— AsyncManager 固定延迟 10ms 后落库。
@@ -87,8 +88,8 @@ pub fn record_oper(pool: &MySqlPool, record: OperRecord) {
             insert into sys_oper_log
                 (title, business_type, method, request_method, operator_type, oper_name,
                  dept_name, oper_url, oper_ip, oper_location, oper_param, json_result,
-                 status, error_msg, oper_time, cost_time)
-            values (?, ?, ?, ?, 1, ?, ?, ?, ?, '', ?, ?, ?, ?, sysdate(), ?)
+                 status, error_msg, oper_time)
+            values (?, ?, ?, ?, 1, ?, ?, ?, ?, '', ?, ?, ?, ?, sysdate())
             "#,
         )
         .bind(record.title)
@@ -103,7 +104,6 @@ pub fn record_oper(pool: &MySqlPool, record: OperRecord) {
         .bind(&record.json_result)
         .bind(record.status)
         .bind(&record.error_msg)
-        .bind(record.cost_time)
         .execute(&pool)
         .await;
 

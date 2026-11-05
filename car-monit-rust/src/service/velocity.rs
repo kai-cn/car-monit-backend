@@ -2,7 +2,7 @@
 // 职责: 代码生成模板（config/../templates/vm*）渲染所需的 Velocity 子集。
 // 支持: 文本、##、#*..*#、#[[..]]#、#set、#if/#elseif/#else/#end、
 //       #foreach(...in...) 与 #break/#continue、$foreach.count/index/first/last、
-//       $velocityCount、$ref/$!ref/${ref}、属性与方法链、字符串/数字/布尔字面量、
+//       $ref/$!ref/${ref}、属性与方法链、字符串/数字/布尔字面量、
 //       ==、!=、<、<=、>、>=、&&、||、!、+（字符串拼接或数值相加）。
 //
 // 与 Java 一致的三条关键语义：
@@ -1005,7 +1005,8 @@ fn render_nodes(nodes: &[Node], ctx: &mut Ctx, out: &mut String, flow: &mut Flow
                 for (index, item) in items.iter().enumerate() {
                     ctx.push();
                     ctx.set(var, item.clone());
-                    ctx.set("velocityCount", Value::from(index as i64 + 1));
+                    // Velocity 2.3 已移除 $velocityCount（本地用 velocity-engine-core-2.3 实测：
+                    // 普通与 ${} 形式都原样输出），只提供 $foreach.*。
                     let mut foreach = Map::new();
                     foreach.insert("count".to_string(), Value::from(index as i64 + 1));
                     foreach.insert("index".to_string(), Value::from(index as i64));

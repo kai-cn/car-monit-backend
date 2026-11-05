@@ -65,7 +65,12 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/base/geometry/getHenDa",
-            meta::get_route("/base/geometry/getHenDa", Some("base:geometry:list"), None, get_hen_da),
+            meta::get_route(
+                "/base/geometry/getHenDa",
+                Some("base:geometry:list"),
+                None,
+                get_hen_da,
+            ),
         )
         .route(
             "/base/geometry/syncAllGeometry",
@@ -77,7 +82,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/base/geometry/list",
-            meta::get_route("/base/geometry/list", Some("base:geometry:list"), None, list),
+            meta::get_route(
+                "/base/geometry/list",
+                Some("base:geometry:list"),
+                None,
+                list,
+            ),
         )
         .route(
             "/base/geometry/export",
@@ -169,12 +179,7 @@ async fn sync_one(
     Ok(AjaxResult::success())
 }
 
-fn spawn_sync(
-    state: AppState,
-    lxbh: Option<String>,
-    lxfx: Option<String>,
-    qdzh: Option<i32>,
-) {
+fn spawn_sync(state: AppState, lxbh: Option<String>, lxfx: Option<String>, qdzh: Option<i32>) {
     tokio::spawn(async move {
         // Java: qdzh 为 null 时在 qdzh + 1 处拆箱 NPE，任务终止（被线程池吞掉）。
         let Some(mut start) = qdzh else { return };
@@ -189,13 +194,8 @@ fn spawn_sync(
             } else {
                 format!("{}", start + 1)
             };
-            if let Some(pivot) = hen_da::get_pile_to_lon_lat(
-                &state,
-                Some(&lxbh),
-                Some(&pile),
-                Some(&lxfx),
-            )
-            .await
+            if let Some(pivot) =
+                hen_da::get_pile_to_lon_lat(&state, Some(&lxbh), Some(&pile), Some(&lxfx)).await
             {
                 let lon = double_value(&pivot, "longitude");
                 let lat = double_value(&pivot, "latitude");
@@ -213,13 +213,8 @@ fn spawn_sync(
                         "zdzh": start + 1,
                         "paths": deep_to_string(&points),
                     });
-                    if let Err(err) = support::insert_entity(
-                        &state.db,
-                        "geometry",
-                        &body,
-                        AutoFill::NONE,
-                    )
-                    .await
+                    if let Err(err) =
+                        support::insert_entity(&state.db, "geometry", &body, AutoFill::NONE).await
                     {
                         tracing::warn!("【恒达】写入 geometry 失败: {err}");
                     }
@@ -270,7 +265,10 @@ async fn export(
     let rows = support::query_all_fmt(&state.db, &params, &SPEC, FORMATS).await?;
     let headers = ["路线编号", "路线方向", "起点桩号", "终点桩号", "经纬度"].map(str::to_string);
     let fields = ["lxbh", "lxfx", "qdzh", "zdzh", "paths"];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "车辆信息数据", &headers, &data)
 }
 
@@ -278,6 +276,8 @@ async fn get_info(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Integer ID`（变量名就叫 ID，报错文案里也是它）。
+    let id = support::path_int("ID", &id)?.to_string();
     Ok(AjaxResult::success_data(
         support::query_by_id_fmt(&state.db, &SPEC, &id, FORMATS).await?,
     ))
@@ -303,7 +303,11 @@ async fn remove(
     State(state): State<AppState>,
     Path(ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&ids);
+    // Java: `@PathVariable Integer[] IDs` —— 任一段转不成 Integer 就整体失败，文案带整段原文。
+    let ids = support::path_int_list("IDs", &ids)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     let count = support::soft_delete_by_ids(&state.db, "geometry", "id", &ids).await?;
     Ok(support::success_count(count))
 }

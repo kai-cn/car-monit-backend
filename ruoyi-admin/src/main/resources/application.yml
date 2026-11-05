@@ -198,7 +198,7 @@ hengda:
   secret: b48381c4b98311ea90b100155d14fa3b
 
 vehicleMonitor:
-  baseUrl: http://127.0.0.1:9901
+  baseUrl: http://127.0.0.1:9902   # car-monit-api 的 Java 端（pro-business-api，Redis db0）；Go 端在 9903（Redis db1）
 isLocalhost: local # 是否本地 prod生成
 
 tx-service-url: https://apis.map.qq.com

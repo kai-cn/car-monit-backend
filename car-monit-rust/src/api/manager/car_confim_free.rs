@@ -23,13 +23,49 @@ use crate::state::AppState;
 /// Java: CarConfimFree extends BasePlusEntity 的 Jackson 键顺序；
 /// Mapper 未查询的属性也要输出（MyBatis 留 null，字段初始化值除外）。
 pub(crate) const CONFIM_FREE_KEYS: &[&str] = &[
-    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
-    "tenantId", "carId", "carNo", "carType", "carVehicle", "linkName", "linkPhone", "orgId",
-    "orgName", "userIds", "userNames", "amount", "aduitAmount", "exceptIds", "escapedTypes",
-    "backCol1", "backCol2", "status", "remark", "carAduitFreeList", "carExceptRecordList",
-    "totalAmount", "chargeAmount", "difAmount", "applyTime1", "applyTime2", "applyTime3",
-    "applyTime4", "carNoQuery", "confimFreeNum", "confimFreeAmount", "escapedType",
-    "comfimFreeType", "number", "escapedAmount",
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "tenantId",
+    "carId",
+    "carNo",
+    "carType",
+    "carVehicle",
+    "linkName",
+    "linkPhone",
+    "orgId",
+    "orgName",
+    "userIds",
+    "userNames",
+    "amount",
+    "aduitAmount",
+    "exceptIds",
+    "escapedTypes",
+    "backCol1",
+    "backCol2",
+    "status",
+    "remark",
+    "carAduitFreeList",
+    "carExceptRecordList",
+    "totalAmount",
+    "chargeAmount",
+    "difAmount",
+    "applyTime1",
+    "applyTime2",
+    "applyTime3",
+    "applyTime4",
+    "carNoQuery",
+    "confimFreeNum",
+    "confimFreeAmount",
+    "escapedType",
+    "comfimFreeType",
+    "number",
+    "escapedAmount",
 ];
 
 /// 按实体声明顺序补齐键；缺失补 null，多出的键追加在后。
@@ -70,7 +106,10 @@ fn delete_end(value: Option<&Value>) -> String {
 /// Java: BigDecimal 列在实体里的值。
 fn decimal_of(value: Option<&Value>) -> Decimal {
     match value {
-        Some(Value::Number(number)) => number.to_string().parse::<Decimal>().unwrap_or(Decimal::ZERO),
+        Some(Value::Number(number)) => number
+            .to_string()
+            .parse::<Decimal>()
+            .unwrap_or(Decimal::ZERO),
         Some(Value::String(text)) => text.trim().parse::<Decimal>().unwrap_or(Decimal::ZERO),
         _ => Decimal::ZERO,
     }
@@ -101,10 +140,7 @@ fn sum_dif_amount(rows: &[Value]) -> Value {
 }
 
 /// Java: CarExceptRecordMapper.selectCarExceptRecordList(exceptIds)
-async fn except_records_by_ids(
-    state: &AppState,
-    except_ids: &str,
-) -> Result<Vec<Value>, AppError> {
+async fn except_records_by_ids(state: &AppState, except_ids: &str) -> Result<Vec<Value>, AppError> {
     let mut params = HashMap::new();
     params.insert("exceptIds".to_string(), except_ids.to_string());
     let rows = support::query_all(&state.db, &params, &car_except_record::EXCEPT_SPEC).await?;
@@ -195,11 +231,21 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/manager/confimfree/concernedList",
-            meta::get_route("/manager/confimfree/concernedList", None, None, concerned_list),
+            meta::get_route(
+                "/manager/confimfree/concernedList",
+                None,
+                None,
+                concerned_list,
+            ),
         )
         .route(
             "/manager/confimfree/exportConcernedList",
-            meta::get_route("/manager/confimfree/exportConcernedList", None, Some(&LOG_EXPORT), export_concerned),
+            meta::get_route(
+                "/manager/confimfree/exportConcernedList",
+                None,
+                Some(&LOG_EXPORT),
+                export_concerned,
+            ),
         )
         .route(
             "/manager/confimfree/carStatics",
@@ -207,15 +253,30 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/manager/confimfree/exportCarStatics",
-            meta::get_route("/manager/confimfree/exportCarStatics", None, Some(&LOG_EXPORT), export_car_statics),
+            meta::get_route(
+                "/manager/confimfree/exportCarStatics",
+                None,
+                Some(&LOG_EXPORT),
+                export_car_statics,
+            ),
         )
         .route(
             "/manager/confimfree/except/{exceptIds}",
-            meta::get_route("/manager/confimfree/except/{exceptIds}", None, None, by_except_ids),
+            meta::get_route(
+                "/manager/confimfree/except/{exceptIds}",
+                None,
+                None,
+                by_except_ids,
+            ),
         )
         .route(
             "/manager/confimfree/export",
-            meta::get_route("/manager/confimfree/export", None, Some(&LOG_EXPORT), export),
+            meta::get_route(
+                "/manager/confimfree/export",
+                None,
+                Some(&LOG_EXPORT),
+                export,
+            ),
         )
         .route(
             "/manager/confimfree/{ids}",
@@ -342,10 +403,7 @@ fn push_param_date(
 
 /// Java: selectConcernedList 的 `<if>` 分支（t 是 car_info；
 /// carId/userIds/... 在 car_info 中不存在，Java 同样会抛 Unknown column）。
-fn push_concerned_filters(
-    builder: &mut QueryBuilder<'_, MySql>,
-    params: &HashMap<String, String>,
-) {
+fn push_concerned_filters(builder: &mut QueryBuilder<'_, MySql>, params: &HashMap<String, String>) {
     push_param_eq(builder, params, "id", "t.id");
     push_param_eq(builder, params, "carId", "t.car_id");
     push_param_eq(builder, params, "carNo", "t.car_no");
@@ -409,7 +467,10 @@ async fn concerned_list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let mut count_builder = concerned_sql(&params, true);
-    let total: i64 = count_builder.build_query_scalar().fetch_one(&state.db).await?;
+    let total: i64 = count_builder
+        .build_query_scalar()
+        .fetch_one(&state.db)
+        .await?;
     let (offset, limit) = page.resolve(total);
     let mut builder = concerned_sql(&params, false);
     builder.push(" limit ");
@@ -433,10 +494,35 @@ async fn export_concerned(
     params.insert("pageNum".to_string(), "1".to_string());
     params.insert("pageSize".to_string(), i32::MAX.to_string());
     let result = concerned_list_all(&state, &params, &page).await?;
-    let headers = ["车牌号", "车型", "车种", "逃费类型", "单位编码", "单位名称", "应缴金额", "收费金额", "差额", "异常流水ids"]
-        .map(str::to_string);
-    let fields = ["car_no", "car_type", "car_vehicle", "escaped_type", "org_id", "org_name", "totalAmount", "chargeAmount", "difAmount", "except_ids"];
-    let data = result.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let headers = [
+        "车牌号",
+        "车型",
+        "车种",
+        "逃费类型",
+        "单位编码",
+        "单位名称",
+        "应缴金额",
+        "收费金额",
+        "差额",
+        "异常流水ids",
+    ]
+    .map(str::to_string);
+    let fields = [
+        "car_no",
+        "car_type",
+        "car_vehicle",
+        "escaped_type",
+        "org_id",
+        "org_name",
+        "totalAmount",
+        "chargeAmount",
+        "difAmount",
+        "except_ids",
+    ];
+    let data = result
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_download("关注车辆", &headers, &data)
 }
 
@@ -555,17 +641,19 @@ fn pivot_car_statistics(rows: &[Value]) -> Vec<Value> {
                 None => Decimal::ZERO,
             };
             map.insert(format!("escapedType{escaped_type}Num"), json!(number));
-            map.insert(format!("escapedType{escaped_type}Amount"), decimal_json(amount));
+            map.insert(
+                format!("escapedType{escaped_type}Amount"),
+                decimal_json(amount),
+            );
             total_num += number;
             total_amount += amount;
         }
         map.insert("totalNum".to_string(), json!(total_num));
         map.insert(
             "totalAmount".to_string(),
-            decimal_json(total_amount.round_dp_with_strategy(
-                2,
-                RoundingStrategy::MidpointAwayFromZero,
-            )),
+            decimal_json(
+                total_amount.round_dp_with_strategy(2, RoundingStrategy::MidpointAwayFromZero),
+            ),
         );
         map.insert("detailVOList".to_string(), Value::Null);
         out.push(Value::Object(map));
@@ -581,7 +669,10 @@ async fn car_statics(
     let params = support::query_map(&raw);
     // Java: startPage() 先分页「分组行」，再在内存里透视；total 取透视后的单位数。
     let mut count_builder = statistics_sql(&params, true);
-    let group_total: i64 = count_builder.build_query_scalar().fetch_one(&state.db).await?;
+    let group_total: i64 = count_builder
+        .build_query_scalar()
+        .fetch_one(&state.db)
+        .await?;
     let (offset, limit) = page.resolve(group_total);
     let mut builder = statistics_sql(&params, false);
     builder.push(" limit ");
@@ -599,17 +690,26 @@ async fn export_car_statics(
     RawQuery(raw): RawQuery,
 ) -> Result<axum::response::Response, AppError> {
     let params = support::query_map(&raw);
-    let rows = statistics_sql(&params, false).build().fetch_all(&state.db).await?;
+    let rows = statistics_sql(&params, false)
+        .build()
+        .fetch_all(&state.db)
+        .await?;
     let data = crate::db::rows::rows_to_json(&rows);
     let headers = ["单位编码", "单位名称", "逃费类型", "金额", "车辆数"].map(str::to_string);
     let fields = ["epsId", "orgName", "escapedType", "escapedAmount", "number"];
-    let data = data.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = data
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_download("车辆统计", &headers, &data)
 }
 
 /// Java: CarConfimFreeMapper.selectCarConfimFreeByExceptIds —— 是否已生成过补缴单。
 async fn already_confirmed(state: &AppState, except_ids: &str) -> Result<bool, AppError> {
-    let ids: Vec<&str> = except_ids.split(',').filter(|id| !id.trim().is_empty()).collect();
+    let ids: Vec<&str> = except_ids
+        .split(',')
+        .filter(|id| !id.trim().is_empty())
+        .collect();
     if ids.is_empty() {
         return Ok(false);
     }
@@ -664,7 +764,9 @@ async fn by_except_ids(
     }
     let eps_list = distinct("epsId");
     if eps_list.len() > 1 {
-        return Ok(AjaxResult::error("选择的异常流水存在多个录入单位，请确认！"));
+        return Ok(AjaxResult::error(
+            "选择的异常流水存在多个录入单位，请确认！",
+        ));
     }
     if already_confirmed(&state, &cleaned).await? {
         return Ok(AjaxResult::error("车辆补缴单已追缴，请勿重复补缴！"));
@@ -673,7 +775,10 @@ async fn by_except_ids(
     let first = records.first().cloned().unwrap_or(Value::Null);
     let mut map = Map::new();
     for key in ["carId", "carNo", "carType", "carVehicle"] {
-        map.insert(key.to_string(), first.get(key).cloned().unwrap_or(Value::Null));
+        map.insert(
+            key.to_string(),
+            first.get(key).cloned().unwrap_or(Value::Null),
+        );
     }
     map.insert("exceptIds".to_string(), json!(cleaned));
     map.insert(
@@ -684,11 +789,18 @@ async fn by_except_ids(
             None => Value::Null,
         },
     );
-    map.insert("carExceptRecordList".to_string(), Value::Array(records.clone()));
+    map.insert(
+        "carExceptRecordList".to_string(),
+        Value::Array(records.clone()),
+    );
 
     let mut raw_sum = Decimal::ZERO;
     for record in &records {
-        if record.get("difAmount").map(|v| !v.is_null()).unwrap_or(false) {
+        if record
+            .get("difAmount")
+            .map(|v| !v.is_null())
+            .unwrap_or(false)
+        {
             raw_sum += decimal_of(record.get("difAmount"));
         }
     }
@@ -705,9 +817,9 @@ async fn by_except_ids(
         "amount".to_string(),
         decimal_json(amount.round_dp_with_strategy(2, RoundingStrategy::MidpointAwayFromZero)),
     );
-    Ok(AjaxResult::success_data(shape_confim_free_row(Value::Object(
-        map,
-    ))))
+    Ok(AjaxResult::success_data(shape_confim_free_row(
+        Value::Object(map),
+    )))
 }
 
 async fn export(
@@ -717,17 +829,56 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = [
-        "车辆id", "车牌号", "车型", "车种", "司机名称", "联系方式", "录入单位id", "录入单位",
-        "录入人员ids", "录入人员", "拆分金额", "处理金额", "异常流水ids", "逃费类型s", "比例",
-        "备用字段2", "状态", "备注", "应缴金额", "收费金额", "差额",
+        "车辆id",
+        "车牌号",
+        "车型",
+        "车种",
+        "司机名称",
+        "联系方式",
+        "录入单位id",
+        "录入单位",
+        "录入人员ids",
+        "录入人员",
+        "拆分金额",
+        "处理金额",
+        "异常流水ids",
+        "逃费类型s",
+        "比例",
+        "备用字段2",
+        "状态",
+        "备注",
+        "应缴金额",
+        "收费金额",
+        "差额",
     ]
     .map(str::to_string);
     let fields = [
-        "carId", "carNo", "carType", "carVehicle", "linkName", "linkPhone", "orgId", "org_name",
-        "userIds", "userNames", "amount", "aduitAmount", "exceptIds", "escapedTypes", "backCol1",
-        "backCol2", "status", "remark", "backCol1", "backCol2", "backCol1",
+        "carId",
+        "carNo",
+        "carType",
+        "carVehicle",
+        "linkName",
+        "linkPhone",
+        "orgId",
+        "org_name",
+        "userIds",
+        "userNames",
+        "amount",
+        "aduitAmount",
+        "exceptIds",
+        "escapedTypes",
+        "backCol1",
+        "backCol2",
+        "status",
+        "remark",
+        "backCol1",
+        "backCol2",
+        "backCol1",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_download("确认补缴数据", &headers, &data)
 }
 
@@ -748,13 +899,13 @@ async fn get_info(
         let except_ids = delete_end(row.get("exceptIds"));
         if !except_ids.trim().is_empty() {
             let records = except_records_by_ids(&state, &except_ids).await?;
+            row.as_object_mut().expect("object").insert(
+                "carExceptRecordList".to_string(),
+                Value::Array(records.clone()),
+            );
             row.as_object_mut()
                 .expect("object")
-                .insert("carExceptRecordList".to_string(), Value::Array(records.clone()));
-            row.as_object_mut().expect("object").insert(
-                "difAmount".to_string(),
-                sum_dif_amount(&records),
-            );
+                .insert("difAmount".to_string(), sum_dif_amount(&records));
         }
         let mut params = HashMap::new();
         params.insert("confirmId".to_string(), id.clone());

@@ -95,7 +95,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/flow/messagedispose/{ids}",
-            meta::delete_route("/flow/messagedispose/{ids}", None, Some(&LOG_REMOVE), remove),
+            meta::delete_route(
+                "/flow/messagedispose/{ids}",
+                None,
+                Some(&LOG_REMOVE),
+                remove,
+            ),
         )
 }
 
@@ -115,10 +120,27 @@ async fn export(
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
-    let headers = ["消息外键", "处理对象ID", "处理对象名称", "消息状态", "处理时间", "其他"]
-        .map(str::to_string);
-    let fields = ["mid", "bussId", "bussName", "msgStatus", "hangTime", "disposeOther"];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let headers = [
+        "消息外键",
+        "处理对象ID",
+        "处理对象名称",
+        "消息状态",
+        "处理时间",
+        "其他",
+    ]
+    .map(str::to_string);
+    let fields = [
+        "mid",
+        "bussId",
+        "bussName",
+        "msgStatus",
+        "hangTime",
+        "disposeOther",
+    ];
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "系统消息处理人数据", &headers, &data)
 }
 
@@ -160,7 +182,11 @@ async fn del_mes(
     Extension(user): Extension<LoginUser>,
     Path(mid): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let mid = if mid.is_empty() { "-1".to_string() } else { mid };
+    let mid = if mid.is_empty() {
+        "-1".to_string()
+    } else {
+        mid
+    };
     let rows = sqlx::query("delete from flow_message_dispose where MID = ? and BUSS_ID = ?")
         .bind(&mid)
         .bind(user.user.user_id.unwrap_or_default().to_string())
@@ -176,7 +202,11 @@ async fn szzd_mes(
     Extension(user): Extension<LoginUser>,
     Path(mid): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let mid = if mid.is_empty() { "-1".to_string() } else { mid };
+    let mid = if mid.is_empty() {
+        "-1".to_string()
+    } else {
+        mid
+    };
     let rows = sqlx::query(
         "update flow_message_dispose set MSG_STATUS = '1' \
          where del_flag = '0' and MID = ? and BUSS_ID = ?",

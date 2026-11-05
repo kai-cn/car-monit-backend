@@ -4,9 +4,9 @@
 
 use axum::extract::{Multipart, Query, State};
 use axum::http::header;
+use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::Router;
-use axum::http::HeaderMap;
 use serde_json::json;
 
 use crate::api::meta;
@@ -16,8 +16,8 @@ use crate::state::AppState;
 
 /// Java: MimeTypeUtils.DEFAULT_ALLOWED_EXTENSION。
 const ALLOWED_EXT: &[&str] = &[
-    "bmp", "gif", "jpg", "jpeg", "png", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "html",
-    "htm", "txt", "rar", "zip", "gz", "bz2", "mp4", "avi", "rmvb",
+    "bmp", "gif", "jpg", "jpeg", "png", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "html", "htm",
+    "txt", "rar", "zip", "gz", "bz2", "mp4", "avi", "rmvb",
 ];
 
 pub fn routes() -> Router<AppState> {
@@ -46,7 +46,8 @@ fn allow_download(name: &str) -> bool {
         return false;
     }
     let ext = name.rsplit_once('.').map(|(_, ext)| ext.to_lowercase());
-    ext.map(|ext| ALLOWED_EXT.contains(&ext.as_str())).unwrap_or(false)
+    ext.map(|ext| ALLOWED_EXT.contains(&ext.as_str()))
+        .unwrap_or(false)
 }
 
 /// Java: serverConfig.getUrl() —— scheme://host（无 contextPath）。
@@ -69,13 +70,19 @@ async fn download(
         .unwrap_or(false);
     if !allow_download(&file_name) {
         tracing::error!("下载文件失败: 文件名称({file_name})非法，不允许下载。");
-        return ([(header::CONTENT_TYPE, "application/octet-stream")], Vec::<u8>::new())
+        return (
+            [(header::CONTENT_TYPE, "application/octet-stream")],
+            Vec::<u8>::new(),
+        )
             .into_response();
     }
     let real_name = format!(
         "{}{}",
         chrono::Local::now().timestamp_millis(),
-        file_name.split_once('_').map(|(_, rest)| rest).unwrap_or(&file_name)
+        file_name
+            .split_once('_')
+            .map(|(_, rest)| rest)
+            .unwrap_or(&file_name)
     );
     let path = std::path::PathBuf::from(&state.settings.ruoyi.profile)
         .join("download")
@@ -99,7 +106,10 @@ async fn download(
         }
         Err(err) => {
             tracing::error!("下载文件失败: {err}");
-            ([(header::CONTENT_TYPE, "application/octet-stream")], Vec::<u8>::new())
+            (
+                [(header::CONTENT_TYPE, "application/octet-stream")],
+                Vec::<u8>::new(),
+            )
                 .into_response()
         }
     }
@@ -107,7 +117,11 @@ async fn download(
 
 /// Java: resourceDownload —— 方法体已全部注释，永远返回空响应。
 async fn download_resource() -> Response {
-    ([(header::CONTENT_TYPE, "application/octet-stream")], Vec::<u8>::new()).into_response()
+    (
+        [(header::CONTENT_TYPE, "application/octet-stream")],
+        Vec::<u8>::new(),
+    )
+        .into_response()
 }
 
 fn upload_path(state: &AppState, original: &str) -> Result<(String, std::path::PathBuf), AppError> {
@@ -117,7 +131,10 @@ fn upload_path(state: &AppState, original: &str) -> Result<(String, std::path::P
         .map(|(base, _)| base)
         .unwrap_or("file");
     let ext = original.rsplit_once('.').map(|(_, ext)| ext).unwrap_or("");
-    let file_name = format!("{date_path}/{base}_{}.{ext}", chrono::Local::now().timestamp_millis());
+    let file_name = format!(
+        "{date_path}/{base}_{}.{ext}",
+        chrono::Local::now().timestamp_millis()
+    );
     let relative = format!("/profile/upload/{file_name}");
     let path = std::path::PathBuf::from(&state.settings.ruoyi.profile)
         .join("upload")
@@ -125,11 +142,7 @@ fn upload_path(state: &AppState, original: &str) -> Result<(String, std::path::P
     Ok((relative, path))
 }
 
-async fn store_upload(
-    state: &AppState,
-    original: &str,
-    bytes: &[u8],
-) -> Result<String, AppError> {
+async fn store_upload(state: &AppState, original: &str, bytes: &[u8]) -> Result<String, AppError> {
     let (relative, path) = upload_path(state, original)?;
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)

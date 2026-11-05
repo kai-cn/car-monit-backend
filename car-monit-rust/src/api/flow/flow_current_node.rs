@@ -134,12 +134,9 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/flow/currentnode",
-            meta::post_route("/flow/currentnode", None, Some(&LOG_ADD), add).merge(meta::put_route(
-                "/flow/currentnode",
-                None,
-                Some(&LOG_EDIT),
-                edit,
-            )),
+            meta::post_route("/flow/currentnode", None, Some(&LOG_ADD), add).merge(
+                meta::put_route("/flow/currentnode", None, Some(&LOG_EDIT), edit),
+            ),
         )
         .route(
             "/flow/currentnode/{ids}",
@@ -156,28 +153,21 @@ async fn select_nodes(
     Ok(support::query_all(pool, params, &SPEC).await?)
 }
 
-async fn select_node_row(
-    pool: &MySqlPool,
-    id: &str,
-) -> Result<Option<Value>, AppError> {
+async fn select_node_row(pool: &MySqlPool, id: &str) -> Result<Option<Value>, AppError> {
     support::query_by_id(pool, &SPEC, id).await
 }
 
-async fn select_template(
-    pool: &MySqlPool,
-    id: &str,
-) -> Result<Option<Value>, AppError> {
-    let row = sqlx::query(&format!("select {TEMPLATE_COLUMNS} from flow_template where ID = ?"))
-        .bind(id)
-        .fetch_optional(pool)
-        .await?;
+async fn select_template(pool: &MySqlPool, id: &str) -> Result<Option<Value>, AppError> {
+    let row = sqlx::query(&format!(
+        "select {TEMPLATE_COLUMNS} from flow_template where ID = ?"
+    ))
+    .bind(id)
+    .fetch_optional(pool)
+    .await?;
     Ok(row.map(|row| crate::db::rows::row_to_json(&row)))
 }
 
-async fn select_flow_name(
-    pool: &MySqlPool,
-    id: &str,
-) -> Result<Option<Value>, AppError> {
+async fn select_flow_name(pool: &MySqlPool, id: &str) -> Result<Option<Value>, AppError> {
     let row = sqlx::query(
         "select ID, FLOW_KEY, FLOW_TITLE, FLOW_CONTEXT, BUSS_NAME, tenant_id, flow_business_type \
          from flow_name where ID = ?",
@@ -188,10 +178,7 @@ async fn select_flow_name(
     Ok(row.map(|row| crate::db::rows::row_to_json(&row)))
 }
 
-async fn select_apply_by_bill(
-    pool: &MySqlPool,
-    bill_oid: &str,
-) -> Result<Option<Value>, AppError> {
+async fn select_apply_by_bill(pool: &MySqlPool, bill_oid: &str) -> Result<Option<Value>, AppError> {
     let row = sqlx::query(&format!(
         "select {APPLY_COLUMNS} from flow_apply_info where del_flag = 0 and bill_oid = ? limit 1"
     ))
@@ -226,14 +213,15 @@ async fn emp_info_list(
             "auitEmpName": field_str(template, "configName"),
         })]);
     }
-    let role_key: Option<String> = sqlx::query_scalar(
-        "select role_key from sys_role where role_id = ?",
-    )
-    .bind(config_id.parse::<i64>().unwrap_or_default())
-    .fetch_optional(&state.db)
-    .await?
-    .flatten();
-    let Some(role_key) = role_key else { return Ok(Vec::new()) };
+    let role_key: Option<String> =
+        sqlx::query_scalar("select role_key from sys_role where role_id = ?")
+            .bind(config_id.parse::<i64>().unwrap_or_default())
+            .fetch_optional(&state.db)
+            .await?
+            .flatten();
+    let Some(role_key) = role_key else {
+        return Ok(Vec::new());
+    };
 
     let mut params = HashMap::new();
     params.insert("billOid".to_string(), bill_oid.to_string());
@@ -265,7 +253,12 @@ async fn select_emp_info_rows(
     params: &HashMap<String, String>,
 ) -> Result<Vec<Value>, AppError> {
     let flag = params.get("flag").cloned().unwrap_or_default();
-    let text = |key: &str| params.get(key).map(|value| value.trim()).filter(|value| !value.is_empty());
+    let text = |key: &str| {
+        params
+            .get(key)
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty())
+    };
     let mut builder = QueryBuilder::<MySql>::new(
         "select t.user_id AUIT_EMP_OID, t.nick_name AUIT_EMP_NAME from sys_user t \
          where t.del_flag = '0' and t.status = '0'",
@@ -296,7 +289,11 @@ async fn select_emp_info_rows(
             builder.push(")");
         }
     } else if flag == "bmjlAudit" || flag == "fgldAudit" {
-        let column = if flag == "bmjlAudit" { "leader_id" } else { "fgld_id" };
+        let column = if flag == "bmjlAudit" {
+            "leader_id"
+        } else {
+            "fgld_id"
+        };
         builder.push(format!(
             " and exists (select 1 from sys_dept ds where ds.del_flag = '0' and ds.dept_id = \
              (select tt.dept_id from sys_user tt where tt.user_id = "
@@ -343,7 +340,9 @@ async fn emp_info_list_return(
 fn valid_identifier(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 64
-        && value.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+        && value
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
 }
 
 // ==================== 写入辅助 ====================
@@ -442,7 +441,9 @@ async fn save_message_info(
         sql.push_str(" and BUSS_TYPE = ?");
     }
     sql.push_str(" order by create_time desc, id limit 1");
-    let mut query = sqlx::query_scalar::<_, String>(&sql).bind(bill_oid).bind(msg_type);
+    let mut query = sqlx::query_scalar::<_, String>(&sql)
+        .bind(bill_oid)
+        .bind(msg_type);
     if let Some(buss_type) = buss_type {
         query = query.bind(buss_type);
     }
@@ -469,7 +470,8 @@ async fn save_message_info(
         Ok(id)
     } else {
         let result =
-            shared::save_flow_entity(state, user, &Value::Object(body), "flow_message_info").await?;
+            shared::save_flow_entity(state, user, &Value::Object(body), "flow_message_info")
+                .await?;
         Ok(result
             .0
             .get("data")
@@ -533,7 +535,8 @@ async fn save_apply_by_bill(
             body.insert("id".to_string(), id);
         }
     }
-    let result = shared::save_flow_entity(state, user, &Value::Object(body), "flow_apply_info").await?;
+    let result =
+        shared::save_flow_entity(state, user, &Value::Object(body), "flow_apply_info").await?;
     Ok(result
         .0
         .get("data")
@@ -606,18 +609,50 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = [
-        "流程OID", "当前节点OID(流程节点OID)", "节点顺序", "节点KEY", "节点名称",
-        "当前流程类型(字典：1人员2角色3其他)", "节点配置id", "节点配置名称", "单据OID", "处理人ID",
-        "处理人名称", "备用字段1", "备用字段2", "备用字段3", "流程key", "流程实例ID", "流程申请ID",
+        "流程OID",
+        "当前节点OID(流程节点OID)",
+        "节点顺序",
+        "节点KEY",
+        "节点名称",
+        "当前流程类型(字典：1人员2角色3其他)",
+        "节点配置id",
+        "节点配置名称",
+        "单据OID",
+        "处理人ID",
+        "处理人名称",
+        "备用字段1",
+        "备用字段2",
+        "备用字段3",
+        "流程key",
+        "流程实例ID",
+        "流程申请ID",
         "流程状态(1起草中2审批中3审批通过4退回修改5审批拒绝)",
     ]
     .map(str::to_string);
     let fields = [
-        "flowOid", "currentOid", "nodeOrder", "nodeKey", "nodeName", "configType", "configId",
-        "configName", "billOid", "auitEmpOid", "auitEmpName", "backCol1", "backCol2", "backCol3",
-        "flowKey", "flowRuid", "flowApplyOid", "flowStatus",
+        "flowOid",
+        "currentOid",
+        "nodeOrder",
+        "nodeKey",
+        "nodeName",
+        "configType",
+        "configId",
+        "configName",
+        "billOid",
+        "auitEmpOid",
+        "auitEmpName",
+        "backCol1",
+        "backCol2",
+        "backCol3",
+        "flowKey",
+        "flowRuid",
+        "flowApplyOid",
+        "flowStatus",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "流程_当前节点数据", &headers, &data)
 }
 
@@ -642,13 +677,47 @@ async fn get_info_by_bill(
     let node = rows.into_iter().next().unwrap_or_else(|| {
         let mut object = Map::new();
         for key in [
-            "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime",
-            "sort", "remark", "tenantId", "deptSubCode", "flag", "searchValue", "params",
-            "flowOid", "currentOid", "nodeOrder", "nodeKey", "nodeName", "configType",
-            "configId", "configName", "billOid", "auitEmpOid", "auitEmpName", "backCol1",
-            "backCol2", "backCol3", "roleId", "tableName", "projectId", "flowKey", "flowRuid",
-            "flowApplyOid", "flowStatus", "shValue", "shContext", "entrustUserId",
-            "entrustUserName", "roleKey", "deptId",
+            "id",
+            "epsId",
+            "delFlag",
+            "createBy",
+            "createTime",
+            "updateBy",
+            "updateTime",
+            "sort",
+            "remark",
+            "tenantId",
+            "deptSubCode",
+            "flag",
+            "searchValue",
+            "params",
+            "flowOid",
+            "currentOid",
+            "nodeOrder",
+            "nodeKey",
+            "nodeName",
+            "configType",
+            "configId",
+            "configName",
+            "billOid",
+            "auitEmpOid",
+            "auitEmpName",
+            "backCol1",
+            "backCol2",
+            "backCol3",
+            "roleId",
+            "tableName",
+            "projectId",
+            "flowKey",
+            "flowRuid",
+            "flowApplyOid",
+            "flowStatus",
+            "shValue",
+            "shContext",
+            "entrustUserId",
+            "entrustUserName",
+            "roleKey",
+            "deptId",
         ] {
             object.insert(key.to_string(), Value::Null);
         }
@@ -742,7 +811,12 @@ async fn save_flow_auit(
         next_template = select_template(&state.db, &next_node_oid)
             .await?
             .ok_or_else(|| AppError::Service("下一个节点不存在，请与管理员联系！".to_string()))?;
-        if next_template.get("id").and_then(Value::as_str).unwrap_or_default().is_empty() {
+        if next_template
+            .get("id")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .is_empty()
+        {
             return Ok(AjaxResult::error("下一个节点不存在，请与管理员联系！"));
         }
         emp_list = emp_info_list(
@@ -754,7 +828,9 @@ async fn save_flow_auit(
         )
         .await?;
         if emp_list.is_empty() {
-            return Ok(AjaxResult::error("该业务找不到下一审批人，请与管理员联系！"));
+            return Ok(AjaxResult::error(
+                "该业务找不到下一审批人，请与管理员联系！",
+            ));
         }
     } else if return_node_oid != "0" && sh_value == "R" {
         next_template = select_template(&state.db, &return_node_oid)
@@ -762,7 +838,9 @@ async fn save_flow_auit(
             .ok_or_else(|| AppError::Service("退回节点不存在，请与管理员联系！".to_string()))?;
         emp_list = emp_info_list_return(&state, &next_template, &bill_oid).await?;
         if emp_list.is_empty() {
-            return Ok(AjaxResult::error("该业务找不到下一审批人，请与管理员联系！"));
+            return Ok(AjaxResult::error(
+                "该业务找不到下一审批人，请与管理员联系！",
+            ));
         }
     }
 
@@ -829,12 +907,26 @@ async fn save_flow_auit(
         &bill_oid,
         &flow_key,
         &sh_value,
-        body.get("shContext").and_then(Value::as_str).unwrap_or_default(),
+        body.get("shContext")
+            .and_then(Value::as_str)
+            .unwrap_or_default(),
     )
     .await?;
 
-    if !next_template.as_object().map(|map| map.is_empty()).unwrap_or(true) {
-        save_flow_node(&state, &user, &next_template, &emp_list, &bill_oid, &project_id).await?;
+    if !next_template
+        .as_object()
+        .map(|map| map.is_empty())
+        .unwrap_or(true)
+    {
+        save_flow_node(
+            &state,
+            &user,
+            &next_template,
+            &emp_list,
+            &bill_oid,
+            &project_id,
+        )
+        .await?;
     }
     save_dispose_list(&state, &user, &mid, &use_ids).await?;
 
@@ -1009,17 +1101,7 @@ async fn submit_entrust_flow(
     )
     .await?;
 
-    let mid = save_message_info(
-        &state,
-        &user,
-        &bill_oid,
-        "2",
-        None,
-        None,
-        None,
-        None,
-    )
-    .await?;
+    let mid = save_message_info(&state, &user, &bill_oid, "2", None, None, None, None).await?;
     mark_all_read(&state, &mid, user_id).await?;
     save_dispose_list(&state, &user, &mid, &[entrust_user_id.clone()]).await?;
 
@@ -1049,7 +1131,13 @@ async fn submit_entrust_flow(
         "entrustInfo".to_string(),
         json!(serde_json::to_string(&entrusts).unwrap_or_default()),
     );
-    shared::save_flow_entity(&state, &user, &Value::Object(apply_update), "flow_apply_info").await?;
+    shared::save_flow_entity(
+        &state,
+        &user,
+        &Value::Object(apply_update),
+        "flow_apply_info",
+    )
+    .await?;
 
     Ok(AjaxResult::success())
 }

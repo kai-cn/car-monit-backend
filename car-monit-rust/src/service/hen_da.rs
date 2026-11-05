@@ -20,7 +20,12 @@ pub async fn get_pile_to_lon_lat(
     pile: Option<&str>,
     direction: Option<&str>,
 ) -> Option<Value> {
-    let base = state.settings.forest.variables.henda_url.trim_end_matches('/');
+    let base = state
+        .settings
+        .forest
+        .variables
+        .henda_url
+        .trim_end_matches('/');
     if base.is_empty() {
         return None;
     }
@@ -102,7 +107,12 @@ fn create_signature(
     json_str: &str,
 ) -> String {
     let strip = |value: &str| value.replace('[', "").replace(']', "");
-    let mut parts = vec![strip(appid), strip(timestamp), strip(nonce), secret.to_string()];
+    let mut parts = vec![
+        strip(appid),
+        strip(timestamp),
+        strip(nonce),
+        secret.to_string(),
+    ];
     parts.sort();
 
     let mut public_str = String::new();

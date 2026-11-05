@@ -19,6 +19,163 @@ use crate::task::remote;
 
 use axum::Extension;
 
+/// Java Jackson 的 `OdsLwzxsfsjFeeRecords01` 键序（实体声明顺序，含 `exist=false` 的
+/// 查询/派生字段）。Forest 反序列化成实体再输出，上游没给的字段是显式 null。
+const FEE_RECORDS_KEYS: &[&str] = &[
+    "bigId",
+    "algorithmidentifier",
+    "antennaid",
+    "axlecount",
+    "balanceafter",
+    "balancebefore",
+    "cardfeesumafter",
+    "cardfeesumbefore",
+    "computerorder",
+    "consumetime",
+    "cpucardid",
+    "cpucardtype",
+    "cpuenddate",
+    "cpuissueid",
+    "cpunetid",
+    "cpustartdate",
+    "cpuvehicleplate",
+    "cpuvehicletype",
+    "cpuversion",
+    "dealstatus",
+    "discountfee",
+    "discountfeegroup",
+    "enlanetype",
+    "entime",
+    "entolllaneid",
+    "entollstationhex",
+    "fee",
+    "feecalcresult",
+    "feecalcspecial",
+    "feecalcspecials",
+    "feegroup",
+    "feeinfo1",
+    "feeinfo2",
+    "feeinfo3",
+    "feemileage",
+    "feeprovbeginhex",
+    "feespare1",
+    "feespare2",
+    "feevehicletype",
+    "gantryhex",
+    "gantryhexopposite",
+    "gantryid",
+    "gantryordernum",
+    "gantrytype",
+    "holidaystate",
+    "hourbatchno",
+    "keyversion",
+    "lastgantryhex",
+    "lastgantrytime",
+    "matchstatus",
+    "mediatype",
+    "nocardtimesafter",
+    "nocardtimesbefore",
+    "obuelectrical",
+    "obuenddate",
+    "obufeesumafter",
+    "obufeesumbefore",
+    "obuinfotyperead",
+    "obuinfotypewrite",
+    "obuissueid",
+    "obulastgantryhex",
+    "obulastgantrytime",
+    "obumac",
+    "obumileageafter",
+    "obumileagebefore",
+    "obupassstate",
+    "obupayfeesumafter",
+    "obupayfeesumbefore",
+    "obuprovfeesumafter",
+    "obuprovfeesumbefore",
+    "obuprovpayfeesumafter",
+    "obuprovpayfeesumbefore",
+    "obuprovtradesuccnumafter",
+    "obuprovtradesuccnumbefore",
+    "obusign",
+    "obusn",
+    "obustartdate",
+    "obustate",
+    "obutotaltradesuccnumafter",
+    "obutotaltradesuccnumbefore",
+    "obutraderesult",
+    "obuvehicleplate",
+    "obuvehicletype",
+    "obuversion",
+    "params",
+    "passid",
+    "passstate",
+    "pathfitflag",
+    "payfee",
+    "payfeegroup",
+    "pcrsuversion",
+    "provminfee",
+    "provincenumafter",
+    "provincenumbefore",
+    "ratecompute",
+    "ratefitcount",
+    "rateversion",
+    "readciphertextverify",
+    "receivetime",
+    "servicetype",
+    "stationdbtime",
+    "stationdealtime",
+    "stationmatchtime",
+    "stationvalidtime",
+    "tac",
+    "terminalno",
+    "terminaltransno",
+    "tollintervalid",
+    "tollintervalsign",
+    "totalweight",
+    "tradeid",
+    "tradereadciphertext",
+    "traderesult",
+    "tradetype",
+    "tradewriteciphertext",
+    "transfee",
+    "transno",
+    "transtime",
+    "transtype",
+    "validstatus",
+    "vehicleclass",
+    "vehiclehight",
+    "vehiclelength",
+    "vehicleplate",
+    "vehicleseat",
+    "vehiclesign",
+    "vehicletype",
+    "vehicleusertype",
+    "vehiclewidth",
+    "verifycode",
+    "loadTime",
+    "gradeLevel",
+    "cid",
+    "cidList",
+    "inApplyTime1",
+    "inApplyTime2",
+    "outApplyTime1",
+    "outApplyTime2",
+    "pageNum",
+    "pageSize",
+    "plateColor",
+    "gantryName",
+    "receivetimeStr",
+    "sectionCodeStr",
+    "type",
+    "code",
+    "sectionName",
+    "roadname",
+    "transtimeStr",
+    "lastgantrytimeStr",
+    "chargeStatus",
+    "entimeStr",
+];
+
 /// Java: `CommonUtil.isNull` —— null 变空串并 trim。
 fn is_null(value: Option<&Value>) -> String {
     match value {
@@ -35,8 +192,12 @@ fn is_blank(text: &str) -> bool {
 /// 收集远端查询参数（Java 会先补 pageNum/pageSize；sectionCodeStr 含 all 时清空）。
 fn remote_query(params: &HashMap<String, String>) -> Vec<(String, String)> {
     let mut forwarded = params.clone();
-    forwarded.entry("pageNum".to_string()).or_insert_with(|| "1".to_string());
-    forwarded.entry("pageSize".to_string()).or_insert_with(|| "10".to_string());
+    forwarded
+        .entry("pageNum".to_string())
+        .or_insert_with(|| "1".to_string());
+    forwarded
+        .entry("pageSize".to_string())
+        .or_insert_with(|| "10".to_string());
 
     // Java: deleteEnd(sectionCodeStr).indexOf("all") > -1 -> sectionCodeStr = ""。
     let section_code = params
@@ -75,7 +236,11 @@ async fn section_display(state: &AppState) -> HashMap<String, (String, String)> 
 }
 
 /// 列表/导出共用的字段翻译。
-async fn enrich(state: &AppState, rows: &mut [Value], with_passstate: bool) -> Result<(), AppError> {
+async fn enrich(
+    state: &AppState,
+    rows: &mut [Value],
+    with_passstate: bool,
+) -> Result<(), AppError> {
     let plate_color = support::dict_map(&state.db, "plate_color").await?;
     let car_type = support::dict_map(&state.db, "car_type_old").await?;
     let car_vehicle = support::dict_map(&state.db, "car_vehicle_old").await?;
@@ -87,7 +252,9 @@ async fn enrich(state: &AppState, rows: &mut [Value], with_passstate: bool) -> R
     let sections = section_display(state).await;
 
     for row in rows {
-        let Some(object) = row.as_object_mut() else { continue };
+        let Some(object) = row.as_object_mut() else {
+            continue;
+        };
 
         let plate = is_null(object.get("plateColor"));
         if !is_blank(&plate) {
@@ -156,8 +323,14 @@ async fn list(
 
     let forwarded = remote_query(&query);
 
-    let start = query.get("inApplyTime1").map(|value| !is_blank(value)).unwrap_or(false);
-    let end = query.get("inApplyTime2").map(|value| !is_blank(value)).unwrap_or(false);
+    let start = query
+        .get("inApplyTime1")
+        .map(|value| !is_blank(value))
+        .unwrap_or(false);
+    let end = query
+        .get("inApplyTime2")
+        .map(|value| !is_blank(value))
+        .unwrap_or(false);
     if !(start && end) {
         // 时间段必填：缺失时返回空表。
         return Ok(TableDataInfo::new(0, Vec::new()));
@@ -165,6 +338,8 @@ async fn list(
 
     let value = remote::get_json_owned(&state, "/base/feerecords/list", &forwarded).await?;
     let mut page = remote::page_from_value(&value);
+    // Java: `JSON.parseArray(json, OdsLwzxsfsjFeeRecords01.class)` —— 行先按实体成型再补字典。
+    page.rows = support::entity_shapes(page.rows, FEE_RECORDS_KEYS);
     enrich(&state, &mut page.rows, false).await?;
     Ok(page)
 }
@@ -177,8 +352,14 @@ async fn export(
     let query = support::query_map(&raw);
     support::query_log(&state.db, &user, &support::query_json(&query), "3", "2").await?;
 
-    let start = query.get("inApplyTime1").map(|value| !is_blank(value)).unwrap_or(false);
-    let end = query.get("inApplyTime2").map(|value| !is_blank(value)).unwrap_or(false);
+    let start = query
+        .get("inApplyTime1")
+        .map(|value| !is_blank(value))
+        .unwrap_or(false);
+    let end = query
+        .get("inApplyTime2")
+        .map(|value| !is_blank(value))
+        .unwrap_or(false);
     if !(start && end) {
         // Java 模板导出即使没有数据也会写出表头工作簿。
         return support::export_download("基础-收费流水数据", &[], &[]);
@@ -197,15 +378,38 @@ async fn export(
     enrich(&state, &mut rows, true).await?;
 
     let headers = [
-        "路线名称", "路段名称", "车牌号", "轴数", "门架", "计费交易时间", "通行状态", "交易结果",
-        "车型", "车种", "通行ID", "驶入时间",
+        "路线名称",
+        "路段名称",
+        "车牌号",
+        "轴数",
+        "门架",
+        "计费交易时间",
+        "通行状态",
+        "交易结果",
+        "车型",
+        "车种",
+        "通行ID",
+        "驶入时间",
     ]
     .map(str::to_string);
     let fields = [
-        "roadname", "sectionName", "vehicleplate", "axlecount", "gantryName", "transtimeStr",
-        "passstate", "chargeStatus", "feevehicletype", "vehicleclass", "passid", "entimeStr",
+        "roadname",
+        "sectionName",
+        "vehicleplate",
+        "axlecount",
+        "gantryName",
+        "transtimeStr",
+        "passstate",
+        "chargeStatus",
+        "feevehicletype",
+        "vehicleclass",
+        "passid",
+        "entimeStr",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_download("基础-收费流水数据", &headers, &data)
 }
 
@@ -215,7 +419,12 @@ async fn get_info(
 ) -> Result<AjaxResult, AppError> {
     let path = format!("/base/feerecords/{}", urlencoding(&big_id));
     let value = remote::get_json_owned(&state, &path, &[]).await?;
-    Ok(AjaxResult::success_data(value))
+    // Java: Forest 把响应反序列化成 OdsLwzxsfsjFeeRecords01 再交给 Jackson，
+    // 实体字段一定全部出现（上游缺的是 null），上游多给的字段被丢掉。
+    Ok(AjaxResult::success_data(support::entity_shape(
+        value,
+        FEE_RECORDS_KEYS,
+    )))
 }
 
 fn urlencoding(value: &str) -> String {
@@ -226,7 +435,12 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/base/feerecords/list",
-            meta::get_route("/base/feerecords/list", Some("base:feerecords:list"), None, list),
+            meta::get_route(
+                "/base/feerecords/list",
+                Some("base:feerecords:list"),
+                None,
+                list,
+            ),
         )
         .route(
             "/base/feerecords/export",

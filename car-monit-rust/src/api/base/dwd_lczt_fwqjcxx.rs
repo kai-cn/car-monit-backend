@@ -101,9 +101,18 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/base/fwqjcxx",
-            meta::post_route("/base/fwqjcxx", Some("base:fwqjcxx:add"), Some(&LOG_ADD), add).merge(
-                meta::put_route("/base/fwqjcxx", Some("base:fwqjcxx:edit"), Some(&LOG_EDIT), edit),
-            ),
+            meta::post_route(
+                "/base/fwqjcxx",
+                Some("base:fwqjcxx:add"),
+                Some(&LOG_ADD),
+                add,
+            )
+            .merge(meta::put_route(
+                "/base/fwqjcxx",
+                Some("base:fwqjcxx:edit"),
+                Some(&LOG_EDIT),
+                edit,
+            )),
         )
         .route(
             "/base/fwqjcxx/{agentPks}",
@@ -160,7 +169,10 @@ pub async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, support::reorder_rows(rows, FWQJCXX_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::reorder_rows(rows, FWQJCXX_KEYS),
+    ))
 }
 
 pub async fn export(
@@ -170,21 +182,78 @@ pub async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = [
-        "源系统主键", "服务区编码", "服务区名称", "纬度", "方向名称", "方向代码", "经度",
-        "所属路线编号", "所属路线名称", "所属路段编号", "所属路段名称", "所处桩号(K格式)",
-        "所处桩号(数值格式)", "所属管理中心编码", "所属管理中心名称", "行政区划名称", "营业日期",
-        "车位数", "是否设置了卡口", "充电桩数", "是否餐饮服务", "是否提供住宿服务",
-        "是否提供汽修服务", "是否提供超市服务", "是否提供加油服务", "面积(平方米)",
-        "是否提供厕所服务", "行政区划代码", "使用年限", "来源系统", "加载日期", "全字段MD5",
+        "源系统主键",
+        "服务区编码",
+        "服务区名称",
+        "纬度",
+        "方向名称",
+        "方向代码",
+        "经度",
+        "所属路线编号",
+        "所属路线名称",
+        "所属路段编号",
+        "所属路段名称",
+        "所处桩号(K格式)",
+        "所处桩号(数值格式)",
+        "所属管理中心编码",
+        "所属管理中心名称",
+        "行政区划名称",
+        "营业日期",
+        "车位数",
+        "是否设置了卡口",
+        "充电桩数",
+        "是否餐饮服务",
+        "是否提供住宿服务",
+        "是否提供汽修服务",
+        "是否提供超市服务",
+        "是否提供加油服务",
+        "面积(平方米)",
+        "是否提供厕所服务",
+        "行政区划代码",
+        "使用年限",
+        "来源系统",
+        "加载日期",
+        "全字段MD5",
     ]
     .map(str::to_string);
     let fields = [
-        "yxtzj", "fwqbm", "fwqmc", "wd", "fxmc", "fxdm", "jd", "sslxbh", "sslxmc", "ssldbh",
-        "ssldmc", "sczhkgs", "sczhszgs", "ssglzxbm", "ssglzxmc", "xzqhmc", "yyrq", "cws",
-        "sfszlkk", "cdzs", "sfcyfw", "sftgzsfw", "sftgqxfw", "sftgcsfw", "sftgjyfw", "mj",
-        "sftgcshfw", "xzqhdm", "synx", "lyxt", "loadTime", "allColPk",
+        "yxtzj",
+        "fwqbm",
+        "fwqmc",
+        "wd",
+        "fxmc",
+        "fxdm",
+        "jd",
+        "sslxbh",
+        "sslxmc",
+        "ssldbh",
+        "ssldmc",
+        "sczhkgs",
+        "sczhszgs",
+        "ssglzxbm",
+        "ssglzxmc",
+        "xzqhmc",
+        "yyrq",
+        "cws",
+        "sfszlkk",
+        "cdzs",
+        "sfcyfw",
+        "sftgzsfw",
+        "sftgqxfw",
+        "sftgcsfw",
+        "sftgjyfw",
+        "mj",
+        "sftgcshfw",
+        "xzqhdm",
+        "synx",
+        "lyxt",
+        "loadTime",
+        "allColPk",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "服务区基础信息数据", &headers, &data)
 }
 
@@ -193,7 +262,8 @@ pub async fn get_info(
     Path(agent_pk): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     Ok(AjaxResult::success_data(
-        support::query_by_id(&state.db, &SPEC, &agent_pk).await?
+        support::query_by_id(&state.db, &SPEC, &agent_pk)
+            .await?
             .map(|row| support::reorder_keys(row, FWQJCXX_KEYS)),
     ))
 }
@@ -203,7 +273,16 @@ pub async fn add(
     Extension(user): Extension<LoginUser>,
     Json(body): Json<Value>,
 ) -> Result<AjaxResult, AppError> {
-    support::save_or_update(&state, &user, &body, "dwd_lczt_fwqjcxx", "agent_pk", false, false).await
+    support::save_or_update(
+        &state,
+        &user,
+        &body,
+        "dwd_lczt_fwqjcxx",
+        "agent_pk",
+        false,
+        false,
+    )
+    .await
 }
 
 pub async fn edit(
@@ -211,7 +290,16 @@ pub async fn edit(
     Extension(user): Extension<LoginUser>,
     Json(body): Json<Value>,
 ) -> Result<AjaxResult, AppError> {
-    support::save_or_update(&state, &user, &body, "dwd_lczt_fwqjcxx", "agent_pk", false, false).await
+    support::save_or_update(
+        &state,
+        &user,
+        &body,
+        "dwd_lczt_fwqjcxx",
+        "agent_pk",
+        false,
+        false,
+    )
+    .await
 }
 
 pub async fn remove(
@@ -219,6 +307,7 @@ pub async fn remove(
     Path(agent_pks): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     let ids = support::ids_param(&agent_pks);
-    let count = support::soft_delete_by_ids(&state.db, "dwd_lczt_fwqjcxx", "agent_pk", &ids).await?;
+    let count =
+        support::soft_delete_by_ids(&state.db, "dwd_lczt_fwqjcxx", "agent_pk", &ids).await?;
     Ok(support::success_count(count))
 }

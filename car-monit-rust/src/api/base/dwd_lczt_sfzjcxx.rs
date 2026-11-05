@@ -82,9 +82,18 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/base/sfzjcxx",
-            meta::post_route("/base/sfzjcxx", Some("base:sfzjcxx:add"), Some(&LOG_ADD), add).merge(
-                meta::put_route("/base/sfzjcxx", Some("base:sfzjcxx:edit"), Some(&LOG_EDIT), edit),
-            ),
+            meta::post_route(
+                "/base/sfzjcxx",
+                Some("base:sfzjcxx:add"),
+                Some(&LOG_ADD),
+                add,
+            )
+            .merge(meta::put_route(
+                "/base/sfzjcxx",
+                Some("base:sfzjcxx:edit"),
+                Some(&LOG_EDIT),
+                edit,
+            )),
         )
         .route(
             "/base/sfzjcxx/{agentPks}",
@@ -114,9 +123,21 @@ pub async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = [
-        "源系统主键", "收费站代码", "收费站名称", "经度", "纬度", "所属路线编号",
-        "所属路线名称", "所属路段编号", "所属路段名称", "所处桩号(K格式)",
-        "所处桩号(数值格式)", "所属管理中心编码", "所属管理中心名称", "来源系统", "加载日期",
+        "源系统主键",
+        "收费站代码",
+        "收费站名称",
+        "经度",
+        "纬度",
+        "所属路线编号",
+        "所属路线名称",
+        "所属路段编号",
+        "所属路段名称",
+        "所处桩号(K格式)",
+        "所处桩号(数值格式)",
+        "所属管理中心编码",
+        "所属管理中心名称",
+        "来源系统",
+        "加载日期",
         "全字段MD5",
     ]
     .map(str::to_string);
@@ -124,7 +145,10 @@ pub async fn export(
         "yxtzj", "sfzdm", "sfzmc", "jd", "wd", "sslxbh", "sslxmc", "ssldbh", "ssldmc", "sczhK",
         "sczhN", "ssglzxbm", "ssglzxmc", "lyxt", "loadTime", "allColPk",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "收费站基础信息数据", &headers, &data)
 }
 
@@ -142,7 +166,16 @@ pub async fn add(
     Extension(user): Extension<LoginUser>,
     Json(body): Json<Value>,
 ) -> Result<AjaxResult, AppError> {
-    support::save_or_update(&state, &user, &body, "dwd_lczt_sfzjcxx", "agent_pk", false, false).await
+    support::save_or_update(
+        &state,
+        &user,
+        &body,
+        "dwd_lczt_sfzjcxx",
+        "agent_pk",
+        false,
+        false,
+    )
+    .await
 }
 
 pub async fn edit(
@@ -150,7 +183,16 @@ pub async fn edit(
     Extension(user): Extension<LoginUser>,
     Json(body): Json<Value>,
 ) -> Result<AjaxResult, AppError> {
-    support::save_or_update(&state, &user, &body, "dwd_lczt_sfzjcxx", "agent_pk", false, false).await
+    support::save_or_update(
+        &state,
+        &user,
+        &body,
+        "dwd_lczt_sfzjcxx",
+        "agent_pk",
+        false,
+        false,
+    )
+    .await
 }
 
 pub async fn remove(
@@ -158,6 +200,7 @@ pub async fn remove(
     Path(agent_pks): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     let ids = support::ids_param(&agent_pks);
-    let count = support::soft_delete_by_ids(&state.db, "dwd_lczt_sfzjcxx", "agent_pk", &ids).await?;
+    let count =
+        support::soft_delete_by_ids(&state.db, "dwd_lczt_sfzjcxx", "agent_pk", &ids).await?;
     Ok(support::success_count(count))
 }

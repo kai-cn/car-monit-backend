@@ -48,22 +48,43 @@ fn add_dict_params(rows: &mut [Value]) {
 
 /// Java: SysDictData 的 Jackson 键顺序（BaseEntity 在前）。
 const DICT_DATA_KEYS: &[&str] = &[
-    "createBy", "createTime", "updateBy", "updateTime", "remark", "params", "dictCode",
-    "dictSort", "dictLabel", "dictValue", "dictType", "cssClass", "listClass", "isDefault",
-    "status", "default",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "remark",
+    "params",
+    "dictCode",
+    "dictSort",
+    "dictLabel",
+    "dictValue",
+    "dictType",
+    "cssClass",
+    "listClass",
+    "isDefault",
+    "status",
+    "default",
 ];
 
-/// 缓存里的元素带 FastJson2 的根 `@type`（Jackson 会消费掉）。
-/// `params` 特殊：DB 直查时是空 Map，Jackson 的 NON_EMPTY 会省略；
-/// 而从 Redis 反序列化回来的值是 FastJson2 写的 `{"@type":"java.util.HashMap"}`，会被原样输出。
+/// 缓存里的元素带 FastJson2 的根 `@type`（Jackson 会消费掉，实测 Java 也不输出）。
+/// `params` 按 Java 的 `@JsonInclude(NON_EMPTY)` 处理：Map 为空才省略；
+/// 实测 Java 读回 Rust 写的缓存后**照样输出** `"params":{"@type":"java.util.HashMap"}`
+/// （FastJson2 对 java.util.HashMap 不消费内层 @type），所以这里不能把纯标记当空 Map 丢掉。
 fn project_dict_rows(rows: Vec<Value>) -> Vec<Value> {
     rows.into_iter()
         .map(|row| {
             let mut source = row.as_object().cloned().unwrap_or_default();
             source.remove("@type");
-            let params = source
-                .remove("params")
-                .filter(|value| value.as_object().map(|map| !map.is_empty()).unwrap_or(false));
+            // 实测（6/6 稳定）：命中缓存时 Java 把缓存元素**原样**出参，
+            // `params` 里 FastJson2 写的 `{"@type":"java.util.HashMap"}` 也照旧出现在响应里；
+            // 走 DB 的那条路径压根没有 params 列，于是 naturally 缺席。
+            // 所以这里只按「是不是非空对象」决定带不带，**不剥内部的 @type**。
+            let params = source.remove("params").filter(|value| {
+                value
+                    .as_object()
+                    .map(|map| !map.is_empty())
+                    .unwrap_or(false)
+            });
             let mut out = Map::new();
             for key in DICT_DATA_KEYS {
                 if *key == "params" {
@@ -94,7 +115,9 @@ fn group_by_dict_type(rows: Vec<Value>) -> Map<String, Value> {
             .and_then(Value::as_str)
             .unwrap_or_default()
             .to_string();
-        let entry = grouped.entry(key).or_insert_with(|| Value::Array(Vec::new()));
+        let entry = grouped
+            .entry(key)
+            .or_insert_with(|| Value::Array(Vec::new()));
         if let Some(items) = entry.as_array_mut() {
             items.push(row);
         }
@@ -106,10 +129,9 @@ fn group_by_dict_type(rows: Vec<Value>) -> Map<String, Value> {
 fn cached_dict_rows(rows: &[Value]) -> Vec<Value> {
     let mut cached = rows.to_vec();
     add_dict_params(&mut cached);
-    crate::db::redis_cache::stamp_types(
-        cached,
-        "com.ruoyi.common.core.domain.entity.SysDictData",
-    )
+    // 形状照抄 Java 的 FastJson2 输出，否则 Java 读不到实体、会把 @type 透传给前端。
+    let cached = support::fastjson_rows(cached);
+    crate::db::redis_cache::stamp_types(cached, "com.ruoyi.common.core.domain.entity.SysDictData")
 }
 
 const BY_TYPE_SQL: &str = "select dict_code, dict_sort, dict_label, dict_value, dict_type, \
@@ -143,7 +165,12 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/system/dict/data/list",
-            meta::get_route("/system/dict/data/list", Some("system:dict:list"), None, list),
+            meta::get_route(
+                "/system/dict/data/list",
+                Some("system:dict:list"),
+                None,
+                list,
+            ),
         )
         .route(
             "/system/dict/data/export",
@@ -160,7 +187,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/system/dict/data/typemore/{dictType}",
-            meta::get_route("/system/dict/data/typemore/{dictType}", None, None, by_type_more),
+            meta::get_route(
+                "/system/dict/data/typemore/{dictType}",
+                None,
+                None,
+                by_type_more,
+            ),
         )
         .route(
             "/system/dict/data/{dictCodes}",
@@ -204,7 +236,10 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list_fmt(&state.db, &params, &SPEC, &page, FORMATS).await?;
-    Ok(TableDataInfo::new(total, support::reorder_rows(rows, DICT_DATA_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::reorder_rows(rows, DICT_DATA_KEYS),
+    ))
 }
 
 async fn export(
@@ -214,11 +249,23 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all_fmt(&state.db, &params, &SPEC, FORMATS).await?;
     let headers = [
-        "字典编码", "字典排序", "字典标签", "字典键值", "字典类型", "是否默认", "状态",
+        "字典编码",
+        "字典排序",
+        "字典标签",
+        "字典键值",
+        "字典类型",
+        "是否默认",
+        "状态",
     ]
     .map(str::to_string);
     let fields = [
-        "dictCode", "dictSort", "dictLabel", "dictValue", "dictType", "isDefault", "status",
+        "dictCode",
+        "dictSort",
+        "dictLabel",
+        "dictValue",
+        "dictType",
+        "isDefault",
+        "status",
     ];
     let data = rows
         .iter()
@@ -245,6 +292,8 @@ async fn get_info(
     State(state): State<AppState>,
     Path(dict_code): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long dictCode`。
+    let dict_code = support::path_long("dictCode", &dict_code)?.to_string();
     Ok(AjaxResult::success_data(
         support::query_by_id_fmt(&state.db, &SPEC, &dict_code, FORMATS)
             .await?
@@ -258,7 +307,11 @@ async fn by_type(
 ) -> Result<AjaxResult, AppError> {
     let cache_key = format!("sys_dict:{dict_type}");
     if let Some(cached) = state.redis.get_object::<Value>(&cache_key).await? {
-        if cached.as_array().map(|items| !items.is_empty()).unwrap_or(false) {
+        if cached
+            .as_array()
+            .map(|items| !items.is_empty())
+            .unwrap_or(false)
+        {
             return Ok(AjaxResult::success_data(project_dict_rows(
                 cached.as_array().cloned().unwrap_or_default(),
             )));
@@ -294,7 +347,11 @@ async fn by_type_more(
     // 并且 DictUtils.getDictCache 用的是整个逗号串作 key。
     let cache_key = format!("sys_dict:{types}");
     if let Some(cached) = state.redis.get_object::<Value>(&cache_key).await? {
-        if cached.as_array().map(|items| !items.is_empty()).unwrap_or(false) {
+        if cached
+            .as_array()
+            .map(|items| !items.is_empty())
+            .unwrap_or(false)
+        {
             let rows = project_dict_rows(cached.as_array().cloned().unwrap_or_default());
             return Ok(AjaxResult::success_data(group_by_dict_type(rows)));
         }
@@ -391,7 +448,11 @@ async fn remove(
     State(state): State<AppState>,
     Path(dict_codes): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&dict_codes);
+    // Java: `@PathVariable Long[] dictCodes` —— 任一段转不成 Long 就整体失败，文案带整段原文。
+    let ids = support::path_long_list("dictCodes", &dict_codes)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     let rows = support::delete_by_ids(&state.db, "sys_dict_data", "dict_code", &ids).await?;
     if rows > 0 {
         clear_dict_cache(&state).await?;

@@ -124,7 +124,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/system/role/optionselect",
-            meta::get_route("/system/role/optionselect", Some("system:role:query"), None, optionselect),
+            meta::get_route(
+                "/system/role/optionselect",
+                Some("system:role:query"),
+                None,
+                optionselect,
+            ),
         )
         .route(
             "/system/role/selectlist",
@@ -193,12 +198,18 @@ fn push_role_filters(builder: &mut QueryBuilder<'_, MySql>, params: &HashMap<Str
         builder.push(" and r.role_key = ");
         builder.push_bind(value.clone());
     }
-    if let Some(value) = params.get("params[beginTime]").filter(|value| !value.is_empty()) {
+    if let Some(value) = params
+        .get("params[beginTime]")
+        .filter(|value| !value.is_empty())
+    {
         builder.push(" and date_format(r.create_time,'%y%m%d') >= date_format(");
         builder.push_bind(value.clone());
         builder.push(", '%y%m%d')");
     }
-    if let Some(value) = params.get("params[endTime]").filter(|value| !value.is_empty()) {
+    if let Some(value) = params
+        .get("params[endTime]")
+        .filter(|value| !value.is_empty())
+    {
         builder.push(" and date_format(r.create_time,'%y%m%d') <= date_format(");
         builder.push_bind(value.clone());
         builder.push(", '%y%m%d')");
@@ -243,10 +254,12 @@ async fn list(
     if let Some(scope) = support::data_scope_sql(&user, "d", None) {
         count_builder.push(scope);
     }
-    let total: i64 = count_builder.build_query_scalar().fetch_one(&state.db).await?;
+    let total: i64 = count_builder
+        .build_query_scalar()
+        .fetch_one(&state.db)
+        .await?;
 
-    let mut builder =
-        QueryBuilder::<MySql>::new(format!("select distinct {ROLE_COLUMNS} {from}"));
+    let mut builder = QueryBuilder::<MySql>::new(format!("select distinct {ROLE_COLUMNS} {from}"));
     push_role_filters(&mut builder, &params);
     if let Some(scope) = support::data_scope_sql(&user, "d", None) {
         builder.push(scope);
@@ -270,9 +283,23 @@ async fn export(
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
     let rows = select_roles(&state, &user, &params).await?;
-    let headers =
-        ["角色序号", "角色名称", "角色权限", "角色排序", "数据范围", "角色状态"].map(str::to_string);
-    let fields = ["roleId", "roleName", "roleKey", "roleSort", "dataScope", "status"];
+    let headers = [
+        "角色序号",
+        "角色名称",
+        "角色权限",
+        "角色排序",
+        "数据范围",
+        "角色状态",
+    ]
+    .map(str::to_string);
+    let fields = [
+        "roleId",
+        "roleName",
+        "roleKey",
+        "roleSort",
+        "dataScope",
+        "status",
+    ];
     let data = rows
         .iter()
         .map(|row| {
@@ -321,6 +348,8 @@ async fn get_info(
     State(state): State<AppState>,
     Path(role_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long roleId`。
+    let role_id = support::path_long("roleId", &role_id)?.to_string();
     let row = sqlx::query(&format!(
         "select distinct {ROLE_COLUMNS} from sys_role r \
          left join sys_user_role ur on ur.role_id = r.role_id \
@@ -331,17 +360,19 @@ async fn get_info(
     .bind(&role_id)
     .fetch_optional(&state.db)
     .await?;
-    Ok(AjaxResult::success_data(
-        row.map(|row| {
-            role_rows(vec![crate::db::rows::row_to_json(&row)])
-                .pop()
-                .unwrap_or(Value::Null)
-        }),
-    ))
+    Ok(AjaxResult::success_data(row.map(|row| {
+        role_rows(vec![crate::db::rows::row_to_json(&row)])
+            .pop()
+            .unwrap_or(Value::Null)
+    })))
 }
 
 fn text(body: &Value, key: &str) -> String {
-    body.get(key).and_then(Value::as_str).unwrap_or_default().trim().to_string()
+    body.get(key)
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim()
+        .to_string()
 }
 
 fn id_list(body: &Value, key: &str) -> Vec<i64> {
@@ -371,7 +402,10 @@ async fn unique_error(
         return Ok(None);
     }
     let sql = format!("select r.role_id from sys_role r where r.{column} = ? limit 1");
-    let found: Option<i64> = sqlx::query_scalar(&sql).bind(&value).fetch_optional(pool).await?;
+    let found: Option<i64> = sqlx::query_scalar(&sql)
+        .bind(&value)
+        .fetch_optional(pool)
+        .await?;
     let current = body.get("roleId").and_then(Value::as_i64).unwrap_or(-1);
     if let Some(found) = found {
         if found != current {
@@ -435,15 +469,19 @@ async fn add(
     if text(&body, "roleKey").is_empty() {
         return Ok(AjaxResult::error("权限字符不能为空"));
     }
-    if let Some(error) = unique_error(&state.db, &body, "role_name", "roleName", "角色名称").await? {
+    if let Some(error) = unique_error(&state.db, &body, "role_name", "roleName", "角色名称").await?
+    {
         return Ok(error);
     }
-    if let Some(error) = unique_error(&state.db, &body, "role_key", "roleKey", "角色权限").await? {
+    if let Some(error) = unique_error(&state.db, &body, "role_key", "roleKey", "角色权限").await?
+    {
         return Ok(error);
     }
 
-    let mut entity = body;
-    let menu_ids = id_list(&entity, "menuIds");
+    // `menuIds` 不是 sys_role 的列，要在过滤前先取出来。
+    let menu_ids = id_list(&body, "menuIds");
+    // Java: Jackson 忽略非实体字段（`params`/`deptIds`/`flag` 等），自己拼 SQL 要先按表列过滤。
+    let mut entity = support::entity_for_table(&state.db, "sys_role", &body).await?;
     if let Some(object) = entity.as_object_mut() {
         object.insert(
             "createBy".to_string(),
@@ -480,10 +518,11 @@ async fn add(
     }
     builder.push(")");
     builder.build().execute(&mut *tx).await?;
-    let role_id: i64 = sqlx::query_scalar("select last_insert_id()")
+    // LAST_INSERT_ID() 的列元信息是 BIGINT UNSIGNED，只能按 u64 取回。
+    let role_id: u64 = sqlx::query_scalar("select last_insert_id()")
         .fetch_one(&mut *tx)
         .await?;
-    insert_role_menu(&mut tx, role_id, &menu_ids).await?;
+    insert_role_menu(&mut tx, role_id as i64, &menu_ids).await?;
     tx.commit().await?;
     Ok(support::to_ajax(1))
 }
@@ -494,10 +533,12 @@ async fn edit(
     Json(body): Json<Value>,
 ) -> Result<AjaxResult, AppError> {
     check_role_allowed(&body)?;
-    if let Some(error) = unique_error(&state.db, &body, "role_name", "roleName", "角色名称").await? {
+    if let Some(error) = unique_error(&state.db, &body, "role_name", "roleName", "角色名称").await?
+    {
         return Ok(error);
     }
-    if let Some(error) = unique_error(&state.db, &body, "role_key", "roleKey", "角色权限").await? {
+    if let Some(error) = unique_error(&state.db, &body, "role_key", "roleKey", "角色权限").await?
+    {
         return Ok(error);
     }
     let role_id = body
@@ -506,7 +547,7 @@ async fn edit(
         .ok_or_else(|| AppError::Service("roleId不能为空".to_string()))?;
     let menu_ids = id_list(&body, "menuIds");
 
-    let mut entity = body;
+    let mut entity = support::entity_for_table(&state.db, "sys_role", &body).await?;
     if let Some(object) = entity.as_object_mut() {
         object.insert(
             "updateBy".to_string(),
@@ -532,13 +573,13 @@ async fn update_role_row(
     entity: &Value,
     role_id: i64,
 ) -> Result<(), AppError> {
-    let Some(object) = entity.as_object() else { return Ok(()) };
+    let Some(object) = entity.as_object() else {
+        return Ok(());
+    };
     let mut builder = QueryBuilder::<MySql>::new("update sys_role set ");
     let mut first = true;
     for (key, value) in object.iter() {
-        if value.is_null()
-            || matches!(key.as_str(), "roleId" | "menuIds" | "deptIds" | "flag")
-        {
+        if value.is_null() || matches!(key.as_str(), "roleId" | "menuIds" | "deptIds" | "flag") {
             continue;
         }
         if !first {
@@ -588,7 +629,7 @@ async fn change_status(
         // Java: where role_id = null 命中 0 行 -> toAjax(0) -> "操作失败"。
         return Ok(AjaxResult::error("操作失败"));
     }
-    let mut entity = body;
+    let mut entity = support::entity_for_table(&state.db, "sys_role", &body).await?;
     if let Some(object) = entity.as_object_mut() {
         object.insert(
             "updateBy".to_string(),
@@ -596,8 +637,9 @@ async fn change_status(
         );
         object.insert("updateTime".to_string(), json!(support::now_string()));
     }
-    let rows = support::update_entity_by_id(&state.db, "sys_role", "role_id", &entity, AutoFill::NONE)
-        .await?;
+    let rows =
+        support::update_entity_by_id(&state.db, "sys_role", "role_id", &entity, AutoFill::NONE)
+            .await?;
     Ok(support::to_ajax(rows))
 }
 
@@ -605,16 +647,19 @@ async fn remove(
     State(state): State<AppState>,
     Path(role_ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&role_ids);
+    // Java: `@PathVariable Long[] roleIds` —— 任一段转不成 Long 就整体失败，文案带整段原文。
+    let ids = support::path_long_list("roleIds", &role_ids)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     for id in &ids {
         if id == "1" {
             return Err(AppError::Service("不允许操作超级管理员角色".to_string()));
         }
-        let count: i64 =
-            sqlx::query_scalar("select count(1) from sys_user_role where role_id = ?")
-                .bind(id)
-                .fetch_one(&state.db)
-                .await?;
+        let count: i64 = sqlx::query_scalar("select count(1) from sys_user_role where role_id = ?")
+            .bind(id)
+            .fetch_one(&state.db)
+            .await?;
         if count > 0 {
             let name: Option<String> =
                 sqlx::query_scalar("select role_name from sys_role where role_id = ?")
@@ -642,7 +687,8 @@ async fn remove(
     }
     builder.push(")");
     builder.build().execute(&mut *tx).await?;
-    let mut builder = QueryBuilder::<MySql>::new("update sys_role set del_flag = '2' where role_id in (");
+    let mut builder =
+        QueryBuilder::<MySql>::new("update sys_role set del_flag = '2' where role_id in (");
     let mut separated = builder.separated(", ");
     for id in &ids {
         separated.push_bind(id.clone());
@@ -658,8 +704,12 @@ async fn refresh_login_user(state: &AppState, user: &LoginUser) -> Result<(), Ap
     if user.user.is_admin() {
         return Ok(());
     }
-    let Some(user_name) = user.user.user_name.clone() else { return Ok(()) };
-    let Some(refreshed) = crate::repository::user_repo::select_user_by_user_name(&state.db, &user_name).await? else {
+    let Some(user_name) = user.user.user_name.clone() else {
+        return Ok(());
+    };
+    let Some(refreshed) =
+        crate::repository::user_repo::select_user_by_user_name(&state.db, &user_name).await?
+    else {
         return Ok(());
     };
     let permissions = match refreshed.user_id {

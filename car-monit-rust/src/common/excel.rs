@@ -33,7 +33,9 @@ pub fn export_workbook(
     let filename = encode_filename(sheet_name);
     let dir = download_dir(profile);
     std::fs::create_dir_all(&dir).map_err(|err| {
-        AppError::Service(format!("导出Excel失败，请联系网站管理员！创建目录失败: {err}"))
+        AppError::Service(format!(
+            "导出Excel失败，请联系网站管理员！创建目录失败: {err}"
+        ))
     })?;
     let path = dir.join(&filename);
 
@@ -70,8 +72,9 @@ pub fn export_bytes(
     for (row_index, row) in rows.iter().enumerate() {
         let excel_row = (row_index + 1) as u32;
         for (col, value) in row.iter().enumerate() {
-            write_cell(worksheet, excel_row, col as u16, value)
-                .map_err(|err| AppError::Service(format!("导出Excel失败，请联系网站管理员！{err}")))?;
+            write_cell(worksheet, excel_row, col as u16, value).map_err(|err| {
+                AppError::Service(format!("导出Excel失败，请联系网站管理员！{err}"))
+            })?;
         }
     }
     workbook
@@ -85,7 +88,9 @@ pub fn export_bytes(
     _headers: &[String],
     _rows: &[Vec<Value>],
 ) -> Result<Vec<u8>, AppError> {
-    Err(AppError::Service("导出Excel失败，请联系网站管理员！".to_string()))
+    Err(AppError::Service(
+        "导出Excel失败，请联系网站管理员！".to_string(),
+    ))
 }
 
 #[cfg(feature = "excel")]
@@ -189,7 +194,8 @@ pub fn read_rows(_bytes: &[u8]) -> Result<Vec<Vec<String>>, AppError> {
 }
 
 /// POI 的 sheet 名限制：不能含 []:*?/\，最长 31 字符。
-fn sanitize_sheet_name(name: &str) -> String {    let cleaned: String = name
+fn sanitize_sheet_name(name: &str) -> String {
+    let cleaned: String = name
         .chars()
         .map(|ch| match ch {
             '[' | ']' | ':' | '*' | '?' | '/' | '\\' => '_',

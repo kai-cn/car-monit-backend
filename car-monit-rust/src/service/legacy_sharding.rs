@@ -43,7 +43,10 @@ pub fn parse_partition_from_id(id: &str) -> Option<String> {
 /// Java: SnowflakeIdUtil.estimateTimeRange —— 前后各 1 天。
 pub fn estimate_time_range(id: &str) -> Option<(NaiveDateTime, NaiveDateTime)> {
     let date = parse_date_from_id(id)?;
-    Some((date - chrono::Duration::days(1), date + chrono::Duration::days(1)))
+    Some((
+        date - chrono::Duration::days(1),
+        date + chrono::Duration::days(1),
+    ))
 }
 
 // ==================== PartitionMappingCache ====================
@@ -92,34 +95,22 @@ impl PartitionMappingCache {
         }
         state
             .redis
-            .set_string_ex(
-                &Self::key(big_id),
-                partition,
-                CACHE_EXPIRE_DAYS * 24 * 3600,
-            )
+            .set_string_ex(&Self::key(big_id), partition, CACHE_EXPIRE_DAYS * 24 * 3600)
             .await
     }
 
-    pub async fn remove_partition_mapping(
-        state: &AppState,
-        big_id: &str,
-    ) -> Result<(), AppError> {
+    pub async fn remove_partition_mapping(state: &AppState, big_id: &str) -> Result<(), AppError> {
         if big_id.is_empty() {
             return Ok(());
         }
         state.redis.delete_object(&Self::key(big_id)).await
     }
 
-    pub fn get_time_range_for_fallback(
-        big_id: &str,
-    ) -> Option<(NaiveDateTime, NaiveDateTime)> {
+    pub fn get_time_range_for_fallback(big_id: &str) -> Option<(NaiveDateTime, NaiveDateTime)> {
         estimate_time_range(big_id)
     }
 
-    pub async fn has_cached_partition(
-        state: &AppState,
-        big_id: &str,
-    ) -> Result<bool, AppError> {
+    pub async fn has_cached_partition(state: &AppState, big_id: &str) -> Result<bool, AppError> {
         if big_id.is_empty() {
             return Ok(false);
         }
@@ -144,10 +135,13 @@ pub async fn select_by_id_optimized(
 ) -> Result<Option<Value>, AppError> {
     if let Some(partition) = PartitionMappingCache::get_partition_by_big_id(state, big_id).await? {
         if valid_partition(&partition) {
-            let sql = format!(
-                "select * from {ACTIVE_TABLE} partition ({partition}) where big_id = ?"
-            );
-            if let Ok(row) = sqlx::query(&sql).bind(big_id).fetch_optional(&state.db).await {
+            let sql =
+                format!("select * from {ACTIVE_TABLE} partition ({partition}) where big_id = ?");
+            if let Ok(row) = sqlx::query(&sql)
+                .bind(big_id)
+                .fetch_optional(&state.db)
+                .await
+            {
                 return Ok(row.map(|row| row_to_json(&row)));
             }
         }
@@ -180,8 +174,8 @@ pub async fn select_by_id_by_time_range(
 
 /// Java: insertWithCache —— 插入后缓存 bigId -> 分区。
 pub async fn insert_with_cache(state: &AppState, record: &Value) -> Result<u64, AppError> {
-    let rows = support::insert_entity(&state.db, ACTIVE_TABLE, record, support::AutoFill::NONE)
-        .await?;
+    let rows =
+        support::insert_entity(&state.db, ACTIVE_TABLE, record, support::AutoFill::NONE).await?;
     if let (Some(big_id), Some(snapshottime)) = (
         record.get("bigId").and_then(Value::as_str),
         record.get("snapshottime").and_then(Value::as_str),
@@ -193,10 +187,7 @@ pub async fn insert_with_cache(state: &AppState, record: &Value) -> Result<u64, 
     Ok(rows)
 }
 
-pub async fn batch_insert_with_cache(
-    state: &AppState,
-    records: &[Value],
-) -> Result<u64, AppError> {
+pub async fn batch_insert_with_cache(state: &AppState, records: &[Value]) -> Result<u64, AppError> {
     let mut total = 0;
     for record in records {
         total += insert_with_cache(state, record).await?;
@@ -220,7 +211,12 @@ pub fn get_partitions_in_range(start: NaiveDateTime, end: NaiveDateTime) -> Vec<
     if start > end {
         return values;
     }
-    let mut cursor = start.date().with_day(1).expect("valid day").and_hms_opt(0, 0, 0).expect("midnight");
+    let mut cursor = start
+        .date()
+        .with_day(1)
+        .expect("valid day")
+        .and_hms_opt(0, 0, 0)
+        .expect("midnight");
     while cursor <= end {
         let partition = format!("p{:04}{:02}", cursor.year(), cursor.month());
         if !values.contains(&partition) {
@@ -245,7 +241,9 @@ pub async fn query_multi_partition_parallel(
     for partition in partitions {
         let state = state.clone();
         futures.push(async move {
-            query_partition(&state, &partition, start, end).await.unwrap_or_default()
+            query_partition(&state, &partition, start, end)
+                .await
+                .unwrap_or_default()
         });
     }
     let results = futures::future::join_all(futures).await;
@@ -291,7 +289,9 @@ pub async fn query_with_page_optimized(
     let mut counts = Vec::new();
     let mut total = 0i64;
     for partition in &partitions {
-        let count = count_partition(state, partition, start, end).await.unwrap_or(0);
+        let count = count_partition(state, partition, start, end)
+            .await
+            .unwrap_or(0);
         total += count;
         counts.push(count);
     }
@@ -366,7 +366,11 @@ pub async fn check_consistency(
     month: &str,
 ) -> Result<ConsistencyResult, AppError> {
     let (start, end) = month_range(month)?;
-    let table = physical_table_name("ods_rt_szdn_snapshot_flow", start, ShardingStrategy::Monthly);
+    let table = physical_table_name(
+        "ods_rt_szdn_snapshot_flow",
+        start,
+        ShardingStrategy::Monthly,
+    );
     let target_count: i64 = sqlx::query_scalar(&format!(
         "select count(1) from {table} where snapshottime between ? and ?"
     ))
@@ -401,7 +405,11 @@ pub async fn sync_with_consistency(state: &AppState) -> Result<String, AppError>
     let mut corrected = 0;
     for month in months_between(earliest, now) {
         let (start, end) = month_range(&month)?;
-        let table = physical_table_name("ods_rt_szdn_snapshot_flow", start, ShardingStrategy::Monthly);
+        let table = physical_table_name(
+            "ods_rt_szdn_snapshot_flow",
+            start,
+            ShardingStrategy::Monthly,
+        );
         if snapshot_flow_repo::check_table_exists(&state.db, &table).await? == 0 {
             snapshot_flow_repo::create_sharding_table(&state.db, &table).await?;
         }
@@ -411,7 +419,9 @@ pub async fn sync_with_consistency(state: &AppState) -> Result<String, AppError>
             corrected += sync_month(state, &table, start, end).await?;
         }
     }
-    Ok(format!("全量同步完成，同步数: {synced}, 补偿数: {corrected}"))
+    Ok(format!(
+        "全量同步完成，同步数: {synced}, 补偿数: {corrected}"
+    ))
 }
 
 async fn sync_month(
@@ -459,7 +469,12 @@ fn month_range(month: &str) -> Result<(NaiveDateTime, NaiveDateTime), AppError> 
 
 fn months_between(start: NaiveDateTime, end: NaiveDateTime) -> Vec<String> {
     let mut values = Vec::new();
-    let mut cursor = start.date().with_day(1).expect("valid day").and_hms_opt(0, 0, 0).expect("midnight");
+    let mut cursor = start
+        .date()
+        .with_day(1)
+        .expect("valid day")
+        .and_hms_opt(0, 0, 0)
+        .expect("midnight");
     while cursor <= end {
         values.push(format!("{:04}{:02}", cursor.year(), cursor.month()));
         cursor = cursor + Months::new(1);
@@ -477,10 +492,9 @@ pub enum OptimizationStrategy {
 }
 
 /// Java: selectOptimalStrategy —— 依据分表数量选择策略。
-pub async fn select_optimal_strategy(
-    state: &AppState,
-) -> Result<OptimizationStrategy, AppError> {
-    let tables = snapshot_flow_repo::list_sharding_tables(&state.db, "ods_rt_szdn_snapshot_flow_").await?;
+pub async fn select_optimal_strategy(state: &AppState) -> Result<OptimizationStrategy, AppError> {
+    let tables =
+        snapshot_flow_repo::list_sharding_tables(&state.db, "ods_rt_szdn_snapshot_flow_").await?;
     Ok(match tables.len() {
         0..=3 => OptimizationStrategy::Fast,
         4..=12 => OptimizationStrategy::Balanced,
@@ -498,7 +512,8 @@ pub async fn execute_optimized_maintenance(state: &AppState) -> Result<String, A
 /// Java: getStrategyInfo —— 策略与分表信息。
 pub async fn get_strategy_info(state: &AppState) -> Result<Value, AppError> {
     let strategy = select_optimal_strategy(state).await?;
-    let tables = snapshot_flow_repo::list_sharding_tables(&state.db, "ods_rt_szdn_snapshot_flow_").await?;
+    let tables =
+        snapshot_flow_repo::list_sharding_tables(&state.db, "ods_rt_szdn_snapshot_flow_").await?;
     Ok(serde_json::json!({
         "strategy": format!("{strategy:?}"),
         "tableCount": tables.len(),
@@ -528,11 +543,17 @@ mod tests {
 
     #[test]
     fn partitions_cover_month_range() {
-        let start = NaiveDateTime::parse_from_str("2025-08-15 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
-        let end = NaiveDateTime::parse_from_str("2025-10-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let start =
+            NaiveDateTime::parse_from_str("2025-08-15 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let end =
+            NaiveDateTime::parse_from_str("2025-10-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
         assert_eq!(
             get_partitions_in_range(start, end),
-            vec!["p202508".to_string(), "p202509".to_string(), "p202510".to_string()]
+            vec![
+                "p202508".to_string(),
+                "p202509".to_string(),
+                "p202510".to_string()
+            ]
         );
     }
 }

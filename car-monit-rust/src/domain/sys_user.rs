@@ -175,7 +175,10 @@ impl SysUser {
         copy.admin = self.is_admin();
         let params = || {
             let mut map = serde_json::Map::new();
-            map.insert("@type".to_string(), serde_json::Value::String("java.util.HashMap".into()));
+            map.insert(
+                "@type".to_string(),
+                serde_json::Value::String("java.util.HashMap".into()),
+            );
             Some(map)
         };
         if copy.params.is_none() {

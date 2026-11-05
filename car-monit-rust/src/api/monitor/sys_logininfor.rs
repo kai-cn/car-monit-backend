@@ -116,7 +116,10 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, support::reorder_rows(rows, LOGININFOR_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::reorder_rows(rows, LOGININFOR_KEYS),
+    ))
 }
 
 async fn export(
@@ -126,12 +129,26 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
     let headers = [
-        "序号", "用户账号", "登录状态", "登录地址", "登录地点", "浏览器", "操作系统", "提示消息",
+        "序号",
+        "用户账号",
+        "登录状态",
+        "登录地址",
+        "登录地点",
+        "浏览器",
+        "操作系统",
+        "提示消息",
         "访问时间",
     ]
     .map(str::to_string);
     let fields = [
-        "infoId", "userName", "status", "ipaddr", "loginLocation", "browser", "os", "msg",
+        "infoId",
+        "userName",
+        "status",
+        "ipaddr",
+        "loginLocation",
+        "browser",
+        "os",
+        "msg",
         "loginTime",
     ];
     let data = rows
@@ -155,12 +172,18 @@ async fn remove(
     State(state): State<AppState>,
     Path(info_ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&info_ids);
+    // Java: `@PathVariable Long[] infoIds` —— 任一段转不成 Long 就整体失败，文案带整段原文。
+    let ids = support::path_long_list("infoIds", &info_ids)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     let rows = support::delete_by_ids(&state.db, "sys_logininfor", "info_id", &ids).await?;
     Ok(support::to_ajax(rows))
 }
 
 async fn clean(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
-    sqlx::query("truncate table sys_logininfor").execute(&state.db).await?;
+    sqlx::query("truncate table sys_logininfor")
+        .execute(&state.db)
+        .await?;
     Ok(AjaxResult::success())
 }

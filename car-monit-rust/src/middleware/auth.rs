@@ -41,12 +41,14 @@ pub async fn auth_middleware(state: AppState, mut request: Request, next: Next) 
     match access {
         Access::DenyAll => {
             if login_user.is_some() {
-                return AppError::forbidden().into_response();
+                // Java: denyAll 命中已认证用户 -> AccessDeniedHandlerImpl -> 403 错误页。
+                return crate::error::forbidden_error_page(&path);
             }
             return AppError::unauthorized(&path).into_response();
         }
         Access::Anonymous if login_user.is_some() => {
-            return AppError::forbidden().into_response();
+            // Java: `anonymous()` 的规则只放行匿名请求，带 token 反而 403 错误页。
+            return crate::error::forbidden_error_page(&path);
         }
         Access::Authenticated if login_user.is_none() => {
             return AppError::unauthorized(&path).into_response();

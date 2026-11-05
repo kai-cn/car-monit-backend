@@ -36,21 +36,27 @@ async fn status(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
     let retry_keys = state.redis.keys(&format!("{RETRY_PREFIX}*")).await?;
     let dead_keys = state.redis.keys(&format!("{DEAD_PREFIX}*")).await?;
     let cdc = &state.settings.cdc;
-    Ok(AjaxResult::success_data(crate::response::java_ordered(&json!({
-        "retryQueueSize": retry_keys.len(),
-        "deadLetterQueueSize": dead_keys.len(),
-        "kafkaTopic": cdc.kafka.topic,
-        "consumerGroupId": cdc.kafka.group_id,
-        "maxRetryAttempts": cdc.retry.max_retries,
-    }))))
+    Ok(AjaxResult::success_data(crate::response::java_ordered(
+        &json!({
+            "retryQueueSize": retry_keys.len(),
+            "deadLetterQueueSize": dead_keys.len(),
+            "kafkaTopic": cdc.kafka.topic,
+            "consumerGroupId": cdc.kafka.group_id,
+            "maxRetryAttempts": cdc.retry.max_retries,
+        }),
+    )))
 }
 
 async fn dead_letters(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
-    Ok(AjaxResult::success_data(queue_values(&state, DEAD_PREFIX).await?))
+    Ok(AjaxResult::success_data(
+        queue_values(&state, DEAD_PREFIX).await?,
+    ))
 }
 
 async fn retry_messages(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
-    Ok(AjaxResult::success_data(queue_values(&state, RETRY_PREFIX).await?))
+    Ok(AjaxResult::success_data(
+        queue_values(&state, RETRY_PREFIX).await?,
+    ))
 }
 
 /// Java: `CdcSyncService.processCdcMessage` —— ES 写入在 Java 里被注释，始终返回 true。
@@ -64,8 +70,12 @@ async fn retry_one(
 ) -> Result<AjaxResult, AppError> {
     let pattern = format!("{DEAD_PREFIX}*");
     for key in state.redis.keys(&pattern).await? {
-        let Some(text) = state.redis.get_string(&key).await? else { continue };
-        let Ok(value) = serde_json::from_str::<Value>(&text) else { continue };
+        let Some(text) = state.redis.get_string(&key).await? else {
+            continue;
+        };
+        let Ok(value) = serde_json::from_str::<Value>(&text) else {
+            continue;
+        };
         if value.get("messageId").and_then(Value::as_str) == Some(message_id.as_str()) {
             if process_message(&value) {
                 state.redis.delete_object(&key).await?;
@@ -81,8 +91,12 @@ async fn retry_all(State(state): State<AppState>) -> Result<AjaxResult, AppError
     let pattern = format!("{DEAD_PREFIX}*");
     let mut success_count = 0;
     for key in state.redis.keys(&pattern).await? {
-        let Some(text) = state.redis.get_string(&key).await? else { continue };
-        let Ok(value) = serde_json::from_str::<Value>(&text) else { continue };
+        let Some(text) = state.redis.get_string(&key).await? else {
+            continue;
+        };
+        let Ok(value) = serde_json::from_str::<Value>(&text) else {
+            continue;
+        };
         if process_message(&value) {
             state.redis.delete_object(&key).await?;
             success_count += 1;
@@ -167,7 +181,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/base/cdc/dead-letters/{messageId}",
-            meta::delete_route("/base/cdc/dead-letters/{messageId}", None, None, delete_dead),
+            meta::delete_route(
+                "/base/cdc/dead-letters/{messageId}",
+                None,
+                None,
+                delete_dead,
+            ),
         )
         .route(
             "/base/cdc/config",

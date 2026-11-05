@@ -196,7 +196,10 @@ async fn list(
 
     let mut count_builder = QueryBuilder::<MySql>::new("");
     candidate_sql(&mut count_builder, &params, true);
-    let total: i64 = count_builder.build_query_scalar().fetch_one(&state.db).await?;
+    let total: i64 = count_builder
+        .build_query_scalar()
+        .fetch_one(&state.db)
+        .await?;
 
     let (offset, limit) = page.resolve(total);
     let mut builder = QueryBuilder::<MySql>::new("");
@@ -206,7 +209,10 @@ async fn list(
     builder.push(" offset ");
     builder.push_bind(offset);
     let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(TableDataInfo::new(total, shape_index_menu_rows(rows_to_json(&rows))))
+    Ok(TableDataInfo::new(
+        total,
+        shape_index_menu_rows(rows_to_json(&rows)),
+    ))
 }
 
 async fn my_list(
@@ -242,9 +248,25 @@ async fn my_list(
                 },
             );
             for key in [
-                "userId", "menuId", "sort", "epsId", "delFlag", "createBy", "createTime",
-                "updateBy", "updateTime", "tenantId", "menuName1", "menuName2", "menuName3",
-                "menuIds", "remark", "deptSubCode", "flag", "searchValue", "params",
+                "userId",
+                "menuId",
+                "sort",
+                "epsId",
+                "delFlag",
+                "createBy",
+                "createTime",
+                "updateBy",
+                "updateTime",
+                "tenantId",
+                "menuName1",
+                "menuName2",
+                "menuName3",
+                "menuIds",
+                "remark",
+                "deptSubCode",
+                "flag",
+                "searchValue",
+                "params",
             ] {
                 object.insert(key.to_string(), Value::Null);
             }
@@ -270,7 +292,10 @@ async fn export(
     let data = rows_to_json(&rows);
     let headers = ["用户ID", "菜单ID"].map(str::to_string);
     let fields = ["userId", "menuId"];
-    let data = data.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = data
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "用户常用菜单数据", &headers, &data)
 }
 
@@ -278,15 +303,19 @@ async fn get_info(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long id`。
+    let id = support::path_long("id", &id)?.to_string();
     let mut row = support::query_by_id(&state.db, &SPEC, &id).await?;
     if let Some(Value::Object(object)) = row.as_mut() {
         if let Some(number) = object.get("id").and_then(Value::as_i64) {
             object.insert("id".to_string(), Value::String(number.to_string()));
         }
     }
-    Ok(AjaxResult::success_data(
-        row.map(|value| shape_index_menu_rows(vec![value]).pop().unwrap_or(Value::Null)),
-    ))
+    Ok(AjaxResult::success_data(row.map(|value| {
+        shape_index_menu_rows(vec![value])
+            .pop()
+            .unwrap_or(Value::Null)
+    })))
 }
 
 async fn add(
@@ -323,8 +352,13 @@ async fn add(
             "createTime": now,
             "updateTime": now,
         });
-        support::insert_entity(&state.db, "sys_index_menu", &entity, AutoFill::from_user(&user))
-            .await?;
+        support::insert_entity(
+            &state.db,
+            "sys_index_menu",
+            &entity,
+            AutoFill::from_user(&user),
+        )
+        .await?;
     }
     Ok(AjaxResult::success())
 }
@@ -346,8 +380,13 @@ async fn edit(
             object.insert("id".to_string(), Value::String(generated.clone()));
             object.insert("delFlag".to_string(), json!("0"));
         }
-        support::insert_entity(&state.db, "sys_index_menu", &entity, AutoFill::from_user(&user))
-            .await?;
+        support::insert_entity(
+            &state.db,
+            "sys_index_menu",
+            &entity,
+            AutoFill::from_user(&user),
+        )
+        .await?;
         Ok(AjaxResult::success_msg_data("操作成功！", generated))
     } else {
         let mut entity = body;
@@ -365,7 +404,11 @@ async fn remove(
     State(state): State<AppState>,
     Path(ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&ids);
+    // Java: `@PathVariable Long[] ids` —— 任一段转不成 Long 就整体失败，文案带整段原文。
+    let ids = support::path_long_list("ids", &ids)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     let count = support::soft_delete_by_ids(&state.db, "sys_index_menu", "ID", &ids).await?;
     Ok(support::success_count(count))
 }

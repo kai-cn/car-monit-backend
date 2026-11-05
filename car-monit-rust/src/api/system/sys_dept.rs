@@ -184,7 +184,10 @@ async fn select_dept_list(
 
 fn push_dept_filters(builder: &mut QueryBuilder<'_, MySql>, params: &HashMap<String, String>) {
     let eq = |builder: &mut QueryBuilder<'_, MySql>, column: &str, key: &str, allow_empty: bool| {
-        if let Some(value) = params.get(key).filter(|value| allow_empty || !value.is_empty()) {
+        if let Some(value) = params
+            .get(key)
+            .filter(|value| allow_empty || !value.is_empty())
+        {
             builder.push(format!(" and {column} = "));
             builder.push_bind(value.clone());
         }
@@ -247,22 +250,28 @@ async fn exclude_child(
     Extension(user): Extension<LoginUser>,
     Path(dept_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long deptId` —— 非数字是类型不匹配的 500 文案，不会退化成「不过滤」。
+    let dept_id_num = support::path_long("deptId", &dept_id)?;
+    let dept_id = dept_id_num.to_string();
     let depts = select_dept_list(&state, &user, &HashMap::new()).await?;
-    if let Ok(dept_id_num) = dept_id.parse::<i64>() {
-        let filtered = depts
-            .into_iter()
-            .filter(|dept| {
-                let id = dept.get("deptId").and_then(Value::as_i64).unwrap_or_default();
-                if id == dept_id_num {
-                    return false;
-                }
-                let ancestors = dept.get("ancestors").and_then(Value::as_str).unwrap_or_default();
-                !ancestors.split(',').any(|item| item == dept_id.to_string())
-            })
-            .collect::<Vec<_>>();
-        return Ok(AjaxResult::success_data(filtered));
-    }
-    Ok(AjaxResult::success_data(depts))
+    let filtered = depts
+        .into_iter()
+        .filter(|dept| {
+            let id = dept
+                .get("deptId")
+                .and_then(Value::as_i64)
+                .unwrap_or_default();
+            if id == dept_id_num {
+                return false;
+            }
+            let ancestors = dept
+                .get("ancestors")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            !ancestors.split(',').any(|item| item == dept_id)
+        })
+        .collect::<Vec<_>>();
+    Ok(AjaxResult::success_data(filtered))
 }
 
 async fn treeselect(
@@ -313,6 +322,8 @@ async fn role_dept_treeselect(
     Extension(user): Extension<LoginUser>,
     Path(role_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long roleId`。
+    let role_id = support::path_long("roleId", &role_id)?.to_string();
     let depts = select_dept_list(&state, &user, &HashMap::new()).await?;
     let checked = select_dept_ids_by_role(&state, &role_id).await?;
     let mut result = AjaxResult::success();
@@ -336,6 +347,8 @@ async fn get_info(
     State(state): State<AppState>,
     Path(dept_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long deptId`。
+    let dept_id = support::path_long("deptId", &dept_id)?.to_string();
     let row = sqlx::query(&format!(
         "select {DEPT_COLUMNS} from sys_dept d where d.dept_id = ?"
     ))
@@ -349,10 +362,7 @@ async fn get_info(
     })))
 }
 
-async fn select_dept_ids_by_role(
-    state: &AppState,
-    role_id: &str,
-) -> Result<Vec<i64>, AppError> {
+async fn select_dept_ids_by_role(state: &AppState, role_id: &str) -> Result<Vec<i64>, AppError> {
     let strict: Option<bool> =
         sqlx::query_scalar("select dept_check_strictly from sys_role where role_id = ?")
             .bind(role_id)
@@ -398,7 +408,10 @@ fn build_tree_select(depts: &[Value]) -> Vec<Value> {
 }
 
 fn dept_node(depts: &[Value], dept: &Value) -> Value {
-    let id = dept.get("deptId").and_then(Value::as_i64).unwrap_or_default();
+    let id = dept
+        .get("deptId")
+        .and_then(Value::as_i64)
+        .unwrap_or_default();
     let mut node = json!({
         "id": id,
         "label": dept.get("deptName").cloned().unwrap_or(Value::Null),
@@ -415,59 +428,99 @@ fn dept_node(depts: &[Value], dept: &Value) -> Value {
 }
 
 fn text(body: &Value, key: &str) -> String {
-    body.get(key).and_then(Value::as_str).unwrap_or_default().trim().to_string()
+    body.get(key)
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim()
+        .to_string()
 }
 
-/// Java: 新增/修改共用 sub_code、tree_leavel 计算。
-async fn compute_sub_code(
-    pool: &MySqlPool,
+/// Java: `insertDept` / `updateDept` 里那段共用的 parentId / isUint / treeLeavel / subCode 计算。
+/// Java 全靠解引用完成，父节点缺失、tree_leavel 为 NULL、isUint 为 null 都会直接 NPE
+/// （响应是 `{"msg":null,"code":500}`），这里逐条照搬；`Err` 就是那个响应。
+struct DeptCodes {
     parent_id: i64,
+    is_uint: String,
+    tree_leavel: i32,
+    /// None 表示 Java 的 `flag == false`，不重新生成 subCode（mapper 也不会写这一列）。
+    sub_code: Option<String>,
+}
+
+async fn compute_dept_codes(
+    pool: &MySqlPool,
+    body: &Value,
     dept_id: Option<i64>,
-) -> Result<(i32, String), AppError> {
-    let (tree_level, parent_sub_code) = if parent_id == 0 {
-        (1, "001".to_string())
-    } else {
-        let parent: Option<(Option<i32>, Option<String>)> = sqlx::query_as(
-            "select tree_leavel, sub_code from sys_dept where dept_id = ?",
-        )
-        .bind(parent_id)
-        .fetch_optional(pool)
-        .await?;
-        let (level, sub) = parent.unwrap_or((None, None));
-        (level.unwrap_or(0) + 1, sub.unwrap_or_default())
+) -> Result<DeptCodes, AjaxResult> {
+    let npe = || AjaxResult::error_null_msg();
+    // Java: `if (null == dept.getParentId()) { setParentId(0L); setIsUint("1"); }`
+    let parent_given = body.get("parentId").and_then(Value::as_i64);
+    let parent_id = parent_given.unwrap_or(0);
+    let is_uint = match body.get("isUint").and_then(Value::as_str) {
+        Some(value) => value.to_string(),
+        None if parent_given.is_none() => "1".to_string(),
+        None => return Err(npe()),
     };
 
+    let (tree_leavel, parent_sub_code) = if parent_id == 0 {
+        (1, "001".to_string())
+    } else {
+        // Java: `parentBO.getTreeLeavel() + 1` —— 行不存在或该列为 NULL 都是 NPE。
+        let parent: Option<(Option<i32>, Option<String>)> =
+            sqlx::query_as("select tree_leavel, sub_code from sys_dept where dept_id = ?")
+                .bind(parent_id)
+                .fetch_optional(pool)
+                .await
+                .map_err(|_| npe())?;
+        let (level, sub) = parent.ok_or_else(npe)?;
+        (
+            level.ok_or_else(npe)? + 1,
+            // 拼 subCode 用的是 Java 的字符串拼接语义：null 拼成字面量 "null"。
+            sub.unwrap_or_else(|| "null".to_string()),
+        )
+    };
+
+    // Java: `if (null != dept.getDeptId()) { tmpbo = selectDeptById(deptId); ... }`
     let mut recompute = true;
     if let Some(dept_id) = dept_id {
-        let current_parent: Option<i64> =
+        let current_parent: Option<Option<i64>> =
             sqlx::query_scalar("select parent_id from sys_dept where dept_id = ?")
                 .bind(dept_id)
                 .fetch_optional(pool)
-                .await?;
-        if current_parent == Some(parent_id) {
-            recompute = false;
-        }
-    }
-    if !recompute {
-        return Ok((tree_level, String::new()));
+                .await
+                .map_err(|_| npe())?;
+        let current_parent = current_parent.ok_or_else(npe)?;
+        // Java: `tmpbo.getParentId().equals(dept.getParentId())` —— 旧父级为 NULL 也是 NPE。
+        let current_parent = current_parent.ok_or_else(npe)?;
+        recompute = current_parent != parent_id;
     }
 
-    let counts: i64 = sqlx::query_scalar(
-        "select count(1) from sys_dept where del_flag = '0' and parent_id = ?",
-    )
-    .bind(parent_id)
-    .fetch_one(pool)
-    .await?;
-    let sub_code = if parent_id == 0 {
-        format!("00{}", counts + 1)
-    } else if counts < 9 {
-        format!("{parent_sub_code}-00{}", counts + 1)
-    } else if counts < 99 {
-        format!("{parent_sub_code}-0{}", counts + 1)
+    let sub_code = if recompute {
+        let counts: i64 = sqlx::query_scalar(
+            "select count(1) from sys_dept where del_flag = '0' and parent_id = ?",
+        )
+        .bind(parent_id)
+        .fetch_one(pool)
+        .await
+        .map_err(|_| npe())?;
+        Some(if parent_id == 0 {
+            format!("00{}", counts + 1)
+        } else if counts < 9 {
+            format!("{parent_sub_code}-00{}", counts + 1)
+        } else if counts < 99 {
+            format!("{parent_sub_code}-0{}", counts + 1)
+        } else {
+            format!("{parent_sub_code}-{}", counts + 1)
+        })
     } else {
-        format!("{parent_sub_code}-{}", counts + 1)
+        None
     };
-    Ok((tree_level, sub_code))
+
+    Ok(DeptCodes {
+        parent_id,
+        is_uint,
+        tree_leavel,
+        sub_code,
+    })
 }
 
 async fn save(
@@ -523,21 +576,27 @@ async fn save(
         }
     }
 
-    let (tree_level, sub_code) = compute_sub_code(&state.db, parent_id, dept_id).await?;
-    let is_unit = text(&body, "isUint");
+    let codes = match compute_dept_codes(&state.db, &body, dept_id).await {
+        Ok(codes) => codes,
+        // Java 的这段全靠解引用，父节点缺失/字段 NULL 直接 NPE -> `{"msg":null,"code":500}`。
+        Err(result) => return Ok(result),
+    };
 
-    let mut entity = body;
+    // Java: Jackson 忽略非列字段（`params`/`parentName`/`children`…），自己拼 SQL 前要先按表列过滤。
+    let mut entity = support::entity_for_table(&state.db, "sys_dept", &body).await?;
     let object = entity
         .as_object_mut()
         .ok_or_else(|| AppError::BadRequest("请求体必须是 JSON 对象".to_string()))?;
-    object.insert("parentId".to_string(), json!(parent_id));
-    object.insert("treeLeavel".to_string(), json!(tree_level));
-    if !sub_code.is_empty() {
+    object.insert("parentId".to_string(), json!(codes.parent_id));
+    object.insert("isUint".to_string(), json!(codes.is_uint));
+    object.insert("treeLeavel".to_string(), json!(codes.tree_leavel));
+    if let Some(sub_code) = codes.sub_code {
         object.insert("subCode".to_string(), json!(sub_code));
     }
-    if is_unit == "0" {
+    if codes.is_uint == "0" {
         object.insert("isZbzg".to_string(), json!("0"));
     }
+    let is_unit = codes.is_uint.clone();
 
     let mut tx = state.db.begin().await?;
     let dept_id = if is_add {
@@ -571,10 +630,11 @@ async fn save(
         }
         builder.push(")");
         builder.build().execute(&mut *tx).await?;
-        let inserted: i64 = sqlx::query_scalar("select last_insert_id()")
+        // LAST_INSERT_ID() 的列元信息是 BIGINT UNSIGNED，只能按 u64 取回。
+        let inserted: u64 = sqlx::query_scalar("select last_insert_id()")
             .fetch_one(&mut *tx)
             .await?;
-        inserted
+        inserted as i64
     } else {
         let current = dept_id.ok_or_else(|| AppError::Service("deptId不能为空".to_string()))?;
         object.insert(
@@ -604,7 +664,10 @@ async fn save(
     // Java: 新增后按 is_uint 设置 tenant_id；修改后按 sub_code 批量刷新租户。
     if is_add {
         if is_unit == "0" {
-            let sub_code = object.get("subCode").and_then(Value::as_str).unwrap_or_default();
+            let sub_code = object
+                .get("subCode")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
             if let Some(tenant) = select_tenant(&mut tx, sub_code).await? {
                 sqlx::query("update sys_dept set tenant_id = ? where dept_id = ?")
                     .bind(tenant)
@@ -666,7 +729,9 @@ async fn refresh_tenants(
         builder.build_query_as().fetch_all(&mut **tx).await?;
     for (dept_id, child_sub_code, is_unit) in rows {
         if is_unit.as_deref() == Some("0") {
-            if let Some(tenant) = select_tenant(tx, child_sub_code.as_deref().unwrap_or_default()).await? {
+            if let Some(tenant) =
+                select_tenant(tx, child_sub_code.as_deref().unwrap_or_default()).await?
+            {
                 sqlx::query("update sys_dept set tenant_id = ? where dept_id = ?")
                     .bind(tenant)
                     .bind(dept_id)
@@ -704,6 +769,8 @@ async fn remove(
     State(state): State<AppState>,
     Path(dept_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long deptId`。
+    let dept_id = support::path_long("deptId", &dept_id)?.to_string();
     let children: i64 = sqlx::query_scalar(
         "select count(1) from sys_dept where del_flag = '0' and parent_id = ? limit 1",
     )

@@ -93,9 +93,18 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/base/section",
-            meta::post_route("/base/section", Some("base:section:add"), Some(&LOG_ADD), add).merge(
-                meta::put_route("/base/section", Some("base:section:edit"), Some(&LOG_EDIT), edit),
-            ),
+            meta::post_route(
+                "/base/section",
+                Some("base:section:add"),
+                Some(&LOG_ADD),
+                add,
+            )
+            .merge(meta::put_route(
+                "/base/section",
+                Some("base:section:edit"),
+                Some(&LOG_EDIT),
+                edit,
+            )),
         )
         .route(
             "/base/section/{ids}",
@@ -125,15 +134,38 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all_fmt(&state.db, &params, &SPEC, FORMATS).await?;
     let headers = [
-        "路线编码", "路线名称", "路段编码", "路段名称", "起点桩号", "终点桩号", "机构代码",
-        "机构名称", "层级代码", "机构分类", "里程", "通车日期",
+        "路线编码",
+        "路线名称",
+        "路段编码",
+        "路段名称",
+        "起点桩号",
+        "终点桩号",
+        "机构代码",
+        "机构名称",
+        "层级代码",
+        "机构分类",
+        "里程",
+        "通车日期",
     ]
     .map(str::to_string);
     let fields = [
-        "roadCode", "roadName", "sectionCode", "sectionName", "startPileNo", "endPileNo",
-        "orgCode", "orgName", "orgLevelCode", "orgCategory", "mileage", "openDate",
+        "roadCode",
+        "roadName",
+        "sectionCode",
+        "sectionName",
+        "startPileNo",
+        "endPileNo",
+        "orgCode",
+        "orgName",
+        "orgLevelCode",
+        "orgCategory",
+        "mileage",
+        "openDate",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "路段信息数据", &headers, &data)
 }
 

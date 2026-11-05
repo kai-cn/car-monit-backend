@@ -22,7 +22,12 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/manager/bigScreen/carStatistics",
-            meta::get_route("/manager/bigScreen/carStatistics", None, None, car_statistics),
+            meta::get_route(
+                "/manager/bigScreen/carStatistics",
+                None,
+                None,
+                car_statistics,
+            ),
         )
         .route(
             "/manager/bigScreen/carLocation",
@@ -67,7 +72,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/manager/bigScreen/incomeStatistic",
-            meta::get_route("/manager/bigScreen/incomeStatistic", None, None, income_statistic),
+            meta::get_route(
+                "/manager/bigScreen/incomeStatistic",
+                None,
+                None,
+                income_statistic,
+            ),
         )
         .route(
             "/manager/bigScreen/exceptRecordList",
@@ -102,28 +112,122 @@ fn push_time_filters(
 /// 以下三组是 Java Jackson 对 VO/实体的键序（实测自 Java 响应）。
 const CAR_STATISTICS_KEYS: &[&str] = &["escapedType", "escapedTypeName", "number", "escapedAmount"];
 const EXCEPTION_CAR_KEYS: &[&str] = &[
-    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
-    "tenantId", "plateColor", "carNo", "carType", "carVehicle", "carNum", "passType",
-    "inStationId", "inStation", "inTime", "outStationId", "outStation", "outTime",
-    "gantryStationId", "gantrytStation", "gantryTime", "fileIds", "outGantryStationId",
-    "outGantrytStation", "outGantryTime", "outFileIds", "escapedType", "escapedTypeName",
-    "escapedNum", "isExcept", "exceptRemark", "exceptFileIds", "checkStatus", "orgId",
-    "orgName", "isWhite", "whiteRemark", "whiteFileIds", "roadCode", "roadName",
-    "sectionCode", "sectionName", "trackId", "trackJosn", "trackNames", "backCol1",
-    "backCol2", "status", "remark", "carNoQuery", "applyTime1", "applyTime2",
-    "createTimeStr", "checkList", "trailList", "gantryCode", "tollCode", "fwqbm", "type",
-    "code", "chargeAmount", "totalAmount", "difAmount", "mjTime", "mjAddress", "txTime",
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "tenantId",
+    "plateColor",
+    "carNo",
+    "carType",
+    "carVehicle",
+    "carNum",
+    "passType",
+    "inStationId",
+    "inStation",
+    "inTime",
+    "outStationId",
+    "outStation",
+    "outTime",
+    "gantryStationId",
+    "gantrytStation",
+    "gantryTime",
+    "fileIds",
+    "outGantryStationId",
+    "outGantrytStation",
+    "outGantryTime",
+    "outFileIds",
+    "escapedType",
+    "escapedTypeName",
+    "escapedNum",
+    "isExcept",
+    "exceptRemark",
+    "exceptFileIds",
+    "checkStatus",
+    "orgId",
+    "orgName",
+    "isWhite",
+    "whiteRemark",
+    "whiteFileIds",
+    "roadCode",
+    "roadName",
+    "sectionCode",
+    "sectionName",
+    "trackId",
+    "trackJosn",
+    "trackNames",
+    "backCol1",
+    "backCol2",
+    "status",
+    "remark",
+    "carNoQuery",
+    "applyTime1",
+    "applyTime2",
+    "createTimeStr",
+    "checkList",
+    "trailList",
+    "gantryCode",
+    "tollCode",
+    "fwqbm",
+    "type",
+    "code",
+    "chargeAmount",
+    "totalAmount",
+    "difAmount",
+    "mjTime",
+    "mjAddress",
+    "txTime",
     "txAddress",
 ];
 const INCOME_STATISTIC_KEYS: &[&str] = &["orgName", "amount", "carNum"];
 const EXCEPT_RECORD_KEYS: &[&str] = &[
-    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
-    "tenantId", "carId", "carNo", "carType", "carVehicle", "carNum", "passType",
-    "inStationId", "inStation", "inTime", "outStationId", "outStation", "outTime",
-    "totalAmount", "chargeAmount", "difAmount", "escapedType", "remark", "backCol1",
-    "backCol2", "status", "applyTime1", "applyTime2", "applyTime3", "applyTime4",
-    "createTimeStr", "orgId", "supplementaryStatus", "exceptIds", "carNoQuery",
-    "createInfo", "exceptNum", "exceptAmount", "inTimeStr", "outTimeStr",
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "tenantId",
+    "carId",
+    "carNo",
+    "carType",
+    "carVehicle",
+    "carNum",
+    "passType",
+    "inStationId",
+    "inStation",
+    "inTime",
+    "outStationId",
+    "outStation",
+    "outTime",
+    "totalAmount",
+    "chargeAmount",
+    "difAmount",
+    "escapedType",
+    "remark",
+    "backCol1",
+    "backCol2",
+    "status",
+    "applyTime1",
+    "applyTime2",
+    "applyTime3",
+    "applyTime4",
+    "createTimeStr",
+    "orgId",
+    "supplementaryStatus",
+    "exceptIds",
+    "carNoQuery",
+    "createInfo",
+    "exceptNum",
+    "exceptAmount",
+    "inTimeStr",
+    "outTimeStr",
 ];
 
 async fn car_statistics(
@@ -160,7 +264,10 @@ async fn car_statistics(
             );
         }
     }
-    Ok(AjaxResult::success_data(support::reorder_rows(data, CAR_STATISTICS_KEYS)))
+    Ok(AjaxResult::success_data(support::reorder_rows(
+        data,
+        CAR_STATISTICS_KEYS,
+    )))
 }
 
 /// Java: CarInfoMapper.getCarLocation。
@@ -183,27 +290,43 @@ async fn car_location(
             _ => ("", ""),
         };
         if !key.is_empty() {
-            let value = if code.is_empty() { default.to_string() } else { code };
+            let value = if code.is_empty() {
+                default.to_string()
+            } else {
+                code
+            };
             params.insert(key.to_string(), value);
         }
     }
 
-    // Java 从 car_list 缓存过滤（未命中时回源 DB），按逗号分隔的编码包含匹配。
+    // Java 从 car_list 缓存过滤；未命中时回源 `selectCarInfoList` 并回写缓存
+    // （那条查询带 `not exists` 排除条件，直接拼一条简单 SQL 会多出被排除的车）。
     let cached = state.redis.get_object::<Value>("car_list").await?;
     let source = match cached {
         Some(Value::Array(items)) => items,
         _ => {
-            let rows = sqlx::query(
-                "select t.id, t.car_no, t.car_type, t.last_pass_longitude, t.last_pass_latitude,                  t.last_pass_type, t.status, t.gantry_code, t.escaped_type                  from car_info t where t.del_flag = '0'",
-            )
-            .fetch_all(&state.db)
-            .await?;
-            rows_to_json(&rows)
+            let rows = crate::api::manager::car_info::car_info_cache_rows(&state).await?;
+            state
+                .redis
+                .set_object(
+                    "car_list",
+                    &crate::db::redis_cache::stamp_types(
+                        rows.clone(),
+                        "com.ruoyi.manager.domain.CarInfo",
+                    ),
+                )
+                .await?;
+            rows
         }
     };
     let mut data = Vec::new();
     for row in source {
-        if row.get("status").and_then(Value::as_str).unwrap_or_default() != "1" {
+        if row
+            .get("status")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            != "1"
+        {
             continue;
         }
         let dev_codes = row
@@ -369,7 +492,9 @@ async fn car_audit(
     );
     push_time_filters(&mut audit, &params, "a.create_time");
     let audit_row = audit.build().fetch_optional(&state.db).await?;
-    let audit_value = audit_row.map(|row| crate::db::rows::row_to_json(&row)).unwrap_or(Value::Null);
+    let audit_value = audit_row
+        .map(|row| crate::db::rows::row_to_json(&row))
+        .unwrap_or(Value::Null);
 
     let mut confirm = QueryBuilder::<MySql>::new(
         "select sum(ifnull(a.amount, 0) + ifnull(a.aduit_amount, 0)) escapedAmount, \
@@ -378,8 +503,9 @@ async fn car_audit(
     );
     push_time_filters(&mut confirm, &params, "a.create_time");
     let confirm_row = confirm.build().fetch_optional(&state.db).await?;
-    let confirm_value =
-        confirm_row.map(|row| crate::db::rows::row_to_json(&row)).unwrap_or(Value::Null);
+    let confirm_value = confirm_row
+        .map(|row| crate::db::rows::row_to_json(&row))
+        .unwrap_or(Value::Null);
 
     // Java 侧 VO 的声明顺序即 totalCount, finishedCount, totalAmount, finishedAmount。
     Ok(AjaxResult::success_data(json!({
@@ -434,7 +560,10 @@ async fn exception_car(State(state): State<AppState>) -> Result<AjaxResult, AppE
             }
         }
     }
-    Ok(AjaxResult::success_data(support::reorder_rows(data, EXCEPTION_CAR_KEYS)))
+    Ok(AjaxResult::success_data(support::reorder_rows(
+        data,
+        EXCEPTION_CAR_KEYS,
+    )))
 }
 
 async fn top_ten(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
@@ -456,7 +585,11 @@ async fn top_ten(State(state): State<AppState>) -> Result<AjaxResult, AppError> 
         if let Some(object) = row.as_object_mut() {
             let count = object.get("carNum").and_then(Value::as_f64).unwrap_or(0.0);
             object.insert("rank".to_string(), json!(index + 1));
-            let rate = if total > 0.0 { (count * 100.0 / total) as i64 } else { 0 };
+            let rate = if total > 0.0 {
+                (count * 100.0 / total) as i64
+            } else {
+                0
+            };
             object.insert("rate".to_string(), json!(rate.to_string()));
         }
     }
@@ -464,10 +597,9 @@ async fn top_ten(State(state): State<AppState>) -> Result<AjaxResult, AppError> 
 }
 
 async fn org_list(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
-    let rows =
-        sqlx::query("select org_code orgCode, org_name orgName from ods_yhgl_v_base_org")
-            .fetch_all(&state.db)
-            .await?;
+    let rows = sqlx::query("select org_code orgCode, org_name orgName from ods_yhgl_v_base_org")
+        .fetch_all(&state.db)
+        .await?;
     Ok(AjaxResult::success_data(rows_to_json(&rows)))
 }
 
@@ -511,7 +643,10 @@ async fn income_statistic(
     push_time_filters(&mut builder, &params, "a.create_time");
     builder.push(" group by a.org_id order by amount desc");
     let rows = builder.build().fetch_all(&state.db).await?;
-    Ok(AjaxResult::success_data(support::reorder_rows(rows_to_json(&rows), INCOME_STATISTIC_KEYS)))
+    Ok(AjaxResult::success_data(support::reorder_rows(
+        rows_to_json(&rows),
+        INCOME_STATISTIC_KEYS,
+    )))
 }
 
 async fn except_record_list(
@@ -546,5 +681,8 @@ async fn except_record_list(
             );
         }
     }
-    Ok(TableDataInfo::new(total, support::reorder_rows(rows, EXCEPT_RECORD_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::reorder_rows(rows, EXCEPT_RECORD_KEYS),
+    ))
 }

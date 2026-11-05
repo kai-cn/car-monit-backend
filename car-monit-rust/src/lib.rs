@@ -17,7 +17,7 @@ pub mod task;
 
 use std::time::Duration;
 
-use axum::http::Uri;
+use axum::response::IntoResponse;
 use axum::routing::{any, get};
 use axum::Router;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
@@ -39,8 +39,34 @@ fn cors_layer() -> CorsLayer {
 }
 
 /// Java: Spring Boot 默认 /error（未匹配路由）
-async fn fallback(uri: Uri) -> axum::response::Response {
-    not_found_response(uri.path())
+async fn fallback(request: axum::extract::Request) -> axum::response::Response {
+    let path = request.uri().path().to_string();
+    not_found_response(request.method(), &path)
+}
+
+/// Java: 路径存在但方法不匹配时，Spring MVC 抛 HttpRequestMethodNotSupportedException，
+/// 由 GlobalExceptionHandler 转成 HTTP 200 + `{"msg":"Request method 'POST' not supported","code":500}`；
+/// axum 默认直接回 405 空响应体（还带 `Allow` 头），这里翻译成 Java 的形状。
+/// 放在最内层：鉴权（外层）先失败的场景仍按 Java 返回 401/403。
+async fn method_not_allowed_mapper(
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    let method = request.method().clone();
+    let response = next.run(request).await;
+    if response.status() == axum::http::StatusCode::METHOD_NOT_ALLOWED {
+        // Java: 该响应由异常解析器写出，Content-Type 带 `;charset=UTF-8`，也没有 `Allow` 头。
+        let mut response =
+            crate::response::AjaxResult::error(format!("Request method '{method}' not supported"))
+                .into_response();
+        response.headers_mut().remove("allow");
+        response.headers_mut().insert(
+            axum::http::header::CONTENT_TYPE,
+            axum::http::HeaderValue::from_static("application/json;charset=UTF-8"),
+        );
+        return response;
+    }
+    response
 }
 
 /// 附录 B 的 501 条控制器端点 + 认证入口（不含 state/中间件，便于自检与复用）。
@@ -77,7 +103,9 @@ pub fn build_api_routes() -> Router<AppState> {
         .merge(api::base::routes())
         .merge(api::manager::routes())
         .merge(api::flow::routes())
-        .merge(api::generator::routes());
+        .merge(api::generator::routes())
+        // Java: ruoyi-common 的 OssEndpoint（基线曾漏记这个控制器）。
+        .merge(api::oss::routes());
     router
 }
 
@@ -94,9 +122,11 @@ pub fn build_router(state: AppState) -> Router {
         ServeDir::new(state.settings.ruoyi.profile.clone()),
     );
 
-    router
+    let router = router
         .fallback(any(fallback))
         .with_state(state.clone())
+        // 方法不匹配先由路由层产出 405，这里立刻换成 Java 的响应体，再交给 @Log/鉴权之外层。
+        .layer(axum::middleware::from_fn(method_not_allowed_mapper))
         // @PreAuthorize + @Log 元数据中间件（必须位于认证内侧）。
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
@@ -111,6 +141,48 @@ pub fn build_router(state: AppState) -> Router {
         }))
         // CORS 必须在最外层：预检请求在鉴权之前响应。
         .layer(cors_layer())
+        // TraceId / 安全头 / CORS 头写法：Java 的 Filter 在业务之前就写好了，401/404/405 也带。
+        .layer(axum::middleware::from_fn(
+            middleware::web_filter::web_filter,
+        ));
+
+    // Java: Spring Boot 2.x 默认 useTrailingSlashMatch —— `/x/` 也命中注册为 `/x` 的映射。
+    // axum 的 `.layer()` 只包住各路由的 handler，改 URI 影响不到路由本身，
+    // 所以只能在「按原样路由不到」之后削掉一个尾斜杠再路由一次。
+    let retrier = router.clone();
+    router.fallback(move |request: axum::extract::Request| {
+        let retrier = retrier.clone();
+        async move { retry_with_trimmed_trailing_slash(request, retrier).await }
+    })
+}
+
+/// 尾斜杠重路由；削不动就直接给 Java 的 404 错误页。
+async fn retry_with_trimmed_trailing_slash(
+    mut request: axum::extract::Request,
+    retrier: Router,
+) -> axum::response::Response {
+    use tower::ServiceExt;
+
+    let path = request.uri().path().to_string();
+    let Some(trimmed) = path.strip_suffix('/') else {
+        return not_found_response(request.method(), &path);
+    };
+    if trimmed.is_empty() {
+        return not_found_response(request.method(), &path);
+    }
+    let rebuilt = match request.uri().query() {
+        Some(query) => format!("{trimmed}?{query}"),
+        None => trimmed.to_string(),
+    };
+    let Ok(uri) = rebuilt.parse::<axum::http::Uri>() else {
+        return not_found_response(request.method(), &path);
+    };
+    *request.uri_mut() = uri;
+    match retrier.oneshot(request).await {
+        Ok(response) => response,
+        // Router 的 Error 是 Infallible。
+        Err(err) => match err {},
+    }
 }
 
 #[cfg(test)]
@@ -172,10 +244,16 @@ mod route_parity {
             extra.len(),
             extra
         );
-        assert_eq!(expected.len(), 501, "基线端点数量应为 501");
+        assert_eq!(expected.len(), 510, "基线端点数量应为 510");
     }
 
+    /// 形状归一：`{var}` 收成 `{}`，并按 Spring 的 `useTrailingSlashMatch` 削掉一个结尾斜杠
+    /// （Java 的 `/oss/object/{b}/{o}/` 与 `/oss/object/{b}/{o}` 命中同一个映射）。
     fn shape(path: &str) -> String {
+        let path = match path.strip_suffix('/') {
+            Some(trimmed) if trimmed.len() > 1 => trimmed,
+            _ => path,
+        };
         let mut out = String::with_capacity(path.len());
         let mut in_param = false;
         for ch in path.chars() {

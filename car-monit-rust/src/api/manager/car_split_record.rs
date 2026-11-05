@@ -3,6 +3,8 @@
 // 职责: 拆分记录 CRUD 与导出（BasePlusEntity 通用逻辑）。
 // 对应关系: manager_crud! 宏生成 list/export/get/add/edit/remove。
 
+use crate::api::support::FieldFormat;
+
 crate::manager_crud! {
     route: "/manager/splitrecord",
     perm: "manager:splitrecord",
@@ -10,9 +12,43 @@ crate::manager_crud! {
     class: "com.ruoyi.web.controller.manager.CarSplitRecordController",
     sheet: "拆分记录数据",
     table: "car_split_record",
-    select: "t.id, t.car_id, t.car_no, t.car_type, t.car_vehicle, t.pass_type, t.in_station_id, t.in_station, t.in_time, t.out_station_id, t.out_station, t.out_time, t.amount, t.back_col1, t.back_col2, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id",
+    select: "t.id, t.car_id, t.car_no, t.car_type, t.car_vehicle, t.pass_type, t.in_station_id, t.in_station, t.in_time, t.out_station_id, t.out_station, t.out_time, t.amount, t.back_col1, t.back_col2, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id, \
+             null as applyTime1, null as applyTime2, null as createTimeStr",
     from: "from car_split_record t",
     order: "t.create_time desc,t.id",
+    dates: [
+        ("inTime", FieldFormat::DateOnly),
+        ("outTime", FieldFormat::DateOnly),
+    ],
+    keys: [
+        "id",
+        "epsId",
+        "delFlag",
+        "createBy",
+        "createTime",
+        "updateBy",
+        "updateTime",
+        "sort",
+        "tenantId",
+        "carId",
+        "carNo",
+        "carType",
+        "carVehicle",
+        "passType",
+        "inStationId",
+        "inStation",
+        "inTime",
+        "outStationId",
+        "outStation",
+        "outTime",
+        "amount",
+        "backCol1",
+        "backCol2",
+        "status",
+        "applyTime1",
+        "applyTime2",
+        "createTimeStr",
+    ],
     binary: true,
     filters: [
         Filter::eq("id", "t.id"),

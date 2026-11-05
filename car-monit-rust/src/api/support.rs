@@ -31,10 +31,11 @@ pub fn page_domain(raw: &Option<String>) -> PageDomain {
 /// Java 的 `@ModelAttribute`/参数绑定：缺省字段为 null，未知字段忽略。
 pub fn query_struct<T: DeserializeOwned>(raw: &Option<String>) -> Result<T, AppError> {
     match raw {
-        Some(raw) if !raw.is_empty() => {
-            serde_urlencoded::from_str::<T>(raw).map_err(|err| AppError::BadRequest(err.to_string()))
+        Some(raw) if !raw.is_empty() => serde_urlencoded::from_str::<T>(raw)
+            .map_err(|err| AppError::BadRequest(err.to_string())),
+        _ => {
+            serde_urlencoded::from_str::<T>("").map_err(|err| AppError::BadRequest(err.to_string()))
         }
-        _ => serde_urlencoded::from_str::<T>("").map_err(|err| AppError::BadRequest(err.to_string())),
     }
 }
 
@@ -86,12 +87,8 @@ pub fn export_excel(
     headers: &[String],
     rows: &[Vec<Value>],
 ) -> Result<AjaxResult, AppError> {
-    let filename = excel::export_workbook(
-        &state.settings.ruoyi.profile,
-        sheet_name,
-        headers,
-        rows,
-    )?;
+    let filename =
+        excel::export_workbook(&state.settings.ruoyi.profile, sheet_name, headers, rows)?;
     // Java ExcelUtil.exportExcel：文件落盘，响应里只有 msg=文件名。
     Ok(AjaxResult::success_msg(filename))
 }
@@ -163,7 +160,11 @@ pub fn query_json(params: &HashMap<String, String>) -> String {
 /// Java: `DataScopeAspect.dataScopeFilter` —— 把角色数据范围拼成 `and (...)`。
 /// 管理员或任一角色为“全部数据权限”时返回 None（不过滤）。
 /// 角色/部门 ID 来自登录态（可信），与 Java 一样直接内联。
-pub fn data_scope_sql(user: &LoginUser, dept_alias: &str, user_alias: Option<&str>) -> Option<String> {
+pub fn data_scope_sql(
+    user: &LoginUser,
+    dept_alias: &str,
+    user_alias: Option<&str>,
+) -> Option<String> {
     if user.user.is_admin() {
         return None;
     }
@@ -255,23 +256,48 @@ pub struct Filter {
 
 impl Filter {
     pub const fn eq(param: &'static str, column: &'static str) -> Self {
-        Self { param, column, kind: FilterKind::Eq, empty_ok: false }
+        Self {
+            param,
+            column,
+            kind: FilterKind::Eq,
+            empty_ok: false,
+        }
     }
 
     pub const fn like(param: &'static str, column: &'static str) -> Self {
-        Self { param, column, kind: FilterKind::Like, empty_ok: false }
+        Self {
+            param,
+            column,
+            kind: FilterKind::Like,
+            empty_ok: false,
+        }
     }
 
     pub const fn like_right(param: &'static str, column: &'static str) -> Self {
-        Self { param, column, kind: FilterKind::LikeRight, empty_ok: false }
+        Self {
+            param,
+            column,
+            kind: FilterKind::LikeRight,
+            empty_ok: false,
+        }
     }
 
     pub const fn raw(param: &'static str, sql: &'static str) -> Self {
-        Self { param, column: "", kind: FilterKind::Raw(sql), empty_ok: false }
+        Self {
+            param,
+            column: "",
+            kind: FilterKind::Raw(sql),
+            empty_ok: false,
+        }
     }
 
     pub const fn eq_allow_empty(param: &'static str, column: &'static str) -> Self {
-        Self { param, column, kind: FilterKind::Eq, empty_ok: true }
+        Self {
+            param,
+            column,
+            kind: FilterKind::Eq,
+            empty_ok: true,
+        }
     }
 }
 
@@ -294,7 +320,11 @@ fn param_value<'a>(params: &'a HashMap<String, String>, filter: &Filter) -> Opti
     Some(value)
 }
 
-fn push_filters(builder: &mut QueryBuilder<MySql>, params: &HashMap<String, String>, filters: &[Filter]) {
+fn push_filters(
+    builder: &mut QueryBuilder<MySql>,
+    params: &HashMap<String, String>,
+    filters: &[Filter],
+) {
     for filter in filters {
         let Some(value) = param_value(params, filter) else {
             continue;
@@ -416,7 +446,10 @@ pub async fn query_all(
     params: &HashMap<String, String>,
     spec: &ListSpec,
 ) -> Result<Vec<Value>, AppError> {
-    let rows = build_list_sql(spec, params, true).build().fetch_all(pool).await?;
+    let rows = build_list_sql(spec, params, true)
+        .build()
+        .fetch_all(pool)
+        .await?;
     Ok(crate::db::rows::rows_to_json(&rows))
 }
 
@@ -470,6 +503,67 @@ pub fn java_text(value: Option<&Value>) -> String {
     }
 }
 
+/// Java: GlobalExceptionHandler.handleMethodArgumentTypeMismatchException 的固定文案。
+/// `%s` 依次是参数名、`getRequiredType().getName()`（数组是 `[Ljava.lang.Long;`）、原始输入值。
+pub fn type_mismatch(name: &str, required: &str, raw: &str) -> AppError {
+    AppError::BadRequest(format!(
+        "请求参数类型不匹配，参数[{name}]要求类型为：'{required}'，但输入值为：'{raw}'"
+    ))
+}
+
+/// Spring: `StringUtils.trimAllWhitespace` —— 去掉**所有**空白（含中间的），不是首尾 trim。
+fn strip_all_whitespace(raw: &str) -> String {
+    raw.chars().filter(|ch| !ch.is_whitespace()).collect()
+}
+
+/// Java: `@PathVariable Long x`（Spring 的 StringToNumber + Long.valueOf）。
+/// 路径变量不会是空串，所以不处理 `source.isEmpty() -> null` 那一支。
+pub fn path_long(name: &str, raw: &str) -> Result<i64, AppError> {
+    strip_all_whitespace(raw)
+        .parse::<i64>()
+        .map_err(|_| type_mismatch(name, "java.lang.Long", raw))
+}
+
+/// Java: `@PathVariable Integer x` / `int x`。
+pub fn path_int(name: &str, raw: &str) -> Result<i32, AppError> {
+    strip_all_whitespace(raw)
+        .parse::<i32>()
+        .map_err(|_| type_mismatch(name, "java.lang.Integer", raw))
+}
+
+/// Java: `@PathVariable Long[] ids` —— 逗号分隔，空段被丢弃；
+/// 任一段转不动就整体失败，报错里的值是**整段路径变量原文**（不是出错的那一段）。
+pub fn path_long_list(name: &str, raw: &str) -> Result<Vec<i64>, AppError> {
+    let mut out = Vec::new();
+    for token in raw.split(',') {
+        let text = strip_all_whitespace(token);
+        if text.is_empty() {
+            continue;
+        }
+        out.push(
+            text.parse::<i64>()
+                .map_err(|_| type_mismatch(name, "[Ljava.lang.Long;", raw))?,
+        );
+    }
+    Ok(out)
+}
+
+/// Java: `@PathVariable Integer[] ids`。
+pub fn path_int_list(name: &str, raw: &str) -> Result<Vec<i32>, AppError> {
+    let mut out = Vec::new();
+    for token in raw.split(',') {
+        let text = strip_all_whitespace(token);
+        if text.is_empty() {
+            continue;
+        }
+        out.push(
+            text.parse::<i32>()
+                .map_err(|_| type_mismatch(name, "[Ljava.lang.Integer;", raw))?,
+        );
+    }
+    Ok(out)
+}
+
 /// Java: BigDecimal 字段的值（列可能是 DECIMAL/字符串）。
 pub fn json_decimal(value: Option<&Value>) -> Option<rust_decimal::Decimal> {
     match value {
@@ -491,7 +585,12 @@ pub fn decimal_json(value: rust_decimal::Decimal) -> Value {
 /// Java: Integer/int 字段。
 pub fn java_int(value: Option<&Value>) -> i64 {
     match value {
-        Some(Value::Number(number)) => number.as_i64().unwrap_or(0),
+        Some(Value::Number(number)) => number
+            .as_i64()
+            // DECIMAL 列经 rows.rs 变成 JSON 浮点（`1119.0`），`as_i64()` 会 None；
+            // Java 的 BigDecimal.intValue() 是向零截断，这里同样截断而不是当 0。
+            .or_else(|| number.as_f64().map(|float| float as i64))
+            .unwrap_or(0),
         Some(Value::String(text)) => text
             .trim()
             .parse::<f64>()
@@ -519,13 +618,17 @@ pub fn project_entity_row(row: Value, keys: &[&str]) -> Value {
 
 /// Java 实体里的集合字段：null 时 Jackson 输出 null，空集合输出 []。
 pub fn shape_rows(rows: Vec<Value>, keys: &[&str]) -> Vec<Value> {
-    rows.into_iter().map(|row| shape_entity_row(row, keys)).collect()
+    rows.into_iter()
+        .map(|row| shape_entity_row(row, keys))
+        .collect()
 }
 
 /// 纯键序重排：只按 `keys` 调整已有键的先后，不补 null、不删键。
 /// 用于「值一致、只有 Jackson 顺序不同」的端点（BaseEntity 字段在前 + 声明顺序 + 派生 getter）。
 pub fn reorder_keys(row: Value, keys: &[&str]) -> Value {
-    let Value::Object(mut source) = row else { return row };
+    let Value::Object(mut source) = row else {
+        return row;
+    };
     let mut out = serde_json::Map::with_capacity(source.len());
     for key in keys {
         if let Some((name, value)) = source.remove_entry(*key) {
@@ -537,7 +640,33 @@ pub fn reorder_keys(row: Value, keys: &[&str]) -> Value {
 }
 
 pub fn reorder_rows(rows: Vec<Value>, keys: &[&str]) -> Vec<Value> {
-    rows.into_iter().map(|row| reorder_keys(row, keys)).collect()
+    rows.into_iter()
+        .map(|row| reorder_keys(row, keys))
+        .collect()
+}
+
+/// Java: Forest 把上游 JSON 反序列化成实体、再由 Jackson 序列化出去 ——
+/// 实体字段**全部**出现（上游没给的补 null），上游多给的字段被丢弃
+/// （Jackson `FAIL_ON_UNKNOWN_PROPERTIES=false`）。远端透传类端点要用它，
+/// 光 `reorder_keys` 只会少键。
+pub fn entity_shape(value: Value, keys: &[&str]) -> Value {
+    let Value::Object(mut source) = value else {
+        return value;
+    };
+    let mut out = serde_json::Map::with_capacity(keys.len());
+    for key in keys {
+        out.insert(
+            (*key).to_string(),
+            source.remove(*key).unwrap_or(Value::Null),
+        );
+    }
+    Value::Object(out)
+}
+
+pub fn entity_shapes(rows: Vec<Value>, keys: &[&str]) -> Vec<Value> {
+    rows.into_iter()
+        .map(|row| entity_shape(row, keys))
+        .collect()
 }
 
 /// 按字段名覆盖行值格式（key 为 JSON 驼峰名）。
@@ -546,9 +675,13 @@ pub fn apply_formats(rows: &mut [Value], formats: &[(&str, FieldFormat)]) {
         return;
     }
     for row in rows.iter_mut() {
-        let Some(object) = row.as_object_mut() else { continue };
+        let Some(object) = row.as_object_mut() else {
+            continue;
+        };
         for (key, format) in formats {
-            let Some(value) = object.get_mut(*key) else { continue };
+            let Some(value) = object.get_mut(*key) else {
+                continue;
+            };
             if value.is_null() {
                 continue;
             }
@@ -621,7 +754,9 @@ fn parse_naive(text: &str) -> Option<chrono::NaiveDateTime> {
     if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(trimmed) {
         return Some(dt.naive_local());
     }
-    if let Ok(date) = chrono::NaiveDate::parse_from_str(trimmed.get(..10).unwrap_or(trimmed), "%Y-%m-%d") {
+    if let Ok(date) =
+        chrono::NaiveDate::parse_from_str(trimmed.get(..10).unwrap_or(trimmed), "%Y-%m-%d")
+    {
         return date.and_hms_opt(0, 0, 0);
     }
     None
@@ -676,10 +811,7 @@ pub async fn query_by_id(
         "select {} {} where {} = ?",
         spec.select, spec.from, spec.id_column
     );
-    let row = sqlx::query(&sql)
-        .bind(id)
-        .fetch_optional(pool)
-        .await?;
+    let row = sqlx::query(&sql).bind(id).fetch_optional(pool).await?;
     Ok(row.map(|row| crate::db::rows::row_to_json(&row)))
 }
 
@@ -694,7 +826,15 @@ pub struct AutoFill<'a> {
     pub user_id: Option<i64>,
     pub dept_id: Option<i64>,
     pub tenant_id: Option<i64>,
+    /// Java: `@TableId(type)` —— `ASSIGN_UUID` 生成主键；`INPUT` 不生成，
+    /// 但 MP 仍把 `id` 放进 INSERT 列清单，于是 MySQL 报 `Column 'id' cannot be null`。
+    pub generate_id: bool,
 }
+
+/// Java: 主键为 `IdType.INPUT`（实体继承 `BasePlusEntityInput`）且 service 里没有显式
+/// setUUID 的表。`car_info` 也继承该类，但 `CarInfoServiceImpl.saveCarInfo` 里
+/// `carInfo.setId(StringUtils.getUUID())`，所以不在此列。
+const ID_INPUT_TABLES: &[&str] = &["car_suspicious_back"];
 
 impl AutoFill<'_> {
     pub const NONE: AutoFill<'static> = AutoFill {
@@ -703,6 +843,7 @@ impl AutoFill<'_> {
         user_id: None,
         dept_id: None,
         tenant_id: None,
+        generate_id: true,
     };
 }
 
@@ -715,8 +856,99 @@ impl<'a> AutoFill<'a> {
             user_id: user.user.user_id,
             dept_id: user.user.dept_id,
             tenant_id: user.user.tenant_id,
+            generate_id: true,
         }
     }
+
+    /// 关闭主键生成，等价实体的 `@TableId(type = IdType.INPUT)`。
+    pub fn with_input_id(mut self) -> Self {
+        self.generate_id = false;
+        self
+    }
+}
+
+/// 表名 -> 列名集合（`information_schema`，进程内缓存）。
+static COLUMN_CACHE: std::sync::LazyLock<
+    std::sync::Mutex<HashMap<String, std::sync::Arc<std::collections::HashSet<String>>>>,
+> = std::sync::LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
+
+/// 查一张表的真实列名（小写），带缓存。
+pub async fn table_columns(
+    pool: &MySqlPool,
+    table: &str,
+) -> Result<std::sync::Arc<std::collections::HashSet<String>>, AppError> {
+    checked_table(table)?;
+    if let Some(found) = COLUMN_CACHE
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .get(table)
+    {
+        return Ok(std::sync::Arc::clone(found));
+    }
+    let rows: Vec<(String,)> = sqlx::query_as(
+        "select column_name from information_schema.columns \
+         where table_schema = database() and table_name = ?",
+    )
+    .bind(table)
+    .fetch_all(pool)
+    .await?;
+    if rows.is_empty() {
+        return Err(AppError::Service(format!("表不存在: {table}")));
+    }
+    let columns = std::sync::Arc::new(
+        rows.into_iter()
+            .map(|(name,)| name.to_lowercase())
+            .collect::<std::collections::HashSet<_>>(),
+    );
+    COLUMN_CACHE
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .insert(table.to_string(), std::sync::Arc::clone(&columns));
+    Ok(columns)
+}
+
+/// Java: Jackson/FastJSON 忽略实体里没有对应列的属性（`params`、`applyTime1` 这类
+/// `exist = false` 字段每个请求体都带），SQLx 侧不过滤就会 1054 —— 前端的
+/// `add`/`edit` 请求整体打不进 Rust。
+fn filter_entity_columns(entity: &Value, columns: &std::collections::HashSet<String>) -> Value {
+    let Some(map) = entity.as_object() else {
+        return entity.clone();
+    };
+    let mut kept = serde_json::Map::new();
+    for (key, value) in map {
+        if columns.contains(&to_under_score_case(key)) {
+            kept.insert(key.clone(), value.clone());
+        }
+    }
+    Value::Object(kept)
+}
+
+/// 自己拼 SQL（同一事务里还要写关联表）的端点用这个：先丢掉非列字段再拼。
+pub async fn entity_for_table(
+    pool: &MySqlPool,
+    table: &str,
+    entity: &Value,
+) -> Result<Value, AppError> {
+    let known = table_columns(pool, table).await?;
+    Ok(filter_entity_columns(entity, &known))
+}
+
+/// Java: FastJson2 `WriteClassName` 写缓存的形状 —— `@type` 在最前、字段名**字典序**、
+/// null 不写。只有按这个形状写，Java 侧才会把缓存反序列化成实体；
+/// 否则 `redisCache.getCacheObject` 拿到的是原始 JSONObject，会把 `@type`/`params`
+/// 一路透传进 HTTP 响应（`sys_dict:*` 就踩过这条）。
+pub fn fastjson_rows(rows: Vec<Value>) -> Vec<Value> {
+    rows.into_iter()
+        .filter_map(|row| row.as_object().cloned())
+        .map(|object| {
+            let mut kept: Vec<(String, Value)> = object
+                .into_iter()
+                .filter(|(_, value)| !value.is_null())
+                .collect();
+            kept.sort_by(|left, right| left.0.cmp(&right.0));
+            Value::Object(kept.into_iter().collect())
+        })
+        .collect()
 }
 
 /// Java: `mapper.insert(entity)` —— 只写入非 null 字段。
@@ -728,27 +960,49 @@ pub async fn insert_entity(
 ) -> Result<u64, AppError> {
     let mut columns = Vec::new();
     let mut values = Vec::new();
-    collect_columns(entity, None, &mut columns, &mut values)?;
+    let known = table_columns(pool, table).await?;
+    collect_columns(
+        &filter_entity_columns(entity, &known),
+        None,
+        &mut columns,
+        &mut values,
+    )?;
 
     if fill.enabled {
-        // Java: @TableId(type = IdType.ASSIGN_UUID) —— 主键缺失时生成本地 UUID。
-        push_if_absent(
-            &mut columns,
-            &mut values,
-            "id",
-            Some(Value::String(uuid::Uuid::new_v4().simple().to_string())),
-        );
+        // Java: @TableId(type = IdType.ASSIGN_UUID) —— 主键缺失时生成本地 UUID；
+        // IdType.INPUT 不生成，但 MP 仍把 id 放进列清单（值 NULL），由 MySQL 拒绝。
+        let id_value = if fill.generate_id {
+            Value::String(uuid::Uuid::new_v4().simple().to_string())
+        } else {
+            Value::Null
+        };
+        push_if_absent(&mut columns, &mut values, "id", Some(id_value));
         push_if_absent(
             &mut columns,
             &mut values,
             "create_time",
             Some(Value::String(now_string())),
         );
-        push_if_absent(&mut columns, &mut values, "create_by", fill.user_id.map(Value::from));
-        push_if_absent(&mut columns, &mut values, "eps_id", fill.dept_id.map(Value::from));
+        push_if_absent(
+            &mut columns,
+            &mut values,
+            "create_by",
+            fill.user_id.map(Value::from),
+        );
+        push_if_absent(
+            &mut columns,
+            &mut values,
+            "eps_id",
+            fill.dept_id.map(Value::from),
+        );
         // Java 的 tenantId 判空写成了 `epsId == null`（局部变量，填充前取值），
         // 效果与“tenantId 为空则填充”一致。
-        push_if_absent(&mut columns, &mut values, "tenant_id", fill.tenant_id.map(Value::from));
+        push_if_absent(
+            &mut columns,
+            &mut values,
+            "tenant_id",
+            fill.tenant_id.map(Value::from),
+        );
     }
 
     if columns.is_empty() {
@@ -789,7 +1043,14 @@ pub async fn save_or_update(
     audit: bool,
     generate_uuid: bool,
 ) -> Result<AjaxResult, AppError> {
-    let fill = if audit { AutoFill::from_user(user) } else { AutoFill::NONE };
+    // Java: `@TableId(type = IdType.INPUT)` 的实体不生成主键，见 ID_INPUT_TABLES。
+    let generate_uuid = generate_uuid && !ID_INPUT_TABLES.contains(&table);
+    let mut fill = if audit {
+        AutoFill::from_user(user)
+    } else {
+        AutoFill::NONE
+    };
+    fill.generate_id = generate_uuid;
     let pk_json = to_camel(pk_column);
     let current = body.get(&pk_json).cloned().unwrap_or(Value::Null);
     let blank = match &current {
@@ -834,10 +1095,21 @@ pub async fn update_entity_by_id(
 
     let mut columns = Vec::new();
     let mut values = Vec::new();
-    collect_columns(entity, Some(id_column), &mut columns, &mut values)?;
+    let known = table_columns(pool, table).await?;
+    collect_columns(
+        &filter_entity_columns(entity, &known),
+        Some(id_column),
+        &mut columns,
+        &mut values,
+    )?;
 
     if fill.enabled {
-        upsert_column(&mut columns, &mut values, "update_by", fill.user_id.map(Value::from));
+        upsert_column(
+            &mut columns,
+            &mut values,
+            "update_by",
+            fill.user_id.map(Value::from),
+        );
         upsert_column(
             &mut columns,
             &mut values,
@@ -980,23 +1252,29 @@ fn upsert_column(
 }
 
 pub fn now_string() -> String {
-    chrono::Local::now().naive_local().format("%Y-%m-%d %H:%M:%S").to_string()
+    chrono::Local::now()
+        .naive_local()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string()
 }
 
 /// 单值查询（i64）。
-pub async fn scalar_i64(
-    pool: &MySqlPool,
-    sql: &str,
-    value: &str,
-) -> Result<Option<i64>, AppError> {
-    Ok(sqlx::query_scalar(sql).bind(value).fetch_optional(pool).await?)
+pub async fn scalar_i64(pool: &MySqlPool, sql: &str, value: &str) -> Result<Option<i64>, AppError> {
+    Ok(sqlx::query_scalar(sql)
+        .bind(value)
+        .fetch_optional(pool)
+        .await?)
 }
 
 /// Java: `ISysConfigService.selectConfigByKey` —— 读 sys_config（不走缓存）。
 pub async fn config_value(pool: &MySqlPool, key: &str) -> Result<String, AppError> {
-    Ok(scalar_string(pool, "select config_value from sys_config where config_key = ?", key)
-        .await?
-        .unwrap_or_default())
+    Ok(scalar_string(
+        pool,
+        "select config_value from sys_config where config_key = ?",
+        key,
+    )
+    .await?
+    .unwrap_or_default())
 }
 
 /// 单值查询（String）。
@@ -1005,7 +1283,10 @@ pub async fn scalar_string(
     sql: &str,
     value: &str,
 ) -> Result<Option<String>, AppError> {
-    Ok(sqlx::query_scalar(sql).bind(value).fetch_optional(pool).await?)
+    Ok(sqlx::query_scalar(sql)
+        .bind(value)
+        .fetch_optional(pool)
+        .await?)
 }
 
 /// camelCase JSON 字段 -> 下划线列名（MyBatis-Plus 列映射）。
@@ -1063,4 +1344,93 @@ fn bind_json(builder: &mut QueryBuilder<MySql>, value: &Value) -> Result<(), App
         other => builder.push_bind(other.to_string()),
     };
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn columns() -> std::collections::HashSet<String> {
+        ["car_no", "car_type", "remark"]
+            .into_iter()
+            .map(str::to_string)
+            .collect()
+    }
+
+    /// Java: Jackson/FastJSON 丢掉非列属性，但 `exist=false` 字段在响应里仍是显式 null。
+    #[test]
+    fn non_column_keys_are_dropped_before_sql() {
+        let body = json!({"carNo": "A", "params": {"beginTime": "x"}, "applyTime1": "y",
+                          "unknownZz": 1, "carType": null});
+        let kept = filter_entity_columns(&body, &columns());
+        assert_eq!(
+            kept.as_object().unwrap().keys().collect::<Vec<_>>(),
+            vec!["carNo", "carType"],
+            "camelCase 键要按同一规则换算成列名再判定"
+        );
+    }
+
+    #[test]
+    fn entity_shape_fills_missing_keys_and_drops_extras() {
+        // 上游只给两个字段（桩上游就是这么不完整），实体键全部出现。
+        let shaped = entity_shape(
+            json!({"bigId": "1", "upstreamOnly": true}),
+            &["bigId", "axlecount", "vehicleplate"],
+        );
+        assert_eq!(
+            shaped,
+            json!({"bigId": "1", "axlecount": null, "vehicleplate": null})
+        );
+        // 非对象（null/数组）原样返回：Java 的 data 也就跟着是 null。
+        assert_eq!(entity_shape(Value::Null, &["bigId"]), Value::Null);
+    }
+
+    /// Java: FastJson2 写缓存是 `@type` 最前 + 字段名字典序 + null 不写；
+    /// 形状不对时 Java 会把缓存当 JSONObject 原样透传（docs/03 §9.1）。
+    #[test]
+    fn cache_rows_match_fastjson2_write_shape() {
+        let shaped = fastjson_rows(vec![json!({
+            "carNo": "A",
+            "updateBy": null,
+            "createTime": "2026-11-04 09:02:17",
+            "epsId": 25367,
+        })]);
+        assert_eq!(
+            shaped[0].as_object().unwrap().keys().collect::<Vec<_>>(),
+            vec!["carNo", "createTime", "epsId"],
+            "字典序且不写 null"
+        );
+        let stamped =
+            crate::db::redis_cache::stamp_types(shaped, "com.ruoyi.manager.domain.CarInfo");
+        assert_eq!(
+            stamped[0].as_object().unwrap().keys().next().unwrap(),
+            "@type",
+            "@type 必须在最前"
+        );
+    }
+
+    /// Java: `IdType.INPUT` 的表不生成主键（见 ID_INPUT_TABLES）。
+    #[test]
+    fn id_input_tables_are_the_java_input_pk_entities() {
+        assert!(ID_INPUT_TABLES.contains(&"car_suspicious_back"));
+        assert!(
+            !ID_INPUT_TABLES.contains(&"car_info"),
+            "CarInfoServiceImpl.saveCarInfo 里显式 setUUID，不算 INPUT"
+        );
+    }
+
+    /// Java: `BigDecimal.intValue()` 是向零截断；DECIMAL 列在 JSON 里是 `1119.0`，
+    /// 早先 `as_i64()` 拿不到就返回 0，把 `geometry` 桩号区间比较全部判成不命中
+    /// （`/manager/suspicious/{id}` 的 raodTrailList 因此为空）。
+    #[test]
+    fn java_int_truncates_like_bigdecimal() {
+        assert_eq!(java_int(Some(&json!(1119))), 1119);
+        assert_eq!(java_int(Some(&json!(1119.0))), 1119);
+        assert_eq!(java_int(Some(&json!(1119.9))), 1119);
+        assert_eq!(java_int(Some(&json!(-1119.9))), -1119);
+        assert_eq!(java_int(Some(&json!("1121.0000"))), 1121);
+        assert_eq!(java_int(Some(&json!(""))), 0);
+        assert_eq!(java_int(None), 0);
+    }
 }

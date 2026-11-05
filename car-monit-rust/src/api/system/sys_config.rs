@@ -69,7 +69,12 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/system/config/list",
-            meta::get_route("/system/config/list", Some("system:config:list"), None, list),
+            meta::get_route(
+                "/system/config/list",
+                Some("system:config:list"),
+                None,
+                list,
+            ),
         )
         .route(
             "/system/config/export",
@@ -168,9 +173,14 @@ async fn export(
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &SPEC).await?;
-    let headers =
-        ["参数主键", "参数名称", "参数键名", "参数键值", "系统内置"].map(str::to_string);
-    let fields = ["configId", "configName", "configKey", "configValue", "configType"];
+    let headers = ["参数主键", "参数名称", "参数键名", "参数键值", "系统内置"].map(str::to_string);
+    let fields = [
+        "configId",
+        "configName",
+        "configKey",
+        "configValue",
+        "configType",
+    ];
     let data = rows
         .iter()
         .map(|row| {
@@ -193,6 +203,8 @@ async fn get_info(
     State(state): State<AppState>,
     Path(config_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long configId` —— 非数字在进控制器前就被 Spring 拦下。
+    let config_id = support::path_long("configId", &config_id)?.to_string();
     Ok(AjaxResult::success_data(
         support::query_by_id(&state.db, &SPEC, &config_id)
             .await?
@@ -229,8 +241,15 @@ async fn get_config_key(
     }
 }
 
-async fn unique_error(state: &AppState, body: &Value, verb: &str) -> Result<Option<AjaxResult>, AppError> {
-    let key = body.get("configKey").and_then(Value::as_str).unwrap_or_default();
+async fn unique_error(
+    state: &AppState,
+    body: &Value,
+    verb: &str,
+) -> Result<Option<AjaxResult>, AppError> {
+    let key = body
+        .get("configKey")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
     if key.is_empty() {
         return Ok(None);
     }
@@ -242,7 +261,10 @@ async fn unique_error(state: &AppState, body: &Value, verb: &str) -> Result<Opti
     let current = body.get("configId").and_then(Value::as_i64).unwrap_or(-1);
     if let Some(found) = found {
         if found != current {
-            let name = body.get("configName").and_then(Value::as_str).unwrap_or_default();
+            let name = body
+                .get("configName")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
             return Ok(Some(AjaxResult::error(format!(
                 "{verb}参数'{name}'失败，参数键名已存在"
             ))));
@@ -257,7 +279,10 @@ async fn save(
     body: Value,
     is_add: bool,
 ) -> Result<AjaxResult, AppError> {
-    for (key, message) in [("configName", "参数名称不能为空"), ("configKey", "参数键名不能为空")] {
+    for (key, message) in [
+        ("configName", "参数名称不能为空"),
+        ("configKey", "参数键名不能为空"),
+    ] {
         let value = body.get(key).and_then(Value::as_str).unwrap_or_default();
         if value.trim().is_empty() {
             return Ok(AjaxResult::error(message));
@@ -295,8 +320,14 @@ async fn save(
             Value::String(user.user.user_name.clone().unwrap_or_default()),
         );
         object.insert("updateTime".to_string(), json!(support::now_string()));
-        support::update_entity_by_id(&state.db, "sys_config", "config_id", &entity, AutoFill::NONE)
-            .await?
+        support::update_entity_by_id(
+            &state.db,
+            "sys_config",
+            "config_id",
+            &entity,
+            AutoFill::NONE,
+        )
+        .await?
     };
 
     if rows > 0 && !config_key.is_empty() {
@@ -328,7 +359,11 @@ async fn remove(
     State(state): State<AppState>,
     Path(config_ids): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let ids = support::ids_param(&config_ids);
+    // Java: `@PathVariable Long[] configIds` —— 任一段转不成 Long 就整体失败，文案带整段原文。
+    let ids = support::path_long_list("configIds", &config_ids)?
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
     for id in &ids {
         let config_type: Option<String> =
             sqlx::query_scalar("select config_type from sys_config where config_id = ?")

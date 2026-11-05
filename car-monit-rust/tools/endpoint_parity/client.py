@@ -6,6 +6,8 @@
 
     PARITY_USER / PARITY_PASSWORD      两端登录账号（必需，无默认值）
     PARITY_REDIS_HOST / PARITY_REDIS_PORT   默认 127.0.0.1:6379
+    PARITY_REDIS_DB_JAVA / PARITY_REDIS_DB_RUST   两端各自的 Redis db 序号
+        （两端不共用 db，验证码与缓存都按各自的 db 取；默认都是 0）
 """
 from __future__ import annotations
 
@@ -18,17 +20,38 @@ import urllib.request
 
 REDIS_HOST = os.environ.get("PARITY_REDIS_HOST", "127.0.0.1")
 REDIS_PORT = int(os.environ.get("PARITY_REDIS_PORT", "6379"))
+REDIS_DB = int(os.environ.get("PARITY_REDIS_DB", "0"))
+# backend-Java(9988)+api-Java(9902) 共用 db0；backend-Rust(9990)+api-Rust(9911) 共用 db15。
+REDIS_DB_JAVA = int(os.environ.get("PARITY_REDIS_DB_JAVA", str(REDIS_DB)))
+REDIS_DB_RUST = int(os.environ.get("PARITY_REDIS_DB_RUST", "15"))
+JAVA_BASE = os.environ.get("PARITY_JAVA_BASE", "http://127.0.0.1:9988").rstrip("/")
+RUST_BASE = os.environ.get("PARITY_RUST_BASE", "http://127.0.0.1:9990").rstrip("/")
 
 
-def redis_command(*parts):
+def redis_db_for(base: str = None) -> int:
+    """按端选 db：验证码、缓存键都只在写入那端的 db 里。"""
+    if base is None:
+        return REDIS_DB
+    trimmed = base.rstrip("/")
+    if trimmed == RUST_BASE:
+        return REDIS_DB_RUST
+    if trimmed == JAVA_BASE:
+        return REDIS_DB_JAVA
+    return REDIS_DB
+
+
+def redis_command(*parts, db: int = None):
     sock = socket.create_connection((REDIS_HOST, REDIS_PORT), timeout=5)
     try:
+        handle = sock.makefile("rb")
+        if db is not None and db != 0:
+            sock.sendall(b"*2\r\n$6\r\nSELECT\r\n$%d\r\n%d\r\n" % (len(str(db)), db))
+            handle.readline()  # +OK
         payload = b"*%d\r\n" % len(parts)
         for part in parts:
             raw = part.encode("utf-8") if isinstance(part, str) else part
             payload += b"$%d\r\n" % len(raw) + raw + b"\r\n"
         sock.sendall(payload)
-        handle = sock.makefile("rb")
         reply = handle.readline().strip()
         if reply == b"$-1":
             return None
@@ -41,8 +64,8 @@ def redis_command(*parts):
         sock.close()
 
 
-def redis_get(key: str):
-    return redis_command("GET", key)
+def redis_get(key: str, db: int = None):
+    return redis_command("GET", key, db=REDIS_DB if db is None else db)
 
 
 def _read_reply(handle):
@@ -69,16 +92,20 @@ def _read_reply(handle):
     return rest.decode("utf-8", errors="replace")
 
 
-def redis_cmd(*parts):
+def redis_cmd(*parts, db: int = None):
     """执行任意 Redis 命令（返回 RESP 解码结果；错误返回异常对象）。"""
     sock = socket.create_connection((REDIS_HOST, REDIS_PORT), timeout=10)
     try:
+        handle = sock.makefile("rb")
+        if db is not None and db != 0:
+            sock.sendall(b"*2\r\n$6\r\nSELECT\r\n$%d\r\n%d\r\n" % (len(str(db)), db))
+            _read_reply(handle)
         payload = b"*%d\r\n" % len(parts)
         for part in parts:
             raw = part.encode("utf-8") if isinstance(part, str) else part
             payload += b"$%d\r\n" % len(raw) + raw + b"\r\n"
         sock.sendall(payload)
-        return _read_reply(sock.makefile("rb"))
+        return _read_reply(handle)
     finally:
         sock.close()
 
@@ -106,12 +133,17 @@ def http(method, url, token=None, body=None, timeout=30, headers=None):
         return -1, {}, str(error).encode("utf-8")
 
 
-def login(base: str, user: str = None, password: str = None):
-    """按 Java 的登录流程取 token；验证码关闭时 code/uuid 传空。"""
+def login(base: str, user: str = None, password: str = None, redis_db: int = None):
+    """按 Java 的登录流程取 token；验证码关闭时 code/uuid 传空。
+
+    验证码写在**登录那端**的 Redis db 里（backend-Java=db0，backend-Rust=db15），
+    所以按 `redis_db_for(base)` 选库，除非调用方显式指定。
+    """
     user = user if user is not None else os.environ.get("PARITY_USER")
     password = password if password is not None else os.environ.get("PARITY_PASSWORD")
     if not user or not password:
         raise SystemExit("需要登录账号：请设置环境变量 PARITY_USER / PARITY_PASSWORD")
+    db = redis_db if redis_db is not None else redis_db_for(base)
     status, _, body = http("GET", base + "/captchaImage", timeout=10)
     try:
         info = json.loads(body)
@@ -120,7 +152,7 @@ def login(base: str, user: str = None, password: str = None):
     uuid = info.get("uuid")
     code = ""
     if info.get("captchaEnabled"):
-        raw = (redis_get("captcha_codes:%s" % uuid) or "").strip().strip('"')
+        raw = (redis_get("captcha_codes:%s" % uuid, db=db) or "").strip().strip('"')
         code = raw[:-1] if raw.endswith("L") else raw
     status, _, body = http(
         "POST", base + "/login", body={"username": user, "password": password, "code": code, "uuid": uuid}, timeout=20

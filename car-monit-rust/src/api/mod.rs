@@ -3,6 +3,7 @@ pub mod captcha;
 pub mod captcha_image;
 pub mod health;
 pub mod meta;
+pub mod oss;
 pub mod support;
 
 pub mod base;

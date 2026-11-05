@@ -97,9 +97,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/flow/applyinfo",
-            meta::post_route("/flow/applyinfo", None, Some(&LOG_ADD), add).merge(
-                meta::put_route("/flow/applyinfo", None, Some(&LOG_EDIT), edit),
-            ),
+            meta::post_route("/flow/applyinfo", None, Some(&LOG_ADD), add).merge(meta::put_route(
+                "/flow/applyinfo",
+                None,
+                Some(&LOG_EDIT),
+                edit,
+            )),
         )
         .route(
             "/flow/applyinfo/{ids}",
@@ -173,16 +176,42 @@ async fn export(
     let params = support::query_map(&raw);
     let rows = support::query_all(&state.db, &params, &APPLY_SPEC).await?;
     let headers = [
-        "单据OID", "业务类型-字典", "流程实例ID", "标题", "内容", "消息类型(1:通知业务，2:办理业务)",
-        "处理的URL", "申请人", "当前节点OID(流程节点OID)", "批次OID", "备用字段1", "备用字段2",
-        "备用字段3", "流程状态(1起草中2审批中3审批通过4退回修改5审批拒绝)",
+        "单据OID",
+        "业务类型-字典",
+        "流程实例ID",
+        "标题",
+        "内容",
+        "消息类型(1:通知业务，2:办理业务)",
+        "处理的URL",
+        "申请人",
+        "当前节点OID(流程节点OID)",
+        "批次OID",
+        "备用字段1",
+        "备用字段2",
+        "备用字段3",
+        "流程状态(1起草中2审批中3审批通过4退回修改5审批拒绝)",
     ]
     .map(str::to_string);
     let fields = [
-        "billOid", "bussType", "flowRuid", "msgTitle", "msgContext", "msgType", "msgUrl",
-        "applyName", "currentOid", "pcOid", "backCol1", "backCol2", "backCol3", "flowStatus",
+        "billOid",
+        "bussType",
+        "flowRuid",
+        "msgTitle",
+        "msgContext",
+        "msgType",
+        "msgUrl",
+        "applyName",
+        "currentOid",
+        "pcOid",
+        "backCol1",
+        "backCol2",
+        "backCol3",
+        "flowStatus",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "我的申请数据", &headers, &data)
 }
 
@@ -194,9 +223,9 @@ async fn get_info(
     if let Some(Value::Object(object)) = row.as_mut() {
         object.insert("auitEmpName".to_string(), Value::Null);
     }
-    Ok(AjaxResult::success_data(
-        row.map(|value| support::reorder_keys(value, APPLY_INFO_KEYS)),
-    ))
+    Ok(AjaxResult::success_data(row.map(|value| {
+        support::reorder_keys(value, APPLY_INFO_KEYS)
+    })))
 }
 
 async fn add(

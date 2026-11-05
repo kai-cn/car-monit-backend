@@ -191,7 +191,10 @@ async fn query(
     page: Option<&crate::common::page::PageDomain>,
 ) -> Result<(i64, Vec<Value>), AppError> {
     let mut count_builder = build_query(params, false, true);
-    let total: i64 = count_builder.build_query_scalar().fetch_one(&state.db).await?;
+    let total: i64 = count_builder
+        .build_query_scalar()
+        .fetch_one(&state.db)
+        .await?;
 
     let mut builder = build_query(params, true, false);
     if let Some(page) = page {
@@ -214,7 +217,10 @@ async fn list_with_flag(
     let page = support::page_domain(&raw);
     let mut params = support::query_map(&raw);
     params.insert("flag".to_string(), flag.to_string());
-    params.insert("userId".to_string(), user_id.unwrap_or_default().to_string());
+    params.insert(
+        "userId".to_string(),
+        user_id.unwrap_or_default().to_string(),
+    );
     let (total, rows) = query(state, &params, Some(&page)).await?;
     Ok(TableDataInfo::new(total, rows))
 }
@@ -258,15 +264,38 @@ async fn export(
     let params = support::query_map(&raw);
     let (_, rows) = query(&state, &params, None).await?;
     let headers = [
-        "单据OID", "业务类型-字典", "流程实例ID", "标题", "内容", "消息类型(1:通知业务，2:办理业务)",
-        "处理的URL", "批次OID", "申请人", "备用字段1", "备用字段2", "备用字段3",
+        "单据OID",
+        "业务类型-字典",
+        "流程实例ID",
+        "标题",
+        "内容",
+        "消息类型(1:通知业务，2:办理业务)",
+        "处理的URL",
+        "批次OID",
+        "申请人",
+        "备用字段1",
+        "备用字段2",
+        "备用字段3",
     ]
     .map(str::to_string);
     let fields = [
-        "billOid", "bussType", "flowRuid", "msgTitle", "msgContext", "msgType", "msgUrl",
-        "pcOid", "applyName", "backCol1", "backCol2", "backCol3",
+        "billOid",
+        "bussType",
+        "flowRuid",
+        "msgTitle",
+        "msgContext",
+        "msgType",
+        "msgUrl",
+        "pcOid",
+        "applyName",
+        "backCol1",
+        "backCol2",
+        "backCol3",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_excel(&state, "系统内部消息数据", &headers, &data)
 }
 

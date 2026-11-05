@@ -19,10 +19,71 @@ use crate::service::snapshot_flow_enhanced;
 use crate::state::AppState;
 use crate::task::remote;
 
+/// Java Jackson 的 `OdsRtSzdnSnapshotFlowAddcode` 键序（实体字段 + `exist=false` 查询字段）。
+const SNAPSHOT_FLOW_KEYS: &[&str] = &[
+    "bigId",
+    "datasource",
+    "cameratype",
+    "deviceid",
+    "gantrycode",
+    "gantryname",
+    "roadcode",
+    "roadname",
+    "sectioncode",
+    "sectionname",
+    "tollcode",
+    "tollname",
+    "orgcode",
+    "orgname",
+    "direction",
+    "hexcode",
+    "pileno",
+    "lon",
+    "lat",
+    "deviceip",
+    "siteid",
+    "laneid",
+    "snapshottimeunix",
+    "snapshottime",
+    "receivedtimeunix",
+    "receivedtime",
+    "platenumber",
+    "platecolor",
+    "platecolorcode",
+    "platetype",
+    "platetypecode",
+    "plateconfidence",
+    "carbrand",
+    "carcolor",
+    "carcolorcode",
+    "cartype",
+    "cartypecode",
+    "cardirection",
+    "snappicturepath",
+    "loadtime",
+    "gradelevel",
+    "datauuid",
+    "reserve3",
+    "id",
+    "snapshottimeStr",
+    "applyTime1",
+    "applyTime2",
+    "pageNum",
+    "pageSize",
+    "directionStr",
+    "sectionCodeStr",
+    "type",
+    "code",
+];
+
 /// `list` / `export` 共用的三步预处理（缺省分页 + 路段串归一）。
 fn normalize(params: &mut HashMap<String, String>) {
-    params.entry("pageNum".to_string()).or_insert_with(|| "1".to_string());
-    params.entry("pageSize".to_string()).or_insert_with(|| "10".to_string());
+    params
+        .entry("pageNum".to_string())
+        .or_insert_with(|| "1".to_string());
+    params
+        .entry("pageSize".to_string())
+        .or_insert_with(|| "10".to_string());
 
     // Java: deleteEnd(sectionCodeStr).indexOf("all") > -1 -> sectionCodeStr = ""
     let section_code = params
@@ -80,8 +141,12 @@ async fn export(
     // 这里按最佳实践跳过，导出仍可完成。
     let direction_map = support::dict_map(&state.db, "direction").await?;
     for row in &mut rows {
-        let Some(object) = row.as_object_mut() else { continue };
-        let Some(direction) = object.get("direction") else { continue };
+        let Some(object) = row.as_object_mut() else {
+            continue;
+        };
+        let Some(direction) = object.get("direction") else {
+            continue;
+        };
         let key = match direction {
             Value::String(text) => text.clone(),
             other => other.to_string(),
@@ -90,9 +155,17 @@ async fn export(
         object.insert("directionStr".to_string(), Value::String(label));
     }
 
-    let headers =
-        ["路线名称", "路段名称", "车牌颜色", "车牌号", "车辆类型", "门架", "方向", "抓拍时间"]
-            .map(str::to_string);
+    let headers = [
+        "路线名称",
+        "路段名称",
+        "车牌颜色",
+        "车牌号",
+        "车辆类型",
+        "门架",
+        "方向",
+        "抓拍时间",
+    ]
+    .map(str::to_string);
     let fields = [
         "roadname",
         "sectionname",
@@ -103,7 +176,10 @@ async fn export(
         "directionStr",
         "snapshottimeStr",
     ];
-    let data = rows.iter().map(|row| support::pick_fields(row, &fields)).collect::<Vec<_>>();
+    let data = rows
+        .iter()
+        .map(|row| support::pick_fields(row, &fields))
+        .collect::<Vec<_>>();
     support::export_download("门架抓拍流水数据", &headers, &data)
 }
 
@@ -111,9 +187,16 @@ async fn get_info(
     State(state): State<AppState>,
     Path(big_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    Ok(AjaxResult::success_data(
-        remote::select_snapshot_flow_by_id(&state, &big_id).await?,
-    ))
+    let row = remote::select_snapshot_flow_by_id(&state, &big_id).await?;
+    // Java: 本地分表与远端 Forest 两条来源最后都经实体输出 ——
+    // `exist = false` 的查询/派生字段恒出现（值为 null），上游多给的字段被丢掉。
+    let shaped = row.map(|row| {
+        support::entity_shape(
+            serde_json::to_value(row).unwrap_or(Value::Null),
+            SNAPSHOT_FLOW_KEYS,
+        )
+    });
+    Ok(AjaxResult::success_data(shaped))
 }
 
 async fn earliest_time(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
@@ -127,7 +210,8 @@ async fn earliest_time(State(state): State<AppState>) -> Result<AjaxResult, AppE
                 .unwrap_or_default();
             Ok(AjaxResult::success_data(millis))
         }
-        None => Ok(AjaxResult::success_data("暂无数据")),
+        // Java: `AjaxResult.success("暂无数据")` —— String 参数走的是 msg 重载，没有 data 键。
+        None => Ok(AjaxResult::success_msg("暂无数据")),
     }
 }
 
@@ -153,7 +237,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/base/snapshotflow/earliest-time",
-            meta::get_route("/base/snapshotflow/earliest-time", None, None, earliest_time),
+            meta::get_route(
+                "/base/snapshotflow/earliest-time",
+                None,
+                None,
+                earliest_time,
+            ),
         )
         .route(
             "/base/snapshotflow/{bigId}",

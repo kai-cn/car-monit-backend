@@ -200,6 +200,8 @@ async fn role_menu_treeselect(
     Extension(user): Extension<LoginUser>,
     Path(role_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long roleId`。
+    let role_id = support::path_long("roleId", &role_id)?.to_string();
     let user_id = user.user.user_id.unwrap_or_default();
     let menus = select_menu_list(&state, &HashMap::new(), user_id).await?;
     let checked = select_menu_ids_by_role(&state, &role_id).await?;
@@ -210,16 +212,12 @@ async fn role_menu_treeselect(
 }
 
 /// Java: selectMenuListByRoleId(roleId) —— 依赖角色的 menuCheckStrictly。
-async fn select_menu_ids_by_role(
-    state: &AppState,
-    role_id: &str,
-) -> Result<Vec<i64>, AppError> {
-    let strict: Option<bool> = sqlx::query_scalar(
-        "select menu_check_strictly from sys_role where role_id = ?",
-    )
-    .bind(role_id)
-    .fetch_optional(&state.db)
-    .await?;
+async fn select_menu_ids_by_role(state: &AppState, role_id: &str) -> Result<Vec<i64>, AppError> {
+    let strict: Option<bool> =
+        sqlx::query_scalar("select menu_check_strictly from sys_role where role_id = ?")
+            .bind(role_id)
+            .fetch_optional(&state.db)
+            .await?;
     let mut sql = String::from(
         "select m.menu_id from sys_menu m left join sys_role_menu rm on m.menu_id = rm.menu_id \
          where rm.role_id = ?",
@@ -246,7 +244,10 @@ fn tree_select(menus: &[Value], parent_id: i64) -> Vec<Value> {
         if current_parent != parent_id {
             continue;
         }
-        let id = menu.get("menuId").and_then(Value::as_i64).unwrap_or_default();
+        let id = menu
+            .get("menuId")
+            .and_then(Value::as_i64)
+            .unwrap_or_default();
         let mut node = json!({
             "id": id,
             "label": menu.get("menuName").cloned().unwrap_or(Value::Null),
@@ -264,10 +265,14 @@ async fn get_info(
     State(state): State<AppState>,
     Path(menu_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let row = sqlx::query(&format!("select {MENU_COLUMNS} from sys_menu m where m.menu_id = ?"))
-        .bind(&menu_id)
-        .fetch_optional(&state.db)
-        .await?;
+    // Java: `@PathVariable Long menuId`。
+    let menu_id = support::path_long("menuId", &menu_id)?.to_string();
+    let row = sqlx::query(&format!(
+        "select {MENU_COLUMNS} from sys_menu m where m.menu_id = ?"
+    ))
+    .bind(&menu_id)
+    .fetch_optional(&state.db)
+    .await?;
     Ok(AjaxResult::success_data(row.map(|row| {
         let mut rows = vec![crate::db::rows::row_to_json(&row)];
         shape_menu_rows(&mut rows);
@@ -276,7 +281,11 @@ async fn get_info(
 }
 
 fn text(body: &Value, key: &str) -> String {
-    body.get(key).and_then(Value::as_str).unwrap_or_default().trim().to_string()
+    body.get(key)
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim()
+        .to_string()
 }
 
 async fn validate_and_save(
@@ -367,6 +376,8 @@ async fn remove(
     State(state): State<AppState>,
     Path(menu_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
+    // Java: `@PathVariable Long menuId`（删除也是它）。
+    let menu_id = support::path_long("menuId", &menu_id)?.to_string();
     let children: i64 = sqlx::query_scalar("select count(1) from sys_menu where parent_id = ?")
         .bind(&menu_id)
         .fetch_one(&state.db)
@@ -374,11 +385,10 @@ async fn remove(
     if children > 0 {
         return Ok(AjaxResult::error("存在子菜单,不允许删除"));
     }
-    let assigned: i64 =
-        sqlx::query_scalar("select count(1) from sys_role_menu where menu_id = ?")
-            .bind(&menu_id)
-            .fetch_one(&state.db)
-            .await?;
+    let assigned: i64 = sqlx::query_scalar("select count(1) from sys_role_menu where menu_id = ?")
+        .bind(&menu_id)
+        .fetch_one(&state.db)
+        .await?;
     if assigned > 0 {
         return Ok(AjaxResult::error("菜单已分配,不允许删除"));
     }

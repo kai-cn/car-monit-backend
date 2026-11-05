@@ -146,7 +146,12 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/manager/carinfo/list",
-            meta::get_route("/manager/carinfo/list", Some("manager:carinfo:list"), None, list),
+            meta::get_route(
+                "/manager/carinfo/list",
+                Some("manager:carinfo:list"),
+                None,
+                list,
+            ),
         )
         .route(
             "/manager/carinfo/listAll",
@@ -163,12 +168,7 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/manager/carinfo/import",
-            meta::post_route(
-                "/manager/carinfo/import",
-                None,
-                Some(&LOG_IMPORT),
-                import,
-            ),
+            meta::post_route("/manager/carinfo/import", None, Some(&LOG_IMPORT), import),
         )
         .route(
             "/manager/carinfo/{ids}",
@@ -176,14 +176,12 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/manager/carinfo",
-            meta::post_route("/manager/carinfo", None, Some(&LOG_ADD), add).merge(
-                meta::put_route(
-                    "/manager/carinfo",
-                    Some("manager:carinfo:edit"),
-                    Some(&LOG_EDIT),
-                    edit,
-                ),
-            ),
+            meta::post_route("/manager/carinfo", None, Some(&LOG_ADD), add).merge(meta::put_route(
+                "/manager/carinfo",
+                Some("manager:carinfo:edit"),
+                Some(&LOG_EDIT),
+                edit,
+            )),
         )
         .route(
             "/manager/carinfo/{ids}",
@@ -198,18 +196,78 @@ pub fn routes() -> Router<AppState> {
 
 /// Java Jackson 的 CarInfo 键序（实体声明顺序 + 派生 applyTime*/carNoQuery/createInfo/trailList/flag）。
 const CAR_INFO_KEYS: &[&str] = &[
-    "id", "epsId", "delFlag", "createBy", "createTime", "updateBy", "updateTime", "sort",
-    "tenantId", "carNo", "carType", "carVehicle", "carNum", "escapedType", "escapedTypeName",
-    "escapedAmount", "escapedNum", "returnAmount", "totalAmount", "chargeAmount", "difAmount",
-    "auitOrgId", "auitOrgName", "isWhite", "whiteRemark", "fileIds", "brand", "plateColor",
-    "plateType", "carColor", "dataSource", "dataSourceName", "lastPassTime", "lastPassPicture",
-    "lastPassType", "lastPassAddress", "lastPassLongitude", "lastPassLatitude",
-    "lastPassCardirection", "roadSectionId", "sectionCode", "roadSectionName", "nextPassTime",
-    "nextPassType", "nextPassAddress", "nextPassLongitude", "nextPassLatitude", "trackId",
-    "trackJosn", "orgId", "orgCode", "orgName", "gantryCode", "roadCode", "roadName",
-    "tollCode", "tollName", "linkName", "linkPhone", "fwqbm", "fwqmc", "backCol1", "backCol2",
-    "status", "remark", "applyTime1", "applyTime2", "carNoQuery", "createTimeStr",
-    "createInfo", "trailList", "flag",
+    "id",
+    "epsId",
+    "delFlag",
+    "createBy",
+    "createTime",
+    "updateBy",
+    "updateTime",
+    "sort",
+    "tenantId",
+    "carNo",
+    "carType",
+    "carVehicle",
+    "carNum",
+    "escapedType",
+    "escapedTypeName",
+    "escapedAmount",
+    "escapedNum",
+    "returnAmount",
+    "totalAmount",
+    "chargeAmount",
+    "difAmount",
+    "auitOrgId",
+    "auitOrgName",
+    "isWhite",
+    "whiteRemark",
+    "fileIds",
+    "brand",
+    "plateColor",
+    "plateType",
+    "carColor",
+    "dataSource",
+    "dataSourceName",
+    "lastPassTime",
+    "lastPassPicture",
+    "lastPassType",
+    "lastPassAddress",
+    "lastPassLongitude",
+    "lastPassLatitude",
+    "lastPassCardirection",
+    "roadSectionId",
+    "sectionCode",
+    "roadSectionName",
+    "nextPassTime",
+    "nextPassType",
+    "nextPassAddress",
+    "nextPassLongitude",
+    "nextPassLatitude",
+    "trackId",
+    "trackJosn",
+    "orgId",
+    "orgCode",
+    "orgName",
+    "gantryCode",
+    "roadCode",
+    "roadName",
+    "tollCode",
+    "tollName",
+    "linkName",
+    "linkPhone",
+    "fwqbm",
+    "fwqmc",
+    "backCol1",
+    "backCol2",
+    "status",
+    "remark",
+    "applyTime1",
+    "applyTime2",
+    "carNoQuery",
+    "createTimeStr",
+    "createInfo",
+    "trailList",
+    "flag",
 ];
 
 async fn list(
@@ -219,7 +277,10 @@ async fn list(
     let page = support::page_domain(&raw);
     let params = support::query_map(&raw);
     let (total, rows) = support::query_list(&state.db, &params, &SPEC, &page).await?;
-    Ok(TableDataInfo::new(total, support::reorder_rows(rows, CAR_INFO_KEYS)))
+    Ok(TableDataInfo::new(
+        total,
+        support::reorder_rows(rows, CAR_INFO_KEYS),
+    ))
 }
 
 async fn export(
@@ -235,44 +296,136 @@ async fn export(
     let run_status = support::dict_map(&state.db, "car_run_status").await?;
 
     let headers = [
-        "车牌号", "车型", "车种", "轴数", "逃费类型", "逃费类型名称", "逃费金额", "逃费次数(反改)",
-        "累计追缴金额", "应缴金额", "收费金额", "差额", "处理单位id", "处理单位", "是否在白名单",
-        "白名单原因", "图片(附件ids)", "车辆品牌", "车牌颜色", "车牌类型", "车辆颜色",
-        "数据来源(1?架抓拍2收费站抓拍)3服务区抓拍)4省界抓拍)", "来源名称", "最后通行时间",
-        "最后通行图片", "最后通行类型(1?架2收费拍)3服务区)", "最后通行地址", "最后通行经度",
-        "最后通行维度", "驾驶(1上行2下行3未知)", "管理中心路段id", "所属路段编码",
-        "管理中心路段名称", "预计下一个通行时间", "预计下一个通行类型", "预计下一个通行地址",
-        "预计下一个通行经度", "预计下一个通行维度", "行驶轨迹id", "行驶轨迹josn", "管理中心id",
-        "所属管理中心机构编码", "管理中心名称", "门架编号", "所属路线编码", "所属路线名称",
-        "所属收费站编码", "所属收费站名称", "司机名称", "联系方式", "服务区编码", "服务区名称",
-        "备用字段1", "备用字段2", "状态", "备注",
+        "车牌号",
+        "车型",
+        "车种",
+        "轴数",
+        "逃费类型",
+        "逃费类型名称",
+        "逃费金额",
+        "逃费次数(反改)",
+        "累计追缴金额",
+        "应缴金额",
+        "收费金额",
+        "差额",
+        "处理单位id",
+        "处理单位",
+        "是否在白名单",
+        "白名单原因",
+        "图片(附件ids)",
+        "车辆品牌",
+        "车牌颜色",
+        "车牌类型",
+        "车辆颜色",
+        "数据来源(1?架抓拍2收费站抓拍)3服务区抓拍)4省界抓拍)",
+        "来源名称",
+        "最后通行时间",
+        "最后通行图片",
+        "最后通行类型(1?架2收费拍)3服务区)",
+        "最后通行地址",
+        "最后通行经度",
+        "最后通行维度",
+        "驾驶(1上行2下行3未知)",
+        "管理中心路段id",
+        "所属路段编码",
+        "管理中心路段名称",
+        "预计下一个通行时间",
+        "预计下一个通行类型",
+        "预计下一个通行地址",
+        "预计下一个通行经度",
+        "预计下一个通行维度",
+        "行驶轨迹id",
+        "行驶轨迹josn",
+        "管理中心id",
+        "所属管理中心机构编码",
+        "管理中心名称",
+        "门架编号",
+        "所属路线编码",
+        "所属路线名称",
+        "所属收费站编码",
+        "所属收费站名称",
+        "司机名称",
+        "联系方式",
+        "服务区编码",
+        "服务区名称",
+        "备用字段1",
+        "备用字段2",
+        "状态",
+        "备注",
     ]
     .map(str::to_string);
     let fields = [
-        "carNo", "carType", "carVehicle", "carNum", "escapedType", "escapedTypeName",
-        "escapedAmount", "escapedNum", "returnAmount", "totalAmount", "chargeAmount",
-        "difAmount", "auitOrgId", "auitOrgName", "isWhite", "whiteRemark", "fileIds", "brand",
-        "plateColor", "plateType", "carColor", "dataSource", "dataSourceName", "lastPassTime",
-        "lastPassPicture", "lastPassType", "lastPassAddress", "lastPassLongitude",
-        "lastPassLatitude", "lastPassCardirection", "roadSectionId", "sectionCode",
-        "roadSectionName", "nextPassTime", "nextPassType", "nextPassAddress",
-        "nextPassLongitude", "nextPassLatitude", "trackId", "backCol1", "orgId", "orgCode",
-        "orgName", "gantryCode", "roadCode", "roadName", "tollCode", "tollName", "linkName",
-        "linkPhone", "fwqbm", "fwqmc", "backCol1", "backCol2", "status", "remark",
+        "carNo",
+        "carType",
+        "carVehicle",
+        "carNum",
+        "escapedType",
+        "escapedTypeName",
+        "escapedAmount",
+        "escapedNum",
+        "returnAmount",
+        "totalAmount",
+        "chargeAmount",
+        "difAmount",
+        "auitOrgId",
+        "auitOrgName",
+        "isWhite",
+        "whiteRemark",
+        "fileIds",
+        "brand",
+        "plateColor",
+        "plateType",
+        "carColor",
+        "dataSource",
+        "dataSourceName",
+        "lastPassTime",
+        "lastPassPicture",
+        "lastPassType",
+        "lastPassAddress",
+        "lastPassLongitude",
+        "lastPassLatitude",
+        "lastPassCardirection",
+        "roadSectionId",
+        "sectionCode",
+        "roadSectionName",
+        "nextPassTime",
+        "nextPassType",
+        "nextPassAddress",
+        "nextPassLongitude",
+        "nextPassLatitude",
+        "trackId",
+        "backCol1",
+        "orgId",
+        "orgCode",
+        "orgName",
+        "gantryCode",
+        "roadCode",
+        "roadName",
+        "tollCode",
+        "tollName",
+        "linkName",
+        "linkPhone",
+        "fwqbm",
+        "fwqmc",
+        "backCol1",
+        "backCol2",
+        "status",
+        "remark",
     ];
     let data = rows
         .iter()
         .map(|row| {
             let mut values = support::pick_fields(row, &fields);
             // 字典翻译与 Java 模板导出一致（null -> 空串）。
-            let translate = |values: &mut Vec<Value>, index: usize, map: &HashMap<String, String>| {
-                let key = values
-                    .get(index)
-                    .and_then(Value::as_str)
-                    .unwrap_or_default()
-                    .to_string();
-                values[index] = Value::String(map.get(&key).cloned().unwrap_or_default());
-            };
+            let translate =
+                |values: &mut Vec<Value>, index: usize, map: &HashMap<String, String>| {
+                    let key = values
+                        .get(index)
+                        .and_then(Value::as_str)
+                        .unwrap_or_default()
+                        .to_string();
+                    values[index] = Value::String(map.get(&key).cloned().unwrap_or_default());
+                };
             translate(&mut values, 1, &car_type);
             translate(&mut values, 2, &car_vehicle);
             translate(&mut values, 18, &plate_color);
@@ -313,7 +466,7 @@ async fn add(
     Extension(user): Extension<LoginUser>,
     Json(body): Json<Value>,
 ) -> Result<AjaxResult, AppError> {
-    support::save_or_update(&state, &user, &body, "car_info", "id", true, true).await
+    save_car_info(&state, &user, &body).await
 }
 
 async fn edit(
@@ -321,7 +474,103 @@ async fn edit(
     Extension(user): Extension<LoginUser>,
     Json(body): Json<Value>,
 ) -> Result<AjaxResult, AppError> {
-    support::save_or_update(&state, &user, &body, "car_info", "id", true, false).await
+    save_car_info(&state, &user, &body).await
+}
+
+/// Java: `CarInfoServiceImpl.saveCarInfo` —— add 与 edit 走同一个方法：
+/// 先把车牌 `CommonUtil.isNull`（null→""、trim），再按车牌判重（编辑时排除自己），
+/// 命中就整条不写、回「车牌号存在重复，请确定！」；写完刷 `car_list` 缓存。
+async fn save_car_info(
+    state: &AppState,
+    user: &LoginUser,
+    body: &Value,
+) -> Result<AjaxResult, AppError> {
+    let mut entity = body.clone();
+    let car_no = text_of(&entity, "carNo").trim().to_string();
+    put_text(&mut entity, "carNo", &car_no);
+    let id = text_of(&entity, "id");
+    let count: i64 = if id.is_empty() {
+        sqlx::query_as::<_, (i64,)>(
+            "select count(1) from car_info t where t.del_flag = '0' and t.car_no = ?",
+        )
+        .bind(&car_no)
+        .fetch_one(&state.db)
+        .await?
+        .0
+    } else {
+        sqlx::query_as::<_, (i64,)>(
+            "select count(1) from car_info t where t.del_flag = '0' and t.car_no = ? and t.id <> ?",
+        )
+        .bind(&car_no)
+        .bind(&id)
+        .fetch_one(&state.db)
+        .await?
+        .0
+    };
+    if count > 0 {
+        return Ok(AjaxResult::error("车牌号存在重复，请确定！"));
+    }
+    // Java: `CommonUtil.isNotBlank(id)` 决定新增还是修改 —— 全空白的 id 也算空，
+    // 走新增并由 service 重新 setUUID。
+    if id.trim().is_empty() {
+        // Java 的新增分支：显式 delFlag='0'，`escapedAmount == null` 时补 BigDecimal.ZERO，
+        // 并写 updateBy/updateTime（自动填充在 INSERT 时同样写这两个）。
+        if let Some(object) = entity.as_object_mut() {
+            object.remove("id");
+            object.insert("delFlag".to_string(), json!("0"));
+            if object
+                .get("escapedAmount")
+                .unwrap_or(&Value::Null)
+                .is_null()
+            {
+                object.insert("escapedAmount".to_string(), json!(0));
+            }
+            object.insert("updateBy".to_string(), json!(user.user.user_id));
+            object.insert("updateTime".to_string(), json!(support::now_string()));
+        }
+    }
+    let result =
+        support::save_or_update(state, user, &entity, "car_info", "id", true, true).await?;
+    update_redis_car_list(state).await?;
+    Ok(result)
+}
+
+/// Java: `updateRedisCarList` —— 整体重写两个**无 TTL 的字符串键**：
+/// `car_list`（`CarInfo` 全字段）与 `car_list_jc`（`CarVO` 只有 carId/carNo）。
+/// Java: `carInfoMapper.selectCarInfoList(new CarInfo())` —— `car_list` 缓存与
+/// 「缓存未命中时回源」用的是**同一条**查询（含 `not exists` 排除条件与 createInfo 拼接）。
+pub async fn car_info_cache_rows(state: &AppState) -> Result<Vec<Value>, AppError> {
+    let rows = support::query_all(&state.db, &HashMap::new(), &SPEC).await?;
+    Ok(support::fastjson_rows(rows))
+}
+
+/// Java: `updateRedisCarList` —— 整体重写两个**无 TTL 的字符串键**：`car_list`（`CarInfo` 全字段）
+/// 与 `car_list_jc`（`CarVO` 只有 carId/carNo）。
+async fn update_redis_car_list(state: &AppState) -> Result<(), AppError> {
+    let full = car_info_cache_rows(state).await?;
+    state
+        .redis
+        .set_object(
+            "car_list",
+            &crate::db::redis_cache::stamp_types(full.clone(), "com.ruoyi.manager.domain.CarInfo"),
+        )
+        .await?;
+    let brief: Vec<Value> = full
+        .iter()
+        .map(|row| {
+            json!({
+                "carId": row.get("id"),
+                "carNo": row.get("carNo"),
+            })
+        })
+        .collect();
+    state
+        .redis
+        .set_object(
+            "car_list_jc",
+            &crate::db::redis_cache::stamp_types(brief, "com.ruoyi.base.domain.CarVO"),
+        )
+        .await
 }
 
 async fn remove(
@@ -333,12 +582,27 @@ async fn remove(
     Ok(support::success_count(count))
 }
 
-/// Java: doImport —— 车牌颜色/车型/车种/逃费类型按字典标签->值翻译后 upsert。
+/// Java: `CarInfoController.initList()` —— 8 列的「列名 / 属性 / 校验规则」。
+const IMPORT_FIELDS: &[crate::common::import_util::ImportField] = &[
+    crate::common::import_util::field("车牌颜色", "plateColor", "1"),
+    crate::common::import_util::field("车牌号", "carNo", "1"),
+    crate::common::import_util::field("车型", "carType", "1"),
+    crate::common::import_util::field("车种", "carVehicle", ""),
+    crate::common::import_util::field("轴数", "carNum", "3"),
+    crate::common::import_util::field("逃费类型", "escapedType", "1"),
+    crate::common::import_util::field("逃费金额（元）", "escapedAmount", "2"),
+    crate::common::import_util::field("备注", "remark", ""),
+];
+
+/// Java: doImport —— 规则校验走 `ImportUtil.importExcel`，字典翻译在没有任何规则错误时才做，
+/// 再按车牌号决定新增/修改（与 `CarInfoServiceImpl.doImport` 的填充一致）。
 async fn import(
     State(state): State<AppState>,
     Extension(user): Extension<LoginUser>,
     mut multipart: Multipart,
 ) -> Result<AjaxResult, AppError> {
+    use crate::common::import_util::{apply_rules, data_rows, header_at, read_sheet};
+
     let mut file_name = String::new();
     let mut bytes = Vec::new();
     while let Some(field) = multipart
@@ -355,148 +619,81 @@ async fn import(
                 .to_vec();
         }
     }
-    if !file_name.ends_with(".xlsx") {
+    if !file_name.contains(".xlsx") {
         return Ok(AjaxResult::error("请上传Excel文件(.xlsx)"));
     }
-    let rows = crate::common::excel::read_rows(&bytes)?;
-    if rows.is_empty() {
-        return Ok(AjaxResult::error("导入失败,模板excel没有数据可以导入，请确定！"));
-    }
-    let expected = [
-        "车牌颜色", "车牌号", "车型", "车种", "轴数", "逃费类型", "逃费金额（元）", "备注",
-    ];
-    let header = rows[0].clone();
-    if header.len() < expected.len()
-        || expected
-            .iter()
-            .zip(header.iter())
-            .any(|(want, got)| got.trim() != *want)
-    {
+    let rows = read_sheet(&bytes)?;
+    let header: Vec<&'static str> = IMPORT_FIELDS.iter().map(|item| item.col_name).collect();
+    // Java: colVdaExcel07 —— 表头在第一行。
+    if !header_at(&rows, 0, &header) {
         return Ok(AjaxResult::error("导入失败,模板不正确,请下载对应的模板！"));
     }
-
-    let plate_color = label_value_map(&state, "plate_color").await?;
-    let car_type = label_value_map(&state, "car_type").await?;
-    let car_vehicle = label_value_map(&state, "car_vehicle").await?;
-    let escaped_type = label_value_map(&state, "escaped_type").await?;
+    let sheet_rows = data_rows(&rows, 1, IMPORT_FIELDS.len(), &[]);
+    if sheet_rows.is_empty() {
+        return Ok(AjaxResult::error(
+            "导入失败,模板excel没有数据可以导入，请确定！",
+        ));
+    }
 
     let mut errors: Vec<Value> = Vec::new();
-    let mut import_list: Vec<Value> = Vec::new();
-    for (index, row) in rows.iter().skip(1).enumerate() {
-        if row.iter().all(|cell| cell.trim().is_empty()) {
-            continue;
-        }
-        let cell = |position: usize| row.get(position).cloned().unwrap_or_default().trim().to_string();
-        let mut entity = serde_json::Map::new();
-        let mut row_errors: Vec<(&str, String)> = Vec::new();
-        let plate = cell(0);
-        if plate.is_empty() {
-            row_errors.push(("车牌颜色", "车牌颜色不能为空".to_string()));
-        } else if let Some(value) = plate_color.get(&plate) {
-            entity.insert("plateColor".to_string(), json!(value));
-        } else {
-            row_errors.push((
-                "车牌颜色",
-                format!("{plate} 车牌颜色不存在,请在字典菜单维护！"),
-            ));
-        }
-        let car_no = cell(1);
-        if car_no.is_empty() {
-            row_errors.push(("车牌号", "车牌号不能为空".to_string()));
-        } else {
-            entity.insert("carNo".to_string(), json!(car_no));
-        }
-        let car_type_text = cell(2);
-        if let Some(value) = car_type.get(&car_type_text) {
-            entity.insert("carType".to_string(), json!(value));
-        } else {
-            row_errors.push((
-                "车型",
-                format!("{car_type_text} 车型不存在,请在字典菜单维护！"),
-            ));
-        }
-        let car_vehicle_text = cell(3);
-        if !car_vehicle_text.is_empty() {
-            if let Some(value) = car_vehicle.get(&car_vehicle_text) {
-                entity.insert("carVehicle".to_string(), json!(value));
-            } else {
-                row_errors.push((
-                    "车种",
-                    format!("{car_vehicle_text} 车种不存在,请在字典菜单维护！"),
-                ));
-            }
-        }
-        let car_num = cell(4);
-        if let Ok(number) = car_num.parse::<i64>() {
-            entity.insert("carNum".to_string(), json!(number));
-        }
-        let escaped_text = cell(5).replace('，', ",");
-        let mut escaped_value = String::new();
-        for code in escaped_text.trim_end_matches(',').split(',') {
-            if code.is_empty() {
-                continue;
-            }
-            if let Some(value) = escaped_type.get(code) {
-                escaped_value.push_str(value);
-                escaped_value.push(',');
-            } else {
-                row_errors.push((
-                    "逃费类型",
-                    format!("{code} 逃费类型不存在,请在字典菜单维护！"),
-                ));
-            }
-        }
-        entity.insert(
-            "escapedType".to_string(),
-            json!(escaped_value.trim_end_matches(',')),
-        );
-        let escaped_amount = cell(6);
-        if let Ok(amount) = escaped_amount.parse::<f64>() {
-            entity.insert("escapedAmount".to_string(), json!(amount));
-        }
-        let remark = cell(7);
-        if !remark.is_empty() {
-            entity.insert("remark".to_string(), json!(remark));
-        }
-        for (field, message) in row_errors {
-            errors.push(json!({
-                "rowNum": index + 1,
-                "colName": field,
-                "errorMsg": message,
-            }));
+    let mut cars: Vec<Value> = Vec::new();
+    for (index, strs) in sheet_rows.iter().enumerate() {
+        // Java: 报错行号 = 数据行下标 + 2；有错后就不再转换后续行。
+        if let Some(object) = apply_rules(IMPORT_FIELDS, strs, index + 1, &mut errors) {
+            cars.push(numberize_entity(object));
         }
         if errors.len() > 100 {
             break;
         }
-        if errors.is_empty() {
-            import_list.push(Value::Object(entity));
-        }
     }
 
     if errors.is_empty() {
-        for addbo in &import_list {
-            let car_no = addbo.get("carNo").and_then(Value::as_str).unwrap_or_default();
-            let existing = support::scalar_string(
-                &state.db,
-                "select id from car_info where del_flag = '0' and car_no = ? limit 1",
-                car_no,
-            )
-            .await?;
-            if let Some(id) = existing {
-                let mut entity = addbo.clone();
-                if let Some(object) = entity.as_object_mut() {
-                    object.insert("id".to_string(), json!(id));
+        let plate_color = label_value_map(&state, "plate_color").await?;
+        let car_type = label_value_map(&state, "car_type").await?;
+        let car_vehicle = label_value_map(&state, "car_vehicle").await?;
+        let escaped_type = label_value_map(&state, "escaped_type").await?;
+        for (index, car) in cars.iter_mut().enumerate() {
+            let row_no = index as i64 + 2;
+            for (key, label, map) in [
+                ("plateColor", "车牌颜色", &plate_color),
+                ("carType", "车型", &car_type),
+                ("carVehicle", "车种", &car_vehicle),
+            ] {
+                let text = text_of(car, key);
+                if text.is_empty() {
+                    continue;
                 }
-                support::update_entity_by_id(&state.db, "car_info", "id", &entity, support::AutoFill::from_user(&user))
-                    .await?;
-            } else {
-                support::insert_entity(
-                    &state.db,
-                    "car_info",
-                    addbo,
-                    support::AutoFill::from_user(&user),
-                )
-                .await?;
+                match map.get(&text) {
+                    Some(value) => put_text(car, key, value),
+                    None => errors.push(crate::common::import_util::error_item(
+                        row_no,
+                        label,
+                        format!("{text} {label}不存在,请在字典菜单维护！"),
+                    )),
+                }
+            }
+
+            // 逃费类型允许多值（中文逗号先换成英文），逐段翻译后再去掉结尾逗号。
+            let escaped = trim_trailing_comma(&text_of(car, "escapedType").replace('，', ","));
+            if !escaped.is_empty() {
+                let mut translated = String::new();
+                for part in escaped.split(',') {
+                    match escaped_type.get(part) {
+                        Some(value) => {
+                            translated.push_str(value);
+                            translated.push(',');
+                        }
+                        None => errors.push(crate::common::import_util::error_item(
+                            row_no,
+                            "逃费类型",
+                            format!("{part} 逃费类型不存在,请在字典菜单维护！"),
+                        )),
+                    }
+                }
+                put_text(car, "escapedType", &trim_trailing_comma(&translated));
+            }
+            if errors.len() > 100 {
+                break;
             }
         }
     }
@@ -504,11 +701,114 @@ async fn import(
     if !errors.is_empty() {
         return Ok(AjaxResult::error("error").put("data", errors));
     }
-    Ok(AjaxResult::success_msg_data("数据导入成功", import_list))
+
+    let user_id = user.user.user_id;
+    let eps_id = user.user.dept_id;
+    let mut payload = Vec::with_capacity(cars.len());
+    for mut car in cars {
+        let car_no = text_of(&car, "carNo");
+        // Java: carInfoService.selectCarInfoList(carNo) —— 与列表接口同一条排除条件。
+        let existing: Option<String> = sqlx::query_scalar(
+            "select t.id from car_info t where t.del_flag = '0' \
+             and not exists (select 1 from (select t1.car_no, \
+                 sum(case when t1.status = '0' then 1 else 0 end) except_num, count(1) count_num \
+                 from car_except_record t1 where t1.del_flag = '0' group by t1.car_no) k \
+                 where t.car_no = k.car_no and k.count_num > 0 and k.except_num = 0) \
+             and t.car_no = ? limit 1",
+        )
+        .bind(&car_no)
+        .fetch_optional(&state.db)
+        .await?;
+        let object = car.as_object_mut().expect("对象");
+        match existing {
+            Some(id) => {
+                object.insert("id".to_string(), json!(id));
+                object.insert("updateBy".to_string(), json!(user_id));
+                object.insert("updateTime".to_string(), json!(support::now_string()));
+                support::update_entity_by_id(
+                    &state.db,
+                    "car_info",
+                    "id",
+                    &car,
+                    support::AutoFill::NONE,
+                )
+                .await?;
+            }
+            None => {
+                // Java: doImport 的新增分支自己补 uuid/delFlag/createBy/epsId，逃费金额缺省 0。
+                let id = uuid::Uuid::new_v4().simple().to_string();
+                if !object.contains_key("escapedAmount") {
+                    object.insert("escapedAmount".to_string(), json!(0));
+                }
+                object.insert("id".to_string(), json!(id));
+                object.insert("delFlag".to_string(), json!("0"));
+                object.insert("createBy".to_string(), json!(user_id));
+                // Java: doImport 的新增分支显式写入 epsId。
+                object.insert("epsId".to_string(), json!(eps_id));
+                object.insert("createTime".to_string(), json!(support::now_string()));
+                // Java: 自动填充在 INSERT 时也写 update 字段；tenantId 不由填充写入。
+                object.insert("updateBy".to_string(), json!(user_id));
+                object.insert("updateTime".to_string(), json!(support::now_string()));
+                support::insert_entity(&state.db, "car_info", &car, support::AutoFill::NONE)
+                    .await?;
+            }
+        }
+        payload.push(car);
+    }
+    Ok(AjaxResult::success_msg_data(
+        "数据导入成功",
+        support::reorder_rows(payload, CAR_INFO_KEYS),
+    ))
+}
+
+/// Java 的实体类型：轴数是 Long、逃费金额是 BigDecimal，表格里读来的是字符串。
+fn numberize_entity(mut object: Value) -> Value {
+    let Some(map) = object.as_object_mut() else {
+        return object;
+    };
+    for key in ["carNum", "escapedAmount"] {
+        if let Some(text) = map.get(key).and_then(Value::as_str).map(str::to_string) {
+            let normalized = match text.strip_prefix('.') {
+                Some(rest) => format!("0{rest}"),
+                None => text.clone(),
+            };
+            match serde_json::from_str::<Value>(&normalized) {
+                Ok(number) => {
+                    map.insert(key.to_string(), number);
+                }
+                Err(_) => {
+                    map.remove(key);
+                }
+            }
+        }
+    }
+    object
+}
+
+fn text_of(record: &Value, key: &str) -> String {
+    match record.get(key) {
+        Some(Value::String(text)) => text.clone(),
+        Some(value) if !value.is_null() => value.to_string(),
+        _ => String::new(),
+    }
+}
+
+fn put_text(record: &mut Value, key: &str, value: &str) {
+    if let Some(object) = record.as_object_mut() {
+        object.insert(key.to_string(), json!(value));
+    }
+}
+
+/// Java: `CommonUtil.deleteEnd` —— 只去掉一个结尾逗号。
+fn trim_trailing_comma(text: &str) -> String {
+    text.strip_suffix(',').unwrap_or(text).to_string()
 }
 
 /// 字典 label -> value（Java: selectDictDataLaleMap）。
-async fn label_value_map(state: &AppState, dict_type: &str) -> Result<HashMap<String, String>, AppError> {
+async fn label_value_map(
+    state: &AppState,
+    dict_type: &str,
+) -> Result<HashMap<String, String>, AppError> {
     let rows: Vec<(Option<String>, Option<String>)> = sqlx::query_as(
         "select dict_value, dict_label from sys_dict_data where dict_type = ? order by dict_sort asc",
     )

@@ -3,6 +3,8 @@
 // 职责: 收费流水 CRUD 与导出（BasePlusEntity 通用逻辑）。
 // 对应关系: manager_crud! 宏生成 list/export/get/add/edit/remove。
 
+use crate::api::support::FieldFormat;
+
 crate::manager_crud! {
     route: "/manager/feerecord",
     perm: "manager:feerecord",
@@ -10,9 +12,44 @@ crate::manager_crud! {
     class: "com.ruoyi.web.controller.manager.CarFeeRecordController",
     sheet: "收费流水数据",
     table: "car_fee_record",
-    select: "t.id, t.car_id, t.car_no, t.car_type, t.car_vehicle, t.in_station_id, t.in_station, t.in_time, t.out_station_id, t.out_station, t.out_time, t.charge_type, t.amount, t.except_id, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id",
+    select: "t.id, t.car_id, t.car_no, t.car_type, t.car_vehicle, t.in_station_id, t.in_station, t.in_time, t.out_station_id, t.out_station, t.out_time, t.charge_type, t.amount, t.except_id, t.back_col1, t.back_col2, t.remark, t.status, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id, \
+             null as applyTime1, null as applyTime2",
     from: "from car_fee_record t",
     order: "t.create_time desc,t.id",
+    dates: [
+        ("inTime", FieldFormat::DateOnly),
+        ("outTime", FieldFormat::DateOnly),
+    ],
+    keys: [
+        "id",
+        "epsId",
+        "delFlag",
+        "createBy",
+        "createTime",
+        "updateBy",
+        "updateTime",
+        "sort",
+        "tenantId",
+        "carId",
+        "carNo",
+        "carType",
+        "carVehicle",
+        "inStationId",
+        "inStation",
+        "inTime",
+        "outStationId",
+        "outStation",
+        "outTime",
+        "chargeType",
+        "amount",
+        "exceptId",
+        "backCol1",
+        "backCol2",
+        "status",
+        "remark",
+        "applyTime1",
+        "applyTime2",
+    ],
     binary: false,
     filters: [
         Filter::eq("id", "t.id"),
