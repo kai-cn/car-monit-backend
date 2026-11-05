@@ -16,12 +16,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/xuri/excelize/v2"
 
 	"car-monit-go/internal/app"
+	"car-monit-go/internal/excelx"
 )
 
 // exportSheet 描述一次导出的表头与行数据。
@@ -118,7 +118,7 @@ func writeExcel(a *app.App, sheet exportSheet) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if err := f.SetCellValue(sheet.name, cell, v); err != nil {
+			if err := f.SetCellValue(sheet.name, cell, excelx.UtilCell(v)); err != nil {
 				return "", err
 			}
 		}
@@ -142,20 +142,10 @@ func writeExcel(a *app.App, sheet exportSheet) (string, error) {
 	return filename, nil
 }
 
-// convertByExp 对应 ExcelUtil.convertByExp：按 "0=正常,1=暂停" 形式的表达式转换展示值，
-// 未匹配时返回原值。
+// convertByExp 对应 ExcelUtil.convertByExp：未命中返回空串（不是原值）。
 func convertByExp(value, exp string) string {
 	if exp == "" || value == "" {
 		return value
 	}
-	for _, item := range strings.Split(exp, ",") {
-		kv := strings.SplitN(item, "=", 2)
-		if len(kv) != 2 {
-			continue
-		}
-		if kv[0] == value {
-			return kv[1]
-		}
-	}
-	return value
+	return excelx.ConvertByExp(value, exp)
 }

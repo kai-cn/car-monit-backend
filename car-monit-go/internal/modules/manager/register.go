@@ -22,20 +22,48 @@ func Register(reg *router.Registry) {
 	// ---------------------------------------------------------------- 标准 CRUD
 	registerStandard(reg, h, "/manager/feerecord", "manager:feerecord", "收费流水", feeRecordSpec,
 		"feeRecords.xlsx", "收费流水数据", true, []exportCol{
-			{Title: "车牌号", Field: "carNo"}, {Title: "车型", Field: "carType", Dict: "car_type"},
-			{Title: "车种", Field: "carVehicle", Dict: "car_vehicle"},
-			{Title: "入口站", Field: "inStation"}, {Title: "入口时间", Field: "inTime"},
-			{Title: "出口站", Field: "outStation"}, {Title: "出口时间", Field: "outTime"},
-			{Title: "收费类型", Field: "chargeType"}, {Title: "金额", Field: "amount"},
+			// JAVA 对照: CarFeeRecord.java:29-96 的 @Excel 声明序（17 列）。
+			// 车型/车种在 Java 侧没有 dictType/readConverterExp ⇒ 输出裸码，不能挂 Dict。
+			{Title: "车辆id", Field: "carId"}, {Title: "车牌号", Field: "carNo"},
+			{Title: "车型", Field: "carType"}, {Title: "车种", Field: "carVehicle"},
+			{Title: "入口站id", Field: "inStationId"}, {Title: "入口站", Field: "inStation"},
+			{Title: "入口时间", Field: "inTime"},
+			{Title: "出口站id", Field: "outStationId"}, {Title: "出口站", Field: "outStation"},
+			{Title: "出口时间", Field: "outTime"},
+			{Title: "交易类型", Field: "chargeType", Exp: "字=典：1出口交易2逃费补缴"},
+			{Title: "收费金额", Field: "amount", Money: true},
+			{Title: "异常流水id", Field: "exceptId"},
+			{Title: "备用字段1", Field: "backCol1"}, {Title: "备用字段2", Field: "backCol2"},
+			{Title: "状态", Field: "status", Exp: "0=正常1停用"},
 			{Title: "备注", Field: "remark"},
 		})
 	registerStandard(reg, h, "/manager/routedetail", "manager:routedetail", "常用路线明细", routeDetailSpec,
 		"carRouteDetail.xlsx", "常用路线明细数据", true, []exportCol{
-			{Title: "车牌号", Field: "carNo"}, {Title: "数据来源", Field: "dataSourceName"},
-			{Title: "通行时间", Field: "lastPassTime"}, {Title: "通行类型", Field: "lastPassType"},
-			{Title: "通行地址", Field: "lastPassAddress"}, {Title: "路段名称", Field: "roadSectionName"},
-			{Title: "下次通行时间", Field: "nextPassTime"}, {Title: "下次通行地址", Field: "nextPassAddress"},
-			{Title: "机构", Field: "orgName"}, {Title: "备注", Field: "remark"},
+			// JAVA 对照: CarRouteDetail.java:28-127 的 @Excel 声明序（25 列）。
+			// 第 12 列标题里的 ⾏(U+2F8F)/⽅(U+2F45) 是 Kangxi 部首字形，不是 行/方，
+			// 照抄注解原文（已从 Java 生成的 xlsx 反查码位确认），不要"顺手改正"。
+			{Title: "路线d", Field: "routeId"}, {Title: "车辆id", Field: "carId"},
+			{Title: "车牌号", Field: "carNo"},
+			{Title: "数据来源(1?架抓拍2收费站抓拍)3服务区抓拍)4省界抓拍)", Field: "dataSource"},
+			{Title: "来源名称", Field: "dataSourceName"},
+			{Title: "最后通行时间", Field: "lastPassTime"},
+			{Title: "最后通行图片", Field: "lastPassPicture"},
+			{Title: "最后通行类型(1?架2收费拍)3服务区)", Field: "lastPassType"},
+			{Title: "最后通行地址", Field: "lastPassAddress"},
+			{Title: "最后通行经度", Field: "lastPassLongitude"},
+			{Title: "最后通行维度", Field: "lastPassLatitude"},
+			{Title: "⾏驶⽅向(1上行2下行3未知)", Field: "lastPassCardirection"},
+			{Title: "管理中心路段id", Field: "roadSectionId"},
+			{Title: "管理中心路段名称", Field: "roadSectionName"},
+			{Title: "预计下一个通行时间", Field: "nextPassTime"},
+			{Title: "预计下一个通行类型", Field: "nextPassType"},
+			{Title: "预计下一个通行地址", Field: "nextPassAddress"},
+			{Title: "预计下一个通行经度", Field: "nextPassLongitude"},
+			{Title: "预计下一个通行维度", Field: "nextPassLatitude"},
+			{Title: "管理中心id", Field: "orgId"}, {Title: "管理中心名称", Field: "orgName"},
+			{Title: "备用字段1", Field: "backCol1"}, {Title: "备用字段2", Field: "backCol2"},
+			{Title: "状态", Field: "status", Exp: "0=正常1停用"},
+			{Title: "备注", Field: "remark"},
 		})
 	registerStandard(reg, h, "/manager/carsuspiciousback", "manager:carsuspiciousback", "可疑车辆备份", suspiciousBackSpec,
 		"carSuspiciousBack.xlsx", "可疑车辆备份数据", true, suspiciousBackExportCols())
@@ -119,9 +147,20 @@ func Register(reg *router.Registry) {
 		})
 	registerStandard(reg, h, "/manager/busstest", "manager:busstest", "业务测试", bussTestSpec,
 		"bussTest.xlsx", "业务测试数据", true, []exportCol{
-			{Title: "单据名称", Field: "billName"}, {Title: "单据类型", Field: "billType"},
-			{Title: "金额", Field: "amount"}, {Title: "状态", Field: "status"},
-			{Title: "备注", Field: "remark"}, {Title: "创建时间", Field: "createTime"},
+			// JAVA 对照: BussTest.java:27-94 的 @Excel 声明序（17 列）。父类 BasePlusEntity 没有
+			// @Excel ⇒ Java 不导出 createTime，原来那列"创建时间"是凭空加的。
+			{Title: "业务名称", Field: "billName"},
+			{Title: "业务名称(字典：1业务2其他)", Field: "billType"},
+			{Title: "金额", Field: "amount", Money: true},
+			{Title: "部门id", Field: "deptId"}, {Title: "人员id", Field: "userId"},
+			{Title: "申请时间", Field: "applyTime"}, {Title: "时间时分秒", Field: "applyTime2"},
+			{Title: "附件(逗号多个分割)", Field: "fileIds"}, {Title: "流程key", Field: "flowKey"},
+			{Title: "流程实例ID", Field: "flowRuid"}, {Title: "流程申请ID", Field: "flowApplyOid"},
+			{Title: "流程状态(1起草中2审批中3审批通过4退回修改5审批拒绝)", Field: "flowStatus"},
+			{Title: "审核时间", Field: "shTime"}, {Title: "备用字段1", Field: "backCol1"},
+			{Title: "备用字段2", Field: "backCol2"},
+			{Title: "状态", Field: "status", Exp: "0=正常1停用"},
+			{Title: "备注", Field: "remark"},
 		})
 	auth.POST("/manager/busstest/syncCurrentTrack", middleware.Perm("manager:busstest:syncTest"),
 		middleware.OperLog(reg.App, "业务测试", middleware.BusinessInsert), h.bussTestSyncCurrentTrack)
@@ -233,7 +272,8 @@ func suspiciousExportCols() []exportCol {
 // JAVA 对照: com/ruoyi/manager/domain/CarSuspiciousBack.java（@Excel 注解顺序）
 func suspiciousBackExportCols() []exportCol {
 	return []exportCol{
-		{Title: "车牌颜色", Field: "plateColor"},
+		// 注解原文是残缺的 readConverterExp（键是"字"），除值恰为"字"外恒不命中 ⇒ Java 整列空。
+		{Title: "车牌颜色", Field: "plateColor", Exp: "字=典：1白色2黑色"},
 		{Title: "车牌号", Field: "carNo"},
 		{Title: "车型", Field: "carType"},
 		{Title: "车种", Field: "carVehicle"},
@@ -253,7 +293,7 @@ func suspiciousBackExportCols() []exportCol {
 		{Title: "终止门架名称", Field: "outGantrytStation"},
 		{Title: "终止经过时间", Field: "outGantryTime"},
 		{Title: "终止图片(附件ids)", Field: "outFileIds"},
-		{Title: "逃费类型", Field: "escapedType"},
+		{Title: "逃费类型", Field: "escapedType", Exp: "字=典：1少轴2屏蔽3货车客标4有入无出5绿通换挂"},
 		{Title: "逃费类型名称", Field: "escapedTypeName"},
 		{Title: "异常通行门架次数", Field: "escapedNum"},
 		{Title: "是否为可疑车辆", Field: "isExcept"},

@@ -17,11 +17,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 	"github.com/xuri/excelize/v2"
 
+	"car-monit-go/internal/excelx"
 	"car-monit-go/internal/web"
 )
 
@@ -109,17 +109,11 @@ func moneySumText(v any) string {
 	return s
 }
 
-// convertByExp 对应 ExcelUtil.convertByExp：按 readConverterExp 把值替换成文案，未命中则原样返回。
+// convertByExp 对应 ExcelUtil.convertByExp：未命中返回空串（Java 的 propertyString 兜底就是空）。
 //
 // JAVA 对照: com/ruoyi/common/utils/poi/ExcelUtil.java convertByExp / separator(=)
 func convertByExp(value, exp string) string {
-	for _, item := range strings.Split(exp, ",") {
-		kv := strings.SplitN(item, "=", 2)
-		if len(kv) == 2 && kv[0] == value {
-			return kv[1]
-		}
-	}
-	return value
+	return excelx.ConvertByExp(value, exp)
 }
 
 const excelMaxRows = 65536
@@ -274,13 +268,9 @@ func buildStaticWorkbook(sheet string, static [][]any, rows [][]any) ([]byte, er
 func normalizeRow(row []any) []any {
 	out := make([]any, len(row))
 	for i, v := range row {
-		// POI 拒绝超过 32767 字符的单元格：Java 侧写出的是「有样式无值」的空格，
-		// excelize 则静默截断，这里先按 Java 置空。
-		if s, ok := v.(string); ok && utf8.RuneCountInString(s) > 32767 {
-			out[i] = ""
-			continue
-		}
-		out[i] = plainValue(v)
+		// ExcelUtil 的 = - + @ 前补 TAB 规则只属于 ExcelUtil 形态；manager 这些端点
+		// 是 EasyPOI 模板导出，只需要指针解引用 + 非法 XML 字符 + 超长置空。
+		out[i] = excelx.Cell(plainValue(v))
 	}
 	return out
 }

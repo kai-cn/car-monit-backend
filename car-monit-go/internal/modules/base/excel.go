@@ -21,6 +21,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/xuri/excelize/v2"
 
+	"car-monit-go/internal/excelx"
 	"car-monit-go/internal/web"
 )
 
@@ -29,6 +30,10 @@ type exportCol struct {
 	Title    string
 	Field    string
 	DateOnly bool
+	// Exp 是 @Excel(readConverterExp) 的原文：命中给文案、未命中给空串（ExcelUtil.convertByExp）。
+	// 本工程里这类表达式大量是代码生成把 Javadoc 里的 "（内部）" 之类切成 name/exp 留下的残骸
+	// （例如 name="收费站编号" readConverterExp="内=部"），Java 的行为就是整列空。
+	Exp string
 }
 
 const excelMaxRows = 65536
@@ -125,7 +130,10 @@ func buildWorkbook(sheet string, cols []exportCol, rows [][]any) ([]byte, error)
 		if err != nil {
 			return nil, web.NewServiceError("导出Excel失败，请联系网站管理员！")
 		}
-		values := row
+		values := make([]any, len(row))
+		for i, v := range row {
+			values[i] = excelx.Cell(v)
+		}
 		if err := f.SetSheetRow(sheet, cell, &values); err != nil {
 			return nil, web.NewServiceError("导出Excel失败，请联系网站管理员！")
 		}
@@ -206,11 +214,42 @@ func buildRows(dest any, cols []exportCol) [][]any {
 		rowValue := slice.Index(i).Interface()
 		row := make([]any, len(cols))
 		for j, col := range cols {
-			row[j] = plainValue(fieldValue(reflect.ValueOf(rowValue), index, col.Field), col.DateOnly)
+			raw := fieldValue(reflect.ValueOf(rowValue), index, col.Field)
+			v := plainValue(raw, col.DateOnly)
+			// JAVA 对照: ExcelUtil.java:1085-1089 dateFormat 之后才轮到 readConverterExp
+			if col.Exp != "" {
+				v = excelx.ConvertByExp(expKeyOf(v), col.Exp)
+			}
+			// buildRows 只服务 ExcelUtil 形态的导出（templateExport 的行由调用方拼），
+			// 所以要带上 setCellVo 的 STRING 分支规则（= - + @ 前补 TAB）。
+			row[j] = excelx.UtilCell(v)
 		}
 		out = append(out, row)
 	}
 	return out
+}
+
+// expKeyOf 是 readConverterExp 的查找键，等价 Java 的 Convert.toStr(value)。
+// 数字用不带尾零的最短形式（120 而不是 120.0），与 BigDecimal.toString 在整数位上等价；
+// BigDecimal 带小数位（2370.00）时两边会有差异，但那只在表达式键也写成小数时才可能命中，
+// 本工程所有这类表达式的键都是单汉字/字母，不受影响。
+func expKeyOf(v any) string {
+	switch x := v.(type) {
+	case nil:
+		return ""
+	case string:
+		return x
+	case bool:
+		return strconv.FormatBool(x)
+	case int:
+		return strconv.Itoa(x)
+	case int64:
+		return strconv.FormatInt(x, 10)
+	case float64:
+		return strconv.FormatFloat(x, 'f', -1, 64)
+	default:
+		return fmt.Sprint(x)
+	}
 }
 
 // exportTable 按 tableSpec 的条件导出全量数据（ExcelUtil 形态：写文件 + 返回文件名）。
@@ -285,23 +324,4 @@ func cellValue(m map[string]any, key string) any {
 	default:
 		return fmt.Sprint(x)
 	}
-}
-
-// dictCell 取字典标签，未命中时保留原值。
-func dictCell(value any, dict map[string]string) any {
-	key := ""
-	switch x := value.(type) {
-	case nil:
-		return ""
-	case string:
-		key = x
-	case float64:
-		key = strconv.FormatFloat(x, 'f', -1, 64)
-	default:
-		key = fmt.Sprint(x)
-	}
-	if label, ok := dict[key]; ok {
-		return label
-	}
-	return key
 }

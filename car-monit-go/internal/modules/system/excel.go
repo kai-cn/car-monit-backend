@@ -24,6 +24,7 @@ import (
 	"github.com/xuri/excelize/v2"
 
 	"car-monit-go/internal/app"
+	"car-monit-go/internal/excelx"
 	"car-monit-go/internal/model"
 	"car-monit-go/internal/web"
 )
@@ -70,7 +71,7 @@ func writeExcel(a *app.App, sheetName string, headers []string, rows [][]any) (s
 			if err != nil {
 				return "", web.NewServiceError("导出Excel失败，请联系网站管理员！")
 			}
-			if err := f.SetCellValue(sheetName, cell, v); err != nil {
+			if err := f.SetCellValue(sheetName, cell, excelx.UtilCell(v)); err != nil {
 				return "", web.NewServiceError("导出Excel失败，请联系网站管理员！")
 			}
 		}
@@ -104,21 +105,12 @@ func excelDate(dt any) string {
 	return ""
 }
 
-// convertExp 对应 ExcelUtil.convertByExp：按 "0=正常,1=停用" 转换展示值，未命中返回原值。
+// convertExp 对应 ExcelUtil.convertByExp：未命中返回空串（不是原值）。
 func convertExp(value, exp string) string {
 	if value == "" || exp == "" {
 		return value
 	}
-	for _, item := range strings.Split(exp, ",") {
-		kv := strings.SplitN(item, "=", 2)
-		if len(kv) != 2 {
-			continue
-		}
-		if kv[0] == value {
-			return kv[1]
-		}
-	}
-	return value
+	return excelx.ConvertByExp(value, exp)
 }
 
 // reverseExp 对应 ExcelUtil.reverseByExp：把中文标签还原成取值，未命中返回原值。
@@ -171,7 +163,9 @@ func (s *service) exportUsers(ctx context.Context, q userQuery) (string, error) 
 			convertExp(model.Str(u.Status), "0=正常,1=停用"),
 			model.Str(u.LoginIP), excelDate(u.LoginDate),
 			model.Str(u.CertID), model.Str(u.CertEntityID), model.Str(u.BussID), model.Str(u.BussName), model.Str(u.EpsName),
-			u.TenantID, model.Str(u.TenantName), model.Str(u.RoleCode), deptName, leader,
+			// 租户单位id 在 Java 是 Long 但没写 cellType ⇒ 默认 STRING 格，Convert.toStr("-1")
+			// 以 '-' 开头会被补一个 TAB（CSV 注入防护），这里按同一规则落成字符串。
+			excelx.TextValue(u.TenantID), model.Str(u.TenantName), model.Str(u.RoleCode), deptName, leader,
 		})
 	}
 	return writeExcel(s.app, "用户数据", headers, data)

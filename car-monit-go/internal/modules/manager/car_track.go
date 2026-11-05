@@ -451,11 +451,23 @@ func (h *handler) trackCarSnapshot(c *gin.Context) {
 func (h *handler) trackExport(c *gin.Context) {
 	clause, args := buildWhere(c, trackInfoSpec.prefix(), trackInfoSpec.conditions)
 	cols := []exportCol{
-		{Title: "车牌号", Field: "carNo"}, {Title: "经度", Field: "longitude"},
-		{Title: "纬度", Field: "latitude"}, {Title: "设备类型", Field: "deviceType"},
-		{Title: "设备编号", Field: "deviceNo"}, {Title: "车道", Field: "laneNo"},
-		{Title: "抓拍时间", Field: "snapTime"}, {Title: "路段名称", Field: "roadSectionName"},
+		// JAVA 对照: CarTrackInfo.java:29-118 的 @Excel 声明序（20 列）。
+		// 末尾的"经度/维度"是注解里重复声明的两列（标题就是 维度 不是 纬度），
+		// 车道列标题是"车道编号"、路段列是"管理中心路段名称"；VO 不查 track_josn，
+		// 但注解里有"行驶轨迹josn"这一列 ⇒ 恒空。
+		{Title: "车辆id", Field: "carId"}, {Title: "车牌号", Field: "carNo"},
+		{Title: "经度", Field: "longitude"}, {Title: "维度", Field: "latitude"},
+		{Title: "设备类型", Field: "deviceType"}, {Title: "设备编号", Field: "deviceNo"},
+		{Title: "车道编号", Field: "laneNo"},
+		{Title: "抓拍时间", Field: "snapTime"}, {Title: "接收时间", Field: "receiveTime"},
+		{Title: "抓拍图片", Field: "snapPic"},
+		{Title: "管理中心路段id", Field: "roadSectionId"},
+		{Title: "管理中心路段名称", Field: "roadSectionName"},
+		{Title: "行驶轨迹id", Field: "trackId"}, {Title: "行驶轨迹josn", Field: "trackJosn"},
+		{Title: "备用字段1", Field: "backCol1"}, {Title: "备用字段2", Field: "backCol2"},
+		{Title: "状态", Field: "status", Exp: "0=正常1停用"},
 		{Title: "备注", Field: "remark"},
+		{Title: "经度", Field: "longitude"}, {Title: "维度", Field: "latitude"},
 	}
 	h.exportWithClause(c, trackInfoSpec, clause, args, "carTrackInfo.xlsx", "车辆行驶轨迹数据", cols, true, nil)
 }

@@ -14,7 +14,6 @@
 package ops
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -23,6 +22,7 @@ import (
 	"github.com/xuri/excelize/v2"
 
 	"car-monit-go/internal/app"
+	"car-monit-go/internal/excelx"
 	"car-monit-go/internal/web"
 )
 
@@ -88,7 +88,7 @@ func exportExcel(a *app.App, sheetName string, columns []excelColumn, rows [][]a
 			if err != nil {
 				return nil, web.NewServiceError("导出Excel失败，请联系网站管理员！")
 			}
-			if err := f.SetCellValue(sheetName, cell, value); err != nil {
+			if err := f.SetCellValue(sheetName, cell, excelx.UtilCell(value)); err != nil {
 				return nil, web.NewServiceError("导出Excel失败，请联系网站管理员！")
 			}
 		}
@@ -127,13 +127,10 @@ func excelTime(t time.Time) string {
 	return t.Format("2006-01-02 15:04:05")
 }
 
-// convertByExp 对应 ExcelUtil.convertByExp（readConverterExp="0=成功,1=失败"）。
-// 命中返回中文文案，未命中返回原值字符串（Java 同样回退到原值）。
+// convertByExp 对应 ExcelUtil.convertByExp（readConverterExp="0=成功,1=失败"）：
+// 命中给文案，未命中给空串 —— Java 的 convertByExp 兜底是 stripEnd("")，不是原值。
 func convertByExp(value int, exp map[int]string) string {
-	if label, ok := exp[value]; ok {
-		return label
-	}
-	return fmt.Sprintf("%d", value)
+	return exp[value]
 }
 
 // BusinessType 中文文案（BizType.OTHER 等）。

@@ -26,6 +26,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/xuri/excelize/v2"
+
+	"car-monit-go/internal/excelx"
 	"gorm.io/gorm"
 
 	"car-monit-go/internal/app"
@@ -260,7 +262,7 @@ func exportExcel(a *app.App, sheetName string, headers []string, rows [][]any) (
 			if err != nil {
 				return "", err
 			}
-			if err := f.SetCellValue(sheetName, cell, v); err != nil {
+			if err := f.SetCellValue(sheetName, cell, excelx.UtilCell(v)); err != nil {
 				return "", err
 			}
 		}
