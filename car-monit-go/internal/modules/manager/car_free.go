@@ -118,11 +118,19 @@ func (h *handler) registerConfimFree(reg *router.Registry) {
 // ---------------------------------------------------------------- 补缴处理
 
 func (h *handler) aduitFreeExport(c *gin.Context) {
+	// JAVA 对照: CarAduitFree.java:27-79 的 @Excel 声明序（14 列），父类 BasePlusEntity 无 @Excel。
+	// 车型/车种在 Java 侧只有 name（没有 dictType/readConverterExp）⇒ 输出裸码，不能挂 Dict；
+	// 拆分金额是 BigDecimal（scale 默认 -1，不走 setScale 分支）⇒ BigDecimal.toString() 恒两位小数。
 	cols := []exportCol{
-		{Title: "车牌号", Field: "carNo"}, {Title: "车型", Field: "carType", Dict: "car_type"},
-		{Title: "车种", Field: "carVehicle", Dict: "car_vehicle"},
-		{Title: "录入单位", Field: "orgName"}, {Title: "处理金额（元）", Field: "amount"},
-		{Title: "状态", Field: "status"}, {Title: "备注", Field: "remark"},
+		{Title: "确认补缴id", Field: "confirmId"}, {Title: "车辆id", Field: "carId"},
+		{Title: "车牌号", Field: "carNo"}, {Title: "车型", Field: "carType"},
+		{Title: "车种", Field: "carVehicle"},
+		{Title: "处理单位id", Field: "orgId"}, {Title: "处理单位", Field: "orgName"},
+		{Title: "处理人员ids", Field: "userIds"}, {Title: "处理人员", Field: "userNames"},
+		{Title: "拆分金额", Field: "amount", Money: true},
+		{Title: "备用字段1", Field: "backCol1"}, {Title: "备用字段2", Field: "backCol2"},
+		{Title: "状态", Field: "status", Exp: "0=正常1停用"},
+		{Title: "备注", Field: "remark"},
 	}
 	h.exportTable(c, aduitFreeSpec, "aduitFree.xlsx", "补缴处理数据", cols, true)
 }

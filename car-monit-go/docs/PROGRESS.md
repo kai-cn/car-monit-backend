@@ -11,6 +11,19 @@
 > 顺带修掉 `/manager/carwarning/list` 的 8 个字段差异（列表被误做了字典翻译 + 缺 `car_info` 联表列）。
 > 另修 `/oss/object/*/*/*` 预签名（改用离线 SigV4，此前 MinIO 不可达时整条 500）、
 > `/common/download` 的 `anonymous()` 语义（有效 token 应 403、无效 token 应 200）。
+>
+> **第二批：把导出层彻底做成可比口径** —— 新增 `compare_export_all.py`，覆盖全部 58 条 `/export` 路由
+> （22 条 EasyPOI 附件流 + 33 条 **ExcelUtil 落盘型**：文件写到 `profile/download`、响应 msg 只带文件名，
+> 之前完全没被比过 + 3 条 non-xlsx 两端逐字节相同），修完 **单元格差异 253487 → 2941 → 0**。
+> 三条新落格规则由双端对拍反推 + `ExcelUtil` 源码印证：① XML 1.0 非法字符 Java 落 `?`（POI 序列化）
+> 而 Go 落 U+FFFD；② STRING 单元格的值以 `= - + @` 开头时 Java 前补一个 TAB（CSV 注入防护，
+> `tenant_id=-1` 落成 `"\t-1"`）；③ `readConverterExp` / `dictType` **未命中给空串**（工程里大量注解是
+> 代码生成切坏 Javadoc 的残骸，如 `readConverterExp="内=部"` ⇒ Java 整列空），且 separator 默认是 `,` 不是 `=`。
+> 规则集中在 `internal/excelx`（`cell_test.go` 钉住），并按 `dump_excels.py` 打印的 @Excel 真值重建了
+> 6 个 manager 端点的列集（busstest 17 / aduitfree 14 / routedetail 25（含 Kangxi 部首 ⾏⽅，不是"行方"）/
+> cartrackinfo 20 / feerecord 17 / carsuspiciousback 补两个残缺 `Exp`）；顺手对齐了 `exportAbnormalPassage`
+> 的 Word 正文标签与金额格式。并更正第一轮口径：`/monitor/operlog/export` 的 496 格差异**不是**自生成审计行
+> （自记录只多 1 行、贡献 0 格），而是规则①。
 > 静态门禁：`build/vet/test` 通过、`check_startpage_map.py` 六类全 0、默认分页 91 条 0 差异、
 > 参数矩阵 1617 组合 0 差异、Redis 隔离 24 项全通过（清理 `failures=0`）。
 >

@@ -531,28 +531,52 @@ func (h *handler) suspiciousExportAbnormalPassage(c *gin.Context) {
 	case "1":
 		isExcept = "确认逃费"
 	}
+	// JAVA 对照: templates/export/carSuspicious.docx 的段落顺序与标签原文（车辆信息 / 通行异常 /
+	// 核实信息 / 证据材料 四个小节），以及控制器给 map 赋值的三条规则：
+	//   金额 = BigDecimal 累加后 toString()（decimal(19,2) ⇒ 两位小数；一条明细都没累加到是 "0"；
+	//          checkList 为 null 时 Java 直接放空串）；
+	//   车种 字典未命中回落原值（Java 只有 carVehicle 这么写，车牌颜色/车型未命中是给空串）；
+	//   图片占位（poi-tl 的 {{susImg1..7}}）在这里无法内嵌，只保留"图片："这一行。
+	amountText := func(v float64) string {
+		if len(car.CheckList) == 0 {
+			return "0"
+		}
+		return strconv.FormatFloat(v, 'f', 2, 64)
+	}
+	chargeTxt, totalTxt, difTxt := amountText(charge), amountText(totalAmount), amountText(dif)
+	if car.CheckList == nil {
+		chargeTxt, totalTxt, difTxt = "", "", ""
+	}
+	carVehicle := carVehicles[strOf(car.CarVehicle)]
+	if carVehicle == "" {
+		carVehicle = strOf(car.CarVehicle)
+	}
 	lines := []string{
 		"车牌颜色：" + plateColors[strOf(car.PlateColor)],
 		"车牌号：" + strOf(car.CarNo),
 		"车型：" + carTypes[strOf(car.CarType)],
-		"车种：" + carVehicles[strOf(car.CarVehicle)],
+		"车种：" + carVehicle,
 		"轴数：" + plainStr(car.CarNum),
-		"入口站：" + strOf(car.InStation),
+		"通行异常",
+		"入站口：" + strOf(car.InStation),
 		"入口时间：" + dateTimeStr(car.InTime),
-		"出口站：" + strOf(car.OutStation),
+		"出站口：" + strOf(car.OutStation),
 		"出口时间：" + dateTimeStr(car.OutTime),
-		"门架：" + strOf(car.GantrytStation),
-		"门架时间：" + dateTimeStr(car.GantryTime),
+		"起始门架：" + strOf(car.GantrytStation),
+		"起始经过时间：" + dateTimeStr(car.GantryTime),
 		"终止门架：" + strOf(car.OutGantrytStation),
-		"终止门架时间：" + dateTimeStr(car.OutGantryTime),
+		"终止经过时间：" + dateTimeStr(car.OutGantryTime),
 		"逃费类型：" + strings.Join(names, ","),
-		"收费金额：" + fmt.Sprintf("%v", charge),
-		"应缴金额：" + fmt.Sprintf("%v", totalAmount),
-		"差额：" + fmt.Sprintf("%v", dif),
-		"是否逃费：" + isExcept,
+		"收费金额（元）：" + chargeTxt,
+		"应缴金额（元）：" + totalTxt,
+		"差额（元）：" + difTxt,
+		"核实信息",
+		"核实结果：" + isExcept,
 		"备注：" + strOf(car.ExceptRemark),
+		"图片：",
+		"证据材料",
 	}
-	data, err := buildDocx("通行异常说明", lines)
+	data, err := buildDocx("车辆信息", lines)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return

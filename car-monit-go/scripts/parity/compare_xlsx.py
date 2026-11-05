@@ -129,6 +129,7 @@ def trim(grid):
 
 def main():
     tk_j, tk_g = pp.login_java(), pp.login_go()
+    total_bad = 0
     for path in sys.argv[1:]:
         sj, bj = fetch(pp.JAVA, path, tk_j)
         sg, bg = fetch(pp.GO, path, tk_g)
@@ -139,42 +140,51 @@ def main():
         if not bj.startswith(b"PK") or not bg.startswith(b"PK"):
             print("   非 xlsx：Java=%r Go=%r" % (bj[:200], bg[:200]))
             continue
-        gj, gg = parse(bj), parse(bg)
-        if list(gj) != list(gg):
-            print("   工作表名不同 Java=%s Go=%s" % (list(gj), list(gg)))
-        bad = 0
-        for name in sorted(set(gj) | set(gg)):
-            if name not in gj or name not in gg:
-                print("   %s 只在一端存在" % name)
-                continue
-            a_all = trim(gj[name][2])
-            b_all = trim(gg[name][2])
-            print("   %s  原始 Java=%d行×%d列 Go=%d行×%d列  裁边后 Java=%d×%d Go=%d×%d" % (
-                name, len(gj[name][2]), gj[name][1][0], len(gg[name][2]), gg[name][1][0],
-                len(a_all), len(a_all[0]) if a_all else 0,
-                len(b_all), len(b_all[0]) if b_all else 0))
-            print("     表头 Java=%s" % json.dumps(a_all[0] if a_all else [], ensure_ascii=False)[:400])
-            print("     表头 Go  =%s" % json.dumps(b_all[0] if b_all else [], ensure_ascii=False)[:400])
-            width = max([len(r) for r in a_all] + [len(r) for r in b_all] + [0])
-            per_col = {}
-            for ri in range(max(len(a_all), len(b_all))):
-                a = a_all[ri] if ri < len(a_all) else []
-                b = b_all[ri] if ri < len(b_all) else []
-                for ci in range(width):
-                    va = a[ci] if ci < len(a) else ""
-                    vb = b[ci] if ci < len(b) else ""
-                    if va != vb:
-                        bad += 1
-                        d = per_col.setdefault(ci, {"n": 0, "s": []})
-                        d["n"] += 1
-                        if len(d["s"]) < 2:
-                            d["s"].append((ri + 1, va, vb))
-            for ci in sorted(per_col)[:10]:
-                title = a_all[0][ci] if a_all and ci < len(a_all[0]) else "?"
-                samples = "; ".join("r%d Java=%r Go=%r" % s for s in per_col[ci]["s"])
-                print("     列%s(%s) 差异行=%d  %s" % (col_name(ci + 1), title,
-                                                            per_col[ci]["n"], samples[:220]))
-        print("   单元格差异合计: %d" % bad)
+        bad = compare_cells(bj, bg)
+        total_bad += bad
+    if len(sys.argv) > 2:
+        print("\n== 全部端点单元格差异合计: %d" % total_bad)
+
+
+def compare_cells(bj, bg):
+    """两份 xlsx 字节逐格对比，打印表头与按列聚合的差异，返回差异格数。"""
+    gj, gg = parse(bj), parse(bg)
+    if list(gj) != list(gg):
+        print("   工作表名不同 Java=%s Go=%s" % (list(gj), list(gg)))
+    bad = 0
+    for name in sorted(set(gj) | set(gg)):
+        if name not in gj or name not in gg:
+            print("   %s 只在一端存在" % name)
+            continue
+        a_all = trim(gj[name][2])
+        b_all = trim(gg[name][2])
+        print("   %s  原始 Java=%d行×%d列 Go=%d行×%d列  裁边后 Java=%d×%d Go=%d×%d" % (
+            name, len(gj[name][2]), gj[name][1][0], len(gg[name][2]), gg[name][1][0],
+            len(a_all), len(a_all[0]) if a_all else 0,
+            len(b_all), len(b_all[0]) if b_all else 0))
+        print("     表头 Java=%s" % json.dumps(a_all[0] if a_all else [], ensure_ascii=False)[:400])
+        print("     表头 Go  =%s" % json.dumps(b_all[0] if b_all else [], ensure_ascii=False)[:400])
+        width = max([len(r) for r in a_all] + [len(r) for r in b_all] + [0])
+        per_col = {}
+        for ri in range(max(len(a_all), len(b_all))):
+            a = a_all[ri] if ri < len(a_all) else []
+            b = b_all[ri] if ri < len(b_all) else []
+            for ci in range(width):
+                va = a[ci] if ci < len(a) else ""
+                vb = b[ci] if ci < len(b) else ""
+                if va != vb:
+                    bad += 1
+                    d = per_col.setdefault(ci, {"n": 0, "s": []})
+                    d["n"] += 1
+                    if len(d["s"]) < 2:
+                        d["s"].append((ri + 1, va, vb))
+        for ci in sorted(per_col)[:10]:
+            title = a_all[0][ci] if a_all and ci < len(a_all[0]) else "?"
+            samples = "; ".join("r%d Java=%r Go=%r" % s for s in per_col[ci]["s"])
+            print("     列%s(%s) 差异行=%d  %s" % (col_name(ci + 1), title,
+                                                        per_col[ci]["n"], samples[:220]))
+    print("   单元格差异合计: %d" % bad)
+    return bad
 
 
 if __name__ == "__main__":

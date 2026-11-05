@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/xuri/excelize/v2"
 
+	"car-monit-go/internal/excelx"
 	"car-monit-go/internal/web"
 )
 
@@ -71,7 +72,7 @@ func (h *handler) writeExcel(sheetName string, cols []exportCol, rows []reflectR
 		}
 		values := make([]any, len(cols))
 		for j, col := range cols {
-			values[j] = col.value(row)
+			values[j] = excelx.UtilCell(col.value(row))
 		}
 		if err := f.SetSheetRow(sheetName, cell, &values); err != nil {
 			return "", web.NewServiceError("导出Excel失败，请联系网站管理员！")

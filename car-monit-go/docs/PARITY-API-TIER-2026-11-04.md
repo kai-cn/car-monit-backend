@@ -5,8 +5,10 @@
 **先 backend 调 api 的接口 → 再 backend 其它业务接口 → 最后框架接口**。
 
 配套工具（本轮新增/改动）：`scripts/parity/compare_xlsx.py`（xlsx 单元格级对比）、
-`scripts/parity/dump_templates.py`（EasyPOI 模板真值打印）、`scripts/parity/compare_get.py --tier`、
-`scripts/parity/start_java_ref.ps1` / `start_go_ref.ps1`、`scripts/parity/api_pair_check.py`。
+`scripts/parity/compare_export_all.py`（全部 58 条 `/export` 路由，含 ExcelUtil 落盘型）、
+`scripts/parity/dump_templates.py`（EasyPOI 模板真值）、`scripts/parity/dump_excels.py`（`@Excel` 注解真值）、
+`scripts/parity/compare_get.py --tier`、`scripts/parity/start_java_ref.ps1` / `start_go_ref.ps1` / `start_api_java.ps1`、
+`scripts/parity/api_pair_check.py`；落格规则集中在 `internal/excelx`（带单测）。
 
 ---
 
@@ -67,6 +69,9 @@
 21 条"非 JSON"全部是 xlsx 附件流。旧的 `compare_get.py` 只能把它们标成 non-json 就放过，
 本轮用 `compare_xlsx.py` 落到单元格：**修复前 20 个端点里有 18 个存在差异，合计 19633 格；
 修复后 21 个端点全部 0 格差异**（含 `/base/feerecords/export` 的真实数据页）。详见 §5。
+
+更大的口子在框架系：`/system/*`、`/monitor/*` 等导出的响应只是"文件名落在 msg 的 AjaxResult"，
+光看 JSON 完全看不出内容差异 —— 这部分连同上面的附件流，一起放进 §6.5 的 58 条 `/export` 全量口径。
 
 ## 4. 第 3 档：框架接口（95 条 URL）
 
@@ -154,6 +159,64 @@
    并挂到 `/common/download`。三个端点现在都是 `good=403 bogus=200 anon=200`。
    注意 `Auth` 只挂在 `reg.Authed` 上，所以这个中间件自己解析一次 token。
 
+## 6.5 ExcelUtil 落盘型导出：第二轮补上的更大盲区
+
+第一轮把 21 个 EasyPOI 附件流端点做完后，还剩一个更大的口子：RuoYi 框架系（`/system/*`、
+`/monitor/*`、`/base/*` 部分、`/manager/*` 部分、`/flow/*`）的导出**不是附件流**，
+而是 `ExcelUtil.exportExcel(list, sheet)` 把文件写到 `ruoyi.profile/download`、
+只把文件名放在 `AjaxResult.msg` 里返回。`compare_get.py` 看到的是一句 JSON，`compare_xlsx.py`
+也够不着 —— 于是新增 `compare_export_all.py`：从 Go 运行态注册日志里取出**全部 58 条 `/export`
+路由**，两类形态一起覆盖（附件流直接比字节；落盘型按 msg 里的文件名去 `D:/ruoyi/uploadPath/download`
+读两端文件逐格比，比完删掉这两个本次生成的文件）。
+
+结果：`58 条 = 22 附件流 + 33 ExcelUtil 落盘 + 3 非 xlsx`，修复前 **33 条落盘型里有 12 条存在差异**，
+含最大的一处 **251011 格**。三条新的落格规则（都是双端对拍反推 + Java 源码印证出来的）：
+
+| 规则 | Java 出处 | 表现 | 修复 |
+|---|---|---|---|
+| XML 1.0 非法字符写成 `?` | POI/XSSF 序列化（`ExcelUtil` 只调 POI） | `sys_oper_log.json_result`、`sys_job_log.exception_info` 里夹着 U+001A/NUL：Java 落 `?`，excelize 落 U+FFFD | `excelx.Sanitize`，operlog 496 格 + jobLog 4 格清零 |
+| 文本以 `= - + @` 开头前补 TAB | `ExcelUtil.java:961-977`（CSV 公式注入防护，仅 STRING/TEXT 分支） | `sys_user.tenant_id=-1` 在 Java 的 xlsx 里是 `"\t-1"`（`@Excel` 没写 cellType ⇒ 默认 STRING） | `excelx.UtilCell`（写手层）+ `excelx.TextValue`（调用点把数字落成 Java 的 STRING 形态） |
+| `readConverterExp` / `dictType` **未命中给空串** | `ExcelUtil.convertByExp:1220-1247`、`DictUtils.getDictLabel:82-112`（兜底是 `stripEnd("")`） | 工程里大量注解是代码生成把 Javadoc 括号内容切坏的残骸（`name="收费站编号" readConverterExp="内=部"`），Java 因此**整列空**；Go 原来回退成原值 | `excelx.ConvertByExp`（separator 默认是 `,` 不是 `=`！），base/manager/ops/system/quartz 四个写手全部改为未命中给空 |
+
+取值优先级也照抄了 `ExcelUtil.java:1085-1108`：`dateFormat` → `readConverterExp` → `dictType` →
+`BigDecimal+scale` → `handler` → 原值。`base/exportCol` 因此新增 `Exp` 字段（原来没有，
+`exports.go:5` 那句"readConverterExp 只影响导入"的前提是错的）。
+
+按 @Excel 注解真值重建的列集（`dump_excels.py` 打印 Java 列序；父类 `BasePlusEntity` 经确认
+**没有任何 @Excel**，所以 Java 列集里没有 createTime，Go 原来加的"创建时间"列是凭空多出来的）：
+
+| 端点 | Java 列数 | Go 原列数 | 修复要点 |
+|---|---|---|---|
+| `/manager/busstest/export` | 17 | 6 | 补 部门id/人员id/申请时间/时间时分秒/附件/流程key/流程实例ID/流程申请ID/流程状态/审核时间/备用字段1/2；`金额` 两位小数；`状态` 用 `Exp:"0=正常1停用"`；删掉 Java 没有的创建时间 |
+| `/manager/aduitfree/export` | 14 | 7 | 补 确认补缴id/车辆id/处理单位id/处理人员ids/处理人员/备用字段1/2；**车型/车种 Java 无字典翻译**（原来挂了 `Dict` 输出标签）；`拆分金额` 两位小数且标题不是"处理金额（元）" |
+| `/manager/routedetail/export` | 25 | 10 | 整组换成注解列；第 12 列标题含 **Kangxi 部首** `⾏`(U+2F8F)/`⽅`(U+2F45)，不是 行/方，逐字照抄 |
+| `/manager/cartrackinfo/export` | 20 | 9 | 补 车辆id/设备类型/接收时间/抓拍图片/管理中心路段id/行驶轨迹id/行驶轨迹josn/备用字段1/2/状态；标题 `车道编号`/`管理中心路段名称`/`维度`（不是"纬度"）；末尾两列是注解里重复声明的经度/维度 |
+| `/manager/feerecord/export` | 17 | 10 | 补 车辆id/入口站id/出口站id/异常流水id/备用字段1/2；`交易类型` 用注解里的残缺 `Exp`；`收费金额` 两位小数；删掉两处 `Dict` |
+| `/manager/carsuspiciousback/export` | 43 | 43 | 列名列序本来就对；只差 `车牌颜色`/`逃费类型` 两个残缺 `Exp`（键是"字"，除值恰为"字"外恒不命中 ⇒ Java 整列空） |
+| `/base/toll/export` | 23 | 23 | 三列（收费站编号/收费站名称/国网编号）加 `Exp:"内=部"` ⇒ 与 Java 一样整列空；真数据在模板后半段的重名列上 |
+| `/base/org/export` | 16 | 16 | `是否是养护类` 加 `Exp:"1=：是，0否"`（全角逗号不算分隔符 ⇒ 文案就是 `：是，0否` 这个怪串） |
+| `/base/config/export` | 13 | 13 | 三列加 `Exp:"分=离"`/`"分=钟"` ⇒ Java 恒空 |
+| `/base/geometry/export` | 5 | 5 | 超 32767 字符的格：POI 抛异常被 `ExcelUtil.addCell` 的单元格级 catch 吞掉 ⇒ **整格留空**，而 excelize 是静默截断到 32767（`paths` 列 149816 字符那一格） |
+
+`internal/excelx` 现在是这套规则的唯一出处，并用 `cell_test.go` 钉住（未命中给空、分隔符是逗号、
+全角逗号不参与拆分、指针解引用、非法字符→`?`、超长置空、TAB 前缀只对文本生效、
+`TextValue` 的 `-1→"\t-1"` 与 `0→"0"`）。
+
+**更正第一轮的口径**：`/monitor/operlog/export` 的差异不是"自生成审计行"造成的。
+按 `列A 操作序号` 建索引对齐后：只在一端存在的行 = 1（就是本次调用自己写进去的那条），
+其贡献的**格数为 0**；496 个差异格全在 `列M 返回参数`，是上面第一条 `?` 规则。
+`/monitor/logininfor/export` 则连自记录噪声都没有（导出写的是 `sys_oper_log`，不是 `sys_logininfor`），
+两端各 3732 行、共同 id 差异 0。
+`/base/gantry/export` 的口径也要精确化：Java 读 Redis 快照 `gantry_list`、Go 缓存缺失时回源查库，
+两者只在"库与快照不一致"时才有差异 —— 本轮内 `ods_szdn_gantry` 实测回到 1526 行（与快照同），
+两端因此直接对齐；上一轮的 1558 vs 1526 已用"把快照复制进 Go 的 db 后逐格 0 差异"证明过是数据源差异。
+
+`/manager/suspicious/exportAbnormalPassage`（Word 模板 `carSuspicious.docx`）顺手对齐了正文：
+标签改成模板原文（车辆信息 / 通行异常 / 入站口 / 出站口 / 起始门架 / 起始经过时间 / 终止门架 /
+终止经过时间 / 收费金额（元） / 应缴金额（元） / 差额（元） / 核实信息 / 核实结果 / 图片 / 证据材料），
+金额按 `BigDecimal.toString()` 落两位（checkList 为 null ⇒ 空串，空列表 ⇒ `0`），
+`车种` 复刻 Java 的"字典未命中回落原值"。poi-tl 的图片内嵌仍不做（`susImg1..7` 只留标题行）。
+
 ## 7. api 双端自身的不一致（第 1 档残余差异的根因）
 
 `api_pair_check.py` 直连 9902/9903 比对 backend 会用到的 11 条列表路径 + 8 条详情路径：
@@ -173,13 +236,18 @@
 
 | 项 | 结果 |
 |---|---|
-| `go build ./... && go vet ./... && go test ./...` | 通过 |
+| `go build ./... && go vet ./... && go test ./...` | 通过（含新增 `internal/excelx` 规则单测） |
 | `gofmt` | 本轮改动文件已格式化 |
 | `check_startpage_map.py` 六类静态核对 | 全 0（含新改的 5 个导出分页点） |
 | `check_default_page.py` | 91 条比对，不一致 0 |
 | `check_query_matrix.py` | 1617 组合，差异 0 |
-| `compare_xlsx.py` 21 端点 | 单元格差异 0 |
-| `check_redis_isolation.py` | 24 项断言全通过，清理 `failures=0`（跑在交付接线 9988/9989 上；参照实例因为另占 db5/db6，用它跑这项会误报） |
+| `routes.py` 路由比对 | Java 511 全匹配，Go 514（多出 `/healthz`、`HEAD /`、`OPTIONS /`） |
+| `compare_xlsx.py` 21 端点（EasyPOI 附件流） | 单元格差异 0 |
+| **`compare_export_all.py` 58 端点（含 33 条 ExcelUtil 落盘型）** | **单元格差异 0**（3 条 non-xlsx：两条两端逐字节相同的 `{"msg":null,"code":500}`，一条 `upgradeInfo` 缺表） |
+| 第 1 档 A/B/C 复跑（最终二进制） | 14/12/**0**/2、14/12/**0**/2、14/11/1/2 |
+| 第 2 档 / 第 3 档复跑（最终二进制） | 185/162/2/21、95/82/11/2 |
+| `compare_write.py` 32 资源生命周期 | 差异 15 条，全落在 8 个 Java 侧缺陷资源上（与上一轮同一批），无新增 |
+| `check_redis_isolation.py` | 24 项断言全通过，清理 `failures=0`（跑在参照对上，`PARITY_GO_DB` 按实例的 db 指定） |
 | `check_oss.py` | 不一致项 0 |
 
 ## 9. 已知差异（不改）
@@ -193,9 +261,15 @@
 3. 运行态数据：`monitor/cache`、`monitor/online/list`。
 4. 同为 500 时的错误文本形态（`/oss/*`、`upgradeInfo/*`）。
 5. `/base/gantry/export` 的行集取决于 Redis 快照 `gantry_list`（Java 读缓存、Go 缓存缺失时回源）。
-   交付环境两端共用同一 Redis 键时逐格一致（已用复制快照的方式验证）。
-6. `ExcelUtil` 型导出（`/system/*`、`/monitor/*`）返回的是"文件名落在 msg 的 AjaxResult"，
-   落盘文件内容不在本档对比范围内 —— 本轮做的是 EasyPOI 附件流的 21 个端点。
+   交付环境两端共用同一 Redis 键时逐格一致（已用复制快照的方式验证；本轮内库行数回到 1526 后两端直接对齐）。
+6. **仍未逐格覆盖的两处**：
+   * `poi-tl` 的 Word 导出（`/manager/suspicious/exportAbnormalPassage`）—— 正文标签与金额已按模板对齐，
+     但图片（`susImg1..7`）不内嵌，docx 也不在单元格对比工具的口径内；
+   * ExcelUtil 落盘型导出**只比对其落盘文件**（`compare_export_all.py` 按 `msg` 里的文件名去
+     `ruoyi.profile/download` 读两端文件，比完删除），所以要求两端共用同一个 download 目录 ——
+     本环境 Java/Go 的 `profile` 都是 `D:/ruoyi/uploadPath`，成立；若分开部署需换成各自拉取。
+   * 单元格**样式**（边框/字体/列宽/合并）一律不比对（POI 与 excelize 的实现差异太大，只保证表头文案、
+     列序、取值、行数、文件名规则一致）。
 
 ## 10. 复现
 
@@ -210,9 +284,14 @@ python scripts/parity/compare_get.py --tier api --out $TEMP/t1.json --log $TEMP/
 python scripts/parity/compare_get.py --tier business --out $TEMP/t2.json --log $TEMP/go-ref-9984.log
 python scripts/parity/compare_get.py --tier framework --out $TEMP/t3.json --log $TEMP/go-ref-9984.log
 python scripts/parity/compare_xlsx.py "/manager/carinfo/export?pageNum=1&pageSize=30"
-python scripts/parity/dump_templates.py carSuspicious        # EasyPOI 模板真值
+python scripts/parity/compare_export_all.py --log "$TEMP/go-ref-9983.log" --out "$TEMP/exports.json"  # 58 条 /export 全覆盖
+python scripts/parity/dump_excels.py BussTest CarRouteDetail                # Java @Excel 列真值
+python scripts/parity/dump_templates.py carSuspicious                       # EasyPOI 模板真值
 python scripts/parity/api_pair_check.py                      # api 双端直连比对（归因用）
 ```
+
+`pp.py` 的两个地址与两个 Redis 库都可覆盖：`PARITY_JAVA` / `PARITY_GO` / `PARITY_JAVA_DB` / `PARITY_GO_DB`
+（参照实例另占 db，跑隔离类校验时必须一起指定，否则会误报）。
 
 `compare_xlsx.py` 会先裁掉"两端都为空的尾部整行/整列"—— POI 习惯多写一列空样式列、
 EasyPOI 空列表时多写一行空格，这不是差异；带值的列不会被裁掉。

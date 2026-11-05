@@ -18,7 +18,8 @@ JAVA = os.environ.get("PARITY_JAVA", "http://127.0.0.1:9988")
 GO = os.environ.get("PARITY_GO", "http://127.0.0.1:9989")
 REDIS_CLI = "D:/work/Redis-8.10.2-Windows-x64-msys2/redis-cli.exe"
 MYSQL = "D:/work/mysql-8.0.30-winx64/bin/mysql.exe"
-JAVA_DB, GO_DB = 0, 2
+JAVA_DB = int(os.environ.get("PARITY_JAVA_DB", "0"))
+GO_DB = int(os.environ.get("PARITY_GO_DB", "2"))
 MYSQL_ARGS = ["-h", "127.0.0.1", "-P", "3307", "-uroot", "-proot", "-N", "-B"]
 MARK = "PARITY"
 
