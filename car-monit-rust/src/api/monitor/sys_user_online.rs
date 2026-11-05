@@ -48,7 +48,14 @@ fn online_of(login_user: &LoginUser) -> Value {
     json!({
         "tokenId": login_user.token,
         "sessionId": login_user.session_id,
-        "deptName": login_user.user.dept_id.map(|_| Value::Null).unwrap_or(Value::Null),
+        // Java: SysUserOnlineServiceImpl.createSysUserOnline —— 只有登录态里带了 dept 才填 deptName。
+        "deptName": login_user
+            .user
+            .dept
+            .as_ref()
+            .and_then(|dept| dept.dept_name.clone())
+            .map(Value::String)
+            .unwrap_or(Value::Null),
         "userName": login_user.username.clone().or_else(|| login_user.user.user_name.clone()),
         "ipaddr": login_user.ipaddr,
         "loginLocation": login_user.login_location,

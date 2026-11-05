@@ -569,7 +569,7 @@ Rust 的常量表把 `crud`/`sub` 与尾部七个写反了，已按实测改回�
    `trimAllWhitespace` 全删、`+5` 合法、溢出报错），改到 Java 侧 48 个数字路径变量端点。
    对拍脚本 `tools/endpoint_parity/pathvar_matrix.py` 直接从 Java 源码解析 `@PathVariable` 类型，
    只用非法值探 GET（写端点探会造成真实删除）：**28 OK / 0 WARN / 1 FAIL**，
-   唯一 FAIL 是下面 §10.6 的 `/oss`。
+   唯一 FAIL 是当时还没迁移的 `/oss`（§10.6/§10.8，现已补齐并实测）。
 3. **两种「没权限」不是一种**：RuoYi 只定制了 `authenticationEntryPoint`（401 才是 AjaxResult），
    授权失败仍走 Spring 默认的 `AccessDeniedHandlerImpl` → `sendError(403)` → `/error` 的
    `{"timestamp","status":403,"error":"Forbidden","path"}`（HTTP **403**）。
@@ -596,14 +596,9 @@ Rust 写的 `login_tokens:*`（没有 `@type`），Java 把它读成 JSONObject 
 ### 10.6 基线漏掉的一个控制器
 
 `ruoyi-common/src/main/java/com/ruoyi/common/utils/http/OssEndpoint.java`（`@RequestMapping("/oss")`，9 条）
-没进 501 条基线清单，所以 Rust 整块缺失。本轮能离线对拍的只有
-`GET /oss/object/{bucketName}/{objectName}/{expires}`：Java 的 `OssTemplate.getObjectURL` 把 `expires`
-当**天**加，超过 7 天时 MinIO SDK 在发请求之前就抛
-`Requests that are pre-signed by SigV4 algorithm are valid for at most 7 days. The expiration date set on the
-current request [yyyyMMdd'T'HHmmss'Z'] has exceeded this limit.`，两端比的就是这条 500 文案（外加
-`Integer` 路径变量的类型不匹配）。其余 8 条要打到 `oss.endpoint=http://172.30.100.102:9002`（本机不可达，
-Java 侧表现是请求挂住），成功路径的 `Bucket`/`S3ObjectSummary` JSON 无法验证 —— 记录为待办，
-本轮不做无法验证的大块实现（任务 #38）。
+没进 501 条基线清单（生成清单的解析器只扫了 `web/controller/**` 与 quartz、generator 两个模块），
+所以 Rust 整块缺失。`tools/endpoint_parity/controller_coverage.py` 现在会把全部 Java 控制器与基线对照，
+结论是**只漏了这一个**。实现与验证见 §10.8。
 
 ### 10.7 对拍脚本自身的修正（不修就会吞掉差异）
 
@@ -621,14 +616,22 @@ Java 侧表现是请求挂住），成功路径的 `Bucket`/`S3ObjectSummary` JS
 | `tenantName` | 实体字段未被映射 → 键存在、值为 null | 整个键缺失 |
 
 上表都已在 `shape_user_rows` / `USER_COLUMNS` / `USER_VO_COLUMNS` 里改齐（`/system/user` 的 14 条 GET
-现在 13 OK / 1 FAIL）。**仍未收口的两条**：
+现在全 OK）。同一轮里接着修掉的另两条：
 
-- `/system/user/currentUser`：Java 的 `selectCurrentUser()` 返回**新建**的 SysUser，只填
-  `userId`、`deptId`（= `SecurityUtils.getEpsId()`）、`headOffice`（看 `selectHeadOffice()` 里
-  `treeLeavel∈{1,2}` 的部门的 tenant 集合）、`procurementManager`（看 `cgjl_manager` 角色是否命中
-  `selectRolesByUserName`），其余全 null；Rust 目前回的是登录态里的完整用户。
-- `/monitor/online/list`：行的 `deptName` Java 有值、Rust 为 null；`sessionId`/`loginTime`/行数本身
-  是双端分库后的自然差异（已按动态处理）。
+- `/system/user/currentUser`：Java 的 `selectCurrentUser()` 返回的是**新建** SysUser，只填
+  `userId`、`deptId`（= `SecurityUtils.getEpsId()`，即登录用户的 deptId）、`headOffice`、
+  `procurementManager`，其余 41 个键全是 null，且**没有 `params` 键**（`BaseEntity.getParams()` 的空 map
+  被 `@JsonInclude(NON_EMPTY)` 抹掉）。`selectHeadOffice()` 有个容易看漏的细节：它返回的是
+  `filterSet.addAll(deptSet)` —— treeLeavel 为 1/2 的部门**本身**就算总公司，所以 admin 的
+  `headOffice=true`；Rust 原先回的是登录态里的完整用户，现在按 Java 重建（`treeLeavel` 为 null 时
+  Java 是 `Integer.equals` 的 NPE，也照抄成 `{"msg":null,"code":500}`）。
+- `/monitor/online/list`：Java 的 `createSysUserOnline` 在 `user.getDept()` 非空时把
+  `dept.deptName` 写进 `deptName`；Rust 原先恒 null。
+
+`/monitor/online/list` 的行数与 `/monitor/cache` 的 `dbSize`/`commandStats`/`INFO` 属于
+「两端各连自己的 Redis db」带来的天然差异，脚本对它们只比结构：
+`DYNAMIC` 端点的列表长度与 `total` 降级为 `LEN-WARN`/`TOTAL-WARN`，`/monitor/cache` 的 `data.*`
+整片走 `VALUE_FREE`。**这些降级只针对运行时计数**，`deptName`/`userName`/`ipaddr` 这类业务值仍然实比。
 
 另外，`SHAPE_ONLY` 是整端降级，粒度太粗；新增 `VALUE_FREE`（端点 → 标量路径正则）只放过真正随时间
 变化的那几个字段（本轮用于 `/manager/suspicious/{id}` 的 `*.paths`）。
@@ -662,21 +665,25 @@ Java 侧 `404` 错误页的 `path` 保留原始尾斜杠，因此削完仍路由
 
 ## 11. 结论
 
-- GET 全量 297 条（真实 api 上游 + 双端分库，2026-11-04 晚）：**OK 285 / WARN 6 / FAIL 0 / KNOWN 3 / SKIP 3**。
-  **口径注意**：这一轮用的 `compare.py` 还带着 §10.7 说的「DYNAMIC 端点不比标量值」缺陷，
-  所以 `/system/user/*`、`/monitor/online|operlog|logininfor`、`/manager/querylog` 这批的值差异
-  当时是被吞掉的；修完脚本后 `/system/user` 已复跑到 13 OK / 1 FAIL（剩 `currentUser`），
-  全量重跑与另外几条动态端点仍属待办。
-  比桩上游那一轮（277 OK / 13 WARN / 4 KNOWN）好：`/base/*` 的透传分会随真实上游变 OK，
-  `tool/gen` 的 4 条键序 WARN 已按实测修掉。剩 6 条 WARN 全是既有类别 ——
-  `sys_upgrade_info` 缺表与 `/base/fitting/list` 的 Java mapper 缺陷（两端同为 500，只差包装文案）、
-  Redis `INFO` 字段序。3 条 KNOWN 是 `/monitor/server`、`/base/geometry/getHenDa`、`/base/cdc/config`
-  （依赖不可用的上游或 Java 自身故障），3 条 SKIP 是有远端副作用的 GET。
+- GET 全量 297 条（真实 api 上游 + 双端分库 + **修正后的 compare.py**，2026-11-05 凌晨）：
+  **OK 280 / WARN 11 / FAIL 0 / KNOWN 3 / SKIP 3**。
+  11 条 WARN 分成三类：
+  1. 5 条 `MSG-DIFF`（`sys_upgrade_info` 缺表 ×4、`/base/fitting/list` 的 Java mapper 反射异常）——
+     两端同为 500，只差包装文案；
+  2. 5 条 `ORDER-DIFF`（`/tool/gen` 的 4 条 + `/monitor/cache` 的 Redis INFO）——
+     **`/tool/gen` 那 4 条是 Java 自己不稳定**：GenTable/GenTableColumn 尾部那几个派生 getter
+     （`sub`/`crud`/`tree` 与 `insert`/`edit`/`capJavaField`/`superColumn`/`increment`/`usableColumn`）
+     没有 `@JsonPropertyOrder`，顺序取决于 Jackson 从反射拿到的方法数组顺序，而这个**按 JVM 实例**固定、
+     跨重启会变（实测同一进程内 4 次完全一致，两次重启之间从 `sub, crud, tree` 变成 `tree, crud, sub`）；
+     Rust 只能对齐其中一次，记 WARN。`data.info` 是 Redis INFO 的键序。
+  3. 1 条 `/monitor/online/list` 的行数/total —— 两端各自的会话库（db0/db15）天然不同。
 - A 段 backend→api：链路矩阵 **20 OK / 4 WARN / 0 FAIL**，`/base` 透传 **71 OK / 1 WARN / 0 FAIL**（§10.1）。
 - B 段业务（`/manager`、`/flow` 129 条 GET）：**129 OK / 0 WARN / 0 FAIL**（§10.2）。
-- C 段框架（`/system`、`/monitor`、`/tool`、`/common`、`/flow` 121 条 GET）：热缓存后 **109 OK / 6 WARN / 0 FAIL**（§10.4）。
-- 数字路径变量类型：GET 侧 **28 OK / 0 WARN / 1 FAIL**，唯一 FAIL 是基线漏掉的 `/oss`（§10.6）。
-- `manager_crud!` 11 张表写入：**10 OK / 1 WARN / 0 FAIL**（§7.7）。
-- `/system/*` 等 14 个新增端点 × 两种请求体：**54 组 0 不一致**，2 组 KNOWN（§7.9）。
-- `/monitor/job` 四张矩阵、两个 Excel 导入端点仍全绿（§7.4、§8）。
+- C 段框架（`/system`、`/monitor`、`/tool`、`/common`、`/flow` 121 条 GET）：热缓存后 109 OK / 6 WARN / 0 FAIL；
+  修掉四类框架层差异后，`/system/user` 家族与 `/monitor/online`、`/monitor/cache` 的值差异也一并收口（§10.4、§10.7）。
+- 数字路径变量（`pathvar_matrix.py`，只用非法值探 GET）：**28 OK / 0 WARN / 1 FAIL**，
+  唯一那条 `/oss` 已随 §10.8 补齐。
+- `/oss/**` 9 条：16 组探针 13 组逐字节一致，剩余 3 组都是尾斜杠路由与错误页 `path` 字段的细节（§10.8）。
+- `manager_crud!` 11 张表写入：**10 OK / 1 WARN / 0 FAIL**（§7.7，路径变量改造后复跑不变）。
+- `/system/*` 等 14 个新增端点 × 两种请求体：**不一致 0**（§7.9，复跑不变）。
 - `/monitor/job` 四张矩阵、两个 Excel 导入端点仍全绿（§7.4、§8）。

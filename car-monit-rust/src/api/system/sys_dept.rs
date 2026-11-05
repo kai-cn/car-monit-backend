@@ -163,7 +163,7 @@ fn shape_dept_rows(rows: &mut [Value]) {
     }
 }
 
-async fn select_dept_list(
+pub(crate) async fn select_dept_list(
     state: &AppState,
     user: &LoginUser,
     params: &HashMap<String, String>,
