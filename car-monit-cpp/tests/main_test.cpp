@@ -292,6 +292,7 @@ void run_crypto_tests();
 void run_crud_engine_tests();
 void run_http_client_tests();
 void run_s3_client_tests();
+void run_gen_utils_tests();
 
 /** Spring URL 层规则的顺序与语义（SecurityConfig 是逐条 antMatchers，先命中先生效） */
 static void testSecurityUrlRules() {
@@ -525,6 +526,7 @@ int main() {
     run_crud_engine_tests();
     run_http_client_tests();
     run_s3_client_tests();
+    run_gen_utils_tests();
     if (fails == 0) {
         std::printf("ALL TESTS PASSED\n");
         return 0;

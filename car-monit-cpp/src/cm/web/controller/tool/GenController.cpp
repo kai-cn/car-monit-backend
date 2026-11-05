@@ -24,7 +24,10 @@
 #include "cm/common/core/page/TableDataInfo.hpp"
 #include "cm/common/utils/JavaCollections.hpp"
 #include "cm/common/utils/DateUtils.hpp"
+#include "cm/common/exception/Exceptions.hpp"
 #include "cm/common/utils/StringUtils.hpp"
+#include "cm/framework/security/SecurityUtils.hpp"
+#include "cm/web/controller/tool/GenUtils.hpp"
 #include "cm/framework/db/Db.hpp"
 #include "cm/framework/web/Router.hpp"
 #include "cm/web/BaseController.hpp"
@@ -315,6 +318,228 @@ std::vector<std::string> splitComma(const std::string& s) {
 
 } // namespace
 
+/** Java 的 String.split(",")：不 trim，保留中间空段，丢掉尾部空段 */
+std::vector<std::string> javaSplitComma(const std::string& s) {
+    std::vector<std::string> out;
+    if (s.empty()) {
+        out.push_back("");   // "".split(",") == [""]
+        return out;
+    }
+    size_t pos = 0;
+    while (true) {
+        size_t comma = s.find(',', pos);
+        if (comma == std::string::npos) {
+            out.push_back(s.substr(pos));
+            break;
+        }
+        out.push_back(s.substr(pos, comma - pos));
+        pos = comma + 1;
+    }
+    while (!out.empty() && out.back().empty()) out.pop_back();
+    return out;
+}
+
+/** selectDbTableListByNames：注意这里**没有** table_comment <> '' 过滤、也没有 ORDER BY
+ *  （和 /db/list 的 selectDbTableList 不同），所以空注释的表也能被导入 */
+std::string dbTablesByNameIn(const std::vector<std::string>& names) {
+    std::string in;
+    for (const auto& n : names) {
+        if (!in.empty()) in += ", ";
+        in += Db::lit(n);
+    }
+    return "select table_name, table_comment, create_time, update_time from information_schema.tables"
+           " where table_name NOT LIKE 'qrtz_%' and table_name NOT LIKE 'gen_%'"
+           " and table_schema = (select database()) and table_name in (" + in + ")";
+}
+
+/** selectDbTableColumnsByName：is_required 不满足时是 **NULL**（不是 '0'） */
+std::string dbColumnsByName(const std::string& tableName) {
+    return "select column_name,"
+           " (case when (is_nullable = 'no' && column_key != 'PRI') then '1' else null end) as is_required,"
+           " (case when column_key = 'PRI' then '1' else '0' end) as is_pk,"
+           " ordinal_position as sort, column_comment,"
+           " (case when extra = 'auto_increment' then '1' else '0' end) as is_increment, column_type"
+           " from information_schema.columns where table_schema = (select database())"
+           " and table_name = (" + Db::lit(tableName) + ") order by ordinal_position";
+}
+
+/** insertGenTable：只写 <if> 成立的列；create_time 恒写 sysdate()。
+ *  注意 initTable 不给 tpl_category/gen_type/options 赋值 ⇒ 这三列走 DDL 默认值 */
+long long insertGenTableRow(const cm::gen::TableInit& t, const std::string& tableName,
+                            const std::string& tableComment, const std::string& remark) {
+    std::vector<std::pair<std::string, std::string>> cols;
+    auto add = [&](const char* col, const std::string& v, bool nonEmpty = true) {
+        if (v.empty() && nonEmpty) return;
+        cols.emplace_back(col, Db::lit(v));
+    };
+    add("table_name", tableName, false);        // <if test="tableName != null">：空串照样写
+    add("table_comment", tableComment);
+    add("class_name", t.className);
+    add("package_name", t.packageName);
+    add("module_name", t.moduleName);
+    add("business_name", t.businessName);
+    add("function_name", t.functionName);
+    add("function_author", t.functionAuthor);
+    add("remark", remark);
+    add("create_by", t.createBy);
+    std::string sql = "insert into gen_table (";
+    std::string vals;
+    for (size_t i = 0; i < cols.size(); ++i) {
+        sql += (i ? ", " : "") + cols[i].first;
+        vals += (i ? ", " : "") + cols[i].second;
+    }
+    sql += ", create_time) values (" + vals + ", sysdate())";
+    long long insertId = 0;
+    Db::instance().execute(sql, nullptr, &insertId);
+    return insertId;
+}
+
+/** insertGenTableColumn：空串一律被 <if test="x != null and x != ''"> 省掉 ⇒ 落 DDL 默认 */
+void insertGenColumnRow(long long tableId, const std::string& createBy, const cm::db::Row& src) {
+    const auto ci = cm::gen::initColumnField(src.str("column_name"), src.str("column_type"),
+                                             src.str("is_pk") == "1");
+    std::vector<std::pair<std::string, std::string>> cols;
+    if (tableId != 0) cols.emplace_back("table_id", Db::lit(tableId));
+    auto add = [&](const char* col, const std::string& v) {
+        if (!v.empty()) cols.emplace_back(col, Db::lit(v));
+    };
+    add("column_name", src.str("column_name"));
+    add("column_comment", src.str("column_comment"));
+    add("column_type", src.str("column_type"));
+    add("java_type", ci.javaType);
+    add("java_field", ci.javaField);
+    add("is_pk", src.str("is_pk"));
+    add("is_increment", src.str("is_increment"));
+    add("is_required", src.str("is_required"));   // 不满足时是 NULL ⇒ 整列被省掉
+    add("is_insert", ci.isInsert);
+    add("is_edit", ci.isEdit);
+    add("is_list", ci.isList);
+    add("is_query", ci.isQuery);
+    add("query_type", ci.queryType);
+    add("html_type", ci.htmlType);               // 未知类型时为空 ⇒ 省掉
+    cols.emplace_back("sort", Db::lit(src.i64("sort")));
+    add("create_by", createBy);
+    std::string sql = "insert into gen_table_column (";
+    std::string vals;
+    for (size_t i = 0; i < cols.size(); ++i) {
+        sql += (i ? ", " : "") + cols[i].first;
+        vals += (i ? ", " : "") + cols[i].second;
+    }
+    sql += ", create_time) values (" + vals + ", sysdate())";
+    Db::instance().execute(sql);
+}
+
+/** importGenTable：@Transactional；row > 0 才导列 */
+void importGenTables(const std::vector<cm::db::Row>& rows, const std::string& operName) {
+    for (const auto& row : rows) {
+        const std::string tableName = row.str("table_name");
+        const std::string tableComment = row.str("table_comment");
+        const auto t = cm::gen::initTable(tableName, tableComment, operName);
+        // GenTable.remark 来自 table_comment（RuoYi 的 resultMap 把 TABLE_COMMENT 同时映射到
+        // tableComment 与 remark），这里保持与库里实测一致：只写 table_comment
+        const long long tableId = insertGenTableRow(t, tableName, tableComment, "");
+        if (tableId <= 0) continue;
+        for (const auto& c : run(dbColumnsByName(tableName)).rows)
+            insertGenColumnRow(tableId, t.createBy, c);
+    }
+}
+
+/** validateEdit：树/子表校验。注意 Java 把 TPL_SUB 分支嵌在 tree 判断里 ⇒
+ *  子表那两条错误信息永远不可达，只有 tree 类别会失败。 */
+void validateEdit(const Json& body) {
+    const std::string tplCategory = cm::jstr(body, "tplCategory");
+    if (tplCategory != "tree") return;
+    const Json params = body.contains("params") && body["params"].is_object()
+                            ? body["params"] : Json::object();
+    auto p = [&](const char* k) { return cm::jstr(params, k); };
+    if (p("treeCode").empty()) throw cm::exception::CustomException("树编码字段不能为空");
+    if (p("treeParentCode").empty()) throw cm::exception::CustomException("树父编码字段不能为空");
+    if (p("treeName").empty()) throw cm::exception::CustomException("树名称字段不能为空");
+}
+
+/** updateGenTable：<if> 逐列；options 由 params 重新序列化，body 不带 params 就写成 "{}"，
+ *  于是原先存的 parentMenuId 被抹掉 —— Java 同样如此。 */
+long long updateGenTableRow(long long tableId, const Json& body) {
+    auto str = [&](const char* k) { return cm::jstr(body, k); };
+    std::vector<std::string> sets;
+    auto addIf = [&](const char* col, const std::string& v, bool nonEmpty) {
+        if (v.empty() && nonEmpty) return;
+        sets.push_back(std::string(col) + " = " + Db::lit(v));
+    };
+    // 这几个 <if> 只判 != null ⇒ 空串是**要写**的，但 body 里没这个键时是 null，不能写。
+    // 早先用 jstr() 取空串当"没给"，结果 PUT 把 table_name 洗成 '' —— 只能靠实机跑出来。
+    if (body.contains("tableName") && !body["tableName"].is_null())
+        sets.push_back("table_name = " + Db::lit(str("tableName")));
+    addIf("table_comment", str("tableComment"), true);
+    if (body.contains("subTableName") && !body["subTableName"].is_null())
+        sets.push_back("sub_table_name = " + Db::lit(str("subTableName")));
+    if (body.contains("subTableFkName") && !body["subTableFkName"].is_null())
+        sets.push_back("sub_table_fk_name = " + Db::lit(str("subTableFkName")));
+    addIf("class_name", str("className"), true);
+    addIf("function_author", str("functionAuthor"), true);
+    addIf("gen_type", str("genType"), true);
+    addIf("gen_path", str("genPath"), true);
+    addIf("tpl_category", str("tplCategory"), true);
+    addIf("package_name", str("packageName"), true);
+    addIf("module_name", str("moduleName"), true);
+    addIf("business_name", str("businessName"), true);
+    addIf("function_name", str("functionName"), true);
+    // options = JSON.toJSONString(params)：getParams() 懒加载空 Map ⇒ 没带 params 就是 "{}"
+    std::string options = "{}";
+    if (body.contains("params") && body["params"].is_object()) options = body["params"].dump();
+    if (!options.empty()) sets.push_back("options = " + Db::lit(options));
+    addIf("update_by", str("updateBy"), true);
+    if (body.contains("remark") && !body["remark"].is_null())
+        sets.push_back("remark = " + Db::lit(str("remark")));   // 同上：判 null，不判空串
+    sets.push_back("update_time = sysdate()");
+    std::string sql = "update gen_table set ";
+    for (size_t i = 0; i < sets.size(); ++i) sql += (i ? ", " : "") + sets[i];
+    sql += " where table_id = " + Db::lit(tableId);
+    long long affected = 0;
+    Db::instance().execute(sql, &affected);
+    return affected;
+}
+
+/** updateGenTableColumn：前 12 个赋值是**无条件**的 ⇒ body 里没带的字段会被写成 NULL；
+ *  6 个 fork 专有列是 <if> 条件赋值；column_name / column_type 永不更新。 */
+void updateGenTableRowColumn(const Json& c) {
+    auto str = [&](const char* k) { return cm::jstr(c, k); };
+    auto nulIfAbsent = [&](const char* k) {
+        if (!c.contains(k) || c[k].is_null()) return std::string("null");
+        return Db::lit(str(k));
+    };
+    std::string sql = "update gen_table_column set column_comment = " + nulIfAbsent("columnComment") +
+                      ", java_type = " + nulIfAbsent("javaType") +
+                      ", java_field = " + nulIfAbsent("javaField") +
+                      ", is_insert = " + nulIfAbsent("isInsert") +
+                      ", is_edit = " + nulIfAbsent("isEdit") +
+                      ", is_list = " + nulIfAbsent("isList") +
+                      ", is_query = " + nulIfAbsent("isQuery") +
+                      ", is_required = " + nulIfAbsent("isRequired") +
+                      ", query_type = " + nulIfAbsent("queryType") +
+                      ", html_type = " + nulIfAbsent("htmlType") +
+                      ", dict_type = " + nulIfAbsent("dictType");
+    const long long sort = c.contains("sort") && c["sort"].is_number() ? c["sort"].get<long long>()
+                                                                       : std::atoll(str("sort").c_str());
+    sql += ", sort = " + Db::lit(sort);
+    static const std::vector<std::pair<const char*, const char*>> kForkCols = {
+        {"linkTableId", "link_table_id"},         {"singleSelection", "single_selection"},
+        {"multipleSelections", "multiple_selections"},
+        {"dialogSearchColumnIds", "dialog_search_column_ids"},
+        {"dialogListColumnIds", "dialog_list_column_ids"},
+        {"fieldMapString", "field_map_string"}};
+    for (const auto& [key, col] : kForkCols) {
+        const std::string v = str(key);
+        if (!v.empty()) sql += ", " + std::string(col) + " = " + Db::lit(v);
+    }
+    sql += ", update_by = " + nulIfAbsent("updateBy") + ", update_time = sysdate()";
+    const long long columnId = c.contains("columnId") && c["columnId"].is_number()
+                                   ? c["columnId"].get<long long>()
+                                   : std::atoll(str("columnId").c_str());
+    sql += " where column_id = " + Db::lit(columnId);
+    Db::instance().execute(sql);
+}
+
 void registerGenController(Router& r) {
     // GET /tool/gen/list —— 代码生成业务列表（分页）
     r.get("/tool/gen/list", [](RequestContext& ctx) -> cm::http::ApiResponse {
@@ -486,6 +711,95 @@ void registerGenController(Router& r) {
     });
 
     // DELETE /tool/gen/{tableIds} —— 先删表再删列（都是硬删除）
+    // POST /tool/gen/importTable —— 从 information_schema 导表进 gen_table/gen_table_column
+    r.post("/tool/gen/importTable", [](RequestContext& ctx) -> cm::http::ApiResponse {
+        // Java: importTableSave(String tables) —— 普通请求参数（query 或 form），不是 JSON。
+        // Convert.toStrArray 是 String.split(",")：不 trim、保留中间空段、丢尾部空段。
+        const std::string tables = ctx.optParam("tables").value_or("");
+        const auto names = javaSplitComma(tables);
+        cm::db::Transaction tx;
+        auto res = run(dbTablesByNameIn(names));
+        importGenTables(res.rows, cm::security::SecurityUtils::getUsername());
+        tx.commit();
+        return BaseController::ok(AjaxResult::success());
+    }).permi("tool:gen:list");
+
+    // PUT /tool/gen —— 编辑表配置 + 逐列编辑（columns[].javaField 有 @NotBlank）
+    r.put("/tool/gen", [](RequestContext& ctx) -> cm::http::ApiResponse {
+        Json body = ctx.body();
+        // GenTableColumn.javaField 的 @NotBlank：Bean Validation 先于方法体生效
+        if (body.contains("columns") && body["columns"].is_array()) {
+            for (const auto& c : body["columns"]) {
+                if (!c.contains("javaField") || !c["javaField"].is_string() ||
+                    c["javaField"].get<std::string>().empty())
+                    throw cm::exception::ServiceException("Java属性不能为空");
+            }
+        }
+        validateEdit(body);
+        cm::db::Transaction tx;
+        const long long tableId = body.contains("tableId") && body["tableId"].is_number()
+                                      ? body["tableId"].get<long long>()
+                                      : std::atoll(cm::jstr(body, "tableId").c_str());
+        const long long affected = updateGenTableRow(tableId, body);
+        if (affected > 0 && body.contains("columns") && body["columns"].is_array()) {
+            for (const auto& c : body["columns"]) updateGenTableRowColumn(c);
+        }
+        tx.commit();
+        return BaseController::ok(AjaxResult::success());
+    }).permi("tool:gen:edit");
+
+    // GET /tool/gen/synchDb/{tableName} —— 只补新列 + 删掉库里没有的列，**从不更新**已存在的列
+    r.get("/tool/gen/synchDb/{tableName}", [](RequestContext& ctx) -> cm::http::ApiResponse {
+        const std::string tableName = ctx.pathVar("tableName");
+        auto t = run(std::string(kGenTableVo) + " where table_name = " + Db::lit(tableName));
+        // Java: selectGenTableByName 声明返回单个 GenTable ⇒ MyBatis 用 selectOne，
+        // 同名两行（重复 importTable 就会造成）直接 TooManyResultsException
+        std::vector<long long> distinctIds;
+        for (const auto& row : t.rows) {
+            if (std::find(distinctIds.begin(), distinctIds.end(), row.i64("table_id")) ==
+                distinctIds.end())
+                distinctIds.push_back(row.i64("table_id"));
+        }
+        // Java: selectGenTableByName 返回 null 时先 table.getColumns() ⇒ NPE（msg 为 null）
+        if (t.rows.empty())
+            throw cm::exception::ServiceException(
+                "Cannot invoke \"GenTable.getColumns()\" because \"table\" is null");
+        if (distinctIds.size() > 1)
+            throw cm::exception::ServiceException(
+                "Expected one result (or null) to be returned by selectOne(), but found: " +
+                std::to_string(distinctIds.size()));
+        const long long tableId = t.rows[0].i64("table_id");
+        const std::string createBy = t.rows[0].str("create_by");
+        auto cols = run(std::string(kGenColumnVo) + " where table_id = " + Db::lit(tableId) +
+                        " order by sort");
+        auto dbCols = run(dbColumnsByName(tableName));
+        if (dbCols.rows.empty())
+            throw cm::exception::CustomException("同步数据失败，原表结构不存在");
+
+        cm::db::Transaction tx;
+        std::vector<std::string> haveNames;
+        for (const auto& r : cols.rows) haveNames.push_back(r.str("column_name"));
+        std::vector<std::string> dbNames;
+        for (const auto& r : dbCols.rows) dbNames.push_back(r.str("column_name"));
+        for (const auto& r : dbCols.rows) {
+            const std::string cn = r.str("column_name");
+            if (std::find(haveNames.begin(), haveNames.end(), cn) != haveNames.end())
+                continue;   // 已存在：Java 不做任何 UPDATE，类型/注释改了也不会同步
+            insertGenColumnRow(tableId, createBy, r);
+        }
+        std::string drop;
+        for (const auto& r : cols.rows) {
+            const std::string cn = r.str("column_name");
+            if (std::find(dbNames.begin(), dbNames.end(), cn) != dbNames.end()) continue;
+            if (!drop.empty()) drop += ", ";
+            drop += Db::lit(r.i64("column_id"));
+        }
+        if (!drop.empty())
+            Db::instance().execute("delete from gen_table_column where column_id in (" + drop + ")");
+        tx.commit();
+        return BaseController::ok(AjaxResult::success());
+    }).permi("tool:gen:edit");
+
     r.del("/tool/gen/{tableIds}", [](RequestContext& ctx) -> cm::http::ApiResponse {
         const auto ids = splitIds(ctx.pathVar("tableIds"));
         if (ids.empty()) return BaseController::ok(AjaxResult::success());
