@@ -43,6 +43,7 @@
 #include "cm/web/BaseController.hpp"
 #include "cm/web/specs/ManagerCrudSpecs.hpp"
 #include "cm/web/util/ImportExcel.hpp"
+#include "cm/web/util/SuspiciousShared.hpp"
 
 namespace cm::web {
 namespace {
@@ -313,38 +314,14 @@ void updateCarInfo(const Ent& car) {
             " AND del_flag = '0'");
 }
 
-/** 对应 CarInfoServiceImpl.updateRedisCarList()：两条缓存都来自 selectCarInfoList(new CarInfo())
- *  的全量结果，写 Redis 时不设过期。
- *  ⚠️ 值必须是 fastjson2 WriteClassName 那种形态（@type、字段按名排序、Long 带 L、null 省略），
- *     直接 dump() 的严格 JSON 会让 Java 反序列化成 JSONObject，用到就 ClassCastException。 */
-void updateRedisCarList() {
-    const Spec& spec = cm::web::crud::specCarInfo();
-    cm::db::Result res = mustRun(cm::web::crud::selectSqlOf(
-        spec, cm::web::crud::buildWhere(spec, Json::object()),
-        spec.orderBy.empty() ? std::string() : " ORDER BY " + spec.orderBy));
-    cm::redis::RedisCache& cache = cm::redis::RedisCache::instance();
-    cache.set("car_list", cm::web::crud::fastJson2CachedArray(
-                              spec, res.rows, "com.ruoyi.manager.domain.CarInfo"));
-
-    std::string jc = "[";
-    for (size_t i = 0; i < res.rows.size(); ++i) {
-        if (i) jc += ",";
-        // CarVO 只赋了 carId/carNo，其余属性 null ⇒ fastjson2 不写出来
-        jc += "{\"@type\":\"com.ruoyi.base.domain.CarVO\",\"carId\":" +
-              Json(res.rows[i].str("id")).dump() + ",\"carNo\":" +
-              Json(res.rows[i].str("car_no")).dump() + "}";
-    }
-    cache.set("car_list_jc", jc + "]");
-}
+// updateRedisCarList / selectCarInfoListByNo 都在 cm/web/util/SuspiciousShared 里 ——
+// 那条缓存值的 fastjson2 形态被四条 Java 路径共用，写两份迟早会有一份写成严格 JSON。
+void updateRedisCarList() { cm::web::updateRedisCarList(); }
 
 /** selectCarInfoList(CarInfo{carNo}) —— 与 /manager/carinfo/list 同一条语句，
  *  所以"异常流水已全部补缴 ⇒ 这辆车查不到"的那个 not exists 照样生效。 */
 cm::db::Result selectCarInfoByNo(const std::string& carNo) {
-    const Spec& spec = cm::web::crud::specCarInfo();
-    Json q = Json::object();
-    q["carNo"] = Json(carNo);
-    return mustRun(cm::web::crud::selectSqlOf(
-        spec, cm::web::crud::buildWhere(spec, q), " ORDER BY " + spec.orderBy));
+    return cm::web::selectCarInfoListByNo(carNo);
 }
 
 /** 对应 CarInfoServiceImpl.saveCarInfo()。返回值在 exceptrecord 导入里被丢弃，
@@ -438,6 +415,15 @@ void saveCarExceptRecord(Ent& rec) {
     }
 
     if (StringUtils::isNotBlank(rec.plain("id"))) {
+        // ⚠️ car_except_record 的父类 BasePlusEntity 声明了 fill = FieldFill.UPDATE，
+        //    所以 MP 的 updateById 会补 update_by/update_time —— 导入循环里没人设过这两个属性，
+        //    不补的话列表接口看到的 updateTime 就还是旧值。
+        if (!rec.present("updateBy") || rec["updateBy"].isNull()) {
+            rec["updateBy"] = numVal(std::to_string(cm::security::SecurityUtils::getUserId()));
+        }
+        if (!rec.present("updateTime") || rec["updateTime"].isNull()) {
+            rec["updateTime"] = dateVal(DateUtils::getTime());
+        }
         const std::string sets = setPairs(EXCEPT_COLS, std::size(EXCEPT_COLS), rec);
         if (!sets.empty()) {
             mustRun("UPDATE car_except_record SET " + sets + " WHERE id = " +

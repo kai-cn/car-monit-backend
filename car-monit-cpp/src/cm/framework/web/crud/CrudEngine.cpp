@@ -13,6 +13,7 @@
 #include "cm/common/utils/StringUtils.hpp"
 #include "cm/framework/db/Db.hpp"
 #include "cm/framework/http/HttpResponse.hpp"
+#include "cm/framework/security/SecurityUtils.hpp"
 #include "cm/web/BaseController.hpp"
 
 namespace cm::web::crud {
@@ -38,6 +39,32 @@ bool Spec::pkIsString() const {
         if (f.pk) return f.fmt != Fmt::Int && f.fmt != Fmt::Long && f.fmt != Fmt::Double;
     }
     return true;
+}
+
+bool Spec::isTailAlias(const std::string& name) const {
+    if (selectTail.empty()) return false;
+    // 逗号分隔的每个表达式，取结尾那个标识符就是它的列别名：
+    // "concat(sd.dept_name, ' ', su.nick_name) createInfo" -> createInfo
+    std::string item;
+    size_t depth = 0;
+    for (size_t i = 0; i <= selectTail.size(); ++i) {
+        const char c = i == selectTail.size() ? ',' : selectTail[i];
+        if (c == '(') ++depth;
+        if (c == ')') --depth;
+        if (c == ',' && depth == 0) {
+            size_t end = item.size();
+            while (end > 0 && std::isspace(static_cast<unsigned char>(item[end - 1]))) --end;
+            size_t start = end;
+            while (start > 0 && (std::isalnum(static_cast<unsigned char>(item[start - 1])) ||
+                                 item[start - 1] == '_'))
+                --start;
+            if (start < end && item.substr(start, end - start) == name) return true;
+            item.clear();
+            continue;
+        }
+        item.push_back(c);
+    }
+    return false;
 }
 
 std::string Spec::selectColumns() const {
@@ -125,6 +152,14 @@ Json rowToJson(const Spec& spec, const cm::db::Row& row) {
     Json j = Json::object();
     for (const auto& f : spec.fields) {
         if (f.column == nullptr) {
+            // `<include refid="Vo"/>,concat(...) createInfo` 这种派生列：Java 的实体上它
+            // 只是普通属性（没有对应表列），所以 Field.column 是 nullptr，值只能从
+            // selectTail 的别名里来。不认识它就等于"Java 有值、C++ 恒 null"。
+            if (!spec.selectTail.empty() && spec.isTailAlias(f.json)) {
+                auto v = row.get(f.json);
+                j[f.json] = v ? Json(*v) : Json(nullptr);
+                continue;
+            }
             // 非列属性：Java 的字段初始值（= "0" / = new ArrayList<>()）会被 Jackson 原样输出，
             // 只有没有初始值时才是 null。列属性走下面的 DB 取值，NULL 就是 null。
             j[f.json] = f.dflt ? Json::parse(f.dflt) : Json(nullptr);
@@ -255,7 +290,40 @@ Json bindQuery(const Spec& spec, RequestContext& ctx) {
     return q;
 }
 
-std::string buildInsert(const Spec& spec, const Json& body) {
+/** MetaObjectHandler 的两个 fill 钩子：它们改的是**实体**，所以后续 "只写非 null 列"
+ *  的循环自然会把补上的值带进 SQL —— 这里同样先补进 body 的副本，再走原逻辑。
+ *  ⚠️ insertFill 里 tenantId 判的是 "epsId == null"（Java 的复制粘贴错误）：
+ *     epsId 有值时 tenantId 就不会被补。照抄。 */
+Json applyInsertFill(const Spec& spec, const Json& body) {
+    if (!spec.auditFillInsert) return body;
+    Json out = body;
+    const long long userId = cm::security::SecurityUtils::getUserId();
+    const long long epsId = cm::security::SecurityUtils::getEpsId();
+    const bool hadEps = findField(out, "epsId") != nullptr;
+    const auto putIf = [&](const char* key, Json v) {
+        if (findField(out, key) == nullptr) out[key] = std::move(v);
+    };
+    putIf("createTime", Json(cm::utils::DateUtils::getTime()));
+    putIf("createBy", Json(userId));
+    putIf("epsId", Json(epsId));
+    if (!hadEps) putIf("tenantId", Json(cm::security::SecurityUtils::getTenantId()));
+    return out;
+}
+
+Json applyUpdateFill(const Spec& spec, const Json& body) {
+    if (!spec.auditFillUpdate) return body;
+    Json out = body;
+    if (findField(out, "updateTime") == nullptr) {
+        out["updateTime"] = Json(cm::utils::DateUtils::getTime());
+    }
+    if (findField(out, "updateBy") == nullptr) {
+        out["updateBy"] = Json(cm::security::SecurityUtils::getUserId());
+    }
+    return out;
+}
+
+std::string buildInsert(const Spec& spec, const Json& bodyIn) {
+    const Json body = applyInsertFill(spec, bodyIn);
     std::string cols, vals;
     // MyBatis-Plus 的 IdType.ASSIGN_UUID（BasePlusEntity / BasePlusEntityNew / BaseUuidEntity 都是）
     // 在**客户端**生成 32 位无横线小写 UUID：请求没带 id 时也必须补上，否则 INSERT 直接缺主键列。
@@ -289,7 +357,8 @@ std::string buildInsert(const Spec& spec, const Json& body) {
     return "INSERT INTO " + std::string(spec.table) + " (" + cols + ") VALUES (" + vals + ")";
 }
 
-std::string buildUpdate(const Spec& spec, const Json& body) {
+std::string buildUpdate(const Spec& spec, const Json& bodyIn) {
+    const Json body = applyUpdateFill(spec, bodyIn);
     const Json* pk = findField(body, spec.pkJson());
     if (pk == nullptr || pk->is_null()) return {};  // 无主键时 Java 侧不会发 UPDATE
     const std::string pk_col = std::string(spec.pkColumn());

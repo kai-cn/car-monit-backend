@@ -284,8 +284,10 @@ redis("DEL", "sys_config:api_map")
 mysql("delete from car_query_log where query_condition like '%QODERGEO挂A%'")
 st, j, _ = call("/manager/cartrackinfo/changeTrailInfo", "PUT",
                 {"tracks": tracks(), "trailList": [point()]})
+# create_time 只有秒级、id 又是随机 UUID ⇒ "order by create_time desc, id" 在同一秒内
+# 是不确定的（一开始就撞上过另一条 changeTrailInfo {} 的记录）。按夹具车牌取，别靠时序。
 log = mysql("select model_type, menu_point, user_id, query_condition from car_query_log"
-            " order by create_time desc, id limit 1")
+            " where query_condition like '%QODERGEO挂A%' limit 1")
 if log:
     mt, mp, uid, qc = (log[0] + ["", "", "", ""])[:4]
     check("queryLog 先于轨迹计算落库：model_type/menu_point 都是 \"1\"",

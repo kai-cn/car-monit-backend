@@ -47,6 +47,7 @@
 #include "cm/web/specs/BaseCrudSpecs.hpp"
 #include "cm/web/specs/ManagerCrudSpecs.hpp"
 #include "cm/web/util/ImportExcel.hpp"
+#include "cm/web/util/SuspiciousShared.hpp"
 
 namespace cm::web {
 namespace {
@@ -248,13 +249,8 @@ std::string bigDecimalAdd(const std::string& a, const std::string& b) {
 
 // ---------------------------------------------------------------- 查询
 
-cm::db::Result mustRun(const std::string& sql) {
-    cm::db::Result res;
-    if (!Db::instance().query(sql, res)) {
-        throw cm::exception::ServiceException("数据访问异常，SQL 执行失败: " + sql.substr(0, 200));
-    }
-    return res;
-}
+// mustRunSql / suspiciousByIdRow 见 cm/web/util/SuspiciousShared.hpp
+cm::db::Result mustRun(const std::string& sql) { return mustRunSql(sql); }
 
 std::map<std::string, std::string> dictValueToLabel(const std::string& dictType) {
     cm::domain::SysDictData q;
@@ -276,11 +272,7 @@ std::map<std::string, std::string> dictValueToLabel(const std::string& dictType)
 
 /** car_suspicious / car_suspicious_back 的 by-id 查询：Vo 之外还要 track_josn */
 Json suspiciousByIdRow(const Spec& spec, const std::string& table, const std::string& id) {
-    const std::string sql = "SELECT " + spec.selectColumns() + ", t.track_josn FROM " + table +
-                            " t WHERE t.id = " + Db::lit(id);
-    cm::db::Result res = mustRun(sql);
-    if (res.rows.empty()) return Json(nullptr);
-    return cm::web::crud::rowToJson(spec, res.rows[0]);
+    return cm::web::suspiciousByIdRow(spec, table, id);
 }
 
 /** selectCarSuspiciousCheckList(CarSuspiciousCheck{carId=id})。

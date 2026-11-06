@@ -36,6 +36,11 @@ const Spec& specBaseConfigServiceArea() {
             {"sectionCode", "section_code", Fmt::Str, Cond::Eq, "路段编码", false, false, true, true},
             {"pileNo", "pile_no", Fmt::Str, Cond::Eq, "桩号", false, false, true, true},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.excelSheetName = "服务区";
         return s;
     }();

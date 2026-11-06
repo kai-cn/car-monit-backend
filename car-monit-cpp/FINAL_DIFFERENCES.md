@@ -14,13 +14,13 @@
 | 指标 | 数值 |
 |---|---|
 | Java 端点总数 | **497** |
-| 已迁移并路径匹配 | **487**（98.0%） |
-| 未迁移 | **10**（逐条见 §4） |
-| C++ 已注册路由（含 Java 没有的扩展） | **560** |
+| 已迁移并路径匹配 | **488**（98.2%） |
+| 未迁移 | **9**（逐条见 §4） |
+| C++ 已注册路由（含 Java 没有的扩展） | **561** |
 | CRUD Spec 覆盖实体 | 59，`verify_generated_sql` 在真实库 0 异常 |
 | 实体字段 ↔ JSON 键缺口 | `audit_spec_keys` 报告 **0** |
 | 单元测试 | 10 文件 / 514 处断言调用点（含 INFLATE 三种块类型、真实 deflate 的 xlsx 对拍、GpsUtil 对 Python 独立实现的对拍） |
-| 端到端断言（实机，需 MySQL+Redis） | 16 个脚本；本轮复跑 6 个共 **234** 项全通过（trail 几何 54、import 61、track_by_time 34、bigscreen 22、suspicious/history 41、template_export 22）；其余脚本需 fake S3 / 桩服务，随各自批次验过 |
+| 端到端断言（实机，需 MySQL+Redis） | 17 个脚本；本轮复跑 7 个共 **267** 项全通过（suspicious_check 33、trail 几何 54、import 61、bigscreen 22、suspicious/history 41、track_by_time 34、template_export 22）；`verify_generated_sql` 另有 59 个实体逐条建 SQL 跑真实库，0 异常。其余脚本需 fake S3 / 桩服务，随各自批次验过 |
 | `@Log` 操作日志规则 | 234 条，C++ 已能写 `sys_oper_log` |
 
 一句话结论：**接口契约（路径、方法、状态码、错误码、JSON 结构与键序、分页与鉴权语义）已对齐到"拿真实数据回归"的程度；剩余差异集中在外部依赖（对象存储、外部 HTTP、模板引擎）与 Excel 读取，且全部是显式标注的缺口，没有静默假数据。**
@@ -62,6 +62,7 @@
 | 29 | **`sys_config:api_map` 只读 Redis 裸键**，绕开 `SysConfigService`：不走 `sys_config` 表回源、不回填缓存，键缺失时默认 `"1"`，只有 trim 后等于 `"0"` 才切到腾讯分支。也就是说库里配了 `api_map` 而 Redis 没同步时，Java 这里看不见 —— C++ 若"顺手"改成走配置服务就会不一致 | `Constants::API_MAP`，`verify_trail_geo.py` 的两条开关断言 |
 | 30 | **`car_lxgh:` 缓存键是无分隔符拼接**（前缀 + 车牌 + 入口站 + 出口站 + 点数），且 `ByPlan` 那条键里 BigDecimal 用 `toString()` 而请求用 `toPlainString()` —— 需要科学计数法的值两边文本不同。这是 Java 的不一致，照抄 | `TrailGeometry::carGeometryByPlan*` |
 | 31 | **`getCarGeometry` 对入参列表有可见副作用**：`trailBo.setPilenoDec(...)` 写的是控制器同一个 list 实例，所以响应里 `trailList` 与 `trailDevCountBO.trailList` 都带出 `pilenoDec`；而且路线顺序是 `LinkedHashMap` 的首次出现序（不是排序），`reserver` 又取的是**排序前**的首/末位置 | `verify_trail_geo.py`（pilenoDec 断言） |
+| 33 | **MyBatis-Plus 的审计列填充取决于父类，不是一刀切**：17 张表的实体 extends `BasePlusEntity` / `BasePlusEntityInput`，这两个父类声明了 `fill = FieldFill.INSERT/UPDATE` ⇒ insert 补 create_by/create_time/eps_id（tenantId 只在 epsId 恰好为空时才补，Java 的复制粘贴错误），update 补 update_by/update_time。其余父类（`BasePlusEntityNew` / `…InputNew` / `…Long` / `BaseEntity` / `BaseUuidEntity`）**一个都没有** —— 例如 `car_info`（InputNew）与 `car_suspicious`（Long）的 updateById 就不动审计列。因为 `update_time` 就在 `selectXxxVo` 里，少写了列表接口立刻能看出来 | `Spec::auditFillInsert/Update`（由生成器读父类源码得出），`verify_suspicious_check.py` |
 | 32 | **同一份实体在不同层的形态不同**：Jackson 响应 = 声明序 + null 全输出（`ZdataTrailTracks` 51 键、`TrailBo` 32 键）；fastjson2 缓存/query_condition = 按名排序 + null 省略；`TrailInfo.enterTime` 没有 `@JsonFormat` ⇒ 输出 epoch 毫秒数字，而 `tracks.enterTime` 有 ⇒ 输出 `"yyyy-MM-dd HH:mm:ss"`。三者混用就是不一致 | `projectViaSpec`/`projectTrailInfo`，`verify_trail_geo.py` |
 
 ---
@@ -111,7 +112,7 @@
 
 | 端点 | 阻塞点 |
 |---|---|
-| `PUT /manager/suspicious/check` | **纯本地事务，无外部 HTTP**：校验 status≠"1" → 删 check/`car_except_record` → 无车则插 `car_info` → 批量落库 → `check_status='1'` → 刷 Redis 车辆列表；返回 `AjaxResult.success("操作成功！",id)`；**`@PreAuthorize` 在 Java 里被注释掉**，不要顺手补 |
+| ~~`PUT /manager/suspicious/check`~~ ✅ | 已实现：校验 status≠"1" → **物理**删 check/`car_except_record` → 无车则插 `car_info` → 批量落库 → `check_status='1'` → 刷 Redis 车辆列表；返回 `AjaxResult.success("操作成功！",id)`；**`@PreAuthorize` 在 Java 里被注释掉**，没有补 |
 | ~~`GET /manager/suspicious/listFileCarNo`~~ ✅ | 已实现：每行 `selectCarSuspiciousById` → 解析 `track_josn` → 三级回退几何；`total` 是行数、`escapedTypeName` 尾逗号都照抄 |
 | ~~`GET /manager/suspicious/history/{id}`~~ ✅ | 已实现（同一套几何后处理，读的是 `car_suspicious_back`） |
 | `GET /manager/suspicious/exportAbnormalPassage` | **docx** 模板：`WordExportUtil.exportWord07` + `ImageEntity` 图片嵌入 + S3 GetObject 取图 ⇒ 需 docx 填充能力 |
@@ -143,11 +144,11 @@
 > ~~`POST /manager/carinfo/import`、`POST /manager/exceptrecord/import`~~ —— 已迁移（xlsx 读取器可用后落地，见 §2 契约 23–26 与 `scripts/verify_import.py` 的 61 项实机断言）。
 > 另注：`POST /system/user/importData` 已在路由表里（未计作"未覆盖"），但它走的是另一套机制（`@Excel` 注解反查 + `updateSupport` 的部门/角色校验），目前仍返回**显式错误**而不是假成功。
 
-### 小结：按"缺什么能力"重排（10 条）
+### 小结：按"缺什么能力"重排（9 条）
 
 | 缺的能力 | 条数 | 端点 |
 |---|---|---|
-| **无（纯移植工作量）** | **4** | `file/uploadFileEnc`、`suspicious/check`、`suspicious/syncSuspiciousCarTask`、`busstest/syncCurrentTrack` |
+| **无（纯移植工作量）** | **3** | `file/uploadFileEnc`、`suspicious/syncSuspiciousCarTask`、`busstest/syncCurrentTrack` |
 | S3 / MinIO 客户端（SigV4） | 7 | `file/upload`、`uploadSupplier`、`uploadPdf`、`uploadFile`、`uploadFileId`、`GET /{bucket}/{obj}`、`GET /view/{bucket}/{obj}`（已实现，缺真实 MinIO 才能验签名之外的分支） |
 | S3 + 出站 HTTP | 1 | `file/uploadByUrl` |
 | 出站 HTTP（外部服务在场才能验） | 3 | `cartrackinfo/listByCarId`、`cartrackinfo/carSnapShot`、`snapshotflow/earliest-time`（`geometry/getHenDa`、`syncAllGeometry`、`syncAllGeometry1` 已实现，仍缺真实 GeoServer；`listByCarByTime` 的远程分支在 Java 里整块被注释，故早已作为纯本地端点落地） |
@@ -186,6 +187,15 @@
 | `TrailDevList` 字段名首字母大写 | 声明成 `private List<TrailDevBO> TrailDevList;`，但 Jackson 从 getter 推导 ⇒ JSON 键是 `trailDevList`。输出成 `TrailDevList` 就是错的 | `TrailGeometry::trailDevCountBo` |
 | `updateRedisList()` 缓存过滤后的列表、返回未过滤的全集 | 冷启动第一次与之后每次的 `raodTrailList` 可能不同。实测这两个差别不可观察（paths 为空的行本来就被跳过、lxbh 为空的行 trim 成 "" 永远匹配不到真实路线编号），C++ 按缓存那份实现 | `TrailGeometry::roadGeometryGroups` |
 | `changeTrailInfo` 里 `trailInfo.setTrailList(josnList)` 是自我赋值 | `josnList` 本来就是从 `trailInfo.getTrailList()` 取的；照抄不改 | `CarTrackInfoController:312` |
+| `check` 里算出来的 `escapedType` 没人用 | `escapedType.indexOf(addCheckType) > -1` 是**子串**判重（码 "1" 会因为已积累的 "10," 含 '1' 而被当成重复跳过；值为空串时 `indexOf("")==0` 永远跳过），拼完 `deleteEnd` 之后却把请求上的 `escapedType` 写进 updatebo —— 计算结果是死值，照抄不"接通" | `ManagerSuspiciousWriteControllers.cpp` |
+| `check` 的两张表是**物理** delete，且排在可能 NPE 的循环之前 | `isExcept!="1"` 且 `checkList` 为 null 时：先删空 → for-each NPE → 500 → 靠 `@Transactional` 回滚。C++ 的 `Transaction` 析构默认回滚，所以正常返回路径必须逐个显式 commit，否则"500 之后旧行应该还在"这条就守不住 | `verify_suspicious_check.py` 的回滚用例 |
+
+### C++ 侧自己埋的坑（移植时必须防复发）
+
+| 条目 | 表现 | 处置 |
+|---|---|---|
+| `Db::lit("0")` 命中 `lit(bool)` 重载 | `const char*` → `bool` 是**标准转换**，优先级高于 → `const std::string&` 的用户定义转换，于是 `del_flag` 这类字面量被写成 `1`。实测 car_info 的 `del_flag` 就这么错了 | 加了 `lit(const char*)` 精确匹配重载；新代码传字符串字面量不会再掉进 bool |
+| 生成器与库里 spec 不完全一致 | `car_info` 那段无条件的 `not exists (… group by …)` 与两处 `createInfo` 派生列是手工补进去的；生成器还表达不了（试过改成逐字照抄 WHERE，被 RuoYi 的 `<where>` 标签骗出 `" and >"` 这种垃圾，已回退） | 已在 `gen_crud_spec.py` 注释里写明；**不要盲目重新生成**，先 diff 再落地 |
 | `syncSuspiciousCarTask` 签名三参数由调用方提供、无时间窗 | 可无限重放、可离线伪造 | §5.1、§4.5 |
 
 ---

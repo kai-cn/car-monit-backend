@@ -150,6 +150,22 @@ def find_domain_class(entity):
     return None
 
 
+def base_audit_fill(base_cls):
+    """父类里有没有 @TableField(fill = FieldFill.INSERT / UPDATE)。
+
+    只有 BasePlusEntity 与 BasePlusEntityInput 有，其余 Base* 变体（…New / …InputNew /
+    …Long / BaseEntity / BaseUuidEntity）都没有。这不是美化：MP 的 MetaObjectHandler
+    会因此补 create_by/create_time/eps_id/tenant_id 与 update_by/update_time，
+    而这些列就在 <sql id="selectXxxVo"> 里 ⇒ 少写了，列表接口的 updateTime 就是旧值。"""
+    if not base_cls:
+        return (False, False)
+    path = find_domain_class(base_cls)
+    if not path:
+        return (False, False)
+    src = read(path)
+    return ("FieldFill.INSERT" in src, "FieldFill.UPDATE" in src)
+
+
 def find_mapper_xml(entity):
     # quartz / generator 的 XML 不在 ruoyi-system 下，必须一起找
     for root in (MAPPER_ROOT, QUARTZ_MAPPER_ROOT):
@@ -521,6 +537,7 @@ def gen_entity(entity, ctrl_path):
     alias = ob_prefix if ob_prefix in cands else (cands[0] if cands else "t")
     L.append('        s.alias = "%s";' % alias)
     # XML 的 selectList 里写死在 <if> 之外的 where 片段（几乎必然是逻辑删除过滤）。
+    # XML 的 selectList 里写死在 <if> 之外的 where 片段（几乎必然是逻辑删除过滤）。
     # 丢了它就等于把 del_flag='1' 的行也返回给前端，与 Java 结果集不同；
     # 只看 <if> 之外的部分，否则会把"用户传了 status 才生效"的条件误当成恒定过滤。
     list_stmt = re.search(r'<select\b[^>]*id="select\w*(?:List|Vo)?"[^>]*>(.*?)</select>', xml_src, re.S)
@@ -541,6 +558,33 @@ def gen_entity(entity, ctrl_path):
         fixed.append(" and %s.status = '0'" % alias)
     if fixed:
         L.append('        s.extraWhere = "%s";' % "".join(fixed))
+    # ⚠️ 这里只重建 del_flag/status 这一类"一眼可见"的恒定过滤。像 car_info 那种
+    # 挂在 WHERE 上的整段 `not exists (select … group by …)`，生成器还表达不了，
+    # 是手工补进 ManagerCrudSpecs.cpp 的 —— 也就是说**生成结果与库里的 spec 不完全一致**，
+    # 重新生成会丢掉那一段。改成逐字照抄 WHERE 的尝试失败过一次：RuoYi 的 <where> 标签
+    # 会被 \bWHERE\b 当成关键字，于是产出 " and >" 这种垃圾。动这里之前先跑
+    # scripts/audit_spec_drift.py 看差异面。
+    # FROM 里带 join、以及 `<include refid="Vo"/>,concat(...) createInfo` 这种派生尾巴：
+    # 派生列不是表列也不在 Vo 里，只能单列表达（见 Spec::selectTail）。
+    # 这里要的是"标签之外"的原文，所以拿 <if> 的替换符当截断点。
+    probe_raw = list_stmt.group(1) if list_stmt else xml_src
+    probe_no_if = re.sub(r"<if\b[^>]*>.*?</if>", "\x00", probe_raw, flags=re.S)
+    # \bWHERE\b 会连 <where> 标签一起匹配到，所以先排除紧跟在 < 后面的那种
+    fm = re.search(r"(?<!<)\bWHERE\b(.*?)\x00", probe_no_if, re.S | re.I)
+    from_frag = ""
+    if fm:
+        between = re.sub(r"\s+", " ", fm.group(1))
+        gm = re.search(r"\bFROM\b(.*?)$", between, re.S | re.I)
+        if gm:
+            from_frag = gm.group(1).strip()
+    if from_frag and "join" in from_frag.lower():
+        L.append('        s.fromSql = "%s";' % c_escape("FROM " + from_frag))
+    tm = re.search(r'<include[^>]*/>\s*,(.*?)\bFROM\b', probe_no_if, re.S | re.I)
+    if tm:
+        tail = re.sub(r"\s+", " ", tm.group(1)).strip()
+        if tail:
+            # 尾巴上的派生列由引擎按别名从结果集里取（见 rowToJson 的 selectTail 分支）
+            L.append('        s.selectTail = "%s";' % c_escape(tail))
     L.append("        s.fields = {")
     COND_CPP = {
         "eq": "Cond::Eq", "ne": "Cond::Ne", "like": "Cond::Like", "not_like": "Cond::NotLike",
@@ -634,6 +678,12 @@ def gen_entity(entity, ctrl_path):
             "true" if ins else "false", "true" if upd else "false", tail,
             invo_tail(vo is None or col.lower() in vo, 10 if tail else 9)))
     L.append("        };")
+    fill_ins, fill_upd = base_audit_fill(base_cls)
+    if fill_ins:
+        L.append("        // 父类 %s 声明了 fill = FieldFill.INSERT" % base_cls)
+        L.append("        s.auditFillInsert = true;")
+    if fill_upd:
+        L.append("        s.auditFillUpdate = true;")
     if order_by:
         L.append('        s.orderBy = "%s";' % c_escape(order_by))
     title = ctrl.get("title") or entity

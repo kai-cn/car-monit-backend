@@ -33,6 +33,10 @@ public:
 
     /** MySQL 字符串字面量转义（含引号） */
     static std::string lit(const std::string& value);
+    /** ⚠️ 必须有这一条：没有它的话 `Db::lit("0")` 会选中 lit(bool) ——
+     *  const char* → bool 是**标准转换**，比 → const std::string& 的用户定义转换优先级高，
+     *  于是 del_flag 这类字面量悄悄变成 1。加了它之后字符串字面量走精确匹配。 */
+    static std::string lit(const char* value) { return lit(std::string(value)); }
     static std::string lit(const std::optional<std::string>& value);
     static std::string lit(long long value);
     static std::string lit(std::optional<long long> value);

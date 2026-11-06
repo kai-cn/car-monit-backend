@@ -47,6 +47,11 @@ const Spec& specBussTest() {
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false, true, true},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false, true, true},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "业务测试";
         return s;
@@ -87,6 +92,11 @@ const Spec& specCarAduitFree() {
             {"applyTime1", nullptr, Fmt::Str, Cond::Gte, nullptr, false, false, false, false, "create_time", nullptr},
             {"applyTime2", nullptr, Fmt::Str, Cond::Lte, nullptr, false, false, false, false, "create_time", nullptr},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time,t.id";
         s.excelSheetName = "补缴处理";
         return s;
@@ -145,6 +155,11 @@ const Spec& specCarConfimFree() {
             {"number", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false, nullptr, "0"},
             {"escapedAmount", nullptr, Fmt::Double, Cond::None, nullptr, false, false, false, false, nullptr, "0"},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "确认补缴";
         return s;
@@ -210,6 +225,11 @@ const Spec& specCarExceptRecord() {
             {"inTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
             {"outTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "异常车辆流水";
         return s;
@@ -253,6 +273,11 @@ const Spec& specCarFeeRecord() {
             {"applyTime1", nullptr, Fmt::Str, Cond::Gte, nullptr, false, false, false, false, "create_time", nullptr},
             {"applyTime2", nullptr, Fmt::Str, Cond::Lte, nullptr, false, false, false, false, "create_time", nullptr},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "收费流水";
         return s;
@@ -392,6 +417,11 @@ const Spec& specCarQueryLog() {
             {"applyTime1", nullptr, Fmt::Str, Cond::Gte, nullptr, false, false, false, false, "create_time", nullptr},
             {"applyTime2", nullptr, Fmt::Str, Cond::Lte, nullptr, false, false, false, false, "create_time", nullptr},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "查询日志";
         return s;
@@ -443,6 +473,11 @@ const Spec& specCarRouteDetail() {
             {"applyTime1", nullptr, Fmt::Str, Cond::Gte, nullptr, false, false, false, false, "create_time", nullptr},
             {"applyTime2", nullptr, Fmt::Str, Cond::Lte, nullptr, false, false, false, false, "create_time", nullptr},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "常用路线明细";
         return s;
@@ -486,6 +521,11 @@ const Spec& specCarRouteInfo() {
             {"applyTime2", nullptr, Fmt::Str, Cond::Lte, nullptr, false, false, false, false, "create_time", nullptr},
             {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "常用路线";
         return s;
@@ -528,6 +568,11 @@ const Spec& specCarSplitRecord() {
             {"applyTime2", nullptr, Fmt::Str, Cond::Lte, nullptr, false, false, false, false, "create_time", nullptr},
             {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "拆分流水";
         return s;
@@ -595,6 +640,11 @@ const Spec& specCarSuspiciousBack() {
             {"status", "status", Fmt::Str, Cond::Eq, "状态", false, false, true, true},
             {"remark", "remark", Fmt::Str, Cond::None, "备注", false, false, true, true},
         };
+        // 父类 BasePlusEntityInput 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "可疑车辆备份";
         return s;
@@ -634,6 +684,11 @@ const Spec& specCarSuspiciousCheck() {
             {"applyTime2", nullptr, Fmt::Str, Cond::Lte, nullptr, false, false, false, false, "create_time", nullptr},
             {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time,t.id";
         s.excelSheetName = "可疑车辆人工核实";
         return s;
@@ -767,6 +822,11 @@ const Spec& specCarTrackInfo() {
             {"pageNum", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
             {"pageSize", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time,t.id";
         s.excelSheetName = "车辆行驶轨迹";
         return s;
@@ -878,6 +938,11 @@ const Spec& specCarWarningRule() {
             {"applyTime2", nullptr, Fmt::Str, Cond::Lte, nullptr, false, false, false, false, "create_time", nullptr},
             {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "预警规则";
         return s;
@@ -915,6 +980,11 @@ const Spec& specCarWhiteInfo() {
             {"createInfo", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
             {"carNoQuery", nullptr, Fmt::Str, Cond::Like, nullptr, false, false, false, false, "car_no", nullptr},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "车俩白名单";
         return s;
@@ -957,6 +1027,11 @@ const Spec& specGantryCar() {
             {"applyTime2", nullptr, Fmt::Str, Cond::Lte, nullptr, false, false, false, false, "create_time", nullptr},
             {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "门架拍识查询";
         return s;
@@ -1000,6 +1075,11 @@ const Spec& specGantryTradeInfo() {
             {"applyTime2", nullptr, Fmt::Str, Cond::Lte, nullptr, false, false, false, false, "create_time", nullptr},
             {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };
+        // 父类 BasePlusEntity 声明了 fill = FieldFill.INSERT / UPDATE ⇒ MP 的 MetaObjectHandler
+        // 会在 insert 补 create_by/create_time/eps_id，在 update 补 update_by/update_time。
+        // 少写这两行，列表接口返回的 updateTime 会停在改之前的旧值。
+        s.auditFillInsert = true;
+        s.auditFillUpdate = true;
         s.orderBy = "t.create_time desc,t.id";
         s.excelSheetName = "门架交易查询";
         return s;

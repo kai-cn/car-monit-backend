@@ -121,10 +121,23 @@ struct Spec {
     std::string excelSheetName;
     /** 软删除列（如 sys_user.del_flag）；为空表示物理删除 */
     std::string softDeleteColumn;
+    /** 实体父类是否声明了 @TableField(fill = FieldFill.INSERT / UPDATE)。
+     *  只有 BasePlusEntity 与 BasePlusEntityInput 有（其余 Base* 变体都没有），
+     *  由生成器读父类源码算出来，不手改。
+     *
+     *  ⚠️ 这不是可有可无的美化：MyBatis-Plus 的 MetaObjectHandler 会在 insert 补
+     *  create_by/create_time/eps_id/tenant_id、在 update 补 update_by/update_time，
+     *  而这些列**就在 <sql id="selectXxxVo"> 里** —— 少写了，列表接口返回的
+     *  updateTime 就是改之前的旧值，与 Java 直接对不上。 */
+    bool auditFillInsert{false};
+    bool auditFillUpdate{false};
 
     std::string pkColumn() const;
     std::string pkJson() const;
     bool pkIsString() const;
+    /** selectTail 里某个表达式产出的列别名（取每段结尾的那个标识符）。
+     *  派生列在实体上只是个普通属性，靠它才能把值对上。 */
+    bool isTailAlias(const std::string& name) const;
     /** selectVo 列清单：<sql id="selectXxxVo"> 的等价物 */
     std::string selectColumns() const;
 };
@@ -139,6 +152,12 @@ std::string buildWhere(const Spec& spec, const Json& query);
 
 /** JSON body -> INSERT 语句（只含非 null 列，对应 MP insert） */
 std::string buildInsert(const Spec& spec, const Json& body);
+
+/** MetaObjectHandler 的 insertFill / updateFill：按 spec 的 auditFill* 标记补审计列。
+ *  buildInsert/buildUpdate 内部已经调用它们，所以走引擎的路径不用管；
+ *  **自己手写 UPDATE/INSERT 的地方必须显式调一遍**，否则 update_time 会停在旧值。 */
+Json applyInsertFill(const Spec& spec, const Json& body);
+Json applyUpdateFill(const Spec& spec, const Json& body);
 
 /** JSON body -> UPDATE 语句（只含非 null 且 updatable 的列，WHERE 用主键） */
 std::string buildUpdate(const Spec& spec, const Json& body);
