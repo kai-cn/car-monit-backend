@@ -195,6 +195,10 @@ SHAPE_ONLY = (
 # 同一时间窗口内双端逐字节一致，跨窗口取到的路线点数会差几个。只比结构不比这个标量。
 VALUE_FREE = {
     '/manager/suspicious/{id}': re.compile(r'\.paths$'),
+    # 在线会话是两个互不相通的登录库（Java=db0 / Rust=db15）的实时内容：
+    # 谁在什么时候登录过由环境决定，任何一端多一个探针会话就会整行错位。
+    # 键集合、类型与行数仍然要一致，只有行里的标量不比。
+    '/monitor/online/list': re.compile(r'^rows(\[\d+\])?\.'),
     # Redis 的 commandStats / INFO / dbSize 是整个实例与所在 db 的实时值：
     # 两端各连自己的 db（db0 / db15），只有结构可比。
     '/monitor/cache': re.compile(r'^data\.'),
@@ -479,6 +483,12 @@ def main(argv=None):
         print('\n--- WARN (%d) ---' % len(warns))
         for r in warns:
             print('#%d %s %s' % (r['idx'], r['path'], r['issues'][:2]))
+        # KNOWN 也是「本来是 FAIL」，不列出来的话上游挂掉、实体退化这类环境事故
+        # 只会让 KNOWN 的计数从 3 变成 9，看不出到底哪几条、为什么。
+        knowns = [r for r in results if r['status'] == 'KNOWN']
+        print('\n--- KNOWN (%d) ---' % len(knowns))
+        for r in knowns:
+            print('#%d %s %s' % (r['idx'], r['path'], r['issues'][:1]))
     return 1 if (args.strict and fails) else 0
 
 

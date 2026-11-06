@@ -154,7 +154,7 @@ Rust 自身写入的登录态、`section_list`、`sys_dict:*`、`car_warning*`�
 | `/base/fitting/list` | MSG-DIFF | Java 的 Mapper 里 `<where>` 引用 `#{id}` 而 `ZdataTrailFitting` 没有该 getter → MyBatis `ReflectionException`；Rust 直接把 SQL 交给 MySQL，报 `Unknown column 'id'`。同为 500 |
 | `/monitor/cache` | ORDER-DIFF | `data.info` 是 Jackson 直接序列化 `Properties`（Hashtable）：桶容量与下标规则已复刻（`java_hashtable_ordered`），同桶内链表的头/尾插随 JDK 版本而变，仍有局部错位；键集合与值完全一致 |
 | `/tool/gen/list`、`/all/list`、`/db/list`、`/{talbleId}` | ORDER-DIFF | GenTable/GenTableColumn 尾部派生 getter（`sub`/`crud`/`tree`、`insert`/`edit`/`capJavaField`/`superColumn`/`increment`/`usableColumn`）没有 `@JsonPropertyOrder`，顺序取决于反射给出的方法序：**同一 JVM 实例内稳定、跨重启会变**（实测本轮 `sub,crud,tree` → `tree,crud,sub`），Rust 只能对齐其中一次。详见 §11 |
-| `/monitor/online/list` | LEN-WARN + TOTAL-WARN | 两端各连自己的 Redis db（db0/db15），在线会话条数天然不同；`userName`/`ipaddr`/`deptName` 等业务值仍逐字段实比（§10.7） |
+| `/monitor/online/list` | LEN-WARN + TOTAL-WARN | 两端各连自己的 Redis db（db0/db15），在线会话条数天然不同；`rows.*` 的标量走 `VALUE_FREE`（对端库里的脏会话会按行号错位，见 §10.7），键集合与类型仍逐格比 |
 
 ## 6. 校验脚本（已入仓库）
 
@@ -537,7 +537,9 @@ api 侧另有 Go 实现（9903，db1），backend 侧另有 Go（9989，db2）�
 ### 10.1 A 段：backend 调 api 的端点
 
 `tools/endpoint_parity/api_chain_matrix.py`（24 条，带真实上游返回值）：**20 OK / 4 WARN / 0 FAIL**；
-`compare.py` 在这套拓扑下跑 `/base` 透传：**71 OK / 1 WARN / 0 FAIL / 2 KNOWN**。
+`compare.py` 在这套拓扑下跑 `/base` 透传（70 条 GET）：**65 OK / 1 WARN / 0 FAIL / 2 KNOWN / 2 SKIP**，
+存档 `build/parity-final3.json`（2026-11-05 09:27，与 §11 的全量 280/11/0/3/3 是同一次）。
+早先这里抄成「71 OK」，比清单里 /base GET 的总数还大，已按存档改正。
 4 条 WARN 都是既有类别：`BigDecimal` scale（`771.44800` vs `771.448`）、上游随机主键、
 以及只有包装文案差的其他值一致项。随机 uuid 与时间戳在脚本里掩码后再比。
 
@@ -658,7 +660,15 @@ Rust 写的 `login_tokens:*`（没有 `@type`），Java 把它读成 JSONObject 
 `/monitor/online/list` 的行数与 `/monitor/cache` 的 `dbSize`/`commandStats`/`INFO` 属于
 「两端各连自己的 Redis db」带来的天然差异，脚本对它们只比结构：
 `DYNAMIC` 端点的列表长度与 `total` 降级为 `LEN-WARN`/`TOTAL-WARN`，`/monitor/cache` 的 `data.*`
-整片走 `VALUE_FREE`。**这些降级只针对运行时计数**，`deptName`/`userName`/`ipaddr` 这类业务值仍然实比。
+整片走 `VALUE_FREE`。**这些降级当时只针对运行时计数**，`deptName`/`userName`/`ipaddr` 这类业务值仍然实比 ——
+正是这条实比把上面那个 `deptName` 恒 null 的 bug 抓出来的。
+
+2026-11-06 复跑时 `/monitor/online/list` 又报 FAIL，内容是对端会话库里的脏行：
+db0 里同时躺着别的流程留下的 `ipaddr=testclient`、`userName=admin_test` 会话（35 行 vs 8 行），
+按行号对齐之后每一格都错位，`VALUE-DIFF` 与代码无关。也就是说**逐行实比对两个互不相通的登录库
+本来就不成立**，之前的「一致」只是那一刻两端会话数恰好相同。口径调整为：
+`/monitor/online/list` 的 `rows.*` 走 `VALUE_FREE`，键集合、类型、条数上限仍照比；
+业务值的正确性改由「同一端从冷启动连跑两次一致」+ §10.4 的修前/修后实测保证。
 
 另外，`SHAPE_ONLY` 是整端降级，粒度太粗；新增 `VALUE_FREE`（端点 → 标量路径正则）只放过真正随时间
 变化的那几个字段（本轮用于 `/manager/suspicious/{id}` 的 `*.paths`）。
@@ -690,10 +700,78 @@ Java 侧 `404` 错误页的 `path` 保留原始尾斜杠，因此削完仍路由
 已知残余偏差：`DELETE /oss/object/{b}/{o}`（不带尾斜杠）Java 回「方法不支持」—— Java 的映射声明本身就带
 尾斜杠，归一之后两种写法只能对齐其中一个。
 
+### 10.9 A 段的上游被打断：`car-monit-api-rust`(9911) 连不上库（2026-11-06，环境阻塞，非代码差异）
+
+复跑 GET 全量时 KNOWN 从 3 条变成 9 条（FAIL 始终是 0），根因不在本仓库：
+Rust backend 的 `vehicleMonitor.baseUrl` 指向 `car-monit-api-rust`（9911），而那个进程从
+2026-11-05T06:21:26Z（本地 14:21）起持续报
+
+```
+ERROR car_monit_api_rust::error: 接口内部错误 status=500
+  error=数据库错误: error returned from database: The account has been locked.
+```
+
+多出来的 6 条 KNOWN 正好是**只有打到 9911 才需要上游**的那 6 条透传（`--only /base` 切片实测，
+70 条里 59 OK / 1 WARN / 0 FAIL / 8 KNOWN / 2 SKIP）：
+
+| 端点 | Java（上游 9902 正常） | Rust（上游 9911 报 500） |
+|---|---|---|
+| `/base/feeGantry/list` | `total=200` + rows | 整个 `total` 键缺失，出参是 `{"msg":"HTTP 500 ErrorContent={...}","code":500}` |
+| `/base/feeGantry/{bigId}` | `code=200` | `code=500` |
+| `/base/feestationexit/list` | `total=270` + rows | `total` 缺失 |
+| `/base/feestationexit/{bigId}` | `data={msg,code}` | `data` 缺失 |
+| `/base/snapshotflow/{bigId}` | `code=200` | `code=500` |
+| `/base/snapshotflow/earliest-time` | `code=200` | `code=500` |
+
+剩下 2 条 KNOWN（`/base/geometry/getHenDa` 的 Java 侧超时、`/base/cdc/config` 的 binary/json）
+与 `/monitor/server` 就是 §5 里记录的那 3 条，本轮没有变化。
+
+判成环境问题而不是双端差异，依据三条：
+
+1. 这条报错是 **DB 服务端在建新连接时**返回的账号状态错误（`The account has been locked.`），
+   与 SQL、实体成型都无关；9911 的池子每次取连接都会重跑一遍认证，到 09:37 仍在报，说明账号还没解锁。
+2. 两个 api 的凭据完全一致：`car-monit-api-rust/config/application.yaml:13-15` 与
+   `car-monit-api/pro-business-api/src/main/resources/application.yml:42-44` 都是
+   `jdbc:postgresql://192.168.56.10:5432/RuoYi` + `gaussdb`。Java 端（9902）还能出数据，靠的是
+   **锁之前就已建立的物理连接**（池里的连接不会因为账号被锁而失效），所以「Java 可用 / Rust 不可用」
+   是连接池的冷热差异，不是实现差异。
+3. 同一时间窗里 backend 自己查库/查缓存的那几路（如 `/base/gantry/list`，读 Redis `gantry_list`
+   再回 MySQL，压根不打上游）两端仍逐字节一致，只有真正打到 9911 的几条降级
+   —— 差异面正好等于「上游是否活着」，而不是「哪端实现错了」。
+
+   受影响的只有 **api 层的 GaussDB 账号**：两个 backend 连的是 MySQL
+   （`config/application.yaml:24` `jdbc:mysql://127.0.0.1:3307/carmonitdb`），
+   所以 B 段、C 段照常可跑，这也是为什么全量扫下来只有 A 段那 6 条变化。
+   顺带一条风险：**9902（Java api）现在能出数据只靠锁之前建立的连接**，
+   它一旦重启也同样连不上 GaussDB，届时 A 段会连基准都没有 —— 需要先把账号解锁。
+
+恢复条件是 `gaussdb` 账号解锁（DBA 侧 `ALTER USER gaussdb ACCOUNT UNLOCK;`），**9911 不用重启就会自愈**
+（它的池子每分钟都在重试）。本次没有替别人的服务和共用库做这个动作：9911 属于 `car-monit-api-rust`
+自己的工作流（它自己给了两套启动配方，Redis db 分别是 15 与 1，擅自重启会连带改变那侧的缓存归属），
+而解锁账号是对共用数据库的写操作，需要授权。所以 §10.1 的 A 段状态在本轮记为「**待复核**」，
+不是 0 FAIL；解锁后直接复跑 `python -m tools.endpoint_parity.compare --only /base`
+（Git Bash 下必须带 `MSYS_NO_PATHCONV=1`，否则 `/base` 会被重写成 Windows 路径而匹配不到端点）
+即可回到记录值。
+
+链路矩阵（`api_chain_matrix.py`，24 条）同一时间的结果是 **12 OK / 0 WARN / 12 FAIL**，
+12 条 FAIL 全部落在 `feeGantry`、`feestationexit`、`snapshotflow` 这三族需要 9911 的链路上
+（`code 200 vs 500`、Java 侧多出 `rows`/`total`/`data`），而 `gantry`/`toll`/`feerecords`/
+`cartrackinfo`/各导出 12 条仍然一致 —— 与 GET 切片完全吻合。
+Rust 侧上游 500 时的包装文案 `HTTP 500 ErrorContent=<响应体>` 是 Forest
+`HttpProtocolException` 的原文（不是自造），所以这一层本身无需修改。
+
+顺手补了对拍脚本的一个盲点：**KNOWN 以前只在计数里出现**。上游挂掉时 FAIL 变成 KNOWN，
+3 → 9 这种变化在控制台里看不出是哪几条、为什么，容易把环境事故当成「已容忍的差异」翻过去。
+现在 `compare.py` 会连同 FAIL/WARN 一起打印 `--- KNOWN (n) ---` 和每条的第一手差异。
+
 ## 11. 结论
 
 - GET 全量 297 条（真实 api 上游 + 双端分库 + **修正后的 compare.py**，2026-11-05 凌晨）：
   **OK 280 / WARN 11 / FAIL 0 / KNOWN 3 / SKIP 3**。
+- 2026-11-06 复跑同一条命令：**OK 274 / WARN 11 / FAIL 0 / KNOWN 9 / SKIP 3**
+  （`build/parity-1106c.md`）。少的 6 条 OK 全部是打到 9911 的透传，成因为上游 api 的
+  GaussDB 账号被锁（§10.9），**双端代码没有任何新差异**；这一轮同时把 `/monitor/online/list`
+  的口径改成按 `rows.*` 免比值（§10.7），并把 KNOWN 明细打印出来，环境事故不再只体现在计数上。
   11 条 WARN 分成三类：
   1. 5 条 `MSG-DIFF`（`sys_upgrade_info` 缺表 ×4、`/base/fitting/list` 的 Java mapper 反射异常）——
      两端同为 500，只差包装文案；
@@ -704,7 +782,10 @@ Java 侧 `404` 错误页的 `path` 保留原始尾斜杠，因此削完仍路由
      跨重启会变（实测同一进程内 4 次完全一致，两次重启之间从 `sub, crud, tree` 变成 `tree, crud, sub`）；
      Rust 只能对齐其中一次，记 WARN。`data.info` 是 Redis INFO 的键序。
   3. 1 条 `/monitor/online/list` 的行数/total —— 两端各自的会话库（db0/db15）天然不同。
-- A 段 backend→api：链路矩阵 **20 OK / 4 WARN / 0 FAIL**，`/base` 透传 **71 OK / 1 WARN / 0 FAIL**（§10.1）。
+- A 段 backend→api：链路矩阵 **20 OK / 4 WARN / 0 FAIL**，`/base` 透传 **65 OK / 1 WARN / 0 FAIL / 2 KNOWN / 2 SKIP**（§10.1）。
+  2026-11-06 复跑为 **12 OK / 0 WARN / 12 FAIL** 与 **59 OK / 1 WARN / 0 FAIL / 8 KNOWN / 2 SKIP**：
+  链路矩阵多的 12 条 FAIL 与透传多的 6 条 KNOWN 都落在需要 9911 的链路上，是 9911 连不上 GaussDB
+  造成的，**这一段本轮记为「待复核」，不能算「已对齐」**（§10.9）。
 - B 段业务（`/manager`、`/flow` 129 条 GET）：**129 OK / 0 WARN / 0 FAIL**（§10.2）。
 - C 段框架（`/system`、`/monitor`、`/tool`、`/common`、`/flow` 121 条 GET）：热缓存后 109 OK / 6 WARN / 0 FAIL；
   修掉四类框架层差异后，`/system/user` 家族与 `/monitor/online`、`/monitor/cache` 的值差异也一并收口（§10.4、§10.7）。
