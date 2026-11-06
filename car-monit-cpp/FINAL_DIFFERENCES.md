@@ -14,9 +14,9 @@
 | 指标 | 数值 |
 |---|---|
 | Java 端点总数 | **497** |
-| 已迁移并路径匹配 | **488**（98.2%） |
-| 未迁移 | **9**（逐条见 §4） |
-| C++ 已注册路由（含 Java 没有的扩展） | **561** |
+| 已迁移并路径匹配 | **489**（98.4%） |
+| 未迁移 | **8**（逐条见 §4） |
+| C++ 已注册路由（含 Java 没有的扩展） | **562** |
 | CRUD Spec 覆盖实体 | 59，`verify_generated_sql` 在真实库 0 异常 |
 | 实体字段 ↔ JSON 键缺口 | `audit_spec_keys` 报告 **0** |
 | 单元测试 | 10 文件 / 514 处断言调用点（含 INFLATE 三种块类型、真实 deflate 的 xlsx 对拍、GpsUtil 对 Python 独立实现的对拍） |
@@ -62,6 +62,7 @@
 | 29 | **`sys_config:api_map` 只读 Redis 裸键**，绕开 `SysConfigService`：不走 `sys_config` 表回源、不回填缓存，键缺失时默认 `"1"`，只有 trim 后等于 `"0"` 才切到腾讯分支。也就是说库里配了 `api_map` 而 Redis 没同步时，Java 这里看不见 —— C++ 若"顺手"改成走配置服务就会不一致 | `Constants::API_MAP`，`verify_trail_geo.py` 的两条开关断言 |
 | 30 | **`car_lxgh:` 缓存键是无分隔符拼接**（前缀 + 车牌 + 入口站 + 出口站 + 点数），且 `ByPlan` 那条键里 BigDecimal 用 `toString()` 而请求用 `toPlainString()` —— 需要科学计数法的值两边文本不同。这是 Java 的不一致，照抄 | `TrailGeometry::carGeometryByPlan*` |
 | 31 | **`getCarGeometry` 对入参列表有可见副作用**：`trailBo.setPilenoDec(...)` 写的是控制器同一个 list 实例，所以响应里 `trailList` 与 `trailDevCountBO.trailList` 都带出 `pilenoDec`；而且路线顺序是 `LinkedHashMap` 的首次出现序（不是排序），`reserver` 又取的是**排序前**的首/末位置 | `verify_trail_geo.py`（pilenoDec 断言） |
+| 34 | **`syncSuspiciousCar` 里那段 Redis 扫描是"跑了但结果被丢掉"**：`addFlag` 是 `"task"` 时，代码仍然先执行 `keys(car_uspicious + yyyyMMdd + "*")`，`redis` 分支收集到的 `trailInfoList` 随后被 `trailInfoList = paraTrailInfoList;` 无条件覆盖。所以那次 KEYS + 若干 GET 对输出没有任何影响 —— 但它是 Java 每次请求都会付出的开销，不算死代码，去掉就是行为不一致。另外 `userId` 写死 `1L`（不是登录人），`create_time/update_time` 用的是 `getTimestampNew2()` —— 名字像"取当前时间"，实际是**当前时间减 2 天**。 | `verify_sync_suspicious.py` |
 | 33 | **MyBatis-Plus 的审计列填充取决于父类，不是一刀切**：17 张表的实体 extends `BasePlusEntity` / `BasePlusEntityInput`，这两个父类声明了 `fill = FieldFill.INSERT/UPDATE` ⇒ insert 补 create_by/create_time/eps_id（tenantId 只在 epsId 恰好为空时才补，Java 的复制粘贴错误），update 补 update_by/update_time。其余父类（`BasePlusEntityNew` / `…InputNew` / `…Long` / `BaseEntity` / `BaseUuidEntity`）**一个都没有** —— 例如 `car_info`（InputNew）与 `car_suspicious`（Long）的 updateById 就不动审计列。因为 `update_time` 就在 `selectXxxVo` 里，少写了列表接口立刻能看出来 | `Spec::auditFillInsert/Update`（由生成器读父类源码得出），`verify_suspicious_check.py` |
 | 32 | **同一份实体在不同层的形态不同**：Jackson 响应 = 声明序 + null 全输出（`ZdataTrailTracks` 51 键、`TrailBo` 32 键）；fastjson2 缓存/query_condition = 按名排序 + null 省略；`TrailInfo.enterTime` 没有 `@JsonFormat` ⇒ 输出 epoch 毫秒数字，而 `tracks.enterTime` 有 ⇒ 输出 `"yyyy-MM-dd HH:mm:ss"`。三者混用就是不一致 | `projectViaSpec`/`projectTrailInfo`，`verify_trail_geo.py` |
 
@@ -116,7 +117,7 @@
 | ~~`GET /manager/suspicious/listFileCarNo`~~ ✅ | 已实现：每行 `selectCarSuspiciousById` → 解析 `track_josn` → 三级回退几何；`total` 是行数、`escapedTypeName` 尾逗号都照抄 |
 | ~~`GET /manager/suspicious/history/{id}`~~ ✅ | 已实现（同一套几何后处理，读的是 `car_suspicious_back`） |
 | `GET /manager/suspicious/exportAbnormalPassage` | **docx** 模板：`WordExportUtil.exportWord07` + `ImageEntity` 图片嵌入 + S3 GetObject 取图 ⇒ 需 docx 填充能力 |
-| `POST /manager/suspicious/syncSuspiciousCarTask` | `SecuritySHA1Utils.shaEncode(signatureKey+timeStamp)` 与传入 signature 直接比（三参数都由调用方给 ⇒ 可离线伪造、无时间窗）+ Redis 白名单/字典 + `envehicletype→carVehicle` 硬编码映射 + 批量落库。SHA1 原语已有，缺的是那套映射 |
+| ~~`POST /manager/suspicious/syncSuspiciousCarTask`~~ ✅ | 已实现：SHA1 签名校验 + Redis 白名单/车辆缓存 + `envehicletype→carVehicle` 硬编码映射 + 收费站/门架首末点提取 + `track_names` 拼接（设备段不判重、路线/路段段判重）+ 批量落库。签名脚本用 Python `hashlib` 独立算，不拿 C++ 输出自证 |
 
 ### C. GenController —— 7 条
 
@@ -144,11 +145,11 @@
 > ~~`POST /manager/carinfo/import`、`POST /manager/exceptrecord/import`~~ —— 已迁移（xlsx 读取器可用后落地，见 §2 契约 23–26 与 `scripts/verify_import.py` 的 61 项实机断言）。
 > 另注：`POST /system/user/importData` 已在路由表里（未计作"未覆盖"），但它走的是另一套机制（`@Excel` 注解反查 + `updateSupport` 的部门/角色校验），目前仍返回**显式错误**而不是假成功。
 
-### 小结：按"缺什么能力"重排（9 条）
+### 小结：按"缺什么能力"重排（8 条）
 
 | 缺的能力 | 条数 | 端点 |
 |---|---|---|
-| **无（纯移植工作量）** | **3** | `file/uploadFileEnc`、`suspicious/syncSuspiciousCarTask`、`busstest/syncCurrentTrack` |
+| **无（纯移植工作量）** | **2** | `file/uploadFileEnc`、`busstest/syncCurrentTrack` |
 | S3 / MinIO 客户端（SigV4） | 7 | `file/upload`、`uploadSupplier`、`uploadPdf`、`uploadFile`、`uploadFileId`、`GET /{bucket}/{obj}`、`GET /view/{bucket}/{obj}`（已实现，缺真实 MinIO 才能验签名之外的分支） |
 | S3 + 出站 HTTP | 1 | `file/uploadByUrl` |
 | 出站 HTTP（外部服务在场才能验） | 3 | `cartrackinfo/listByCarId`、`cartrackinfo/carSnapShot`、`snapshotflow/earliest-time`（`geometry/getHenDa`、`syncAllGeometry`、`syncAllGeometry1` 已实现，仍缺真实 GeoServer；`listByCarByTime` 的远程分支在 Java 里整块被注释，故早已作为纯本地端点落地） |

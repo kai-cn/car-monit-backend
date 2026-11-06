@@ -107,6 +107,12 @@ struct Constants {
     static constexpr const char* STATION_CAPTURE = "StationCapture";
     static constexpr const char* GANTRY_CAPTURE = "GantryCapture";
     static constexpr const char* SERVICE_AREA_CAPTURE = "ServiceAreaCapture";
+    /** 轨迹可疑车辆缓存前缀：car_uspicious + yyyyMMdd + *（Java 拼写就是 uspicious） */
+    static constexpr const char* car_uspicious = "car_uspicious";
+    /** 白名单车辆缓存 whole-key */
+    static constexpr const char* white_car_list = "white_car_list";
+    static constexpr const char* BORDER_WEIGHING_CAPTURE = "BorderWeighingCapture";
+    static constexpr const char* PROV_CAPTURE = "ProvCapture";
     /** 预警车辆列表缓存（Java setCacheObject 不带过期时间） */
     static constexpr const char* car_warning_list = "car_warning_list";
     /** 车辆语音提醒规则缓存前缀：car_warning_rule:{userId}type{noticeType} */
