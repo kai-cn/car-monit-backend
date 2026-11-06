@@ -1,18 +1,13 @@
 // 内置 INFLATE 解码器（RFC 1951）。实现取向：宁可写得直白，也不要为了省几行
 // 把位序/码表出错的风险留给"只有真实 xlsx 才能发现"的场景。
 //
-// ⚠️ KNOWN BUG（未完成，勿用于生产）：**BTYPE=01（固定哈夫曼）与 BTYPE=10（动态哈夫曼）
-// 都解不出第一个后向引用**，报"距离超过已解出的数据"；BTYPE=00（stored）能过。
-// 已排除的可能性：
-//   * 流本身是好的（scripts/gen_inflate_fixture.py 产出后用 zlib.decompressobj 原样验回）；
-//   * 不是 fixed 码表的长度分配 —— 换成动态块同样失败；
-//   * 不是查表法与 puff 法(first/index/count)的差异 —— 两种实现都试过，症状一致；
-//   * 头字段读取顺序 HLIT/HDIST/HCLEN 与 kOrder 重排表都对得上 RFC。
-// 症状指向"字面量之后的第一个距离"读错位，最可能是长度符号 257..285 的
-// 基值/附加位表与 EOB 边界在某处整体偏移一格。下一步该做的是：把解出的位流
-// 与 zlib 的 deflate 输出逐位比对（固定输入 + 只留 stored/一段动态），而不是再猜。
-// 因此 tests/inflate_test.cpp 与 tests/xlsx_test.cpp 暂未接进 main_test.cpp，
-// xlsx 读取器也还没有接进任何端点 —— 现在跑导入接口仍然是显式报错，不会返回假数据。
+// 早先 BTYPE=01/10 都解不出第一个后向引用（stored 能过），字面量全对、只有距离错。
+// 根因是 kDistBase 抄成了「长度码」那一路的翻倍序列（…6,8,12,16,24,32…），而
+// RFC 1951 表 3.3.f 的距离基值在 4 之后是 5,7,9,13,17,25,…；bits-in/out 与
+// 规范哈夫曼构造（含 MSB 先行累积、HLIT/HDIST/HCLEN 顺序、kOrder 重排）都对得上，
+// 两张表唯一的不同就是这一处。距离码 0..3 的基值恰好一致，所以短距离的流看不出来。
+// 现在 stored/fixed/dynamic + zlib + gzip 都按 scripts/gen_inflate_fixture.py 产出的
+// 对拍样本（Python zlib 独立生成并回验）验证通过，测试见 tests/inflate_test.cpp。
 #include "cm/common/utils/Inflate.hpp"
 
 #include <map>
@@ -180,10 +175,13 @@ bool inflateRaw(std::string_view in, std::string& out, std::string* err) {
                                           227, 258};
         static const int kLengthExtra[] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
                                            3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0};
-        static const int kDistBase[] = {1,     2,     3,     4,     6,     8,     12,    16,
-                                        24,    32,    48,    64,    96,    128,   192,   256,
-                                        384,   512,   768,   1024,  1536,  2048,  3072,  4096,
-                                        6144,  8192,  12288, 16384, 24576, 32768};
+        // RFC 1951 表 3.3.f 的距离基值。注意它和前向引用长度表（2 的幂翻倍）不同，
+        // 这里是 1,2,3,4 之后接 5,7,9,13,17,25,... ；早先误抄了长度表那一路，
+        // 表现是"字面量都对、第一个稍远的后向引用就报距离越界"。
+        static const int kDistBase[] = {1,     2,     3,     4,     5,     7,     9,     13,
+                                        17,    25,    33,    49,    65,    97,    129,   193,
+                                        257,   385,   513,   769,   1025,  1537,  2049,  3073,
+                                        4097,  6145,  8193,  12289, 16385, 24577};
         static const int kDistExtra[] = {0, 0, 0,  0,  1,  1,  2,  2,  3,  3,  4,
                                          4, 5, 5,  6,  6,  7,  7,  8,  8,  9,  9,
                                          10, 10, 11, 11, 12, 12, 13, 13};
