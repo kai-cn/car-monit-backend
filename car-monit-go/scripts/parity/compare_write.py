@@ -122,6 +122,9 @@ RESOURCES = [
               "configType": "1", "configId": "1", "configName": "配置", "returnNum": 0}},
 ]
 
+# 只做导入对拍、没有写生命周期的资源落在这些表里，--clean 时一并扫掉。
+EXTRA_CLEAN_TABLES = ("car_except_record",)
+
 NUMS = set()
 
 
@@ -289,7 +292,8 @@ def run_resource(tk_j, tk_g, res, log):
 
 def clean():
     fails = 0
-    for res in RESOURCES:
+    # 导入用例（compare_import.py）写进这些表，它们没有写生命周期，所以只在这里扫一遍。
+    for res in RESOURCES + [{"table": t} for t in EXTRA_CLEAN_TABLES]:
         table = res.get("table")
         cols = table_columns(table, only_text=True)
         if cols is None:

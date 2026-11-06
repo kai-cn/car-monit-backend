@@ -373,6 +373,23 @@ func (h *handler) insertRow(ctx context.Context, table string, cols map[string]a
 	return h.app.DB.WithContext(ctx).Table(table).Create(cols).Error
 }
 
+// mpNonNullCols 对应 MyBatis-Plus 的默认字段策略 NOT_NULL：null 属性不进 INSERT/UPDATE 的列清单，
+// 于是新增时取库里的默认值、更新时保持旧值。Go 侧用 nil 指针表达「Java 侧是 null」，需要先剔掉。
+func mpNonNullCols(cols map[string]any) map[string]any {
+	out := make(map[string]any, len(cols))
+	for name, value := range cols {
+		if value == nil {
+			continue
+		}
+		rv := reflect.ValueOf(value)
+		if rv.Kind() == reflect.Ptr && rv.IsNil() {
+			continue
+		}
+		out[name] = value
+	}
+	return out
+}
+
 // updateRow 执行 UPDATE ... WHERE id = ?（对应 BaseMapper.updateById），返回受影响行数。
 //
 // JAVA 对照: 实体上的 @TableLogic 会让 MP 在 updateById 时追加 del_flag = '0'。
@@ -439,3 +456,11 @@ func jsonBody(c *gin.Context) (map[string]any, error) {
 	}
 	return body, nil
 }
+
+// notWorkbookMsg 是 ImportSysUtil 走 POI 分支时，非工作簿内容的消息。
+const notWorkbookMsg = "No valid entries or contents found, this is not a valid OOXML (Office Open XML) file"
+
+// ole2IsNotXSSFMsg 是 ImportSysUtil 用 XSSFWorkbook 读到老 .xls 时 POI 的消息。
+const ole2IsNotXSSFMsg = "The supplied data appears to be in the OLE2 Format. " +
+	"You are calling the part of POI that deals with OOXML (Office Open XML) Documents. " +
+	"You need to call a different part of POI to process this data (eg HSSF instead of XSSF)"

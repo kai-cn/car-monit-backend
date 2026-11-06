@@ -130,6 +130,9 @@ UUID_RE = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 HEX32_RE = re.compile(r"[0-9a-f]{32}")
 LONG_ID_RE = re.compile(r"\b\d{15,20}\b")
 MARK_RE = re.compile(MARK + r"[_A-Za-z0-9]*")
+# 预签名 URL 的 X-Amz-Expires = (过期时刻 - SDK 内部再取一次的当前时刻) 按秒截断，
+# 两读之间隔了几毫秒就少 1 秒，Java 自己也在 86400/86399 之间摇摆，不两侧对账。
+AMZ_EXPIRES_RE = re.compile(r"X-Amz-Expires=\d+")
 
 # 这些字段的值由运行态决定（时间、随机文件名、会话 id），对比时统一屏蔽
 NOISE_KEYS = {"timestamp", "random", "uuid", "fileName", "accessBy", "infoId", "operId"}
@@ -146,6 +149,7 @@ def norm(value, noise=()):
         s = UUID_RE.sub("<UUID>", s)
         s = HEX32_RE.sub("<HEX32>", s)
         s = LONG_ID_RE.sub("<ID>", s)
+        s = AMZ_EXPIRES_RE.sub("X-Amz-Expires=<EXPIRES>", s)
         return MARK_RE.sub("<PARITY>", s)
     if isinstance(value, float):
         return round(value, 6)

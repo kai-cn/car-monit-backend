@@ -177,9 +177,12 @@ func (h *userHandler) ImportTemplate(c *gin.Context) {
 
 // ImportData 对应 SysUserController.importData。
 func (h *userHandler) ImportData(c *gin.Context) {
-	file, err := c.FormFile("file")
+	// JAVA 对照: SysUserController.importData 既不校验后缀也不判空 —— file 为 null 时
+	// 后面直接 NPE，GlobalExceptionHandler 拿到的 e.getMessage() 就是 null；
+	// "空文件"与"不是 OLE2/OOXML"这两条消息来自 Spring 与 POI，不是业务文案。
+	file, err := web.FormFile(c, "file")
 	if err != nil {
-		web.JSON(c, web.ErrorMsg("导入用户数据不能为空！"))
+		web.JSON(c, web.ErrorResult(web.NewNilMessageError()))
 		return
 	}
 	f, err := file.Open()
@@ -188,6 +191,10 @@ func (h *userHandler) ImportData(c *gin.Context) {
 		return
 	}
 	defer func() { _ = f.Close() }()
+	if msg := web.CheckUpload(file.Size, f, notWorkbookMsg, ""); msg != "" {
+		web.JSON(c, web.ErrorMsg(msg))
+		return
+	}
 	list, err := parseUserImport(f)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
@@ -553,3 +560,7 @@ func registerUser(reg *router.Registry, svc *service) {
 	g.DELETE("/:userIds", middleware.Perm("system:user:remove"),
 		middleware.OperLog(reg.App, "用户管理", middleware.BusinessDelete), h.Remove)
 }
+
+// notWorkbookMsg 是 RuoYi ExcelUtil（WorkbookFactory.create(InputStream)）在非 OLE2 且非 OOXML 时的消息，
+// 与 ImportSysUtil 走的那条 POI 分支文案不同 —— 两端对拍实测出来的差别，别"统一"掉。
+const notWorkbookMsg = "Your InputStream was neither an OLE2 stream, nor an OOXML stream"

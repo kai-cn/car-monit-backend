@@ -247,6 +247,11 @@ func (s *service) userImportTemplate() (string, error) {
 	return filename, nil
 }
 
+// userImportTitles 是 SysUser 上 @Excel(name=...) 的全部导入列标题。
+var userImportTitles = []string{"用户序号", "用户编码", "部门编号", "登录名称", "用户名称", "用户类型",
+	"用户邮箱", "手机号码", "用户性别", "帐号状态", "证书Id", "证书实体Id", "业务id", "业务名称",
+	"单位名称", "租户单位id", "租户单位名称", "角色编码"}
+
 // parseUserImport 按表头名解析上传的 xlsx（ExcelUtil.importExcel 的等价实现）。
 func parseUserImport(r io.Reader) ([]*userBody, error) {
 	f, err := excelize.OpenReader(r)
@@ -258,16 +263,47 @@ func parseUserImport(r io.Reader) ([]*userBody, error) {
 	if len(sheets) == 0 {
 		return nil, web.NewServiceError("导入Excel失败：工作表为空")
 	}
-	rows, err := f.GetRows(sheets[0])
+	it, err := f.Rows(sheets[0])
 	if err != nil {
 		return nil, web.NewServiceError("导入Excel失败：%s", err.Error())
 	}
-	if len(rows) == 0 {
+	defer func() { _ = it.Close() }()
+	// GetRows 会裁掉整行空值的行，行号就跟 POI 的 getRow(i) 对不上了；
+	// 迭代器逐行给出，缺行补 nil（POI 那边是 null row）。
+	rows := make([][]string, 0, 16)
+	for it.Next() {
+		cells, err := it.Columns()
+		if err != nil {
+			return nil, web.NewServiceError("导入Excel失败：%s", err.Error())
+		}
+		if len(cells) == 0 {
+			rows = append(rows, nil)
+			continue
+		}
+		rows = append(rows, cells)
+	}
+	// JAVA 对照: ExcelUtil 只在 sheet.getLastRowNum() > 0 时才进解析块 —— 除表头外一行数据都没有
+	// 就直接返回空列表，由 importUser 报「导入用户数据不能为空！」；标题对不对得上是下一步的事。
+	if len(rows) < 2 {
 		return nil, web.NewServiceError("导入用户数据不能为空！")
 	}
 	index := make(map[string]int, len(rows[0]))
 	for i, h := range rows[0] {
 		index[strings.TrimSpace(h)] = i
+	}
+	// JAVA 对照: fieldsMap 为空时循环体一次都不执行，entity 始终是 null，而 ExcelUtil
+	// 结尾无条件 list.add(entity) —— 于是 importUser 拿到一个装着 null 的列表，
+	// 它的 catch 里又一次 user.getUserName() 直接 NPE，getMessage() 为 null，
+	// 最终响应是 {"msg":null,"code":500}。表头一个 @Excel 标题都对不上就是这个场景。
+	matched := false
+	for _, title := range userImportTitles {
+		if _, ok := index[title]; ok {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		return nil, web.NewNilMessageError()
 	}
 	cell := func(row []string, name string) string {
 		i, ok := index[name]

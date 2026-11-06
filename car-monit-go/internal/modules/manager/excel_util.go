@@ -14,7 +14,10 @@ import (
 	"car-monit-go/internal/web"
 )
 
-// readXlsxRows 读取第一个 sheet 的全部单元格为字符串矩阵。
+// readXlsxRows 读取第一个 sheet 的单元格为字符串矩阵，行下标与表格里一致。
+//
+// JAVA 对照: POI 的 sheet.getRow(i) 对「没有 <row> 元素」的行返回 null，导入链路据此 break。
+// GetRows 会把整行空值的行裁掉，行号就对不上了，所以走 Rows 迭代器：缺行补一条 nil。
 func readXlsxRows(r io.Reader) ([][]string, error) {
 	f, err := excelize.OpenReader(r)
 	if err != nil {
@@ -25,9 +28,23 @@ func readXlsxRows(r io.Reader) ([][]string, error) {
 	if len(sheets) == 0 {
 		return nil, web.NewServiceError("读取Excel失败，请确认文件格式！")
 	}
-	rows, err := f.GetRows(sheets[0])
+	it, err := f.Rows(sheets[0])
 	if err != nil {
 		return nil, web.NewServiceError("读取Excel失败，请确认文件格式！")
+	}
+	defer func() { _ = it.Close() }()
+	var rows [][]string
+	for i := 0; it.Next(); i++ {
+		cells, err := it.Columns()
+		if err != nil {
+			return nil, web.NewServiceError("读取Excel失败，请确认文件格式！")
+		}
+		if len(cells) == 0 {
+			// 缺行（或没有任何单元格的行）：POI 侧 getRow(i) == null
+			rows = append(rows, nil)
+			continue
+		}
+		rows = append(rows, cells)
 	}
 	return rows, nil
 }

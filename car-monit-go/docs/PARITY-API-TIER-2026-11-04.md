@@ -217,6 +217,112 @@
 金额按 `BigDecimal.toString()` 落两位（checkList 为 null ⇒ 空串，空列表 ⇒ `0`），
 `车种` 复刻 Java 的"字典未命中回落原值"。poi-tl 的图片内嵌仍不做（`susImg1..7` 只留标题行）。
 
+## 6.6 Excel 导入层（本轮收尾的三个上传端点）
+
+对拍工具：`scripts/parity/compare_import.py`（同一份 xlsx 传两端，比响应体 + 落库对照）、
+`scripts/parity/compare_upload_errors.py`（10 类畸形请求 × 3 端点 = 30 条错误形态）、
+`scripts/parity/dump_local_xlsx.py`（打印本地 xlsx 每一行，用来核对真实模板的表头）。
+参照对：Java 9987 / Go 9982，两端都挂 api 9902，Redis db0 vs db8。
+两端共用一个 MySQL，所以每端各用自己的标记值（`PARITY_J*` / `PARITY_G*`），比对时归一成 `<PARITY>`。
+
+| 端点 | Java 解析器 | 表头来源 | 数据起始行 | 错误对象 |
+|---|---|---|---|---|
+| `/system/user/importData` | `ExcelUtil.importExcel`（`WorkbookFactory` 按内容嗅探，**不看后缀**） | SysUser 的 `@Excel(name)` | 第 2 行 | 无，逐行拼中文消息 |
+| `/manager/carinfo/import` | `ImportSysUtil` + `ImportUtil.importExcel` | `CarInfoController.initList()` 8 列 | 第 2 行 | `{rowNo,colName,message}` |
+| `/manager/exceptrecord/import` | 同上（`colVdaExcel08` / `dataRtnExcel08`） | `initListTwo()` 21 列（含 8 个空标题） | 第 4 行 | 同上 |
+
+### 通用逐列校验：新文件 `internal/modules/manager/import_validate.go`
+
+`ImportUtil.importExcel:43-107` 的规则表原样搬到 `validateImportRow`：`1 必填`、
+`2 小数`、`3 整数`、`4 年月日`、`5 身份证`、`6 年月`、`7 数值`、`8 年月日时分秒`，
+消息逐字 `不能为空 / 不是小数 / 不是正整数 / 日期格式（年-月-日）不正确 / 身份证号码不正确 /
+日期格式（年-月）不正确 / 不是数值 / 日期格式（年月日时分秒）不正确`。四处容易抄错：
+
+- Java 用 `Pattern.matches`（全串匹配）⇒ 没写锚点的 `eLtime2` 在 Go 里要补 `^$`；
+  `elTimeYM` 的 `\- \/ \.` 在 Go 正则是非法转义，改成裸字符。
+- 规则 token 逐个一轮，`2..8` 之间是 else-if 链 ⇒ 值 `"x"` 配 `"2,3"` 会报 **2** 条，
+  而一个 token 内只报 1 条（`import_validate_test.go` 把这条钉住了）。
+- `1` 独立于非空判断；2..8 只在值非空时才查 ⇒ 「必填 + 小数」的空格只报 `不能为空`。
+- 行号来自 `getErrorBO(index + 1, ...)` 内部又 `row + 1` ⇒ `rowNo = 数据行序号 + 2`，
+  与表格真实行号无关（`ImportSysUtil.java:190-197`）。两个阶段的错误都用它，
+  所以顺序是「所有行的格式错，全通过才轮到字典/业务错」，不是按行归类。
+
+### `/manager/exceptrecord/import`
+
+- 真实模板 `templates/down/importCarExcept.xlsx` 的前三行实测为：标题行 / `initListTwo` 表头 /
+  子表头（`一级类型|二级类型|省内|省外|小计…`）。Java 拿**同一份** `initListTwo` 去比第 2、3 行
+  （`CarExceptRecordController.java:353-368`，`initListThree()` 根本没被调用），
+  所以只有第 2 行能命中；Go 用 `sameHeader(rows[1]) || sameHeader(rows[2])` 复刻。
+- `dataRtnExcel08(sheet, strName, strNum, 3)` 的 `strNum={0,11,12,14,15,17,18,19,21}` 是合并单元格列，
+  读值时跳过；这些列在 `initListTwo` 里的属性名也都是空串 ⇒ 跳过与否不影响结果，Go 按列位直取。
+- 车种**不取表格里那一列**：由（经 `car_type_change` 转换后的）车型推导，
+  1-4→`1`、11-16→`2`、21-26→`3`、其余 `99`（`:438-474`）。
+- 收费站查不到时 Java 不碰 `in_station_id` ⇒ 列保持 NULL；Go 之前写空串，已改为不下推该列。
+- 第三段写库前有 `isExitsTime` 区间查重（同车牌、区间重叠、排除自身 id），命中就 `return error` ——
+  而控制器**忽略返回值**，净效果是「这一行不写库、响应里照样带着它」。抽成 `exceptTimeOverlap`，
+  `exceptSave` 一并复用，条件为空时和 XML 的 `<if>` 一样整条不下推。
+- 审计列按 `BasePlusEntity` 的 `@TableField(fill=...)`（`MyBatisPlusHandlerConfig.java:20-86`）：
+  `insertFill` 只填 `create_by/create_time/eps_id/tenant_id`，**不填** update_*；
+  `updateFill` 只填 update_*，且 MP 会把填进去的值写回实体 ⇒ 新增行的响应有 `createBy/createTime/epsId/tenantId`
+  而没有 `updateBy`，更新行相反。另外该 handler 的 tenant 段把变量抄错（`if (epsId == null)`），
+  于是 `car_except_record` 拿到 `tenant_id=-1`，而 `car_info` 因为 `doImport` 先显式设了 `epsId` 反而拿不到 ——
+  两处都照抄，不做"修正"。
+- `supplementaryStatus` 是域对象的字段初值 `"0"`（`CarExceptRecord.java:136`），响应体一直带着。
+- 车牌列会被 `split("_")` 拆成「车牌_车牌颜色」⇒ 对拍脚本在这一端点的标记值不能含下划线，
+  否则两端都落到 `car_no='PARITY'`，共用库又互相看见了（这一坑已踩过一次）。
+- 时间列（规则 `1,8`）必须按 **本地时区** 解析：`fastjson` 用 JVM 默认时区，DSN 又带 `loc=Local`，
+  Go 这边若用 `time.Parse` 拿到 UTC，入库钟点整体 +8 小时。改用 `web.ParseDate`
+  （内部是 `ParseInLocation(..., time.Local)`），并在单测里按 Unix 值钉住。
+
+### `/manager/carinfo/import`
+
+- 两段式（`CarInfoController.java:207-295`）：先把所有行过一遍格式校验，**全通过**才进字典校验段。
+- 与 `updateSupport` 无关；`CarInfoServiceImpl.doImport:197-217` 的新增/更新**两个分支都** stamp
+  `updateBy/updateTime`，而响应体就是这批就地改过的对象 ⇒ Go 之前只在新增分支 stamp，
+  「重复上传」那一轮少两格（就是本轮开头的那条差异）。
+- 逃费类型：`CommonUtil.deleteEnd` 只削**一个**尾逗号，`split(",")` 保留中间空串，
+  空串查不到字典照样报 ` 逃费类型不存在,请在字典菜单维护！`。
+- MP 默认字段策略 NOT_NULL ⇒ null 属性不进 INSERT/UPDATE 列清单。新增 `mpNonNullCols` 剔掉 nil 指针，
+  否则轴数/逃费金额为空时更新分支会把库里的旧值擦成 NULL。
+
+### `/system/user/importData`
+
+Java 侧三处结构细节决定了本轮 4 条错误形态的归属：
+
+- `SysUserController.importData:155-161` 既不判后缀也不判空，`file` 为 null 时
+  `GlobalExceptionHandler` 拿到 `e.getMessage()==null` ⇒ `{"msg":null,"code":500}`（已对齐）。
+- `ExcelUtil.java:353` 以 `sheet.getLastRowNum() > 0` 为闸：只有表头 ⇒ 空列表 ⇒
+  `importUser` 报「导入用户数据不能为空！」；有数据行才进解析块。
+- `ExcelUtil.java:496` 结尾**无条件** `list.add(entity)`：表头一个 `@Excel` 标题都对不上时 `entity`
+  始终为 null，`importUser` 的 catch 里又一次 `user.getUserName()` 抛 NPE ⇒ 又回到
+  `{"msg":null,"code":500}`。Go 用「标题全不匹配 ⇒ 空消息错误」复刻（`system/excel.go`）。
+- 为此 `readXlsxRows` 从 `GetRows` 换成 `Rows` 迭代器：`GetRows` 会裁掉整行空值的行，
+  行号与 POI 的 `getRow(i)` 对不上；迭代器逐行给出、缺行补 nil。
+  `endOfImportSheet` 因此只在「行不存在」或首格是 `break/结束` 时收尾，
+  「行在、值全空」仍按 Java 送去逐列校验（`ExcelUtil.isRowEmpty:1625-1640` 看的是单元格类型，
+  空字符串的 STRING 单元格不算空行）。
+
+### 结果
+
+| 用例 | 响应 | 落库对照 |
+|---|---|---|
+| `/system/user/importData` 新增/重复/updateSupport + 重复上传 | 除「新增」是 Java 已知缺陷外逐字一致 | Java 0 条 / Go 1 条（同一缺陷） |
+| `/manager/carinfo/import` 合法 + 重复上传 | 一致（补上 `updateBy/updateTime` 后） | 1 / 1，差异 0 |
+| `/manager/carinfo/import` 规则 1/3/2 报错 | 一致（3 条错误逐字同、顺序同） | 不写库 |
+| `/manager/exceptrecord/import` 日期不满足规则 8 | 一致（2 条） | 不写库 |
+| `/manager/exceptrecord/import` 合法 + 重复上传 | 一致 | 1 / 1，差异 0；列值逐项核对（`tenant_id=-1`、`in_station_id=NULL`、钟点不偏移、金额/车种推导） |
+| 30 条上传错误形态 | 28 条一致 | 2 条已知（见 §9） |
+
+**多行用例**（单行覆盖不到的跨行分支，全部一致）：
+
+| 用例 | 覆盖的分支 | 实测 |
+|---|---|---|
+| 流水 4 行（时间倒挂 / 收费>应缴 / 字典查不到） | 第二段业务校验的**跨行顺序**与 `rowNo = 序号+2` | 3 条错误 `rowNo 3/4/5`，两端逐字同 |
+| 流水 2 行同车牌区间重叠 | `isExitsTime` 命中 ⇒ 控制器忽略返回值 | 响应带 2 行、库里只有 1 行，两端同 |
+| 流水「数据行 + 结束行 + 数据行」 | `dataRtnExcel07/08` 的首格 `break/结束` 终止 | 只读第一行，落库 1 条，两端同 |
+| 车辆 3 行（中间行轴数非法） | `importList` 只在 `errorList` 仍为空时追加 ⇒ 后续合法行也不入库；第二段字典校验整段跳过 | 只有 1 条 `轴数 不是正整数`，两端同 |
+| 车辆 105 行全非法 | `errorList.size() > 100` 的提前 break | 错误条数与末条 rowNo 两端一致 |
+
 ## 7. api 双端自身的不一致（第 1 档残余差异的根因）
 
 `api_pair_check.py` 直连 9902/9903 比对 backend 会用到的 11 条列表路径 + 8 条详情路径：
@@ -241,14 +347,22 @@
 | `check_startpage_map.py` 六类静态核对 | 全 0（含新改的 5 个导出分页点） |
 | `check_default_page.py` | 91 条比对，不一致 0 |
 | `check_query_matrix.py` | 1617 组合，差异 0 |
-| `routes.py` 路由比对 | Java 511 全匹配，Go 514（多出 `/healthz`、`HEAD /`、`OPTIONS /`） |
+| `routes.py` 路由比对 | Java 511 全匹配，Go 514（多出 `/healthz`、`HEAD /`、`OPTIONS /`）—— 导入层改动后复跑，仍 0 缺失 |
 | `compare_xlsx.py` 21 端点（EasyPOI 附件流） | 单元格差异 0 |
-| **`compare_export_all.py` 58 端点（含 33 条 ExcelUtil 落盘型）** | **单元格差异 0**（3 条 non-xlsx：两条两端逐字节相同的 `{"msg":null,"code":500}`，一条 `upgradeInfo` 缺表） |
+| **`compare_export_all.py` 59 端点（34 条 ExcelUtil 落盘型 + 22 条 EasyPOI 附件流 + 3 条 non-xlsx）** | **单元格差异 0**，临时文件删除 0 失败（3 条 non-xlsx：两条两端逐字节相同的 `{"msg":null,"code":500}`，一条 `upgradeInfo` 缺表）。导入层改动之后复跑过一遍，计数从 58/33 校正为 59/34 —— 差的那条是 `/system/user/importTemplate`，之前按 `/export` 口径没单列 |
 | 第 1 档 A/B/C 复跑（最终二进制） | 14/12/**0**/2、14/12/**0**/2、14/11/1/2 |
 | 第 2 档 / 第 3 档复跑（最终二进制） | 185/162/2/21、95/82/11/2 |
+| 第 1 档导入轮复跑（Java 9987 + Go 9982，同挂 api 9902） | 14/12/**0**/2 |
+| **`compare_import.py` 10 组用例（含 5 组多行：跨行顺序/终止行/区间重叠/>100 break）** | **问题 0**（唯一残项是 Java `insertUser` 的 `No group 2` 已知缺陷） |
+| **`compare_upload_errors.py` 30 条上传错误形态** | **28 条一致**，2 条已知（§9.7） |
 | `compare_write.py` 32 资源生命周期 | 差异 15 条，全落在 8 个 Java 侧缺陷资源上（与上一轮同一批），无新增 |
 | `check_redis_isolation.py` | 24 项断言全通过，清理 `failures=0`（跑在参照对上，`PARITY_GO_DB` 按实例的 db 指定） |
 | `check_oss.py` | 不一致项 0 |
+
+第 1 档必须让两端 backend 挂**同一个** api 才有意义：本轮导入轮复跑时 Go 版 api（9903）的
+`/health` 已是 503（其 `OdsRtSzdnSnapshotFlow*` 仓储连不上 `192.168.*` 数据源），
+backend 两端配对 9903 时第 1 档会多出 4 条 `null` vs 缺键的差异 —— 用 9902 复跑即归零，
+属 api 侧运行态，不是 backend 的账。
 
 ## 9. 已知差异（不改）
 
@@ -270,6 +384,17 @@
      本环境 Java/Go 的 `profile` 都是 `D:/ruoyi/uploadPath`，成立；若分开部署需换成各自拉取。
    * 单元格**样式**（边框/字体/列宽/合并）一律不比对（POI 与 excelize 的实现差异太大，只保证表头文案、
      列序、取值、行数、文件名规则一致）。
+7. 导入层两条已知差异（`compare_upload_errors.py` 里标了 `known`）：
+   * `/system/user/importData` 收到「OLE2 魔数 + 垃圾字节」时，Java 走 `WorkbookFactory`，
+     报的是 POIFS 头块的 `Unsupported blocksize  (2^12). Expected 2^9 or 2^6.` —— 文本随文件的扇区大小变，
+     Go 只有 excelize 的统一格式错误。两个 manager 端点直接 `new XSSFWorkbook`，
+     拿到的是 OLE2/HSSF 提示，已逐字一致。顺带一条能力差：真·`.xls` 改名 `.xlsx` 时
+     Java 的 `WorkbookFactory` 会按 HSSF 读进去，Go（excelize）只认 OOXML —— 属移植范围外的格式支持。
+   * `user 表头 + 一行"有单元格但全是空串"的空白行`：POI 的 `isRowEmpty` 看的是**单元格类型**
+     （STRING 空串不算空行），于是 Java 真去插一次，撞的还是 `insertUser` 的 `No group 2` 已知缺陷，
+     消息是逐行的 `1、账号  导入失败：…PersistenceException…`。Go 读不到单元格类型，
+     按"值全空即空行"跳过，返回「导入用户数据不能为空！」——不镜像 Java 的插入崩溃，
+     也不会在库里造出一个空账号。
 
 ## 10. 复现
 
@@ -287,8 +412,15 @@ python scripts/parity/compare_xlsx.py "/manager/carinfo/export?pageNum=1&pageSiz
 python scripts/parity/compare_export_all.py --log "$TEMP/go-ref-9983.log" --out "$TEMP/exports.json"  # 58 条 /export 全覆盖
 python scripts/parity/dump_excels.py BussTest CarRouteDetail                # Java @Excel 列真值
 python scripts/parity/dump_templates.py carSuspicious                       # EasyPOI 模板真值
+python scripts/parity/dump_local_xlsx.py <模板.xlsx> 0 5                     # 本地 xlsx 逐行（导入模板表头真值）
+python scripts/parity/compare_import.py            # 导入三层：响应 + 落库（先 --clean 再起，收尾再 --clean）
+python scripts/parity/compare_upload_errors.py     # 30 条上传错误形态
 python scripts/parity/api_pair_check.py                      # api 双端直连比对（归因用）
 ```
+
+导入类对拍要先清干净：`compare_write.py --clean` 会顺带扫 `car_except_record`
+（`EXTRA_CLEAN_TABLES`，导入用例落的表没有写生命周期）。
+`/manager/exceptrecord/import` 的车牌标记值不能带下划线 —— Java 会按 `_` 拆「车牌_车牌颜色」。
 
 `pp.py` 的两个地址与两个 Redis 库都可覆盖：`PARITY_JAVA` / `PARITY_GO` / `PARITY_JAVA_DB` / `PARITY_GO_DB`
 （参照实例另占 db，跑隔离类校验时必须一起指定，否则会误报）。

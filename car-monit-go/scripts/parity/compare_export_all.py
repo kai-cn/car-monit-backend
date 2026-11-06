@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-"""所有导出路由的单元格级双端对比（含 ExcelUtil 落盘型导出）。
+"""所有导出/导入模板路由的单元格级双端对比（含 ExcelUtil 落盘型导出）。
 
 compare_get.py 对附件流只能标成 non-json；ExcelUtil 型导出（返回
 {msg:"<uuid>_xx.xlsx"}、文件落在 profile/download）连附件都看不到。
-本脚本把两类一起覆盖：
+本脚本把三类一起覆盖：
   * 响应是 xlsx 字节（EasyPOI 附件流）  -> 直接逐格对比
   * 响应是 JSON 且 msg 以 .xlsx 结尾    -> 读两端落盘文件逐格对比，并把这两个文件删掉
+  * importTemplate（导入模板，同为 ExcelUtil 落盘型）也纳入口径
 
 用法:
   python scripts/parity/compare_export_all.py [--log 启动日志] [--out report.json] [--only 前缀]
@@ -32,7 +33,7 @@ def export_routes(log_path, only=""):
         if m.group(1) != "GET" or m.group(2).startswith("http"):
             continue
         path = norm(m.group(2))
-        if "export" not in path.lower():
+        if not re.search(r"export|import", path.lower()):
             continue
         if only and not path.startswith(only):
             continue
