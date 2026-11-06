@@ -389,8 +389,9 @@ void registerManagerExtraControllers(Router& r) {
         const auto& rs = specCarExceptRecord();
         Json q = Json::object();
         q["exceptIds"] = exceptIds;
-        auto res = select("SELECT " + rs.selectColumns() + " FROM " + rs.table + " " + rs.alias + " " +
-                          cm::web::crud::buildWhere(rs, q) + " ORDER BY " + rs.orderBy).rows;
+        // selectSqlOf 而不是自己拼 FROM：specCarExceptRecord 现在带 join 与派生列 createInfo
+        auto res = select(cm::web::crud::selectSqlOf(rs, cm::web::crud::buildWhere(rs, q),
+                                                     " ORDER BY " + rs.orderBy)).rows;
         if (res.empty()) return BaseController::ok(AjaxResult::error("异常车辆流水不存在！"));
 
         std::vector<std::string> carNos, epsIds;

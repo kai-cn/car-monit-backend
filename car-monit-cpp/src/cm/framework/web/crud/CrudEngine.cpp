@@ -53,6 +53,8 @@ std::string Spec::selectColumns() const {
         if (!out.empty()) out += ", ";
         out += prefix + f.column;
     }
+    // 派生列（createInfo 那种 concat）跟着 Vo 之后，顺序与 Java 的 SELECT 一致
+    if (!selectTail.empty()) out += ", " + selectTail;
     return out;
 }
 
@@ -503,6 +505,73 @@ void registerReadOnly(Router& router, const std::string& base, const Spec& spec,
     auto info = router.get(base + "/{" + pk + "}",
                            [sp, pk](RequestContext& ctx) { return runGetInfo(*sp, ctx, pk); });
     if (perms.query) info.permi(perms.query);
+}
+
+std::string selectSqlOf(const Spec& spec, const std::string& where, const std::string& order) {
+    return selectSql(spec, where, order);
+}
+
+Json fetchRowsOf(const Spec& spec, const cm::db::Result& res) { return fetchRows(spec, res); }
+
+std::string fromClauseOf(const Spec& spec) { return fromClause(spec); }
+
+std::string fastJson2CachedArray(const Spec& spec, const std::vector<cm::db::Row>& rows,
+
+                                 const std::string& elemType) {
+    // fastjson2 在写之前把字段按名字排序，所以这里的顺序与 spec.fields / SELECT 顺序无关
+    std::vector<const Field*> ordered;
+    for (const auto& f : spec.fields) {
+        if (f.column == nullptr || !f.inVo) continue;   // 非列属性 / Vo 没投影 ⇒ Java 里是 null
+        ordered.push_back(&f);
+    }
+    std::sort(ordered.begin(), ordered.end(), [](const Field* a, const Field* b) {
+        return std::string(a->json) < std::string(b->json);
+    });
+
+    std::string out = "[";
+    for (size_t r = 0; r < rows.size(); ++r) {
+        if (r) out += ",";
+        out += "{\"@type\":" + Json(elemType).dump();
+        for (const Field* f : ordered) {
+            auto v = rows[r].get(f->column);
+            if (!v) continue;                            // null 整个键都不写（fastjson2 默认丢 null）
+            std::string raw;
+            switch (f->fmt) {
+                case Fmt::Int:
+                    raw = *v;                            // Integer 不带后缀
+                    break;
+                case Fmt::Long:
+                    raw = *v + "L";                      // Long 写出来带 L，不是合法 JSON
+                    break;
+                case Fmt::Bool:
+                    raw = (*v == "1" || *v == "true") ? "true" : "false";
+                    break;
+                case Fmt::Double:
+                    raw = *v;   // BigDecimal 保持 DB 标度：0.00 不会塌成 0
+                    break;
+                case Fmt::DateYmd:
+                case Fmt::DateYmdHms:
+                case Fmt::DateIso:
+                case Fmt::DateTimeIso: {
+                    // 缓存走的是 fastjson2 的默认日期格式（带时分秒），不是 @JsonFormat
+                    auto ms = utils::DateUtils::parseDbDateTime(*v);
+                    raw = ms ? Json(utils::DateUtils::formatMillis(
+                                     *ms, "yyyy-MM-dd HH:mm:ss")).dump()
+                             : Json(*v).dump();
+                    break;
+                }
+                case Fmt::Str:
+                default:
+                    raw = Json(*v).dump();
+                    break;
+            }
+            if (raw.empty()) raw = *v;   // 数值列的原文就是字面量
+            out += "," + Json(std::string(f->json)).dump() + ":" + raw;
+        }
+        out += "}";
+    }
+    out += "]";
+    return out;
 }
 
 } // namespace cm::web::crud

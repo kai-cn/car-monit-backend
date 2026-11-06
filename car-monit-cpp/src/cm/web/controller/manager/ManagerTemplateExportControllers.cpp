@@ -87,14 +87,12 @@ std::map<std::string, std::string> dictDataMap(const std::string& dictType) {
 std::string str(const Json& j, const char* key) { return cm::jstr(j, key, std::string()); }
 
 /** listCarOrgId / exportOrgId 共用的查询（selectCarExceptRecordListNew）
- *  条件与 specCarExceptRecord 一致，只是多了 createInfo 与两个 join，且 order by 不同。 */
+ *  条件与 specCarExceptRecord 一致，只是 order by 不同；
+ *  createInfo 与两个 join 现在由 spec 的 selectTail/fromSql 提供，这里不再手写。 */
 std::string listNewSql(const std::string& where) {
     const auto& sp = cm::web::crud::specCarExceptRecord();
-    return "SELECT " + sp.selectColumns() + ", concat(sd.dept_name, ' ', su.nick_name) createInfo"
-           " FROM car_except_record t"
-           " left join sys_user su on su.user_id = t.create_by"
-           " left join sys_dept sd on t.eps_id = sd.dept_id "
-           + where + " order by t.dif_amount desc,t.id";
+    return "SELECT " + sp.selectColumns() + " " + cm::web::crud::fromClauseOf(sp) + " " + where +
+           " order by t.dif_amount desc,t.id";
 }
 
 std::vector<Json> listNewRows(RequestContext& ctx) {

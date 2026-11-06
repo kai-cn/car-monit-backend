@@ -14,13 +14,13 @@
 | 指标 | 数值 |
 |---|---|
 | Java 端点总数 | **497** |
-| 已迁移并路径匹配 | **482**（97.0%） |
-| 未迁移 | **15**（逐条见 §4） |
-| C++ 已注册路由（含 Java 没有的扩展） | **553** |
+| 已迁移并路径匹配 | **484**（97.4%） |
+| 未迁移 | **13**（逐条见 §4） |
+| C++ 已注册路由（含 Java 没有的扩展） | **555** |
 | CRUD Spec 覆盖实体 | 59，`verify_generated_sql` 在真实库 0 异常 |
 | 实体字段 ↔ JSON 键缺口 | `audit_spec_keys` 报告 **0** |
-| 单元测试 | 3 文件 / 32 组用例 / 286 处断言调用点 |
-| 端到端断言（实机，需 MySQL+Redis） | 11 个脚本共 **265** 项（16+14+18+22+31+22+41+34+20 + 审批 27），本轮全部通过 |
+| 单元测试 | 9 文件 / 479 处断言调用点（含 INFLATE 三种块类型 + 真实 deflate 打包的 xlsx 对拍） |
+| 端到端断言（实机，需 MySQL+Redis） | 16 个脚本；本轮复跑 5 个共 **180** 项全通过（import 61、bigscreen 22、suspicious/history 41、template_export 22、track_by_time 34）；其余脚本需 fake S3 / 桩服务，随各自批次验过 |
 | `@Log` 操作日志规则 | 234 条，C++ 已能写 `sys_oper_log` |
 
 一句话结论：**接口契约（路径、方法、状态码、错误码、JSON 结构与键序、分页与鉴权语义）已对齐到"拿真实数据回归"的程度；剩余差异集中在外部依赖（对象存储、外部 HTTP、模板引擎）与 Excel 读取，且全部是显式标注的缺口，没有静默假数据。**
@@ -53,6 +53,11 @@
 | 20 | **SELECT 投影 = `<sql id="selectXxxVo">` 的列清单**：MyBatis 只填结果集里出现的列，Vo 没写的属性在 Java 里保持字段声明初值（多为 null），但**照样能当 WHERE 条件的左值**。`car_suspicious` 的 `trackJosn/trackNames/epsId/sort/tenantId/createBy/updateBy/updateTime/delFlag` 9 个键即为此类（`scripts/audit_projection.py` 可逐实体复现） | `Field::inVo`、`verify_suspicious_history.py` |
 | 21 | **WHERE 左值列与运算符以 XML 为准**：`sectionCode`/`sectionName` 在 Java 里过滤的是 `t.track_names`（不是 `section_code`）、`carNoQuery`→`t.car_no like`、`applyTime1/2`→`t.in_time >= / <=`、`and t.id != #{id}` 是不等于；派生属性也能带条件（`condColumn`）。`scripts/audit_cond_columns.py` 逐条对拍 | `Field::condColumn`、`Cond::Gte/Lte/Ne/NotLike` |
 | 22 | 导出类接口一律先 `startPage()`：`exportHistory` 导的是**当前页**，不是全表；且 Java 导出前把 7 个字典全查一遍（`Collectors.toMap` 遇重复 `dict_value` 抛异常 → 整个导出 500），少查一个就变成"Java 500、C++ 成功" | §2.3、`verify_suspicious_history.py` |
+| 23 | **Redis 缓存值的字节形态 = fastjson2 `WriteClassName`**：`RedisConfig` 给 valueSerializer 开了 WriteClassName，于是 `car_list` 里是 `[{"@type":"com.ruoyi.manager.domain.CarInfo","carNo":…,"createBy":1L,…}]` —— 字段**按名排序**、null 整个键省略、Long 带 `L`、BigDecimal 保 DB 标度。C++ 若 dump 严格 JSON，Java 反序列化拿到的是 JSONObject，用到就 ClassCastException，等于缓存互操作失效 | `cm::web::crud::fastJson2CachedArray`，`verify_import.py` 的 3 条缓存断言 |
+| 24 | **恒定 WHERE 只看本层**：`selectCarInfoList` 除了 `del_flag='0'` 还挂着一个**无条件**的 `not exists (… group by car_no … except_num = 0)` —— 异常流水已全部补缴的车牌在列表/导出/缓存/导入回查里都查不到。早先生成器把子查询里的 `case when t1.status='0'` 误成本层恒定过滤，凭空加了 `and t.status='0'`（少返回一批行，且让导入把已缴清的车当新车重插） | `scripts/gen_crud_spec.py:strip_subqueries`、`verify_import.py` |
+| 25 | **派生列不属于任何 Field**：Java 普遍写成 `<include refid="selectXxxVo"/>,concat(sd.dept_name,' ',su.nick_name) createInfo` + 两个 left join。它既不在 Vo 里也不是表列，所以要用 `Spec::selectTail`/`fromSql` 表达；任何自己拼 `FROM 表 别名` 的地方都会因为拿不到 join 而生成非法 SQL | `selectSqlOf`/`fromClauseOf` |
+| 26 | **导入的三段语义**：表头逐格 `String.equals`（carinfo 比第 1 行，exceptrecord 比第 2 行**或**第 3 行且两次用同一份列名）；数据读取靠 `getRow()` 的 NPE-catch 做 break ⇒ "整行缺失"停读、"行在但没格"不停；`errorList` 跨行共享 + `> 100` 才 break ⇒ 第一个错误之后的行全不入库、最多 101 条错误；`rowNo = index + 2`（exceptrecord 数据在 Excel 第 4 行起，报的却是 2 起） | `ImportExcel.hpp/cpp`、`verify_import.py` 61 项 |
+| 27 | **`@Transactional` 的提交点**：`saveCarInfo` / `saveCarExceptRecord` 都是"return error 而不是 throw" ⇒ 事务照常提交，只是少写一行；而外层 `CarInfoServiceImpl.doImport` 与非事务的控制器循环意味着批量导入**没有**整体原子性，插到第 N 行失败就留前 N-1 行。C++ 的 `Transaction` 析构默认回滚，必须在每个"正常返回"路径显式 commit | `ManagerImportControllers.cpp`，`verify_import.py` |
 
 ---
 
@@ -61,7 +66,7 @@
 | # | 偏离 | 影响 | 规避 / 现状 | 章节 |
 |---|---|---|---|---|
 | ⚠️1 | 验证码图片 **JPEG → PNG**；无 zlib 时 PNG 不压缩（约 10KB） | 仅体积，解码结果一致 | 系统装 zlib 则自动启用 | §2.1/§2.2 |
-| ⚠️2 | Redis value 序列化不是 Java 的 fastjson2 二进制格式，而是 JSON 文本 | **只影响 C++ 自己写的键**；读 Java 会话正常 | 与 Java 混跑时避免让 Java 读 C++ 写的键 | §2.2、§6.2 |
+| ⚠️2 | Redis value 的写出形态：`car_list`/`car_list_jc` 已改为 fastjson2 `WriteClassName` 形态（✅ 可与 Java 互读，见契约 23）；其余键（登录会话等）C++ 仍写普通 JSON 文本 | **只影响 C++ 自己写的非缓存键**；读 Java 会话/缓存都正常 | 与 Java 混跑时别让 Java 读那些普通 JSON 键；新增缓存键一律走 `fastJson2CachedArray` | §2.2、§6.2、契约 23 |
 | ⚠️3 | Excel 导出：响应形态/文件名/列集合/单元格类型/`readConverterExp` 都对，但模板导出**不复刻标题行、两级表头、合并单元格与样式**（自研最小 OOXML，单 sheet inline string） | 导出文件可正常打开，数据一致，版式不同 | 需要版式时改接真实模板渲染 | §2.3 |
 | ⚠️4 | 无 Quartz 调度器：`sys_job` CRUD 与 `changeStatus`/`jobLog` 语义一致，但 `PUT /monitor/job/run` **明确返回未实现**，调度需外部触发 | 定时任务不会自转 | 外部 cron/systemd/K8s 调 HTTP；或 Java 继续承担调度 | §2.4、`PORTING_REPORT` §6.6 |
 | ⚠️5 | 固定 32 工作线程（`CM_WORKERS`），无 GC；长耗时外部调用会占满 worker | 并发模型不同，慢上游会整站排队 | 部署时按核数放大；外部调用必须设超时 | §2.5、§5.1 |
@@ -128,26 +133,27 @@
 |---|---|
 | `GET /base/geometry/getHenDa`、`/syncAllGeometry`、`/syncAllGeometry1` | Forest → GeoServer `http://36.200.20.14:7890/...`；签名是 `EncryptUtils.createSignature` 的 MD5 字典序拼接，**含 `append(publicStr)` 自拼接 quirk，必须逐字复刻**；两个 sync 是"先 `return success()` 再后台线程池跑"，失败不可见（§5.1） |
 | `GET /base/snapshotflow/earliest-time` | Forest → `127.0.0.1:9901`；无 try/catch ⇒ 上游失败直接 500；`data` 在"日期串"与 `"暂无数据"` 之间切换 |
-| `POST /manager/carinfo/import`、`POST /manager/exceptrecord/import` | 需 xlsx 读取（`ImportSysUtil` 只支持 xlsx；`ImportEntity` 中文列名→属性硬编码表；错误优先 `AjaxResult.error("error", errorList)`，msg 不是 500） |
 | `POST /manager/busstest/syncCurrentTrack` | **纯 DB+Redis**；返回 `void` ⇒ 成功是 200 空体；`isLocalhost=="local"` 时直接不执行 |
 
-> 另注：`POST /system/user/importData` 已在路由表里（未计作"未覆盖"），但它同样缺 xlsx 读取器 —— 现在返回显式错误而不是假成功。
+> ~~`POST /manager/carinfo/import`、`POST /manager/exceptrecord/import`~~ —— 已迁移（xlsx 读取器可用后落地，见 §2 契约 23–26 与 `scripts/verify_import.py` 的 61 项实机断言）。
+> 另注：`POST /system/user/importData` 已在路由表里（未计作"未覆盖"），但它走的是另一套机制（`@Excel` 注解反查 + `updateSupport` 的部门/角色校验），目前仍返回**显式错误**而不是假成功。
 
-### 小结：按"缺什么能力"重排（4 + 1 + 2 + 2 + 6 = 15）
+### 小结：按"缺什么能力"重排（13 条）
 
 | 缺的能力 | 条数 | 端点 |
 |---|---|---|
 | **无（纯移植工作量）** | **4** | `file/uploadFileEnc`、`suspicious/check`、`suspicious/syncSuspiciousCarTask`、`busstest/syncCurrentTrack` |
-| S3 / MinIO 客户端（SigV4） | 7 | `file/upload`、`uploadSupplier`、`uploadPdf`、`uploadFile`、`uploadFileId`、`GET /{bucket}/{obj}`、`GET /view/{bucket}/{obj}` |
+| S3 / MinIO 客户端（SigV4） | 7 | `file/upload`、`uploadSupplier`、`uploadPdf`、`uploadFile`、`uploadFileId`、`GET /{bucket}/{obj}`、`GET /view/{bucket}/{obj}`（已实现，缺真实 MinIO 才能验签名之外的分支） |
 | S3 + 出站 HTTP | 1 | `file/uploadByUrl` |
 | 出站 HTTP（外部服务在场才能验） | 9 | `suspicious/listFileCarNo`、`suspicious/history/{id}`、`cartrackinfo/listByCarId`、`changeTrailInfo`、`carSnapShot`、`geometry/getHenDa`、`syncAllGeometry`、`syncAllGeometry1`、`snapshotflow/earliest-time`（其中 `listByCarByTime` 的远程分支在 Java 里整块被注释，故已作为纯本地端点落地） |
 | docx 模板填充 | 1 | `suspicious/exportAbnormalPassage` |
-| xlsx 读取（INFLATE + sharedStrings + `@Excel` 反查） | 2 | `carinfo/import`、`exceptrecord/import` |
-| GenUtils / Velocity + zip | 7 | `gen/importTable`、`PUT /tool/gen`、`gen/synchDb`、`preview`、`download`、`genCode`、`batchGenCode` |
+| GenUtils / Velocity + zip | 7 | `gen/importTable`、`PUT /tool/gen`、`gen/synchDb`、`preview`、`download`、`genCode`、`batchGenCode`（前三条已落地，剩 4 条要 Velocity 渲染 13 个 `vmplus/` 模板） |
+
+> ~~xlsx 读取（INFLATE + sharedStrings）~~ —— 0 条：读取器已可用，`carinfo/import` 与 `exceptrecord/import` 已迁移。
 
 两点修正性说明：
 * `listFileCarNo` / `history/{id}` / `changeTrailInfo` 取决于 Redis 开关 `sys_config:api_map`：值为 `"0"` 时走**本地几何**，那时这三条也归入"无需新能力"。
-* `POST /system/user/importData` 已注册（因此不计入 35），但它同样缺 xlsx 读取器 —— 现在返回显式错误而不是假成功。
+* `POST /system/user/importData` 已注册（因此不计入未覆盖），但它用的是 easypoi/`@Excel` 注解那一套，与 `ImportSysUtil` 的硬编码表头不是同一件事 —— 现在返回显式错误而不是假成功。
 
 ## 5. 照抄的 Java 缺陷清单（防"顺手修正"）
 
@@ -164,6 +170,10 @@
 | `selectOrgId` 返回 String 但 SQL 可能多行 | 多行时 Java 抛 `TooManyResultsException`；C++ 取第一行（已标注 ⚠️） | `PORTING_REPORT` §4.2 |
 | `SysFileController.uploadFileId` 里 `AjaxResult.error("主键不能为空")` 返回值被丢弃 | 未迁移；迁移时不要"修正" | §4.2 |
 | `uploadFileEnc` 循环体是注释 | 恒返回空数组 | §4.2 |
+| `exceptrecord/import` 里 `initListThree()` 从未被调用 | `gzListThree` 也是 `initListTwo()` ⇒ 表头的第 2 行与第 3 行比的是**同一份**列名，那个看起来专为第 3 行准备的表定义是死代码。移植时不要"顺手接上" | `ManagerImportControllers.cpp`、`verify_import.py` |
+| `isExitsTime` 判的是"区间有交集"而非文案说的"重复" | `out_time >= #{inTime} AND in_time <= #{outTime}`；且 `saveCarExceptRecord` 的返回值被导入循环丢弃 ⇒ "录入区间时间重复！"永远不会出现，那一行只是静默不写 | `verify_import.py` |
+| `MyBatisPlusHandlerConfig.insertFill` 里 tenantId 判的是 `epsId == null` | epsId 已有值时 tenantId 就不填 —— 复制粘贴错误，照抄 | `saveCarExceptRecord` |
+| `carinfo/import` 的 `doImport` 无 `@Transactional`，且插入前又重设一次 `createTime` | 注释还写着"创建的时间一样"，实际每行各取当前时间；失败时前面已插入的行不回滚 | `CarInfoServiceImpl:215` |
 | `syncSuspiciousCarTask` 签名三参数由调用方提供、无时间窗 | 可无限重放、可离线伪造 | §5.1、§4.5 |
 
 ---
@@ -211,8 +221,8 @@ python scripts/verify_flow_approval.py --port 9991
 ## 8. 剩余风险与建议顺序
 
 1. **先补出站 HTTP 客户端**（一次性解锁 8 条外部依赖接口，且能对本地 stub 验证超时/失败边界）；同时把 `hengda` 的 MD5 自拼接 quirk 与"失败塌缩成 null"照抄，不做参数化修复。
-2. **再补 INFLATE + xlsx 读取器**（解锁 3 条 import；顺带能读 easypoi 模板做真正的版式复刻，消掉 ⚠️3）。
-3. **S3 SigV4 客户端**（解锁 8 条 SysFile；MinIO 不在网内 ⇒ 只能对 AWS 官方测试向量做签名级单测 + 本地 fake S3 验证 PUT/GET/DELETE 行为，要如实标注"未对真实 MinIO 验证"）。
-4. **统一 SQL 失败的降级语义**（⚠️10）：现在只有模板导出路径改成抛异常，其余仍是"失败变空结果"，需要一轮全量改 + 回归。
-5. `@Log` 已落地，但 `preview/genCode/download` 的 Velocity 渲染是纯增量工作（zip 已具备）。
-6. 混跑注意：C++ 写进 Redis 的键用 JSON 文本（⚠️2），别让 Java 侧去读；两侧都不给 `car_list`/`car_warning_list` 设 TTL，行为一致但缓存新鲜度依赖 Java 的刷新任务。
+2. ~~**再补 INFLATE + xlsx 读取器**~~ ✅ 已完成：INFLATE 三种块类型对拍通过（根因是距离基值表抄成了长度表那一路，见 `Inflate.cpp` 顶部），xlsx 读取器已接进 `carinfo/import` 与 `exceptrecord/import`。剩下的是 `system/user/importData`（easypoi `@Excel` 注解那套，机制不同）与 easypoi 模板的版式复刻（⚠️3 仍在）。
+3. ~~**S3 SigV4 客户端**~~ ✅ 已实现（7 条 SysFile 端点 + `verify_sys_file.py` 40 项对本地 fake S3 通过，fake_s3 用 Python 标准库独立重算签名）。⚠️ 仍未对**真实 MinIO** 验证过，只验到签名与协议层。
+4. **统一 SQL 失败的降级语义**（⚠️10）：现在只有模板导出与新增的导入链路改成抛异常（`mustRun`），其余仍是"失败变空结果"，需要一轮全量改 + 回归。
+5. `@Log` 已落地，但 `preview/genCode/download` 的 Velocity 渲染是纯增量工作（zip 已具备，deflate 也可用了）。
+6. 混跑注意：`car_list`/`car_list_jc`/`car_warning_list` 两侧都不设 TTL，行为一致，但缓存新鲜度依赖对方的刷新任务；C++ 写的**非缓存**键仍是普通 JSON 文本（⚠️2），别让 Java 去读。

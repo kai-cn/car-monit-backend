@@ -158,6 +158,10 @@ const Spec& specCarExceptRecord() {
         s.table = "car_except_record";
         s.alias = "t";
         s.extraWhere = " and t.del_flag = '0'";
+        s.fromSql =
+            "FROM car_except_record t left join sys_user su on su.user_id = t.create_by"
+            " left join sys_dept sd on t.eps_id = sd.dept_id";
+        s.selectTail = "concat(sd.dept_name, ' ', su.nick_name) createInfo";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::Eq, nullptr, true, false, true, true, nullptr},
             {"epsId", "eps_id", Fmt::Long, Cond::Eq, nullptr, false, false, true, true, nullptr},
@@ -197,7 +201,10 @@ const Spec& specCarExceptRecord() {
             {"supplementaryStatus", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, "\"0\""},
             {"exceptIds", nullptr, Fmt::Str, Cond::FindInSetCol, "异常流水ids", false, false, false, false, "id", nullptr},
             {"carNoQuery", nullptr, Fmt::Str, Cond::Like, "车俩查询", false, false, false, false, "car_no", nullptr},
-            {"createInfo", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            // createInfo 是 SELECT 尾巴上的派生列（concat(sd.dept_name,' ',su.nick_name)），
+            // 不在 <sql id="selectCarExceptRecordVo"> 里 ⇒ inVo=false 交给 selectTail 输出；
+            // 这条语句没有 createInfo 的 <if>，所以 Cond::None。
+            {"createInfo", "createInfo", Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr, false},
             {"exceptNum", nullptr, Fmt::Int, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
             {"exceptAmount", nullptr, Fmt::Double, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
             {"inTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
@@ -258,7 +265,23 @@ const Spec& specCarInfo() {
         Spec s;
         s.table = "car_info";
         s.alias = "t";
-        s.extraWhere = " and t.del_flag = '0' and t.status = '0'";
+        // Java CarInfoMapper.xml:145-156 —— WHERE 里除 del_flag 之外还挂着一个**无条件**的
+        // not exists：凡是"异常流水全部已补缴"（count_num>0 且 except_num=0）的车牌，
+        // 在 selectCarInfoList 里直接查不到。这条同时决定了 /manager/carinfo/list 的行集、
+        // 导入接口按车牌回查主键的结果，以及 Redis car_list 的内容 —— 少了它就会把
+        // 已缴清的车也返回/也当成"新车"重复插入。
+        // ⚠️ 早先这里写的是 "and t.status = '0'"，那是生成器把子查询里的
+        //    `case when t1.status='0'` 误认成本层恒定过滤造出来的，Java 里并不存在。
+        s.extraWhere =
+            " and t.del_flag = '0' and not exists (select 1 from (select t1.car_no,"
+            " sum(case when t1.status = '0' then 1 else 0 end) except_num, count(1) count_num"
+            " from car_except_record t1 where t1.del_flag = '0' group by t1.car_no) k"
+            " where t.car_no = k.car_no and k.count_num > 0 and k.except_num = 0)";
+        // Java 的 FROM 带两个 left join，SELECT 尾巴上还有 concat(...) createInfo
+        s.fromSql =
+            "FROM car_info t left join sys_user su on su.user_id = t.create_by"
+            " left join sys_dept sd on t.eps_id = sd.dept_id";
+        s.selectTail = "concat(sd.dept_name, ' ', su.nick_name) createInfo";
         s.fields = {
             {"id", "id", Fmt::Str, Cond::Ne, nullptr, true, false, true, true, nullptr},
             {"epsId", "eps_id", Fmt::Long, Cond::Eq, nullptr, false, false, true, true, nullptr},
@@ -329,7 +352,7 @@ const Spec& specCarInfo() {
             {"applyTime2", nullptr, Fmt::Str, Cond::Lte, nullptr, false, false, false, false, "create_time", nullptr},
             {"carNoQuery", nullptr, Fmt::Str, Cond::Like, nullptr, false, false, false, false, "car_no", nullptr},
             {"createTimeStr", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
-            {"createInfo", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
+            {"createInfo", "createInfo", Fmt::Str, Cond::Like, nullptr, false, false, false, false, "sd.dept_name", nullptr, false},
             {"trailList", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
             {"flag", nullptr, Fmt::Str, Cond::None, nullptr, false, false, false, false, nullptr, nullptr},
         };

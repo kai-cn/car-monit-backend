@@ -282,8 +282,16 @@ bool Xlsx::load(const std::string& bytes, bool dateWithTime, Xlsx& out, std::str
     }
 
     out.rows_.clear();
+    out.present_.clear();
     size_t rp = 0;
     while ((rp = sheet->find("<row", rp)) != std::string::npos) {
+        // "<rows>" 之类的前缀不能误认成 row 标签
+        const char after = rp + 4 < sheet->size() ? (*sheet)[rp + 4] : ' ';
+        if (after != ' ' && after != '>' && after != '/' && after != '\t' && after != '\n' &&
+            after != '\r') {
+            rp += 4;
+            continue;
+        }
         const bool selfClosing = sheet->find("/>", rp) == rp + 1 ||
                                  (sheet->find("</row>", rp) == std::string::npos);
         const size_t rend = selfClosing ? sheet->find("/>", rp) : sheet->find("</row>", rp);
@@ -298,6 +306,8 @@ bool Xlsx::load(const std::string& bytes, bool dateWithTime, Xlsx& out, std::str
         }
         if (rowIdx > 200000) { rp = rend; continue; }   // 恶意/异常行号，跳过
         out.rows_.resize(rowIdx + 1);
+        out.present_.resize(rowIdx + 1, 0);
+        out.present_[rowIdx] = 1;                        // 这一行确实存在（区别于"行缺失"）
         std::vector<std::string>& row = out.rows_[rowIdx];
 
         const std::string body = selfClosing ? std::string()

@@ -215,6 +215,32 @@ def invo_tail(in_vo, written):
     return ", nullptr" * max(0, 11 - written) + ", false"
 
 
+def strip_subqueries(sql):
+    """去掉括号里含 select 的片段（子查询）与 case...end，只留本层 WHERE 看得见的文本。
+
+    恒定过滤的判断只能看本层：car_info 的 `not exists (select … case when t1.status='0' …)`
+    曾被当成"这条语句还有 status='0' 的固定条件"，凭空少返回一批行。"""
+    out, i, n = [], 0, len(sql)
+    while i < n:
+        if sql[i] == '(':
+            depth, j = 1, i + 1
+            while j < n and depth:
+                if sql[j] == '(':
+                    depth += 1
+                elif sql[j] == ')':
+                    depth -= 1
+                j += 1
+            frag = sql[i:j]
+            if not re.search(r'\bselect\b', frag, re.I):
+                out.append(frag)
+            i = j
+            continue
+        out.append(sql[i])
+        i += 1
+    text = ''.join(out)
+    text = re.sub(r'\bcase\b.*?\bend\b', ' ', text, flags=re.S | re.I)
+    return re.sub(r'\s+', ' ', text)
+
 def snake_case(name):
     out = []
     for i, ch in enumerate(name):
@@ -504,6 +530,10 @@ def gen_entity(entity, ctrl_path):
                     re.search(r'<sql id="select\w*Vo">(.*?)</sql>', xml_src, re.S).group(1)
                     if re.search(r'<sql id="select\w*Vo">(.*?)</sql>', xml_src, re.S) else "",
                     flags=re.S)
+    # 子查询与 case-when 里的常量过滤不属于本语句的 WHERE。
+    # 之前只按 "…status = '0'" 正则扫全文，car_info 就被 `not exists` 里的
+    # `sum(case when t1.status='0' …)` 骗出了一条根本不存在的恒定过滤。
+    probe = strip_subqueries(probe)
     fixed = []
     if re.search(r"(?:\b%s\.|\b)del_flag\s*=\s*'0'" % re.escape(alias), probe, re.I):
         fixed.append(" and %s.del_flag = '0'" % alias)

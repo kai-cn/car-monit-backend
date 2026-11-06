@@ -65,11 +65,13 @@ Json vo2(const std::string& k1, const std::string& v1, const std::string& k2, co
     return j;
 }
 
-/** 走 spec 取整表行（Java 的 selectXxxList(new Xxx()) 形态） */
+/** 走 spec 取整表行（Java 的 selectXxxList(new Xxx()) 形态）。
+ *  必须走 selectSqlOf：自己拼 "FROM 表 别名" 会漏掉 spec.fromSql 里的 join，
+ *  而 selectColumns() 尾部可能带着只有 join 才有的派生列（car_info 的 createInfo）。 */
 std::vector<Json> specRows(const cm::web::crud::Spec& sp) {
-    auto res = run("SELECT " + sp.selectColumns() + " FROM " + sp.table + " " + sp.alias + " " +
-                   "WHERE 1=1" + sp.extraWhere +
-                   (sp.orderBy.empty() ? std::string() : (" ORDER BY " + sp.orderBy)));
+    auto res = run(cm::web::crud::selectSqlOf(
+        sp, "WHERE 1=1" + sp.extraWhere,
+        sp.orderBy.empty() ? std::string() : (" ORDER BY " + sp.orderBy)));
     std::vector<Json> out;
     for (const auto& row : res.rows) out.push_back(cm::web::crud::rowToJson(sp, row));
     return out;
@@ -305,10 +307,19 @@ void registerBigScreenController(Router& r) {
             Json j = cm::utils::parse_cached_json(*cached);  // 解析失败 -> 500（Java 的强转同样会抛）
             if (j.is_array()) for (const auto& e : j) cars.push_back(e);
         } else {
-            cars = specRows(cm::web::crud::specCarInfo());
-            Json arr = Json::array();
-            for (const auto& c : cars) arr.push_back(c);
-            cm::redis::RedisCache::instance().set("car_list", arr.dump());  // 不设 TTL，与 Java 一致
+            // 回源写缓存必须用 fastjson2 的写出形态（@type/字段排序/Long 带 L），
+            // 否则 Java 读到的是 JSONObject，用到就 ClassCastException。见 CrudSpec.hpp。
+            cm::db::Result res;
+            const std::string sql = cm::web::crud::selectSqlOf(
+                cm::web::crud::specCarInfo(),
+                cm::web::crud::buildWhere(cm::web::crud::specCarInfo(), Json::object()),
+                " ORDER BY " + cm::web::crud::specCarInfo().orderBy);
+            if (!cm::db::Db::instance().query(sql, res)) res.rows.clear();
+            cars = cm::web::crud::fetchRowsOf(cm::web::crud::specCarInfo(), res);
+            cm::redis::RedisCache::instance().set(
+                "car_list", cm::web::crud::fastJson2CachedArray(
+                                cm::web::crud::specCarInfo(), res.rows,
+                                "com.ruoyi.manager.domain.CarInfo"));  // 不设 TTL，与 Java 一致
         }
 
         // 参数预处理：sectionCode 含 all 视为不限；三个编码先按调用方传的值绑定，type 再决定
@@ -598,7 +609,9 @@ void registerBigScreenController(Router& r) {
         std::string order;
         if (!page.orderBy.empty()) order = " ORDER BY " + page.orderBy;
         else if (!sp.orderBy.empty()) order = " ORDER BY " + sp.orderBy;
-        const std::string from = std::string(" FROM ") + sp.table + " " + sp.alias + " " + where;
+        // FROM 走 fromClauseOf：specCarExceptRecord 现在带 sys_user/sys_dept 两个 left join
+        // （createInfo 那一列只在 join 后才存在）
+        const std::string from = " " + cm::web::crud::fromClauseOf(sp) + " " + where;
         const std::string dataSql = "SELECT " + sp.selectColumns() + from + order;
 
         std::vector<Json> rows;

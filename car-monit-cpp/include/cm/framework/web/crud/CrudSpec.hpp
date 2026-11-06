@@ -109,6 +109,10 @@ struct Spec {
     std::string alias{"t"};             ///< XML 里普遍用 "FROM tbl t"
     std::string orderBy;               ///< "order by t.create_time desc"（不含关键字）
     std::string fromSql;               ///< 覆盖 "FROM tbl t"（join 场景）
+    /** SELECT 列表尾部追加的表达式（不含前导逗号）。
+     *  Java 的 Mapper 普遍写成 `<include refid="selectXxxVo"/>,concat(...) createInfo` ——
+     *  派生列既不是表列也不能当成 WHERE 左值，所以它不属于任何 Field，只能单列出来。 */
+    std::string selectTail;
     std::string extraWhere;            ///< 固定附加条件，如 "and t.del_flag = '0'"
     RangeStyle rangeStyle{RangeStyle::DayYyyymmdd};
     const char* rangeColumn{nullptr};  ///< DateRange 对应的列，通常是 create_time
@@ -138,6 +142,18 @@ std::string buildInsert(const Spec& spec, const Json& body);
 
 /** JSON body -> UPDATE 语句（只含非 null 且 updatable 的列，WHERE 用主键） */
 std::string buildUpdate(const Spec& spec, const Json& body);
+
+/** "SELECT <Vo 列> FROM … <where> <order>" —— runList/runExport 用的同一句，
+ *  控制器里要按实体条件再查一遍时（导入按车牌回查主键）必须走它，别自己拼。 */
+std::string selectSqlOf(const Spec& spec, const std::string& where, const std::string& order);
+
+/** "FROM 表 别名" 或 spec.fromSql 的 join 形态 —— 与 selectSqlOf 用的是同一个 FROM。
+ *  自己拼 FROM 的地方（PageHelper 的 count 语句）必须走它，否则 spec 里那些
+ *  "只有 join 才存在的派生列"会拼出非法 SQL。 */
+std::string fromClauseOf(const Spec& spec);
+
+/** 结果集 -> JSON 数组（与列表接口同一套 afterRow 钩子/字段序） */
+Json fetchRowsOf(const Spec& spec, const cm::db::Result& res);
 
 /** 把 HTTP query 参数收集成实体形态的 Json（Spring 的参数绑定） */
 Json bindQuery(const Spec& spec, RequestContext& ctx);
@@ -174,5 +190,19 @@ void registerReadOnly(Router& router, const std::string& base, const Spec& spec,
 
 /** 导出：返回 Java 侧 ExcelUtil 的响应形态（data = 文件名） */
 cm::http::ApiResponse exportExcel(const Spec& spec, const Json& rows, const std::string& sheetName);
+
+/** 生成 Java FastJson2JsonRedisSerializer 写进 Redis 的那种值（WriteClassName）。
+
+ *
+ *  为什么不能直接用 Json::dump()：Java 侧 RedisConfig 给 valueSerializer 开了
+ *  `JSONWriter.Feature.WriteClassName`，写出来的不是严格 JSON ——
+ *      [{"@type":"com.ruoyi.manager.domain.CarInfo","carNo":"…","createBy":1L,…}]
+ *  字段按**属性名排序**（fastjson2 排好序再写）、null 整个省略、Long 带 `L` 后缀、
+ *  BigDecimal 保持 DB 的标度（0.00 不会变成 0）。C++ 若写严格 JSON，Java 读进去拿到的是
+ *  JSONObject 而不是 CarInfo，用到就 ClassCastException —— 缓存互操作等于没有。
+ *
+ *  所以凡是"Java 也会写这个键"的缓存，必须走这里，而不是 arr.dump()。 */
+std::string fastJson2CachedArray(const Spec& spec, const std::vector<cm::db::Row>& rows,
+                                 const std::string& elemType);
 
 } // namespace cm::web::crud

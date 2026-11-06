@@ -40,8 +40,15 @@ public:
     const std::vector<std::vector<std::string>>& rows() const { return rows_; }
     int lastRowNum() const { return rows_.empty() ? -1 : static_cast<int>(rows_.size()) - 1; }
 
+    /** 这一行在 sheet 里**存在**吗。POI 的 getRow(r) 对不存在的行返回 null，
+     *  而 dataRtnExcel07/08 拿到 null 会 NPE 并被 catch 成 break —— 中间空一行 ⇒ 后面的数据全不读。
+     *  "行存在但没有单元格"（<row r="5"/>）则是另一回事：那不算 null，循环继续。
+     *  所以只凭 rows()[r].empty() 区分不了这两种，必须单独记。 */
+    bool rowPresent(size_t r) const { return r < present_.size() && present_[r] != 0; }
+
 private:
     std::vector<std::vector<std::string>> rows_;
+    std::vector<unsigned char> present_;
 };
 
 } // namespace cm::utils
