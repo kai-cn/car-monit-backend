@@ -52,13 +52,15 @@ func (o *ossStorage) presign(bucket, object string, days int) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// Java 取两次时钟：OssTemplate 先 new Date() 再 calendar.add(DAY_OF_MONTH, expires)，
+	// SDK 内部又 new Date() 反算 (expiration - now)/1000。第二次必然晚于第一次，
+	// 差值截断到秒就少 1 秒，所以 1 天下来的一直是 86399。
+	expireAt := time.Now().AddDate(0, 0, days)
 	now := time.Now().UTC()
 	amzDate := now.Format("20060102T150405Z")
 	dateStamp := amzDate[:8]
 	scope := dateStamp + "/" + presignRegion + "/s3/aws4_request"
-	// Java 先 calendar.add(DAY_OF_MONTH, expires)，SDK 再用 currentTimeMillis 反算秒数，
-	// 所以 1 天可能落在 86400 也可能掉到 86399。
-	expires := int(time.Until(now.AddDate(0, 0, days)) / time.Second)
+	expires := int(expireAt.Sub(now) / time.Second)
 
 	params := map[string]string{
 		"X-Amz-Algorithm":     "AWS4-HMAC-SHA256",

@@ -243,6 +243,28 @@ func (h *handler) exceptGetConfirmID(c *gin.Context) {
 
 func (h *handler) exceptGet(c *gin.Context) { h.tableGet(c, exceptRecordSpec) }
 
+// exceptTimeOverlap 对应 CarExceptRecordMapper.isExitsTime：同车牌、区间与 [inTime, outTime]
+// 重叠、且不是自己那一行的记录数。id/车牌为空时对应的条件整个不下推（XML 的 <if>）。
+func (h *handler) exceptTimeOverlap(ctx context.Context, id, carNo string, inTime, outTime any) (bool, error) {
+	sqlStr := "SELECT COUNT(1) FROM car_except_record t WHERE t.del_flag = '0'"
+	var args []any
+	if id != "" {
+		sqlStr += " AND t.id != ?"
+		args = append(args, id)
+	}
+	sqlStr += " AND t.out_time >= ? AND t.in_time <= ?"
+	args = append(args, inTime, outTime)
+	if carNo != "" {
+		sqlStr += " AND t.car_no = ?"
+		args = append(args, carNo)
+	}
+	var count int64
+	if err := h.app.DB.WithContext(ctx).Raw(sqlStr, args...).Scan(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 // exceptSave 对应 saveCarExceptRecord：区间查重 -> 新增/修改 -> 回写重点车辆。
 func (h *handler) exceptSave(c *gin.Context) {
 	body, err := jsonBody(c)
@@ -255,20 +277,12 @@ func (h *handler) exceptSave(c *gin.Context) {
 	outTime := bodyString(body, "outTime")
 	carNo := isNull(bodyString(body, "carNo"))
 	if inTime != "" && outTime != "" {
-		sqlStr := "SELECT COUNT(1) FROM car_except_record t WHERE t.del_flag = '0'"
-		var args []any
-		if id != "" {
-			sqlStr += " AND t.id != ?"
-			args = append(args, id)
-		}
-		sqlStr += " AND t.out_time >= ? AND t.in_time <= ? AND t.car_no = ?"
-		args = append(args, inTime, outTime, carNo)
-		var count int64
-		if err := h.app.DB.WithContext(c.Request.Context()).Raw(sqlStr, args...).Scan(&count).Error; err != nil {
+		dup, err := h.exceptTimeOverlap(c.Request.Context(), id, carNo, inTime, outTime)
+		if err != nil {
 			web.JSON(c, web.ErrorResult(err))
 			return
 		}
-		if count > 0 {
+		if dup {
 			web.JSON(c, web.ErrorMsg("录入区间时间重复！"))
 			return
 		}
@@ -351,9 +365,11 @@ func (h *handler) exceptDelete(c *gin.Context) {
 
 // exceptImport 对应 POST /import（importCarExcept.xlsx）。
 func (h *handler) exceptImport(c *gin.Context) {
-	fileHeader, err := c.FormFile("file")
+	// JAVA 对照: 不是 multipart / 缺 file part 的消息由 Spring 给出；
+	// 后缀不是 .xlsx 才是 ImportSysUtil 的中文提示；再往后 0 字节与非法格式的消息来自 POI。
+	fileHeader, err := web.FormFile(c, "file")
 	if err != nil {
-		web.JSON(c, web.ErrorMsg("请上传Excel文件(.xlsx)"))
+		web.JSON(c, web.ErrorMsg(err.Error()))
 		return
 	}
 	if !strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".xlsx") {
@@ -366,28 +382,30 @@ func (h *handler) exceptImport(c *gin.Context) {
 		return
 	}
 	defer func() { _ = f.Close() }()
+	if msg := web.CheckUpload(fileHeader.Size, f, notWorkbookMsg, ole2IsNotXSSFMsg); msg != "" {
+		web.JSON(c, web.ErrorMsg(msg))
+		return
+	}
 	rows, err := readXlsxRows(f)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
-	if len(rows) < 4 || !looksLikeExceptHeader(rows[1]) && !looksLikeExceptHeader(rows[2]) {
+	// JAVA 对照: colVdaExcel08 先拿 initListTwo 的表头比第 2 行，再比第 3 行；
+	// 两处传的是同一个列表（colsNameThree 也是 initListTwo，initListThree 从未被用到），
+	// 所以真实模板只有第 2 行能命中，第 3 行的子表头必然比不过。
+	headerNames := importColNames(exceptImportCols)
+	if len(rows) < 4 || (!sameHeader(rows[1], headerNames) && !sameHeader(rows[2], headerNames)) {
 		web.JSON(c, web.ErrorMsg("导入失败,模板不正确,请下载对应的模板！"))
 		return
 	}
+	dataRows := collectImportRows(rows[3:]) // dataRtnExcel08(..., num=3)
+	if len(dataRows) == 0 {
+		web.JSON(c, web.ErrorMsg("导入失败,模板excel没有数据可以导入，请确定！"))
+		return
+	}
 
-	type importError struct {
-		RowNum   int    `json:"rowNum"`
-		ColName  string `json:"colName"`
-		ErrorMsg string `json:"errorMsg"`
-	}
 	var errList []importError
-	cell := func(row []string, idx int) string {
-		if idx < len(row) {
-			return strings.TrimSpace(row[idx])
-		}
-		return ""
-	}
 	carTypeChange, _ := h.dictLabelValue(c.Request.Context(), "car_type_change")
 	escapedTypeMap, _ := h.dictLabelValue(c.Request.Context(), "escaped_type")
 	plateColorMap, _ := h.dictLabelValue(c.Request.Context(), "plate_color")
@@ -429,99 +447,87 @@ func (h *handler) exceptImport(c *gin.Context) {
 	var importList []*carExceptRecord
 	var addCars []*addCarInfo
 	addCarSet := map[string]struct{}{}
-	for i := 3; i < len(rows); i++ {
-		row := rows[i]
-		rowNum := i
-		outStation, outTimeStr, passType, carNoRaw := cell(row, 1), cell(row, 2), cell(row, 3), cell(row, 4)
-		carTypeLabel, inStation, inTimeStr := cell(row, 5), cell(row, 7), cell(row, 8)
-		backCol1, escapedTypeLabel := cell(row, 9), cell(row, 10)
-		chargeStr, totalStr, remark := cell(row, 13), cell(row, 16), cell(row, 20)
-		if carNoRaw == "" {
-			errList = append(errList, importError{rowNum, "车牌", "车牌不能为空"})
-			continue
+	for i, row := range dataRows {
+		vals := importCells(row, len(exceptImportCols))
+		validateImportRow(&errList, exceptImportCols, i, vals)
+		if len(errList) == 0 {
+			importList = append(importList, parseExceptImportRow(vals))
 		}
-		if outTimeStr == "" || inTimeStr == "" {
-			errList = append(errList, importError{rowNum, "时间", "通行时间不能为空"})
-			continue
-		}
-		outTime, err1 := web.ParseDate(outTimeStr)
-		inTime, err2 := web.ParseDate(inTimeStr)
-		if err1 != nil || err2 != nil {
-			errList = append(errList, importError{rowNum, "时间", "时间格式不正确"})
-			continue
-		}
-		chargeAmount, err1 := strconv.ParseFloat(chargeStr, 64)
-		totalAmount, err2 := strconv.ParseFloat(totalStr, 64)
-		if chargeStr == "" || totalStr == "" || err1 != nil || err2 != nil {
-			errList = append(errList, importError{rowNum, "缴费金额", "缴费金额格式不正确"})
-			continue
-		}
-		if totalAmount < chargeAmount {
-			errList = append(errList, importError{rowNum, "缴费金额", "收费金额不能大于应缴金额"})
-			continue
-		}
-		if inTime.After(outTime) {
-			errList = append(errList, importError{rowNum, "时间", "入口时间大于出口时间，请确认!"})
-			continue
-		}
-
-		// 车牌号_车牌颜色
-		carNo := carNoRaw
-		plateColor := ""
-		if idx := strings.Index(carNoRaw, "_"); idx > -1 {
-			parts := strings.Split(carNoRaw, "_")
-			if len(parts) > 1 {
-				plateColor = parts[1]
-			}
-			carNo = parts[0]
-		}
-		if plateColor != "" {
-			if value, ok := plateColorMap[plateColor]; ok {
-				plateColor = value
-			}
-		}
-		item := &carExceptRecord{
-			CarNo: strPtr(carNo), PassType: strPtr(passType), BackCol1: strPtr(backCol1),
-			InStationID: strPtr(tollMap[inStation]), OutStationID: strPtr(tollMap[outStation]),
-			TotalAmount: &totalAmount, ChargeAmount: &chargeAmount,
-			Remark: strPtr(remark),
-		}
-		item.InTime = ptrDateTime(inTime)
-		item.OutTime = ptrDateTime(outTime)
-		item.InStation = strPtr(inStation)
-		item.OutStation = strPtr(outStation)
-		if carTypeLabel != "" {
-			if value, ok := carTypeChange[carTypeLabel]; ok {
-				item.CarType = strPtr(value)
-			} else {
-				item.CarType = strPtr(carTypeLabel)
-			}
-		}
-		item.CarVehicle = strPtr(carVehicleOf(strOf(item.CarType)))
-		if escapedTypeLabel != "" {
-			if value, ok := escapedTypeMap[escapedTypeLabel]; ok {
-				item.EscapedType = strPtr(value)
-			} else {
-				errList = append(errList, importError{rowNum, "逃费类型", escapedTypeLabel + " 逃费类型不存在,请在字典菜单维护！"})
-				continue
-			}
-		}
-		if car, ok := carMap[carNo]; ok {
-			item.CarID = strPtr(car.ID)
-			if item.CarNum == nil {
-				item.CarNum = car.CarNum
-			}
-		} else if _, seen := addCarSet[carNo]; !seen {
-			addCarSet[carNo] = struct{}{}
-			addCars = append(addCars, &addCarInfo{
-				CarNo: carNo, PlateColor: plateColor, CarType: strOf(item.CarType), CarVehicle: strOf(item.CarVehicle),
-			})
-		}
-		diff := totalAmount - chargeAmount
-		item.DifAmount = &diff
-		importList = append(importList, item)
 		if len(errList) > 100 {
 			break
+		}
+	}
+
+	// JAVA 对照: 控制器的第二段循环，只在没有格式错时开始，错误行号同样是数据行序号 +2。
+	if len(errList) == 0 {
+		for i, item := range importList {
+			carType := isNull(item.CarType)
+			if carType != "" {
+				if value, ok := carTypeChange[carType]; ok {
+					item.CarType = strPtr(value)
+				}
+			}
+			// 车种不取表格里那一列，只由（转换后的）车型推导，推不出来就是 99。
+			item.CarVehicle = strPtr(carVehicleOf(isNull(item.CarType)))
+
+			// 车牌号_车牌颜色
+			carNoRaw := isNull(item.CarNo)
+			carNo, plateColor := carNoRaw, ""
+			if strings.Contains(carNoRaw, "_") {
+				parts := strings.Split(carNoRaw, "_")
+				if len(parts) > 1 {
+					plateColor = parts[1]
+				}
+				carNo = parts[0]
+			}
+			item.CarNo = strPtr(carNo)
+			if plateColor != "" {
+				if value, ok := plateColorMap[plateColor]; ok {
+					plateColor = value
+				}
+			}
+			if carNo != "" {
+				if car, ok := carMap[carNo]; ok {
+					item.CarID = strPtr(car.ID)
+					item.CarNum = car.CarNum
+				} else if _, seen := addCarSet[carNo]; !seen {
+					addCarSet[carNo] = struct{}{}
+					addCars = append(addCars, &addCarInfo{
+						CarNo: carNo, PlateColor: plateColor,
+						CarType: isNull(item.CarType), CarVehicle: isNull(item.CarVehicle),
+					})
+				}
+			}
+			escapedType := isNull(item.EscapedType)
+			if escapedType != "" {
+				if value, ok := escapedTypeMap[escapedType]; ok {
+					item.EscapedType = strPtr(value)
+				} else {
+					errList = append(errList, importErrorAt(i, "逃费类型", escapedType+" 逃费类型不存在,请在字典菜单维护！"))
+				}
+			}
+			inStation := isNull(item.InStation)
+			if inStation != "" {
+				// 查不到收费站时 Java 不动 inStationId，列保持 null（MP 的 NOT_NULL 策略）。
+				if code, ok := tollMap[inStation]; ok {
+					item.InStationID = strPtr(code)
+				}
+			}
+			outStation := isNull(item.OutStation)
+			if outStation != "" {
+				if code, ok := tollMap[outStation]; ok {
+					item.OutStationID = strPtr(code)
+				}
+			}
+			if item.TotalAmount != nil && item.ChargeAmount != nil && *item.TotalAmount < *item.ChargeAmount {
+				errList = append(errList, importErrorAt(i, "缴费金额", "收费金额不能大于应缴金额"))
+			}
+			if item.InTime != nil && item.OutTime != nil && item.InTime.After(item.OutTime.Time) {
+				errList = append(errList, importErrorAt(i, "时间", "入口时间大于出口时间，请确认!"))
+			}
+			if len(errList) > 100 {
+				break
+			}
 		}
 	}
 
@@ -540,52 +546,117 @@ func (h *handler) exceptImport(c *gin.Context) {
 		})
 	}
 
-	now := time.Now()
 	userID := currentUserID(c)
+	epsID := currentEpsID(c)
+	tenantID := currentTenantID(c)
 	for _, item := range importList {
-		// 根据车牌号和入口时间判断是否已存在
+		// JAVA 对照: 控制器第三段先算 difAmount，再按 car_no + in_time 找已有记录决定新增还是修改。
+		if item.TotalAmount != nil && item.ChargeAmount != nil {
+			diff := *item.TotalAmount - *item.ChargeAmount
+			item.DifAmount = &diff
+		}
 		var existingID string
 		_ = h.app.DB.WithContext(c.Request.Context()).Table(carExceptRecordTable).
 			Select("id").Where("del_flag = '0' AND car_no = ? AND in_time = ?", item.CarNo, item.InTime).
 			Limit(1).Scan(&existingID).Error
-		cols := map[string]any{
+		if existingID != "" {
+			item.ID = strPtr(existingID)
+		}
+		// JAVA 对照: saveCarExceptRecord 的区间查重命中就 return error，控制器忽略返回值，
+		// 表现为「这一行不写库、响应里照样带着它」。
+		if item.InTime != nil && item.OutTime != nil {
+			dup, err := h.exceptTimeOverlap(c.Request.Context(), strOf(item.ID), isNull(item.CarNo), item.InTime, item.OutTime)
+			if err != nil {
+				web.JSON(c, web.ErrorResult(err))
+				return
+			}
+			if dup {
+				continue
+			}
+		}
+		cols := mpNonNullCols(map[string]any{
 			"car_id": item.CarID, "car_no": item.CarNo, "car_type": item.CarType,
-			"car_vehicle": item.CarVehicle, "pass_type": item.PassType,
+			"car_vehicle": item.CarVehicle, "car_num": item.CarNum, "pass_type": item.PassType,
 			"in_station_id": item.InStationID, "in_station": item.InStation, "in_time": item.InTime,
 			"out_station_id": item.OutStationID, "out_station": item.OutStation, "out_time": item.OutTime,
 			"total_amount": item.TotalAmount, "charge_amount": item.ChargeAmount, "dif_amount": item.DifAmount,
 			"escaped_type": item.EscapedType, "back_col1": item.BackCol1, "remark": item.Remark,
-			"update_by": userID, "update_time": now,
-		}
-		if existingID != "" {
-			if _, err := h.updateRow(c.Request.Context(), carExceptRecordTable, existingID, cols); err != nil {
+		})
+		if strOf(item.ID) != "" {
+			// updateFill：MP 会把 updateBy/updateTime 同时写回实体，所以响应里也有。
+			now := auditNow()
+			cols["update_by"] = userID
+			cols["update_time"] = now
+			if _, err := h.updateRow(c.Request.Context(), carExceptRecordTable, strOf(item.ID), cols); err != nil {
 				web.JSON(c, web.ErrorResult(err))
 				return
 			}
-			item.ID = strPtr(existingID)
-			continue
+			item.UpdateBy = &userID
+			item.UpdateTime = ptrDateTime(now)
+		} else {
+			// insertFill：只填 createBy/createTime/epsId/tenantId，不填 updateBy/updateTime。
+			item.ID = strPtr(newUUID())
+			now := auditNow()
+			cols["id"] = strOf(item.ID)
+			cols["status"] = "0"
+			cols["del_flag"] = "0"
+			cols["create_by"] = userID
+			cols["create_time"] = now
+			cols["eps_id"] = epsID
+			cols["tenant_id"] = tenantID
+			if err := h.insertRow(c.Request.Context(), carExceptRecordTable, cols); err != nil {
+				web.JSON(c, web.ErrorResult(err))
+				return
+			}
+			// Java 在 insert 前 setStatus("0")，而 delFlag 只靠列默认值，实体里一直是 null。
+			item.Status = strPtr("0")
+			item.CreateBy = &userID
+			item.CreateTime = ptrDateTime(now)
+			item.EpsID = &epsID
+			item.TenantID = &tenantID
 		}
-		item.ID = strPtr(newUUID())
-		cols["id"] = strOf(item.ID)
-		cols["status"] = "0"
-		cols["del_flag"] = "0"
-		cols["create_by"] = userID
-		cols["create_time"] = now
-		if err := h.insertRow(c.Request.Context(), carExceptRecordTable, cols); err != nil {
-			web.JSON(c, web.ErrorResult(err))
-			return
+		if isNull(item.CarNo) != "" {
+			h.saveCarExcept(c, isNull(item.CarNo))
 		}
-		h.saveCarExcept(c, strOf(item.CarNo))
 	}
 	web.JSON(c, web.SuccessFull("数据导入成功", importList))
 }
 
-// looksLikeExceptHeader 校验模板第二/第三行表头。
-func looksLikeExceptHeader(row []string) bool {
-	if len(row) < 14 {
-		return false
+// parseExceptImportRow 对应 JSONObject(objMap).toJavaObject(CarExceptRecord.class)：
+// 只有 initListTwo 给了属性的列会进对象，文本列空串不是 null，数字/时间列空值转 null。
+func parseExceptImportRow(vals []string) *carExceptRecord {
+	item := &carExceptRecord{
+		OutStation:  strPtr(vals[1]),
+		PassType:    strPtr(vals[3]),
+		CarNo:       strPtr(vals[4]),
+		CarType:     strPtr(vals[5]),
+		CarVehicle:  strPtr(vals[6]),
+		InStation:   strPtr(vals[7]),
+		BackCol1:    strPtr(vals[9]),
+		EscapedType: strPtr(vals[10]),
+		Remark:      strPtr(vals[20]),
+		// JAVA 对照: 域对象的字段初始值，新增/修改分支都带着它序列化出去。
+		SupplementaryStatus: strPtr("0"),
 	}
-	return strings.TrimSpace(row[1]) == "出口收费站" && strings.TrimSpace(row[4]) == "车牌"
+	// JAVA 对照: fastjson 按 JVM 默认时区把这段文本解析成 Date，Go 这边必须用
+	// ParseInLocation(time.Local)（web.ParseDate），否则 DSN 的 loc=Local 会把钟点平移。
+	if t, err := web.ParseDate(vals[2]); err == nil {
+		item.OutTime = ptrDateTime(t)
+	}
+	if t, err := web.ParseDate(vals[8]); err == nil {
+		item.InTime = ptrDateTime(t)
+	}
+	if vals[13] != "" {
+		if v, err := strconv.ParseFloat(vals[13], 64); err == nil {
+			item.ChargeAmount = &v
+		}
+	}
+	if vals[16] != "" {
+		if v, err := strconv.ParseFloat(vals[16], 64); err == nil {
+			item.TotalAmount = &v
+		}
+	}
+	return item
 }
 
 // carVehicleOf 对应承运车型 -> 车种（1/2/3，未知 99）。

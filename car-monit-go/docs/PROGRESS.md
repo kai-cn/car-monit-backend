@@ -27,6 +27,42 @@
 > 静态门禁：`build/vet/test` 通过、`check_startpage_map.py` 六类全 0、默认分页 91 条 0 差异、
 > 参数矩阵 1617 组合 0 差异、Redis 隔离 24 项全通过（清理 `failures=0`）。
 >
+> **第三批（2026-11-05）：Excel 导入层收口** —— 导出归零后剩下的最后一块是**上传**。
+> 新增 `compare_import.py`（同一份 inlineStr xlsx 传两端，比响应 + 按本端标记值精确查落库）、
+> `compare_upload_errors.py`（10 类畸形请求 × 3 端点 = 30 条错误形态）、`dump_local_xlsx.py`
+> （本地 xlsx 逐行打印，用来核对真实导入模板的表头）。把 `ImportUtil.importExcel` 的通用逐列校验
+> （规则 `1 必填 / 2 小数 / 3 整数 / 4 年月日 / 5 身份证 / 6 年月 / 7 数值 / 8 年月日时分秒`）
+> 抄成 `internal/modules/manager/import_validate.go`，错误对象统一成 `ImportErrorEntity` 的
+> `{rowNo,colName,message}`，行号按 `getErrorBO(index+1)` 的双重 +1 落成「数据行序号 + 2」，
+> 单测 `import_validate_test.go` 钉住（含"每个 token 独立一轮 ⇒ 一个值可报两条"、
+> "空值只查必填"、Java `Pattern.matches` 的全匹配语义）。三个端点按 Java 的**两段式**重排：
+> 格式校验先跑完所有行，全通过才轮到字典/业务校验。落库侧补齐 Java 的 MP 语义
+> （`mpNonNullCols` 剔掉 nil 指针，null 属性不进 SET；`insertFill` 不填 update_*、
+> `updateFill` 会把值写回实体所以响应里也有；`tenant_id` 只在 `epsId` 原本为 null 时才填 ⇒
+> `car_except_record` 拿到 `-1`、`car_info` 拿不到），并把 `isExitsTime` 区间查重
+> 抽成 `exceptTimeOverlap`（命中就"这一行不写库、响应照样带着它"）。
+> 途中修掉三个真 bug：① `/manager/carinfo/import` 更新分支漏 stamp `updateBy/updateTime`；
+> ② 导入的时间列用 `time.Parse` 拿到 UTC，配合 DSN `loc=Local` 把入库钟点整体 +8 小时；
+> ③ `/system/user/importData` 的 `readXlsxRows` 用 `GetRows` 会裁掉"有单元格但全是空串"的行，
+> 行号与 POI `getRow(i)` 对不上 ⇒ 换成 `Rows` 迭代器、缺行补 nil，据此区分
+> 「没有数据行」与「标题全不匹配」（后者 Java 是 `list.add(entity)` 无条件加 null 再被
+> `importUser` 的 catch 二次 NPE ⇒ `{"msg":null,"code":500}`，已复刻）。
+> 另外把预签名 URL 的 `X-Amz-Expires` 还原成 Java 的两次取时反算（86400/86399 由 SDK 耗时决定，
+> 对拍里按 `<EXPIRES>` 归一）。
+> 结果：导入回归**问题 0**（10 组用例，其中 5 组是多行：跨行业务错误顺序、`isExitsTime` 区间重叠时
+> "这一行不写库但响应照样带着它"、首格 `结束` 终止读行、一行报错后合法行也不入库的级联、
+> `errorList > 100` 提前 break）、30 条错误形态 28 条一致（2 条已知，
+> 均为 Java 内部异常文本），第 1/2/3 档复跑 14/12/**0**/2、185/162/2/21、95/82/11/2，
+> 导出层 59 条路由复扫单元格差异 0（口径从 58/33 校正为 59/34，多出的那条是 `/system/user/importTemplate`）、
+> 路由清单 Java 511 全匹配、
+> 参数矩阵 1617 组合 0 差异、默认分页 91 条 0 差异、`check_startpage_map.py` 六类全 0、
+> 写生命周期 15 条差异仍只落在 8 个 Java 侧缺陷资源上、Redis 隔离清理 `failures=0`，
+> PARITY 行已全部清干净（`--clean` 现在也扫 `car_except_record`）。
+> 详见 `docs/PARITY-API-TIER-2026-11-04.md` §6.6。
+> **收尾时踩到一件环境上的事**：共享库里 `admin` 的口令散列被换掉了（`update_time` 仍是 2025-09-27，
+> 像是直接改的列），现在 Java 参照端与 Go 端**都**返回「用户不存在/密码错误」，
+> 在线双端对拍因此打不进去；本轮结束前所有用例都还是通的，代码与文档状态不受影响。
+>
 > **2026-11-03 批次收口见 `docs/PARITY-SUMMARY-2026-11-03.md`，分页专题见 `docs/PAGINATION-PARITY-2026-11-03.md`**：
 > 分页语义与 PageHelper 5.3.3 源码逐条对齐（`SkipQuery` 照抄 `afterCount` 的 `pageNum>0 && count>startRow`、
 > `Clamp` 的 reasonable 两界、`startRow`、`OrderBy` 原样拼接、`reasonable` 的 `Convert.toBool` 词表）、

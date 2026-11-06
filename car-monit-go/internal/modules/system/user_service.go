@@ -624,10 +624,9 @@ func (s *service) applyDeptOfUser(tx *gorm.DB, b *userBody) error {
 func (s *service) updateUser(ctx context.Context, b *userBody, updateBy string) (int64, error) {
 	var rows int64
 	err := s.app.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if b.UserID == nil {
-			return web.NewServiceError("用户ID不能为空")
-		}
-		uid := *b.UserID
+		// uid 为 nil 时按 SQL NULL 传：Java 的 updateUser 不做非空校验，
+		// delete/update 各自匹配 0 行，整个事务仍然成功返回。
+		uid := userIDArg(b.UserID)
 		// 删除用户与角色关联
 		if err := tx.Exec("delete from sys_user_role where user_id = ?", uid).Error; err != nil {
 			return err
@@ -662,9 +661,8 @@ func (s *service) updateUser(ctx context.Context, b *userBody, updateBy string) 
 // execUpdateUser 生成并执行 update sys_user ... where user_id = ?。
 // JAVA 对照: SysUserMapper.xml:309-340 updateUser
 func (s *service) execUpdateUser(tx *gorm.DB, b *userBody, updateBy string) (int64, error) {
-	if b.UserID == nil {
-		return 0, web.NewServiceError("用户ID不能为空")
-	}
+	// 不再在 Go 侧拦空主键：Java 的 updateUser 直接把它交给 MyBatis，
+	// `where user_id = null` 匹配 0 行、接口照样返回成功（导入分支就靠这个形态对齐）。
 	sets := make([]string, 0, 20)
 	args := make([]any, 0, 22)
 	add := func(col string, v any) {
@@ -717,12 +715,20 @@ func (s *service) execUpdateUser(tx *gorm.DB, b *userBody, updateBy string) (int
 		return 0, nil
 	}
 	sql := "update sys_user set " + strings.Join(sets, ", ") + " where user_id = ?"
-	args = append(args, *b.UserID)
+	args = append(args, userIDArg(b.UserID))
 	res := tx.Exec(sql, args...)
 	if res.Error != nil {
 		return 0, res.Error
 	}
 	return res.RowsAffected, nil
+}
+
+// userIDArg 把可空主键转成 SQL 参数（nil -> NULL，而不是解引用崩溃）。
+func userIDArg(id *int64) any {
+	if id == nil {
+		return nil
+	}
+	return *id
 }
 
 // resetPwd 对应 SysUserServiceImpl.resetPwd -> userMapper.updateUser（动态更新，不触发关联表重写）。

@@ -231,12 +231,14 @@ func (h *handler) carInfoExport(c *gin.Context) {
 
 // carInfoImport 对应 POST /import（模板 importCar.xlsx）。
 //
-// DIFF: Java ImportSysUtil 的完整校验规则（必填/整数/小数/重复）在此按同等语义实现，
-// 错误对象只保留 {rowNum,colName,errorMsg} 三个字段。
+// 校验分两段，与 Java 一致：先 ImportUtil.importExcel 的通用逐列格式校验（carInfoImportCols），
+// 全通过后再做字典转换校验；错误对象是 ImportErrorEntity 的 {rowNo,colName,message}。
 func (h *handler) carInfoImport(c *gin.Context) {
-	fileHeader, err := c.FormFile("file")
+	// JAVA 对照: 不是 multipart / 缺 file part 的消息由 Spring 给出；
+	// 后缀不是 .xlsx 才是 ImportSysUtil 的中文提示；再往后 0 字节与非法格式的消息来自 POI。
+	fileHeader, err := web.FormFile(c, "file")
 	if err != nil {
-		web.JSON(c, web.ErrorMsg("请上传Excel文件(.xlsx)"))
+		web.JSON(c, web.ErrorMsg(err.Error()))
 		return
 	}
 	if !strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".xlsx") {
@@ -249,17 +251,21 @@ func (h *handler) carInfoImport(c *gin.Context) {
 		return
 	}
 	defer func() { _ = f.Close() }()
+	if msg := web.CheckUpload(fileHeader.Size, f, notWorkbookMsg, ole2IsNotXSSFMsg); msg != "" {
+		web.JSON(c, web.ErrorMsg(msg))
+		return
+	}
 	rows, err := readXlsxRows(f)
 	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
-	headers := []string{"车牌颜色", "车牌号", "车型", "车种", "轴数", "逃费类型", "逃费金额（元）", "备注"}
-	if len(rows) == 0 || !sameHeader(rows[0], headers) {
+	if len(rows) == 0 || !sameHeader(rows[0], importColNames(carInfoImportCols)) {
 		web.JSON(c, web.ErrorMsg("导入失败,模板不正确,请下载对应的模板！"))
 		return
 	}
-	if len(rows) == 1 {
+	dataRows := collectImportRows(rows[1:]) // dataRtnExcel07：第 2 行起，遇终止行即停
+	if len(dataRows) == 0 {
 		web.JSON(c, web.ErrorMsg("导入失败,模板excel没有数据可以导入，请确定！"))
 		return
 	}
@@ -269,88 +275,63 @@ func (h *handler) carInfoImport(c *gin.Context) {
 	carVehicles, _ := h.dictLabelValue(c.Request.Context(), "car_vehicle")
 	escapedTypes, _ := h.dictLabelValue(c.Request.Context(), "escaped_type")
 
-	type importError struct {
-		RowNum   int    `json:"rowNum"`
-		ColName  string `json:"colName"`
-		ErrorMsg string `json:"errorMsg"`
-	}
+	// JAVA 对照: ImportUtil.importExcel 先对所有行做格式校验，字典校验（CarInfoController 的第二段
+	// 循环）只在没有格式错时才开始；两段的 rowNo 都是数据行序号 +2，见 importErrorAt。
 	var errList []importError
-	importList := make([]*carInfo, 0, len(rows)-1)
-	for i, row := range rows[1:] {
-		rowNum := i + 1
-		get := func(idx int) string {
-			if idx < len(row) {
-				return strings.TrimSpace(row[idx])
-			}
-			return ""
+	importList := make([]*carInfo, 0, len(dataRows))
+	for i, row := range dataRows {
+		vals := importCells(row, len(carInfoImportCols))
+		validateImportRow(&errList, carInfoImportCols, i, vals)
+		if len(errList) == 0 {
+			importList = append(importList, parseCarInfoImportRow(vals))
 		}
-		plateColor, carNo, carType, carVehicle := get(0), get(1), get(2), get(3)
-		carNum, escapedType, escapedAmount, remark := get(4), get(5), get(6), get(7)
-		if plateColor == "" {
-			errList = append(errList, importError{rowNum, "车牌颜色", "车牌颜色不能为空"})
-		}
-		if carNo == "" {
-			errList = append(errList, importError{rowNum, "车牌号", "车牌号不能为空"})
-		}
-		if carType == "" {
-			errList = append(errList, importError{rowNum, "车型", "车型不能为空"})
-		}
-		if escapedType == "" {
-			errList = append(errList, importError{rowNum, "逃费类型", "逃费类型不能为空"})
-		}
-		var carNumValue *int64
-		if carNum != "" {
-			v, err := strconv.ParseInt(carNum, 10, 64)
-			if err != nil {
-				errList = append(errList, importError{rowNum, "轴数", carNum + " 轴数格式不正确"})
-			} else {
-				carNumValue = &v
-			}
-		}
-		var amountValue *float64
-		if escapedAmount != "" {
-			v, err := strconv.ParseFloat(escapedAmount, 64)
-			if err != nil {
-				errList = append(errList, importError{rowNum, "逃费金额（元）", escapedAmount + " 逃费金额格式不正确"})
-			} else {
-				amountValue = &v
-			}
-		}
-
-		item := &carInfo{CarNo: strPtr(carNo), Remark: strPtr(remark), CarNum: carNumValue, EscapedAmount: amountValue}
-		if value, ok := plateColors[plateColor]; ok {
-			item.PlateColor = strPtr(value)
-		} else {
-			errList = append(errList, importError{rowNum, "车牌颜色", plateColor + " 车牌颜色不存在,请在字典菜单维护！"})
-		}
-		if value, ok := carTypes[carType]; ok {
-			item.CarType = strPtr(value)
-		} else {
-			errList = append(errList, importError{rowNum, "车型", carType + " 车型不存在,请在字典菜单维护！"})
-		}
-		if carVehicle != "" {
-			if value, ok := carVehicles[carVehicle]; ok {
-				item.CarVehicle = strPtr(value)
-			} else {
-				errList = append(errList, importError{rowNum, "车种", carVehicle + " 车种不存在,请在字典菜单维护！"})
-			}
-		}
-		var escapedValues []string
-		for _, part := range strings.Split(deleteEnd(strings.ReplaceAll(escapedType, "，", ",")), ",") {
-			part = strings.TrimSpace(part)
-			if part == "" {
-				continue
-			}
-			if value, ok := escapedTypes[part]; ok {
-				escapedValues = append(escapedValues, value)
-			} else {
-				errList = append(errList, importError{rowNum, "逃费类型", part + " 逃费类型不存在,请在字典菜单维护！"})
-			}
-		}
-		item.EscapedType = strPtr(strings.Join(escapedValues, ","))
-		importList = append(importList, item)
 		if len(errList) > 100 {
 			break
+		}
+	}
+
+	if len(errList) == 0 {
+		for i, item := range importList {
+			plateColor := isNull(item.PlateColor)
+			if plateColor != "" {
+				if value, ok := plateColors[plateColor]; ok {
+					item.PlateColor = strPtr(value)
+				} else {
+					errList = append(errList, importErrorAt(i, "车牌颜色", plateColor+" 车牌颜色不存在,请在字典菜单维护！"))
+				}
+			}
+			carType := isNull(item.CarType)
+			if carType != "" {
+				if value, ok := carTypes[carType]; ok {
+					item.CarType = strPtr(value)
+				} else {
+					errList = append(errList, importErrorAt(i, "车型", carType+" 车型不存在,请在字典菜单维护！"))
+				}
+			}
+			carVehicle := isNull(item.CarVehicle)
+			if carVehicle != "" {
+				if value, ok := carVehicles[carVehicle]; ok {
+					item.CarVehicle = strPtr(value)
+				} else {
+					errList = append(errList, importErrorAt(i, "车种", carVehicle+" 车种不存在,请在字典菜单维护！"))
+				}
+			}
+			// JAVA 对照: deleteEnd 只去掉一个结尾逗号；split(",") 保留中间的空串，空串查不到字典也报错。
+			escapedType := strings.ReplaceAll(deleteEnd(item.EscapedType), "，", ",")
+			escapedValue := ""
+			if escapedType != "" {
+				for _, part := range strings.Split(escapedType, ",") {
+					if value, ok := escapedTypes[part]; ok {
+						escapedValue += value + ","
+					} else {
+						errList = append(errList, importErrorAt(i, "逃费类型", part+" 逃费类型不存在,请在字典菜单维护！"))
+					}
+				}
+			}
+			item.EscapedType = strPtr(deleteEnd(escapedValue))
+			if len(errList) > 100 {
+				break
+			}
 		}
 	}
 
@@ -371,18 +352,24 @@ func (h *handler) carInfoImport(c *gin.Context) {
 			web.JSON(c, web.ErrorResult(err))
 			return
 		}
-		cols := map[string]any{
+		// MP 的默认字段策略 NOT_NULL：轴数/逃费金额为 null 时不进 SET，
+		// 更新分支因此不会把库里的旧值擦成 NULL。
+		cols := mpNonNullCols(map[string]any{
 			"car_no": item.CarNo, "car_type": item.CarType, "car_vehicle": item.CarVehicle,
 			"car_num": item.CarNum, "escaped_type": item.EscapedType, "remark": item.Remark,
 			"plate_color": item.PlateColor, "escaped_amount": item.EscapedAmount,
 			"update_by": userID, "update_time": now,
-		}
+		})
 		if existingID != "" {
 			if _, err := h.updateRow(c.Request.Context(), carInfoTable, existingID, cols); err != nil {
 				web.JSON(c, web.ErrorResult(err))
 				return
 			}
+			// JAVA 对照: CarInfoServiceImpl.doImport 的两个分支都会写 updateBy/updateTime，
+			// 而返回体就是这批被就地改过的对象，所以更新分支的响应里也有更新人/更新时间。
 			item.ID = strPtr(existingID)
+			item.UpdateBy = &userID
+			item.UpdateTime = ptrDateTime(now)
 			continue
 		}
 		item.ID = strPtr(newUUID())
@@ -408,6 +395,30 @@ func (h *handler) carInfoImport(c *gin.Context) {
 	}
 	_ = h.refreshCarList(c)
 	web.JSON(c, web.SuccessFull("数据导入成功", importList))
+}
+
+// parseCarInfoImportRow 对应 JSONObject(objMap).toJavaObject(CarInfo.class)：
+// 字符串列原样带上（空串不是 null），数字列空值转 null，字典值要等第二段校验才替换。
+func parseCarInfoImportRow(vals []string) *carInfo {
+	item := &carInfo{
+		PlateColor:  strPtr(vals[0]),
+		CarNo:       strPtr(vals[1]),
+		CarType:     strPtr(vals[2]),
+		CarVehicle:  strPtr(vals[3]),
+		EscapedType: strPtr(vals[5]),
+		Remark:      strPtr(vals[7]),
+	}
+	if vals[4] != "" {
+		if v, err := strconv.ParseInt(vals[4], 10, 64); err == nil {
+			item.CarNum = &v
+		}
+	}
+	if vals[6] != "" {
+		if v, err := strconv.ParseFloat(vals[6], 64); err == nil {
+			item.EscapedAmount = &v
+		}
+	}
+	return item
 }
 
 // refreshCarList 对应 updateRedisCarList：整份覆盖 car_list / car_list_jc。
