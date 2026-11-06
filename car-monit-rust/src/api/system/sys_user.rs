@@ -670,7 +670,10 @@ async fn current_user(
         }
         object.insert((*key).to_string(), Value::Null);
     }
-    object.insert("userId".to_string(), user_id.map(Value::from).unwrap_or(Value::Null));
+    object.insert(
+        "userId".to_string(),
+        user_id.map(Value::from).unwrap_or(Value::Null),
+    );
     object.insert("deptId".to_string(), json!(dept_id));
     object.insert("headOffice".to_string(), json!(head_office));
     object.insert("procurementManager".to_string(), json!(procurement_manager));
@@ -703,7 +706,7 @@ async fn head_office_dept_ids(
     let mut out = level_ids.clone();
     for dept in &depts {
         let tenant_id = dept.get("tenantId").and_then(Value::as_i64);
-        if tenant_id.map(|value| level_ids.contains(&value)).unwrap_or(false) {
+        if tenant_id.is_some_and(|value| level_ids.contains(&value)) {
             if let Some(dept_id) = dept.get("deptId").and_then(Value::as_i64) {
                 out.insert(dept_id);
             }

@@ -6,9 +6,10 @@ use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::{Decimal, RoundingStrategy};
 
 /// Java: `GpsUtil.pi`（double 能表示的取值就是 3.141592653589793）。
-const PI: f64 = 3.141592653589793;
+const PI: f64 = std::f64::consts::PI;
 const A: f64 = 6378245.0;
-const EE: f64 = 0.00669342162296594323;
+/// Java 源码写的是 `0.00669342162296594323`，double 存不下这么多位，实际取值就是下面这个。
+const EE: f64 = 0.006693421622965943;
 
 pub fn out_of_china(lat: f64, lon: f64) -> bool {
     lon < 72.004 || lon > 137.8347 || lat < 0.8293 || lat > 55.8271
