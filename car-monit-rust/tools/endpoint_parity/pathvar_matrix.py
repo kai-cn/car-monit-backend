@@ -113,14 +113,15 @@ def parse_controllers():
     return out
 
 
-def fill_pattern(pattern, bad_position=None):
-    """把 {var} 换成样例值；bad_position 指定第几个变量用坏值（这里统一用坏值）。
-    与 compare.py 的样例表分开：这里只关心路径变量的类型转换，值一律给非法的。"""
-    return re.sub(r'\{[^}]*\}', BAD_VALUE, pattern)
+def fill_pattern(pattern, bad_value=BAD_VALUE):
+    """把 {var} 换成非法值。GET 用 `1x`；写端点用「不存在的 id + x」，
+    这样即使某端实现仍然宽松转换，落到 DB 上的也是 0 行的删除/更新，不会改到真实数据。"""
+    return re.sub(r'\{[^}]*\}', bad_value, pattern)
 
 
 def probe(base, token, method, path):
-    status, headers, body = http(method, base + path, token=token, timeout=60)
+    status, headers, body = http(method, base + path, token=token,
+                                 body={} if method in ('POST', 'PUT') else None, timeout=60)
     text = (body or b'').decode('utf-8', 'replace')
     try:
         payload = json.loads(text)
@@ -141,6 +142,9 @@ def core(msg):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--inventory', action='store_true', help='只打印 Java 的数字路径变量清单')
+    parser.add_argument('--writes', action='store_true',
+                        help='只探非 GET 端点：坏值由「不存在的 id + x」组成，宽松实现也删不到真实行')
+    parser.add_argument('--all', action='store_true', help='GET 与写端点都探')
     parser.add_argument('--java-base', default=JAVA_BASE)
     parser.add_argument('--rust-base', default=RUST_BASE)
     parser.add_argument('--verbose', action='store_true')
@@ -149,19 +153,25 @@ def main():
     entries = parse_controllers()
     total = sum(len(params) for _, _, params in entries)
     print('Java 控制器里的数字路径变量端点：%d 个（变量 %d 个）' % (len(entries), total))
-    for verb, pattern, params in entries:
-        print('  %-6s %-46s %s' % (verb, pattern, params))
     if args.inventory:
+        for verb, pattern, params in entries:
+            print('  %-6s %-46s %s' % (verb, pattern, params))
         return
 
     tj = login(args.java_base)[0]
     tr = login(args.rust_base)[0]
     ok = warn = fail = skip = 0
     for verb, pattern, params in entries:
-        if verb != 'GET':
+        write_side = verb != 'GET'
+        if write_side and not (args.writes or args.all):
             skip += 1
             continue
-        path = fill_pattern(pattern)
+        if not write_side and args.writes:
+            continue
+        # 写端点用不存在的 id（3 千万）拼坏值：Java 在类型转换阶段就失败，
+        # 万一某端仍然宽松，落到 DB 上的 WHERE 也只命中 0 行。
+        bad = BAD_VALUE if not write_side else '30000000x'
+        path = fill_pattern(pattern, bad)
         sj, cj, mj = probe(args.java_base, tj, verb, path)
         sr, cr, mr = probe(args.rust_base, tr, verb, path)
         same = (sj == sr and cj == cr and core(mj) == core(mr))
@@ -182,7 +192,8 @@ def main():
         print('%s %-6s %s' % (tag, verb, path))
         print('     java status=%s code=%s msg=%s' % (sj, cj, core(mj)))
         print('     rust status=%s code=%s msg=%s' % (sr, cr, core(mr)))
-    print('\n=== SUMMARY === 端点 OK=%d WARN=%d FAIL=%d 未探测(非 GET)=%d' % (ok, warn, fail, skip))
+    scope = '写端点' if args.writes else ('GET+写' if args.all else 'GET')
+    print('\n=== SUMMARY === %s OK=%d WARN=%d FAIL=%d 未探测=%d' % (scope, ok, warn, fail, skip))
     return 1 if fail else 0
 
 

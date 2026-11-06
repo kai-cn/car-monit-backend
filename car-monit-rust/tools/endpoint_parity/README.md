@@ -82,12 +82,20 @@ python -m tools.endpoint_parity.api_chain_matrix
 
 # Java 侧 @PathVariable 是数字类型的端点，用非法值探 GET（28 条量级）
 python -m tools.endpoint_parity.pathvar_matrix --inventory   # 只看清单
-python -m tools.endpoint_parity.pathvar_matrix               # 双端对拍
+python -m tools.endpoint_parity.pathvar_matrix               # 只探 GET
+python -m tools.endpoint_parity.pathvar_matrix --writes      # 只探 DELETE/PUT/POST
+python -m tools.endpoint_parity.pathvar_matrix --all         # 两类都探
+
+# 写端点探针的前后行数快照（23 张表），用来证明探针没改动业务数据
+python -m tools.endpoint_parity.db_snapshot.py before
+python -m tools.endpoint_parity.db_snapshot.py diff
 ```
 
 `pathvar_matrix.py` 直接从 Java 源码解析（控制器不止在 `ruoyi-admin`，`ruoyi-quartz`、
 `ruoyi-generator` 也要扫），因此它能发现基线清单漏掉的控制器——`/oss/*` 就是这么露出来的。
-它**只探 GET**：`DELETE /system/user/1x` 这类写端点一旦被宽松实现接受就会真的删数据。
+GET 用 `1x`；写端点**不能**用 `1x`（宽松实现会当成 id=1，而 1 是 admin 用户/超级角色），
+`--writes` 换成 `30000000x`：Java 在类型转换阶段就失败，宽松实现也只是 `WHERE id = 30000000` 命中 0 行。
+配合 `db_snapshot.py` 的 before/diff 可以证明业务表一行没动。
 Java 遇到非法数字会在进控制器之前失败，文案是
 `请求参数类型不匹配，参数[jobIds]要求类型为：'[Ljava.lang.Long;'，但输入值为：'1,1x'`
 ——第三个占位是**整段**路径变量原文，不是出错的那一段。

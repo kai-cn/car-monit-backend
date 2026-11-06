@@ -146,13 +146,15 @@ Rust 自身写入的登录态、`section_list`、`sys_dict:*`、`car_warning*`�
   落到本地桩号拼接的兜底分支（`getCarGeometry`），本次比对即该分支，结果一致；
   若外部 API 可用，返回值取决于上游。
 
-## 5.1 剩余 6 个 WARN（均非值差异）
+## 5.1 剩余 11 个 WARN（均非值差异）
 
 | 端点 | 类别 | 说明 |
 |---|---|---|
 | `/system/upgradeInfo/list`、`/newest`、`/export`、`/{id}` | MSG-DIFF | 库里缺 `sys_upgrade_info` 表，两端都 500、`code` 一致，只是 MyBatis 拼装的异常文本 vs sqlx 文本不同（要再压缩差距只能硬编码对方文案） |
 | `/base/fitting/list` | MSG-DIFF | Java 的 Mapper 里 `<where>` 引用 `#{id}` 而 `ZdataTrailFitting` 没有该 getter → MyBatis `ReflectionException`；Rust 直接把 SQL 交给 MySQL，报 `Unknown column 'id'`。同为 500 |
 | `/monitor/cache` | ORDER-DIFF | `data.info` 是 Jackson 直接序列化 `Properties`（Hashtable）：桶容量与下标规则已复刻（`java_hashtable_ordered`），同桶内链表的头/尾插随 JDK 版本而变，仍有局部错位；键集合与值完全一致 |
+| `/tool/gen/list`、`/all/list`、`/db/list`、`/{talbleId}` | ORDER-DIFF | GenTable/GenTableColumn 尾部派生 getter（`sub`/`crud`/`tree`、`insert`/`edit`/`capJavaField`/`superColumn`/`increment`/`usableColumn`）没有 `@JsonPropertyOrder`，顺序取决于反射给出的方法序：**同一 JVM 实例内稳定、跨重启会变**（实测本轮 `sub,crud,tree` → `tree,crud,sub`），Rust 只能对齐其中一次。详见 §11 |
+| `/monitor/online/list` | LEN-WARN + TOTAL-WARN | 两端各连自己的 Redis db（db0/db15），在线会话条数天然不同；`userName`/`ipaddr`/`deptName` 等业务值仍逐字段实比（§10.7） |
 
 ## 6. 校验脚本（已入仓库）
 
@@ -568,8 +570,13 @@ Rust 的常量表把 `crud`/`sub` 与尾部七个写反了，已按实测改回�
    新增 `support::path_long / path_int / path_long_list / path_int_list`（空白按 Spring 的
    `trimAllWhitespace` 全删、`+5` 合法、溢出报错），改到 Java 侧 48 个数字路径变量端点。
    对拍脚本 `tools/endpoint_parity/pathvar_matrix.py` 直接从 Java 源码解析 `@PathVariable` 类型，
-   只用非法值探 GET（写端点探会造成真实删除）：**28 OK / 0 WARN / 1 FAIL**，
+   GET 侧用 `1x`：**28 OK / 0 WARN / 1 FAIL**，
    唯一 FAIL 是当时还没迁移的 `/oss`（§10.6/§10.8，现已补齐并实测）。
+   写侧（48 条里 19 条 DELETE/PUT/POST）**不能直接用 `1x`** —— 宽松实现会把它当 1，
+   而 id=1 正是 admin 用户与超级角色。`--writes` 用 `30000000x`：Java 在类型转换阶段就失败，
+   万一某端仍宽松，`WHERE id = 30000000` 也只命中 0 行；再用
+   `tools/endpoint_parity/db_snapshot.py` 对 23 张表做前后快照验证：
+   **19 OK / 0 WARN / 0 FAIL，业务表行数零变动**（只有 `sys_logininfor` +2，是探针自身登录写的审计行）。
 3. **两种「没权限」不是一种**：RuoYi 只定制了 `authenticationEntryPoint`（401 才是 AjaxResult），
    授权失败仍走 Spring 默认的 `AccessDeniedHandlerImpl` → `sendError(403)` → `/error` 的
    `{"timestamp","status":403,"error":"Forbidden","path"}`（HTTP **403**）。
