@@ -74,6 +74,21 @@ python -m tools.endpoint_parity.compare --strict --quiet --report build/parity-r
   本地路网规划服务的实时结果，同一时间窗内两端逐字节一致，跨窗会因路网刷新差几个点。
   用 `SHAPE_ONLY` 会把整个响应降级成只比结构，别滥用。
 
+## 缓存共存与「抄值」测试
+
+```bash
+python -m tools.endpoint_parity.cache_crosscheck
+```
+
+`car_lxgh:`（轨迹路径规划结果）这类缓存，双端各连自己的 Redis db，平时读不到对方的写法。
+脚本把一端的值**按字节**抄到另一端的 db，再请求同一个 `/manager/suspicious/{id}`，
+要求读的那端原样输出；两个方向都过，才说明 Java 的 FastJson2 与 Rust 的 serde_json
+在这类键上兼容。抄写前先把两端原值存下，结束时还原。
+
+`db_snapshot.py` 是配套的安全网：写端点探针（`pathvar_matrix --writes`）跑之前 `before`、
+之后 `diff`，用来证明业务表一行没被改动（审计表 `sys_oper_log`/`sys_logininfor`/`sys_job_log`
+会被请求本身写入，不参与判定）。
+
 ## 上游链路（backend → api）与路径变量类型专项
 
 ```bash
