@@ -113,6 +113,16 @@ struct Constants {
     static constexpr const char* CAR_WARNING_RULE = "car_warning_rule:";
     /** 预警触发时间间隔（sys_config 的缓存键，单位分钟） */
     static constexpr const char* WARNING_TRIGGER_TIMESPAN = "sys_config:warning_trigger_timespan";
+    /** 卡口流水来源标识（TrailBo.stateType 的取值之一，参与设备分组去重） */
+    static constexpr const char* FEE_RECORD = "FeeRecord";
+    /** 路线桩号→经纬度缓存 whole-key（Java 就把它当一个键，不带后缀） */
+    static constexpr const char* lxbh_jdwd = "lxbh_jdwd:";
+    /** 路径规划缓存前缀：car_lxgh: + 车牌 + 站点/经纬度串 + 点数，**无分隔符**，无 TTL */
+    static constexpr const char* car_lxgh = "car_lxgh:";
+    /** ⚠️ 轨迹几何走哪条分支的开关：只读 Redis 这一个裸键，不走 SysConfigService
+     *  （也就是说 sys_config 表里有 api_map 而 Redis 里没有时，Java 同样看不见）。
+     *  缺失 ⇒ 默认 "1"；只有值为 "0"（trim 后）才走腾讯坐标系那条分支。 */
+    static constexpr const char* API_MAP = "sys_config:api_map";
 };
 
 } // namespace cm::constant

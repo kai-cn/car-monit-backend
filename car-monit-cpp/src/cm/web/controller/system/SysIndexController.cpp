@@ -16,6 +16,7 @@
 #include "cm/web/controller/manager/BigScreenController.hpp"
 #include "cm/web/controller/manager/ManagerExtraControllers.hpp"
 #include "cm/web/controller/manager/ManagerImportControllers.hpp"
+#include "cm/web/controller/manager/ManagerTrailInfoControllers.hpp"
 #include "cm/web/controller/manager/ManagerTemplateExportControllers.hpp"
 #include "cm/web/controller/monitor/CacheController.hpp"
 #include "cm/web/controller/monitor/ServerController.hpp"
@@ -80,6 +81,7 @@ void registerControllers(Router& r) {
     registerFlowExtraControllers(r);
     registerManagerExtraControllers(r);
     registerManagerImportControllers(r);
+    registerManagerTrailInfoControllers(r);
     registerManagerTemplateExportControllers(r);
     registerBigScreenController(r);
     registerQuartzExtraControllers(r);

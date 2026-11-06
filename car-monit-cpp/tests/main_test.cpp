@@ -296,6 +296,7 @@ void run_gen_utils_tests();
 void run_encrypt_utils_tests();
 void run_inflate_tests();
 void run_xlsx_tests();
+void run_trail_geo_tests();
 
 /** Spring URL 层规则的顺序与语义（SecurityConfig 是逐条 antMatchers，先命中先生效） */
 static void testSecurityUrlRules() {
@@ -533,6 +534,7 @@ int main() {
     run_encrypt_utils_tests();
     run_inflate_tests();
     run_xlsx_tests();
+    run_trail_geo_tests();
     if (fails == 0) {
         std::printf("ALL TESTS PASSED\n");
         return 0;

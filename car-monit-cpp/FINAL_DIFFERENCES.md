@@ -14,13 +14,13 @@
 | 指标 | 数值 |
 |---|---|
 | Java 端点总数 | **497** |
-| 已迁移并路径匹配 | **484**（97.4%） |
-| 未迁移 | **13**（逐条见 §4） |
-| C++ 已注册路由（含 Java 没有的扩展） | **555** |
+| 已迁移并路径匹配 | **487**（98.0%） |
+| 未迁移 | **10**（逐条见 §4） |
+| C++ 已注册路由（含 Java 没有的扩展） | **560** |
 | CRUD Spec 覆盖实体 | 59，`verify_generated_sql` 在真实库 0 异常 |
 | 实体字段 ↔ JSON 键缺口 | `audit_spec_keys` 报告 **0** |
-| 单元测试 | 9 文件 / 479 处断言调用点（含 INFLATE 三种块类型 + 真实 deflate 打包的 xlsx 对拍） |
-| 端到端断言（实机，需 MySQL+Redis） | 16 个脚本；本轮复跑 5 个共 **180** 项全通过（import 61、bigscreen 22、suspicious/history 41、template_export 22、track_by_time 34）；其余脚本需 fake S3 / 桩服务，随各自批次验过 |
+| 单元测试 | 10 文件 / 514 处断言调用点（含 INFLATE 三种块类型、真实 deflate 的 xlsx 对拍、GpsUtil 对 Python 独立实现的对拍） |
+| 端到端断言（实机，需 MySQL+Redis） | 16 个脚本；本轮复跑 6 个共 **234** 项全通过（trail 几何 54、import 61、track_by_time 34、bigscreen 22、suspicious/history 41、template_export 22）；其余脚本需 fake S3 / 桩服务，随各自批次验过 |
 | `@Log` 操作日志规则 | 234 条，C++ 已能写 `sys_oper_log` |
 
 一句话结论：**接口契约（路径、方法、状态码、错误码、JSON 结构与键序、分页与鉴权语义）已对齐到"拿真实数据回归"的程度；剩余差异集中在外部依赖（对象存储、外部 HTTP、模板引擎）与 Excel 读取，且全部是显式标注的缺口，没有静默假数据。**
@@ -58,6 +58,11 @@
 | 25 | **派生列不属于任何 Field**：Java 普遍写成 `<include refid="selectXxxVo"/>,concat(sd.dept_name,' ',su.nick_name) createInfo` + 两个 left join。它既不在 Vo 里也不是表列，所以要用 `Spec::selectTail`/`fromSql` 表达；任何自己拼 `FROM 表 别名` 的地方都会因为拿不到 join 而生成非法 SQL | `selectSqlOf`/`fromClauseOf` |
 | 26 | **导入的三段语义**：表头逐格 `String.equals`（carinfo 比第 1 行，exceptrecord 比第 2 行**或**第 3 行且两次用同一份列名）；数据读取靠 `getRow()` 的 NPE-catch 做 break ⇒ "整行缺失"停读、"行在但没格"不停；`errorList` 跨行共享 + `> 100` 才 break ⇒ 第一个错误之后的行全不入库、最多 101 条错误；`rowNo = index + 2`（exceptrecord 数据在 Excel 第 4 行起，报的却是 2 起） | `ImportExcel.hpp/cpp`、`verify_import.py` 61 项 |
 | 27 | **`@Transactional` 的提交点**：`saveCarInfo` / `saveCarExceptRecord` 都是"return error 而不是 throw" ⇒ 事务照常提交，只是少写一行；而外层 `CarInfoServiceImpl.doImport` 与非事务的控制器循环意味着批量导入**没有**整体原子性，插到第 N 行失败就留前 N-1 行。C++ 的 `Transaction` 析构默认回滚，必须在每个"正常返回"路径显式 commit | `ManagerImportControllers.cpp`，`verify_import.py` |
+| 28 | **轨迹几何是三级回退，不是二选一**：`ByPlanNew`（本地 roadPath）→ `ByPlan`（腾讯）→ `getCarGeometry`（纯本地 geometry 表按桩号区间拼接）。两条出站分支把所有异常都 `catch(Exception){return null;}` 吞掉，调用方据此**继续降级**而不是返回空/500；失败值也不写缓存。所以外部服务全挂时响应依然是 200 且 `raodTrailList` 有内容 | `TrailGeometry.hpp` 顶部链路图，`verify_trail_geo.py` |
+| 29 | **`sys_config:api_map` 只读 Redis 裸键**，绕开 `SysConfigService`：不走 `sys_config` 表回源、不回填缓存，键缺失时默认 `"1"`，只有 trim 后等于 `"0"` 才切到腾讯分支。也就是说库里配了 `api_map` 而 Redis 没同步时，Java 这里看不见 —— C++ 若"顺手"改成走配置服务就会不一致 | `Constants::API_MAP`，`verify_trail_geo.py` 的两条开关断言 |
+| 30 | **`car_lxgh:` 缓存键是无分隔符拼接**（前缀 + 车牌 + 入口站 + 出口站 + 点数），且 `ByPlan` 那条键里 BigDecimal 用 `toString()` 而请求用 `toPlainString()` —— 需要科学计数法的值两边文本不同。这是 Java 的不一致，照抄 | `TrailGeometry::carGeometryByPlan*` |
+| 31 | **`getCarGeometry` 对入参列表有可见副作用**：`trailBo.setPilenoDec(...)` 写的是控制器同一个 list 实例，所以响应里 `trailList` 与 `trailDevCountBO.trailList` 都带出 `pilenoDec`；而且路线顺序是 `LinkedHashMap` 的首次出现序（不是排序），`reserver` 又取的是**排序前**的首/末位置 | `verify_trail_geo.py`（pilenoDec 断言） |
+| 32 | **同一份实体在不同层的形态不同**：Jackson 响应 = 声明序 + null 全输出（`ZdataTrailTracks` 51 键、`TrailBo` 32 键）；fastjson2 缓存/query_condition = 按名排序 + null 省略；`TrailInfo.enterTime` 没有 `@JsonFormat` ⇒ 输出 epoch 毫秒数字，而 `tracks.enterTime` 有 ⇒ 输出 `"yyyy-MM-dd HH:mm:ss"`。三者混用就是不一致 | `projectViaSpec`/`projectTrailInfo`，`verify_trail_geo.py` |
 
 ---
 
@@ -107,8 +112,8 @@
 | 端点 | 阻塞点 |
 |---|---|
 | `PUT /manager/suspicious/check` | **纯本地事务，无外部 HTTP**：校验 status≠"1" → 删 check/`car_except_record` → 无车则插 `car_info` → 批量落库 → `check_status='1'` → 刷 Redis 车辆列表；返回 `AjaxResult.success("操作成功！",id)`；**`@PreAuthorize` 在 Java 里被注释掉**，不要顺手补 |
-| `GET /manager/suspicious/listFileCarNo` | 本地 SQL，但每行调 `selectCarSuspiciousById` → 解析 `track_josn` → `getCarGeometryByPlanNew` → 受 Redis 开关 `sys_config:api_map` 分流（`"0"` 走本地几何，否则要外部路网） |
-| `GET /manager/suspicious/history/{id}` | 同上（同一套几何后处理） |
+| ~~`GET /manager/suspicious/listFileCarNo`~~ ✅ | 已实现：每行 `selectCarSuspiciousById` → 解析 `track_josn` → 三级回退几何；`total` 是行数、`escapedTypeName` 尾逗号都照抄 |
+| ~~`GET /manager/suspicious/history/{id}`~~ ✅ | 已实现（同一套几何后处理，读的是 `car_suspicious_back`） |
 | `GET /manager/suspicious/exportAbnormalPassage` | **docx** 模板：`WordExportUtil.exportWord07` + `ImageEntity` 图片嵌入 + S3 GetObject 取图 ⇒ 需 docx 填充能力 |
 | `POST /manager/suspicious/syncSuspiciousCarTask` | `SecuritySHA1Utils.shaEncode(signatureKey+timeStamp)` 与传入 signature 直接比（三参数都由调用方给 ⇒ 可离线伪造、无时间窗）+ Redis 白名单/字典 + `envehicletype→carVehicle` 硬编码映射 + 批量落库。SHA1 原语已有，缺的是那套映射 |
 
@@ -119,12 +124,12 @@
 | `POST /tool/gen/importTable`、`PUT /tool/gen`、`GET /tool/gen/synchDb/{tableName}` | 需 `GenUtils.initTable/initColumnField`（类型→javaType/htmlType 映射表、`information_schema.columns` 读列）与 `validateEdit` 的树/子表校验分支 |
 | `GET /tool/gen/preview/{id}`、`/download/{t}`、`/genCode/{t}`、`/batchGenCode` | 28 份 Velocity 模板渲染 + zip（zip 写出器本轮已为 xlsx 落地） |
 
-### D. CarTrackInfoController —— 3 条
+### D. CarTrackInfoController —— 剩 2 条
 
 | 端点 | 阻塞点 |
 |---|---|
 | `GET /manager/cartrackinfo/listByCarId` | 本地为空才回退 `httpSysUtilApiService.carTrackQueryByCarNo`（`127.0.0.1:9901`），且**回退时写 Redis + 落库**（读接口带写副作用，必须照抄） |
-| `PUT /manager/cartrackinfo/changeTrailInfo` | 同上按 `sys_config:api_map` 分流 + `carQueryLogService.queryLog` 落日志 |
+| ~~`PUT /manager/cartrackinfo/changeTrailInfo`~~ ✅ | 已实现：`carQueryLogService.queryLog` 落日志 + 三级回退几何 + `trailDevCountBO`；`query_condition` 写的是 fastjson2 丢 null 的形态 |
 | `GET /manager/cartrackinfo/carSnapShot` | 纯外部：`/base/sysutil/getByTrailBo`，整个 `TrailBo` 被拍平成 query string |
 
 ### E/F/G/H. 其余 7 条
@@ -138,21 +143,22 @@
 > ~~`POST /manager/carinfo/import`、`POST /manager/exceptrecord/import`~~ —— 已迁移（xlsx 读取器可用后落地，见 §2 契约 23–26 与 `scripts/verify_import.py` 的 61 项实机断言）。
 > 另注：`POST /system/user/importData` 已在路由表里（未计作"未覆盖"），但它走的是另一套机制（`@Excel` 注解反查 + `updateSupport` 的部门/角色校验），目前仍返回**显式错误**而不是假成功。
 
-### 小结：按"缺什么能力"重排（13 条）
+### 小结：按"缺什么能力"重排（10 条）
 
 | 缺的能力 | 条数 | 端点 |
 |---|---|---|
 | **无（纯移植工作量）** | **4** | `file/uploadFileEnc`、`suspicious/check`、`suspicious/syncSuspiciousCarTask`、`busstest/syncCurrentTrack` |
 | S3 / MinIO 客户端（SigV4） | 7 | `file/upload`、`uploadSupplier`、`uploadPdf`、`uploadFile`、`uploadFileId`、`GET /{bucket}/{obj}`、`GET /view/{bucket}/{obj}`（已实现，缺真实 MinIO 才能验签名之外的分支） |
 | S3 + 出站 HTTP | 1 | `file/uploadByUrl` |
-| 出站 HTTP（外部服务在场才能验） | 9 | `suspicious/listFileCarNo`、`suspicious/history/{id}`、`cartrackinfo/listByCarId`、`changeTrailInfo`、`carSnapShot`、`geometry/getHenDa`、`syncAllGeometry`、`syncAllGeometry1`、`snapshotflow/earliest-time`（其中 `listByCarByTime` 的远程分支在 Java 里整块被注释，故已作为纯本地端点落地） |
+| 出站 HTTP（外部服务在场才能验） | 3 | `cartrackinfo/listByCarId`、`cartrackinfo/carSnapShot`、`snapshotflow/earliest-time`（`geometry/getHenDa`、`syncAllGeometry`、`syncAllGeometry1` 已实现，仍缺真实 GeoServer；`listByCarByTime` 的远程分支在 Java 里整块被注释，故早已作为纯本地端点落地） |
 | docx 模板填充 | 1 | `suspicious/exportAbnormalPassage` |
 | GenUtils / Velocity + zip | 7 | `gen/importTable`、`PUT /tool/gen`、`gen/synchDb`、`preview`、`download`、`genCode`、`batchGenCode`（前三条已落地，剩 4 条要 Velocity 渲染 13 个 `vmplus/` 模板） |
 
 > ~~xlsx 读取（INFLATE + sharedStrings）~~ —— 0 条：读取器已可用，`carinfo/import` 与 `exceptrecord/import` 已迁移。
+> ~~`suspicious/listFileCarNo`、`suspicious/history/{id}`、`cartrackinfo/changeTrailInfo`~~ —— 已迁移（几何三级回退链，见契约 28–31）。本机既无 roadPath 也无腾讯服务，实测跑的是**降级路径**（最终落到本地 geometry 表拼接），与 Java 在同环境下的行为一致；两条出站分支只做到"签名/请求体拼串"级别的单测钉死。
 
 两点修正性说明：
-* `listFileCarNo` / `history/{id}` / `changeTrailInfo` 取决于 Redis 开关 `sys_config:api_map`：值为 `"0"` 时走**本地几何**，那时这三条也归入"无需新能力"。
+* ~~`listFileCarNo` / `history/{id}` / `changeTrailInfo` 取决于 Redis 开关 `sys_config:api_map`~~ —— 三条都已落地；值为 `"0"` 时走腾讯分支（本机不可达 ⇒ 降级），非 `"0"` 时走本地 roadPath（同样不可达 ⇒ 降级），最终都落在纯本地的 geometry 表拼接上，所以**响应形态与 Java 在本机环境下一致**，但两条出站分支本身仍未被真实服务验证过。
 * `POST /system/user/importData` 已注册（因此不计入未覆盖），但它用的是 easypoi/`@Excel` 注解那一套，与 `ImportSysUtil` 的硬编码表头不是同一件事 —— 现在返回显式错误而不是假成功。
 
 ## 5. 照抄的 Java 缺陷清单（防"顺手修正"）
@@ -174,6 +180,12 @@
 | `isExitsTime` 判的是"区间有交集"而非文案说的"重复" | `out_time >= #{inTime} AND in_time <= #{outTime}`；且 `saveCarExceptRecord` 的返回值被导入循环丢弃 ⇒ "录入区间时间重复！"永远不会出现，那一行只是静默不写 | `verify_import.py` |
 | `MyBatisPlusHandlerConfig.insertFill` 里 tenantId 判的是 `epsId == null` | epsId 已有值时 tenantId 就不填 —— 复制粘贴错误，照抄 | `saveCarExceptRecord` |
 | `carinfo/import` 的 `doImport` 无 `@Transactional`，且插入前又重设一次 `createTime` | 注释还写着"创建的时间一样"，实际每行各取当前时间；失败时前面已插入的行不回滚 | `CarInfoServiceImpl:215` |
+| `lxbh` 首点 roadCode 为 null 就永久锁死成 null | `if("".equals(lxbh) && !"".equals(roadCode))`：`roadCode==null` 时后者也是 true，于是 `lxbh=null`，之后 `"".equals(null)` 恒 false ⇒ 后面的有效路线编号再也进不来，响应里 `"lxbh":null` | `TrailGeometry`，`verify_trail_geo.py` 的缓存命中用例 |
+| `listFileCarNo` 的 `total` 是当前页行数 | `getDataTable(rtnList)` 里 `new PageInfo(list)` 拿到的是普通 ArrayList ⇒ `total=pageSize`；`pageSize=1` 就报 1，不是数据库总数 | `verify_trail_geo.py` |
+| `escapedTypeName` 结尾逗号不删 | 逐个 `bussName += label + ","` 后直接 set，没有 `deleteEnd`（同一段代码在别处都会删） | `verify_trail_geo.py` |
+| `TrailDevList` 字段名首字母大写 | 声明成 `private List<TrailDevBO> TrailDevList;`，但 Jackson 从 getter 推导 ⇒ JSON 键是 `trailDevList`。输出成 `TrailDevList` 就是错的 | `TrailGeometry::trailDevCountBo` |
+| `updateRedisList()` 缓存过滤后的列表、返回未过滤的全集 | 冷启动第一次与之后每次的 `raodTrailList` 可能不同。实测这两个差别不可观察（paths 为空的行本来就被跳过、lxbh 为空的行 trim 成 "" 永远匹配不到真实路线编号），C++ 按缓存那份实现 | `TrailGeometry::roadGeometryGroups` |
+| `changeTrailInfo` 里 `trailInfo.setTrailList(josnList)` 是自我赋值 | `josnList` 本来就是从 `trailInfo.getTrailList()` 取的；照抄不改 | `CarTrackInfoController:312` |
 | `syncSuspiciousCarTask` 签名三参数由调用方提供、无时间窗 | 可无限重放、可离线伪造 | §5.1、§4.5 |
 
 ---

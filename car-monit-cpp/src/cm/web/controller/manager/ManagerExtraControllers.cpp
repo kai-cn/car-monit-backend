@@ -47,16 +47,22 @@ void presetBlank(Json& query, const char* key) {
  *  listByCarByTime 把 track_josn 用 fastjson 反序列化成 List<TrailBo> 再交给 Jackson，
  *  于是"track_josn 里多出来的键被丢掉、缺的键输出 null、顺序按声明序"这三件事同时成立 ——
  *  照抄字段表才能一模一样，不能把解析结果原样吐回去。 */
-enum class Tk { Str, Num, Bool };
+enum class Tk { Str, Num, Bool, Obj };
+// TrailBo 的 32 个字段，声明序。中间那 9 个是**包级私有**的嵌套 BO（Lombok 照样生成 public getter，
+// 所以 Jackson 会输出它们）：真实 track_josn 里从没有过这些键（实测 64 行全为 0 命中），
+// 但 Jackson 的 inclusion 是 ALWAYS ⇒ 必须输出成 null，不能整个键少掉。
 static const std::vector<std::pair<const char*, Tk>> TRAIL_BO = {
-    {"pointUuid", Tk::Str},    {"stateType", Tk::Str},    {"pointFlag", Tk::Str},
-    {"pointJosn", Tk::Str},    {"captureTime", Tk::Str},  {"directionIn", Tk::Bool},
-    {"locationCode", Tk::Str}, {"locationFlag", Tk::Str}, {"ipType", Tk::Str},
-    {"locationJosn", Tk::Str}, {"devCode", Tk::Str},      {"devName", Tk::Str},
-    {"imagesArry", Tk::Str},   {"lon", Tk::Num},          {"lat", Tk::Num},
-    {"roadCode", Tk::Str},     {"sectionCode", Tk::Str},  {"direction", Tk::Str},
-    {"pileno", Tk::Str},       {"preCaptureTime", Tk::Str}, {"countNum", Tk::Num},
-    {"pilenoDec", Tk::Num},    {"isQuery", Tk::Str},
+    {"pointUuid", Tk::Str},   {"stateType", Tk::Str},   {"pointFlag", Tk::Str},
+    {"pointJosn", Tk::Str},   {"borderWeighingCaptureBO", Tk::Obj}, {"gantryCaptureBO", Tk::Obj},
+    {"provCaptureBO", Tk::Obj}, {"stationCapture", Tk::Obj}, {"feeRecord", Tk::Obj},
+    {"feeStationEnter", Tk::Obj}, {"feeStationExit", Tk::Obj},
+    {"captureTime", Tk::Str}, {"directionIn", Tk::Bool}, {"locationCode", Tk::Str},
+    {"locationFlag", Tk::Str}, {"ipType", Tk::Str},     {"locationJosn", Tk::Str},
+    {"gantryIpBO", Tk::Obj},  {"stationIpBO", Tk::Obj}, {"devCode", Tk::Str},
+    {"devName", Tk::Str},     {"imagesArry", Tk::Str},  {"lon", Tk::Num},
+    {"lat", Tk::Num},         {"roadCode", Tk::Str},    {"sectionCode", Tk::Str},
+    {"direction", Tk::Str},   {"pileno", Tk::Str},      {"preCaptureTime", Tk::Str},
+    {"countNum", Tk::Num},    {"pilenoDec", Tk::Num},   {"isQuery", Tk::Str},
 };
 
 /** 对应 JSON.parseArray(trackJosn, TrailBo.class) 的类型转换再序列化 */
@@ -85,6 +91,12 @@ Json projectTrailBo(const Json& src) {
             else if (v.is_string()) out[name] = Json(v.get<std::string>() == "true");
             else if (v.is_number()) out[name] = Json(v.get<double>() != 0.0);
             else out[name] = Json(nullptr);
+        } else if (kind == Tk::Obj) {
+            // 嵌套的 Ods* BO。⚠️ Java 会先反序列化成那个类型再序列化 ⇒ 未声明的键会被丢掉、
+            // 缺的键补 null。这里原样透传：实测 64 行 track_josn 里这 9 个键一次都没出现过，
+            // 只有客户端自己 POST 时才可能有值，为了"少一个键"去复刻 7 个 Ods 类（2000+ 行）
+            // 不值当，差异记在 FINAL_DIFFERENCES §3。
+            out[name] = v.is_object() ? v : Json(nullptr);
         } else {
             // 目标类型是 String：数字/布尔取它的 JSON 文本（fastjson 保留原始字面量）
             out[name] = v.is_string() ? v : Json(v.dump());
@@ -121,6 +133,8 @@ cm::db::Result mustRun(const std::string& sql) {
 }
 
 } // namespace
+
+Json projectTrailBoJson(const Json& src) { return projectTrailBo(src); }
 
 const Spec& suspiciousHistorySpec() {
     static const Spec s = [] {

@@ -17,4 +17,9 @@ void registerManagerExtraControllers(Router& r);
  *  listHistory 与 exportHistory 共用（后者是模板导出，走另一个控制器文件）。 */
 const cm::web::crud::Spec& suspiciousHistorySpec();
 
+/** TrailBo（com.ruoyi.base.domain.TrailBo）32 个字段的 JSON 投影：
+ *  fastjson2 反序列化成实体再交给 Jackson 输出 ⇒ 多出来的键丢掉、缺的键补 null、顺序按声明序。
+ *  changeTrailInfo / listFileCarNo / history/{id} 与 listByCarByTime 共用同一份。 */
+Json projectTrailBoJson(const Json& src);
+
 } // namespace cm::web

@@ -68,8 +68,14 @@ def get(url_path, query=""):
 
 TRAIL_INFO_KEYS = ["trailUuid", "enterTime", "tracks", "trailList", "raodTrailList",
                    "trailDevCountBO"]
-TRAIL_BO_KEYS = ["pointUuid", "stateType", "pointFlag", "pointJosn", "captureTime",
-                 "directionIn", "locationCode", "locationFlag", "ipType", "locationJosn",
+# TrailBo 的 32 个字段声明序。中间 9 个是**包级私有**的嵌套 BO —— Lombok 照样给它们
+# 生成 public getter，Jackson 就照样输出（真实 track_josn 里从没有这些键，
+# 所以它们全是 null，但"输出 null"与"整个键不输出"是两种不同的响应）。
+TRAIL_BO_KEYS = ["pointUuid", "stateType", "pointFlag", "pointJosn",
+                 "borderWeighingCaptureBO", "gantryCaptureBO", "provCaptureBO",
+                 "stationCapture", "feeRecord", "feeStationEnter", "feeStationExit",
+                 "captureTime", "directionIn", "locationCode", "locationFlag", "ipType",
+                 "locationJosn", "gantryIpBO", "stationIpBO",
                  "devCode", "devName", "imagesArry", "lon", "lat", "roadCode", "sectionCode",
                  "direction", "pileno", "preCaptureTime", "countNum", "pilenoDec", "isQuery"]
 
