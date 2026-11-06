@@ -47,6 +47,12 @@ python -m tools.endpoint_parity.compare --strict --quiet --report build/parity-r
 也可用环境变量 `PARITY_JAVA_BASE` / `PARITY_RUST_BASE` / `PARITY_ENDPOINTS` /
 `PARITY_REPORT` / `PARITY_WORKERS` / `PARITY_REDIS_HOST` / `PARITY_REDIS_PORT` 设默认值。
 
+> Git Bash 里 `--only /base` 会被路径转换改写成 `D:/.../base`，结果是「没有匹配的 GET 端点」，
+> 前缀参数要写成 `MSYS_NO_PATHCONV=1 python -m tools.endpoint_parity.compare --only /base`。
+
+`--quiet` 之外的输出会把 FAIL、WARN **和 KNOWN** 都逐条列出。KNOWN 也必须列出来：
+它本质是「被判定为环境的 FAIL」，上游挂掉时只会让计数从 3 变 9，不打印就看不出是哪几条、为什么。
+
 ## 结果分类
 
 | 状态 | 判据 |
@@ -72,6 +78,8 @@ python -m tools.endpoint_parity.compare --strict --quiet --report build/parity-r
 - 只有**个别标量**不稳定时用 `VALUE_FREE`（按端点给一个路径正则），
   例如 `/manager/suspicious/{id}` 的 `*.paths` —— 那段路径点是腾讯 direction /
   本地路网规划服务的实时结果，同一时间窗内两端逐字节一致，跨窗会因路网刷新差几个点。
+  `/monitor/online/list` 的 `rows.*` 也走 `VALUE_FREE`：双端各读自己的登录库（db0/db15），
+  行内容根本是两个集合，按行号对齐比标量只会比出脏会话（键集合、类型、条数仍然比）。
   用 `SHAPE_ONLY` 会把整个响应降级成只比结构，别滥用。
 
 ## 缓存共存与「抄值」测试
