@@ -226,6 +226,48 @@ pub async fn meta_middleware(
     // ---- 结果体：LogAspect 的 jsonResult / status / errorMsg ----
     let is_error = response.extensions().get::<ErrorResponseMarker>().is_some();
     let (parts, body) = response.into_parts();
+
+    let oper_name = login_user
+        .as_ref()
+        .map(|user| user.username())
+        .unwrap_or_default();
+    let dept_name = login_user
+        .as_ref()
+        .and_then(|user| user.user.dept.as_ref())
+        .and_then(|dept| dept.dept_name.clone())
+        .unwrap_or_default();
+    let client = client_meta(
+        &parts.headers,
+        parts
+            .extensions
+            .get::<axum::extract::ConnectInfo<std::net::SocketAddr>>()
+            .map(|info| info.0),
+        state.settings.ruoyi.address_enabled,
+    );
+
+    // Java: 导出类端点直接写 HttpServletResponse 流，LogAspect 拿不到 JSON 结果；
+    // 这里不缓冲二进制 body，避免 64MB 上限与二次拷贝。
+    if is_binary_response(&parts.headers) {
+        audit::record_oper(
+            &state.db,
+            OperRecord {
+                title: log_spec.title,
+                business_type: log_spec.business_type as i32,
+                method: log_spec.method,
+                request_method: method.as_str().to_string(),
+                oper_name,
+                dept_name,
+                oper_url: truncate(&uri_path, 255),
+                oper_ip: client.ip,
+                oper_param,
+                json_result: None,
+                status: if is_error { 1 } else { 0 },
+                error_msg: None,
+            },
+        );
+        return Response::from_parts(parts, body);
+    }
+
     let body_bytes = match axum::body::to_bytes(body, RESPONSE_CAPTURE_LIMIT).await {
         Ok(bytes) => bytes,
         Err(_) => return Response::from_parts(parts, Body::empty()),
@@ -250,24 +292,6 @@ pub async fn meta_middleware(
         None
     };
 
-    let oper_name = login_user
-        .as_ref()
-        .map(|user| user.username())
-        .unwrap_or_default();
-    let dept_name = login_user
-        .as_ref()
-        .and_then(|user| user.user.dept.as_ref())
-        .and_then(|dept| dept.dept_name.clone())
-        .unwrap_or_default();
-    let client = client_meta(
-        &parts.headers,
-        parts
-            .extensions
-            .get::<axum::extract::ConnectInfo<std::net::SocketAddr>>()
-            .map(|info| info.0),
-        state.settings.ruoyi.address_enabled,
-    );
-
     audit::record_oper(
         &state.db,
         OperRecord {
@@ -287,6 +311,20 @@ pub async fn meta_middleware(
     );
 
     Response::from_parts(parts, Body::from(body_bytes))
+}
+
+fn is_binary_response(headers: &axum::http::HeaderMap) -> bool {
+    let content_type = headers
+        .get(header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    let attachment = headers
+        .get(header::CONTENT_DISPOSITION)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    content_type.contains("application/octet-stream") || attachment.contains("attachment")
 }
 
 fn should_capture_body(method: &Method, content_type: &str) -> bool {
