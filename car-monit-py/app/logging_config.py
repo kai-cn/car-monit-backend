@@ -147,6 +147,8 @@ class _CappedRotatingFileHandler(logging.handlers.RotatingFileHandler):
        清理时永远保护四个活动文件名（见 :data:`_ACTIVE_LOG_FILES`）。
     2. 写入失败（``OSError``，典型是磁盘满/权限变更）时只打印一次告警；
        连续失败 3 次后自动停用该 handler，业务请求不受影响。
+       注意：CPython 3.12 的 ``Handler.handle`` **不检查** ``Handler.disabled``，
+       必须用自有标志在 :meth:`emit` 开头直接返回。
     """
 
     def __init__(self, *args, max_total_bytes: int = 0, **kwargs) -> None:  # noqa: ANN002, ANN003
@@ -154,14 +156,17 @@ class _CappedRotatingFileHandler(logging.handlers.RotatingFileHandler):
         self.max_total_bytes = max_total_bytes
         self._failures = 0
         self._failed = False
+        self._stopped = False
 
     def emit(self, record: logging.LogRecord) -> None:
+        if self._stopped:
+            return
         self._failed = False
         super().emit(record)
         if self._failed:
             self._failures += 1
             if self._failures >= 3:
-                self.disabled = True
+                self._stopped = True
         else:
             self._failures = 0
 

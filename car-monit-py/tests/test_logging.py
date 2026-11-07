@@ -122,6 +122,38 @@ class TestLogCapacity:
             assert (tmp_path / name).exists()
         assert not old_rotated.exists()
 
+    def test_handler_stops_after_three_write_failures(self, tmp_path, monkeypatch) -> None:
+        """CPython 3.12 不检查 ``Handler.disabled``，必须靠自有标志停用（回归）。"""
+        import logging.handlers
+
+        from app.logging_config import _CappedRotatingFileHandler
+
+        handler = _CappedRotatingFileHandler(
+            filename=tmp_path / "failed.log",
+            maxBytes=1024,
+            backupCount=0,
+            max_total_bytes=0,
+            encoding="utf-8",
+        )
+        handler.stream.close()  # 模拟磁盘/权限故障：后续写入抛 ValueError
+        record = logging.LogRecord("x", logging.INFO, __file__, 1, "msg", None, None)
+
+        for _ in range(3):
+            handler.emit(record)
+        assert handler._stopped is True
+
+        calls: list = []
+        monkeypatch.setattr(
+            logging.handlers.RotatingFileHandler,
+            "emit",
+            lambda self, item: calls.append(item),
+        )
+        handler.emit(record)
+        assert calls == []
+        # 模拟故障时 stream 已被关闭；先摘掉引用再 close，避免 close() 里的 flush 抛错。
+        handler.stream = None
+        handler.close()
+
     def test_prune_drops_oldest_files_until_within_budget(self, tmp_path) -> None:
         import os
 
