@@ -508,6 +508,11 @@ class AppSection(_Section):
     oss_enabled: bool = False
     # Emit the RuoYi startup banner / banner.txt equivalent to stdout.
     banner_enabled: bool = True
+    # anyio 请求线程池上限。Java 用 server.tomcat.threads.max=800，但 Druid
+    # maxActive=200：同步端点几乎每条 SQL 都要借一个连接，800 个请求线程里
+    # 最多 200 个能真正干活，其余 600 个在连接池上排队，纯属内存与上下文切换开销。
+    # 默认压到与连接池一致；确实需要 800 时设 APP__REQUEST_THREAD_LIMIT=800。
+    request_thread_limit: int = 200
 
 
 # ---------------------------------------------------------------------------

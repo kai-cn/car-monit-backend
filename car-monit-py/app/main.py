@@ -302,7 +302,7 @@ def _shutdown_thread_pools() -> None:
 
 
 def _apply_tomcat_thread_parity(settings: AppSettings) -> None:
-    """Reconcile Tomcat's thread budget with anyio's thread pool.
+    """Reconcile the request thread budget with anyio's thread pool.
 
     Java 原语义
         ``server.tomcat.threads.max: 800`` -- Tomcat keeps up to 800 request worker
@@ -312,16 +312,21 @@ def _apply_tomcat_thread_parity(settings: AppSettings) -> None:
         All endpoints are declared as sync ``def`` (chosen for behavioural parity with
         JDBC/ThreadLocal), so Starlette dispatches every request onto anyio's default
         thread pool. That pool is capped at **40 tokens** by default, which would
-        silently throttle the service 20x versus the Java deployment. Raise the cap to
-        the configured Tomcat value.
+        silently throttle the service.
+
+    与 Java 的偏差（有意为之）
+        800 个请求线程里最多只有 ``spring.datasource.druid.max-active``（200）个
+        能拿到 DB 连接，其余 600 个只是在连接池上排队。默认改用
+        ``app.request_thread_limit``（200），与连接池对齐；需要复刻 Tomcat 原值
+        时设 ``APP__REQUEST_THREAD_LIMIT=800``。
     """
-    max_threads = settings.server.tomcat.threads.max
+    max_threads = settings.app.request_thread_limit
     try:
         anyio.to_thread.current_default_thread_limiter().total_tokens = max(1, max_threads)
     except Exception:  # pragma: no cover - defensive, anyio API is stable
         logger.warning("[启动警告] 无法调整 anyio 线程池上限, 并发请求可能被限制在 40")
         return
-    logger.debug("[启动参数] anyio 线程池上限 = %s (对应 server.tomcat.threads.max)", max_threads)
+    logger.debug("[启动参数] anyio 线程池上限 = %s (app.request_thread_limit)", max_threads)
 
 
 def create_app(settings: AppSettings | None = None) -> FastAPI:
