@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "cm/common/utils/JsonUtils.hpp"
+#include "cm/framework/db/Param.hpp"
 #include "cm/framework/db/Row.hpp"
 #include "cm/framework/web/Router.hpp"
 
@@ -147,10 +148,14 @@ struct Spec {
 /** 单行 -> JSON，字段顺序 = fields 声明顺序（对应 Jackson 按字段声明序输出） */
 Json rowToJson(const Spec& spec, const cm::db::Row& row);
 
-/** 依据查询参数拼 WHERE 片段（对应 XML 的 <if> 集合） */
+/** 依据查询参数拼 WHERE 片段（对应 XML 的 <if> 集合）。
+ *  值以 `?` 占位并压入 params；调用方执行时必须传同一个 params。 */
+std::string buildWhere(const Spec& spec, const Json& query, cm::db::Params& params);
+/** 延迟绑定版本：值以令牌形式留在 SQL 文本里，执行时由 Db 解析（调用方无需 Params）。 */
 std::string buildWhere(const Spec& spec, const Json& query);
 
 /** JSON body -> INSERT 语句（只含非 null 列，对应 MP insert） */
+std::string buildInsert(const Spec& spec, const Json& body, cm::db::Params& params);
 std::string buildInsert(const Spec& spec, const Json& body);
 
 /** MetaObjectHandler 的 insertFill / updateFill：按 spec 的 auditFill* 标记补审计列。
@@ -160,6 +165,7 @@ Json applyInsertFill(const Spec& spec, const Json& body);
 Json applyUpdateFill(const Spec& spec, const Json& body);
 
 /** JSON body -> UPDATE 语句（只含非 null 且 updatable 的列，WHERE 用主键） */
+std::string buildUpdate(const Spec& spec, const Json& body, cm::db::Params& params);
 std::string buildUpdate(const Spec& spec, const Json& body);
 
 /** "SELECT <Vo 列> FROM … <where> <order>" —— runList/runExport 用的同一句，
@@ -177,8 +183,8 @@ Json fetchRowsOf(const Spec& spec, const cm::db::Result& res);
 /** 把 HTTP query 参数收集成实体形态的 Json（Spring 的参数绑定） */
 Json bindQuery(const Spec& spec, RequestContext& ctx);
 
-/** 主键字面量：字符串列加引号，数字列不加 */
-std::string pkLiteral(const Spec& spec, const std::string& raw);
+/** 主键绑定：字符串列按文本、数字列按整数压入 params，返回 "?" */
+std::string pkValue(const Spec& spec, const std::string& raw, cm::db::Params& params);
 
 // ---- 注册 ----
 

@@ -2,13 +2,16 @@
 // 对应 Java: DataSource(Druid) + MyBatis SqlSession
 //
 // 提供全局连接池与 SQL 辅助（转义、IN 列表、分页）。
-// ⚠️ 与 Java 的差异：MyBatis 使用 PreparedStatement；C++ 侧为文本协议 + 手工转义。
-//    所有外部输入都必须经过 escape()/lit()，见 MIGRATION_GUIDE.md 的安全章节。
+// 安全模型：
+//   * 值 -> 用 Param.hpp 的 bind()/bindIn() 绑定，驱动走 PREPARE + SET @v + EXECUTE；
+//   * 标识符（表名/列名/ORDER BY 表达式）不可绑定，必须来自编译期常量或白名单校验；
+//   * Db::lit() 仅保留给标识符、固定常量与 PREPARE 模板，不再用于请求值。
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "cm/framework/db/MySqlClient.hpp"
+#include "cm/framework/db/Param.hpp"
 #include "cm/framework/db/Row.hpp"
 
 namespace cm::db {
@@ -17,15 +20,22 @@ class Db {
 public:
     static Db& instance();
 
-    void init(const DbConfig& cfg, int initial, int minIdle, int maxActive, int maxWaitMs);
+    void init(const DbConfig& cfg, int initial, int minIdle, int maxActive, int maxWaitMs,
+              int preparedCacheMax = 64);
     ConnectionPool& pool() { return *pool_; }
     bool ready() const { return pool_ != nullptr; }
 
     bool query(const std::string& sql, Result& out);
     bool execute(const std::string& sql, long long* affected = nullptr, long long* insertId = nullptr);
+    /** 参数绑定版本（SQL 模板用 ? 占位，params 顺序与占位符一一对应） */
+    bool query(const std::string& sql, const Params& params, Result& out);
+    bool execute(const std::string& sql, const Params& params, long long* affected = nullptr,
+                 long long* insertId = nullptr);
     /** 单值查询（第一行第一列） */
     std::optional<std::string> scalar(const std::string& sql);
+    std::optional<std::string> scalar(const std::string& sql, const Params& params);
     long long count(const std::string& sql);
+    long long count(const std::string& sql, const Params& params);
 
     /** 当前线程绑定的事务连接；为空表示不在事务中。
      *  Db::query/execute 有它就直接用，不再从池里另借一条。 */
@@ -118,7 +128,10 @@ struct PageResult {
 /**
  * 执行分页查询：
  *   countSql 与 dataSql 的 WHERE 部分必须一致；dataSql 不需要写 LIMIT。
+ *   带 Params 的版本用于参数绑定；count 与 data 各用各的参数列表（通常共用同一个 where）。
  */
 PageResult queryPage(const std::string& countSql, const std::string& dataSql, const PageRequest& page);
+PageResult queryPage(const std::string& countSql, const Params& countParams, const std::string& dataSql,
+                     const Params& dataParams, const PageRequest& page);
 
 } // namespace cm::db

@@ -166,11 +166,11 @@ std::string OperLogRow::toInsertSql() const {
            " oper_name, dept_name, oper_url, oper_ip, oper_location, oper_param, json_result,"
            " status, error_msg, oper_time)"
            " values (" +
-           Db::lit(title) + ", " + Db::lit(businessType) + ", " + Db::lit(method) + ", " +
-           Db::lit(requestMethod) + ", " + Db::lit(operatorType) + ", " + Db::lit(operName) + ", " +
-           Db::lit(deptName) + ", " + Db::lit(operUrl) + ", " + Db::lit(operIp) + ", " +
-           Db::lit(operLocation) + ", " + Db::lit(operParam) + ", " + Db::lit(jsonResult) + ", " +
-           Db::lit(status) + ", " + Db::lit(errorMsg) + ", sysdate())";
+           cm::db::bind(title) + ", " + cm::db::bind(businessType) + ", " + cm::db::bind(method) + ", " +
+           cm::db::bind(requestMethod) + ", " + cm::db::bind(operatorType) + ", " + cm::db::bind(operName) + ", " +
+           cm::db::bind(deptName) + ", " + cm::db::bind(operUrl) + ", " + cm::db::bind(operIp) + ", " +
+           cm::db::bind(operLocation) + ", " + cm::db::bind(operParam) + ", " + cm::db::bind(jsonResult) + ", " +
+           cm::db::bind(status) + ", " + cm::db::bind(errorMsg) + ", sysdate())";
 }
 
 std::optional<OperLogRow> OperLogAspect::build(const cm::http::HttpRequest& req,
@@ -273,6 +273,9 @@ void OperLogAspect::worker() {
             queue_.pop_front();
         }
         flushOne(row);
+        // 后台线程没有 HTTP dispatch 边界：每条日志写完清空延迟绑定注册表，
+        // 防止某次构建了 SQL 但写库失败时令牌残留到下一行。
+        cm::db::resetBindings();
     }
 }
 

@@ -42,13 +42,13 @@ std::string SysRoleMapper::selectRoleListSql(const cm::domain::SysRole& role) {
                       " left join sys_dept d on u.dept_id = d.dept_id"
                       " where r.del_flag = '0'";
     if (role.roleName && !role.roleName->empty()) {
-        sql += " AND r.role_name like " + cm::db::Db::lit("%" + *role.roleName + "%");
+        sql += " AND r.role_name like " + cm::db::bind("%" + *role.roleName + "%");
     }
     if (role.status && !role.status->empty()) {
-        sql += " AND r.status = " + cm::db::Db::lit(*role.status);
+        sql += " AND r.status = " + cm::db::bind(*role.status);
     }
     if (role.roleKey && !role.roleKey->empty()) {
-        sql += " AND r.role_key = " + cm::db::Db::lit(*role.roleKey);
+        sql += " AND r.role_key = " + cm::db::bind(*role.roleKey);
     }
     sql += " order by r.role_sort";
     return sql;
@@ -94,7 +94,7 @@ std::optional<cm::domain::SysRole> SysRoleMapper::selectRoleById(long long roleI
                       " left join sys_user_role ur on ur.role_id = r.role_id"
                       " left join sys_user u on u.user_id = ur.user_id"
                       " left join sys_dept d on u.dept_id = d.dept_id"
-                      " where r.role_id = " + cm::db::Db::lit(roleId);
+                      " where r.role_id = " + cm::db::bind(roleId);
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     return mapRole(res.rows[0]);
@@ -107,7 +107,7 @@ std::vector<cm::domain::SysRole> SysRoleMapper::selectRolesByUserName(const std:
                       " left join sys_user_role ur on ur.role_id = r.role_id"
                       " left join sys_user u on u.user_id = ur.user_id"
                       " left join sys_dept d on u.dept_id = d.dept_id"
-                      " WHERE r.del_flag = '0' and u.user_name = " + cm::db::Db::lit(userName);
+                      " WHERE r.del_flag = '0' and u.user_name = " + cm::db::bind(userName);
     cm::db::Result res;
     std::vector<cm::domain::SysRole> roles;
     if (!cm::db::Db::instance().query(sql, res)) return roles;
@@ -119,7 +119,7 @@ std::vector<long long> SysRoleMapper::selectRoleListByUserId(long long userId) {
     std::string sql = "select r.role_id from sys_role r"
                       " left join sys_user_role ur on ur.role_id = r.role_id"
                       " left join sys_user u on u.user_id = ur.user_id"
-                      " where u.user_id = " + cm::db::Db::lit(userId);
+                      " where u.user_id = " + cm::db::bind(userId);
     cm::db::Result res;
     std::vector<long long> ids;
     if (!cm::db::Db::instance().query(sql, res)) return ids;
@@ -137,7 +137,7 @@ std::optional<cm::domain::SysRole> SysRoleMapper::checkRoleNameUnique(const std:
                       " left join sys_user_role ur on ur.role_id = r.role_id"
                       " left join sys_user u on u.user_id = ur.user_id"
                       " left join sys_dept d on u.dept_id = d.dept_id"
-                      " where r.role_name = " + cm::db::Db::lit(roleName) + " limit 1";
+                      " where r.role_name = " + cm::db::bind(roleName) + " limit 1";
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     return mapRole(res.rows[0]);
@@ -150,7 +150,7 @@ std::optional<cm::domain::SysRole> SysRoleMapper::checkRoleKeyUnique(const std::
                       " left join sys_user_role ur on ur.role_id = r.role_id"
                       " left join sys_user u on u.user_id = ur.user_id"
                       " left join sys_dept d on u.dept_id = d.dept_id"
-                      " where r.role_key = " + cm::db::Db::lit(roleKey) + " limit 1";
+                      " where r.role_key = " + cm::db::bind(roleKey) + " limit 1";
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     return mapRole(res.rows[0]);
@@ -159,16 +159,16 @@ std::optional<cm::domain::SysRole> SysRoleMapper::checkRoleKeyUnique(const std::
 bool SysRoleMapper::insertRole(cm::domain::SysRole& role) {
     std::string sql = "insert into sys_role(";
     std::string vals;
-    if (role.roleId && *role.roleId != 0) { sql += "role_id,"; vals += cm::db::Db::lit(*role.roleId) + ","; }
-    if (role.roleName && !role.roleName->empty()) { sql += "role_name,"; vals += cm::db::Db::lit(*role.roleName) + ","; }
-    if (role.roleKey && !role.roleKey->empty()) { sql += "role_key,"; vals += cm::db::Db::lit(*role.roleKey) + ","; }
-    if (role.roleSort && !role.roleSort->empty()) { sql += "role_sort,"; vals += cm::db::Db::lit(*role.roleSort) + ","; }
-    if (role.dataScope && !role.dataScope->empty()) { sql += "data_scope,"; vals += cm::db::Db::lit(*role.dataScope) + ","; }
-    sql += "menu_check_strictly,"; vals += cm::db::Db::lit(role.menuCheckStrictly) + ",";
-    sql += "dept_check_strictly,"; vals += cm::db::Db::lit(role.deptCheckStrictly) + ",";
-    if (role.status && !role.status->empty()) { sql += "status,"; vals += cm::db::Db::lit(*role.status) + ","; }
-    if (role.remark && !role.remark->empty()) { sql += "remark,"; vals += cm::db::Db::lit(*role.remark) + ","; }
-    if (role.createBy && !role.createBy->empty()) { sql += "create_by,"; vals += cm::db::Db::lit(*role.createBy) + ","; }
+    if (role.roleId && *role.roleId != 0) { sql += "role_id,"; vals += cm::db::bind(*role.roleId) + ","; }
+    if (role.roleName && !role.roleName->empty()) { sql += "role_name,"; vals += cm::db::bind(*role.roleName) + ","; }
+    if (role.roleKey && !role.roleKey->empty()) { sql += "role_key,"; vals += cm::db::bind(*role.roleKey) + ","; }
+    if (role.roleSort && !role.roleSort->empty()) { sql += "role_sort,"; vals += cm::db::bind(*role.roleSort) + ","; }
+    if (role.dataScope && !role.dataScope->empty()) { sql += "data_scope,"; vals += cm::db::bind(*role.dataScope) + ","; }
+    sql += "menu_check_strictly,"; vals += cm::db::bind(role.menuCheckStrictly) + ",";
+    sql += "dept_check_strictly,"; vals += cm::db::bind(role.deptCheckStrictly) + ",";
+    if (role.status && !role.status->empty()) { sql += "status,"; vals += cm::db::bind(*role.status) + ","; }
+    if (role.remark && !role.remark->empty()) { sql += "remark,"; vals += cm::db::bind(*role.remark) + ","; }
+    if (role.createBy && !role.createBy->empty()) { sql += "create_by,"; vals += cm::db::bind(*role.createBy) + ","; }
     sql += "create_time) values (" + vals + "sysdate())";
     long long insertId = 0;
     bool ok = cm::db::Db::instance().execute(sql, nullptr, &insertId);
@@ -178,27 +178,27 @@ bool SysRoleMapper::insertRole(cm::domain::SysRole& role) {
 
 bool SysRoleMapper::updateRole(const cm::domain::SysRole& role) {
     std::string sql = "update sys_role set ";
-    if (role.roleName && !role.roleName->empty()) sql += "role_name = " + cm::db::Db::lit(*role.roleName) + ",";
-    if (role.roleKey && !role.roleKey->empty()) sql += "role_key = " + cm::db::Db::lit(*role.roleKey) + ",";
-    if (role.roleSort && !role.roleSort->empty()) sql += "role_sort = " + cm::db::Db::lit(*role.roleSort) + ",";
-    if (role.dataScope && !role.dataScope->empty()) sql += "data_scope = " + cm::db::Db::lit(*role.dataScope) + ",";
-    sql += "menu_check_strictly = " + cm::db::Db::lit(role.menuCheckStrictly) + ",";
-    sql += "dept_check_strictly = " + cm::db::Db::lit(role.deptCheckStrictly) + ",";
-    if (role.status && !role.status->empty()) sql += "status = " + cm::db::Db::lit(*role.status) + ",";
-    if (role.remark) sql += "remark = " + cm::db::Db::lit(*role.remark) + ",";
-    if (role.updateBy && !role.updateBy->empty()) sql += "update_by = " + cm::db::Db::lit(*role.updateBy) + ",";
-    sql += "update_time = sysdate() where role_id = " + cm::db::Db::lit(role.roleId.value_or(0));
+    if (role.roleName && !role.roleName->empty()) sql += "role_name = " + cm::db::bind(*role.roleName) + ",";
+    if (role.roleKey && !role.roleKey->empty()) sql += "role_key = " + cm::db::bind(*role.roleKey) + ",";
+    if (role.roleSort && !role.roleSort->empty()) sql += "role_sort = " + cm::db::bind(*role.roleSort) + ",";
+    if (role.dataScope && !role.dataScope->empty()) sql += "data_scope = " + cm::db::bind(*role.dataScope) + ",";
+    sql += "menu_check_strictly = " + cm::db::bind(role.menuCheckStrictly) + ",";
+    sql += "dept_check_strictly = " + cm::db::bind(role.deptCheckStrictly) + ",";
+    if (role.status && !role.status->empty()) sql += "status = " + cm::db::bind(*role.status) + ",";
+    if (role.remark) sql += "remark = " + cm::db::bind(*role.remark) + ",";
+    if (role.updateBy && !role.updateBy->empty()) sql += "update_by = " + cm::db::bind(*role.updateBy) + ",";
+    sql += "update_time = sysdate() where role_id = " + cm::db::bind(role.roleId.value_or(0));
     return cm::db::Db::instance().execute(sql);
 }
 
 bool SysRoleMapper::deleteRoleById(long long roleId) {
-    std::string sql = "update sys_role set del_flag = '2' where role_id = " + cm::db::Db::lit(roleId);
+    std::string sql = "update sys_role set del_flag = '2' where role_id = " + cm::db::bind(roleId);
     return cm::db::Db::instance().execute(sql);
 }
 
 bool SysRoleMapper::deleteRoleByIds(const std::vector<long long>& roleIds) {
     if (roleIds.empty()) return true;
-    std::string sql = "update sys_role set del_flag = '2' where role_id in " + cm::db::Db::inList(roleIds);
+    std::string sql = "update sys_role set del_flag = '2' where role_id in " + cm::db::bindIn(roleIds);
     return cm::db::Db::instance().execute(sql);
 }
 

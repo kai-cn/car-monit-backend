@@ -393,6 +393,90 @@ catch (...) { conn->rollback(); throw; }
 ⚠️ 探活策略略有差异：C++ 在借出时 ping 失效连接并重建；Druid 默认
 `testOnBorrow=false`、`testWhileIdle=true`。对业务无影响。
 
+### 5.5 SQL 参数绑定（对应 MyBatis `#{}` / JDBC `PreparedStatement`）
+
+**为什么不是 libmysqlclient**：本工程承诺"clone 即可构建"，`libmysqlclient` 需要额外开发包；
+`COM_STMT` 返回**二进制结果集**，要按列类型解码 DATE/DECIMAL/BLOB，而现有结果集解析是文本协议。
+因此采用 **SQL 级预处理**：`PREPARE` + `SET @cm_pN` + `EXECUTE ... USING`，结果集仍是文本协议。
+
+| 层 | 对应 Java | 实现 |
+|---|---|---|
+| 值 → 占位符 | `#{}` | `cm::db::bind(v)` / `bindIn(vec)` / `bindNull()`，返回令牌 |
+| 标识符 | `${}` / 拼接 | **不可绑定**，见下表 |
+| 语句复用 | MyBatis `MappedStatement` 缓存 | 每连接 LRU 缓存会话级预备语句 |
+
+#### 5.5.1 标识符 vs 值的边界（不可绑定的一侧必须白名单）
+
+| SQL 位置 | 例子 | 处理 |
+|---|---|---|
+| 表名 / 列名 / 别名 | `FROM ods_... t`、`t.car_no` | 来自 `Spec` 的编译期常量。运行时来源的（`flow_name.BUSS_NAME` 作表名）必须过 `requireTableName()`：只允许 `[A-Za-z0-9_]` |
+| ORDER BY | `page.orderBy` | 沿用 `SqlUtil::escapeOrderBySql`：`[a-zA-Z0-9_ ,.]` + 长度 ≤500，超限抛 `UtilException`（与 Java 同文案） |
+| LIMIT / OFFSET | 分页 | 由 `PageRequest` 整数计算，不来自请求原文 |
+| 固定常量 | `del_flag = '0'`、`status='0'` | 编译期常量，内联 |
+| **所有请求值** | 查询条件、body 字段、路径变量、IN 列表 | **必须 `bind`**，不得内联 |
+
+`Db::lit()` 现在只允许出现在上面"标识符 / 固定常量 / PREPARE 模板"三种位置。
+`scripts/audit_sql_bindings.py` 会列出仍在值位置使用 `Db::lit` 的调用（字面量参数计入白名单）。
+
+#### 5.5.2 字符串如何安全到达服务端
+
+值不进 SQL 模板；赋给会话变量时用 `_utf8mb4 0x<hex>`（十六进制只含 `0-9a-f`，
+不可能引入引号 / 反斜杠 / 注释符）：
+
+```
+SET @cm_p1 = _utf8mb4 0x41274222435c44, @cm_p2 = 116.5, @cm_p3 = NULL
+EXECUTE cm_s_7 USING @cm_p1, @cm_p2, @cm_p3
+```
+
+- 空串 → `_utf8mb4''`（不等于 NULL，与 Java `''` 一致）
+- NULL → `NULL`
+- 整数 / DECIMAL 文本 → 原样十进制（19 位雪花不经过 double）
+- 非法数值（人为构造的 `Param`）→ 退化为文本 hex，不会拼出 SQL 结构
+
+#### 5.5.3 延迟绑定：为什么不用"边拼边 push"
+
+C++ 对重载 `operator+` 的**操作数求值顺序不作保证**，
+`"a" + bind(p,x) + "b" + bind(p,y)` 可能先算 `y`，参数顺序就错了。
+所以 `bind()`（无 `Params` 参数的重载）把值登记到线程内注册表并返回令牌
+`/*cmpN*/?`；`Db::query/execute` 执行前按 SQL 文本中出现的位置解析成 `?` 并排好参数顺序。
+令牌只由 `bind()` 生成，用户值永远不进 SQL 文本。
+
+- 请求边界：`Server::dispatch()` 开头 `cm::db::resetBindings()`
+- 后台线程：`OperLogAspect::worker()` 每条日志写完 `resetBindings()`
+- 注册表上限 8192，超限清空并告警（正常路径不会触发）
+
+#### 5.5.4 预备语句缓存：归一化 / 容量 / 淘汰 / 监控
+
+动态 SQL 的模板数量随"筛选条件组合 × 排序"增长，必须设上界：
+
+| 项 | 值 |
+|---|---|
+| 缓存 key | SQL 模板归一化结果：去首尾空白、引号外连续空白折叠为单空格、去结尾分号。**不删注释、不改字面量**（保留 optimizer hint 与字符串内容） |
+| 语句名 | `cm_s_<n>`（连接内单调递增） |
+| 容量 | 每连接默认 **64**，配置项 `cm.db.prepared-cache-max` |
+| 淘汰 | LRU：命中时 `splice` 到表头；满则淘汰表尾并发 `DEALLOCATE PREPARE`（失败只记录） |
+| 连接关闭 | `close()` 清空本地缓存（服务端会话语句也随之销毁），重连后语句名从 0 重新分配 |
+| 服务端上限 | 首次 PREPARE 时读 `SHOW VARIABLES LIKE 'max_prepared_stmt_count'`（默认 16382）。33 条连接 × 64 ≈ 2.1k，余量约 8 倍 |
+
+**监控项**（`MySqlConnection` 已暴露，建议接入 `/health` 或指标端点）：
+
+| 指标 | 含义 | 告警建议 |
+|---|---|---|
+| `preparedCacheSize()` | 当前连接的缓存条目数 | 持续等于 `prepared-cache-max` → 模板发散，考虑收敛筛选组合 |
+| `preparedCacheHits()` | 命中次数 | 命中率 = hits / preparedQueries，长期偏低说明每请求新模板 |
+| `preparedCacheEvictions()` | 淘汰次数 | > 0 且持续增长 → 容量不足或模板发散 |
+| `preparedQueries()` | 走绑定路径的语句数 | — |
+| `serverPreparedStmtLimit()` | 服务端 `max_prepared_stmt_count` | < 连接数 × 容量 时降低 `prepared-cache-max` |
+| 日志 | `查询失败/绑定查询失败` 会打印原始 SQL | 出现 `PREPARE 失败` / `EXECUTE 失败` 立即排查 |
+
+#### 5.5.5 往返次数
+
+| 场景 | 改造前 | 改造后 |
+|---|---|---|
+| 无参数语句 | 1 次 COM_QUERY | 1 次 COM_QUERY（不变） |
+| 首次见到的模板 | 1 次 | 3 次（PREPARE + SET + EXECUTE） |
+| 已缓存模板 | 1 次 | 2 次（SET + EXECUTE） |
+
 ---
 
 ## 6. 层 5：横切关注点

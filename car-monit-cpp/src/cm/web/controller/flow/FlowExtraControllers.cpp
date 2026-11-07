@@ -225,11 +225,11 @@ void registerFlowExtraControllers(Router& r) {
 
         Json arr = Json::array();
         const auto& ls = flowListSpec();
-        auto rows = selectAll(selectAllSql(ls, "WHERE t.BILL_OID = " + Db::lit(billOid)));
+        auto rows = selectAll(selectAllSql(ls, "WHERE t.BILL_OID = " + cm::db::bind(billOid)));
         for (const auto& row : rows.rows) arr.push_back(rowToJson(ls, row));
 
         const auto& as = flowApplyInfoSpec();
-        auto applyRows = selectAll(selectAllSql(as, "WHERE t.BILL_OID = " + Db::lit(billOid)));
+        auto applyRows = selectAll(selectAllSql(as, "WHERE t.BILL_OID = " + cm::db::bind(billOid)));
         if (!applyRows.rows.empty()) {
             const auto& apply = applyRows.rows[0];
             const std::string status = trimOrNull(apply.get("FLOW_STATUS"));
@@ -288,9 +288,9 @@ void registerFlowExtraControllers(Router& r) {
     r.del("/flow/messagedispose/delmes/{mid}", [](RequestContext& ctx) -> cm::http::ApiResponse {
         std::string mid = ctx.pathVar("mid");
         if (mid.empty()) mid = "-1";
-        std::string sql = "delete from flow_message_dispose where MID = " + Db::lit(mid);
+        std::string sql = "delete from flow_message_dispose where MID = " + cm::db::bind(mid);
         const std::string bussId = std::to_string(SecurityUtils::getUserId());
-        if (!bussId.empty()) sql += " and BUSS_ID = " + Db::lit(bussId);
+        if (!bussId.empty()) sql += " and BUSS_ID = " + cm::db::bind(bussId);
         long long affected = 0;
         Db::instance().execute(sql, &affected);
         return BaseController::ok(AjaxResult::success(Json(affected)));
@@ -301,9 +301,9 @@ void registerFlowExtraControllers(Router& r) {
         std::string mid = ctx.pathVar("mid");
         if (mid.empty()) mid = "-1";
         std::string sql = "update flow_message_dispose set MSG_STATUS = '1' where del_flag = '0' and MID = " +
-                          Db::lit(mid);
+                          cm::db::bind(mid);
         const std::string bussId = std::to_string(SecurityUtils::getUserId());
-        if (!bussId.empty()) sql += " and BUSS_ID = " + Db::lit(bussId);
+        if (!bussId.empty()) sql += " and BUSS_ID = " + cm::db::bind(bussId);
         long long affected = 0;
         Db::instance().execute(sql, &affected);
         return BaseController::ok(AjaxResult::success(Json(affected)));
@@ -315,7 +315,7 @@ void registerFlowExtraControllers(Router& r) {
         const auto& ms = flowMessageInfoSpec();
         const std::string id = ctx.optParam("id").value_or("");
         auto infoRows = selectAll("SELECT " + ms.selectColumns() + " FROM flow_message_info t WHERE t.ID = " +
-                                  Db::lit(id));
+                                  cm::db::bind(id));
         if (infoRows.rows.empty()) {
             // Java: messageInfo.getApplyName() 对 null 调用 -> NullPointerException -> 500
             throw cm::exception::NullPointerException();

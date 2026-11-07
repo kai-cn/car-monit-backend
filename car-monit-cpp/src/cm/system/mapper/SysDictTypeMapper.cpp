@@ -29,18 +29,18 @@ cm::domain::SysDictType SysDictTypeMapper::mapDictType(const cm::db::Row& row) {
 std::string SysDictTypeMapper::selectDictTypeListSql(const cm::domain::SysDictType& dt) {
     std::string sql = std::string(kSelectDictTypeVo) + " where 1=1";
     if (dt.dictName && !dt.dictName->empty())
-        sql += " AND dict_name like " + cm::db::Db::lit("%" + *dt.dictName + "%");
+        sql += " AND dict_name like " + cm::db::bind("%" + *dt.dictName + "%");
     if (dt.status && !dt.status->empty())
-        sql += " AND status = " + cm::db::Db::lit(*dt.status);
+        sql += " AND status = " + cm::db::bind(*dt.status);
     if (dt.dictType && !dt.dictType->empty())
-        sql += " AND dict_type like " + cm::db::Db::lit("%" + *dt.dictType + "%");
+        sql += " AND dict_type like " + cm::db::bind("%" + *dt.dictType + "%");
     if (dt.params.contains("beginTime") && dt.params["beginTime"].is_string()) {
         std::string bt = dt.params["beginTime"].get<std::string>();
-        if (!bt.empty()) sql += " AND date_format(create_time,'%y%m%d') >= date_format(" + cm::db::Db::lit(bt) + ",'%y%m%d')";
+        if (!bt.empty()) sql += " AND date_format(create_time,'%y%m%d') >= date_format(" + cm::db::bind(bt) + ",'%y%m%d')";
     }
     if (dt.params.contains("endTime") && dt.params["endTime"].is_string()) {
         std::string et = dt.params["endTime"].get<std::string>();
-        if (!et.empty()) sql += " AND date_format(create_time,'%y%m%d') <= date_format(" + cm::db::Db::lit(et) + ",'%y%m%d')";
+        if (!et.empty()) sql += " AND date_format(create_time,'%y%m%d') <= date_format(" + cm::db::bind(et) + ",'%y%m%d')";
     }
     sql += " order by create_time desc";
     return sql;
@@ -75,21 +75,21 @@ std::vector<cm::domain::SysDictType> SysDictTypeMapper::selectDictTypeAll() {
 }
 
 std::optional<cm::domain::SysDictType> SysDictTypeMapper::selectDictTypeById(long long dictId) {
-    std::string sql = std::string(kSelectDictTypeVo) + " where dict_id = " + cm::db::Db::lit(dictId);
+    std::string sql = std::string(kSelectDictTypeVo) + " where dict_id = " + cm::db::bind(dictId);
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     return mapDictType(res.rows.front());
 }
 
 std::optional<cm::domain::SysDictType> SysDictTypeMapper::selectDictTypeByType(const std::string& dictType) {
-    std::string sql = std::string(kSelectDictTypeVo) + " where dict_type = " + cm::db::Db::lit(dictType);
+    std::string sql = std::string(kSelectDictTypeVo) + " where dict_type = " + cm::db::bind(dictType);
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     return mapDictType(res.rows.front());
 }
 
 std::optional<cm::domain::SysDictType> SysDictTypeMapper::checkDictTypeUnique(const std::string& dictType) {
-    std::string sql = std::string(kSelectDictTypeVo) + " where dict_type = " + cm::db::Db::lit(dictType) + " limit 1";
+    std::string sql = std::string(kSelectDictTypeVo) + " where dict_type = " + cm::db::bind(dictType) + " limit 1";
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     return mapDictType(res.rows.front());
@@ -98,11 +98,11 @@ std::optional<cm::domain::SysDictType> SysDictTypeMapper::checkDictTypeUnique(co
 long long SysDictTypeMapper::insertDictType(const cm::domain::SysDictType& dt) {
     std::string cols = "create_time";
     std::string vals = "sysdate()";
-    if (dt.dictName && !dt.dictName->empty()) { cols += ", dict_name"; vals += ", " + cm::db::Db::lit(*dt.dictName); }
-    if (dt.dictType && !dt.dictType->empty()) { cols += ", dict_type"; vals += ", " + cm::db::Db::lit(*dt.dictType); }
-    if (dt.status) { cols += ", status"; vals += ", " + cm::db::Db::lit(*dt.status); }
-    if (dt.remark && !dt.remark->empty()) { cols += ", remark"; vals += ", " + cm::db::Db::lit(*dt.remark); }
-    if (dt.createBy && !dt.createBy->empty()) { cols += ", create_by"; vals += ", " + cm::db::Db::lit(*dt.createBy); }
+    if (dt.dictName && !dt.dictName->empty()) { cols += ", dict_name"; vals += ", " + cm::db::bind(*dt.dictName); }
+    if (dt.dictType && !dt.dictType->empty()) { cols += ", dict_type"; vals += ", " + cm::db::bind(*dt.dictType); }
+    if (dt.status) { cols += ", status"; vals += ", " + cm::db::bind(*dt.status); }
+    if (dt.remark && !dt.remark->empty()) { cols += ", remark"; vals += ", " + cm::db::bind(*dt.remark); }
+    if (dt.createBy && !dt.createBy->empty()) { cols += ", create_by"; vals += ", " + cm::db::bind(*dt.createBy); }
     std::string sql = "insert into sys_dict_type (" + cols + ") values (" + vals + ")";
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
@@ -113,20 +113,20 @@ long long SysDictTypeMapper::updateDictType(const cm::domain::SysDictType& dt) {
     std::string sql = "update sys_dict_type set";
     bool first = true;
     auto append = [&](const std::string& c) { if (!first) sql += ","; sql += " " + c; first = false; };
-    if (dt.dictName && !dt.dictName->empty()) append("dict_name = " + cm::db::Db::lit(*dt.dictName));
-    if (dt.dictType && !dt.dictType->empty()) append("dict_type = " + cm::db::Db::lit(*dt.dictType));
-    if (dt.status) append("status = " + cm::db::Db::lit(*dt.status));
-    if (dt.remark) append("remark = " + cm::db::Db::lit(*dt.remark));
-    if (dt.updateBy && !dt.updateBy->empty()) append("update_by = " + cm::db::Db::lit(*dt.updateBy));
+    if (dt.dictName && !dt.dictName->empty()) append("dict_name = " + cm::db::bind(*dt.dictName));
+    if (dt.dictType && !dt.dictType->empty()) append("dict_type = " + cm::db::bind(*dt.dictType));
+    if (dt.status) append("status = " + cm::db::bind(*dt.status));
+    if (dt.remark) append("remark = " + cm::db::bind(*dt.remark));
+    if (dt.updateBy && !dt.updateBy->empty()) append("update_by = " + cm::db::bind(*dt.updateBy));
     append("update_time = sysdate()");
-    sql += " where dict_id = " + cm::db::Db::lit(dt.dictId.value_or(0));
+    sql += " where dict_id = " + cm::db::bind(dt.dictId.value_or(0));
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return affected;
 }
 
 long long SysDictTypeMapper::deleteDictTypeById(long long dictId) {
-    std::string sql = "delete from sys_dict_type where dict_id = " + cm::db::Db::lit(dictId);
+    std::string sql = "delete from sys_dict_type where dict_id = " + cm::db::bind(dictId);
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return affected;
@@ -134,7 +134,7 @@ long long SysDictTypeMapper::deleteDictTypeById(long long dictId) {
 
 long long SysDictTypeMapper::deleteDictTypeByIds(const std::vector<long long>& dictIds) {
     if (dictIds.empty()) return 0;
-    std::string sql = "delete from sys_dict_type where dict_id in " + cm::db::Db::inList(dictIds);
+    std::string sql = "delete from sys_dict_type where dict_id in " + cm::db::bindIn(dictIds);
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return affected;

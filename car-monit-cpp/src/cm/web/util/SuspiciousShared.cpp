@@ -52,7 +52,7 @@ Json suspiciousByIdRow(const cm::web::crud::Spec& spec, const std::string& table
                        const std::string& id) {
     const std::string sql =
         "SELECT " + spec.selectColumns() + ", t.track_josn FROM " + table + " t WHERE t.id = " +
-        Db::lit(id);
+        cm::db::bind(id);
     const cm::db::Result res = mustRunSql(sql);
     if (res.rows.empty()) return Json(nullptr);
     return cm::web::crud::rowToJson(spec, res.rows[0]);

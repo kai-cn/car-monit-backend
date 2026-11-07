@@ -154,17 +154,17 @@ cm::domain::SysUser SysUserMapper::mapUser(const cm::db::Row& row) {
 
 std::optional<cm::domain::SysUser> SysUserMapper::selectUserByUserName(const std::string& userName) {
     return loadFirstUser(std::string(kSelectUserVo) + " where u.user_name = " +
-                         cm::db::Db::lit(userName));
+                         cm::db::bind(userName));
 }
 
 std::optional<cm::domain::SysUser> SysUserMapper::selectUserById(long long userId) {
     return loadFirstUser(std::string(kSelectUserVo) + " where u.user_id = " +
-                         cm::db::Db::lit(userId));
+                         cm::db::bind(userId));
 }
 
 std::optional<cm::domain::SysUser> SysUserMapper::selectUserByCertEntityId(const std::string& certEntityId) {
     return loadFirstUser(std::string(kSelectUserVo) + " where u.cert_entity_id = " +
-                         cm::db::Db::lit(certEntityId));
+                         cm::db::bind(certEntityId));
 }
 
 std::vector<cm::domain::SysRole> SysUserMapper::selectRolesByUserId(long long userId) {
@@ -176,7 +176,7 @@ std::vector<cm::domain::SysRole> SysUserMapper::selectRolesByUserId(long long us
         " left join sys_user_role ur on ur.role_id = r.role_id"
         " left join sys_user u on u.user_id = ur.user_id"
         " left join sys_dept d on u.dept_id = d.dept_id"
-        " where r.del_flag = '0' and ur.user_id = " + cm::db::Db::lit(userId) +
+        " where r.del_flag = '0' and ur.user_id = " + cm::db::bind(userId) +
         " and r.status = '0'";
     cm::db::Result res;
     std::vector<cm::domain::SysRole> roles;
@@ -202,7 +202,7 @@ std::vector<std::string> SysUserMapper::selectRolePermissionByUserId(long long u
         " left join sys_user_role ur on ur.role_id = r.role_id"
         " left join sys_user u on u.user_id = ur.user_id"
         " left join sys_dept d on u.dept_id = d.dept_id"
-        " WHERE r.del_flag = '0' and ur.user_id = " + cm::db::Db::lit(userId);
+        " WHERE r.del_flag = '0' and ur.user_id = " + cm::db::bind(userId);
     cm::db::Result res;
     std::vector<std::string> keys;
     if (!cm::db::Db::instance().query(sql, res)) return keys;
@@ -219,7 +219,7 @@ std::vector<std::string> SysUserMapper::selectMenuPermsByUserId(long long userId
         " left join sys_role_menu rm on m.menu_id = rm.menu_id"
         " left join sys_user_role ur on rm.role_id = ur.role_id"
         " left join sys_role r on r.role_id = ur.role_id"
-        " where m.status = '0' and r.status = '0' and ur.user_id = " + cm::db::Db::lit(userId);
+        " where m.status = '0' and r.status = '0' and ur.user_id = " + cm::db::bind(userId);
     cm::db::Result res;
     std::vector<std::string> perms;
     if (!cm::db::Db::instance().query(sql, res)) return perms;
@@ -232,9 +232,9 @@ std::vector<std::string> SysUserMapper::selectMenuPermsByUserId(long long userId
 bool SysUserMapper::updateLoginInfo(long long userId, const std::string& loginIp, long long loginDate) {
     // updateUser 中登录相关字段；时间用 FROM_UNIXTIME 保持服务器时区口径
     const std::string sql =
-        "update sys_user set login_ip = " + cm::db::Db::lit(loginIp) +
+        "update sys_user set login_ip = " + cm::db::bind(loginIp) +
         ", login_date = from_unixtime(" + std::to_string(loginDate / 1000) + ")"
-        " where user_id = " + cm::db::Db::lit(userId);
+        " where user_id = " + cm::db::bind(userId);
     return cm::db::Db::instance().execute(sql);
 }
 
@@ -244,9 +244,9 @@ void SysUserMapper::insertLogininfor(const std::string& userName, const std::str
                                      const std::string& msg, long long loginTime) {
     const std::string sql =
         "insert into sys_logininfor (user_name, status, ipaddr, login_location, browser, os, msg, login_time)"
-        " values (" + cm::db::Db::lit(userName) + ", " + cm::db::Db::lit(status) + ", " +
-        cm::db::Db::lit(ipaddr) + ", " + cm::db::Db::lit(loginLocation) + ", " +
-        cm::db::Db::lit(browser) + ", " + cm::db::Db::lit(os) + ", " + cm::db::Db::lit(msg) +
+        " values (" + cm::db::bind(userName) + ", " + cm::db::bind(status) + ", " +
+        cm::db::bind(ipaddr) + ", " + cm::db::bind(loginLocation) + ", " +
+        cm::db::bind(browser) + ", " + cm::db::bind(os) + ", " + cm::db::bind(msg) +
         ", from_unixtime(" + std::to_string(loginTime / 1000) + "))";
     cm::db::Db::instance().execute(sql);
 }
@@ -262,24 +262,24 @@ std::string SysUserMapper::selectUserListSql(const cm::domain::SysUser& user) {
                       " left join sys_dept d on u.dept_id = d.dept_id"
                       " left join sys_dept d2 on d.tenant_id = d2.dept_id"
                       " where u.del_flag = '0'";
-    if (user.userId && *user.userId != 0) sql += " AND u.user_id = " + cm::db::Db::lit(*user.userId);
-    if (user.userNo) sql += " AND u.user_no = " + cm::db::Db::lit(*user.userNo);
-    if (user.userName && !user.userName->empty()) sql += " AND u.user_name like " + cm::db::Db::lit("%" + *user.userName + "%");
-    if (user.status && !user.status->empty()) sql += " AND u.status = " + cm::db::Db::lit(*user.status);
-    if (user.phonenumber && !user.phonenumber->empty()) sql += " AND u.phonenumber like " + cm::db::Db::lit("%" + *user.phonenumber + "%");
-    if (user.deptId && *user.deptId != 0) sql += " AND (u.dept_id = " + cm::db::Db::lit(*user.deptId) + " OR u.dept_id IN (SELECT t.dept_id FROM sys_dept t WHERE find_in_set(" + cm::db::Db::lit(*user.deptId) + ", ancestors)))";
-    if (user.userType && !user.userType->empty()) sql += " and u.user_type = " + cm::db::Db::lit(*user.userType);
-    if (user.certEntityId && !user.certEntityId->empty()) sql += " and u.cert_entity_id = " + cm::db::Db::lit(*user.certEntityId);
-    if (user.certId && !user.certId->empty()) sql += " and u.cert_id = " + cm::db::Db::lit(*user.certId);
-    if (user.bussId && !user.bussId->empty()) sql += " and u.buss_id = " + cm::db::Db::lit(*user.bussId);
-    if (user.bussName && !user.bussName->empty()) sql += " and u.buss_name like " + cm::db::Db::lit("%" + *user.bussName + "%");
-    if (user.epsName && !user.epsName->empty()) sql += " and u.eps_name like " + cm::db::Db::lit("%" + *user.epsName + "%");
-    if (user.tenantId) sql += " and d.tenant_id = " + cm::db::Db::lit(*user.tenantId);
+    if (user.userId && *user.userId != 0) sql += " AND u.user_id = " + cm::db::bind(*user.userId);
+    if (user.userNo) sql += " AND u.user_no = " + cm::db::bind(*user.userNo);
+    if (user.userName && !user.userName->empty()) sql += " AND u.user_name like " + cm::db::bind("%" + *user.userName + "%");
+    if (user.status && !user.status->empty()) sql += " AND u.status = " + cm::db::bind(*user.status);
+    if (user.phonenumber && !user.phonenumber->empty()) sql += " AND u.phonenumber like " + cm::db::bind("%" + *user.phonenumber + "%");
+    if (user.deptId && *user.deptId != 0) sql += " AND (u.dept_id = " + cm::db::bind(*user.deptId) + " OR u.dept_id IN (SELECT t.dept_id FROM sys_dept t WHERE find_in_set(" + cm::db::bind(*user.deptId) + ", ancestors)))";
+    if (user.userType && !user.userType->empty()) sql += " and u.user_type = " + cm::db::bind(*user.userType);
+    if (user.certEntityId && !user.certEntityId->empty()) sql += " and u.cert_entity_id = " + cm::db::bind(*user.certEntityId);
+    if (user.certId && !user.certId->empty()) sql += " and u.cert_id = " + cm::db::bind(*user.certId);
+    if (user.bussId && !user.bussId->empty()) sql += " and u.buss_id = " + cm::db::bind(*user.bussId);
+    if (user.bussName && !user.bussName->empty()) sql += " and u.buss_name like " + cm::db::bind("%" + *user.bussName + "%");
+    if (user.epsName && !user.epsName->empty()) sql += " and u.eps_name like " + cm::db::bind("%" + *user.epsName + "%");
+    if (user.tenantId) sql += " and d.tenant_id = " + cm::db::bind(*user.tenantId);
     if (user.roleCode && !user.roleCode->empty()) {
-        sql += " and EXISTS (select 1 from sys_user_role t1, sys_role t2 where t2.del_flag = '0' and t2.role_id = t1.role_id and t1.user_id = u.user_id and t2.role_key = " + cm::db::Db::lit(*user.roleCode) + ")";
+        sql += " and EXISTS (select 1 from sys_user_role t1, sys_role t2 where t2.del_flag = '0' and t2.role_id = t1.role_id and t1.user_id = u.user_id and t2.role_key = " + cm::db::bind(*user.roleCode) + ")";
     }
-    if (user.queryNickName && !user.queryNickName->empty()) sql += " AND u.nick_name LIKE " + cm::db::Db::lit("%" + *user.queryNickName + "%");
-    if (user.excludeId) sql += " AND u.user_id != " + cm::db::Db::lit(*user.excludeId);
+    if (user.queryNickName && !user.queryNickName->empty()) sql += " AND u.nick_name LIKE " + cm::db::bind("%" + *user.queryNickName + "%");
+    if (user.excludeId) sql += " AND u.user_id != " + cm::db::bind(*user.excludeId);
     return sql;
 }
 
@@ -303,12 +303,12 @@ std::vector<cm::domain::SysUser> SysUserMapper::selectUserList(const cm::domain:
 }
 
 int SysUserMapper::checkUserNameUnique(const std::string& userName) {
-    std::string sql = "select count(1) from sys_user where user_name = " + cm::db::Db::lit(userName) + " and del_flag = '0' limit 1";
+    std::string sql = "select count(1) from sys_user where user_name = " + cm::db::bind(userName) + " and del_flag = '0' limit 1";
     return static_cast<int>(cm::db::Db::instance().count(sql));
 }
 
 std::optional<cm::domain::SysUser> SysUserMapper::checkPhoneUnique(const std::string& phonenumber) {
-    std::string sql = "select user_id, phonenumber from sys_user where phonenumber = " + cm::db::Db::lit(phonenumber) + " and del_flag = '0' limit 1";
+    std::string sql = "select user_id, phonenumber from sys_user where phonenumber = " + cm::db::bind(phonenumber) + " and del_flag = '0' limit 1";
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     cm::domain::SysUser u;
@@ -318,7 +318,7 @@ std::optional<cm::domain::SysUser> SysUserMapper::checkPhoneUnique(const std::st
 }
 
 std::optional<cm::domain::SysUser> SysUserMapper::checkEmailUnique(const std::string& email) {
-    std::string sql = "select user_id, email from sys_user where email = " + cm::db::Db::lit(email) + " and del_flag = '0' limit 1";
+    std::string sql = "select user_id, email from sys_user where email = " + cm::db::bind(email) + " and del_flag = '0' limit 1";
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     cm::domain::SysUser u;
@@ -330,32 +330,32 @@ std::optional<cm::domain::SysUser> SysUserMapper::checkEmailUnique(const std::st
 bool SysUserMapper::insertUser(cm::domain::SysUser& user) {
     std::string sql = "insert into sys_user(";
     std::string vals;
-    if (user.userNo) { sql += "user_no,"; vals += cm::db::Db::lit(*user.userNo) + ","; }
-    if (user.deptId) { sql += "dept_id,"; vals += cm::db::Db::lit(*user.deptId) + ","; }
-    if (user.userName && !user.userName->empty()) { sql += "user_name,"; vals += cm::db::Db::lit(*user.userName) + ","; }
-    if (user.nickName && !user.nickName->empty()) { sql += "nick_name,"; vals += cm::db::Db::lit(*user.nickName) + ","; }
-    if (user.userType && !user.userType->empty()) { sql += "user_type,"; vals += cm::db::Db::lit(*user.userType) + ","; }
-    if (user.email && !user.email->empty()) { sql += "email,"; vals += cm::db::Db::lit(*user.email) + ","; }
-    if (user.phonenumber && !user.phonenumber->empty()) { sql += "phonenumber,"; vals += cm::db::Db::lit(*user.phonenumber) + ","; }
-    if (user.sex && !user.sex->empty()) { sql += "sex,"; vals += cm::db::Db::lit(*user.sex) + ","; }
-    if (user.avatar && !user.avatar->empty()) { sql += "avatar,"; vals += cm::db::Db::lit(*user.avatar) + ","; }
-    if (user.password && !user.password->empty()) { sql += "password,"; vals += cm::db::Db::lit(*user.password) + ","; }
-    if (user.status && !user.status->empty()) { sql += "status,"; vals += cm::db::Db::lit(*user.status) + ","; }
-    if (user.remark && !user.remark->empty()) { sql += "remark,"; vals += cm::db::Db::lit(*user.remark) + ","; }
-    if (user.certEntityId && !user.certEntityId->empty()) { sql += "cert_entity_id,"; vals += cm::db::Db::lit(*user.certEntityId) + ","; }
-    if (user.certId && !user.certId->empty()) { sql += "cert_id,"; vals += cm::db::Db::lit(*user.certId) + ","; }
-    if (user.bussId && !user.bussId->empty()) { sql += "buss_id,"; vals += cm::db::Db::lit(*user.bussId) + ","; }
-    if (user.bussName && !user.bussName->empty()) { sql += "buss_name,"; vals += cm::db::Db::lit(*user.bussName) + ","; }
-    if (user.epsName && !user.epsName->empty()) { sql += "eps_name,"; vals += cm::db::Db::lit(*user.epsName) + ","; }
-    if (user.loginIp && !user.loginIp->empty()) { sql += "login_ip,"; vals += cm::db::Db::lit(*user.loginIp) + ","; }
+    if (user.userNo) { sql += "user_no,"; vals += cm::db::bind(*user.userNo) + ","; }
+    if (user.deptId) { sql += "dept_id,"; vals += cm::db::bind(*user.deptId) + ","; }
+    if (user.userName && !user.userName->empty()) { sql += "user_name,"; vals += cm::db::bind(*user.userName) + ","; }
+    if (user.nickName && !user.nickName->empty()) { sql += "nick_name,"; vals += cm::db::bind(*user.nickName) + ","; }
+    if (user.userType && !user.userType->empty()) { sql += "user_type,"; vals += cm::db::bind(*user.userType) + ","; }
+    if (user.email && !user.email->empty()) { sql += "email,"; vals += cm::db::bind(*user.email) + ","; }
+    if (user.phonenumber && !user.phonenumber->empty()) { sql += "phonenumber,"; vals += cm::db::bind(*user.phonenumber) + ","; }
+    if (user.sex && !user.sex->empty()) { sql += "sex,"; vals += cm::db::bind(*user.sex) + ","; }
+    if (user.avatar && !user.avatar->empty()) { sql += "avatar,"; vals += cm::db::bind(*user.avatar) + ","; }
+    if (user.password && !user.password->empty()) { sql += "password,"; vals += cm::db::bind(*user.password) + ","; }
+    if (user.status && !user.status->empty()) { sql += "status,"; vals += cm::db::bind(*user.status) + ","; }
+    if (user.remark && !user.remark->empty()) { sql += "remark,"; vals += cm::db::bind(*user.remark) + ","; }
+    if (user.certEntityId && !user.certEntityId->empty()) { sql += "cert_entity_id,"; vals += cm::db::bind(*user.certEntityId) + ","; }
+    if (user.certId && !user.certId->empty()) { sql += "cert_id,"; vals += cm::db::bind(*user.certId) + ","; }
+    if (user.bussId && !user.bussId->empty()) { sql += "buss_id,"; vals += cm::db::bind(*user.bussId) + ","; }
+    if (user.bussName && !user.bussName->empty()) { sql += "buss_name,"; vals += cm::db::bind(*user.bussName) + ","; }
+    if (user.epsName && !user.epsName->empty()) { sql += "eps_name,"; vals += cm::db::bind(*user.epsName) + ","; }
+    if (user.loginIp && !user.loginIp->empty()) { sql += "login_ip,"; vals += cm::db::bind(*user.loginIp) + ","; }
     if (user.loginDate) { sql += "login_date,"; vals += "from_unixtime(" + std::to_string(*user.loginDate / 1000) + "),"; }
-    if (user.delFlag && !user.delFlag->empty()) { sql += "del_flag,"; vals += cm::db::Db::lit(*user.delFlag) + ","; }
-    if (user.createBy && !user.createBy->empty()) { sql += "create_by,"; vals += cm::db::Db::lit(*user.createBy) + ","; }
+    if (user.delFlag && !user.delFlag->empty()) { sql += "del_flag,"; vals += cm::db::bind(*user.delFlag) + ","; }
+    if (user.createBy && !user.createBy->empty()) { sql += "create_by,"; vals += cm::db::bind(*user.createBy) + ","; }
     if (user.createTime) { sql += "create_time,"; vals += "from_unixtime(" + std::to_string(*user.createTime / 1000) + "),"; }
-    if (user.updateBy && !user.updateBy->empty()) { sql += "update_by,"; vals += cm::db::Db::lit(*user.updateBy) + ","; }
+    if (user.updateBy && !user.updateBy->empty()) { sql += "update_by,"; vals += cm::db::bind(*user.updateBy) + ","; }
     if (user.updateTime) { sql += "update_time,"; vals += "from_unixtime(" + std::to_string(*user.updateTime / 1000) + "),"; }
-    if (user.tenantId) { sql += "tenant_id,"; vals += cm::db::Db::lit(*user.tenantId) + ","; }
-    if (user.imageId && !user.imageId->empty()) { sql += "image_id,"; vals += cm::db::Db::lit(*user.imageId) + ","; }
+    if (user.tenantId) { sql += "tenant_id,"; vals += cm::db::bind(*user.tenantId) + ","; }
+    if (user.imageId && !user.imageId->empty()) { sql += "image_id,"; vals += cm::db::bind(*user.imageId) + ","; }
     sql += ") values (" + vals + ")";
     long long insertId = 0;
     bool ok = cm::db::Db::instance().execute(sql, nullptr, &insertId);
@@ -365,62 +365,62 @@ bool SysUserMapper::insertUser(cm::domain::SysUser& user) {
 
 int SysUserMapper::updateUser(const cm::domain::SysUser& user) {
     std::string sql = "update sys_user set ";
-    if (user.userNo) sql += "user_no = " + cm::db::Db::lit(*user.userNo) + ",";
-    if (user.deptId) sql += "dept_id = " + cm::db::Db::lit(*user.deptId) + ",";
-    if (user.userName && !user.userName->empty()) sql += "user_name = " + cm::db::Db::lit(*user.userName) + ",";
-    if (user.nickName && !user.nickName->empty()) sql += "nick_name = " + cm::db::Db::lit(*user.nickName) + ",";
-    if (user.password && !user.password->empty()) sql += "password = " + cm::db::Db::lit(*user.password) + ",";
-    if (user.userType && !user.userType->empty()) sql += "user_type = " + cm::db::Db::lit(*user.userType) + ",";
-    if (user.email && !user.email->empty()) sql += "email = " + cm::db::Db::lit(*user.email) + ",";
-    if (user.phonenumber && !user.phonenumber->empty()) sql += "phonenumber = " + cm::db::Db::lit(*user.phonenumber) + ",";
-    if (user.sex && !user.sex->empty()) sql += "sex = " + cm::db::Db::lit(*user.sex) + ",";
-    if (user.avatar && !user.avatar->empty()) sql += "avatar = " + cm::db::Db::lit(*user.avatar) + ",";
-    if (user.status && !user.status->empty()) sql += "status = " + cm::db::Db::lit(*user.status) + ",";
-    if (user.remark) sql += "remark = " + cm::db::Db::lit(*user.remark) + ",";
-    if (user.certEntityId && !user.certEntityId->empty()) sql += "cert_entity_id = " + cm::db::Db::lit(*user.certEntityId) + ",";
-    if (user.certId && !user.certId->empty()) sql += "cert_id = " + cm::db::Db::lit(*user.certId) + ",";
-    if (user.bussId && !user.bussId->empty()) sql += "buss_id = " + cm::db::Db::lit(*user.bussId) + ",";
-    if (user.bussName && !user.bussName->empty()) sql += "buss_name = " + cm::db::Db::lit(*user.bussName) + ",";
-    if (user.epsName && !user.epsName->empty()) sql += "eps_name = " + cm::db::Db::lit(*user.epsName) + ",";
-    if (user.loginIp && !user.loginIp->empty()) sql += "login_ip = " + cm::db::Db::lit(*user.loginIp) + ",";
+    if (user.userNo) sql += "user_no = " + cm::db::bind(*user.userNo) + ",";
+    if (user.deptId) sql += "dept_id = " + cm::db::bind(*user.deptId) + ",";
+    if (user.userName && !user.userName->empty()) sql += "user_name = " + cm::db::bind(*user.userName) + ",";
+    if (user.nickName && !user.nickName->empty()) sql += "nick_name = " + cm::db::bind(*user.nickName) + ",";
+    if (user.password && !user.password->empty()) sql += "password = " + cm::db::bind(*user.password) + ",";
+    if (user.userType && !user.userType->empty()) sql += "user_type = " + cm::db::bind(*user.userType) + ",";
+    if (user.email && !user.email->empty()) sql += "email = " + cm::db::bind(*user.email) + ",";
+    if (user.phonenumber && !user.phonenumber->empty()) sql += "phonenumber = " + cm::db::bind(*user.phonenumber) + ",";
+    if (user.sex && !user.sex->empty()) sql += "sex = " + cm::db::bind(*user.sex) + ",";
+    if (user.avatar && !user.avatar->empty()) sql += "avatar = " + cm::db::bind(*user.avatar) + ",";
+    if (user.status && !user.status->empty()) sql += "status = " + cm::db::bind(*user.status) + ",";
+    if (user.remark) sql += "remark = " + cm::db::bind(*user.remark) + ",";
+    if (user.certEntityId && !user.certEntityId->empty()) sql += "cert_entity_id = " + cm::db::bind(*user.certEntityId) + ",";
+    if (user.certId && !user.certId->empty()) sql += "cert_id = " + cm::db::bind(*user.certId) + ",";
+    if (user.bussId && !user.bussId->empty()) sql += "buss_id = " + cm::db::bind(*user.bussId) + ",";
+    if (user.bussName && !user.bussName->empty()) sql += "buss_name = " + cm::db::bind(*user.bussName) + ",";
+    if (user.epsName && !user.epsName->empty()) sql += "eps_name = " + cm::db::bind(*user.epsName) + ",";
+    if (user.loginIp && !user.loginIp->empty()) sql += "login_ip = " + cm::db::bind(*user.loginIp) + ",";
     if (user.loginDate) sql += "login_date = from_unixtime(" + std::to_string(*user.loginDate / 1000) + "),";
-    if (user.delFlag && !user.delFlag->empty()) sql += "del_flag = " + cm::db::Db::lit(*user.delFlag) + ",";
-    if (user.createBy && !user.createBy->empty()) sql += "create_by = " + cm::db::Db::lit(*user.createBy) + ",";
+    if (user.delFlag && !user.delFlag->empty()) sql += "del_flag = " + cm::db::bind(*user.delFlag) + ",";
+    if (user.createBy && !user.createBy->empty()) sql += "create_by = " + cm::db::bind(*user.createBy) + ",";
     if (user.createTime) sql += "create_time = from_unixtime(" + std::to_string(*user.createTime / 1000) + "),";
-    if (user.updateBy && !user.updateBy->empty()) sql += "update_by = " + cm::db::Db::lit(*user.updateBy) + ",";
+    if (user.updateBy && !user.updateBy->empty()) sql += "update_by = " + cm::db::bind(*user.updateBy) + ",";
     if (user.updateTime) sql += "update_time = from_unixtime(" + std::to_string(*user.updateTime / 1000) + "),";
-    if (user.tenantId) sql += "tenant_id = " + cm::db::Db::lit(*user.tenantId) + ",";
-    if (user.imageId && !user.imageId->empty()) sql += "image_id = " + cm::db::Db::lit(*user.imageId) + ",";
+    if (user.tenantId) sql += "tenant_id = " + cm::db::bind(*user.tenantId) + ",";
+    if (user.imageId && !user.imageId->empty()) sql += "image_id = " + cm::db::bind(*user.imageId) + ",";
     // Remove trailing comma
     if (!sql.empty() && sql.back() == ',') sql.pop_back();
-    sql += " where user_id = " + cm::db::Db::lit(user.userId.value_or(0));
+    sql += " where user_id = " + cm::db::bind(user.userId.value_or(0));
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return static_cast<int>(affected);
 }
 
 bool SysUserMapper::deleteUserById(long long userId) {
-    std::string sql = "update sys_user set del_flag = '1' where user_id = " + cm::db::Db::lit(userId);
+    std::string sql = "update sys_user set del_flag = '1' where user_id = " + cm::db::bind(userId);
     return cm::db::Db::instance().execute(sql);
 }
 
 int SysUserMapper::deleteUserByIds(const std::vector<long long>& userIds) {
     if (userIds.empty()) return 0;
-    std::string sql = "update sys_user set del_flag = '1' where user_id in " + cm::db::Db::inList(userIds);
+    std::string sql = "update sys_user set del_flag = '1' where user_id in " + cm::db::bindIn(userIds);
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return static_cast<int>(affected);
 }
 
 int SysUserMapper::resetUserPwd(const std::string& userName, const std::string& password) {
-    std::string sql = "update sys_user set password = " + cm::db::Db::lit(password) + ", update_time = now() where user_name = " + cm::db::Db::lit(userName);
+    std::string sql = "update sys_user set password = " + cm::db::bind(password) + ", update_time = now() where user_name = " + cm::db::bind(userName);
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return static_cast<int>(affected);
 }
 
 int SysUserMapper::updateUserAvatar(const std::string& userName, const std::string& avatar) {
-    std::string sql = "update sys_user set avatar = " + cm::db::Db::lit(avatar) + " where user_name = " + cm::db::Db::lit(userName);
+    std::string sql = "update sys_user set avatar = " + cm::db::bind(avatar) + " where user_name = " + cm::db::bind(userName);
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return static_cast<int>(affected);

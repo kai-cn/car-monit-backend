@@ -51,24 +51,24 @@ void registerSysLogininforController(Router& r) {
         std::string baseSql = "SELECT info_id, user_name, ipaddr, login_location, browser, os, status, msg, login_time FROM sys_logininfor";
         std::string where;
         if (logininfor.ipaddr && !logininfor.ipaddr->empty()) {
-            where += " AND ipaddr LIKE " + cm::db::Db::lit("%" + *logininfor.ipaddr + "%");
+            where += " AND ipaddr LIKE " + cm::db::bind("%" + *logininfor.ipaddr + "%");
         }
         if (logininfor.status && !logininfor.status->empty()) {
-            where += " AND status = " + cm::db::Db::lit(*logininfor.status);
+            where += " AND status = " + cm::db::bind(*logininfor.status);
         }
         if (logininfor.userName && !logininfor.userName->empty()) {
-            where += " AND user_name LIKE " + cm::db::Db::lit("%" + *logininfor.userName + "%");
+            where += " AND user_name LIKE " + cm::db::bind("%" + *logininfor.userName + "%");
         }
         if (logininfor.params.contains("beginTime") && logininfor.params["beginTime"].is_string()) {
             std::string bt = logininfor.params["beginTime"].get<std::string>();
             if (!bt.empty()) {
-                where += " AND date_format(login_time,'%y%m%d') >= date_format(" + cm::db::Db::lit(bt) + ",'%y%m%d')";
+                where += " AND date_format(login_time,'%y%m%d') >= date_format(" + cm::db::bind(bt) + ",'%y%m%d')";
             }
         }
         if (logininfor.params.contains("endTime") && logininfor.params["endTime"].is_string()) {
             std::string et = logininfor.params["endTime"].get<std::string>();
             if (!et.empty()) {
-                where += " AND date_format(login_time,'%y%m%d') <= date_format(" + cm::db::Db::lit(et) + ",'%y%m%d')";
+                where += " AND date_format(login_time,'%y%m%d') <= date_format(" + cm::db::bind(et) + ",'%y%m%d')";
             }
         }
         std::string countSql = "SELECT COUNT(*) FROM sys_logininfor";

@@ -41,25 +41,25 @@ cm::domain::SysConfig SysConfigMapper::mapConfig(const cm::db::Row& row) {
 std::string SysConfigMapper::selectConfigListSql(const cm::domain::SysConfig& config) {
     std::string sql = std::string(kSelectConfigVo) + " where 1=1";
     if (config.configName && !config.configName->empty()) {
-        sql += " AND config_name like " + cm::db::Db::lit("%" + *config.configName + "%");
+        sql += " AND config_name like " + cm::db::bind("%" + *config.configName + "%");
     }
     if (config.configType && !config.configType->empty()) {
-        sql += " AND config_type = " + cm::db::Db::lit(*config.configType);
+        sql += " AND config_type = " + cm::db::bind(*config.configType);
     }
     if (config.configKey && !config.configKey->empty()) {
-        sql += " AND config_key like " + cm::db::Db::lit("%" + *config.configKey + "%");
+        sql += " AND config_key like " + cm::db::bind("%" + *config.configKey + "%");
     }
     // params.beginTime / endTime support
     if (config.params.contains("beginTime") && config.params["beginTime"].is_string()) {
         std::string bt = config.params["beginTime"].get<std::string>();
         if (!bt.empty()) {
-            sql += " AND date_format(create_time,'%y%m%d') >= date_format(" + cm::db::Db::lit(bt) + ",'%y%m%d')";
+            sql += " AND date_format(create_time,'%y%m%d') >= date_format(" + cm::db::bind(bt) + ",'%y%m%d')";
         }
     }
     if (config.params.contains("endTime") && config.params["endTime"].is_string()) {
         std::string et = config.params["endTime"].get<std::string>();
         if (!et.empty()) {
-            sql += " AND date_format(create_time,'%y%m%d') <= date_format(" + cm::db::Db::lit(et) + ",'%y%m%d')";
+            sql += " AND date_format(create_time,'%y%m%d') <= date_format(" + cm::db::bind(et) + ",'%y%m%d')";
         }
     }
     return sql;
@@ -89,10 +89,10 @@ std::vector<cm::domain::SysConfig> SysConfigMapper::selectConfigList(const cm::d
 std::optional<cm::domain::SysConfig> SysConfigMapper::selectConfig(const cm::domain::SysConfig& config) {
     std::string sql = std::string(kSelectConfigVo) + " where 1=1";
     if (config.configId) {
-        sql += " and config_id = " + cm::db::Db::lit(*config.configId);
+        sql += " and config_id = " + cm::db::bind(*config.configId);
     }
     if (config.configKey && !config.configKey->empty()) {
-        sql += " and config_key = " + cm::db::Db::lit(*config.configKey);
+        sql += " and config_key = " + cm::db::bind(*config.configKey);
     }
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
@@ -107,7 +107,7 @@ std::optional<cm::domain::SysConfig> SysConfigMapper::selectConfigById(long long
 
 std::optional<cm::domain::SysConfig> SysConfigMapper::checkConfigKeyUnique(const std::string& configKey) {
     std::string sql = std::string(kSelectConfigVo) + " where config_key = " +
-                      cm::db::Db::lit(configKey) + " limit 1";
+                      cm::db::bind(configKey) + " limit 1";
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     return mapConfig(res.rows.front());
@@ -118,27 +118,27 @@ long long SysConfigMapper::insertConfig(const cm::domain::SysConfig& config) {
     std::string vals = "sysdate()";
     if (config.configName && !config.configName->empty()) {
         cols += ", config_name";
-        vals += ", " + cm::db::Db::lit(*config.configName);
+        vals += ", " + cm::db::bind(*config.configName);
     }
     if (config.configKey && !config.configKey->empty()) {
         cols += ", config_key";
-        vals += ", " + cm::db::Db::lit(*config.configKey);
+        vals += ", " + cm::db::bind(*config.configKey);
     }
     if (config.configValue && !config.configValue->empty()) {
         cols += ", config_value";
-        vals += ", " + cm::db::Db::lit(*config.configValue);
+        vals += ", " + cm::db::bind(*config.configValue);
     }
     if (config.configType && !config.configType->empty()) {
         cols += ", config_type";
-        vals += ", " + cm::db::Db::lit(*config.configType);
+        vals += ", " + cm::db::bind(*config.configType);
     }
     if (config.createBy && !config.createBy->empty()) {
         cols += ", create_by";
-        vals += ", " + cm::db::Db::lit(*config.createBy);
+        vals += ", " + cm::db::bind(*config.createBy);
     }
     if (config.remark && !config.remark->empty()) {
         cols += ", remark";
-        vals += ", " + cm::db::Db::lit(*config.remark);
+        vals += ", " + cm::db::bind(*config.remark);
     }
     std::string sql = "insert into sys_config (" + cols + ") values (" + vals + ")";
     long long affected = 0;
@@ -155,32 +155,32 @@ long long SysConfigMapper::updateConfig(const cm::domain::SysConfig& config) {
         first = false;
     };
     if (config.configName && !config.configName->empty()) {
-        append("config_name = " + cm::db::Db::lit(*config.configName));
+        append("config_name = " + cm::db::bind(*config.configName));
     }
     if (config.configKey && !config.configKey->empty()) {
-        append("config_key = " + cm::db::Db::lit(*config.configKey));
+        append("config_key = " + cm::db::bind(*config.configKey));
     }
     if (config.configValue && !config.configValue->empty()) {
-        append("config_value = " + cm::db::Db::lit(*config.configValue));
+        append("config_value = " + cm::db::bind(*config.configValue));
     }
     if (config.configType && !config.configType->empty()) {
-        append("config_type = " + cm::db::Db::lit(*config.configType));
+        append("config_type = " + cm::db::bind(*config.configType));
     }
     if (config.updateBy && !config.updateBy->empty()) {
-        append("update_by = " + cm::db::Db::lit(*config.updateBy));
+        append("update_by = " + cm::db::bind(*config.updateBy));
     }
     if (config.remark) {
-        append("remark = " + cm::db::Db::lit(*config.remark));
+        append("remark = " + cm::db::bind(*config.remark));
     }
     append("update_time = sysdate()");
-    sql += " where config_id = " + cm::db::Db::lit(config.configId.value_or(0));
+    sql += " where config_id = " + cm::db::bind(config.configId.value_or(0));
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return affected;
 }
 
 long long SysConfigMapper::deleteConfigById(long long configId) {
-    std::string sql = "delete from sys_config where config_id = " + cm::db::Db::lit(configId);
+    std::string sql = "delete from sys_config where config_id = " + cm::db::bind(configId);
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return affected;
@@ -189,7 +189,7 @@ long long SysConfigMapper::deleteConfigById(long long configId) {
 long long SysConfigMapper::deleteConfigByIds(const std::vector<long long>& configIds) {
     if (configIds.empty()) return 0;
     std::string sql = "delete from sys_config where config_id in " +
-                      cm::db::Db::inList(configIds);
+                      cm::db::bindIn(configIds);
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return affected;

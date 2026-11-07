@@ -153,11 +153,11 @@ CarTrackLocal carTrackQueryLocal(RequestContext& ctx, const Json& q) {
     // getCyly 与 getHistoryTrail 共享的那三段条件
     auto baseWhere = [&]() {
         std::string w = " WHERE 1=1";
-        if (!StringUtils::isBlank(carNo)) w += " and t.plate_key = " + Db::lit(carNo);
+        if (!StringUtils::isBlank(carNo)) w += " and t.plate_key = " + cm::db::bind(carNo);
         if (!StringUtils::isBlank(apply1))
-            w += " and t.enter_time >= STR_TO_DATE(" + Db::lit(apply1) + ",'%Y-%m-%d')";
+            w += " and t.enter_time >= STR_TO_DATE(" + cm::db::bind(apply1) + ",'%Y-%m-%d')";
         if (!StringUtils::isBlank(apply2))
-            w += " and t.enter_time < date_add(STR_TO_DATE(" + Db::lit(apply2)
+            w += " and t.enter_time < date_add(STR_TO_DATE(" + cm::db::bind(apply2)
                  + ",'%Y-%m-%d'), interval 1 day)";
         return w;
     };
@@ -194,14 +194,14 @@ CarTrackLocal carTrackQueryLocal(RequestContext& ctx, const Json& q) {
 
     std::string where = baseWhere();
     if (!StringUtils::isBlank(plateKey))
-        where += " and t.plate_key like concat('%', " + Db::lit(plateKey) + ", '%')";
+        where += " and t.plate_key like concat('%', " + cm::db::bind(plateKey) + ", '%')";
     if (!StringUtils::isBlank(entoll))
-        where += " and t.entollstationid = " + Db::lit(entoll);
+        where += " and t.entollstationid = " + cm::db::bind(entoll);
     if (!uuidList.empty()) {
         where += " and uuid in (";
         for (size_t i = 0; i < uuidList.size(); ++i) {
             if (i) where += ",";
-            where += Db::lit(uuidList[i]);
+            where += cm::db::bind(uuidList[i]);
         }
         where += ")";
     }
@@ -414,9 +414,9 @@ void registerManagerExtraControllers(Router& r) {
             "select t.car_no,count(1) exceptNum,round(sum(t.dif_amount),2) exceptAmount,"
             "round(sum(t.total_amount),2) total_amount,round(sum(t.charge_amount),2) charge_amount "
             "from car_except_record t where t.del_flag = '0' and t.car_no = " +
-            Db::lit(carNo);
+            cm::db::bind(carNo);
         if (auto v = ctx.optParam("status"); v && !StringUtils::isBlank(*v))
-            sql += " and t.status = " + Db::lit(*v);
+            sql += " and t.status = " + cm::db::bind(*v);
         sql += " group by t.car_no";
 
         static const Spec cs = aliasSpec(specCarExceptRecord(),
@@ -439,9 +439,9 @@ void registerManagerExtraControllers(Router& r) {
             "select t.car_no,count(1) confimFreeNum,"
             "round(ifnull(sum(t.aduit_amount),0) + ifnull(sum(t.amount),0),2) confimFreeAmount "
             "from car_confim_free t where t.del_flag = '0' and t.car_no = " +
-            Db::lit(carNo);
+            cm::db::bind(carNo);
         if (auto v = ctx.optParam("status"); v && !StringUtils::isBlank(*v))
-            sql += " and t.status = " + Db::lit(*v);
+            sql += " and t.status = " + cm::db::bind(*v);
         sql += " group by t.car_no";
 
         static const Spec cs = aliasSpec(specCarConfimFree(),
@@ -459,7 +459,7 @@ void registerManagerExtraControllers(Router& r) {
         const std::string id = ctx.pathVar("id");
         const std::string sql =
             "SELECT t.ID FROM car_confim_free t WHERE t.del_flag = '0' and (find_in_set(" +
-            Db::lit(id) + ", t.except_ids) > 0)";
+            cm::db::bind(id) + ", t.except_ids) > 0)";
         auto res = select(sql);
         const std::string confirmId = res.rows.empty() ? std::string("-1") : res.rows[0].str("ID");
         AjaxResult success = AjaxResult::success();
@@ -500,7 +500,7 @@ void registerManagerExtraControllers(Router& r) {
             size_t comma = exceptIds.find(',', pos);
             std::string item = exceptIds.substr(pos, comma == std::string::npos ? std::string::npos : comma - pos);
             if (!in.empty()) in += " OR ";
-            in += "find_in_set(" + Db::lit(StringUtils::trim(item)) + ", t.except_ids) > 0";
+            in += "find_in_set(" + cm::db::bind(StringUtils::trim(item)) + ", t.except_ids) > 0";
             if (comma == std::string::npos) break;
             pos = comma + 1;
         }
@@ -544,14 +544,14 @@ void registerManagerExtraControllers(Router& r) {
                             "d.dept_name orgName,a.create_time from " + table +
                             " a left join sys_dept d on d.dept_id = a.org_id where a.del_flag = '0'";
             if (aduit) s += " and a.status = '0'";
-            s += " and a.org_id = " + Db::lit(orgId);
+            s += " and a.org_id = " + cm::db::bind(orgId);
             if (!StringUtils::isBlank(applyTime1))
-                s += " and a.create_time >= STR_TO_DATE(" + Db::lit(applyTime1) + ",'%Y-%m-%d')";
+                s += " and a.create_time >= STR_TO_DATE(" + cm::db::bind(applyTime1) + ",'%Y-%m-%d')";
             if (!StringUtils::isBlank(applyTime2))
-                s += " and a.create_time < date_add(STR_TO_DATE(" + Db::lit(applyTime2) +
+                s += " and a.create_time < date_add(STR_TO_DATE(" + cm::db::bind(applyTime2) +
                      ", '%Y-%m-%d'), interval 1 day)";
             if (!StringUtils::isBlank(carNo))
-                s += " and a.car_no like concat('%', " + Db::lit(carNo) + ", '%')";
+                s += " and a.car_no like concat('%', " + cm::db::bind(carNo) + ", '%')";
             return s;
         };
         const std::string inner = half("car_aduit_free", true) + " UNION all " + half("car_confim_free", false);

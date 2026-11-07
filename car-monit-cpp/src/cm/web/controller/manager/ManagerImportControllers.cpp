@@ -135,7 +135,7 @@ void bindText(const Spec& spec, Ent& e, const std::string& json, const std::stri
 
 std::string sqlLit(const Val& v) {
     if (v.isNull()) return "NULL";
-    return v.numeric() ? v.s : Db::lit(v.s);
+    return v.numeric() ? v.s : cm::db::bind(v.s);
 }
 
 /** Jackson 对实体的输出：字段声明序（spec 就是按这个顺序生成的）。
@@ -310,7 +310,7 @@ void updateCarInfo(const Ent& car) {
     const std::string sets = setPairs(CAR_INFO_COLS, std::size(CAR_INFO_COLS), car);
     if (sets.empty()) return;   // 全 null：MP 不会发 UPDATE
     // @TableLogic 让 updateById 的 WHERE 带上 del_flag='0'
-    mustRun("UPDATE car_info SET " + sets + " WHERE id = " + Db::lit(car.plain("id")) +
+    mustRun("UPDATE car_info SET " + sets + " WHERE id = " + cm::db::bind(car.plain("id")) +
             " AND del_flag = '0'");
 }
 
@@ -330,9 +330,9 @@ void saveCarInfo(Ent& car) {
     cm::db::Transaction tx;   // @Transactional(rollbackFor = Exception.class)
     car["carNo"] = strVal(CommonUtil::isNull(car.plain("carNo")));
     std::string dup = "select count(1) from car_info t where t.del_flag = '0' and t.car_no = " +
-                      Db::lit(car.plain("carNo"));
+                      cm::db::bind(car.plain("carNo"));
     if (StringUtils::isNotBlank(car.plain("id"))) {
-        dup += " and t.id != " + Db::lit(car.plain("id"));
+        dup += " and t.id != " + cm::db::bind(car.plain("id"));
     }
     if (mustCount(dup) > 0) {
         tx.commit();   // 同样是"return 而非 throw"⇒ 事务提交（其实什么都没写）
@@ -371,7 +371,7 @@ void saveCarExcept(const std::string& carNo) {
         " round(sum(t.total_amount),2) total_amount, round(sum(t.charge_amount),2) charge_amount,"
         " group_concat(distinct t.escaped_type SEPARATOR ',') escaped_type"
         " from car_except_record t where t.del_flag = '0' and t.car_no = " +
-        Db::lit(carNo) + " group by t.car_no");
+        cm::db::bind(carNo) + " group by t.car_no");
     std::map<std::string, std::string> carMap;
     for (const auto& row : selectCarInfoByNo(carNo).rows) {
         carMap[CommonUtil::isNull(row.str("car_no"))] = row.str("id");
@@ -384,11 +384,11 @@ void saveCarExcept(const std::string& carNo) {
         // uptcarInfo 上只赋了 id / escapedType / escapedAmount 三个属性
         std::string sets;
         const auto esc = row.get("escaped_type");
-        if (esc) sets += "escaped_type = " + Db::lit(*esc);
+        if (esc) sets += "escaped_type = " + cm::db::bind(*esc);
         const auto amt = row.get("except_amount");
         if (amt) sets += (sets.empty() ? std::string("escaped_amount = ") : ", escaped_amount = ") + *amt;
         if (sets.empty()) continue;
-        mustRun("UPDATE car_info SET " + sets + " WHERE id = " + Db::lit(it->second) +
+        mustRun("UPDATE car_info SET " + sets + " WHERE id = " + cm::db::bind(it->second) +
                 " AND del_flag = '0'");
     }
 }
@@ -402,12 +402,12 @@ void saveCarExceptRecord(Ent& rec) {
     if (!inTime.isNull() && !outTime.isNull()) {
         std::string dup = "select count(1) from car_except_record t where t.del_flag = '0'";
         if (StringUtils::isNotBlank(rec.plain("id"))) {
-            dup += " and t.id != " + Db::lit(rec.plain("id"));
+            dup += " and t.id != " + cm::db::bind(rec.plain("id"));
         }
         // ⚠️ Java 的 isExitsTime 把 in/out 用反了（out_time >= #{inTime} 且 in_time <= #{outTime}），
         //     那是"区间有交集"的判断，跟文案说的"重复"不是一回事 —— 照抄。
-        dup += " and t.out_time >= " + Db::lit(inTime.s) + " and t.in_time <= " + Db::lit(outTime.s);
-        dup += " and t.car_no = " + Db::lit(rec.plain("carNo"));
+        dup += " and t.out_time >= " + cm::db::bind(inTime.s) + " and t.in_time <= " + cm::db::bind(outTime.s);
+        dup += " and t.car_no = " + cm::db::bind(rec.plain("carNo"));
         if (mustCount(dup) > 0) {
             tx.commit();   // Java 是 return（不是抛）⇒ 事务照常提交，这一行只是不写
             return;        // AjaxResult.error("录入区间时间重复！")，返回值被调用方丢弃
@@ -427,7 +427,7 @@ void saveCarExceptRecord(Ent& rec) {
         const std::string sets = setPairs(EXCEPT_COLS, std::size(EXCEPT_COLS), rec);
         if (!sets.empty()) {
             mustRun("UPDATE car_except_record SET " + sets + " WHERE id = " +
-                    Db::lit(rec.plain("id")) + " AND del_flag = '0'");
+                    cm::db::bind(rec.plain("id")) + " AND del_flag = '0'");
         }
     } else {
         rec["status"] = strVal("0");

@@ -38,7 +38,7 @@ void registerQuartzExtraControllers(Router& r) {
 
         // 查不到任务时 Java 在 newJob.setStatus(...) 处抛 NPE
         cm::db::Result found;
-        if (!Db::instance().query("select job_id from sys_job where job_id = " + Db::lit(jobId), found) ||
+        if (!Db::instance().query("select job_id from sys_job where job_id = " + cm::db::bind(jobId), found) ||
             found.rows.empty()) {
             throw cm::exception::NullPointerException();
         }
@@ -48,8 +48,8 @@ void registerQuartzExtraControllers(Router& r) {
         if (!resume && !pause) return BaseController::ok(BaseController::toAjax(false));
 
         long long rows = 0;
-        Db::instance().execute("update sys_job set status = " + Db::lit(status) +
-                                   " where job_id = " + Db::lit(jobId),
+        Db::instance().execute("update sys_job set status = " + cm::db::bind(status) +
+                                   " where job_id = " + cm::db::bind(jobId),
                                &rows);
         // 调度器侧的 pauseJob/resumeJob 在 C++ 无对应实现（见头文件说明）
         return BaseController::ok(BaseController::toAjax(rows > 0));

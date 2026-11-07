@@ -201,6 +201,13 @@ void MySqlConnection::close() {
     }
     in_tx_ = false;
     seq_ = 0;
+    // 连接关闭时服务端会话级预备语句随之销毁，本地缓存必须同步清空，
+    // 否则重连后会把旧语句名当作有效句柄发送 EXECUTE。
+    prepared_.clear();
+    prepared_lru_.clear();
+    next_stmt_id_ = 0;
+    stmt_limit_probed_ = false;
+    server_stmt_limit_ = -1;
 }
 
 bool MySqlConnection::sendPacket(const std::string& payload) {
@@ -602,7 +609,7 @@ bool MySqlConnection::readResult(Result& out, bool& more_results) {
     return true;
 }
 
-bool MySqlConnection::query(const std::string& sql, Result& out) {
+bool MySqlConnection::queryRaw(const std::string& sql, Result& out) {
     if (!cm::net::validStorage(fd_)) {
         setError("MySQL 连接未建立");
         return false;
@@ -628,9 +635,234 @@ bool MySqlConnection::query(const std::string& sql, Result& out) {
     return true;
 }
 
+bool MySqlConnection::query(const std::string& sql, Result& out) { return queryRaw(sql, out); }
+
 bool MySqlConnection::execute(const std::string& sql, long long* affected, long long* insertId) {
     Result r;
     if (!query(sql, r)) return false;
+    if (affected) *affected = r.affectedRows;
+    if (insertId) *insertId = r.insertId;
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// 预编译语句（SQL 级 PREPARE / SET @v / EXECUTE ... USING）
+//
+// 为什么不用 COM_STMT：COM_STMT_EXECUTE 返回的是**二进制结果集**，需要按列类型
+// 解码 DATE/DECIMAL/BLOB 等；本工程结果集解析目前是文本协议，SQL 级 PREPARE 的
+// EXECUTE 仍然返回文本结果集，可以复用 readResult，正确性风险最低。
+// 值不进入 SQL 模板：字符串以 `_utf8mb4 0x<hex>` 的形式赋给会话变量，
+// 十六进制字符集不含引号/反斜杠/注释符，结构上不可能改变语句结构。
+// ---------------------------------------------------------------------------
+
+namespace {
+
+bool isSpaceNoNewline(char c) { return c == ' ' || c == '\t' || c == '\r'; }
+
+} // namespace
+
+size_t MySqlConnection::countPlaceholders(const std::string& sql) {
+    size_t n = 0;
+    char quote = 0;
+    for (size_t i = 0; i < sql.size(); ++i) {
+        const char c = sql[i];
+        if (quote != 0) {
+            if (c == '\\' && quote != '`') {
+                if (i + 1 < sql.size()) ++i;
+                continue;
+            }
+            if (c == quote) quote = 0;
+            continue;
+        }
+        if (c == '\'' || c == '"' || c == '`') {
+            quote = c;
+            continue;
+        }
+        // -- 行注释
+        if (c == '-' && i + 1 < sql.size() && sql[i + 1] == '-') {
+            i += 2;
+            while (i < sql.size() && sql[i] != '\n') ++i;
+            continue;
+        }
+        // /* */ 块注释（保留 /*+ optimizer hint */ 的语义，只跳过计数）
+        if (c == '/' && i + 1 < sql.size() && sql[i + 1] == '*') {
+            i += 2;
+            while (i + 1 < sql.size() && !(sql[i] == '*' && sql[i + 1] == '/')) ++i;
+            if (i + 1 < sql.size()) ++i;
+            continue;
+        }
+        if (c == '?') ++n;
+    }
+    return n;
+}
+
+std::string MySqlConnection::normalizeTemplate(const std::string& sql) {
+    // 归一化只做三件不影响语义的事：
+    //   1) 去首尾空白；2) 把引号外的连续空格/Tab/\r 折叠成一个空格；3) 去掉结尾的分号。
+    // 绝不删除注释、换行或字面量内容，避免改变 optimizer hint 与字符串值。
+    std::string out;
+    out.reserve(sql.size());
+    bool quote = false;
+    char q = 0;
+    bool pending_space = false;
+    for (size_t i = 0; i < sql.size(); ++i) {
+        const char c = sql[i];
+        if (quote) {
+            out.push_back(c);
+            if (c == '\\' && q != '`') {
+                if (i + 1 < sql.size()) out.push_back(sql[++i]);
+            } else if (c == q) {
+                quote = false;
+            }
+            continue;
+        }
+        if (c == '\'' || c == '"' || c == '`') {
+            if (pending_space && !out.empty()) out.push_back(' ');
+            pending_space = false;
+            quote = true;
+            q = c;
+            out.push_back(c);
+            continue;
+        }
+        if (isSpaceNoNewline(c)) {
+            pending_space = true;
+            continue;
+        }
+        if (pending_space && !out.empty()) out.push_back(' ');
+        pending_space = false;
+        out.push_back(c);
+    }
+    while (!out.empty() && (out.back() == ' ' || out.back() == '\n' || out.back() == '\r' ||
+                            out.back() == '\t'))
+        out.pop_back();
+    if (!out.empty() && out.back() == ';') out.pop_back();
+    while (!out.empty() && (out.back() == ' ' || out.back() == '\n' || out.back() == '\r' ||
+                            out.back() == '\t'))
+        out.pop_back();
+    return out;
+}
+
+std::string MySqlConnection::quoteTextLiteral(const std::string& s) {
+    // 仅用于 PREPARE 的模板（代码常量，不含用户值），与 Db::lit 的转义集保持一致。
+    std::string out = "'";
+    for (char c : s) {
+        switch (c) {
+            case '\0': out += "\\0"; break;
+            case '\n': out += "\\n"; break;
+            case '\r': out += "\\r"; break;
+            case '\\': out += "\\\\"; break;
+            case '\'': out += "\\'"; break;
+            case '"': out += "\\\""; break;
+            case '\032': out += "\\Z"; break;
+            default: out.push_back(c); break;
+        }
+    }
+    out.push_back('\'');
+    return out;
+}
+
+void MySqlConnection::probeServerStmtLimit() {
+    if (stmt_limit_probed_) return;
+    stmt_limit_probed_ = true;
+    Result r;
+    if (!queryRaw("SHOW VARIABLES LIKE 'max_prepared_stmt_count'", r) || r.rows.empty()) return;
+    const auto& vals = r.rows.front().values();
+    if (vals.size() < 2 || !vals[1]) return;
+    try {
+        server_stmt_limit_ = std::stoll(*vals[1]);
+    } catch (...) {
+        server_stmt_limit_ = -1;
+    }
+}
+
+void MySqlConnection::evictPreparedOne() {
+    if (prepared_lru_.empty()) return;
+    const std::string key = prepared_lru_.back();
+    prepared_lru_.pop_back();
+    auto it = prepared_.find(key);
+    if (it == prepared_.end()) return;
+    Result ignored;
+    // DEALLOCATE 失败不改变淘汰决定：语句可能已经因连接重建而消失。
+    queryRaw("DEALLOCATE PREPARE " + it->second.name, ignored);
+    prepared_.erase(it);
+    ++prepared_evictions_;
+}
+
+bool MySqlConnection::ensurePrepared(const std::string& sql, std::string& stmtName) {
+    const std::string key = normalizeTemplate(sql);
+    auto it = prepared_.find(key);
+    if (it != prepared_.end()) {
+        ++prepared_hits_;
+        prepared_lru_.splice(prepared_lru_.begin(), prepared_lru_, it->second.lru_it);
+        stmtName = it->second.name;
+        return true;
+    }
+    if (static_cast<int>(prepared_.size()) >= prepared_max_) evictPreparedOne();
+    if (!stmt_limit_probed_) probeServerStmtLimit();
+
+    const std::string name = "cm_s_" + std::to_string(++next_stmt_id_);
+    Result r;
+    if (!queryRaw("PREPARE " + name + " FROM " + quoteTextLiteral(key), r)) {
+        setError("PREPARE 失败: " + last_error_);
+        return false;
+    }
+    prepared_lru_.push_front(key);
+    prepared_[key] = PreparedEntry{name, prepared_lru_.begin()};
+    stmtName = name;
+    return true;
+}
+
+bool MySqlConnection::setPreparedParams(const Params& params) {
+    if (params.empty()) return true;
+    std::string cmd = "SET ";
+    for (size_t i = 0; i < params.size(); ++i) {
+        if (i) cmd += ", ";
+        cmd += "@cm_p" + std::to_string(i + 1) + " = " + paramWireLiteral(params[i]);
+    }
+    Result r;
+    if (!queryRaw(cmd, r)) {
+        setError("设置绑定参数失败: " + last_error_);
+        return false;
+    }
+    return true;
+}
+
+bool MySqlConnection::queryPrepared(const std::string& sql, const Params& params, Result& out) {
+    if (params.empty()) return queryRaw(sql, out);
+    if (!cm::net::validStorage(fd_)) {
+        setError("MySQL 连接未建立");
+        return false;
+    }
+    const size_t placeholders = countPlaceholders(sql);
+    if (placeholders != params.size()) {
+        setError("SQL 占位符数量(" + std::to_string(placeholders) + ")与绑定参数数量(" +
+                 std::to_string(params.size()) + ")不一致");
+        return false;
+    }
+    std::string name;
+    if (!ensurePrepared(sql, name)) return false;
+    if (!setPreparedParams(params)) return false;
+    ++prepared_queries_;
+
+    std::string cmd = "EXECUTE " + name;
+    if (!params.empty()) {
+        cmd += " USING ";
+        for (size_t i = 0; i < params.size(); ++i) {
+            if (i) cmd += ", ";
+            cmd += "@cm_p" + std::to_string(i + 1);
+        }
+    }
+    if (!queryRaw(cmd, out)) {
+        setError("EXECUTE 失败: " + last_error_);
+        return false;
+    }
+    return true;
+}
+
+bool MySqlConnection::executePrepared(const std::string& sql, const Params& params, long long* affected,
+                                      long long* insertId) {
+    Result r;
+    if (!queryPrepared(sql, params, r)) return false;
     if (affected) *affected = r.affectedRows;
     if (insertId) *insertId = r.insertId;
     return true;
@@ -697,6 +929,7 @@ ConnectionPool::~ConnectionPool() {
 std::shared_ptr<MySqlConnection> ConnectionPool::create() {
     auto c = std::make_shared<MySqlConnection>();
     if (!c->connect(cfg_)) return nullptr;
+    c->setPreparedCacheCapacity(prepared_cache_max_);
     total_.fetch_add(1);
     return c;
 }
@@ -772,6 +1005,26 @@ bool ConnectionPool::execute(const std::string& sql, long long* affected, long l
     auto c = borrow();
     if (!c) return false;
     bool ok = c->execute(sql, affected, insertId);
+    release(c);
+    return ok;
+}
+
+bool ConnectionPool::queryPrepared(const std::string& sql, const Params& params, Result& out) {
+    auto c = borrow();
+    if (!c) {
+        out = Result{};
+        return false;
+    }
+    bool ok = c->queryPrepared(sql, params, out);
+    release(c);
+    return ok;
+}
+
+bool ConnectionPool::executePrepared(const std::string& sql, const Params& params, long long* affected,
+                                     long long* insertId) {
+    auto c = borrow();
+    if (!c) return false;
+    bool ok = c->executePrepared(sql, params, affected, insertId);
     release(c);
     return ok;
 }

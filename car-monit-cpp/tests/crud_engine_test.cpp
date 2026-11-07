@@ -55,41 +55,65 @@ static void testSelectAndPk() {
     CK(!s.pkIsString());
     CK_EQ(s.selectColumns(),
           std::string("t.id, t.name, t.status, t.score, t.is_deleted, t.create_time"));
-    CK_EQ(pkLiteral(s, "12"), std::string("12"));
+    cm::db::Params p1;
+    CK_EQ(pkValue(s, "12", p1), std::string("?"));
+    CK_EQ(p1.size(), size_t(1));
+    CK(p1[0].kind == cm::db::ParamKind::Int);
+    CK_EQ(p1[0].text, std::string("12"));
     s.fields[0].fmt = Fmt::Str;  // 主键换成字符串（如 agent_pk）
     CK(s.pkIsString());
-    CK_EQ(pkLiteral(s, "A'B"), std::string("'A\\'B'"));  // 必须走 Db::lit 转义
+    cm::db::Params p2;
+    CK_EQ(pkValue(s, "A'B", p2), std::string("?"));
+    CK_EQ(p2.size(), size_t(1));
+    CK(p2[0].kind == cm::db::ParamKind::Text);
+    CK_EQ(p2[0].text, std::string("A'B"));  // 值原样交给驱动，不做手工转义
 }
 
 static void testBuildWhere() {
     const Spec s = demoSpec();
 
+    cm::db::Params p0;
     Json q = Json::object();
-    CK_EQ(buildWhere(s, q), std::string("WHERE 1=1"));
+    CK_EQ(buildWhere(s, q, p0), std::string("WHERE 1=1"));
+    CK(p0.empty());
 
     // 空串不进 WHERE（对应 XML 的 <if test="x != null and x != ''">）
     q["name"] = "";
-    CK_EQ(buildWhere(s, q), std::string("WHERE 1=1"));
+    cm::db::Params p1;
+    CK_EQ(buildWhere(s, q, p1), std::string("WHERE 1=1"));
+    CK(p1.empty());
 
     q["name"] = "abc";
-    CK_EQ(buildWhere(s, q), std::string("WHERE 1=1 and t.name like concat('%', 'abc', '%')"));
+    cm::db::Params p2;
+    CK_EQ(buildWhere(s, q, p2),
+          std::string("WHERE 1=1 and t.name like concat('%', ?, '%')"));
+    CK_EQ(p2.size(), size_t(1));
+    CK_EQ(p2[0].text, std::string("abc"));
 
     q["status"] = "0";
-    CK(buildWhere(s, q).find("and t.status = '0'") != std::string::npos);
+    cm::db::Params p3;
+    CK(buildWhere(s, q, p3).find("and t.status = ?") != std::string::npos);
+    CK_EQ(p3.size(), size_t(2));  // name + status，按 WHERE 文本顺序
 
     // EqNotNull：只判 null，空串仍然是条件
     Spec s2 = demoSpec();
     s2.fields[2].cond = Cond::EqNotNull;
     Json q2 = Json::object();
     q2["status"] = "";
-    CK_EQ(buildWhere(s2, q2), std::string("WHERE 1=1 and t.status = ''"));
+    cm::db::Params p4;
+    CK_EQ(buildWhere(s2, q2, p4), std::string("WHERE 1=1 and t.status = ?"));
+    CK_EQ(p4.size(), size_t(1));
+    CK_EQ(p4[0].text, std::string(""));
 
-    // 注入防护：所有值都必须经过转义
+    // 注入防护：值只进参数，不出现引号转义/注释片段
     Json q3 = Json::object();
     q3["status"] = std::string("x' or 1=1 --");
-    const std::string w = buildWhere(s, q3);
-    CK(w.find("or 1=1") == std::string::npos || w.find("\\'") != std::string::npos);
-    CK(w.find("'x\\' or 1=1 --'") != std::string::npos);
+    cm::db::Params p5;
+    const std::string w = buildWhere(s, q3, p5);
+    CK_EQ(w, std::string("WHERE 1=1 and t.status = ?"));
+    CK(w.find("or 1=1") == std::string::npos);
+    CK_EQ(p5.size(), size_t(1));
+    CK_EQ(p5[0].text, std::string("x' or 1=1 --"));
 
     // 日期区间：params.beginTime / endTime
     Json q4 = Json::object();
@@ -97,20 +121,27 @@ static void testBuildWhere() {
     params["beginTime"] = "2024-01-01";
     params["endTime"] = "2024-01-31";
     q4["params"] = params;
-    const std::string w4 = buildWhere(s, q4);
-    CK(w4.find("date_format(t.create_time, '%Y%m%d') >= date_format('2024-01-01', '%Y%m%d')") !=
+    cm::db::Params p6;
+    const std::string w4 = buildWhere(s, q4, p6);
+    CK(w4.find("date_format(t.create_time, '%Y%m%d') >= date_format(?, '%Y%m%d')") !=
        std::string::npos);
-    CK(w4.find("<= date_format('2024-01-31', '%Y%m%d')") != std::string::npos);
+    CK(w4.find("<= date_format(?, '%Y%m%d')") != std::string::npos);
+    CK_EQ(p6.size(), size_t(2));
+    CK_EQ(p6[0].text, std::string("2024-01-01"));
+    CK_EQ(p6[1].text, std::string("2024-01-31"));
 
     // Raw 风格
     Spec s5 = demoSpec();
     s5.rangeStyle = RangeStyle::Raw;
-    CK(buildWhere(s5, q4).find("and t.create_time >= '2024-01-01'") != std::string::npos);
+    cm::db::Params p7;
+    CK(buildWhere(s5, q4, p7).find("and t.create_time >= ?") != std::string::npos);
 
     // extraWhere 恒定附加（del_flag 之类）
     Spec s6 = demoSpec();
     s6.extraWhere = " and t.del_flag = '0'";
-    CK_EQ(buildWhere(s6, Json::object()), std::string("WHERE 1=1 and t.del_flag = '0'"));
+    cm::db::Params p8;
+    CK_EQ(buildWhere(s6, Json::object(), p8),
+          std::string("WHERE 1=1 and t.del_flag = '0'"));
 
     // FindInSetCol：XML 写 find_in_set(t.id, #{exceptIds})，左值另有其列
     Spec s7 = demoSpec();
@@ -119,12 +150,25 @@ static void testBuildWhere() {
     s7.fields[2].condColumn = "id";
     Json q7 = Json::object();
     q7["status"] = "1,2";
-    CK_EQ(buildWhere(s7, q7),
-          std::string("WHERE 1=1 and find_in_set(t.id, '1,2')"));
+    cm::db::Params p9;
+    CK_EQ(buildWhere(s7, q7, p9), std::string("WHERE 1=1 and find_in_set(t.id, ?)"));
+    CK_EQ(p9[0].text, std::string("1,2"));
     // 没给 condColumn 时退化成取本列
     Spec s8 = s7;
     s8.fields[2].condColumn = nullptr;
-    CK(buildWhere(s8, q7).find("find_in_set(t.except_ids, '1,2')") != std::string::npos);
+    cm::db::Params p10;
+    CK(buildWhere(s8, q7, p10).find("find_in_set(t.except_ids, ?)") != std::string::npos);
+
+    // 延迟绑定桥接：2 参版本生成的令牌按 SQL 文本顺序解析回参数
+    Json q11 = Json::object();
+    q11["name"] = "abc";
+    q11["status"] = "0";
+    auto resolved = cm::db::resolveBindings(buildWhere(s, q11));
+    CK(resolved.ok);
+    CK_EQ(resolved.sql, std::string("WHERE 1=1 and t.name like concat('%', ?, '%') and t.status = ?"));
+    CK_EQ(resolved.params.size(), size_t(2));
+    CK_EQ(resolved.params[0].text, std::string("abc"));
+    CK_EQ(resolved.params[1].text, std::string("0"));
 }
 
 static void testBuildInsert() {
@@ -132,19 +176,28 @@ static void testBuildInsert() {
     Json body = Json::object();
     body["name"] = "n1";
     body["score"] = 12.5;
-    const std::string sql = buildInsert(s, body);
-    CK_EQ(sql, std::string("INSERT INTO demo_table (name, score) VALUES ('n1', 12.5)"));
+    cm::db::Params p1;
+    const std::string sql = buildInsert(s, body, p1);
+    CK_EQ(sql, std::string("INSERT INTO demo_table (name, score) VALUES (?, ?)"));
+    CK_EQ(p1.size(), size_t(2));
+    CK_EQ(p1[0].text, std::string("n1"));
+    CK_EQ(p1[1].text, std::string("12.5"));
 
     // null 字段跳过（MyBatis-Plus 默认 NOT_NULL 策略）
     Json b2 = Json::object();
     b2["name"] = "n1";
     b2["status"] = nullptr;
-    CK_EQ(buildInsert(s, b2), std::string("INSERT INTO demo_table (name) VALUES ('n1')"));
+    cm::db::Params p2;
+    CK_EQ(buildInsert(s, b2, p2), std::string("INSERT INTO demo_table (name) VALUES (?)"));
+    CK_EQ(p2.size(), size_t(1));
 
     // 空串照写（Java 侧空串不是 null）
     Json b3 = Json::object();
     b3["status"] = "";
-    CK_EQ(buildInsert(s, b3), std::string("INSERT INTO demo_table (status) VALUES ('')"));
+    cm::db::Params p3;
+    CK_EQ(buildInsert(s, b3, p3), std::string("INSERT INTO demo_table (status) VALUES (?)"));
+    CK_EQ(p3[0].text, std::string(""));
+    CK(p3[0].kind == cm::db::ParamKind::Text);
 
     // 自增主键不写入
     Spec s4 = demoSpec();
@@ -152,7 +205,8 @@ static void testBuildInsert() {
     Json b4 = Json::object();
     b4["id"] = 7;
     b4["name"] = "x";
-    CK_EQ(buildInsert(s4, b4), std::string("INSERT INTO demo_table (name) VALUES ('x')"));
+    cm::db::Params p4;
+    CK_EQ(buildInsert(s4, b4, p4), std::string("INSERT INTO demo_table (name) VALUES (?)"));
 
     // 字符串主键 + IdType.INPUT：主键要写入
     Spec s5 = demoSpec();
@@ -162,8 +216,9 @@ static void testBuildInsert() {
     Json b5 = Json::object();
     b5["agentPk"] = "PK-1";
     b5["name"] = "x";
-    CK_EQ(buildInsert(s5, b5),
-          std::string("INSERT INTO demo_table (agent_pk, name) VALUES ('PK-1', 'x')"));
+    cm::db::Params p5;
+    CK_EQ(buildInsert(s5, b5, p5), std::string("INSERT INTO demo_table (agent_pk, name) VALUES (?, ?)"));
+    CK_EQ(p5[0].text, std::string("PK-1"));
 
     // IdType.ASSIGN_UUID（BasePlusEntity / BasePlusEntityNew / BaseUuidEntity 都是）：
     // MP 在客户端生成主键，请求没带 id 时也必须补，否则 INSERT 少了主键列直接报错
@@ -171,26 +226,34 @@ static void testBuildInsert() {
     s6.fields[0].fmt = Fmt::Str;
     Json b6 = Json::object();
     b6["name"] = "x";
-    const std::string sql6 = buildInsert(s6, b6);
-    CK(sql6.rfind("INSERT INTO demo_table (id, name) VALUES ('", 0) == 0);
-    CK(sql6.find("', 'x')") != std::string::npos);
-    const size_t head = sql6.find("('") + 2;
-    const size_t tail = sql6.find('\'', head);
-    CK_EQ(tail - head, static_cast<size_t>(32));   // 32 位无横线
-    for (size_t i = head; i < tail; ++i) {
-        const char c = sql6[i];
+    cm::db::Params p6;
+    const std::string sql6 = buildInsert(s6, b6, p6);
+    CK_EQ(sql6, std::string("INSERT INTO demo_table (id, name) VALUES (?, ?)"));
+    CK_EQ(p6.size(), size_t(2));
+    CK_EQ(p6[0].text.size(), size_t(32));   // 32 位无横线
+    for (char c : p6[0].text) {
         CK((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'));   // 小写十六进制
     }
     // 请求带了主键就照用户的值，不覆盖
     Json b7 = Json::object();
     b7["id"] = "FIXED";
     b7["name"] = "x";
-    CK_EQ(buildInsert(s6, b7), std::string("INSERT INTO demo_table (id, name) VALUES ('FIXED', 'x')"));
+    cm::db::Params p7;
+    CK_EQ(buildInsert(s6, b7, p7), std::string("INSERT INTO demo_table (id, name) VALUES (?, ?)"));
+    CK_EQ(p7[0].text, std::string("FIXED"));
 
     // 数值主键（自增以外的 INPUT）不生成 UUID
     Json b8 = Json::object();
     b8["name"] = "x";
-    CK_EQ(buildInsert(demoSpec(), b8), std::string("INSERT INTO demo_table (name) VALUES ('x')"));
+    cm::db::Params p8;
+    CK_EQ(buildInsert(demoSpec(), b8, p8), std::string("INSERT INTO demo_table (name) VALUES (?)"));
+
+    // 延迟绑定桥接：多值按 SQL 文本顺序解析
+    auto resolved = cm::db::resolveBindings(buildInsert(s, body));
+    CK(resolved.ok);
+    CK_EQ(resolved.params.size(), size_t(2));
+    CK_EQ(resolved.params[0].text, std::string("n1"));
+    CK_EQ(resolved.params[1].text, std::string("12.5"));
 }
 
 static void testBuildUpdate() {
@@ -198,25 +261,39 @@ static void testBuildUpdate() {
     Json body = Json::object();
     body["id"] = 3;
     body["name"] = "renamed";
-    CK_EQ(buildUpdate(s, body), std::string("UPDATE demo_table SET name = 'renamed' WHERE id = 3"));
+    cm::db::Params p1;
+    CK_EQ(buildUpdate(s, body, p1), std::string("UPDATE demo_table SET name = ? WHERE id = ?"));
+    CK_EQ(p1.size(), size_t(2));
+    CK_EQ(p1[0].text, std::string("renamed"));
+    CK_EQ(p1[1].text, std::string("3"));
 
     // 没有主键 -> 空串（调用方据此报“修改失败”，等价 Java 不执行 updateById）
     Json noPk = Json::object();
     noPk["name"] = "x";
-    CK_EQ(buildUpdate(s, noPk), std::string(""));
+    cm::db::Params p2;
+    CK_EQ(buildUpdate(s, noPk, p2), std::string(""));
 
     // null 不更新；主键自身不出现在 SET 里
     Json b2 = Json::object();
     b2["id"] = 3;
     b2["name"] = nullptr;
     b2["status"] = "1";
-    CK_EQ(buildUpdate(s, b2), std::string("UPDATE demo_table SET status = '1' WHERE id = 3"));
+    cm::db::Params p3;
+    CK_EQ(buildUpdate(s, b2, p3), std::string("UPDATE demo_table SET status = ? WHERE id = ?"));
+    CK_EQ(p3.size(), size_t(2));
 
     // 全 null：生成无副作用语句，保持 affected rows 语义（Java 侧不会执行更新）
     Json b3 = Json::object();
     b3["id"] = 3;
-    CK_EQ(buildUpdate(s, b3),
-          std::string("UPDATE demo_table SET id = id WHERE id = 3"));
+    cm::db::Params p4;
+    CK_EQ(buildUpdate(s, b3, p4), std::string("UPDATE demo_table SET id = id WHERE id = ?"));
+    CK_EQ(p4.size(), size_t(1));
+
+    // 延迟绑定桥接
+    auto resolved = cm::db::resolveBindings(buildUpdate(s, body));
+    CK(resolved.ok);
+    CK_EQ(resolved.params.size(), size_t(2));
+    CK_EQ(resolved.params[0].text, std::string("renamed"));
 }
 
 static void testRowToJson() {
@@ -295,6 +372,48 @@ static void testRouteShape() {
     if (add_route) CK(add_route->required_perms.empty());
 }
 
+static void testParamWireLiteral() {
+    using cm::db::Param;
+    using cm::db::ParamKind;
+
+    auto text = [](const std::string& s) {
+        Param p;
+        p.kind = ParamKind::Text;
+        p.text = s;
+        return p;
+    };
+    auto integer = [](const std::string& s) {
+        Param p;
+        p.kind = ParamKind::Int;
+        p.text = s;
+        return p;
+    };
+
+    CK_EQ(cm::db::paramWireLiteral(text("abc")), std::string("_utf8mb4 0x616263"));
+    CK_EQ(cm::db::paramWireLiteral(text("A'B\"C\\D")), std::string("_utf8mb4 0x41274222435c44"));
+    // UTF-8：中文“云” = e4 ba 91；emoji 🚗 = f0 9f 9a 97
+    CK_EQ(cm::db::paramWireLiteral(text("云")), std::string("_utf8mb4 0xe4ba91"));
+    CK_EQ(cm::db::paramWireLiteral(text("🚗")), std::string("_utf8mb4 0xf09f9a97"));
+    // LIKE 元字符与空串
+    CK_EQ(cm::db::paramWireLiteral(text("%_")), std::string("_utf8mb4 0x255f"));
+    CK_EQ(cm::db::paramWireLiteral(text("")), std::string("_utf8mb4''"));
+
+    Param nullp;
+    nullp.kind = ParamKind::Null;
+    CK_EQ(cm::db::paramWireLiteral(nullp), std::string("NULL"));
+
+    // 19 位雪花的文本不经过 double，原样保留
+    CK_EQ(cm::db::paramWireLiteral(integer("1234567890123456789")),
+          std::string("1234567890123456789"));
+    Param dp;
+    dp.kind = ParamKind::Double;
+    dp.text = "116.5";
+    CK_EQ(cm::db::paramWireLiteral(dp), std::string("116.5"));
+    // 非法数值伪装：按文本 hex 编码，不会变成 SQL 结构
+    CK_EQ(cm::db::paramWireLiteral(integer("1; drop table x")),
+          std::string("_utf8mb4 0x313b2064726f70207461626c652078"));
+}
+
 void run_crud_engine_tests() {
     testSelectAndPk();
     testBuildWhere();
@@ -302,4 +421,5 @@ void run_crud_engine_tests() {
     testBuildUpdate();
     testRowToJson();
     testRouteShape();
+    testParamWireLiteral();
 }

@@ -33,13 +33,13 @@ cm::domain::SysUpgradeInfo SysUpgradeInfoMapper::mapSysUpgradeInfo(const cm::db:
 
 std::string SysUpgradeInfoMapper::selectSysUpgradeInfoListSql(const cm::domain::SysUpgradeInfo& q) {
     std::string sql = std::string(kSelectVo) + " where t.del_flag = '0'";
-    if (q.id && !q.id->empty()) sql += " and t.id = " + cm::db::Db::lit(*q.id);
-    if (q.ver && !q.ver->empty()) sql += " and t.ver = " + cm::db::Db::lit(*q.ver);
-    if (q.info && !q.info->empty()) sql += " and t.info = " + cm::db::Db::lit(*q.info);
-    if (q.backCol1 && !q.backCol1->empty()) sql += " and t.back_col1 = " + cm::db::Db::lit(*q.backCol1);
-    if (q.epsId && !q.epsId->empty()) sql += " and t.eps_id = " + cm::db::Db::lit(*q.epsId);
-    if (q.tenantId) sql += " and t.tenant_id = " + cm::db::Db::lit(*q.tenantId);
-    if (q.createBy && !q.createBy->empty()) sql += " and t.create_by = " + cm::db::Db::lit(*q.createBy);
+    if (q.id && !q.id->empty()) sql += " and t.id = " + cm::db::bind(*q.id);
+    if (q.ver && !q.ver->empty()) sql += " and t.ver = " + cm::db::bind(*q.ver);
+    if (q.info && !q.info->empty()) sql += " and t.info = " + cm::db::bind(*q.info);
+    if (q.backCol1 && !q.backCol1->empty()) sql += " and t.back_col1 = " + cm::db::bind(*q.backCol1);
+    if (q.epsId && !q.epsId->empty()) sql += " and t.eps_id = " + cm::db::bind(*q.epsId);
+    if (q.tenantId) sql += " and t.tenant_id = " + cm::db::bind(*q.tenantId);
+    if (q.createBy && !q.createBy->empty()) sql += " and t.create_by = " + cm::db::bind(*q.createBy);
     sql += " order by t.create_time desc, t.id";
     return sql;
 }
@@ -64,7 +64,7 @@ std::vector<cm::domain::SysUpgradeInfo> SysUpgradeInfoMapper::selectSysUpgradeIn
 }
 
 std::optional<cm::domain::SysUpgradeInfo> SysUpgradeInfoMapper::selectSysUpgradeInfoById(const std::string& id) {
-    std::string sql = std::string(kSelectVo) + " where t.id = " + cm::db::Db::lit(id);
+    std::string sql = std::string(kSelectVo) + " where t.id = " + cm::db::bind(id);
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     return mapSysUpgradeInfo(res.rows.front());
@@ -84,17 +84,17 @@ long long SysUpgradeInfoMapper::insertSysUpgradeInfo(const cm::domain::SysUpgrad
         if (!cols.empty()) { cols += ", "; vals += ", "; }
         cols += c; vals += v;
     };
-    if (info.id && !info.id->empty()) add("id", cm::db::Db::lit(*info.id));
-    if (info.ver) add("ver", cm::db::Db::lit(*info.ver));
-    if (info.info) add("info", cm::db::Db::lit(*info.info));
-    if (info.backCol1) add("back_col1", cm::db::Db::lit(*info.backCol1));
-    if (info.epsId) add("eps_id", cm::db::Db::lit(*info.epsId));
-    if (info.delFlag) add("del_flag", cm::db::Db::lit(*info.delFlag));
-    if (info.createBy) add("create_by", cm::db::Db::lit(*info.createBy));
+    if (info.id && !info.id->empty()) add("id", cm::db::bind(*info.id));
+    if (info.ver) add("ver", cm::db::bind(*info.ver));
+    if (info.info) add("info", cm::db::bind(*info.info));
+    if (info.backCol1) add("back_col1", cm::db::bind(*info.backCol1));
+    if (info.epsId) add("eps_id", cm::db::bind(*info.epsId));
+    if (info.delFlag) add("del_flag", cm::db::bind(*info.delFlag));
+    if (info.createBy) add("create_by", cm::db::bind(*info.createBy));
     if (info.createTime) add("create_time", "from_unixtime(" + std::to_string(*info.createTime / 1000) + ")");
-    if (info.updateBy) add("update_by", cm::db::Db::lit(*info.updateBy));
+    if (info.updateBy) add("update_by", cm::db::bind(*info.updateBy));
     if (info.updateTime) add("update_time", "from_unixtime(" + std::to_string(*info.updateTime / 1000) + ")");
-    if (info.tenantId) add("tenant_id", cm::db::Db::lit(*info.tenantId));
+    if (info.tenantId) add("tenant_id", cm::db::bind(*info.tenantId));
     std::string sql = "insert into sys_upgrade_info (" + cols + ") values (" + vals + ")";
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
@@ -105,24 +105,24 @@ long long SysUpgradeInfoMapper::updateSysUpgradeInfo(const cm::domain::SysUpgrad
     std::string sql = "update sys_upgrade_info set";
     bool first = true;
     auto append = [&](const std::string& c) { if (!first) sql += ","; sql += " " + c; first = false; };
-    if (info.ver) append("ver = " + cm::db::Db::lit(*info.ver));
-    if (info.info) append("info = " + cm::db::Db::lit(*info.info));
-    if (info.backCol1) append("back_col1 = " + cm::db::Db::lit(*info.backCol1));
-    if (info.epsId) append("eps_id = " + cm::db::Db::lit(*info.epsId));
-    if (info.delFlag) append("del_flag = " + cm::db::Db::lit(*info.delFlag));
-    if (info.createBy) append("create_by = " + cm::db::Db::lit(*info.createBy));
+    if (info.ver) append("ver = " + cm::db::bind(*info.ver));
+    if (info.info) append("info = " + cm::db::bind(*info.info));
+    if (info.backCol1) append("back_col1 = " + cm::db::bind(*info.backCol1));
+    if (info.epsId) append("eps_id = " + cm::db::bind(*info.epsId));
+    if (info.delFlag) append("del_flag = " + cm::db::bind(*info.delFlag));
+    if (info.createBy) append("create_by = " + cm::db::bind(*info.createBy));
     if (info.createTime) append("create_time = from_unixtime(" + std::to_string(*info.createTime / 1000) + ")");
-    if (info.updateBy) append("update_by = " + cm::db::Db::lit(*info.updateBy));
+    if (info.updateBy) append("update_by = " + cm::db::bind(*info.updateBy));
     if (info.updateTime) append("update_time = from_unixtime(" + std::to_string(*info.updateTime / 1000) + ")");
-    if (info.tenantId) append("tenant_id = " + cm::db::Db::lit(*info.tenantId));
-    sql += " where id = " + cm::db::Db::lit(info.id.value_or(""));
+    if (info.tenantId) append("tenant_id = " + cm::db::bind(*info.tenantId));
+    sql += " where id = " + cm::db::bind(info.id.value_or(""));
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return affected;
 }
 
 long long SysUpgradeInfoMapper::deleteSysUpgradeInfoById(const std::string& id) {
-    std::string sql = "update sys_upgrade_info set del_flag = '1' where id = " + cm::db::Db::lit(id);
+    std::string sql = "update sys_upgrade_info set del_flag = '1' where id = " + cm::db::bind(id);
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return affected;
@@ -130,7 +130,7 @@ long long SysUpgradeInfoMapper::deleteSysUpgradeInfoById(const std::string& id) 
 
 long long SysUpgradeInfoMapper::deleteSysUpgradeInfoByIds(const std::vector<std::string>& ids) {
     if (ids.empty()) return 0;
-    std::string sql = "update sys_upgrade_info set del_flag = '1' where id in " + cm::db::Db::inList(ids);
+    std::string sql = "update sys_upgrade_info set del_flag = '1' where id in " + cm::db::bindIn(ids);
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return affected;

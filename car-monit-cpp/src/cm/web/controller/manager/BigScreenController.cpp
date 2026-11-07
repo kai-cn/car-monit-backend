@@ -53,7 +53,7 @@ std::string sectionIn(const std::string& raw, const char* column) {
     std::string in;
     for (const auto& v : items) {
         if (!in.empty()) in += ", ";
-        in += Db::lit(v);
+        in += cm::db::bind(v);
     }
     return std::string(" and ") + column + " in (" + in + ")";
 }
@@ -272,9 +272,9 @@ void registerBigScreenController(Router& r) {
         const std::string t2 = param(ctx, "applyTime2");
         auto window = [&](std::string sql) {
             if (!t1.empty())
-                sql += " and a.create_time >= STR_TO_DATE(" + Db::lit(t1) + ",'%Y-%m-%d')";
+                sql += " and a.create_time >= STR_TO_DATE(" + cm::db::bind(t1) + ",'%Y-%m-%d')";
             if (!t2.empty())
-                sql += " and a.create_time < date_add(STR_TO_DATE(" + Db::lit(t2) +
+                sql += " and a.create_time < date_add(STR_TO_DATE(" + cm::db::bind(t2) +
                        ", '%Y-%m-%d'), interval 1 day)";
             return sql;
         };
@@ -428,14 +428,14 @@ void registerBigScreenController(Router& r) {
             " where a.del_flag = '0'";
         if (queryDateType == "suo") sql += " and a.status = '0'";
         if (!startDate.empty())
-            sql += " and a.create_time >= STR_TO_DATE(" + Db::lit(startDate) + ",'%Y-%m-%d')"
-                   " and a.create_time < LAST_DAY(" + Db::lit(startDate) + ")";
+            sql += " and a.create_time >= STR_TO_DATE(" + cm::db::bind(startDate) + ",'%Y-%m-%d')"
+                   " and a.create_time < LAST_DAY(" + cm::db::bind(startDate) + ")";
         sql += queryDateType == "suo" ? " and d.tree_leavel = 2"
                                       : (queryDateType == "zhan" ? " and d.tree_leavel = 3" : "");
         if (!applyTime1.empty())
-            sql += " and a.create_time >= STR_TO_DATE(" + Db::lit(applyTime1) + ",'%Y-%m-%d')";
+            sql += " and a.create_time >= STR_TO_DATE(" + cm::db::bind(applyTime1) + ",'%Y-%m-%d')";
         if (!applyTime2.empty())
-            sql += " and a.create_time < date_add(STR_TO_DATE(" + Db::lit(applyTime2) +
+            sql += " and a.create_time < date_add(STR_TO_DATE(" + cm::db::bind(applyTime2) +
                    ", '%Y-%m-%d'), interval 1 day)";
         sql += " group by a.org_id order by amount desc";
 
@@ -462,12 +462,12 @@ void registerBigScreenController(Router& r) {
         std::string sql = "select a.escaped_type escapedType, sum(ifnull(a.dif_amount, 0)) escapedAmount,"
                           " count(distinct a.car_no) number from car_except_record a where a.del_flag = '0'";
         if (!applyTime1.empty())
-            sql += " and a.create_time >= STR_TO_DATE(" + Db::lit(applyTime1) + ", '%Y-%m-%d')";
+            sql += " and a.create_time >= STR_TO_DATE(" + cm::db::bind(applyTime1) + ", '%Y-%m-%d')";
         if (!applyTime2.empty())
-            sql += " and a.create_time < date_add(STR_TO_DATE(" + Db::lit(applyTime2) +
+            sql += " and a.create_time < date_add(STR_TO_DATE(" + cm::db::bind(applyTime2) +
                    ", '%Y-%m-%d'), interval 1 day)";
-        if (!escapedType.empty()) sql += " and a.escaped_type = " + Db::lit(escapedType);
-        if (!orgId.empty()) sql += " and a.eps_id = " + Db::lit(orgId);
+        if (!escapedType.empty()) sql += " and a.escaped_type = " + cm::db::bind(escapedType);
+        if (!orgId.empty()) sql += " and a.eps_id = " + cm::db::bind(orgId);
         sql += " group by a.escaped_type";
 
         Json arr = Json::array();
@@ -501,7 +501,7 @@ void registerBigScreenController(Router& r) {
                            ", c.escaped_type escapedType, c.escaped_amount escapedAmount"
                            " FROM car_warning_info t"
                            " inner join car_info c on c.del_flag = '0' and t.car_id = c.id and c.status = '1'"
-                           " WHERE t.del_flag = '0' and t.back_col1 = " + Db::lit(today) +
+                           " WHERE t.del_flag = '0' and t.back_col1 = " + cm::db::bind(today) +
                            " order by t.gantry_time desc, t.id");
             for (const auto& row : res.rows) {
                 Json j = cm::web::crud::rowToJson(sp, row);
@@ -630,14 +630,14 @@ void registerBigScreenController(Router& r) {
             const std::string id = cm::jstr(row, "id", std::string());
             // ⚠️ Java 的 find_in_set 参数顺序是 (列, 传入值)——与直觉相反，照抄不改；
             //    且返回类型是 String，多行会抛 TooManyResultsException，这里取第一行。
-            auto res = run("select org_id from car_confim_free where car_id = " + Db::lit(carId) +
-                           " and find_in_set(except_ids, " + Db::lit(id) + ") > 0");
+            auto res = run("select org_id from car_confim_free where car_id = " + cm::db::bind(carId) +
+                           " and find_in_set(except_ids, " + cm::db::bind(id) + ") > 0");
             if (!res.rows.empty() && res.rows[0].get("org_id")) {
                 row["orgId"] = Json(*res.rows[0].get("org_id"));
             }
             // MyBatis-Plus 的 lambdaQuery().count()：@TableLogic 会自动带上 del_flag = '0'
             const long long cnt = Db::instance().count(
-                "select count(1) from car_aduit_free where car_id = " + Db::lit(carId) + " and del_flag = '0'");
+                "select count(1) from car_aduit_free where car_id = " + cm::db::bind(carId) + " and del_flag = '0'");
             if (cnt > 0) row["supplementaryStatus"] = Json("1");
         }
 

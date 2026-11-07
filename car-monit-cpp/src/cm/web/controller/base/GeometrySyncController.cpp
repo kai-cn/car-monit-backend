@@ -195,8 +195,8 @@ void runSyncTask(GeoRow g) {
                     const std::string paths = deepToString(pts);
                     Db::instance().execute(
                         "insert into geometry (lxbh, lxfx, qdzh, zdzh, paths) values (" +
-                        Db::lit(g.lxbh) + ", " + Db::lit(g.lxfx) + ", " + std::to_string(qdzh) +
-                        ", " + std::to_string(qdzh + 1) + ", " + Db::lit(paths) + ")");
+                        cm::db::bind(g.lxbh) + ", " + cm::db::bind(g.lxfx) + ", " + std::to_string(qdzh) +
+                        ", " + std::to_string(qdzh + 1) + ", " + cm::db::bind(paths) + ")");
                 }
                 pts.clear();
                 qdzh++;

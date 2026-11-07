@@ -52,30 +52,30 @@ std::vector<cm::domain::SysDept> SysDeptMapper::selectDeptList(const cm::domain:
                       " d.bank_name, d.account, d.social_code, d.postal_code, d.address, d.phone, d.email, d.status, d.del_flag,"
                       " d.create_by, d.create_time, d.is_zbzg, d.is_uint, d.tree_leavel, d.sub_code, d.dept_jc, d.tenant_id"
                       " from sys_dept d where d.del_flag = '0'";
-    if (dept.parentId) sql += " AND d.parent_id = " + cm::db::Db::lit(*dept.parentId);
-    if (dept.deptName && !dept.deptName->empty()) sql += " AND d.dept_name like " + cm::db::Db::lit("%" + *dept.deptName + "%");
-    if (dept.status && !dept.status->empty()) sql += " AND d.status = " + cm::db::Db::lit(*dept.status);
-    if (dept.deptId) sql += " AND d.dept_id = " + cm::db::Db::lit(*dept.deptId);
-    if (dept.isZbzg && !dept.isZbzg->empty()) sql += " and d.is_zbzg = " + cm::db::Db::lit(*dept.isZbzg);
-    if (dept.isUint && !dept.isUint->empty()) sql += " and d.is_uint = " + cm::db::Db::lit(*dept.isUint);
-    if (dept.treeLeavel) sql += " and d.tree_leavel = " + cm::db::Db::lit(*dept.treeLeavel);
-    if (dept.subCode && !dept.subCode->empty()) sql += " and d.sub_code = " + cm::db::Db::lit(*dept.subCode);
-    if (dept.deptJc && !dept.deptJc->empty()) sql += " and d.dept_jc = " + cm::db::Db::lit(*dept.deptJc);
-    if (dept.tenantId) sql += " and d.tenant_id = " + cm::db::Db::lit(*dept.tenantId);
+    if (dept.parentId) sql += " AND d.parent_id = " + cm::db::bind(*dept.parentId);
+    if (dept.deptName && !dept.deptName->empty()) sql += " AND d.dept_name like " + cm::db::bind("%" + *dept.deptName + "%");
+    if (dept.status && !dept.status->empty()) sql += " AND d.status = " + cm::db::bind(*dept.status);
+    if (dept.deptId) sql += " AND d.dept_id = " + cm::db::bind(*dept.deptId);
+    if (dept.isZbzg && !dept.isZbzg->empty()) sql += " and d.is_zbzg = " + cm::db::bind(*dept.isZbzg);
+    if (dept.isUint && !dept.isUint->empty()) sql += " and d.is_uint = " + cm::db::bind(*dept.isUint);
+    if (dept.treeLeavel) sql += " and d.tree_leavel = " + cm::db::bind(*dept.treeLeavel);
+    if (dept.subCode && !dept.subCode->empty()) sql += " and d.sub_code = " + cm::db::bind(*dept.subCode);
+    if (dept.deptJc && !dept.deptJc->empty()) sql += " and d.dept_jc = " + cm::db::bind(*dept.deptJc);
+    if (dept.tenantId) sql += " and d.tenant_id = " + cm::db::bind(*dept.tenantId);
     // SysDeptMapper.xml: <if test="flag != null and flag == 'sjzbDept'"> —— 只对精确值
     // "sjzbDept" 生效；控制器里 sjzbDeptCg 分支同样只设置 dataId，条件不成立，
     // 这是 Java 原样行为，不做“顺手修正”
     if (dept.flag && *dept.flag == "sjzbDept") {
         sql += " and exists ( select 1 from sys_dept tb,sys_dept tb1"
                " where tb.del_flag = '0' and  tb.del_flag = '0' and tb1.dept_id = tb.parent_id"
-               " and tb.dept_id = " + cm::db::Db::lit(dept.dataId.value_or("")) +
+               " and tb.dept_id = " + cm::db::bind(dept.dataId.value_or("")) +
                "  and tb1.dept_id = d.tenant_id )";
     }
-    if (dept.leaderId) sql += " and d.leader_id = " + cm::db::Db::lit(*dept.leaderId);
-    if (dept.leader && !dept.leader->empty()) sql += " and d.leader = " + cm::db::Db::lit(*dept.leader);
-    if (dept.fgldId) sql += " and d.fgld_id = " + cm::db::Db::lit(*dept.fgldId);
-    if (dept.fgldName && !dept.fgldName->empty()) sql += " and d.fgld_name like " + cm::db::Db::lit("%" + *dept.fgldName + "%");
-    if (dept.deptSubCode && !dept.deptSubCode->empty()) sql += " and d.sub_code like " + cm::db::Db::lit(*dept.deptSubCode + "%");
+    if (dept.leaderId) sql += " and d.leader_id = " + cm::db::bind(*dept.leaderId);
+    if (dept.leader && !dept.leader->empty()) sql += " and d.leader = " + cm::db::bind(*dept.leader);
+    if (dept.fgldId) sql += " and d.fgld_id = " + cm::db::bind(*dept.fgldId);
+    if (dept.fgldName && !dept.fgldName->empty()) sql += " and d.fgld_name like " + cm::db::bind("%" + *dept.fgldName + "%");
+    if (dept.deptSubCode && !dept.deptSubCode->empty()) sql += " and d.sub_code like " + cm::db::bind(*dept.deptSubCode + "%");
     sql += " order by d.parent_id, d.order_num";
     cm::db::Result res;
     std::vector<cm::domain::SysDept> depts;
@@ -88,16 +88,16 @@ std::optional<cm::domain::SysDept> SysDeptMapper::selectDeptById(long long deptI
     std::string sql = "select d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader_id, d.leader, d.fgld_id, d.fgld_name,"
                       " d.bank_name, d.account, d.social_code, d.postal_code, d.address, d.phone, d.email, d.status, d.del_flag,"
                       " d.create_by, d.create_time, d.is_zbzg, d.is_uint, d.tree_leavel, d.sub_code, d.dept_jc, d.tenant_id"
-                      " from sys_dept d where dept_id = " + cm::db::Db::lit(deptId);
+                      " from sys_dept d where dept_id = " + cm::db::bind(deptId);
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     return mapDept(res.rows[0]);
 }
 
 std::vector<long long> SysDeptMapper::selectDeptListByRoleId(long long roleId, bool deptCheckStrictly) {
-    std::string sql = "select d.dept_id from sys_dept d left join sys_role_dept rd on d.dept_id = rd.dept_id where rd.role_id = " + cm::db::Db::lit(roleId);
+    std::string sql = "select d.dept_id from sys_dept d left join sys_role_dept rd on d.dept_id = rd.dept_id where rd.role_id = " + cm::db::bind(roleId);
     if (deptCheckStrictly) {
-        sql += " and d.dept_id not in (select d.parent_id from sys_dept d inner join sys_role_dept rd on d.dept_id = rd.dept_id and rd.role_id = " + cm::db::Db::lit(roleId) + ")";
+        sql += " and d.dept_id not in (select d.parent_id from sys_dept d inner join sys_role_dept rd on d.dept_id = rd.dept_id and rd.role_id = " + cm::db::bind(roleId) + ")";
     }
     sql += " order by d.parent_id, d.order_num";
     cm::db::Result res;
@@ -114,54 +114,54 @@ std::optional<cm::domain::SysDept> SysDeptMapper::checkDeptNameUnique(const std:
     std::string sql = "select d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader_id, d.leader, d.fgld_id, d.fgld_name,"
                       " d.bank_name, d.account, d.social_code, d.postal_code, d.address, d.phone, d.email, d.status, d.del_flag,"
                       " d.create_by, d.create_time, d.is_zbzg, d.is_uint, d.tree_leavel, d.sub_code, d.dept_jc, d.tenant_id"
-                      " from sys_dept d where dept_name = " + cm::db::Db::lit(deptName) + " and parent_id = " + cm::db::Db::lit(parentId) + " limit 1";
+                      " from sys_dept d where dept_name = " + cm::db::bind(deptName) + " and parent_id = " + cm::db::bind(parentId) + " limit 1";
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     return mapDept(res.rows[0]);
 }
 
 int SysDeptMapper::hasChildByDeptId(long long deptId) {
-    std::string sql = "select count(1) from sys_dept where del_flag = '0' and parent_id = " + cm::db::Db::lit(deptId) + " limit 1";
+    std::string sql = "select count(1) from sys_dept where del_flag = '0' and parent_id = " + cm::db::bind(deptId) + " limit 1";
     return static_cast<int>(cm::db::Db::instance().count(sql));
 }
 
 int SysDeptMapper::checkDeptExistUser(long long deptId) {
-    std::string sql = "select count(1) from sys_user where dept_id = " + cm::db::Db::lit(deptId) + " and del_flag = '0'";
+    std::string sql = "select count(1) from sys_user where dept_id = " + cm::db::bind(deptId) + " and del_flag = '0'";
     return static_cast<int>(cm::db::Db::instance().count(sql));
 }
 
 int SysDeptMapper::selectNormalChildrenDeptById(long long deptId) {
-    std::string sql = "select count(*) from sys_dept where status = 0 and del_flag = '0' and find_in_set(" + cm::db::Db::lit(deptId) + ", ancestors)";
+    std::string sql = "select count(*) from sys_dept where status = 0 and del_flag = '0' and find_in_set(" + cm::db::bind(deptId) + ", ancestors)";
     return static_cast<int>(cm::db::Db::instance().count(sql));
 }
 
 bool SysDeptMapper::insertDept(cm::domain::SysDept& dept) {
     std::string sql = "insert into sys_dept(";
     std::string vals;
-    if (dept.deptId && *dept.deptId != 0) { sql += "dept_id,"; vals += cm::db::Db::lit(*dept.deptId) + ","; }
-    if (dept.parentId && *dept.parentId != 0) { sql += "parent_id,"; vals += cm::db::Db::lit(*dept.parentId) + ","; }
-    if (dept.deptName && !dept.deptName->empty()) { sql += "dept_name,"; vals += cm::db::Db::lit(*dept.deptName) + ","; }
-    if (dept.ancestors && !dept.ancestors->empty()) { sql += "ancestors,"; vals += cm::db::Db::lit(*dept.ancestors) + ","; }
-    if (dept.orderNum && !dept.orderNum->empty()) { sql += "order_num,"; vals += cm::db::Db::lit(*dept.orderNum) + ","; }
-    if (dept.leaderId) { sql += "leader_id,"; vals += cm::db::Db::lit(*dept.leaderId) + ","; }
-    if (dept.leader) { sql += "leader,"; vals += cm::db::Db::lit(*dept.leader) + ","; }
-    if (dept.fgldId) { sql += "fgld_id,"; vals += cm::db::Db::lit(*dept.fgldId) + ","; }
-    if (dept.fgldName) { sql += "fgld_name,"; vals += cm::db::Db::lit(*dept.fgldName) + ","; }
-    if (dept.bankName) { sql += "bank_name,"; vals += cm::db::Db::lit(*dept.bankName) + ","; }
-    if (dept.account) { sql += "account,"; vals += cm::db::Db::lit(*dept.account) + ","; }
-    if (dept.socialCode) { sql += "social_code,"; vals += cm::db::Db::lit(*dept.socialCode) + ","; }
-    if (dept.postalCode) { sql += "postal_code,"; vals += cm::db::Db::lit(*dept.postalCode) + ","; }
-    if (dept.address) { sql += "address,"; vals += cm::db::Db::lit(*dept.address) + ","; }
-    if (dept.phone && !dept.phone->empty()) { sql += "phone,"; vals += cm::db::Db::lit(*dept.phone) + ","; }
-    if (dept.email && !dept.email->empty()) { sql += "email,"; vals += cm::db::Db::lit(*dept.email) + ","; }
-    if (dept.status) { sql += "status,"; vals += cm::db::Db::lit(*dept.status) + ","; }
-    if (dept.createBy && !dept.createBy->empty()) { sql += "create_by,"; vals += cm::db::Db::lit(*dept.createBy) + ","; }
-    if (dept.isZbzg) { sql += "is_zbzg,"; vals += cm::db::Db::lit(*dept.isZbzg) + ","; }
-    if (dept.isUint) { sql += "is_uint,"; vals += cm::db::Db::lit(*dept.isUint) + ","; }
-    if (dept.treeLeavel) { sql += "tree_leavel,"; vals += cm::db::Db::lit(*dept.treeLeavel) + ","; }
-    if (dept.subCode) { sql += "sub_code,"; vals += cm::db::Db::lit(*dept.subCode) + ","; }
-    if (dept.deptJc) { sql += "dept_jc,"; vals += cm::db::Db::lit(*dept.deptJc) + ","; }
-    if (dept.tenantId) { sql += "tenant_id,"; vals += cm::db::Db::lit(*dept.tenantId) + ","; }
+    if (dept.deptId && *dept.deptId != 0) { sql += "dept_id,"; vals += cm::db::bind(*dept.deptId) + ","; }
+    if (dept.parentId && *dept.parentId != 0) { sql += "parent_id,"; vals += cm::db::bind(*dept.parentId) + ","; }
+    if (dept.deptName && !dept.deptName->empty()) { sql += "dept_name,"; vals += cm::db::bind(*dept.deptName) + ","; }
+    if (dept.ancestors && !dept.ancestors->empty()) { sql += "ancestors,"; vals += cm::db::bind(*dept.ancestors) + ","; }
+    if (dept.orderNum && !dept.orderNum->empty()) { sql += "order_num,"; vals += cm::db::bind(*dept.orderNum) + ","; }
+    if (dept.leaderId) { sql += "leader_id,"; vals += cm::db::bind(*dept.leaderId) + ","; }
+    if (dept.leader) { sql += "leader,"; vals += cm::db::bind(*dept.leader) + ","; }
+    if (dept.fgldId) { sql += "fgld_id,"; vals += cm::db::bind(*dept.fgldId) + ","; }
+    if (dept.fgldName) { sql += "fgld_name,"; vals += cm::db::bind(*dept.fgldName) + ","; }
+    if (dept.bankName) { sql += "bank_name,"; vals += cm::db::bind(*dept.bankName) + ","; }
+    if (dept.account) { sql += "account,"; vals += cm::db::bind(*dept.account) + ","; }
+    if (dept.socialCode) { sql += "social_code,"; vals += cm::db::bind(*dept.socialCode) + ","; }
+    if (dept.postalCode) { sql += "postal_code,"; vals += cm::db::bind(*dept.postalCode) + ","; }
+    if (dept.address) { sql += "address,"; vals += cm::db::bind(*dept.address) + ","; }
+    if (dept.phone && !dept.phone->empty()) { sql += "phone,"; vals += cm::db::bind(*dept.phone) + ","; }
+    if (dept.email && !dept.email->empty()) { sql += "email,"; vals += cm::db::bind(*dept.email) + ","; }
+    if (dept.status) { sql += "status,"; vals += cm::db::bind(*dept.status) + ","; }
+    if (dept.createBy && !dept.createBy->empty()) { sql += "create_by,"; vals += cm::db::bind(*dept.createBy) + ","; }
+    if (dept.isZbzg) { sql += "is_zbzg,"; vals += cm::db::bind(*dept.isZbzg) + ","; }
+    if (dept.isUint) { sql += "is_uint,"; vals += cm::db::bind(*dept.isUint) + ","; }
+    if (dept.treeLeavel) { sql += "tree_leavel,"; vals += cm::db::bind(*dept.treeLeavel) + ","; }
+    if (dept.subCode) { sql += "sub_code,"; vals += cm::db::bind(*dept.subCode) + ","; }
+    if (dept.deptJc) { sql += "dept_jc,"; vals += cm::db::bind(*dept.deptJc) + ","; }
+    if (dept.tenantId) { sql += "tenant_id,"; vals += cm::db::bind(*dept.tenantId) + ","; }
     sql += "create_time) values (" + vals + "sysdate())";
     long long insertId = 0;
     bool ok = cm::db::Db::instance().execute(sql, nullptr, &insertId);
@@ -171,35 +171,35 @@ bool SysDeptMapper::insertDept(cm::domain::SysDept& dept) {
 
 bool SysDeptMapper::updateDept(const cm::domain::SysDept& dept) {
     std::string sql = "update sys_dept set ";
-    if (dept.parentId && *dept.parentId != 0) sql += "parent_id = " + cm::db::Db::lit(*dept.parentId) + ",";
-    if (dept.deptName && !dept.deptName->empty()) sql += "dept_name = " + cm::db::Db::lit(*dept.deptName) + ",";
-    if (dept.ancestors && !dept.ancestors->empty()) sql += "ancestors = " + cm::db::Db::lit(*dept.ancestors) + ",";
-    if (dept.orderNum && !dept.orderNum->empty()) sql += "order_num = " + cm::db::Db::lit(*dept.orderNum) + ",";
-    if (dept.leaderId) sql += "leader_id = " + cm::db::Db::lit(*dept.leaderId) + ",";
-    if (dept.leader) sql += "leader = " + cm::db::Db::lit(*dept.leader) + ",";
-    if (dept.fgldId) sql += "fgld_id = " + cm::db::Db::lit(*dept.fgldId) + ",";
-    if (dept.fgldName) sql += "fgld_name = " + cm::db::Db::lit(*dept.fgldName) + ",";
-    if (dept.bankName) sql += "bank_name = " + cm::db::Db::lit(*dept.bankName) + ",";
-    if (dept.account) sql += "account = " + cm::db::Db::lit(*dept.account) + ",";
-    if (dept.socialCode) sql += "social_code = " + cm::db::Db::lit(*dept.socialCode) + ",";
-    if (dept.postalCode) sql += "postal_code = " + cm::db::Db::lit(*dept.postalCode) + ",";
-    if (dept.address) sql += "address = " + cm::db::Db::lit(*dept.address) + ",";
-    if (dept.phone) sql += "phone = " + cm::db::Db::lit(*dept.phone) + ",";
-    if (dept.email) sql += "email = " + cm::db::Db::lit(*dept.email) + ",";
-    if (dept.status && !dept.status->empty()) sql += "status = " + cm::db::Db::lit(*dept.status) + ",";
-    if (dept.updateBy && !dept.updateBy->empty()) sql += "update_by = " + cm::db::Db::lit(*dept.updateBy) + ",";
-    if (dept.isZbzg) sql += "is_zbzg = " + cm::db::Db::lit(*dept.isZbzg) + ",";
-    if (dept.isUint) sql += "is_uint = " + cm::db::Db::lit(*dept.isUint) + ",";
-    if (dept.treeLeavel) sql += "tree_leavel = " + cm::db::Db::lit(*dept.treeLeavel) + ",";
-    if (dept.subCode) sql += "sub_code = " + cm::db::Db::lit(*dept.subCode) + ",";
-    if (dept.deptJc) sql += "dept_jc = " + cm::db::Db::lit(*dept.deptJc) + ",";
-    if (dept.tenantId) sql += "tenant_id = " + cm::db::Db::lit(*dept.tenantId) + ",";
-    sql += "update_time = sysdate() where dept_id = " + cm::db::Db::lit(dept.deptId.value_or(0));
+    if (dept.parentId && *dept.parentId != 0) sql += "parent_id = " + cm::db::bind(*dept.parentId) + ",";
+    if (dept.deptName && !dept.deptName->empty()) sql += "dept_name = " + cm::db::bind(*dept.deptName) + ",";
+    if (dept.ancestors && !dept.ancestors->empty()) sql += "ancestors = " + cm::db::bind(*dept.ancestors) + ",";
+    if (dept.orderNum && !dept.orderNum->empty()) sql += "order_num = " + cm::db::bind(*dept.orderNum) + ",";
+    if (dept.leaderId) sql += "leader_id = " + cm::db::bind(*dept.leaderId) + ",";
+    if (dept.leader) sql += "leader = " + cm::db::bind(*dept.leader) + ",";
+    if (dept.fgldId) sql += "fgld_id = " + cm::db::bind(*dept.fgldId) + ",";
+    if (dept.fgldName) sql += "fgld_name = " + cm::db::bind(*dept.fgldName) + ",";
+    if (dept.bankName) sql += "bank_name = " + cm::db::bind(*dept.bankName) + ",";
+    if (dept.account) sql += "account = " + cm::db::bind(*dept.account) + ",";
+    if (dept.socialCode) sql += "social_code = " + cm::db::bind(*dept.socialCode) + ",";
+    if (dept.postalCode) sql += "postal_code = " + cm::db::bind(*dept.postalCode) + ",";
+    if (dept.address) sql += "address = " + cm::db::bind(*dept.address) + ",";
+    if (dept.phone) sql += "phone = " + cm::db::bind(*dept.phone) + ",";
+    if (dept.email) sql += "email = " + cm::db::bind(*dept.email) + ",";
+    if (dept.status && !dept.status->empty()) sql += "status = " + cm::db::bind(*dept.status) + ",";
+    if (dept.updateBy && !dept.updateBy->empty()) sql += "update_by = " + cm::db::bind(*dept.updateBy) + ",";
+    if (dept.isZbzg) sql += "is_zbzg = " + cm::db::bind(*dept.isZbzg) + ",";
+    if (dept.isUint) sql += "is_uint = " + cm::db::bind(*dept.isUint) + ",";
+    if (dept.treeLeavel) sql += "tree_leavel = " + cm::db::bind(*dept.treeLeavel) + ",";
+    if (dept.subCode) sql += "sub_code = " + cm::db::bind(*dept.subCode) + ",";
+    if (dept.deptJc) sql += "dept_jc = " + cm::db::bind(*dept.deptJc) + ",";
+    if (dept.tenantId) sql += "tenant_id = " + cm::db::bind(*dept.tenantId) + ",";
+    sql += "update_time = sysdate() where dept_id = " + cm::db::bind(dept.deptId.value_or(0));
     return cm::db::Db::instance().execute(sql);
 }
 
 bool SysDeptMapper::deleteDeptById(long long deptId) {
-    std::string sql = "update sys_dept set del_flag = '2' where dept_id = " + cm::db::Db::lit(deptId);
+    std::string sql = "update sys_dept set del_flag = '2' where dept_id = " + cm::db::bind(deptId);
     return cm::db::Db::instance().execute(sql);
 }
 
@@ -207,7 +207,7 @@ std::optional<cm::domain::SysDept> SysDeptMapper::selectTenantId(const cm::domai
     std::string sql = "select d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader_id, d.leader, d.fgld_id, d.fgld_name,"
                       " d.bank_name, d.account, d.social_code, d.postal_code, d.address, d.phone, d.email, d.status, d.del_flag,"
                       " d.create_by, d.create_time, d.is_zbzg, d.is_uint, d.tree_leavel, d.sub_code, d.dept_jc, d.tenant_id"
-                      " from sys_dept d where d.del_flag = '0' and " + cm::db::Db::lit(dept.subCode.value_or("")) + " like concat(d.sub_code, '%')"
+                      " from sys_dept d where d.del_flag = '0' and " + cm::db::bind(dept.subCode.value_or("")) + " like concat(d.sub_code, '%')"
                       " and d.is_uint = '1' order by d.tree_leavel desc limit 1";
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;

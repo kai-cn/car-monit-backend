@@ -111,13 +111,13 @@ long long saveFileRow(const std::string& key, const std::string& original, long 
     // insertSysFile 的列集合（<if test="X != null">）：buss_type / tenant_id 这些上传路径从不赋值
     std::string sql = "insert into sys_file (id, file_name, bucket_name, original, type, file_size,"
                       " create_user, create_time, update_user, update_time, del_flag";
-    std::string vals = std::to_string(id) + ", " + Db::lit(key) + ", "
-                       + Db::lit(cm::config::AppConfig::instance().ossBucketName) + ", "
-                       + Db::lit(original) + ", " + Db::lit(e) + ", " + std::to_string(fileSize) + ", "
-                       + Db::lit(uid) + ", sysdate(), " + Db::lit(uid) + ", sysdate(), '0'";
+    std::string vals = std::to_string(id) + ", " + cm::db::bind(key) + ", "
+                       + cm::db::bind(cm::config::AppConfig::instance().ossBucketName) + ", "
+                       + cm::db::bind(original) + ", " + cm::db::bind(e) + ", " + std::to_string(fileSize) + ", "
+                       + cm::db::bind(uid) + ", sysdate(), " + cm::db::bind(uid) + ", sysdate(), '0'";
     if (!bussName.empty()) {
         sql += ", buss_name";
-        vals += ", " + Db::lit(bussName);
+        vals += ", " + cm::db::bind(bussName);
     }
     sql += ") values (" + vals + ")";
     Db::instance().execute(sql);
@@ -387,10 +387,10 @@ void registerSysFileUploadController(Router& r) {
                 std::string("insert into sys_file (id, file_name, bucket_name, original, type,"
                             " file_size, create_user, create_time, update_user, update_time,"
                             " del_flag) values (") +
-                std::to_string(reqId) + ", " + Db::lit(key) + ", " + Db::lit(bucket) + ", " +
-                Db::lit(original) + ", " + Db::lit(subtype) + ", " +
-                std::to_string(bytes.size()) + ", " + Db::lit(uid) + ", sysdate(), " +
-                Db::lit(uid) + ", sysdate(), '0')";
+                std::to_string(reqId) + ", " + cm::db::bind(key) + ", " + cm::db::bind(bucket) + ", " +
+                cm::db::bind(original) + ", " + cm::db::bind(subtype) + ", " +
+                std::to_string(bytes.size()) + ", " + cm::db::bind(uid) + ", sysdate(), " +
+                cm::db::bind(uid) + ", sysdate(), '0')";
             if (!Db::instance().execute(ins))
                 return BaseController::ok(AjaxResult::error("插入 sys_file 失败"));
             auto put = cm::net::s3::putObject(cfg, bucket, key, bytes);

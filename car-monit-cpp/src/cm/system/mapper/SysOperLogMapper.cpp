@@ -17,30 +17,30 @@ std::vector<cm::domain::SysOperLog> SysOperLogMapper::selectOperLogList(const cm
     std::string sql = kSelectOperLogVo;
     std::string where;
     if (operLog.title && !operLog.title->empty()) {
-        where += " AND title like " + cm::db::Db::lit("%" + *operLog.title + "%");
+        where += " AND title like " + cm::db::bind("%" + *operLog.title + "%");
     }
     if (operLog.businessType) {
-        where += " AND business_type = " + cm::db::Db::lit(*operLog.businessType);
+        where += " AND business_type = " + cm::db::bind(*operLog.businessType);
     }
     if (!operLog.businessTypes.empty()) {
-        where += " AND business_type IN " + cm::db::Db::inList(operLog.businessTypes);
+        where += " AND business_type IN " + cm::db::bindIn(operLog.businessTypes);
     }
     if (operLog.status) {
-        where += " AND status = " + cm::db::Db::lit(*operLog.status);
+        where += " AND status = " + cm::db::bind(*operLog.status);
     }
     if (operLog.operName && !operLog.operName->empty()) {
-        where += " AND oper_name like " + cm::db::Db::lit("%" + *operLog.operName + "%");
+        where += " AND oper_name like " + cm::db::bind("%" + *operLog.operName + "%");
     }
     if (operLog.params.contains("beginTime") && operLog.params["beginTime"].is_string()) {
         std::string beginTime = operLog.params["beginTime"].get<std::string>();
         if (!beginTime.empty()) {
-            where += " AND date_format(oper_time,'%y%m%d') >= date_format(" + cm::db::Db::lit(beginTime) + ",'%y%m%d')";
+            where += " AND date_format(oper_time,'%y%m%d') >= date_format(" + cm::db::bind(beginTime) + ",'%y%m%d')";
         }
     }
     if (operLog.params.contains("endTime") && operLog.params["endTime"].is_string()) {
         std::string endTime = operLog.params["endTime"].get<std::string>();
         if (!endTime.empty()) {
-            where += " AND date_format(oper_time,'%y%m%d') <= date_format(" + cm::db::Db::lit(endTime) + ",'%y%m%d')";
+            where += " AND date_format(oper_time,'%y%m%d') <= date_format(" + cm::db::bind(endTime) + ",'%y%m%d')";
         }
     }
     if (!where.empty()) {
@@ -58,7 +58,7 @@ std::vector<cm::domain::SysOperLog> SysOperLogMapper::selectOperLogList(const cm
 }
 
 std::optional<cm::domain::SysOperLog> SysOperLogMapper::selectOperLogById(long long operId) {
-    std::string sql = std::string(kSelectOperLogVo) + " WHERE oper_id = " + cm::db::Db::lit(operId);
+    std::string sql = std::string(kSelectOperLogVo) + " WHERE oper_id = " + cm::db::bind(operId);
     cm::db::Result res;
     if (!cm::db::Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     return cm::domain::SysOperLog::fromRow(res.rows.front());
@@ -66,7 +66,7 @@ std::optional<cm::domain::SysOperLog> SysOperLogMapper::selectOperLogById(long l
 
 int SysOperLogMapper::deleteOperLogByIds(const std::vector<long long>& operIds) {
     if (operIds.empty()) return 0;
-    std::string sql = "DELETE FROM sys_oper_log WHERE oper_id IN " + cm::db::Db::inList(operIds);
+    std::string sql = "DELETE FROM sys_oper_log WHERE oper_id IN " + cm::db::bindIn(operIds);
     long long affected = 0;
     cm::db::Db::instance().execute(sql, &affected);
     return static_cast<int>(affected);

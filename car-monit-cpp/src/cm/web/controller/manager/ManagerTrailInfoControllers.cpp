@@ -352,11 +352,11 @@ void queryLog(const std::string& queryCondition, const std::string& modelType,
     }
     mustRun("INSERT INTO car_query_log (id, user_id, user_name, user_ip, model_type, menu_point,"
             " query_condition, create_by, create_time, eps_id) VALUES (" +
-            Db::lit(cm::utils::simpleUuid()) + ", " + Db::lit(std::to_string(userId)) + ", " +
-            Db::lit(cm::security::SecurityUtils::getUserRealName()) + ", " + Db::lit(loginIp) +
-            ", " + Db::lit(modelType) + ", " + Db::lit(menuPoint) + ", " +
-            Db::lit(queryCondition) + ", " + std::to_string(userId) + ", " +
-            Db::lit(DateUtils::getTime()) + ", " + std::to_string(epsId) + ")");
+            cm::db::bind(cm::utils::simpleUuid()) + ", " + cm::db::bind(std::to_string(userId)) + ", " +
+            cm::db::bind(cm::security::SecurityUtils::getUserRealName()) + ", " + cm::db::bind(loginIp) +
+            ", " + cm::db::bind(modelType) + ", " + cm::db::bind(menuPoint) + ", " +
+            cm::db::bind(queryCondition) + ", " + std::to_string(userId) + ", " +
+            cm::db::bind(DateUtils::getTime()) + ", " + std::to_string(epsId) + ")");
 }
 
 /** PUT /manager/cartrackinfo/changeTrailInfo */
@@ -531,7 +531,7 @@ cm::http::ApiResponse listByCarId(RequestContext& ctx) {
             }
             // 这条链路上没有事务：删先提交、再逐条插（插到一半失败，删掉的也回不来）
             Db::instance().execute("delete from zdata_trail_tracks t where plate_key in (" +
-                                   Db::lit(carNo) + ")");
+                                   cm::db::bind(carNo) + ")");
             for (const auto& e : addlist) {
                 Db::instance().execute(
                     cm::web::crud::buildInsert(cm::web::crud::specZdataTrailTracks(), e));

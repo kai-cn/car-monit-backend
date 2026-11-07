@@ -46,11 +46,11 @@ Json rowsToJson(const cm::db::Result& res) {
 /** Json 标量 -> SQL 字面量（Db::lit 的重载对 Json 有歧义，这里显式分流） */
 std::string litJson(const Json& v) {
     if (v.is_null()) return "NULL";
-    if (v.is_boolean()) return Db::lit(v.get<bool>());
-    if (v.is_number_integer()) return Db::lit(static_cast<long long>(v.get<long long>()));
-    if (v.is_number_float()) return Db::lit(v.get<double>());
-    if (v.is_string()) return Db::lit(v.get<std::string>());
-    return Db::lit(v.dump());
+    if (v.is_boolean()) return cm::db::bind(v.get<bool>());
+    if (v.is_number_integer()) return cm::db::bind(static_cast<long long>(v.get<long long>()));
+    if (v.is_number_float()) return cm::db::bind(v.get<double>());
+    if (v.is_string()) return cm::db::bind(v.get<std::string>());
+    return cm::db::bind(v.dump());
 }
 
 int execute(const std::string& sql) {
@@ -79,17 +79,17 @@ std::string listSql(const IndexMenuQuery& q) {
     if (!q.userId || *q.userId != 1) {
         sql += " and exists ( select 1 from sys_role_menu rm,sys_user_role ur"
                " where rm.role_id = ur.role_id and rm.menu_id = t1.menu_id and ur.user_id = " +
-               Db::lit(q.userId) + ")";
+               cm::db::bind(q.userId) + ")";
     }
     sql += " and not exists ( select 1 from sys_index_menu tim where tim.del_flag = '0'"
-           " and tim.menu_id = t1.menu_id and tim.user_id = " + Db::lit(q.userId) + ")";
+           " and tim.menu_id = t1.menu_id and tim.user_id = " + cm::db::bind(q.userId) + ")";
     sql += " and not exists ( select 1 from sys_menu t3 where t3.menu_type = 'C'"
            " and t3.parent_id = t1.menu_id)";
     if (q.menuName && !q.menuName->empty()) {
-        sql += " and t1.menu_name like concat('%', " + Db::lit(*q.menuName) + ", '%')";
+        sql += " and t1.menu_name like concat('%', " + cm::db::bind(*q.menuName) + ", '%')";
     }
     if (q.menuName2 && !q.menuName2->empty()) {
-        sql += " and t2.menu_name like concat('%', " + Db::lit(*q.menuName2) + ", '%')";
+        sql += " and t2.menu_name like concat('%', " + cm::db::bind(*q.menuName2) + ", '%')";
     }
     sql += " order by t2.parent_id, t2.order_num, t1.order_num, t1.menu_id";
     return sql;
@@ -117,7 +117,7 @@ Json SysIndexMenuService::getListJson(long long userId) {
         " from SYS_INDEX_MENU t"
         " left join sys_menu t1 on t.MENU_ID = t1.menu_id"
         " left join sys_menu t2 on t1.parent_id = t2.menu_id"
-        " where t.del_flag='0' and t.USER_ID = " + Db::lit(userId) +
+        " where t.del_flag='0' and t.USER_ID = " + cm::db::bind(userId) +
         " order by t.CREATE_TIME desc limit 9";
     cm::db::Result res;
     if (!Db::instance().query(sql, res)) return Json::array();
@@ -128,7 +128,7 @@ Json SysIndexMenuService::selectSysIndexMenuByIdJson(long long id) {
     const std::string sql =
         "select t.ID, t.USER_ID, t.MENU_ID, t.SORT, t.EPS_ID, t.DEL_FLAG, t.CREATE_BY,"
         " t.CREATE_TIME, t.UPDATE_BY, t.UPDATE_TIME, t.TENANT_ID"
-        " from sys_index_menu t where t.ID = " + Db::lit(id);
+        " from sys_index_menu t where t.ID = " + cm::db::bind(id);
     cm::db::Result res;
     if (!Db::instance().query(sql, res) || res.rows.empty()) return Json(nullptr);
     Json j = Json::object();
@@ -150,7 +150,7 @@ cm::core::domain::AjaxResult SysIndexMenuService::saveSysIndexMenu(const Json& b
     };
     const std::string id = getStr("id");
     if (!id.empty()) {
-        std::string sets = "UPDATE_BY = " + Db::lit(userId) + ", UPDATE_TIME = " + Db::lit(ts);
+        std::string sets = "UPDATE_BY = " + cm::db::bind(userId) + ", UPDATE_TIME = " + cm::db::bind(ts);
         if (auto v = body.find("menuId"); v != body.end() && !v->is_null())
             sets += ", MENU_ID = " + litJson(*v);
         if (auto v = body.find("sort"); v != body.end() && !v->is_null())
@@ -158,7 +158,7 @@ cm::core::domain::AjaxResult SysIndexMenuService::saveSysIndexMenu(const Json& b
         if (auto v = body.find("epsId"); v != body.end() && !v->is_null())
             sets += ", EPS_ID = " + litJson(*v);
         // Java 的 <if test="id != null"> 不含 ID 列（WHERE 用），此处一致
-        if (execute("update sys_index_menu SET " + sets + " where ID = " + Db::lit(id)) < 0) {
+        if (execute("update sys_index_menu SET " + sets + " where ID = " + cm::db::bind(id)) < 0) {
             return AjaxResult::error("操作失败");
         }
         return AjaxResult::success("操作成功！", Json(id));
@@ -167,8 +167,8 @@ cm::core::domain::AjaxResult SysIndexMenuService::saveSysIndexMenu(const Json& b
     //    bigint 的 ID 列。库里开着 STRICT_TRANS_TABLES，这条语句在 Java 侧同样报
     //    1366，即 PUT /system/indexmenu 本来就是 500；这里刻意照抄，不做修正。
     const std::string newId = cm::utils::simpleUuid();
-    std::string cols = "ID, ", vals = Db::lit(newId);
-    cols += ", USER_ID"; vals += ", " + Db::lit(userId);
+    std::string cols = "ID, ", vals = cm::db::bind(newId);
+    cols += ", USER_ID"; vals += ", " + cm::db::bind(userId);
     if (auto v = body.find("menuId"); v != body.end() && !v->is_null()) {
         cols += ", MENU_ID"; vals += ", " + litJson(*v);
     }
@@ -176,14 +176,14 @@ cm::core::domain::AjaxResult SysIndexMenuService::saveSysIndexMenu(const Json& b
         cols += ", SORT"; vals += ", " + litJson(*v);
     }
     cols += ", DEL_FLAG, CREATE_BY, CREATE_TIME, UPDATE_BY, UPDATE_TIME";
-    vals += ", " + Db::lit("0") + ", " + Db::lit(userId) + ", " + Db::lit(ts) + ", " +
-            Db::lit(userId) + ", " + Db::lit(ts);
+    vals += ", " + Db::lit("0") + ", " + cm::db::bind(userId) + ", " + cm::db::bind(ts) + ", " +
+            cm::db::bind(userId) + ", " + cm::db::bind(ts);
     if (auto v = body.find("epsId"); v != body.end() && !v->is_null()) {
         cols += ", EPS_ID";
         vals += ", " + litJson(*v);
     } else {
         cols += ", EPS_ID";
-        vals += ", " + Db::lit(cm::security::SecurityUtils::getEpsId());
+        vals += ", " + cm::db::bind(cm::security::SecurityUtils::getEpsId());
     }
     // Java 的 <trim suffixOverrides=","> 会留下 “ID, ,  USER_ID” 之类的双逗号吗？
     // 不会：每个 <if> 自带尾逗号。上面拼法与之等价。
@@ -203,13 +203,13 @@ cm::core::domain::AjaxResult SysIndexMenuService::insertSysIndexMenu(const std::
             if (token.empty()) continue;
             const std::string menuId = token;
             // deleteByMenuUserId：物理删除同 (menu_id,user_id) 的旧记录
-            execute("delete from sys_index_menu where menu_id = " + Db::lit(menuId) +
-                    " and user_id = " + Db::lit(userId));
+            execute("delete from sys_index_menu where menu_id = " + cm::db::bind(menuId) +
+                    " and user_id = " + cm::db::bind(userId));
             execute("insert into sys_index_menu (USER_ID, MENU_ID, DEL_FLAG, EPS_ID, CREATE_BY,"
-                    " CREATE_TIME, UPDATE_BY, UPDATE_TIME) values (" + Db::lit(userId) + ", " +
-                    Db::lit(menuId) + ", " + Db::lit("0") + ", " +
-                    Db::lit(cm::security::SecurityUtils::getEpsId()) + ", " + Db::lit(userId) +
-                    ", " + Db::lit(ts) + ", " + Db::lit(userId) + ", " + Db::lit(ts) + ")");
+                    " CREATE_TIME, UPDATE_BY, UPDATE_TIME) values (" + cm::db::bind(userId) + ", " +
+                    cm::db::bind(menuId) + ", " + Db::lit("0") + ", " +
+                    cm::db::bind(cm::security::SecurityUtils::getEpsId()) + ", " + cm::db::bind(userId) +
+                    ", " + cm::db::bind(ts) + ", " + cm::db::bind(userId) + ", " + cm::db::bind(ts) + ")");
         }
     }
     return AjaxResult::success();
@@ -221,7 +221,7 @@ cm::core::domain::AjaxResult SysIndexMenuService::deleteSysIndexMenuByIds(
     std::string in;
     for (long long id : ids) {
         if (!in.empty()) in += ", ";
-        in += Db::lit(id);
+        in += cm::db::bind(id);
     }
     const int count = execute("update sys_index_menu set del_flag = '1' where ID in (" + in + ")");
     return AjaxResult::success(count < 0 ? 0 : count);

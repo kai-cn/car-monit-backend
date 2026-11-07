@@ -173,6 +173,9 @@ void AppConfig::apply() {
     dbConnectTimeoutMs = static_cast<int>(druidRoot_.getInt("spring.datasource.druid.connectTimeout", dbConnectTimeoutMs));
     dbSocketTimeoutMs = static_cast<int>(druidRoot_.getInt("spring.datasource.druid.socketTimeout", dbSocketTimeoutMs));
     dbSlaveEnabled = druidRoot_.getBool("spring.datasource.druid.slave.enabled", dbSlaveEnabled);
+    // C++ 扩展配置：每条连接的预备语句缓存上限（LRU）。默认 64，避免 33 条连接
+    // 在筛选组合很多时把会话级 prepared statement 数推到 max_prepared_stmt_count 附近。
+    dbPreparedCacheMax = static_cast<int>(getInt("cm.db.prepared-cache-max", dbPreparedCacheMax));
 
     pwdMaxRetryCount = static_cast<int>(getInt("user.password.maxRetryCount", pwdMaxRetryCount));
     pwdLockTime = static_cast<int>(getInt("user.password.lockTime", pwdLockTime));

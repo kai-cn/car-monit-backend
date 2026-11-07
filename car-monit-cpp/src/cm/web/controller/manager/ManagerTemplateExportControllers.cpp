@@ -73,7 +73,7 @@ std::map<std::string, std::string> dictDataMap(const std::string& dictType) {
     std::map<std::string, std::string> out;
     for (const auto& row : run("select d.dict_value dict_value, d.dict_label dict_label"
                                " from sys_dict_data d left join sys_dict_type t on d.dict_type = t.dict_type"
-                               " where d.dict_type = " + Db::lit(dictType) + " order by d.dict_sort").rows) {
+                               " where d.dict_type = " + cm::db::bind(dictType) + " order by d.dict_sort").rows) {
         const std::string k = row.str("dict_value");
         if (out.count(k)) {
             throw cm::exception::ServiceException(
@@ -185,19 +185,19 @@ void registerManagerTemplateExportControllers(Router& r) {
         Json query = cm::web::crud::bindQuery(sp, ctx);
         std::string where = " WHERE t.del_flag = '0'";
         auto p = [&](const char* k) { return cm::jstr(query, k, std::string()); };
-        if (!p("carNo").empty()) where += " and t.car_no = " + Db::lit(p("carNo"));
-        if (!p("carType").empty()) where += " and t.car_type = " + Db::lit(p("carType"));
-        if (!p("carVehicle").empty()) where += " and t.car_vehicle = " + Db::lit(p("carVehicle"));
-        if (!p("escapedType").empty()) where += " and t.escaped_type = " + Db::lit(p("escapedType"));
-        if (!p("orgName").empty()) where += " and sd.dept_name like concat('%', " + Db::lit(p("orgName")) + ", '%')";
-        if (!p("backCol1").empty()) where += " and t.back_col1 = " + Db::lit(p("backCol1"));
-        if (!p("backCol2").empty()) where += " and t.back_col2 = " + Db::lit(p("backCol2"));
-        if (!p("status").empty()) where += " and t.status = " + Db::lit(p("status"));
-        if (!p("carNoQuery").empty()) where += " and t.car_no like concat('%', " + Db::lit(p("carNoQuery")) + ", '%')";
+        if (!p("carNo").empty()) where += " and t.car_no = " + cm::db::bind(p("carNo"));
+        if (!p("carType").empty()) where += " and t.car_type = " + cm::db::bind(p("carType"));
+        if (!p("carVehicle").empty()) where += " and t.car_vehicle = " + cm::db::bind(p("carVehicle"));
+        if (!p("escapedType").empty()) where += " and t.escaped_type = " + cm::db::bind(p("escapedType"));
+        if (!p("orgName").empty()) where += " and sd.dept_name like concat('%', " + cm::db::bind(p("orgName")) + ", '%')";
+        if (!p("backCol1").empty()) where += " and t.back_col1 = " + cm::db::bind(p("backCol1"));
+        if (!p("backCol2").empty()) where += " and t.back_col2 = " + cm::db::bind(p("backCol2"));
+        if (!p("status").empty()) where += " and t.status = " + cm::db::bind(p("status"));
+        if (!p("carNoQuery").empty()) where += " and t.car_no like concat('%', " + cm::db::bind(p("carNoQuery")) + ", '%')";
         const std::string apply1 = p("applyTime1");
         const std::string apply2 = p("applyTime2");
-        if (!apply1.empty()) where += " and t.create_time >= STR_TO_DATE(" + Db::lit(apply1) + ", '%Y-%m-%d %H:%i:%s')";
-        if (!apply2.empty()) where += " and t.create_time <= STR_TO_DATE(" + Db::lit(apply2) + ", '%Y-%m-%d %H:%i:%s')";
+        if (!apply1.empty()) where += " and t.create_time >= STR_TO_DATE(" + cm::db::bind(apply1) + ", '%Y-%m-%d %H:%i:%s')";
+        if (!apply2.empty()) where += " and t.create_time <= STR_TO_DATE(" + cm::db::bind(apply2) + ", '%Y-%m-%d %H:%i:%s')";
         // ⚠️ 其余 <if> 条件（id/carId/amount/escapedTypes/userIds…）在本页前端不传，未逐条移植；
         //     传了也不会生效，与 Java 不同的地方仅此一处，且只在异常路径上。
         const std::string sql =
@@ -274,11 +274,11 @@ void registerManagerTemplateExportControllers(Router& r) {
         const std::string apply2 = ctx.optParam("applyTime2").value_or("");
         const std::string escapedType = ctx.optParam("escapedType").value_or("");
         const std::string orgId = ctx.optParam("orgId").value_or("");
-        if (!apply1.empty()) sql += " and a.create_time >= STR_TO_DATE(" + Db::lit(apply1) + ", '%Y-%m-%d')";
+        if (!apply1.empty()) sql += " and a.create_time >= STR_TO_DATE(" + cm::db::bind(apply1) + ", '%Y-%m-%d')";
         if (!apply2.empty())
-            sql += " and a.create_time < date_add(STR_TO_DATE(" + Db::lit(apply2) + ", '%Y-%m-%d'), interval 1 day)";
-        if (!escapedType.empty()) sql += " and a.escaped_type = " + Db::lit(escapedType);
-        if (!orgId.empty()) sql += " and a.eps_id = " + Db::lit(orgId);
+            sql += " and a.create_time < date_add(STR_TO_DATE(" + cm::db::bind(apply2) + ", '%Y-%m-%d'), interval 1 day)";
+        if (!escapedType.empty()) sql += " and a.escaped_type = " + cm::db::bind(escapedType);
+        if (!orgId.empty()) sql += " and a.eps_id = " + cm::db::bind(orgId);
         sql += " group by d.dept_id, d.dept_name, a.escaped_type";
 
         std::vector<Json> list;
@@ -319,11 +319,11 @@ void registerManagerTemplateExportControllers(Router& r) {
                             " d.dept_name orgName from " + table +
                             " a left join sys_dept d on d.dept_id = a.org_id where a.del_flag = '0'";
             if (aduit) s += " and a.status = '0'";
-            if (!orgId.empty()) s += " and a.org_id = " + Db::lit(orgId);
-            if (!apply1.empty()) s += " and a.create_time >= STR_TO_DATE(" + Db::lit(apply1) + ", '%Y-%m-%d')";
+            if (!orgId.empty()) s += " and a.org_id = " + cm::db::bind(orgId);
+            if (!apply1.empty()) s += " and a.create_time >= STR_TO_DATE(" + cm::db::bind(apply1) + ", '%Y-%m-%d')";
             if (!apply2.empty())
-                s += " and a.create_time < date_add(STR_TO_DATE(" + Db::lit(apply2) + ", '%Y-%m-%d'), interval 1 day)";
-            if (!carNo.empty()) s += " and a.car_no like concat('%', " + Db::lit(carNo) + ", '%')";
+                s += " and a.create_time < date_add(STR_TO_DATE(" + cm::db::bind(apply2) + ", '%Y-%m-%d'), interval 1 day)";
+            if (!carNo.empty()) s += " and a.car_no like concat('%', " + cm::db::bind(carNo) + ", '%')";
             return s;
         };
         const std::string sql =
@@ -357,11 +357,11 @@ void registerManagerTemplateExportControllers(Router& r) {
                             " d.dept_name orgName, a.create_time from " + table +
                             " a left join sys_dept d on d.dept_id = a.org_id where a.del_flag = '0'";
             if (aduit) s += " and a.status = '0'";
-            s += " and a.org_id = " + Db::lit(orgId);
-            if (!apply1.empty()) s += " and a.create_time >= STR_TO_DATE(" + Db::lit(apply1) + ", '%Y-%m-%d')";
+            s += " and a.org_id = " + cm::db::bind(orgId);
+            if (!apply1.empty()) s += " and a.create_time >= STR_TO_DATE(" + cm::db::bind(apply1) + ", '%Y-%m-%d')";
             if (!apply2.empty())
-                s += " and a.create_time < date_add(STR_TO_DATE(" + Db::lit(apply2) + ", '%Y-%m-%d'), interval 1 day)";
-            if (!carNo.empty()) s += " and a.car_no like concat('%', " + Db::lit(carNo) + ", '%')";
+                s += " and a.create_time < date_add(STR_TO_DATE(" + cm::db::bind(apply2) + ", '%Y-%m-%d'), interval 1 day)";
+            if (!carNo.empty()) s += " and a.car_no like concat('%', " + cm::db::bind(carNo) + ", '%')";
             return s;
         };
         const std::string sql = "select * from (" + half("car_aduit_free", true) + " UNION all " +

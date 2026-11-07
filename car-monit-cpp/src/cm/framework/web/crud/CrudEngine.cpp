@@ -85,9 +85,9 @@ std::string Spec::selectColumns() const {
     return out;
 }
 
-std::string pkLiteral(const Spec& spec, const std::string& raw) {
-    if (spec.pkIsString()) return Db::lit(raw);
-    return Db::lit(static_cast<long long>(std::atoll(raw.c_str())));
+std::string pkValue(const Spec& spec, const std::string& raw, cm::db::Params& params) {
+    if (spec.pkIsString()) return cm::db::bind(params, raw);
+    return cm::db::bind(params, static_cast<long long>(std::atoll(raw.c_str())));
 }
 
 namespace {
@@ -121,29 +121,84 @@ const Json* findField(const Json& obj, const std::string& key) {
     return it == obj.end() ? nullptr : &*it;
 }
 
-std::string jsonToSql(const Field& f, const Json& v) {
+std::string jsonToBound(const Field& f, const Json& v, cm::db::Params& params) {
     if (!isDateFmt(f.fmt)) {
-        if (v.is_number_integer()) return Db::lit(static_cast<long long>(v.get<long long>()));
-        if (v.is_number_float()) return Db::lit(v.get<double>());
-        if (v.is_boolean()) return Db::lit(v.get<bool>());
+        if (v.is_number_integer()) return cm::db::bind(params, static_cast<long long>(v.get<long long>()));
+        if (v.is_number_float()) return cm::db::bind(params, v.get<double>());
+        if (v.is_boolean()) return cm::db::bind(params, v.get<bool>());
     }
-    return Db::lit(jsonAsString(v));
+    return cm::db::bind(params, jsonAsString(v));
 }
 
 /** 区间条件：对应 XML 里 date_format(col,'%Y%m%d') 比较 params.beginTime/endTime */
-std::string rangeExpr(const Spec& s, const Field& f, const std::string& op, const std::string& value) {
+std::string rangeExpr(const Spec& s, const Field& f, const std::string& op, const std::string& value,
+                      cm::db::Params& params) {
     const std::string col = qualified(s, f.column);
     switch (s.rangeStyle) {
         case RangeStyle::DayYyyymmdd:
             return " and date_format(" + col + ", '%Y%m%d') " + op + " date_format(" +
-                   Db::lit(value) + ", '%Y%m%d')";
+                   cm::db::bind(params, value) + ", '%Y%m%d')";
         case RangeStyle::MonthYyyymm:
-            return " and date_format(" + col + ", '%Y%m') " + op + " date_format(" + Db::lit(value) +
-                   ", '%Y%m')";
+            return " and date_format(" + col + ", '%Y%m') " + op + " date_format(" +
+                   cm::db::bind(params, value) + ", '%Y%m')";
         case RangeStyle::Raw:
-            return " and " + col + " " + op + " " + Db::lit(value);
+            return " and " + col + " " + op + " " + cm::db::bind(params, value);
     }
     return {};
+}
+
+/** 把显式 Params 生成的 `?` 占位改写成延迟绑定令牌。
+ *  为什么要这一步：旧调用点广泛使用 `"..." + cm::db::bind(x) + "..."` 的表达式形态，
+ *  C++ 重载运算符的操作数求值顺序不保证，直接 push Params 可能顺序错。
+ *  令牌按 SQL 文本位置解析，顺序天然正确；这里把 3 参 buildX 的产物桥接到同一机制。 */
+std::string tokenizeParams(const std::string& sql, const cm::db::Params& params) {
+    std::string out;
+    out.reserve(sql.size() + params.size() * 8);
+    size_t pi = 0;
+    char quote = 0;
+    for (size_t i = 0; i < sql.size(); ++i) {
+        const char c = sql[i];
+        if (quote != 0) {
+            out.push_back(c);
+            if (c == '\\' && quote != '`') {
+                if (i + 1 < sql.size()) out.push_back(sql[++i]);
+            } else if (c == quote) {
+                quote = 0;
+            }
+            continue;
+        }
+        if (c == '\'' || c == '"' || c == '`') {
+            quote = c;
+            out.push_back(c);
+            continue;
+        }
+        if (c == '?') {
+            if (pi >= params.size()) return sql;  // 数量不符：交给执行期占位符校验报错
+            const cm::db::Param& p = params[pi++];
+            switch (p.kind) {
+                case cm::db::ParamKind::Null: out += cm::db::bindNull(); break;
+                case cm::db::ParamKind::Int:
+                    try {
+                        out += cm::db::bind(static_cast<long long>(std::stoll(p.text)));
+                    } catch (...) {
+                        out += cm::db::bind(p.text);
+                    }
+                    break;
+                case cm::db::ParamKind::Double:
+                    try {
+                        out += cm::db::bind(std::stod(p.text));
+                    } catch (...) {
+                        out += cm::db::bind(p.text);
+                    }
+                    break;
+                case cm::db::ParamKind::Text:
+                default: out += cm::db::bind(p.text); break;
+            }
+            continue;
+        }
+        out.push_back(c);
+    }
+    return out;
 }
 
 } // namespace
@@ -213,7 +268,7 @@ Json rowToJson(const Spec& spec, const cm::db::Row& row) {
     return j;
 }
 
-std::string buildWhere(const Spec& spec, const Json& query) {
+std::string buildWhere(const Spec& spec, const Json& query, cm::db::Params& params) {
     std::string where = "WHERE 1=1" + spec.extraWhere;
     for (const auto& f : spec.fields) {
         if (f.cond == Cond::None) continue;
@@ -225,13 +280,13 @@ std::string buildWhere(const Spec& spec, const Json& query) {
                               : (f.column ? qualified(spec, f.column) : std::string());
         if (col.empty()) continue;
         if (f.cond == Cond::DateRange) {
-            const Json* params = findField(query, "params");
-            if (params == nullptr) continue;
-            if (const Json* b = findField(*params, "beginTime"); b != nullptr && !jsonEmpty(*b)) {
-                where += rangeExpr(spec, f, ">=", jsonAsString(*b));
+            const Json* range = findField(query, "params");
+            if (range == nullptr) continue;
+            if (const Json* b = findField(*range, "beginTime"); b != nullptr && !jsonEmpty(*b)) {
+                where += rangeExpr(spec, f, ">=", jsonAsString(*b), params);
             }
-            if (const Json* e = findField(*params, "endTime"); e != nullptr && !jsonEmpty(*e)) {
-                where += rangeExpr(spec, f, "<=", jsonAsString(*e));
+            if (const Json* e = findField(*range, "endTime"); e != nullptr && !jsonEmpty(*e)) {
+                where += rangeExpr(spec, f, "<=", jsonAsString(*e), params);
             }
             continue;
         }
@@ -239,40 +294,46 @@ std::string buildWhere(const Spec& spec, const Json& query) {
         if (v == nullptr) continue;
         const bool skip = (f.cond == Cond::EqNotNull) ? v->is_null() : jsonEmpty(*v);
         if (skip) continue;
+        const std::string p = cm::db::bind(params, jsonAsString(*v));
         switch (f.cond) {
             case Cond::Like:
-                where += " and " + col + " like concat('%', " + Db::lit(jsonAsString(*v)) + ", '%')";
+                where += " and " + col + " like concat('%', " + p + ", '%')";
                 break;
             // XML 里写的是 col >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d %H:%i:%s')。
-            // MySQL 对 DATETIME 与字符串常量做的隐式转换与 STR_TO_DATE 同格式，直接传字面量等价。
+            // MySQL 对 DATETIME 与字符串常量做的隐式转换与 STR_TO_DATE 同格式，直接传值等价。
             case Cond::Gte:
-                where += " and " + col + " >= " + Db::lit(jsonAsString(*v));
+                where += " and " + col + " >= " + p;
                 break;
             case Cond::Lte:
-                where += " and " + col + " <= " + Db::lit(jsonAsString(*v));
+                where += " and " + col + " <= " + p;
                 break;
             case Cond::Ne:
-                where += " and " + col + " != " + Db::lit(jsonAsString(*v));
+                where += " and " + col + " != " + p;
                 break;
             case Cond::NotLike:
-                where += " and " + col + " not like concat('%', " + Db::lit(jsonAsString(*v)) + ", '%')";
+                where += " and " + col + " not like concat('%', " + p + ", '%')";
                 break;
             case Cond::FindInSet:
-                where += " and find_in_set(" + Db::lit(jsonAsString(*v)) + ", " + col + ")";
+                where += " and find_in_set(" + p + ", " + col + ")";
                 break;
             case Cond::FindInSetCol: {
                 // XML 里写的是 find_in_set(t.id, #{exceptIds})：左值另有其列（通常是主键）
                 const std::string left =
                     f.condColumn ? qualified(spec, f.condColumn) : col;
-                where += " and find_in_set(" + left + ", " + Db::lit(jsonAsString(*v)) + ")";
+                where += " and find_in_set(" + left + ", " + p + ")";
                 break;
             }
             default:
-                where += " and " + col + " = " + Db::lit(jsonAsString(*v));
+                where += " and " + col + " = " + p;
                 break;
         }
     }
     return where;
+}
+
+std::string buildWhere(const Spec& spec, const Json& query) {
+    cm::db::Params params;
+    return tokenizeParams(buildWhere(spec, query, params), params);
 }
 
 Json bindQuery(const Spec& spec, RequestContext& ctx) {
@@ -322,7 +383,7 @@ Json applyUpdateFill(const Spec& spec, const Json& body) {
     return out;
 }
 
-std::string buildInsert(const Spec& spec, const Json& bodyIn) {
+std::string buildInsert(const Spec& spec, const Json& bodyIn, cm::db::Params& params) {
     const Json body = applyInsertFill(spec, bodyIn);
     std::string cols, vals;
     // MyBatis-Plus 的 IdType.ASSIGN_UUID（BasePlusEntity / BasePlusEntityNew / BaseUuidEntity 都是）
@@ -341,7 +402,7 @@ std::string buildInsert(const Spec& spec, const Json& bodyIn) {
                     vals += ", ";
                 }
                 cols += f.column;
-                vals += Db::lit(generatedPk);
+                vals += cm::db::bind(params, generatedPk);
                 continue;
             }
             continue;  // MyBatis-Plus 默认 NOT_NULL 策略
@@ -351,32 +412,43 @@ std::string buildInsert(const Spec& spec, const Json& bodyIn) {
             vals += ", ";
         }
         cols += f.column;
-        vals += jsonToSql(f, *v);
+        vals += jsonToBound(f, *v, params);
     }
     if (cols.empty()) return "INSERT INTO " + std::string(spec.table) + " VALUES ()";
     return "INSERT INTO " + std::string(spec.table) + " (" + cols + ") VALUES (" + vals + ")";
 }
 
-std::string buildUpdate(const Spec& spec, const Json& bodyIn) {
+std::string buildInsert(const Spec& spec, const Json& body) {
+    cm::db::Params params;
+    return tokenizeParams(buildInsert(spec, body, params), params);
+}
+
+std::string buildUpdate(const Spec& spec, const Json& bodyIn, cm::db::Params& params) {
     const Json body = applyUpdateFill(spec, bodyIn);
     const Json* pk = findField(body, spec.pkJson());
     if (pk == nullptr || pk->is_null()) return {};  // 无主键时 Java 侧不会发 UPDATE
     const std::string pk_col = std::string(spec.pkColumn());
-    const std::string pk_value = pkLiteral(spec, jsonAsString(*pk));
     std::string sets;
     for (const auto& f : spec.fields) {
         if (!f.updatable || f.pk) continue;
         const Json* v = findField(body, f.json);
         if (v == nullptr || v->is_null()) continue;  // null 不更新，空串照写
         if (!sets.empty()) sets += ", ";
-        sets += std::string(f.column) + " = " + jsonToSql(f, *v);
+        sets += std::string(f.column) + " = " + jsonToBound(f, *v, params);
     }
+    // 参数顺序必须与 SQL 文本中的占位顺序一致：SET 在前、WHERE 主键在后。
+    const std::string pk_value = pkValue(spec, jsonAsString(*pk), params);
     if (sets.empty()) {
         // 全字段为 null：MP 不会生成 SET，这里用恒等赋值保持“语句合法且无副作用”
         return "UPDATE " + std::string(spec.table) + " SET " + pk_col + " = " + pk_col + " WHERE " +
                pk_col + " = " + pk_value;
     }
     return "UPDATE " + std::string(spec.table) + " SET " + sets + " WHERE " + pk_col + " = " + pk_value;
+}
+
+std::string buildUpdate(const Spec& spec, const Json& body) {
+    cm::db::Params params;
+    return tokenizeParams(buildUpdate(spec, body, params), params);
 }
 
 cm::http::ApiResponse exportExcel(const Spec& spec, const Json& rows, const std::string& sheetName) {
@@ -428,26 +500,28 @@ std::string selectSql(const Spec& spec, const std::string& where, const std::str
 cm::http::ApiResponse runList(const Spec& spec, RequestContext& ctx) {
     Json query = bindQuery(spec, ctx);
     if (spec.hooks.beforeQuery) spec.hooks.beforeQuery(ctx, query);
-    const std::string where = buildWhere(spec, query);
+    cm::db::Params params;
+    const std::string where = buildWhere(spec, query, params);
     const auto page = ctx.pageRequest();
     const std::string order = orderSqlOf(spec, page);
     if (page.enabled) {
-        auto pr = cm::db::queryPage("SELECT COUNT(1) " + fromClause(spec) + " " + where,
-                                    selectSql(spec, where, order), page);
+        auto pr = cm::db::queryPage("SELECT COUNT(1) " + fromClause(spec) + " " + where, params,
+                                    selectSql(spec, where, order), params, page);
         return BaseController::ok(BaseController::dataTable(fetchRows(spec, pr.rows), pr.total));
     }
     cm::db::Result res;
     Json arr = Json::array();
-    if (Db::instance().query(selectSql(spec, where, order), res)) arr = fetchRows(spec, res);
+    if (Db::instance().query(selectSql(spec, where, order), params, res)) arr = fetchRows(spec, res);
     return BaseController::ok(BaseController::dataTable(arr, static_cast<long long>(arr.size())));
 }
 
 cm::http::ApiResponse runExport(const Spec& spec, RequestContext& ctx) {
     Json query = bindQuery(spec, ctx);
     if (spec.hooks.beforeQuery) spec.hooks.beforeQuery(ctx, query);
+    cm::db::Params params;
     cm::db::Result res;
     Json arr = Json::array();
-    if (Db::instance().query(selectSql(spec, buildWhere(spec, query), {}), res)) {
+    if (Db::instance().query(selectSql(spec, buildWhere(spec, query, params), {}), params, res)) {
         arr = fetchRows(spec, res);
     }
     return exportExcel(spec, arr,
@@ -455,11 +529,12 @@ cm::http::ApiResponse runExport(const Spec& spec, RequestContext& ctx) {
 }
 
 cm::http::ApiResponse runGetInfo(const Spec& spec, RequestContext& ctx, const std::string& pkVar) {
-    const std::string where =
-        "WHERE " + std::string(spec.pkColumn()) + " = " + pkLiteral(spec, ctx.pathVar(pkVar));
+    cm::db::Params params;
+    const std::string where = "WHERE " + std::string(spec.pkColumn()) + " = " +
+                              pkValue(spec, ctx.pathVar(pkVar), params);
     cm::db::Result res;
     Json arr = Json::array();
-    if (Db::instance().query(selectSql(spec, where, {}), res)) arr = fetchRows(spec, res);
+    if (Db::instance().query(selectSql(spec, where, {}), params, res)) arr = fetchRows(spec, res);
     // Java: 记录不存在时 AjaxResult.success(null)
     return BaseController::ok(AjaxResult::success(arr.empty() ? Json(nullptr) : arr.front()));
 }
@@ -467,8 +542,9 @@ cm::http::ApiResponse runGetInfo(const Spec& spec, RequestContext& ctx, const st
 cm::http::ApiResponse runAdd(const Spec& spec, RequestContext& ctx) {
     Json body = ctx.body();
     if (spec.hooks.beforeInsert) spec.hooks.beforeInsert(ctx, body);
+    cm::db::Params params;
     long long affected = 0;
-    if (!Db::instance().execute(buildInsert(spec, body), &affected)) {
+    if (!Db::instance().execute(buildInsert(spec, body, params), params, &affected)) {
         return BaseController::ok(AjaxResult::error("新增失败"));
     }
     return BaseController::ok(BaseController::toAjax(affected));
@@ -477,21 +553,26 @@ cm::http::ApiResponse runAdd(const Spec& spec, RequestContext& ctx) {
 cm::http::ApiResponse runEdit(const Spec& spec, RequestContext& ctx) {
     Json body = ctx.body();
     if (spec.hooks.beforeUpdate) spec.hooks.beforeUpdate(ctx, body);
-    const std::string sql = buildUpdate(spec, body);
+    cm::db::Params params;
+    const std::string sql = buildUpdate(spec, body, params);
     if (sql.empty()) return BaseController::ok(AjaxResult::error("修改失败"));
     long long affected = 0;
-    if (!Db::instance().execute(sql, &affected)) {
+    if (!Db::instance().execute(sql, params, &affected)) {
         return BaseController::ok(AjaxResult::error("修改失败"));
     }
     return BaseController::ok(BaseController::toAjax(affected));
 }
 
 cm::http::ApiResponse runRemove(const Spec& spec, RequestContext& ctx, const std::string& pkVar) {
+    cm::db::Params params;
     std::string in;
     for (const auto& part : utils::StringUtils::split(ctx.pathVar(pkVar), ',')) {
         if (part.empty()) continue;
         if (!in.empty()) in += ", ";
-        in += pkLiteral(spec, part);
+        if (spec.pkIsString())
+            in += cm::db::bind(params, part);
+        else
+            in += cm::db::bind(params, static_cast<long long>(std::atoll(part.c_str())));
     }
     if (in.empty()) return BaseController::ok(AjaxResult::error("删除失败"));
     const std::string pk_col = std::string(spec.pkColumn());
@@ -501,7 +582,7 @@ cm::http::ApiResponse runRemove(const Spec& spec, RequestContext& ctx, const std
                                 : ("UPDATE " + std::string(spec.table) + " SET " +
                                    spec.softDeleteColumn + " = '1' WHERE " + pk_col + " IN (" + in + ")");
     long long affected = 0;
-    if (!Db::instance().execute(sql, &affected)) {
+    if (!Db::instance().execute(sql, params, &affected)) {
         return BaseController::ok(AjaxResult::error("删除失败"));
     }
     return BaseController::ok(BaseController::toAjax(affected));
@@ -515,17 +596,18 @@ void registerListVariant(Router& router, const std::string& path, const Spec& sp
     auto b = router.get(path, [sp, kind](RequestContext& ctx) -> cm::http::ApiResponse {
         Json query = bindQuery(*sp, ctx);
         if (sp->hooks.beforeQuery) sp->hooks.beforeQuery(ctx, query);
-        const std::string where = buildWhere(*sp, query);
+        cm::db::Params params;
+        const std::string where = buildWhere(*sp, query, params);
         const auto page = ctx.pageRequest();
         const std::string order = orderSqlOf(*sp, page);
         if (kind == ListKind::Paged && page.enabled) {
-            auto pr = cm::db::queryPage("SELECT COUNT(1) " + fromClause(*sp) + " " + where,
-                                        selectSql(*sp, where, order), page);
+            auto pr = cm::db::queryPage("SELECT COUNT(1) " + fromClause(*sp) + " " + where, params,
+                                        selectSql(*sp, where, order), params, page);
             return BaseController::ok(BaseController::dataTable(fetchRows(*sp, pr.rows), pr.total));
         }
         cm::db::Result res;
         Json arr = Json::array();
-        if (Db::instance().query(selectSql(*sp, where, order), res)) arr = fetchRows(*sp, res);
+        if (Db::instance().query(selectSql(*sp, where, order), params, res)) arr = fetchRows(*sp, res);
         if (kind == ListKind::Counted)
             return BaseController::ok(BaseController::dataTable(arr, static_cast<long long>(arr.size())));
         // Plain：对应 Java 的 return AjaxResult.success(list)

@@ -116,7 +116,7 @@ std::pair<std::string, std::string> colText(const char* column, const Json& o, c
     const Json& v = o[key];
     if (v.is_number_integer()) return {column, v.dump()};
     if (v.is_number()) return {column, v.dump()};
-    return {column, Db::lit(v.is_string() ? v.get<std::string>() : v.dump())};
+    return {column, cm::db::bind(v.is_string() ? v.get<std::string>() : v.dump())};
 }
 
 /** car_suspicious_check 的一行（实体属性名 → 列名） */
@@ -200,8 +200,8 @@ cm::http::ApiResponse checkSuspicious(RequestContext& ctx) {
     }
 
     // ⚠️ 物理删除，且发生在后面那个可能 NPE 的循环之前 —— 靠事务回滚保住一致性
-    mustRunSql("delete from car_suspicious_check where car_id = " + Db::lit(carId));
-    mustRunSql("delete from car_except_record where car_id = " + Db::lit(carId));
+    mustRunSql("delete from car_suspicious_check where car_id = " + cm::db::bind(carId));
+    mustRunSql("delete from car_except_record where car_id = " + cm::db::bind(carId));
 
     const long long userId = cm::security::SecurityUtils::getUserId();
     const long long epsId = cm::security::SecurityUtils::getEpsId();
@@ -228,20 +228,20 @@ cm::http::ApiResponse checkSuspicious(RequestContext& ctx) {
         if (cars.rows.empty()) {
             // 与 saveCarInfo 的新增分支同一套列；这里 Java 是直接 new 一个 CarInfo 插
             std::vector<std::pair<std::string, std::string>> col = {
-                {"id", Db::lit(cm::utils::simpleUuid())},
+                {"id", cm::db::bind(cm::utils::simpleUuid())},
                 {"del_flag", Db::lit("0")},
                 {"eps_id", std::to_string(epsId)},
                 {"create_by", std::to_string(userId)},
-                {"create_time", Db::lit(DateUtils::getTime())},
+                {"create_time", cm::db::bind(DateUtils::getTime())},
                 {"update_by", std::to_string(userId)},
-                {"update_time", Db::lit(DateUtils::getTime())},
-                {"car_no", Db::lit(carNo)},
-                {"car_type", hasVal(body, "carType") ? Db::lit(optText(body, "carType")) : std::string()},
+                {"update_time", cm::db::bind(DateUtils::getTime())},
+                {"car_no", cm::db::bind(carNo)},
+                {"car_type", hasVal(body, "carType") ? cm::db::bind(optText(body, "carType")) : std::string()},
                 {"car_num", hasVal(body, "carNum") ? std::to_string(cm::jlong(body, "carNum")) : std::string()},
-                {"car_vehicle", hasVal(body, "carVehicle") ? Db::lit(optText(body, "carVehicle")) : std::string()},
-                {"plate_color", hasVal(body, "plateColor") ? Db::lit(optText(body, "plateColor")) : std::string()},
-                {"escaped_type", hasVal(body, "escapedType") ? Db::lit(optText(body, "escapedType")) : std::string()},
-                {"escaped_amount", Db::lit(escapedAmount)},
+                {"car_vehicle", hasVal(body, "carVehicle") ? cm::db::bind(optText(body, "carVehicle")) : std::string()},
+                {"plate_color", hasVal(body, "plateColor") ? cm::db::bind(optText(body, "plateColor")) : std::string()},
+                {"escaped_type", hasVal(body, "escapedType") ? cm::db::bind(optText(body, "escapedType")) : std::string()},
+                {"escaped_amount", cm::db::bind(escapedAmount)},
             };
             std::string names, vals;
             for (const auto& c : col) {
@@ -297,22 +297,22 @@ cm::http::ApiResponse checkSuspicious(RequestContext& ctx) {
     // 修改状态已核实：updateById 只写非 null 属性
     std::vector<std::pair<std::string, std::string>> set = {
         {"check_status", Db::lit("1")},
-        {"is_except", hasVal(body, "isExcept") ? Db::lit(optText(body, "isExcept")) : std::string()},
-        {"except_remark", hasVal(body, "exceptRemark") ? Db::lit(optText(body, "exceptRemark")) : std::string()},
-        {"except_file_ids", hasVal(body, "exceptFileIds") ? Db::lit(optText(body, "exceptFileIds")) : std::string()},
-        {"pass_type", hasVal(body, "passType") ? Db::lit(optText(body, "passType")) : std::string()},
-        {"plate_color", hasVal(body, "plateColor") ? Db::lit(optText(body, "plateColor")) : std::string()},
-        {"car_no", Db::lit(carNo)},
-        {"car_type", hasVal(body, "carType") ? Db::lit(optText(body, "carType")) : std::string()},
-        {"car_vehicle", hasVal(body, "carVehicle") ? Db::lit(optText(body, "carVehicle")) : std::string()},
+        {"is_except", hasVal(body, "isExcept") ? cm::db::bind(optText(body, "isExcept")) : std::string()},
+        {"except_remark", hasVal(body, "exceptRemark") ? cm::db::bind(optText(body, "exceptRemark")) : std::string()},
+        {"except_file_ids", hasVal(body, "exceptFileIds") ? cm::db::bind(optText(body, "exceptFileIds")) : std::string()},
+        {"pass_type", hasVal(body, "passType") ? cm::db::bind(optText(body, "passType")) : std::string()},
+        {"plate_color", hasVal(body, "plateColor") ? cm::db::bind(optText(body, "plateColor")) : std::string()},
+        {"car_no", cm::db::bind(carNo)},
+        {"car_type", hasVal(body, "carType") ? cm::db::bind(optText(body, "carType")) : std::string()},
+        {"car_vehicle", hasVal(body, "carVehicle") ? cm::db::bind(optText(body, "carVehicle")) : std::string()},
         {"car_num", hasVal(body, "carNum") ? std::to_string(cm::jlong(body, "carNum")) : std::string()},
-        {"escaped_type", hasVal(body, "escapedType") ? Db::lit(optText(body, "escapedType")) : std::string()},
-        {"remark", hasVal(body, "remark") ? Db::lit(optText(body, "remark")) : std::string()},
+        {"escaped_type", hasVal(body, "escapedType") ? cm::db::bind(optText(body, "escapedType")) : std::string()},
+        {"remark", hasVal(body, "remark") ? cm::db::bind(optText(body, "remark")) : std::string()},
     };
     if (isExcept == "0") {
         // setExceptFileIds("") —— 空串不是 null，照样进 SET
         for (auto& p : set) {
-            if (p.first == "except_file_ids") p.second = Db::lit(std::string());
+            if (p.first == "except_file_ids") p.second = cm::db::bind(std::string());
         }
     }
     std::string sets;
@@ -322,7 +322,7 @@ cm::http::ApiResponse checkSuspicious(RequestContext& ctx) {
         sets += p.first + " = " + p.second;
     }
     if (!sets.empty()) {
-        mustRunSql("UPDATE car_suspicious SET " + sets + " WHERE id = " + Db::lit(carId) +
+        mustRunSql("UPDATE car_suspicious SET " + sets + " WHERE id = " + cm::db::bind(carId) +
                    " AND del_flag = '0'");
     }
 
@@ -530,35 +530,35 @@ bool syncSuspiciousCar(const std::string& addFlag, const Json& paraTrailInfoList
             row.id = queryList[0].str("id");
             checkStatus = CommonUtil::isNull(queryList[0].str("check_status"));
         }
-        row.col["track_id"] = Db::lit(trailUUid);
-        row.col["track_josn"] = Db::lit(sortedNoNulls(trailInfo).dump());
-        if (!tsText(tracks, "escapedTfcj").empty()) row.col["back_col1"] = Db::lit(jstr(tracks, "escapedTfcj"));
+        row.col["track_id"] = cm::db::bind(trailUUid);
+        row.col["track_josn"] = cm::db::bind(sortedNoNulls(trailInfo).dump());
+        if (!tsText(tracks, "escapedTfcj").empty()) row.col["back_col1"] = cm::db::bind(jstr(tracks, "escapedTfcj"));
 
         if (checkStatus == "1") {
             // 已核实的什么都不改（Java 那里是一个空的 if 块）
             continue;
         }
 
-        row.col["car_no"] = Db::lit(carNo);
+        row.col["car_no"] = cm::db::bind(carNo);
         // plateColor 先按**中文 label** 翻成码；翻不到就得到 null（Map.get 不是空串）
         {
             const std::string raw = jstr(tracks, "plateColor");
             auto it = plateColorMap.find(CommonUtil::isNull(raw));
-            row.col["plate_color"] = it != plateColorMap.end() ? Db::lit(it->second) : std::string();
+            row.col["plate_color"] = it != plateColorMap.end() ? cm::db::bind(it->second) : std::string();
         }
         // 有重点车辆信息就以它为准（覆盖上面那次字典翻译的结果）
         auto cit = carMap.find(carNo);
         if (cit != carMap.end()) {
-            row.col["plate_color"] = Db::lit(carAttr(cit->second, "plateColor", "plate_color"));
-            row.col["car_type"] = Db::lit(carAttr(cit->second, "carType", "car_type"));
-            row.col["car_vehicle"] = Db::lit(carAttr(cit->second, "carVehicle", "car_vehicle"));
+            row.col["plate_color"] = cm::db::bind(carAttr(cit->second, "plateColor", "plate_color"));
+            row.col["car_type"] = cm::db::bind(carAttr(cit->second, "carType", "car_type"));
+            row.col["car_vehicle"] = cm::db::bind(carAttr(cit->second, "carVehicle", "car_vehicle"));
         } else {
             const std::string envehicletype = jstr(tracks, "envehicletype");
             if (StringUtils::isNotBlank(envehicletype)) {
                 const std::string carVehicle = vehicleOfEnVehicleType(envehicletype);
                 if (!carVehicle.empty()) {
-                    row.col["car_type"] = Db::lit(envehicletype);
-                    row.col["car_vehicle"] = Db::lit(carVehicle);
+                    row.col["car_type"] = cm::db::bind(envehicletype);
+                    row.col["car_vehicle"] = cm::db::bind(carVehicle);
                 }
             }
         }
@@ -568,7 +568,7 @@ bool syncSuspiciousCar(const std::string& addFlag, const Json& paraTrailInfoList
         } else if (tracks.contains("carNum") && !tracks["carNum"].is_null()) {
             row.col["car_num"] = std::to_string(cm::jlong(tracks, "carNum"));
         }
-        row.col["pass_type"] = Db::lit(jstr(tracks, "passType"));
+        row.col["pass_type"] = cm::db::bind(jstr(tracks, "passType"));
 
         // 门架 / 收费站两个子表，按 stateType 分进去
         std::vector<Json> gantryList, stationList;
@@ -596,42 +596,42 @@ bool syncSuspiciousCar(const std::string& addFlag, const Json& paraTrailInfoList
             if (i != 0 && i + 1 != stationList.size()) continue;
             const Json& bo = stationList[i];
             if (i == 0) {
-                row.col["in_station_id"] = Db::lit(jstr(bo, "devCode"));
-                row.col["in_station"] = Db::lit(jstr(bo, "devName"));
+                row.col["in_station_id"] = cm::db::bind(jstr(bo, "devCode"));
+                row.col["in_station"] = cm::db::bind(jstr(bo, "devName"));
             } else {
-                row.col["out_station_id"] = Db::lit(jstr(bo, "devCode"));
-                row.col["out_station"] = Db::lit(jstr(bo, "devName"));
+                row.col["out_station_id"] = cm::db::bind(jstr(bo, "devCode"));
+                row.col["out_station"] = cm::db::bind(jstr(bo, "devName"));
             }
             const std::string t = tsText(bo, "captureTime");
             if (!t.empty()) {
-                if (i == 0) row.col["in_time"] = Db::lit(t); else row.col["out_time"] = Db::lit(t);
+                if (i == 0) row.col["in_time"] = cm::db::bind(t); else row.col["out_time"] = cm::db::bind(t);
             }
         }
         // tracks 上的进出口站编号优先覆盖上面收费站的结果
         if (StringUtils::isNotBlank(jstr(tracks, "entollstationid"))) {
-            row.col["in_station_id"] = Db::lit(jstr(tracks, "entollstationid"));
-            row.col["in_station"] = Db::lit(jstr(tracks, "entollstationname"));
+            row.col["in_station_id"] = cm::db::bind(jstr(tracks, "entollstationid"));
+            row.col["in_station"] = cm::db::bind(jstr(tracks, "entollstationname"));
             const std::string t = tsText(tracks, "enterTime");
-            if (!t.empty()) row.col["in_time"] = Db::lit(t);
+            if (!t.empty()) row.col["in_time"] = cm::db::bind(t);
         }
         if (StringUtils::isNotBlank(jstr(tracks, "extollstationid"))) {
-            row.col["out_station_id"] = Db::lit(jstr(tracks, "extollstationid"));
-            row.col["out_station"] = Db::lit(jstr(tracks, "extollstationname"));
+            row.col["out_station_id"] = cm::db::bind(jstr(tracks, "extollstationid"));
+            row.col["out_station"] = cm::db::bind(jstr(tracks, "extollstationname"));
             const std::string t = tsText(tracks, "exitTime");
-            if (!t.empty()) row.col["out_time"] = Db::lit(t);
+            if (!t.empty()) row.col["out_time"] = cm::db::bind(t);
         }
         for (size_t i = 0; i < gantryList.size(); ++i) {
             if (i != 0 && i + 1 != gantryList.size()) continue;
             const Json& bo = gantryList[i];
             const std::string t = tsText(bo, "captureTime");
             if (i == 0) {
-                row.col["gantry_station_id"] = Db::lit(jstr(bo, "devCode"));
-                row.col["gantryt_station"] = Db::lit(jstr(bo, "devName"));
-                if (!t.empty()) row.col["gantry_time"] = Db::lit(t);
+                row.col["gantry_station_id"] = cm::db::bind(jstr(bo, "devCode"));
+                row.col["gantryt_station"] = cm::db::bind(jstr(bo, "devName"));
+                if (!t.empty()) row.col["gantry_time"] = cm::db::bind(t);
             } else {
-                row.col["out_gantry_station_id"] = Db::lit(jstr(bo, "devCode"));
-                row.col["out_gantryt_station"] = Db::lit(jstr(bo, "devName"));
-                if (!t.empty()) row.col["out_gantry_time"] = Db::lit(t);
+                row.col["out_gantry_station_id"] = cm::db::bind(jstr(bo, "devCode"));
+                row.col["out_gantryt_station"] = cm::db::bind(jstr(bo, "devName"));
+                if (!t.empty()) row.col["out_gantry_time"] = cm::db::bind(t);
             }
         }
 
@@ -639,15 +639,15 @@ bool syncSuspiciousCar(const std::string& addFlag, const Json& paraTrailInfoList
         const std::string twoDaysAgo = DateUtils::formatMillis(
             DateUtils::nowMillis() - 2LL * 24 * 3600 * 1000, DateUtils::YYYY_MM_DD_HH_MM_SS);
         row.col["create_by"] = std::to_string(userId);
-        row.col["create_time"] = Db::lit(twoDaysAgo);
+        row.col["create_time"] = cm::db::bind(twoDaysAgo);
         row.col["update_by"] = std::to_string(userId);
-        row.col["update_time"] = Db::lit(twoDaysAgo);
+        row.col["update_time"] = cm::db::bind(twoDaysAgo);
         row.col["is_except"] = Db::lit("1");
         row.col["status"] = Db::lit("0");
-        row.col["track_names"] = Db::lit(CommonUtil::deleteEnd(devCodes));
-        row.col["remark"] = Db::lit(jstr(tracks, "escapedTypeRemark"));
+        row.col["track_names"] = cm::db::bind(CommonUtil::deleteEnd(devCodes));
+        row.col["remark"] = cm::db::bind(jstr(tracks, "escapedTypeRemark"));
         if (row.id.empty()) {
-            row.col["escaped_type"] = Db::lit(jstr(tracks, "escapedType"));
+            row.col["escaped_type"] = cm::db::bind(jstr(tracks, "escapedType"));
             addList.push_back(std::move(row));
         } else {
             updList.push_back(std::move(row));
@@ -655,7 +655,7 @@ bool syncSuspiciousCar(const std::string& addFlag, const Json& paraTrailInfoList
     }
 
     for (auto& r : addList) {
-        r.col["id"] = Db::lit(cm::utils::simpleUuid());
+        r.col["id"] = cm::db::bind(cm::utils::simpleUuid());
         std::string names, vals;
         for (const auto& c : orderedCols) {
             const auto it = r.col.find(c.first);
@@ -679,7 +679,7 @@ bool syncSuspiciousCar(const std::string& addFlag, const Json& paraTrailInfoList
         if (sets.empty()) continue;
         // CarSuspicious 的父类 BasePlusEntityLong 没有 fill，create_by/create_time 不在
         // updateById 的 SET 里（Java 手动设过 create_by，但 MP 只写非 null 属性 —— 一样会写）。
-        mustRunSql("UPDATE car_suspicious SET " + sets + " WHERE id = " + Db::lit(r.id) +
+        mustRunSql("UPDATE car_suspicious SET " + sets + " WHERE id = " + cm::db::bind(r.id) +
                    " AND del_flag = '0'");
     }
     (void)errMsg;

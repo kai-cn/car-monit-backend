@@ -307,6 +307,9 @@ bool Server::readRequest(cm::net::Fd fd, std::string& buf, cm::http::HttpRequest
 }
 
 cm::http::ApiResponse Server::dispatch(cm::http::HttpRequest& req) {
+    // 每个请求开始清空线程内的延迟绑定注册表：上一个请求若有"构建了 SQL 但没执行"的
+    // 分支，令牌会残留；这里保证参数不会跨请求串用。
+    cm::db::resetBindings();
     auto& ts = cm::security::TokenService::instance();
     cm::security::SecurityUtils::clear();
 

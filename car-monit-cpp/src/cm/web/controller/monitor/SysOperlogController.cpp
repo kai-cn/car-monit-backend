@@ -61,30 +61,30 @@ void registerSysOperlogController(Router& r) {
                               "status, error_msg, oper_time FROM sys_oper_log";
         std::string where;
         if (operLog.title && !operLog.title->empty()) {
-            where += " AND title LIKE " + cm::db::Db::lit("%" + *operLog.title + "%");
+            where += " AND title LIKE " + cm::db::bind("%" + *operLog.title + "%");
         }
         if (operLog.businessType) {
-            where += " AND business_type = " + cm::db::Db::lit(*operLog.businessType);
+            where += " AND business_type = " + cm::db::bind(*operLog.businessType);
         }
         if (!operLog.businessTypes.empty()) {
-            where += " AND business_type IN " + cm::db::Db::inList(operLog.businessTypes);
+            where += " AND business_type IN " + cm::db::bindIn(operLog.businessTypes);
         }
         if (operLog.status) {
-            where += " AND status = " + cm::db::Db::lit(*operLog.status);
+            where += " AND status = " + cm::db::bind(*operLog.status);
         }
         if (operLog.operName && !operLog.operName->empty()) {
-            where += " AND oper_name LIKE " + cm::db::Db::lit("%" + *operLog.operName + "%");
+            where += " AND oper_name LIKE " + cm::db::bind("%" + *operLog.operName + "%");
         }
         if (operLog.params.contains("beginTime") && operLog.params["beginTime"].is_string()) {
             std::string bt = operLog.params["beginTime"].get<std::string>();
             if (!bt.empty()) {
-                where += " AND date_format(oper_time,'%y%m%d') >= date_format(" + cm::db::Db::lit(bt) + ",'%y%m%d')";
+                where += " AND date_format(oper_time,'%y%m%d') >= date_format(" + cm::db::bind(bt) + ",'%y%m%d')";
             }
         }
         if (operLog.params.contains("endTime") && operLog.params["endTime"].is_string()) {
             std::string et = operLog.params["endTime"].get<std::string>();
             if (!et.empty()) {
-                where += " AND date_format(oper_time,'%y%m%d') <= date_format(" + cm::db::Db::lit(et) + ",'%y%m%d')";
+                where += " AND date_format(oper_time,'%y%m%d') <= date_format(" + cm::db::bind(et) + ",'%y%m%d')";
             }
         }
         std::string countSql = "SELECT COUNT(*) FROM sys_oper_log";

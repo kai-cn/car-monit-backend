@@ -63,6 +63,8 @@ public:
     int dbConnectTimeoutMs{30000};
     int dbSocketTimeoutMs{60000};
     bool dbSlaveEnabled{false};
+    /** 每条 MySQL 连接的预备语句缓存上限（LRU）；默认 64。 */
+    int dbPreparedCacheMax{64};
 
     // ---- user.password ----
     int pwdMaxRetryCount{5};

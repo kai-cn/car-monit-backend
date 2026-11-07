@@ -66,6 +66,10 @@ cm:
   log:
     dir: logs
     level: debug
+  db:
+    # 每条 MySQL 连接的会话级预备语句缓存上限（LRU）。
+    # 33 条连接 × 64 ≈ 2.1k，低于 MySQL max_prepared_stmt_count 默认 16382。
+    prepared-cache-max: 64
   upload:
     max-file-size: 41943040
     max-request-size: 209715200

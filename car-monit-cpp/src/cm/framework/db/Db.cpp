@@ -13,8 +13,10 @@ Db& Db::instance() {
     return db;
 }
 
-void Db::init(const DbConfig& cfg, int initial, int minIdle, int maxActive, int maxWaitMs) {
+void Db::init(const DbConfig& cfg, int initial, int minIdle, int maxActive, int maxWaitMs,
+              int preparedCacheMax) {
     pool_ = std::make_unique<ConnectionPool>(cfg, initial, minIdle, maxActive, maxWaitMs);
+    pool_->setPreparedCacheCapacity(preparedCacheMax);
     if (pool_->idleCount() == 0) {
         LOG_WARN("Db", "MySQL 连接池初始化后无可用连接（" + cfg.host + ":" + std::to_string(cfg.port) + "/" +
                            cfg.database + "）");
@@ -22,30 +24,83 @@ void Db::init(const DbConfig& cfg, int initial, int minIdle, int maxActive, int 
 }
 
 bool Db::query(const std::string& sql, Result& out) {
+    auto resolved = resolveBindings(sql);
+    if (!resolved.ok) {
+        LOG_WARN("Db", "绑定解析失败: " + resolved.error);
+        out = Result{};
+        return false;
+    }
+    if (!resolved.params.empty()) return query(resolved.sql, resolved.params, out);
+    const std::string& plain = resolved.sql;
     if (!pool_) {
         out = Result{};
         return false;
     }
     // 事务作用域内：必须用同一条连接，否则 BEGIN/ROLLBACK 看到的是别的会话
     if (auto& tx = txConn(); tx) {
-        if (tx->query(sql, out)) return true;
-        LOG_WARN("Db", "查询失败: " + sql);
+        if (tx->query(plain, out)) return true;
+        LOG_WARN("Db", "查询失败: " + plain);
         return false;
     }
-    bool ok = pool_->query(sql, out);
-    if (!ok) LOG_WARN("Db", "查询失败: " + sql);
+    bool ok = pool_->query(plain, out);
+    if (!ok) LOG_WARN("Db", "查询失败: " + plain);
     return ok;
 }
 
 bool Db::execute(const std::string& sql, long long* affected, long long* insertId) {
-    if (!pool_) return false;
-    if (auto& tx = txConn(); tx) {
-        if (tx->execute(sql, affected, insertId)) return true;
-        LOG_WARN("Db", "执行失败: " + sql);
+    auto resolved = resolveBindings(sql);
+    if (!resolved.ok) {
+        LOG_WARN("Db", "绑定解析失败: " + resolved.error);
         return false;
     }
-    bool ok = pool_->execute(sql, affected, insertId);
-    if (!ok) LOG_WARN("Db", "执行失败: " + sql);
+    if (!resolved.params.empty()) return execute(resolved.sql, resolved.params, affected, insertId);
+    const std::string& plain = resolved.sql;
+    if (!pool_) return false;
+    if (auto& tx = txConn(); tx) {
+        if (tx->execute(plain, affected, insertId)) return true;
+        LOG_WARN("Db", "执行失败: " + plain);
+        return false;
+    }
+    bool ok = pool_->execute(plain, affected, insertId);
+    if (!ok) LOG_WARN("Db", "执行失败: " + plain);
+    return ok;
+}
+
+bool Db::query(const std::string& sql, const Params& params, Result& out) {
+    if (hasBindTokens(sql)) {
+        LOG_WARN("Db", "显式 Params 与延迟绑定令牌不能混用: " + sql);
+        out = Result{};
+        return false;
+    }
+    if (!pool_) {
+        out = Result{};
+        return false;
+    }
+    if (params.empty()) return query(sql, out);
+    if (auto& tx = txConn(); tx) {
+        if (tx->queryPrepared(sql, params, out)) return true;
+        LOG_WARN("Db", "绑定查询失败: " + sql + " (" + tx->lastError() + ")");
+        return false;
+    }
+    bool ok = pool_->queryPrepared(sql, params, out);
+    if (!ok) LOG_WARN("Db", "绑定查询失败: " + sql);
+    return ok;
+}
+
+bool Db::execute(const std::string& sql, const Params& params, long long* affected, long long* insertId) {
+    if (hasBindTokens(sql)) {
+        LOG_WARN("Db", "显式 Params 与延迟绑定令牌不能混用: " + sql);
+        return false;
+    }
+    if (!pool_) return false;
+    if (params.empty()) return execute(sql, affected, insertId);
+    if (auto& tx = txConn(); tx) {
+        if (tx->executePrepared(sql, params, affected, insertId)) return true;
+        LOG_WARN("Db", "绑定执行失败: " + sql + " (" + tx->lastError() + ")");
+        return false;
+    }
+    bool ok = pool_->executePrepared(sql, params, affected, insertId);
+    if (!ok) LOG_WARN("Db", "绑定执行失败: " + sql);
     return ok;
 }
 
@@ -63,8 +118,26 @@ std::optional<std::string> Db::scalar(const std::string& sql) {
     return vals.front();
 }
 
+std::optional<std::string> Db::scalar(const std::string& sql, const Params& params) {
+    Result r;
+    if (!query(sql, params, r) || r.rows.empty()) return std::nullopt;
+    const auto& vals = r.rows.front().values();
+    if (vals.empty()) return std::nullopt;
+    return vals.front();
+}
+
 long long Db::count(const std::string& sql) {
     auto v = scalar(sql);
+    if (!v || v->empty()) return 0;
+    try {
+        return std::stoll(*v);
+    } catch (...) {
+        return 0;
+    }
+}
+
+long long Db::count(const std::string& sql, const Params& params) {
+    auto v = scalar(sql, params);
     if (!v || v->empty()) return 0;
     try {
         return std::stoll(*v);
@@ -135,13 +208,19 @@ std::string Db::inList(const std::vector<long long>& values) {
     return out;
 }
 
-PageResult queryPage(const std::string& countSql, const std::string& dataSql, const PageRequest& page) {
+namespace {
+
+PageResult runPage(const std::string& countSql, const Params& countParams, const std::string& dataSql,
+                   const Params& dataParams, const PageRequest& page, bool bound) {
     PageResult pr;
     if (!page.enabled) {
-        Db::instance().query(dataSql, pr.rows);
+        if (bound)
+            Db::instance().query(dataSql, dataParams, pr.rows);
+        else
+            Db::instance().query(dataSql, pr.rows);
         return pr;
     }
-    pr.total = Db::instance().count(countSql);
+    pr.total = bound ? Db::instance().count(countSql, countParams) : Db::instance().count(countSql);
     // Java: PageHelper 在 count == 0 时 **不执行** data 语句，直接返回空 Page
     if (pr.total <= 0) return pr;
 
@@ -163,8 +242,22 @@ PageResult queryPage(const std::string& countSql, const std::string& dataSql, co
         }
     }
     sql += " LIMIT " + std::to_string(offset) + "," + std::to_string(pageSize);
-    Db::instance().query(sql, pr.rows);
+    if (bound)
+        Db::instance().query(sql, dataParams, pr.rows);
+    else
+        Db::instance().query(sql, pr.rows);
     return pr;
+}
+
+} // namespace
+
+PageResult queryPage(const std::string& countSql, const std::string& dataSql, const PageRequest& page) {
+    return runPage(countSql, Params{}, dataSql, Params{}, page, false);
+}
+
+PageResult queryPage(const std::string& countSql, const Params& countParams, const std::string& dataSql,
+                     const Params& dataParams, const PageRequest& page) {
+    return runPage(countSql, countParams, dataSql, dataParams, page, true);
 }
 
 } // namespace cm::db

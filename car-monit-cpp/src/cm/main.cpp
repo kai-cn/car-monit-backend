@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
     dbc.connectTimeoutMs = cfg.dbConnectTimeoutMs;
     dbc.socketTimeoutMs = cfg.dbSocketTimeoutMs;
     cm::db::Db::instance().init(dbc, cfg.dbInitialSize, cfg.dbMinIdle, cfg.dbMaxActive,
-                                cfg.dbMaxWaitMs);
+                                cfg.dbMaxWaitMs, cfg.dbPreparedCacheMax);
     if (!cm::db::Db::instance().pool().pingAll()) {
         LOG_WARN("main", "MySQL 不可用，服务继续启动（登录等需要数据库的接口会失败）");
     }

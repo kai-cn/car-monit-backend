@@ -46,6 +46,10 @@ void mustExec(const std::string& sql) {
     if (!Db::instance().execute(sql))
         throw std::runtime_error("SQL 执行失败（事务回滚）: " + sql);
 }
+void mustExec(const std::string& sql, const cm::db::Params& params) {
+    if (!Db::instance().execute(sql, params))
+        throw std::runtime_error("SQL 执行失败（事务回滚）: " + sql);
+}
 
 /** Java 的 isEmpty(String)：null 与 "" 同等 */
 bool isEmpty(const Json& j, const std::string& key) {
@@ -66,31 +70,36 @@ std::string nowStamp() {
 }
 
 /** 对应 <include refid="selectXxxVo"/> + from <table> t + 调用方给的 where/order */
-std::vector<Json> selectRows(const Spec& sp, const std::string& where, const std::string& order) {
+std::vector<Json> selectRows(const Spec& sp, const std::string& where, const cm::db::Params& params,
+                             const std::string& order) {
     std::string sql = "SELECT " + sp.selectColumns() + " FROM " + sp.table + " " + sp.alias;
     if (!where.empty()) sql += " " + where;
     if (!order.empty()) sql += " ORDER BY " + order;
     cm::db::Result res;
     std::vector<Json> out;
-    if (Db::instance().query(sql, res))
+    if (Db::instance().query(sql, params, res))
         for (const auto& row : res.rows) out.push_back(cm::web::crud::rowToJson(sp, row));
     return out;
 }
 
-std::optional<Json> selectOne(const Spec& sp, const std::string& where, const std::string& order) {
-    auto rows = selectRows(sp, where, order);
+std::optional<Json> selectOne(const Spec& sp, const std::string& where, const cm::db::Params& params,
+                              const std::string& order) {
+    auto rows = selectRows(sp, where, params, order);
     if (rows.empty()) return std::nullopt;
     return rows.front();
 }
 
 /** 对应 selectXxxById：where t.ID = ? —— Java 的 by-id 语句不过滤 del_flag */
 std::optional<Json> byId(const Spec& sp, const std::string& id) {
-    return selectOne(sp, "WHERE " + sp.alias + ".ID = " + Db::lit(id), std::string());
+    cm::db::Params params;
+    return selectOne(sp, "WHERE " + sp.alias + ".ID = " + cm::db::bind(params, id), params, std::string());
 }
 
 /** 对应 selectXxxList：del_flag 过滤在 spec.extraWhere，动态条件在 <if> */
 std::vector<Json> listBy(const Spec& sp, const Json& query) {
-    return selectRows(sp, cm::web::crud::buildWhere(sp, query), sp.orderBy);
+    cm::db::Params params;
+    const std::string where = cm::web::crud::buildWhere(sp, query, params);
+    return selectRows(sp, where, params, sp.orderBy);
 }
 
 /** 对应各 ServiceImpl 的 save-or-update：id 有值走 update，否则补主键与审计列后 insert。
@@ -101,7 +110,8 @@ std::string saveEntity(const Spec& sp, Json body) {
     if (!isEmpty(body, "id")) {
         body["updateBy"] = userId;
         body["updateTime"] = ts;
-        mustExec(cm::web::crud::buildUpdate(sp, body));
+        cm::db::Params params;
+        mustExec(cm::web::crud::buildUpdate(sp, body, params), params);
     } else {
         body["id"] = cm::utils::simpleUuid();  // Java: StringUtils.getUUID() —— 32 位无横线
         body["delFlag"] = "0";
@@ -110,7 +120,8 @@ std::string saveEntity(const Spec& sp, Json body) {
         body["createTime"] = ts;
         body["updateBy"] = userId;
         body["updateTime"] = ts;
-        mustExec(cm::web::crud::buildInsert(sp, body));
+        cm::db::Params params;
+        mustExec(cm::web::crud::buildInsert(sp, body, params), params);
     }
     return sOf(body, "id");
 }
@@ -137,20 +148,20 @@ std::string saveApplyInfoNew(Json body) {
 
 /** 对应 flowCurrentNodeMapper.deleteByBillId */
 void deleteNodesByBillId(const std::string& billOid) {
-    mustExec("delete from flow_current_node where BILL_OID = " + Db::lit(billOid));
+    mustExec("delete from flow_current_node where BILL_OID = " + cm::db::bind(billOid));
 }
 
 /** 对应 removeFlowMessage(mid, bussId)：bussId 为空时删该消息的全部处理人 */
 void removeFlowMessage(const std::string& mid, const std::string& bussId) {
-    std::string sql = "delete from flow_message_dispose where MID = " + Db::lit(mid);
-    if (!bussId.empty()) sql += " and BUSS_ID = " + Db::lit(bussId);
+    std::string sql = "delete from flow_message_dispose where MID = " + cm::db::bind(mid);
+    if (!bussId.empty()) sql += " and BUSS_ID = " + cm::db::bind(bussId);
     mustExec(sql);
 }
 
 /** 对应 saveSzzdFlowMessageAll：把该消息所有未处理待办置已读并归到某人 */
 void saveSzzdFlowMessageAll(const std::string& mid, const std::string& bussId) {
     mustExec("update flow_message_dispose set MSG_STATUS = '1', BUSS_ID = " +
-                           Db::lit(bussId) + " where del_flag = '0' and MID = " + Db::lit(mid) +
+                           cm::db::bind(bussId) + " where del_flag = '0' and MID = " + cm::db::bind(mid) +
                            " and MSG_STATUS = '2'");
 }
 
@@ -200,11 +211,11 @@ void requireTableName(const std::string& table) {
 void updateFlowTable(const std::string& tableName, const std::string& billOid,
                      const std::string& flowStatus) {
     requireTableName(tableName);
-    std::string set = "flow_status = " + Db::lit(flowStatus) + ", ";
+    std::string set = "flow_status = " + cm::db::bind(flowStatus) + ", ";
     if (flowStatus == "3")  // Java: <if test="flowStatus != null and flowStatus == 3">sh_time = now(),</if>
-        set = "flow_status = " + Db::lit(flowStatus) + ", sh_time = now(), ";
+        set = "flow_status = " + cm::db::bind(flowStatus) + ", sh_time = now(), ";
     mustExec("update " + tableName + " set " + set + "update_time = now() where id = " +
-                           Db::lit(billOid));
+                           cm::db::bind(billOid));
 }
 
 /** 对应 flowNameMapper.selectFlowNameById 之后的三处取键，null 会让 Java NPE */
@@ -220,7 +231,7 @@ std::optional<Json> selectRole(const std::string& configId) {
         throw std::runtime_error("java.lang.NumberFormatException: For input string: \"" + configId + "\"");
     cm::db::Result res;
     const std::string sql = "select r.role_id, r.role_key from sys_role r where r.role_id = " +
-                            Db::lit(static_cast<long long>(std::stoll(configId)));
+                            cm::db::bind(static_cast<long long>(std::stoll(configId)));
     if (!Db::instance().query(sql, res) || res.rows.empty()) return std::nullopt;
     Json j = obj();
     j["roleId"] = res.rows[0].i64("role_id");
@@ -239,24 +250,24 @@ std::vector<Json> selectEmpInfoList(const Json& q) {
 
     if (!roleId.empty())
         sql += " and exists (select 1 from sys_user_role t1 where t1.user_id = t.user_id and t1.role_id = " +
-               Db::lit(roleId) + ")";
+               cm::db::bind(roleId) + ")";
     if (!isEmpty(q, "tenantId"))
         sql += " and exists (select 1 from sys_dept td where td.del_flag = '0' and td.dept_id = t.dept_id"
-               " and td.tenant_id = " + Db::lit(cm::jlong(q, "tenantId")) + ")";
+               " and td.tenant_id = " + cm::db::bind(cm::jlong(q, "tenantId")) + ")";
     if (!isEmpty(q, "deptId"))
-        sql += " and t.dept_id = " + Db::lit(cm::jlong(q, "deptId"));
+        sql += " and t.dept_id = " + cm::db::bind(cm::jlong(q, "deptId"));
 
     if (flag == "dutyAudit") {
         requireTableName(backCol1);  // 这里 backCol1 装的是业务表名
         sql += " and t.dept_id in (select tp.borrow_dept_id from " + backCol1 +
-               " tp where tp.id = " + Db::lit(billOid) + ")";
+               " tp where tp.id = " + cm::db::bind(billOid) + ")";
     } else if (flag == "bmjlAudit") {
         sql += " AND EXISTS (SELECT 1 FROM sys_dept ds WHERE ds.del_flag = '0' AND ds.dept_id ="
-               " (SELECT tt.dept_id FROM sys_user tt WHERE tt.user_id = " + Db::lit(backCol1) +
+               " (SELECT tt.dept_id FROM sys_user tt WHERE tt.user_id = " + cm::db::bind(backCol1) +
                ") AND ds.leader_id = t.user_id)";
     } else if (flag == "fgldAudit") {
         sql += " AND EXISTS (SELECT 1 FROM sys_dept ds WHERE ds.del_flag = '0' AND ds.dept_id ="
-               " (SELECT tt.dept_id FROM sys_user tt WHERE tt.user_id = " + Db::lit(backCol1) +
+               " (SELECT tt.dept_id FROM sys_user tt WHERE tt.user_id = " + cm::db::bind(backCol1) +
                ") AND ds.fgld_id = t.user_id)";
     }
 
@@ -319,8 +330,9 @@ std::vector<Json> getEmpInfoListReturn(const Json& tp, const std::string& billOi
     Json q = obj();
     q["billOid"] = billOid;
     q["currentOid"] = sOf(tp, "id");
+    cm::db::Params params;
     auto rows = selectRows(cm::web::crud::specFlowList(),
-                           cm::web::crud::buildWhere(cm::web::crud::specFlowList(), q),
+                           cm::web::crud::buildWhere(cm::web::crud::specFlowList(), q, params), params,
                            "t.create_time desc ,t.id");  // selectFlowListListNew 的排序
     if (rows.empty()) return list;
     const Json& src = rows.front();
@@ -509,13 +521,13 @@ AjaxResult submitReturn(const Json& body) {
     if (!msgs.empty()) {
         const std::string mid = sOf(msgs.front(), "id");
         // deleteFlowMessageInfoById 是逻辑删除：update ... set del_flag = '1'
-        mustExec("update flow_message_info set del_flag = '1' where ID = " + Db::lit(mid));
+        mustExec("update flow_message_info set del_flag = '1' where ID = " + cm::db::bind(mid));
         removeFlowMessage(mid, "");  // bussId 为空 -> 删该消息的全部处理人
     }
 
     // Java 传的是 flowCurrentNode.getId()（不是申请单 id）—— 照抄这个取值，别自作聪明改成 billOid
     mustExec("update flow_apply_info set del_flag = '1' where ID = " +
-                           Db::lit(sOf(current, "id")));
+                           cm::db::bind(sOf(current, "id")));
 
     updateFlowTable(sOf(*flowName, "bussName"), billOid, "1");  // FlowTypeEnum.SUBMIT = 草稿
 
@@ -546,7 +558,8 @@ AjaxResult submitEntrustFlow(const Json& body) {
     if (!flowName) return AjaxResult::error("找不到对应的流程信息!");
 
     auto apply = selectOne(cm::web::crud::specFlowApplyInfo(),
-                           "WHERE t.del_flag = 0 AND t.bill_oid = " + Db::lit(billOid), std::string());
+                           "WHERE t.del_flag = 0 AND t.bill_oid = " + cm::db::bind(billOid),
+                           cm::db::Params{}, std::string());
     if (!apply) return AjaxResult::error("找不到对应的流程申请信息!");
 
     /** 当前节点改成被委托人，并记下委托前的审核人 */
@@ -638,7 +651,8 @@ void reorderFlowNodes(const std::string& flowOid) {
         v["previousNodeOid"] = Json(pre);
         v["nextNodeOid"] = Json(next);
         v["returnNodeOid"] = Json(ret);
-        mustExec(cm::web::crud::buildUpdate(cm::web::crud::specFlowTemplate(), v));
+        cm::db::Params params;
+        mustExec(cm::web::crud::buildUpdate(cm::web::crud::specFlowTemplate(), v, params), params);
     }
 }
 
@@ -694,7 +708,8 @@ AjaxResult tbFlow() {
                 c["createTime"] = Json(ts);
                 c["updateBy"] = Json(userId);
                 c["updateTime"] = Json(ts);
-                mustExec(cm::web::crud::buildInsert(cm::web::crud::specFlowTemplate(), c));
+                cm::db::Params params;
+                mustExec(cm::web::crud::buildInsert(cm::web::crud::specFlowTemplate(), c, params), params);
             }
             reorderFlowNodes(newId);
         }

@@ -233,13 +233,13 @@ std::string genTableWhere(const RequestContext& ctx) {
     const std::string begin = ctx.optParam("params[beginTime]").value_or("");
     const std::string end = ctx.optParam("params[endTime]").value_or("");
     if (!tableName.empty())
-        w += " AND lower(table_name) like lower(concat('%', " + Db::lit(tableName) + ", '%'))";
+        w += " AND lower(table_name) like lower(concat('%', " + cm::db::bind(tableName) + ", '%'))";
     if (!tableComment.empty())
-        w += " AND lower(table_comment) like lower(concat('%', " + Db::lit(tableComment) + ", '%'))";
+        w += " AND lower(table_comment) like lower(concat('%', " + cm::db::bind(tableComment) + ", '%'))";
     if (!begin.empty())
-        w += " AND date_format(create_time,'%y%m%d') >= date_format(" + Db::lit(begin) + ", '%y%m%d')";
+        w += " AND date_format(create_time,'%y%m%d') >= date_format(" + cm::db::bind(begin) + ", '%y%m%d')";
     if (!end.empty())
-        w += " AND date_format(create_time,'%y%m%d') <= date_format(" + Db::lit(end) + ", '%y%m%d')";
+        w += " AND date_format(create_time,'%y%m%d') <= date_format(" + cm::db::bind(end) + ", '%y%m%d')";
     return w;
 }
 
@@ -269,15 +269,15 @@ std::string columnWhere(const Json& body) {
             tableId = -1;
         }
     }
-    if (tableId > 0) w += " AND table_id = " + Db::lit(tableId);
+    if (tableId > 0) w += " AND table_id = " + cm::db::bind(tableId);
     auto strAt = [&](const char* k) -> std::string {
         if (!body.contains(k) || !body[k].is_string()) return std::string();
         return body[k].get<std::string>();
     };
     const std::string columnName = strAt("columnName");
     const std::string javaField = strAt("javaField");
-    if (!columnName.empty()) w += " AND `column_name` LIKE CONCAT('%', " + Db::lit(columnName) + ", '%%')";
-    if (!javaField.empty()) w += " AND java_field LIKE CONCAT('%', " + Db::lit(javaField) + ", '%%')";
+    if (!columnName.empty()) w += " AND `column_name` LIKE CONCAT('%', " + cm::db::bind(columnName) + ", '%%')";
+    if (!javaField.empty()) w += " AND java_field LIKE CONCAT('%', " + cm::db::bind(javaField) + ", '%%')";
     return w;
 }
 
@@ -294,7 +294,7 @@ std::vector<Json> columnListByIds(const std::vector<std::string>& ids) {
     std::string in;
     for (const auto& id : ids) {
         if (!in.empty()) in += ", ";
-        in += Db::lit(id);
+        in += cm::db::bind(id);
     }
     auto res = run(std::string(kGenColumnVo) + " where column_id in (" + in + ") order by sort");
     for (const auto& row : res.rows) out.push_back(genColumnJson(row));
@@ -345,7 +345,7 @@ std::string dbTablesByNameIn(const std::vector<std::string>& names) {
     std::string in;
     for (const auto& n : names) {
         if (!in.empty()) in += ", ";
-        in += Db::lit(n);
+        in += cm::db::bind(n);
     }
     return "select table_name, table_comment, create_time, update_time from information_schema.tables"
            " where table_name NOT LIKE 'qrtz_%' and table_name NOT LIKE 'gen_%'"
@@ -360,7 +360,7 @@ std::string dbColumnsByName(const std::string& tableName) {
            " ordinal_position as sort, column_comment,"
            " (case when extra = 'auto_increment' then '1' else '0' end) as is_increment, column_type"
            " from information_schema.columns where table_schema = (select database())"
-           " and table_name = (" + Db::lit(tableName) + ") order by ordinal_position";
+           " and table_name = (" + cm::db::bind(tableName) + ") order by ordinal_position";
 }
 
 /** insertGenTable：只写 <if> 成立的列；create_time 恒写 sysdate()。
@@ -370,7 +370,7 @@ long long insertGenTableRow(const cm::gen::TableInit& t, const std::string& tabl
     std::vector<std::pair<std::string, std::string>> cols;
     auto add = [&](const char* col, const std::string& v, bool nonEmpty = true) {
         if (v.empty() && nonEmpty) return;
-        cols.emplace_back(col, Db::lit(v));
+        cols.emplace_back(col, cm::db::bind(v));
     };
     add("table_name", tableName, false);        // <if test="tableName != null">：空串照样写
     add("table_comment", tableComment);
@@ -399,9 +399,9 @@ void insertGenColumnRow(long long tableId, const std::string& createBy, const cm
     const auto ci = cm::gen::initColumnField(src.str("column_name"), src.str("column_type"),
                                              src.str("is_pk") == "1");
     std::vector<std::pair<std::string, std::string>> cols;
-    if (tableId != 0) cols.emplace_back("table_id", Db::lit(tableId));
+    if (tableId != 0) cols.emplace_back("table_id", cm::db::bind(tableId));
     auto add = [&](const char* col, const std::string& v) {
-        if (!v.empty()) cols.emplace_back(col, Db::lit(v));
+        if (!v.empty()) cols.emplace_back(col, cm::db::bind(v));
     };
     add("column_name", src.str("column_name"));
     add("column_comment", src.str("column_comment"));
@@ -417,7 +417,7 @@ void insertGenColumnRow(long long tableId, const std::string& createBy, const cm
     add("is_query", ci.isQuery);
     add("query_type", ci.queryType);
     add("html_type", ci.htmlType);               // 未知类型时为空 ⇒ 省掉
-    cols.emplace_back("sort", Db::lit(src.i64("sort")));
+    cols.emplace_back("sort", cm::db::bind(src.i64("sort")));
     add("create_by", createBy);
     std::string sql = "insert into gen_table_column (";
     std::string vals;
@@ -464,17 +464,17 @@ long long updateGenTableRow(long long tableId, const Json& body) {
     std::vector<std::string> sets;
     auto addIf = [&](const char* col, const std::string& v, bool nonEmpty) {
         if (v.empty() && nonEmpty) return;
-        sets.push_back(std::string(col) + " = " + Db::lit(v));
+        sets.push_back(std::string(col) + " = " + cm::db::bind(v));
     };
     // 这几个 <if> 只判 != null ⇒ 空串是**要写**的，但 body 里没这个键时是 null，不能写。
     // 早先用 jstr() 取空串当"没给"，结果 PUT 把 table_name 洗成 '' —— 只能靠实机跑出来。
     if (body.contains("tableName") && !body["tableName"].is_null())
-        sets.push_back("table_name = " + Db::lit(str("tableName")));
+        sets.push_back("table_name = " + cm::db::bind(str("tableName")));
     addIf("table_comment", str("tableComment"), true);
     if (body.contains("subTableName") && !body["subTableName"].is_null())
-        sets.push_back("sub_table_name = " + Db::lit(str("subTableName")));
+        sets.push_back("sub_table_name = " + cm::db::bind(str("subTableName")));
     if (body.contains("subTableFkName") && !body["subTableFkName"].is_null())
-        sets.push_back("sub_table_fk_name = " + Db::lit(str("subTableFkName")));
+        sets.push_back("sub_table_fk_name = " + cm::db::bind(str("subTableFkName")));
     addIf("class_name", str("className"), true);
     addIf("function_author", str("functionAuthor"), true);
     addIf("gen_type", str("genType"), true);
@@ -487,14 +487,14 @@ long long updateGenTableRow(long long tableId, const Json& body) {
     // options = JSON.toJSONString(params)：getParams() 懒加载空 Map ⇒ 没带 params 就是 "{}"
     std::string options = "{}";
     if (body.contains("params") && body["params"].is_object()) options = body["params"].dump();
-    if (!options.empty()) sets.push_back("options = " + Db::lit(options));
+    if (!options.empty()) sets.push_back("options = " + cm::db::bind(options));
     addIf("update_by", str("updateBy"), true);
     if (body.contains("remark") && !body["remark"].is_null())
-        sets.push_back("remark = " + Db::lit(str("remark")));   // 同上：判 null，不判空串
+        sets.push_back("remark = " + cm::db::bind(str("remark")));   // 同上：判 null，不判空串
     sets.push_back("update_time = sysdate()");
     std::string sql = "update gen_table set ";
     for (size_t i = 0; i < sets.size(); ++i) sql += (i ? ", " : "") + sets[i];
-    sql += " where table_id = " + Db::lit(tableId);
+    sql += " where table_id = " + cm::db::bind(tableId);
     long long affected = 0;
     Db::instance().execute(sql, &affected);
     return affected;
@@ -506,7 +506,7 @@ void updateGenTableRowColumn(const Json& c) {
     auto str = [&](const char* k) { return cm::jstr(c, k); };
     auto nulIfAbsent = [&](const char* k) {
         if (!c.contains(k) || c[k].is_null()) return std::string("null");
-        return Db::lit(str(k));
+        return cm::db::bind(str(k));
     };
     std::string sql = "update gen_table_column set column_comment = " + nulIfAbsent("columnComment") +
                       ", java_type = " + nulIfAbsent("javaType") +
@@ -521,7 +521,7 @@ void updateGenTableRowColumn(const Json& c) {
                       ", dict_type = " + nulIfAbsent("dictType");
     const long long sort = c.contains("sort") && c["sort"].is_number() ? c["sort"].get<long long>()
                                                                        : std::atoll(str("sort").c_str());
-    sql += ", sort = " + Db::lit(sort);
+    sql += ", sort = " + cm::db::bind(sort);
     static const std::vector<std::pair<const char*, const char*>> kForkCols = {
         {"linkTableId", "link_table_id"},         {"singleSelection", "single_selection"},
         {"multipleSelections", "multiple_selections"},
@@ -530,13 +530,13 @@ void updateGenTableRowColumn(const Json& c) {
         {"fieldMapString", "field_map_string"}};
     for (const auto& [key, col] : kForkCols) {
         const std::string v = str(key);
-        if (!v.empty()) sql += ", " + std::string(col) + " = " + Db::lit(v);
+        if (!v.empty()) sql += ", " + std::string(col) + " = " + cm::db::bind(v);
     }
     sql += ", update_by = " + nulIfAbsent("updateBy") + ", update_time = sysdate()";
     const long long columnId = c.contains("columnId") && c["columnId"].is_number()
                                    ? c["columnId"].get<long long>()
                                    : std::atoll(str("columnId").c_str());
-    sql += " where column_id = " + Db::lit(columnId);
+    sql += " where column_id = " + cm::db::bind(columnId);
     Db::instance().execute(sql);
 }
 
@@ -574,13 +574,13 @@ void registerGenController(Router& r) {
         const std::string begin = ctx.optParam("params[beginTime]").value_or("");
         const std::string end = ctx.optParam("params[endTime]").value_or("");
         if (!tableName.empty())
-            sql += " AND lower(table_name) like lower(concat('%', " + Db::lit(tableName) + ", '%'))";
+            sql += " AND lower(table_name) like lower(concat('%', " + cm::db::bind(tableName) + ", '%'))";
         if (!tableComment.empty())
-            sql += " AND lower(table_comment) like lower(concat('%', " + Db::lit(tableComment) + ", '%'))";
+            sql += " AND lower(table_comment) like lower(concat('%', " + cm::db::bind(tableComment) + ", '%'))";
         if (!begin.empty())
-            sql += " AND date_format(create_time,'%y%m%d') >= date_format(" + Db::lit(begin) + ", '%y%m%d')";
+            sql += " AND date_format(create_time,'%y%m%d') >= date_format(" + cm::db::bind(begin) + ", '%y%m%d')";
         if (!end.empty())
-            sql += " AND date_format(create_time,'%y%m%d') <= date_format(" + Db::lit(end) + ", '%y%m%d')";
+            sql += " AND date_format(create_time,'%y%m%d') <= date_format(" + cm::db::bind(end) + ", '%y%m%d')";
         const auto page = ctx.pageRequest();
         if (page.enabled) {
             auto pr = cm::db::queryPage(
@@ -588,7 +588,7 @@ void registerGenController(Router& r) {
                 " AND table_name NOT LIKE 'qrtz_%' AND table_name NOT LIKE 'gen_%'"
                 " AND table_name NOT IN (select table_name from gen_table)"
                 + (tableName.empty() ? std::string()
-                                     : " AND lower(table_name) like lower(concat('%', " + Db::lit(tableName) + ", '%'))"),
+                                     : " AND lower(table_name) like lower(concat('%', " + cm::db::bind(tableName) + ", '%'))"),
                 sql, page);
             std::vector<Json> rows;
             for (const auto& row : pr.rows.rows) rows.push_back(genTableJson(row));
@@ -605,7 +605,7 @@ void registerGenController(Router& r) {
     //    另外这个接口 new TableDataInfo() 只 setRows/setTotal，code/msg 保持字段默认 0/null。
     r.get("/tool/gen/column/{talbleId}", [](RequestContext& ctx) -> cm::http::ApiResponse {
         const long long tableId = std::atoll(ctx.pathVar("talbleId").c_str());
-        auto res = run(std::string(kGenColumnVo) + " where table_id = " + Db::lit(tableId) + " order by sort");
+        auto res = run(std::string(kGenColumnVo) + " where table_id = " + cm::db::bind(tableId) + " order by sort");
         Json rows = Json::array();
         for (const auto& row : res.rows) rows.push_back(genColumnJson(row));
         // 对应 new TableDataInfo() + setRows/setTotal：框架不会填 code/msg，所以是 0 / null
@@ -629,7 +629,7 @@ void registerGenController(Router& r) {
             " c.single_selection, c.multiple_selections, c.dialog_search_column_ids,"
             " c.dialog_list_column_ids, c.sort"
             " FROM gen_table t LEFT JOIN gen_table_column c ON t.table_id = c.table_id"
-            " where t.table_id = " + Db::lit(tableId) + " order by c.sort");
+            " where t.table_id = " + cm::db::bind(tableId) + " order by c.sort");
         Json info = res.rows.empty() ? Json(nullptr) : genTableJson(res.rows[0]);
 
         // tables：selectGenTableAll（同样折叠，每张表取第一行）
@@ -653,7 +653,7 @@ void registerGenController(Router& r) {
         }
 
         // rows：列清单，并把 dialogXxxColumnIds 换成对应的列名串
-        auto cols = run(std::string(kGenColumnVo) + " where table_id = " + Db::lit(tableId) + " order by sort");
+        auto cols = run(std::string(kGenColumnVo) + " where table_id = " + cm::db::bind(tableId) + " order by sort");
         Json rows = Json::array();
         for (const auto& row : cols.rows) {
             Json j = genColumnJson(row);
@@ -753,7 +753,7 @@ void registerGenController(Router& r) {
     // GET /tool/gen/synchDb/{tableName} —— 只补新列 + 删掉库里没有的列，**从不更新**已存在的列
     r.get("/tool/gen/synchDb/{tableName}", [](RequestContext& ctx) -> cm::http::ApiResponse {
         const std::string tableName = ctx.pathVar("tableName");
-        auto t = run(std::string(kGenTableVo) + " where table_name = " + Db::lit(tableName));
+        auto t = run(std::string(kGenTableVo) + " where table_name = " + cm::db::bind(tableName));
         // Java: selectGenTableByName 声明返回单个 GenTable ⇒ MyBatis 用 selectOne，
         // 同名两行（重复 importTable 就会造成）直接 TooManyResultsException
         std::vector<long long> distinctIds;
@@ -772,7 +772,7 @@ void registerGenController(Router& r) {
                 std::to_string(distinctIds.size()));
         const long long tableId = t.rows[0].i64("table_id");
         const std::string createBy = t.rows[0].str("create_by");
-        auto cols = run(std::string(kGenColumnVo) + " where table_id = " + Db::lit(tableId) +
+        auto cols = run(std::string(kGenColumnVo) + " where table_id = " + cm::db::bind(tableId) +
                         " order by sort");
         auto dbCols = run(dbColumnsByName(tableName));
         if (dbCols.rows.empty())
@@ -794,7 +794,7 @@ void registerGenController(Router& r) {
             const std::string cn = r.str("column_name");
             if (std::find(dbNames.begin(), dbNames.end(), cn) != dbNames.end()) continue;
             if (!drop.empty()) drop += ", ";
-            drop += Db::lit(r.i64("column_id"));
+            drop += cm::db::bind(r.i64("column_id"));
         }
         if (!drop.empty())
             Db::instance().execute("delete from gen_table_column where column_id in (" + drop + ")");
@@ -808,7 +808,7 @@ void registerGenController(Router& r) {
         std::string in;
         for (auto id : ids) {
             if (!in.empty()) in += ", ";
-            in += Db::lit(id);
+            in += cm::db::bind(id);
         }
         Db::instance().execute("delete from gen_table where table_id in (" + in + ")");
         Db::instance().execute("delete from gen_table_column where table_id in (" + in + ")");
