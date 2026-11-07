@@ -74,11 +74,27 @@ C++ 对应实现位置：
 
 * Java：`FastJson2JsonRedisSerializer` 使用 `JSONWriter.Feature.WriteClassName`，
   value 形如 `{"@type":"com.ruoyi.common.core.domain.model.LoginUser",...}`。
-* C++：写入纯 JSON（无 `@type`）。
-* 影响：**同一 Redis 实例中，C++ 写入的 `login_tokens:*` 无法被 Java 读取**；反向可读
-  （C++ 解析时忽略未知字段）。
-* 规避：迁移切换时使用独立 Redis DB（`spring.redis.database` / `CM_REDIS_DB`）或在切换期
-  让流量只走一个实现。C++ 内部自洽，不影响单机功能。
+* C++：`login_tokens:*` 已按 fastjson2 形态写出（`cm::domain::loginUserToFastJson2`），
+  与 Java 的 `FastJson2JsonRedisSerializer.serialize` **逐字节一致**；其余缓存键仍按各自约定
+  （`car_list` 等走 `fastJson2CachedArray`，普通 KV 走纯 JSON）。
+* 为什么必须一致：Java 的序列化器注册的是 `Object.class`，读回时目标类型是 `Object`
+  而不是 `LoginUser` —— 文本里没有 `@type` 会得到 `JSONObject`，随后
+  `TokenService.getLoginUser` 的 `LoginUser user = redisCache.getCacheObject(key)`
+  在 checkcast 处抛 `ClassCastException`（HTTP 200 + `code:500`）。
+* 已实测的 fastjson2 细节（与 Jackson 不同，别按 Jackson 直觉改）：
+  `@type` 置顶、其余键按属性名字母序；null 整个键省略、`0/false` 照写；
+  根对象 boxed `Long` 不带 `L`、嵌套对象带 `L`；`Set` 写 `Set[...]`；
+  `Date` 写 `"yyyy-MM-dd HH:mm:ss"`；`BaseEntity.params` 空 Map 也输出
+  `{"@type":"java.util.HashMap"}`；另外还要带上 `getter` 派生键
+  （`enabled` / `accountNonExpired` / `accountNonLocked` / `credentialsNonExpired` / `username`，
+  SysUser 的 `admin`、SysRole 的 `admin`）。
+* 反向兼容：C++ 读 Java 写的值走 `cm::utils::normalizeFastJson2`（去 `L` 后缀、`Set[` → `[`），
+  已有回归用例。
+* golden：`tests/golden/login_user_fastjson2.json`（真实 ruoyi-common 编译产物 + fastjson2 2.0.43 生成），
+  `tests/login_user_fastjson2_test.cpp` 做逐字节比对与字段集守护（LoginUser 10 / SysUser 47）。
+* 并行窗口：迁移文档明确要求"共用 MySQL + Redis db0"且"灰度共存必测"（见
+  `car-monit-rust/README-MIGRATION.md:22`、`car-monit-rust/docs/02-JAVA-RUST-MAPPING.md:197,334`），
+  C++ 的 `config/application.yaml` 同样是 `database: 0`，所以该兼容层是必需项。
 
 ### ⚠️ 2.3 Excel 导入导出
 

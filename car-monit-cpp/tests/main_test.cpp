@@ -299,6 +299,7 @@ void run_encrypt_utils_tests();
 void run_inflate_tests();
 void run_xlsx_tests();
 void run_trail_geo_tests();
+void run_login_user_fastjson2_tests();
 
 /** chunked 请求体的 chunk-size 行解析（十六进制 + chunk-ext + 上限） */
 static void testChunkSizeLine() {
@@ -661,6 +662,7 @@ int main() {
     run_inflate_tests();
     run_xlsx_tests();
     run_trail_geo_tests();
+    run_login_user_fastjson2_tests();
     if (fails == 0) {
         std::printf("ALL TESTS PASSED\n");
         return 0;

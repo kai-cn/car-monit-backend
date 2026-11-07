@@ -1,8 +1,8 @@
 #include "cm/framework/security/TokenService.hpp"
-
 #include <chrono>
 
 #include "cm/common/constant/Constants.hpp"
+#include "cm/common/core/domain/model/LoginUserFastJson2.hpp"
 #include "cm/common/utils/FastJson2Compat.hpp"
 #include "cm/common/utils/IdUtils.hpp"
 #include "cm/common/utils/Logger.hpp"
@@ -75,14 +75,10 @@ std::optional<cm::domain::LoginUser> TokenService::getLoginUserByToken(const std
     if (!uuid) return std::nullopt;
     auto cached = cm::redis::RedisCache::instance().get(getTokenKey(*uuid));
     if (!cached) return std::nullopt;
-    try {
-        // Java 写入的会话值带 fastjson2 类型标注（Set[...] / 25367L），必须先降级
-        Json j = cm::utils::parse_cached_json(*cached);
-        return cm::domain::LoginUser::fromJson(j);
-    } catch (const std::exception& e) {
-        LOG_ERROR("TokenService", std::string("解析 LoginUser 缓存失败: ") + e.what());
-        return std::nullopt;
-    }
+    // Java 写入的会话值带 fastjson2 类型标注（Set[...] / 25367L），走同一个兼容解析
+    const cm::domain::LoginUser u = cm::domain::loginUserFromFastJson2(*cached);
+    if (!u.token && !u.user.userId && u.permissions.empty()) return std::nullopt;
+    return u;
 }
 
 std::optional<cm::domain::LoginUser> TokenService::getLoginUser(const cm::http::HttpRequest& request) {
@@ -95,7 +91,11 @@ void TokenService::refreshToken(cm::domain::LoginUser& loginUser) {
     loginUser.loginTime = nowMillis();
     loginUser.expireTime = *loginUser.loginTime + static_cast<long long>(expire_minutes_) * 60 * 1000;
     std::string key = getTokenKey(loginUser.token.value_or(""));
-    cm::redis::RedisCache::instance().set(key, loginUser.toJson().dump(),
+    // 只对 login_tokens:* 使用 fastjson2 WriteClassName 形态：Java 的 RedisConfig 用
+    // FastJson2JsonRedisSerializer(Object.class) 读取，纯 JSON 会在 checkcast LoginUser 处
+    // 抛 ClassCastException（表现为 Java 侧带此 token 的请求 200 + code:500）。
+    // 其它缓存（car_list 等）走各自的 fastJson2CachedArray / 普通 JSON，不要混用。
+    cm::redis::RedisCache::instance().set(key, cm::domain::loginUserToFastJson2(loginUser),
                                           static_cast<long long>(expire_minutes_) * 60);
 }
 

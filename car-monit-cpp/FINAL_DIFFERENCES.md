@@ -77,7 +77,7 @@
 | # | 偏离 | 影响 | 规避 / 现状 | 章节 |
 |---|---|---|---|---|
 | ⚠️1 | 验证码图片 **JPEG → PNG**；无 zlib 时 PNG 不压缩（约 10KB） | 仅体积，解码结果一致 | 系统装 zlib 则自动启用 | §2.1/§2.2 |
-| ⚠️2 | Redis value 的写出形态：`car_list`/`car_list_jc` 已改为 fastjson2 `WriteClassName` 形态（✅ 可与 Java 互读，见契约 23）；其余键（登录会话等）C++ 仍写普通 JSON 文本 | **只影响 C++ 自己写的非缓存键**；读 Java 会话/缓存都正常 | 与 Java 混跑时别让 Java 读那些普通 JSON 键；新增缓存键一律走 `fastJson2CachedArray` | §2.2、§6.2、契约 23 |
+| ⚠️2 | Redis value 的写出形态：`car_list`/`car_list_jc` 与 **`login_tokens:*`** 都已改为 fastjson2 `WriteClassName` 形态（✅ 与 Java 双向互读，见契约 23 与 COMPATIBILITY §2.2）；其余普通 KV 仍是纯 JSON | 登录态已可跨语言混跑；普通 KV 只影响 C++ 自己写的非缓存键 | 新增缓存键一律走 `fastJson2CachedArray`；登录态走 `loginUserToFastJson2` | §2.2、§6.2、契约 23 |
 | ⚠️3 | Excel 导出：响应形态/文件名/列集合/单元格类型/`readConverterExp` 都对，但模板导出**不复刻标题行、两级表头、合并单元格与样式**（自研最小 OOXML，单 sheet inline string） | 导出文件可正常打开，数据一致，版式不同 | 需要版式时改接真实模板渲染 | §2.3 |
 | ⚠️4 | 无 Quartz 调度器：`sys_job` CRUD 与 `changeStatus`/`jobLog` 语义一致，但 `PUT /monitor/job/run` **明确返回未实现**，调度需外部触发 | 定时任务不会自转 | 外部 cron/systemd/K8s 调 HTTP；或 Java 继续承担调度 | §2.4、`PORTING_REPORT` §6.6 |
 | ⚠️5 | 固定 32 工作线程（`CM_WORKERS`），无 GC；长耗时外部调用会占满 worker | 并发模型不同，慢上游会整站排队 | 部署时按核数放大；外部调用必须设超时 | §2.5、§5.1 |
