@@ -576,12 +576,14 @@ Java 侧改动 Mapper XML / 实体注解后的固定流程：
 | 日志 | SLF4J + Logback | `cm::log::Logger` | ⚠️ 格式接近，非逐字节 |
 | 鉴权 | Spring Security 过滤器链 | `Server::dispatch` | ✅ |
 | 异常 | `@RestControllerAdvice` | `ExceptionMapper` | ✅（实测 12 条全部对齐） |
-| 限流 | Redis Lua `limitScript` | ❌ 未实现（控制器内可用 `RedisCache::incr` 实现） | ❌ |
-| 防重复提交 | `@RepeatSubmit` + Redis | ❌ 未实现 | ❌ |
-| 操作日志 | `@Log` + AOP + `sys_oper_log` | ❌ 未实现 AOP | ❌ |
+| 限流 | Redis Lua `limitScript` + `@RateLimiter` | —（注解 0 处使用，Java 侧无行为） | ✅（不实现即一致） |
+| 防重复提交 | `@RepeatSubmit` + Redis（全仓 1 处：`POST /system/config`） | `cm::web::checkRepeatSubmit` | ✅ |
+| 操作日志 | `@Log` + AOP + `sys_oper_log` | `cm::aspect::OperLogAspect`（234 条规则） | ✅ |
 | 数据权限 | `@DataScope` + 切面 | 部分（mapper 内显式拼接） | ⚠️ |
 | 监控埋点 | `GlobalExceptionTraceHandler` | ❌（实测被遮蔽，无需实现） | ✅（不实现即一致） |
 | 配置刷新 | `@RefreshScope` | ❌ 需重启 | ❌ |
+| 脱敏 | `@Sensitive` + `SensitiveJsonSerializer` | —（注解 0 处使用，Java 侧无行为） | ✅（不实现即一致） |
+| i18n | `I18nConfig` + `MessageUtils`（8 处调用，仅 1 份中文 bundle） | 文案硬编码（与默认 bundle 逐字相同） | ✅（`?lang` 无其它 bundle，输出不变） |
 | XSS 过滤 | `XssFilter` | ❌ 未实现（前端/网关负责） | ⚠️ |
 
 ---
@@ -715,6 +717,31 @@ Java 跟随 JVM 时区；C++ 固定 `+08:00`。部署时保持 `TZ=Asia/Shanghai
 
 Jackson 默认输出 `null`；`@JsonInclude(NON_EMPTY)` 的 VO 才省略。C++ 用
 `putStr/putI64`（保留 null）与 `RouterVo` 的条件写入（省略空值）分别复刻。
+
+### ⑪ `BigDecimal` 与浮点标度（风险：中，**已决定保留**）
+
+Java 的金额/标度字段是 `BigDecimal`（Jackson / fastjson2 都按原始标度输出 `116.500`）；
+C++ 的 JSON 数值只有 `double`，`116.500` 解析后再写出是 `116.5`（⚠️7）。
+
+**结论：保持现状，不引入十进制类型。** 理由与边界：
+
+* 契约里这些字段声明为 JSON 数值，按数值比较的调用方（前端/本工程所有端点）结果一致；
+  只有"按字符串比较"或"依赖标度展示"的场景可见差异，当前没有这种调用方。
+* 要在 JSON→实体→SQL 全链路逐字节保真，需要新十进制类型并改所有 mapper / spec，
+  收益仅是标度文本，风险与工作量都不成比例。
+* 整数（含 19 位雪花 ID）走 `int64`，**无精度损失**；风险只在"带小数且要求标度"的字段。
+
+影响范围：
+
+| 场景 | Java | C++ | 处理 |
+|---|---|---|---|
+| 金额/单价等 `DECIMAL` 字段的 JSON 输出 | `116.500` | `116.5` | 前端按数值处理；`*Str` 文本列不受影响 |
+| 远程轨迹 JSON 回写 `track_josn`（⚠️7 实证） | 原样 `116.500` | `116.5`，**会落库** | 别把 C++ 写的行与 Java 写的行做文本 diff |
+| 导出 Excel | POI 按 BigDecimal | 已按数值/文本列写出（⚠️3） | 打开后单元格值一致 |
+| SQL 参数绑定 | `setBigDecimal` | 最短可往返 `%.*g` 文本 | DECIMAL 列回读标度一致（§5.5.6「DECIMAL 标度回读」） |
+
+> 若将来出现"按标度比较"的新契约，应新增十进制类型并以本表为验收基线，
+> 而不是把字段悄悄改成字符串（那会破坏数值契约）。
 
 ---
 

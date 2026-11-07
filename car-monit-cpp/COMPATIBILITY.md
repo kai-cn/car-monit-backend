@@ -258,6 +258,27 @@ C++ 对应实现位置：
 13. **MyBatis 的 `<association>` 只填结果集里存在的列**：`selectUserList` 没 join
     `parent_id/order_num/dept_status`，所以 `dept` 对象里这几项是 `null`，而 `deptId`
     取的是 `u.dept_id`；扁平的 `SysUser.deptName` 属性 resultMap 里根本没映射，恒为 `null`。
+14. **`@Sensitive` 与 `@RateLimiter` 都是"有定义、没使用"**：全仓 `@Sensitive` 只出现在
+    `annotation/Sensitive.java` 与 `config/serializer/SensitiveJsonSerializer.java`，
+    **0 个字段使用**；`@RateLimiter` 只出现在 `annotation/RateLimiter.java` 与
+    `aspectj/RateLimiterAspect.java`，**0 个控制器使用**。二者在 Java 侧没有任何对外行为，
+    C++ 不实现即为一致——不要照注解定义"补"一个脱敏/限流中间件，那反而偏离 Java。
+15. **i18n 只有一份默认 bundle**：`spring.messages.basename: i18n/messages`，
+    `ruoyi-admin/src/main/resources/i18n/` 下只有 `messages.properties`（无 `_en` 等变体），
+    `Constants.DEFAULT_LOCALE = Locale.SIMPLIFIED_CHINESE`。真实调用点 8 处：登录 4
+    （验证码失效/验证码错误/密码不匹配/登录成功）、登出 1、文件上传异常 2、注册 1
+    （`user.register.success` 所在的 `SysRegisterService` **没有控制器暴露**，实际不可达）。
+    因无其它 bundle，`?lang=xx` 仍回退到同一份中文。C++ 把这些文案硬编码在
+    `LoginServices.cpp` / `Server.cpp` / `Exceptions.hpp`，与默认 bundle **逐字相同**
+    ⇒ 无行为差异，不引入 MessageSource。
+16. **`@RepeatSubmit` 全仓只有 1 处**：`SysConfigController.add`（`POST /system/config`）。
+    Java 实现细节：key = `repeat_submit:` + `getRequestURI()` + `trimToEmpty(鉴权头原值)`
+    （**不剥 `Bearer `**），value = `{url:{repeatParams=body 原文, repeatTime=Long}}`，
+    TTL = `@RepeatSubmit.interval()`（**默认 5000ms**，注意类注释写的"10 秒"与代码不符），
+    参数完全相同且 `now - prev < interval` 才判重；命中时走 `ServletUtils.renderString`
+    ⇒ HTTP 200 + 小写 `charset=utf-8` + `{"code":500,"msg":"不允许重复提交，请稍候再试"}`。
+    C++ 对应 `cm::web::checkRepeatSubmit`（`src/cm/framework/web/RepeatSubmit.cpp`），
+    单测 `testRepeatSubmit` 覆盖 Java 写入形态、5s 边界与非法缓存。
 
 ---
 
@@ -271,7 +292,7 @@ C++ 对应实现位置：
 | Quartz | 定时任务调度 | ❌ | 见 §2.4 |
 | Apache POI | Excel | ⚠️ | 自研最小 XLSX |
 | MinIO / 阿里云 OSS | 对象存储 | ❌ | 本地磁盘 `ruoyi.profile`；如需 OSS，可在 `FileUpload` 层加适配器 |
-| Forest（HTTP 客户端） | 调用第三方（恒达、腾讯地图、车辆监控） | ⚠️ | 见 §5.1：调用侧的异常边界已逐条分析；`cm::net::HttpClient` 已支持 http/https（TLS 走 vendored mbedTLS），但**不自动跟随重定向、不自动重试**（这两点由调用方决定） |
+| Forest（HTTP 客户端） | 调用第三方（恒达、腾讯地图、车辆监控） | ⚠️ | 见 §5.1：`cm::net::HttpClient` 支持 http/https（TLS 走 vendored mbedTLS），并已复刻 Forest `BackOffRetryer` 语义；**不自动跟随重定向**（现有调用点的上游都不返回 3xx，出现时需显式处理） |
 | Druid 控制台 `/druid/**` | SQL 监控台 | ❌ | SecurityConfig 中本来就是 `denyAll()`，C++ 直接返回 403 |
 | Swagger / springfox | API 文档 | ❌ | 以 `ENDPOINTS_INVENTORY.md` 取代 |
 | Actuator | 健康检查 | ⚠️ | 新增 `GET /health`（C++ 扩展，Java 无此端点） |
@@ -295,6 +316,17 @@ Java 侧配置（`application.yml:182-193`）：Forest + httpclient，`timeout=6
 | `CarSuspiciousController.syncSuspiciousCarTask`（permitAll） | 签名 = `SHA1(signatureKey + timeStamp)`；两者都由请求方提供 ⇒ 任何人都能自证；没有时间窗（可无限重放）；拼接有歧义（"a1"+2 与 "a"+12 同号） | 这是 Java 的既有安全缺陷，按"照抄不擅自修正"处理，但要写进安全评审；C++ 已有 `sha1` 原语，可实现 |
 | `OdsRtSzdnSnapshotFlowAddcodeController` 的 `/earliest-time` | 通过 Forest 取 GaussDB 的 `Date`，**没有 try/catch** ⇒ 上游失败直接 500；成功时 `data` 是 ISO-8601 字符串，失败无数据时是字面量 `"暂无数据"` | 响应体类型会在"日期串"和"中文提示串"之间切换，前端按字符串处理；移植别统一成 null |
 | `carInfoService.getRedisCarList`（大屏 `carLocation` 的数据源） | 走 **Redis + DB 回源**，不是外部 HTTP；`setCacheObject(key, list)` **不带过期时间** ⇒ 永久缓存；缓存里若是别的类型，`(List) obj` 强转抛 ClassCastException → 500 | C++ 可直接实现（Redis + 同一 DB 查询）；但必须同样不设 TTL，否则数据新鲜度行为与 Java 不同 |
+
+**重试（2026-11-08 补齐，对应 Forest `BackOffRetryer`）**：`HttpOptions` 默认
+`maxRetryCount=2`、`retryIntervalMs=1000`，即除首次外最多再试 2 次、每次间隔 1s
+（对齐 `retry-count=2` 与 `max-retry-interval=1s` 把指数退避封顶在 1s）；
+**异常与非 2xx 都算失败并重试**（对应 `DefaultRetryWhen = !(noException && statusOk)`）。
+
+> ⚠️ **非 GET 默认不重试**：C++ 把 `POST/PUT/PATCH/DELETE` 视为非幂等，`retryNonIdempotent`
+> 默认 `false` ⇒ 只发 1 次。这是**有意收紧**：Forest 1.6 对所有方法一律重试，
+> 但本项目这些 POST 调用点一旦重试就可能重复写库/重复下单。确实需要时在调用点显式
+> `opt.retryNonIdempotent = true`（单测 `testRetry` 覆盖了 GET 重试、POST 不重试、
+> POST 显式开启后重试三条路径）。
 
 **TLS（2026-11-07 补齐）**：`cm::net::HttpClient` 现在 http/https 都支持，TLS 用 vendored mbedTLS：
 - 强制校验证书链与主机名，不提供"跳过校验"开关；CA 顺序：`cm.http.ca-bundle` → `$CM_CA_BUNDLE` →
