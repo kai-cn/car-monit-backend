@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use sqlx::mysql::MySqlPoolOptions;
+use sqlx::ConnectOptions;
 use sqlx::MySqlPool;
 
 use crate::auth::jwt::JwtService;
@@ -51,6 +52,14 @@ impl AppState {
         if let Some(timezone) = settings.mysql_session_timezone() {
             connect_options = connect_options.timezone(timezone);
         }
+        // Java: SqlLogInterceptor 拦截每条 SQL —— 普通 SQL 记 DEBUG
+        // （SqlLogInterceptor logger 默认 info，运行时被抑制），耗时 >=
+        // monitor.slow-sql-threshold 时升级为 WARN 并写 sys-slow.log。
+        // SQLx 的 LogSettings 覆盖所有查询（含事务与 QueryBuilder 拼接的 SQL）。
+        let slow_sql_threshold = Duration::from_millis(settings.monitor.slow_sql_threshold);
+        connect_options = connect_options
+            .log_statements(log::LevelFilter::Debug)
+            .log_slow_statements(log::LevelFilter::Warn, slow_sql_threshold);
 
         let pool = MySqlPoolOptions::new()
             .max_connections(settings.database.pool.max_active)

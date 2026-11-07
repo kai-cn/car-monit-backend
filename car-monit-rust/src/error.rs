@@ -140,6 +140,16 @@ impl From<axum::extract::rejection::PathRejection> for AppError {
 
 impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
+        // Java SqlLogInterceptor.intercept 的 finally 里：
+        // log.error("[SQL异常] {}, 耗时: {}ms, 异常: {}", sqlId, cost, throwable.getMessage())
+        // 并写 SqlLogInterceptor logger（logback additivity=false -> sys-slow.log）。
+        // Rust 侧没有 Mapper id，单次耗时尚需在 SQLx 事件里可见（成功执行时），
+        // 异常转 AppError 时只能拿到异常文本。
+        tracing::error!(
+            target: crate::logging::SQL_LOG_TARGET,
+            "[SQL异常] sqlx::query, 异常: {}",
+            err
+        );
         Self::Database(err.to_string())
     }
 }

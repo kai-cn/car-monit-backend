@@ -60,8 +60,12 @@ fn init_tracing(settings: &Settings) -> Option<Vec<car_monit_rust::logging::LogH
         .event_format(car_monit_rust::logging::JavaLogFormat {
             console: true,
             logger_width: 20,
+            slow_sql_threshold_ms: settings.monitor.slow_sql_threshold,
         })
-        .with_ansi(false);
+        .with_ansi(false)
+        .with_filter(FilterFn::new(not_monitor_file));
+
+    let slow_sql_threshold_ms = settings.monitor.slow_sql_threshold;
 
     match std::fs::create_dir_all(&settings.log.dir) {
         Ok(()) => {
@@ -80,6 +84,7 @@ fn init_tracing(settings: &Settings) -> Option<Vec<car_monit_rust::logging::LogH
             let file_format = || car_monit_rust::logging::JavaLogFormat {
                 console: false,
                 logger_width: 36,
+                slow_sql_threshold_ms,
             };
             let info_layer = tracing_subscriber::fmt::layer()
                 .event_format(file_format())
@@ -146,15 +151,24 @@ fn level_in_file(level: &Level) -> bool {
     matches!(*level, Level::INFO | Level::WARN | Level::ERROR)
 }
 
+fn not_monitor_file(metadata: &tracing::Metadata<'_>) -> bool {
+    !car_monit_rust::logging::is_monitor_file_target(metadata.target())
+}
+
 fn info_only(metadata: &tracing::Metadata<'_>) -> bool {
-    *metadata.level() == Level::INFO
+    *metadata.level() == Level::INFO && not_monitor_file(metadata)
 }
 
 fn error_only(metadata: &tracing::Metadata<'_>) -> bool {
-    *metadata.level() == Level::ERROR
+    *metadata.level() == Level::ERROR && not_monitor_file(metadata)
 }
 
 fn slow_only(metadata: &tracing::Metadata<'_>) -> bool {
+    // Java: SqlLogInterceptor logger -> file_slow（additivity=false）。
+    // SQLx 的语句事件：WARN 是慢 SQL，DEBUG 是普通 SQL；是否放行由 EnvFilter/RUST_LOG 决定。
+    if car_monit_rust::logging::is_sql_query_target(metadata.target()) {
+        return true;
+    }
     car_monit_rust::logging::is_slow_target(metadata.target()) && level_in_file(metadata.level())
 }
 

@@ -25,8 +25,17 @@ use tracing_subscriber::registry::LookupSpan;
 const CHANNEL_CAPACITY: usize = 1024;
 const DATE_LEN: usize = 10;
 const TRACE_ID_TARGET: &str = "com.ruoyi.common.core.monitor.TraceIdFilter";
-const SQL_LOG_TARGET: &str = "com.ruoyi.common.core.monitor.SqlLogInterceptor";
+pub const SQL_LOG_TARGET: &str = "com.ruoyi.common.core.monitor.SqlLogInterceptor";
+/// SQLx 内建 SQL 日志事件（LogSettings）的 target；对应 Java SqlLogInterceptor。
+pub const SQLX_QUERY_TARGET: &str = "sqlx::query";
 const USER_LOG_TARGET: &str = "sys-user";
+/// Java SqlLogInterceptor.java 中 log.warn / log.debug / log.debug / log.error 的调用行号（%L）。
+const SQL_WARN_LINE: u32 = 139;
+const SQL_DEBUG_LINE: u32 = 156;
+const SQL_DEBUG_TEXT_LINE: u32 = 159;
+const SQL_ERROR_LINE: u32 = 165;
+/// Rust 侧拿不到 MyBatis MappedStatement#getId（Mapper FQCN + 方法名）。
+const SQL_MAPPER_PLACEHOLDER: &str = "sqlx::query";
 
 tokio::task_local! {
     static TRACE_ID: String;
@@ -399,6 +408,42 @@ fn local_date() -> String {
 pub struct JavaLogFormat {
     pub console: bool,
     pub logger_width: usize,
+    /// Java: `monitor.slow-sql-threshold`，用于慢 SQL 框里的「阈值」。
+    pub slow_sql_threshold_ms: u64,
+}
+
+impl JavaLogFormat {
+    fn write_prefix(
+        &self,
+        writer: &mut Writer<'_>,
+        now: chrono::DateTime<Local>,
+        level: &str,
+        target: &str,
+        line: u32,
+    ) -> fmt::Result {
+        if self.console {
+            write!(
+                writer,
+                "{} [{}] {:<5} [{}] {} - ",
+                now.format("%H:%M:%S%.3f"),
+                thread_name(),
+                level,
+                current_trace_id(),
+                abbreviate_logger(target, self.logger_width)
+            )
+        } else {
+            write!(
+                writer,
+                "{} [{}] {:<5} [{}] {}:{} - ",
+                now.format("%Y-%m-%d %H:%M:%S%.3f"),
+                thread_name(),
+                level,
+                current_trace_id(),
+                abbreviate_logger(target, self.logger_width),
+                line
+            )
+        }
+    }
 }
 
 impl<S, N> FormatEvent<S, N> for JavaLogFormat
@@ -414,28 +459,63 @@ where
     ) -> fmt::Result {
         let metadata = event.metadata();
         let now = Local::now();
-        if self.console {
-            write!(
-                writer,
-                "{} [{}] {:<5} [{}] {} - ",
-                now.format("%H:%M:%S%.3f"),
-                thread_name(),
-                metadata.level().as_str(),
-                current_trace_id(),
-                abbreviate_logger(metadata.target(), self.logger_width)
-            )?;
-        } else {
-            write!(
-                writer,
-                "{} [{}] {:<5} [{}] {}:{} - ",
-                now.format("%Y-%m-%d %H:%M:%S%.3f"),
-                thread_name(),
-                metadata.level().as_str(),
-                current_trace_id(),
-                abbreviate_logger(metadata.target(), self.logger_width),
-                metadata.line().unwrap_or(0)
-            )?;
+        let level = metadata.level().as_str();
+
+        // SQLx 的 SQL 事件对应 Java SqlLogInterceptor：WARN 慢 SQL 框、
+        // DEBUG 的 [SQL]/[SQL-Text] 两行（Java 默认 logger level=info 会抑制 DEBUG）。
+        if metadata.target() == SQLX_QUERY_TARGET {
+            let mut visitor = MessageVisitor::default();
+            event.record(&mut visitor);
+            match *metadata.level() {
+                tracing::Level::WARN => {
+                    self.write_prefix(
+                        &mut writer,
+                        now,
+                        level,
+                        SQL_LOG_TARGET,
+                        SQL_WARN_LINE,
+                    )?;
+                    write_slow_sql_box(&mut writer, &visitor, self.slow_sql_threshold_ms)?;
+                    return writeln!(writer);
+                }
+                tracing::Level::DEBUG => {
+                    let (cost, sql) = sql_event_details(&visitor);
+                    self.write_prefix(
+                        &mut writer,
+                        now,
+                        level,
+                        SQL_LOG_TARGET,
+                        SQL_DEBUG_LINE,
+                    )?;
+                    write!(
+                        &mut writer,
+                        "[SQL] {} | 耗时: {}ms | TraceId: {}",
+                        SQL_MAPPER_PLACEHOLDER,
+                        cost,
+                        current_trace_id()
+                    )?;
+                    writeln!(writer)?;
+                    self.write_prefix(
+                        &mut writer,
+                        now,
+                        level,
+                        SQL_LOG_TARGET,
+                        SQL_DEBUG_TEXT_LINE,
+                    )?;
+                    write!(&mut writer, "[SQL-Text] {sql}")?;
+                    return writeln!(writer);
+                }
+                _ => {}
+            }
         }
+
+        self.write_prefix(
+            &mut writer,
+            now,
+            level,
+            display_target(metadata.target()),
+            log_line(metadata.target(), metadata.line()),
+        )?;
         let mut visitor = MessageVisitor::default();
         event.record(&mut visitor);
         if let Some(message) = visitor.message {
@@ -446,6 +526,90 @@ where
         }
         writeln!(writer)
     }
+}
+
+/// Rust 模块 target -> Java 全类名。没有 Java 对应类的模块保持原 target。
+fn display_target(target: &str) -> &str {
+    match target {
+        SQLX_QUERY_TARGET => SQL_LOG_TARGET,
+        other => other,
+    }
+}
+
+/// Java logback 的 `%L`：SQLx 事件映射到 SqlLogInterceptor.java 的调用行。
+fn log_line(target: &str, rust_line: Option<u32>) -> u32 {
+    match target {
+        SQLX_QUERY_TARGET => SQL_WARN_LINE,
+        SQL_LOG_TARGET => SQL_ERROR_LINE,
+        _ => rust_line.unwrap_or(0),
+    }
+}
+
+fn sql_event_details(visitor: &MessageVisitor) -> (u64, String) {
+    let cost = visitor
+        .field("elapsed_secs")
+        .and_then(|value| value.parse::<f64>().ok())
+        .map(|secs| secs * 1000.0)
+        .or_else(|| parse_elapsed_ms(visitor.field("elapsed")))
+        .unwrap_or(0.0);
+    let sql = visitor
+        .field("db.statement")
+        .filter(|value| !value.trim().is_empty())
+        .or(visitor.message.as_deref())
+        .unwrap_or_default();
+    (cost as u64, normalize_sql(sql))
+}
+
+/// Java `getFullSql`：`replaceAll("[\\s]+", " ")` + 2000 字符截断。
+fn normalize_sql(sql: &str) -> String {
+    let collapsed = sql.split_whitespace().collect::<Vec<_>>().join(" ");
+    if collapsed.chars().count() > 2000 {
+        let mut truncated: String = collapsed.chars().take(2000).collect();
+        truncated.push_str("...(已截断)");
+        truncated
+    } else {
+        collapsed
+    }
+}
+
+/// SQLx 的 `elapsed` 字段是 Debug 输出（如 `123.456ms` / `1.234s`），用于兜底。
+fn parse_elapsed_ms(text: Option<&str>) -> Option<f64> {
+    let text = text?.trim();
+    if let Some(value) = text.strip_suffix("ms") {
+        value.trim().parse::<f64>().ok()
+    } else if let Some(value) = text.strip_suffix('s') {
+        value.trim().parse::<f64>().ok().map(|secs| secs * 1000.0)
+    } else if let Some(value) = text.strip_suffix("µs") {
+        value.trim().parse::<f64>().ok().map(|micros| micros / 1000.0)
+    } else if let Some(value) = text.strip_suffix("ns") {
+        value.trim().parse::<f64>().ok().map(|nanos| nanos / 1_000_000.0)
+    } else {
+        text.parse::<f64>().ok()
+    }
+}
+
+/// Java SqlLogInterceptor 的慢 SQL WARN 原始字符串（多行框）。
+fn write_slow_sql_box(
+    writer: &mut Writer<'_>,
+    visitor: &MessageVisitor,
+    threshold_ms: u64,
+) -> fmt::Result {
+    let (cost, sql) = sql_event_details(visitor);
+    write!(
+        writer,
+        "\n╔══════════════════════════════════════════════════════════\n\
+         ║ 【慢SQL告警】\n\
+         ║  Mapper: {}\n\
+         ║  耗时: {} ms (阈值: {} ms)\n\
+         ║  SQL: {}\n\
+         ║  TraceId: {}\n\
+         ╚══════════════════════════════════════════════════════════",
+        SQL_MAPPER_PLACEHOLDER,
+        cost,
+        threshold_ms,
+        sql,
+        current_trace_id()
+    )
 }
 
 fn thread_name() -> String {
@@ -493,6 +657,13 @@ impl MessageVisitor {
             self.fields.push((field.name().to_string(), value));
         }
     }
+
+    fn field(&self, name: &str) -> Option<&str> {
+        self.fields
+            .iter()
+            .find(|(key, _)| key == name)
+            .map(|(_, value)| value.as_str())
+    }
 }
 
 impl Visit for MessageVisitor {
@@ -523,6 +694,17 @@ impl Visit for MessageVisitor {
 
 pub fn is_slow_target(target: &str) -> bool {
     matches!(target, TRACE_ID_TARGET | SQL_LOG_TARGET)
+}
+
+/// SQLx 的 SQL 事件与 Java SqlLogInterceptor 共用 sys-slow（additivity=false）。
+pub fn is_sql_query_target(target: &str) -> bool {
+    target == SQLX_QUERY_TARGET
+}
+
+/// Java logback 中这两个 logger 设为 additivity=false，只挂 file_slow：
+/// 因此既不进 console，也不进 sys-info / sys-error。
+pub fn is_monitor_file_target(target: &str) -> bool {
+    matches!(target, TRACE_ID_TARGET | SQL_LOG_TARGET | SQLX_QUERY_TARGET)
 }
 
 pub fn is_user_target(target: &str) -> bool {
@@ -594,6 +776,7 @@ mod tests {
             .event_format(JavaLogFormat {
                 console: false,
                 logger_width: 36,
+                slow_sql_threshold_ms: 1000,
             })
             .with_writer(handle.writer())
             .with_ansi(false);
@@ -617,5 +800,64 @@ mod tests {
         assert!(text.contains("[abc123]"), "{text}");
         assert!(text.contains("com.ruoyi.test:"), "{text}");
         assert!(text.contains("hello 1"), "{text}");
+    }
+
+    #[tokio::test]
+    async fn slow_sql_uses_java_interceptor_box() {
+        use tracing_subscriber::layer::SubscriberExt;
+
+        let dir = tempfile::tempdir().expect("tempdir");
+        let handle = start_appender(dir.path(), "sys-slow", false, u64::MAX, 60).expect("start");
+        let layer = tracing_subscriber::fmt::layer()
+            .event_format(JavaLogFormat {
+                console: false,
+                logger_width: 36,
+                slow_sql_threshold_ms: 1000,
+            })
+            .with_writer(handle.writer())
+            .with_ansi(false);
+        let subscriber = tracing_subscriber::registry().with(layer);
+        let guard = tracing::subscriber::set_default(subscriber);
+
+        with_trace_id("abc123".to_string(), async {
+            tracing::event!(
+                target: SQLX_QUERY_TARGET,
+                tracing::Level::WARN,
+                summary = "SELECT * FROM sys_user",
+                db.statement = "SELECT *\n  FROM sys_user\n  WHERE user_id = ?",
+                elapsed_secs = 1.234f64,
+                "slow statement: execution time exceeded alert threshold"
+            );
+        })
+        .await;
+
+        drop(guard);
+        drop(handle);
+        let files: Vec<_> = std::fs::read_dir(dir.path())
+            .expect("read dir")
+            .flatten()
+            .map(|entry| entry.path())
+            .collect();
+        let text = std::fs::read_to_string(&files[0]).expect("read log");
+        assert!(text.contains("SqlLogInterceptor:139"), "{text}");
+        assert!(text.contains("【慢SQL告警】"), "{text}");
+        assert!(text.contains("Mapper: sqlx::query"), "{text}");
+        assert!(text.contains("耗时: 1234 ms (阈值: 1000 ms)"), "{text}");
+        assert!(
+            text.contains("SQL: SELECT * FROM sys_user WHERE user_id = ?"),
+            "{text}"
+        );
+        assert!(text.contains("TraceId: abc123"), "{text}");
+        assert!(!text.contains("elapsed_secs="), "{text}");
+        assert!(!text.contains("slow_threshold="), "{text}");
+    }
+
+    #[test]
+    fn sql_normalization_collapses_whitespace_and_truncates() {
+        assert_eq!(normalize_sql("SELECT *\n\tFROM  t"), "SELECT * FROM t");
+        let long = "x".repeat(2100);
+        let normalized = normalize_sql(&long);
+        assert_eq!(normalized.chars().count(), 2000 + "...(已截断)".chars().count());
+        assert!(normalized.ends_with("...(已截断)"));
     }
 }

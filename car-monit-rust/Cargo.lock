@@ -847,6 +847,7 @@ dependencies = [
  "image",
  "indexmap",
  "jsonwebtoken",
+ "log",
  "md-5 0.10.6",
  "mime_guess",
  "minijinja",
