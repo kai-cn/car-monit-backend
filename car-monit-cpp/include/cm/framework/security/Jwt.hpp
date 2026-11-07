@@ -3,7 +3,8 @@
 //
 // ⚠️ 关键差异：jjwt 的 `signWith(alg, String secret)` 与 `setSigningKey(String)`
 //    都会把字符串当成 **Base64** 解码后作为 HMAC key（JAXB DatatypeConverter）。
-//    默认 secret "abcdefghijklmnopqrstuvwxyz" 因此只有 18 字节，而不是 26 字节。
+//    默认 secret "abcdefghijklmnopqrstuvwxyz"（26 个字符）被解成 **19 字节**，不是 26 字节；
+//    末尾只剩 1 个字符无法凑成 4 字符组时按忽略处理（JAXB 宽松解码）。
 //    为了与存量 Java 令牌互通，这里必须复刻同一套解码逻辑。
 #include <optional>
 #include <string>

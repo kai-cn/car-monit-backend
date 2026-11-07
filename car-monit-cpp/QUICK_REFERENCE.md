@@ -25,7 +25,7 @@
 | `JwtAuthenticationTokenFilter` | `Server` 认证阶段 + `TokenService::getLoginUser` |
 | `AuthenticationEntryPointImpl` | `cm::web::Errors::unauthorized`（小写 `charset=utf-8`） |
 | `TokenService`（`createToken/verifyToken/refreshToken`） | `cm::security::TokenService` |
-| `JwtUtils`（jjwt 0.9.1 HS512） | `cm::security::Jwt`（Base64 解码 secret，18 字节） |
+| `JwtUtils`（jjwt 0.9.1 HS512） | `cm::security::Jwt`（Base64 解码 secret，19 字节） |
 | `SecurityUtils.getLoginUser()/getUserId()/hasPermi()` | `cm::security::SecurityUtils`（`thread_local`） |
 | `@PreAuthorize("@ss.hasPermi('a:b:c')")` | `.permi("a:b:c")` |
 | `@PreAuthorize("@ss.hasAnyPermi('a,b')")` | `.anyPermi("a,b")` |
