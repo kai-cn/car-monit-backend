@@ -276,3 +276,35 @@ Java backend 的 Forest/Fastjson2 解不了 `2024-10-26 08:53:57` 而恒 500（J
   - 两条所在用例组连跑 5 轮，每轮 27 项 0 失败。
 - 4 条 `sys_config` 用例原本断言的是错误形态（`data`），按 Java 改成 `msg`。
 - 交付接线的第 2 档 7 条差异与改前**逐条同号**，说明改动没有波及非目标端点。
+
+## 13. 提交点与恢复须知（2026-11-07）
+
+本轮改动已提交并推送：`20565cd` fix（四处修复）/ `504505f` test（两条抖动用例）/
+`280bd15` docs+tool（本报告、工装与 COMPATIBILITY §45），随分支一起进了 `origin/master`。
+
+复跑前的环境自检（本轮收尾时的实际状态）：
+
+| 检查项 | 收尾时 | 复跑要做的事 |
+|---|---|---|
+| MySQL `127.0.0.1:3307` | **已停** | 先起来，否则 backend 报 `CannotGetJdbcConnectionException` |
+| Redis `127.0.0.1:6379` | **已停** | 先起来，登录验证码读写都依赖它 |
+| api Java 9902 | 在（别的会话的 `-Xmx2048m` 进程） | 按要求复用不重启 |
+| api Python 9901 | **已退** | `cd car-monit-api-python && CAR_MONIT_PORT=9901 .venv/Scripts/python.exe run.py` |
+| backend Java 9788 | 在，但库已断 | 库起来后可继续用；要重启用 `-Xmx500m` 那条命令行（§11） |
+| backend Python 9789/9790/9791 | **已退** | 按 §2 的三行命令行重起（9790/9791 只在需要归因时才起） |
+| `PAR_PASSWORD` | **必设** | 工装不再内置口令（`_par_common.py` 未设就直接报错，不入库） |
+| `evidence/_par_tokens.json` | 已进 `.gitignore` | 换实例/换 db 后删掉它，或加 `--refresh-token` |
+
+还欠的三件事（§10 状态列里标了"未修/待定"，都不影响已修四项）：
+
+1. **代码生成 6 条**：`/tool/gen/{genCode,preview,download}` 与 `gen_list/db_list/all_list` 的
+   `columns` 子集合 —— Python 给 `null` 而 Java 给一条几乎全 null 的占位元素；模板也与
+   Java 的 `config/vm`+`vmplus` 不齐。
+2. **`params.@type` 4 条**：Java 把 Fastjson2 的 `{"@type":"java.util.HashMap"}` 漏进了 HTTP 响应
+   （`/getInfo`、`/system/user/profile`、`/system/dict/data/{type,typemore}`）。Go 端复刻了
+   `/getInfo` 一处。要不要在 Python 复刻是**策略问题**：这是 Java 内部类型标记外泄。
+3. **写面（POST/PUT/DELETE）一致性**：本轮只跑读面 + 导出面。写会动**共享** MySQL，
+   需要单独一轮并带清理（Go 那侧的先例是 `compare_write.py` 的 `PARITY` 标记 + 跑完删）。
+
+已知不可修（不要在它们上花时间，理由见 §12.2 与 COMPATIBILITY §45.5）：POI 数值字面量、
+openpyxl 的 CR 归一、pydantic `mode="json"` 把 Decimal 塌成 float。
