@@ -365,18 +365,29 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     application.add_middleware(SecurityMiddleware)
     application.add_middleware(RequestContextMiddleware)
 
-    application.add_middleware(
-        CORSMiddleware,
-        # Java: config.addAllowedOriginPattern("*") -- NOT addAllowedOrigin("*").
-        # ``allow_credentials=true`` with "*" is spec-invalid, so a permissive regex is the
-        # correct equivalent of Spring's allowedOriginPatterns.
-        allow_origin_regex=".*",
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-        expose_headers=["X-Trace-Id"],
-        max_age=1800,  # Java: config.setMaxAge(1800L)
-    )
+    # Java: config.addAllowedOriginPattern("*") -- NOT addAllowedOrigin("*").
+    # ``allow_credentials=true`` with "*" is spec-invalid, so a permissive regex is the
+    # correct equivalent of Spring's allowedOriginPatterns. Production should whitelist
+    # through ``app.cors.allowed_origins``; when the list is empty only local installs
+    # keep the permissive Java behaviour (see CorsSection).
+    allowed_origins = [origin.strip() for origin in settings.app.cors.allowed_origins if origin.strip()]
+    cors_options: dict = {
+        "allow_credentials": True,
+        "allow_methods": ["*"],
+        "allow_headers": ["*"],
+        "expose_headers": ["X-Trace-Id"],
+        "max_age": 1800,  # Java: config.setMaxAge(1800L)
+    }
+    if allowed_origins:
+        cors_options["allow_origins"] = allowed_origins
+        logger.info("[启动参数] CORS 白名单已启用: %s", allowed_origins)
+    elif (settings.is_localhost or "").strip().lower() == "local":
+        cors_options["allow_origin_regex"] = ".*"
+    else:
+        logger.warning(
+            "[启动警告] app.cors.allowed_origins 未配置, 非 local 环境将拒绝所有跨域请求"
+        )
+    application.add_middleware(CORSMiddleware, **cors_options)
     application.add_middleware(TraceIdMiddleware, settings=settings)
     # Java: FilterConfig.xssFilterRegistration -> order HIGHEST_PRECEDENCE。add_middleware
     # 是 prepend，所以最后添加的 XssMiddleware 位于最外层（先于 CORS/TraceId/Security）。

@@ -485,6 +485,20 @@ class GeneratorCodeSection(_Section):
     mybatis_plus: GeneratorMyBatisPlusSection = Field(default_factory=GeneratorMyBatisPlusSection)
 
 
+class CorsSection(_Section):
+    """CORS 白名单（Python-only，Java 只有 ``allowedOriginPattern("*")``）。
+
+    * 非空：只回显列表里的 Origin（生产环境的正确用法）。
+    * 为空且 ``is_localhost == "local"``：退回 Java 的 ``allowedOriginPattern("*")``，
+      开发/测试前端任意端口都能直连。
+    * 为空且非 local：不放开任何跨域来源，并在启动时告警。
+
+    环境变量是 JSON 数组：``APP__CORS__ALLOWED_ORIGINS='["https://a.example"]'``。
+    """
+
+    allowed_origins: List[str] = Field(default_factory=list)
+
+
 class AppSection(_Section):
     """Python-only switches.
 
@@ -513,6 +527,8 @@ class AppSection(_Section):
     # 最多 200 个能真正干活，其余 600 个在连接池上排队，纯属内存与上下文切换开销。
     # 默认压到与连接池一致；确实需要 800 时设 APP__REQUEST_THREAD_LIMIT=800。
     request_thread_limit: int = 200
+    # CORS 白名单；为空时 local 退回 Java 的"允许所有来源"，非 local 拒绝跨域。
+    cors: CorsSection = Field(default_factory=CorsSection)
 
 
 # ---------------------------------------------------------------------------

@@ -137,3 +137,31 @@ class TestCorsConfig:
         response = client.get("/", headers={"Origin": "http://example.com"})
         assert response.headers.get("access-control-allow-origin") == "http://example.com"
         assert "x-trace-id" in response.headers.get("access-control-expose-headers", "").lower()
+
+    def test_configured_whitelist_only_echoes_listed_origins(self) -> None:
+        """``app.cors.allowed_origins`` 非空时只回显白名单内的 Origin（P1-8）。"""
+        from app.main import create_app
+        from app.settings import AppSettings
+
+        application = create_app(
+            AppSettings(app={"cors": {"allowed_origins": ["https://ok.example"]}})
+        )
+        http = TestClient(application)
+
+        allowed = http.options(
+            "/",
+            headers={
+                "Origin": "https://ok.example",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert allowed.headers["access-control-allow-origin"] == "https://ok.example"
+
+        denied = http.options(
+            "/",
+            headers={
+                "Origin": "https://evil.example",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert "access-control-allow-origin" not in denied.headers
