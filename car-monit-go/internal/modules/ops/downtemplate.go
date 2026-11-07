@@ -53,14 +53,34 @@ func (h *downTemplateHandler) DownExcel(c *gin.Context) {
 	c.Data(200, templateContentType, content)
 }
 
-// resolveTemplatePath 把 type 映射成磁盘路径；未知 type 返回目录本身（读取必然失败），
+// resolveTemplatePath 把 type 映射成磁盘路径；未知 type 落到目录本身（读文件必然失败），
 // 与 Java 让异常发生在 ExcelExportUtil 里的位置一致。
+//
+// 根目录有两个候选：Java 从 classpath 取模板、位置与配置文件无关；Go 原先只认
+// 「配置文件同级 templates/down」，配置被搬到别处（校验用的临时配置就是这样）时
+// 七个合法 type 全退成 200 空 body。
+//
+// 安全口径：请求里的 type 只当 map 的键用，路径的每一段都来自本包常量（templateDir 与
+// templateByType 的值），拼不出 ../，所以不存在目录穿越面。
 func resolveTemplatePath(configFile, typeName string) string {
-	relative := templateDir
-	if name, ok := templateByType[typeName]; ok {
-		relative += "/" + name
+	name := ""
+	if f, ok := templateByType[typeName]; ok {
+		name = f
 	}
-	return filepath.Join(filepath.Dir(configFile), filepath.FromSlash(relative))
+	roots := []string{filepath.Dir(configFile)}
+	if wd, err := os.Getwd(); err == nil {
+		roots = append(roots, filepath.Join(wd, "configs"))
+	}
+	if name != "" {
+		for _, root := range roots {
+			p := filepath.Join(root, templateDir, filepath.FromSlash(name))
+			if st, err := os.Stat(p); err == nil && !st.IsDir() {
+				return p
+			}
+		}
+	}
+	// 全都找不着：返回目录路径，让读文件失败走与 Java 相同的"空 200"分支。
+	return filepath.Join(roots[0], templateDir)
 }
 
 // newDownTemplateRoutes 注册 /downTemplate/**。

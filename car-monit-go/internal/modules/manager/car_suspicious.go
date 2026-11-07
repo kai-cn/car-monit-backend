@@ -290,13 +290,23 @@ func (h *handler) suspiciousCheck(c *gin.Context) {
 	}
 	carNo := isNull(bodyString(body, "carNo"))
 	isExcept := isNull(bodyString(body, "isExcept"))
+	rawChecks, hasChecks := body["checkList"]
 	var checkList []*carSuspiciousCheck
-	if raw, ok := body["checkList"]; ok && raw != nil {
-		encoded, _ := json.Marshal(raw)
+	if hasChecks && rawChecks != nil {
+		encoded, _ := json.Marshal(rawChecks)
 		_ = json.Unmarshal(encoded, &checkList)
 	}
 	if isExcept == "1" && len(checkList) == 0 {
 		web.JSON(c, web.ErrorMsg(checkListEmptyMessage))
+		return
+	}
+	// JAVA 对照: checkList 是 CarSuspicious 的实例字段，请求里不给就是 null，
+	// 而下面 `for (CarSuspiciousCheck check : checkList)` 不判空 ⇒ 直接 NPE，
+	// GlobalExceptionHandler 拿到的 e.getMessage() 是 null ⇒ {"msg":null,"code":500}。
+	// 方法带 @Transactional(rollbackFor=Exception.class)，NPE 会把随后两个 delete 回滚掉，
+	// 所以在删除之前返回同样的空消息错误，净效果一致（数据一行都不动）。
+	if !hasChecks || rawChecks == nil {
+		web.JSON(c, web.ErrorResult(web.NewNilMessageError()))
 		return
 	}
 

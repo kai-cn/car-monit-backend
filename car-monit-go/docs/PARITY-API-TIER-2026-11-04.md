@@ -321,7 +321,7 @@ Java 侧三处结构细节决定了本轮 4 条错误形态的归属：
 | 流水 2 行同车牌区间重叠 | `isExitsTime` 命中 ⇒ 控制器忽略返回值 | 响应带 2 行、库里只有 1 行，两端同 |
 | 流水「数据行 + 结束行 + 数据行」 | `dataRtnExcel07/08` 的首格 `break/结束` 终止 | 只读第一行，落库 1 条，两端同 |
 | 车辆 3 行（中间行轴数非法） | `importList` 只在 `errorList` 仍为空时追加 ⇒ 后续合法行也不入库；第二段字典校验整段跳过 | 只有 1 条 `轴数 不是正整数`，两端同 |
-| 车辆 105 行全非法 | `errorList.size() > 100` 的提前 break | 错误条数与末条 rowNo 两端一致 |
+| 车辆 105 行全非法 | `errorList.size() > 100` 的提前 break | 两端都停在 **101 条**错误、`rowNo 2..102`（每行 1 条），第 103~105 行根本不被校验 |
 
 ## 7. api 双端自身的不一致（第 1 档残余差异的根因）
 
@@ -352,17 +352,27 @@ Java 侧三处结构细节决定了本轮 4 条错误形态的归属：
 | **`compare_export_all.py` 59 端点（34 条 ExcelUtil 落盘型 + 22 条 EasyPOI 附件流 + 3 条 non-xlsx）** | **单元格差异 0**，临时文件删除 0 失败（3 条 non-xlsx：两条两端逐字节相同的 `{"msg":null,"code":500}`，一条 `upgradeInfo` 缺表）。导入层改动之后复跑过一遍，计数从 58/33 校正为 59/34 —— 差的那条是 `/system/user/importTemplate`，之前按 `/export` 口径没单列 |
 | 第 1 档 A/B/C 复跑（最终二进制） | 14/12/**0**/2、14/12/**0**/2、14/11/1/2 |
 | 第 2 档 / 第 3 档复跑（最终二进制） | 185/162/2/21、95/82/11/2 |
+| 第 3 档扩面后复跑（§11.2 把 5 条顶层路由纳入口径） | 100/86/**11**/3 —— 新增的 5 条里 `/getRouters` 一开始差 `meta.link`（已修，§11.1），`/getInfo`、`/test/user/list`、`/test/user/1` 本来就一直，`/downTemplate/1` 是附件流 |
 | 第 1 档导入轮复跑（Java 9987 + Go 9982，同挂 api 9902） | 14/12/**0**/2 |
 | **`compare_import.py` 10 组用例（含 5 组多行：跨行顺序/终止行/区间重叠/>100 break）** | **问题 0**（唯一残项是 Java `insertUser` 的 `No group 2` 已知缺陷） |
 | **`compare_upload_errors.py` 30 条上传错误形态** | **28 条一致**，2 条已知（§9.7） |
-| `compare_write.py` 32 资源生命周期 | 差异 15 条，全落在 8 个 Java 侧缺陷资源上（与上一轮同一批），无新增 |
+| `compare_write.py` 资源生命周期 | 原 32 资源：差异 15 条，全落在 8 个 Java 侧缺陷资源上。§11.3 扩到 **45 资源**后共 22 条 = 11 条真差异 + 11 条说明性记录；新增的 8 个资源族里 6 个四步全一致，其余 4 条新真差异全部定性完毕（见 §11.4） |
 | `check_redis_isolation.py` | 24 项断言全通过，清理 `failures=0`（跑在参照对上，`PARITY_GO_DB` 按实例的 db 指定） |
 | `check_oss.py` | 不一致项 0 |
+| **`check_coverage.py` 全路由覆盖率盘点（本轮新增）** | 515 条注册路由：437 条被对拍覆盖 / 450 条可比 = **97.1%**；11 条无对拍价值、18 条非 CRUD 语义、36 条按约定不盲打（各有理由），剩 **13 条**待补（§11.5） |
+| `/downTemplate/{type}` 7 个合法 type（本轮新纳入逐格口径） | 两端都是 xlsx 附件、**单元格差异 0**；Java 是 easypoi 重写后的字节、Go 是模板原始字节，长度不同但版面一致 |
 
 第 1 档必须让两端 backend 挂**同一个** api 才有意义：本轮导入轮复跑时 Go 版 api（9903）的
 `/health` 已是 503（其 `OdsRtSzdnSnapshotFlow*` 仓储连不上 `192.168.*` 数据源），
 backend 两端配对 9903 时第 1 档会多出 4 条 `null` vs 缺键的差异 —— 用 9902 复跑即归零，
 属 api 侧运行态，不是 backend 的账。
+
+遗留待定性项复测并已销：`GET /manager/carwarning/export`（历史某轮 Java 侧 500）现在两端都是
+200 附件流、12 列表头逐字同、**单元格差异 0**；那次 Java 500 反复复测不可复现，不记为差异。
+另外收尾时出现过一阵「用户不存在/密码错误」：Java 参照端与 Go 端**同时**失败（重试 3 次均如此，
+而 `sys_user` 里 admin 的 `status/del_flag/update_time` 都没变），过一会儿未经任何改动自行恢复，
+四个实例（含共享的 9988/9989）用同一凭据重新都能登录 ——
+`admin` 的口令散列没有被改过，这条记为环境抖动，不作为代码问题。
 
 ## 9. 已知差异（不改）
 
@@ -395,6 +405,11 @@ backend 两端配对 9903 时第 1 档会多出 4 条 `null` vs 缺键的差异 
      消息是逐行的 `1、账号  导入失败：…PersistenceException…`。Go 读不到单元格类型，
      按"值全空即空行"跳过，返回「导入用户数据不能为空！」——不镜像 Java 的插入崩溃，
      也不会在库里造出一个空账号。
+8. 写侧扩面新出现的 4 条（详见 §11.4，全部是 Java 侧行为，不改 Go）：
+   `messagedispose` 的 JSON 415（实体上被生成器写坏的 `@JsonFormat` 日期格式）、
+   `dwd_lczt_fwqjcxx` 的 DELETE 缺 `del_flag` 列（两端同 500，只差文本）、
+   `dwd_lczt_sfsjcxx/sfzjcxx` 因主键可空且"给主键即更新"而跑不了后三步、
+   `sys_upgrade_info` 表在共享库里不存在。
 
 ## 10. 复现
 
@@ -427,3 +442,87 @@ python scripts/parity/api_pair_check.py                      # api 双端直连�
 
 `compare_xlsx.py` 会先裁掉"两端都为空的尾部整行/整列"—— POI 习惯多写一列空样式列、
 EasyPOI 空列表时多写一行空格，这不是差异；带值的列不会被裁掉。
+
+## 11. 第四批（2026-11-06→07）：覆盖率盘点挖出的四个真差异 + 写侧扩面
+
+上一批把导入层归零后，本批换了个角度：**不按接口档、而按"Go 注册的每一条路由是否真被某条对拍跑过"来查**。
+新增 `scripts/parity/check_coverage.py`，口径全部复用各对拍脚本自己的定义（`compare_get.in_tier`、
+`compare_export_all.export_routes`、`compare_write.RESOURCES`、`compare_import.CASES`），
+避免"脚本改了、盘点没跟上"。第一轮盘出来 515 条注册路由里 **102 条从没被跑过**，
+其中最大一块是 13 个纯 CRUD 资源族没进写生命周期；把口径补齐后又挖出 4 个真差异。
+
+### 11.1 四个已修的真差异
+
+1. **`GET /getRouters` 少 `meta.link`**。Java 的 `SysMenuServiceImpl.buildMenus:149,165` 只走
+   `MetaVo(title, icon, noCache)` 三参构造，`link` 从不赋值 —— 但它是实例字段，
+   Jackson 照样输出 `"link": null`。Go 的 `model.Meta` 当初写成 `string` + `omitempty`，键直接被省掉。
+   改成 `*string` 且不带 omitempty。（这条路由本来就注册着，但因为不在 `/system|/monitor|...`
+   任何前缀下，三档跑不到它 —— 见 §11.2。）
+2. **`/downTemplate/{type}` 的模板根**。Go 原先只认「配置文件同级 `templates/down`」。
+   校验用的临时配置放在 `%TEMP%`，于是 7 个合法 type 全部退成 `200 + 空 body`，
+   而 Java 从 classpath 取模板、与配置位置无关，返回 7178~16113 字节的真 xlsx。
+   现在按 `dir(configFile)` → `CWD/configs` 两个候选找，都找不着才落回
+   「返回目录路径 ⇒ 读文件失败 ⇒ 空 200」这条与 Java 等价的分支。
+   `type` 只当 map 的键用，路径每一段都是本包常量 ⇒ 没有 `../` 穿越面（已在注释里写明）。
+3. **base 模块写接口多输出 `"data":""`**。Java 是 `AjaxResult.success("操作成功！", entity.getPk())`，
+   而 `AjaxResult` 只在 data 非 null 时写 data 键 —— 请求体里**根本没有主键这个键**时实体主键是 null ⇒ 无 data；
+   请求体显式给 `""` 时 data 是空串 ⇒ 有 data。Go 的 `bodyString` 把两者都读成 `""`，
+   于是 `/base/fwqjcxx`、`/base/sfsjcxx`、`/base/sfzjcxx` 的 POST/PUT 各多一个键。
+   新增 `bodyStringValue(body, key) (string, bool)` 区分缺键与空串。
+4. **`PUT /manager/suspicious/check`**。Java `CarSuspiciousServiceImpl.cherkCarSuspicious` 在
+   `isExcept != "1"` 时不做非空校验，直接 `for (CarSuspiciousCheck check : checkList)` 遍历 null ⇒ NPE ⇒
+   GlobalExceptionHandler 的 `getMessage()` 是 null ⇒ 响应 `{"msg":null,"code":500}`；
+   而方法带 `@Transactional(rollbackFor = Exception.class)`，NPE 把前面两个 delete 回滚掉，
+   净效果是一行都不动。Go 原先直接"操作成功"。现在在删除之前返回同样的空消息错误；
+   `checkList: []`（空数组，不是 null）仍然照常走完，与 Java 一致。
+
+### 11.2 读侧口径扩面
+
+`compare_get.FRAMEWORK_EXTRA = ("/getInfo", "/getRouters", "/downTemplate", "/test")`：
+5 条顶层单段路由原本不在任何 root 前缀下，从来没被比过。纳入后第 3 档从 95 条变 100 条
+（100/86/11/3），其中 `/getInfo`、`/test/user/list`、`/test/user/1` 本来就一直，只有
+`/getRouters` 露出 §11.1.1 那条差异。
+
+### 11.3 写侧扩面
+
+`compare_write.RESOURCES` 从 32 个资源族扩到 **45 个**：新增
+`/manager/exceptrecord`、`/manager/gantrycar`、`/manager/gantrytrade`、`/manager/suspicious`、
+`/manager/aduitfree`、`/flow/applyinfo`、`/flow/currentnode`、`/flow/messagedispose`、
+`/base/fwqjcxx`、`/base/sfsjcxx`、`/base/sfzjcxx`、`/system/upgradeInfo`（前三张 dwd 表的
+主键是 `agent_pk`，Java 的 `DeleteMapping` 是 `/{agentPks}`，`locate()` 会把 pk 蛇化成列名，
+所以条目里写 JSON 键 `agentPk`）。三张 flow 表在共享库里是空的（"无样本行"），必须自带 body。
+另外给 RESOURCES 加了 `actions` 钩子：CRUD 四步之外再打一遍该资源的业务动作端点，
+只作用在刚建的自己那行上（目前挂了 `PUT /manager/suspicious/check`）。
+
+### 11.4 扩面新出现的差异定性（都是 Java 侧，Go 无需改）
+
+| 资源 | 现象 | 定性 |
+|---|---|---|
+| `/flow/messagedispose` POST | Java 415 `Content type 'application/json' not supported`，Go 200 | 实体上 `@JsonFormat(pattern = "flow_message_dispose")` —— 代码生成器把表名塞进了日期格式，Jackson 建不出解析器。属 §9.1 缺陷族 |
+| `/base/fwqjcxx` DELETE | 两端都 500，只差文本 | Java mapper 对没有 `del_flag` 列的 dwd 表做软删 ⇒ `Unknown column 'del_flag'`；Go 照抄同一条 SQL ⇒ 同 §9.4"同为 500 的错误文本形态"族 |
+| `/base/sfsjcxx`、`/base/sfzjcxx` | POST 两端一致，后三步跑不了 | 主键 `agent_pk` 可空且无默认，而 Java 的 `save` 是"给了主键就走 updateById"⇒ 造不出可定位的自建行。记录为口径说明，不是差异 |
+| `/system/upgradeInfo` | 全档 500 | 共享库里根本没有 `sys_upgrade_info` 表（§9.1 缺表族） |
+
+### 11.5 盘点后仍剩的 13 条（下一批的活，已登记）
+
+动作型/子资源端点，安全的可以走 `actions` 钩子，不安全的应显式豁免：
+
+- 可补进 `actions`：`PUT /system/role/changeStatus`、`PUT /system/role/dataScope`、
+  `PUT /system/user/changeStatus`、`DELETE /flow/messagedispose/delmes/:id`、
+  `DELETE /flow/messagedispose/szzdmes/:id`（后两条只传路径参数，用不存在的 id 打即可，
+  两端都该回"未找到"形态）。
+- 应按约定豁免（会动到当前登录用户或共享缓存/真实数据）：`PUT /system/user/profile`、
+  `POST /system/user/profile/avatar`、`POST /system/user/bindUky`、
+  `DELETE /system/config/clearCache`、`DELETE /system/dict/type/clearCache`、
+  `PUT /manager/cartrackinfo/changeTrailInfo`、`POST /flow/flowname/tbFlow`、
+  `DELETE /flow/messageinfo/:id`（该表没有自建行，删的是别人的消息）。
+
+### 11.6 两个会造成"假绿"的脚本坑（先记下来）
+
+- Git Bash 会把 `compare_write.py /manager/xxx` 这样的位置参数转成 Windows 路径，
+  于是 `only` 一条都匹配不上、脚本安静地报"差异汇总 (0)" —— 跑生命周期类脚本必须
+  先 `export MSYS2_ARG_CONV_EXCL='*'`。这条坑已经吃过一次。
+- 19 位雪花 id 不能当 JSON 数字传：Go 侧 `map[string]any` 解码成 float64 直接丢精度
+  （`…400` 变 `…352`），Java 的 String 字段拿的是原始 token 不受影响。
+  `compare_write.num()` 现在只在 15 位以内才转数字。真实浏览器也存不下 19 位整数，
+  前端只会传字符串，所以这不是产品差异。

@@ -25,6 +25,13 @@ from routes import GIN_RE, norm  # noqa: E402
 DOWNLOAD_DIR = os.environ.get(
     "PARITY_DOWNLOAD_DIR", "D:/ruoyi/uploadPath/download").replace("\\", "/")
 
+# GET /downTemplate/{type} 的 7 个合法 type：Java 的 if/else 链与 Go 的 templateByType
+# 必须一致（两边写法不同，一半是 type.equals("x")、一半是 "x".equals(type)，
+# 只 grep 一种会漏）。这条口径是专门补的：Java 走 easypoi 重写工作簿、
+# Go 直接回模板原始字节，只有逐格比对才知道两种输出到底一不一样。
+DOWN_TEMPLATE_TYPES = ("goodsFkApplyDetail", "goodsRkApplyDetail", "planListDetail",
+                       "importPsbz", "importSupplierAnnualScore", "carinfo", "carExcept")
+
 
 def export_routes(log_path, only=""):
     text = open(log_path, encoding="utf-8", errors="ignore").read()
@@ -38,6 +45,10 @@ def export_routes(log_path, only=""):
         if only and not path.startswith(only):
             continue
         if path not in out:
+            out.append(path)
+    for t in DOWN_TEMPLATE_TYPES:
+        path = "/downTemplate/" + t
+        if not only or path.startswith(only):
             out.append(path)
     return out
 

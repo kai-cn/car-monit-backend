@@ -1,5 +1,28 @@
 # 迁移工作进度（接口返回逐一对比阶段）
 
+> **2026-11-06→07 第四批：按"每条注册路由是否真被比过"重查一遍** —— 新增 `check_coverage.py`，
+> 口径直接复用各对拍脚本自己的定义。第一轮盘出 515 条路由里 **102 条从没被跑过**；补齐口径后
+> 现在是 437/450 = **97.1%** 覆盖，未覆盖只剩 13 条动作型端点（5 条可补 `actions`、8 条按约定该豁免，
+> 逐条列在 §11.5）。这一轮挖出 **4 个真差异并全部修掉**：
+> ① `/getRouters` 少 `meta.link`（Java 的 MetaVo 实例字段恒输出 null，Go 用了 omitempty）；
+> ② `/downTemplate/{type}` 的模板根只认"配置文件同级"，配置一搬走 7 个合法 type 全退成空 200
+> （现按两个候选根找；type 只当 map 键用，路径全是本包常量，无穿越面）；
+> ③ base 模块写接口在"请求体没有主键这个键"时多输出 `"data":""`（Java 是 `success(msg, null)`
+> 不写 data 键；新增 `bodyStringValue` 区分缺键与空串）；
+> ④ `PUT /manager/suspicious/check`：Java 在 `isExcept != "1"` 时不判空就遍历 null 的 `checkList`
+> ⇒ NPE ⇒ `{"msg":null,"code":500}`，且 `@Transactional` 把前面两个 delete 回滚掉，
+> Go 原先直接"操作成功"，现在返回同样的空消息错误（`[]` 空数组仍照常走完）。
+> 读侧口径扩了 5 条顶层路由（`/getInfo`、`/getRouters`、`/downTemplate`、`/test/**`），
+> 第 3 档 95 → 100 条、差异仍是 11 条已知；写侧从 32 个资源族扩到 **45 个**并加了 `actions` 钩子，
+> 新增资源里 6 个四步全一致，其余 4 条新差异全部定性为 Java 侧（§11.4）。
+> `/downTemplate/{type}` 的 7 个合法 type 首次逐格比对：Java 是 easypoi 重写后的字节、
+> Go 是模板原始字节，长度不同但 **单元格差异 0**。
+> 另外记两个会造成"假绿"的坑：Git Bash 会把位置参数转成 Windows 路径，
+> `compare_write.py /manager/xxx` 必须先 `export MSYS2_ARG_CONV_EXCL='*'`，否则匹配不到任何资源
+> 却安静地报"差异 0"；19 位雪花 id 不能当 JSON 数字传（Go 解成 float64 会丢精度，Java 的
+> String 字段拿原始 token），脚本只在 15 位以内才转数字。
+> 详见 `docs/PARITY-API-TIER-2026-11-04.md` §11。
+>
 > **2026-11-04 批次（api 联动 + 分层校验）见 `docs/PARITY-API-TIER-2026-11-04.md`**：
 > 按「backend→api 的接口 → 其它业务接口 → 框架接口」三档跑双端对比，api 双端（9902/9903）与
 > backend 双端共用 MySQL、Redis 各占不同 db；用**钉版接线**（两端同指一个 api）把残余差异归因到
