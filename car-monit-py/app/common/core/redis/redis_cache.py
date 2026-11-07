@@ -24,9 +24,9 @@ Two Java behaviours that are easy to get wrong:
   requires a TTL. ``TokenService.refreshToken`` uses the 4-arg form with
   ``expireTime`` minutes -- losing the TTL would make sessions immortal.
 
-``keys(pattern)`` uses ``KEYS``, not ``SCAN``, exactly as Spring Data Redis does. On a
-production keyspace that is an O(N) blocking command; the Java build has the same
-property, so it is preserved rather than "improved".
+``keys(pattern)`` deviates from Java deliberately: Spring Data Redis uses ``KEYS``, an
+O(N) command that blocks the whole server; this implementation uses ``SCAN`` incremental
+iteration instead, de-duplicates keys and sorts the result (see the method docstring).
 """
 
 from __future__ import annotations

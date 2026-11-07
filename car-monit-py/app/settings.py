@@ -162,10 +162,11 @@ class LoggingSection(_Section):
     """``logging.level.*`` -- logger name -> level.
 
     ``file_*`` 三项是 Python 侧新增的容量保护（Java 只有 logback 的
-    ``maxFileSize=100MB`` + ``maxHistory=60``，没有目录总量预算）：
-    单文件滚动阈值、保留份数、日志目录总量上限。均可用
-    ``LOGGING__FILE_MAX_BYTES`` / ``LOGGING__FILE_BACKUP_COUNT`` /
-    ``LOGGING__FILE_MAX_TOTAL_BYTES`` 覆盖。
+    ``maxFileSize=100MB`` + ``maxHistory=60`` 天，没有目录总量预算）：
+    单文件滚动阈值、保留份数、日志目录总量上限。``file_backup_count`` 默认
+    ``30`` 份历史文件（``backupCount`` 只能按份数、不能按天，取舍见
+    ``COMPATIBILITY.md``）。均可用 ``LOGGING__FILE_MAX_BYTES`` /
+    ``LOGGING__FILE_BACKUP_COUNT`` / ``LOGGING__FILE_MAX_TOTAL_BYTES`` 覆盖。
     """
 
     level: Dict[str, str] = Field(default_factory=lambda: {"com.ruoyi": "debug", "org.springframework": "warn"})

@@ -358,11 +358,15 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
 
     # ---- Filters: order mirrors the Java filter chain ----------------------
     # Java registers CorsFilter before JwtAuthenticationTokenFilter; TraceIdFilter is a
-    # plain servlet filter, so it sits outermost. ``add_middleware`` **prepends**, therefore
-    # this list is written innermost-first and executes in the opposite order:
+    # plain servlet filter and XssFilter runs at HIGHEST_PRECEDENCE, so XSS sits outermost.
+    # ``add_middleware`` **prepends**, therefore this list is written innermost-first and
+    # executes in the opposite order:
     #
-    #     TraceIdFilter -> CorsFilter -> RequestContextFilter -> Spring Security
-    #     TraceIdMiddleware -> CORSMiddleware -> RequestContextMiddleware -> SecurityMiddleware
+    #     XssFilter -> TraceIdFilter -> CorsFilter -> RequestContextFilter -> Spring Security
+    #     XssMiddleware -> TraceIdMiddleware -> CORSMiddleware -> RequestContextMiddleware
+    #         -> SecurityMiddleware
+    #
+    # XssMiddleware is added **last** (see below) so that it wraps every other middleware.
     #
     # SecurityMiddleware must be registered **before** CORSMiddleware so that CORS ends up
     # outside it: ``CorsFilter`` answers a preflight OPTIONS and returns without calling the

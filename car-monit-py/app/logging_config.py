@@ -208,7 +208,8 @@ def _rotating_handler(path: Path, level: int, formatter: logging.Formatter, sett
         filename=path,
         # logback: <maxFileSize>100MB</maxFileSize>
         maxBytes=max(1, settings.logging.file_max_bytes),
-        # logback: <maxHistory>60</maxHistory> (days -> rotations)
+        # logback: <maxHistory>60</maxHistory> 是"保留 60 天"；RotatingFileHandler 只能
+        # 按份数保留，默认 30 份（换算与取舍见 COMPATIBILITY.md）
         backupCount=max(0, settings.logging.file_backup_count),
         max_total_bytes=max(0, settings.logging.file_max_total_bytes),
         encoding="utf-8",

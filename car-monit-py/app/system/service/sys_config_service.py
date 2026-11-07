@@ -144,7 +144,7 @@ class SysConfigService:
 
     # Java: void clearCache()
     def clear_cache(self) -> None:
-        """``keys("sys_config:*")`` + 批量删。``KEYS`` 是 O(N) 阻塞命令（照抄）。"""
+        """``keys("sys_config:*")`` + 批量删；``RedisCache.keys`` 内部用 ``SCAN`` 增量遍历。"""
         cache = get_redis_cache()
         keys = cache.keys(f"{SYS_CONFIG_KEY}*")
         cache.delete_object(keys)
