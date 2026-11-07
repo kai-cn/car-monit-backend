@@ -143,6 +143,7 @@ from app.logging_config import configure_logging
 from app.middleware.request_context import RequestContextMiddleware
 from app.middleware.security import SecurityMiddleware
 from app.middleware.trace_id import TraceIdMiddleware
+from app.middleware.xss import XssMiddleware
 from app.settings import AppSettings, get_settings
 
 # Java: ``@ComponentScan`` 扫到 ``com.ruoyi.quartz.task`` 的六个业务 bean。
@@ -351,6 +352,9 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
         max_age=1800,  # Java: config.setMaxAge(1800L)
     )
     application.add_middleware(TraceIdMiddleware, settings=settings)
+    # Java: FilterConfig.xssFilterRegistration -> order HIGHEST_PRECEDENCE。add_middleware
+    # 是 prepend，所以最后添加的 XssMiddleware 位于最外层（先于 CORS/TraceId/Security）。
+    application.add_middleware(XssMiddleware, settings=settings)
 
     register_exception_handlers(application)
 
