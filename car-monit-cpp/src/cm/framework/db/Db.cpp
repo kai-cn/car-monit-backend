@@ -82,8 +82,9 @@ bool Db::query(const std::string& sql, const Params& params, Result& out) {
         LOG_WARN("Db", "绑定查询失败: " + sql + " (" + tx->lastError() + ")");
         return false;
     }
-    bool ok = pool_->queryPrepared(sql, params, out);
-    if (!ok) LOG_WARN("Db", "绑定查询失败: " + sql);
+    std::string err;
+    bool ok = pool_->queryPrepared(sql, params, out, &err);
+    if (!ok) LOG_WARN("Db", "绑定查询失败: " + sql + " (" + err + ")");
     return ok;
 }
 
@@ -99,8 +100,9 @@ bool Db::execute(const std::string& sql, const Params& params, long long* affect
         LOG_WARN("Db", "绑定执行失败: " + sql + " (" + tx->lastError() + ")");
         return false;
     }
-    bool ok = pool_->executePrepared(sql, params, affected, insertId);
-    if (!ok) LOG_WARN("Db", "绑定执行失败: " + sql);
+    std::string err;
+    bool ok = pool_->executePrepared(sql, params, affected, insertId, &err);
+    if (!ok) LOG_WARN("Db", "绑定执行失败: " + sql + " (" + err + ")");
     return ok;
 }
 

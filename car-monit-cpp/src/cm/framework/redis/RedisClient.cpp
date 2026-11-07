@@ -209,15 +209,42 @@ bool RedisClient::readReply(std::string& out, bool* isNil) {
     return true;
 }
 
+/** 幂等命令白名单：断线重连后可以安全重试一次。
+ *  INCR/DECR 之类非幂等命令不在列内，断线后只做「作废连接」，让下一次调用自愈，
+ *  避免重试导致计数重复累加。 */
+static bool isIdempotentCommand(const std::string& cmd) {
+    static const char* kOk[] = {"PING", "GET",  "SET",   "SETEX",  "PSETEX", "SETNX",  "DEL",
+                                "EXISTS", "EXPIRE", "PEXPIRE", "PTTL", "TTL",   "KEYS",  "SCAN",
+                                "HGET", "HSET", "HDEL", "HKEYS", "HLEN", "TYPE", "STRLEN"};
+    for (const char* c : kOk) {
+        if (cmd == c) return true;
+    }
+    return false;
+}
+
 std::optional<std::string> RedisClient::command(const std::vector<std::string>& args) {
     std::lock_guard<std::mutex> lk(mu_);
-    if (!ensureConnected()) return std::nullopt;
-    if (!sendCommand(args)) return std::nullopt;
-    std::string reply;
-    bool nil = false;
-    if (!readReply(reply, &nil)) return std::nullopt;
-    if (nil) return std::nullopt;
-    return reply;
+    const bool retryable = !args.empty() && isIdempotentCommand(args.front());
+    for (int attempt = 0; attempt < 2; ++attempt) {
+        if (!ensureConnected()) return std::nullopt;
+        if (!sendCommand(args)) {
+            // 写失败（对端已关闭）——作废连接；幂等命令重连后重试一次
+            close();
+            if (retryable && attempt == 0) continue;
+            return std::nullopt;
+        }
+        std::string reply;
+        bool nil = false;
+        if (!readReply(reply, &nil)) {
+            // 读失败（CLIENT KILL / 空闲超时 / 半关闭）——同样作废连接，下次自愈
+            close();
+            if (retryable && attempt == 0) continue;
+            return std::nullopt;
+        }
+        if (nil) return std::nullopt;
+        return reply;
+    }
+    return std::nullopt;
 }
 
 bool RedisClient::ping() {
@@ -226,13 +253,8 @@ bool RedisClient::ping() {
 }
 
 std::optional<std::string> RedisClient::get(const std::string& key) {
-    std::lock_guard<std::mutex> lk(mu_);
-    if (!ensureConnected()) return std::nullopt;
-    if (!sendCommand({"GET", key})) return std::nullopt;
-    std::string reply;
-    bool nil = false;
-    if (!readReply(reply, &nil) || nil) return std::nullopt;
-    return reply;
+    // 走 command() 统一的重连/自愈路径；nil 与失败都返回 nullopt（与原语义一致）
+    return command({"GET", key});
 }
 
 bool RedisClient::set(const std::string& key, const std::string& value) {

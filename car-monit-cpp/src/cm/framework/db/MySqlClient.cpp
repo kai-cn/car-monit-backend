@@ -1009,22 +1009,29 @@ bool ConnectionPool::execute(const std::string& sql, long long* affected, long l
     return ok;
 }
 
-bool ConnectionPool::queryPrepared(const std::string& sql, const Params& params, Result& out) {
+bool ConnectionPool::queryPrepared(const std::string& sql, const Params& params, Result& out,
+                                   std::string* error) {
     auto c = borrow();
     if (!c) {
         out = Result{};
+        if (error) *error = "连接池无可用连接";
         return false;
     }
     bool ok = c->queryPrepared(sql, params, out);
+    if (!ok && error) *error = c->lastError();
     release(c);
     return ok;
 }
 
 bool ConnectionPool::executePrepared(const std::string& sql, const Params& params, long long* affected,
-                                     long long* insertId) {
+                                     long long* insertId, std::string* error) {
     auto c = borrow();
-    if (!c) return false;
+    if (!c) {
+        if (error) *error = "连接池无可用连接";
+        return false;
+    }
     bool ok = c->executePrepared(sql, params, affected, insertId);
+    if (!ok && error) *error = c->lastError();
     release(c);
     return ok;
 }

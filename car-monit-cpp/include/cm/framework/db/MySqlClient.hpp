@@ -140,10 +140,12 @@ public:
     /** 便捷执行 */
     bool query(const std::string& sql, Result& out);
     bool execute(const std::string& sql, long long* affected = nullptr, long long* insertId = nullptr);
-    /** 参数绑定执行（借出连接 → queryPrepared/executePrepared → 归还） */
-    bool queryPrepared(const std::string& sql, const Params& params, Result& out);
+    /** 参数绑定执行（借出连接 → queryPrepared/executePrepared → 归还）
+     *  error 非空时回填最后一条连接的错误文本（诊断用） */
+    bool queryPrepared(const std::string& sql, const Params& params, Result& out,
+                       std::string* error = nullptr);
     bool executePrepared(const std::string& sql, const Params& params, long long* affected = nullptr,
-                         long long* insertId = nullptr);
+                         long long* insertId = nullptr, std::string* error = nullptr);
     bool pingAll();
 
     /** 新建连接时应用该容量（默认 64） */

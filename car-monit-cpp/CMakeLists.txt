@@ -116,3 +116,21 @@ if (CAR_MONIT_BUILD_TESTS)
     target_include_directories(carmonit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     add_test(NAME carmonit_tests COMMAND carmonit_tests)
 endif()
+
+# ---------------------------------------------------------------------------
+# 真库验收工具（默认不构建）：参数绑定 vs 手工拼接的对照 + 基准
+#   cmake -B build -DCAR_MONIT_BUILD_DB_VERIFY=ON
+#   需要一台可写的测试 MySQL；库名/端口由 CM_VERIFY_DB_* 环境变量指定。
+# ---------------------------------------------------------------------------
+option(CAR_MONIT_BUILD_DB_VERIFY "构建真库验收工具 carmonit_db_verify" OFF)
+if (CAR_MONIT_BUILD_DB_VERIFY)
+    add_executable(carmonit_db_verify tools/db_verify/main.cpp)
+    target_link_libraries(carmonit_db_verify PRIVATE carmonit_core)
+endif()
+
+# Redis 连接模型验收工具（默认不构建）：多线程连接/AUTH/自愈/回收/降级
+option(CAR_MONIT_BUILD_REDIS_VERIFY "构建 Redis 验收工具 carmonit_redis_verify" OFF)
+if (CAR_MONIT_BUILD_REDIS_VERIFY)
+    add_executable(carmonit_redis_verify tools/redis_verify/main.cpp)
+    target_link_libraries(carmonit_redis_verify PRIVATE carmonit_core)
+endif()
