@@ -38,5 +38,6 @@ jobs:
         run: ruff check app tests
 
       - name: pytest
-        # tests/integration 在 MySQL/Redis 不可达时会自行 skip，公共 runner 不启动服务
-        run: python -m pytest -q
+        # tests/integration 在 MySQL/Redis 不可达时会自行 skip，公共 runner 不启动服务。
+        # 当前全量覆盖率 73%，门槛留 3 个点余量，防止后续改动悄悄掉到 70 以下。
+        run: python -m pytest -q --cov=app --cov-report=term --cov-fail-under=70
