@@ -4889,5 +4889,5 @@ gantrycar,gantrytrade}/export`、`/base/{geometry,snapshotflow,feerecords}/expor
   「未实施的高风险优化」。
 - **P2-11（合并 3 层 `BaseHTTPMiddleware`）**：涉及 `contextvars` 在纯 ASGI 中间件中的
   手工传播与安全过滤器顺序，本轮不改代码，方案同上。
-- **P2-12**：CI 已加 `ruff + pytest`，并按当前 73% 设置 70% 覆盖率门槛。
+- **P2-12**：CI 已加 `ruff + pytest`；实测覆盖率 **72.85%**（3605 tests / 1 skipped），门槛设 70%。
 - **P2-13**：Alembic 增加空基线 `0001_baseline`，已有库执行一次 `alembic stamp`。
