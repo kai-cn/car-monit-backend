@@ -1,0 +1,42 @@
+name: car-monit-py
+
+on:
+  push:
+    paths:
+      - 'car-monit-py/**'
+      - '.github/workflows/car-monit-py.yml'
+  pull_request:
+    paths:
+      - 'car-monit-py/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: car-monit-py
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: car-monit-py/requirements.txt
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff==0.8.4
+
+      - name: ruff
+        run: ruff check app tests
+
+      - name: pytest
+        # tests/integration 在 MySQL/Redis 不可达时会自行 skip，公共 runner 不启动服务
+        run: python -m pytest -q

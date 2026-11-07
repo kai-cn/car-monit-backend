@@ -214,7 +214,7 @@ def _query_bool(request: Request, name: str, default: bool) -> bool:
         return True
     if lowered in _FALSE_LITERALS:
         return False
-    raise ValueError(f"Failed to convert value of type 'java.lang.String' to required type 'boolean'")
+    raise ValueError("Failed to convert value of type 'java.lang.String' to required type 'boolean'")
 
 
 def _parse_id_array(raw: str) -> List[int]:
