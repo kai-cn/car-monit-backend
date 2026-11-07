@@ -126,7 +126,7 @@ Python 的装饰器先执行，顺序反了。唯一受影响的端点恒定 500
 | integration | `tests/integration/test_real_backend.py` | 真 MySQL + 真 Redis（`-m integration`） |
 
 约定：断言响应体时**断言 `list(body)` 的键序**，不要只断言 `body["code"]`。
-`pytest` 的 `addopts` 已带 `-q`；全量 **3646** 条（3563 单测 + 83 条联调），跑一遍约 36 秒。
+`pytest` 的 `addopts` 已带 `-q`；全量约 **3600** 条（含 1 条联调 skip），跑一遍约 1 分钟。
 
 ## 6. 回归与对拍
 
@@ -156,9 +156,47 @@ python scripts/gen_mapping_docs.py                 # 重写 MAPPING_{BASE,MANAGE
 | 域字段 | 可比 115，属性/Excel/导出列 **零缺口** |
 | 响应信封 | 可比 501 全部归类：`AjaxResult`→`AjaxResult` 359、`TableDataInfo`→`TableDataInfo` 100、`AjaxResult`→`Response` 24、`void`→`Response` 8、`R`→`R` 5、`String`→`str` 5 |
 | 文案 | Java 148 种 / Python 155 种，两侧缺口均 **0** |
-| 用例 | **3646 passed / 0 failed / 0 skipped** |
+| 用例 | **约 3600 passed / 0 failed / 1 skipped（联调）** |
 | 对照表 | 5 份 `MAPPING_*.md`：54 个控制器 / 341 个端点，且生成器幂等 |
 | 自检 | smoke **5/5** |
+
+## 7. Java 命名 / 死代码 / 生成器模板：集中标注（P3-1/2/3/6 决策）
+
+评审报告把以下四项列为 P3；本轮**保持迁移保真、不改代码**，集中在这里说明，
+避免逐文件散落注释。
+
+### 7.1 文档密度（P3-1）
+
+模块 docstring 目前约占全仓 23% 行数，大部分是 Java 对照与踩坑记录。保留它们：
+迁移期的价值在于"读 Python 能直接看到 Java 语义"，删掉会让后续对拍重新踩坑。
+新增代码的约定：**行为差异/坑写进 docstring，逐行 Java 对照写进 `MAPPING_*.md`**，
+不要把两份内容重复贴两遍。
+
+### 7.2 Java 命名残留（P3-2）
+
+`select_xxx` / `is_null` / `is_not_blank` / `SysXxxService` 等命名刻意保留，便于
+与 Java 源码逐行 diff。**新写的 Python 模块**（`bounded_executor`、`ARCHITECTURE.md`
+相关工具）使用 Pythonic 命名；存量不做批量重命名，避免制造无意义的 diff。
+
+### 7.3 死代码（P3-3）
+
+以下符号在 Java 中就没有调用者，按迁移原则"看似无用也照搬"保留：
+
+| 符号 | 位置 | Java 来源 |
+|---|---|---|
+| `TokenService.get_username_from_token` | `app/framework/web/service/token_service.py` | `getUsernameFromToken` |
+| `set_file_download_header` | `app/common/utils/file_utils.py` | `FileUtils.setFileDownloadHeader` |
+| `Acknowledgment` | `app/base/service/cdc/cdc_sync_service.py` | Spring Kafka `Acknowledgment` 的最小替身 |
+| `upload_default` / `upload_with_extensions` 的 1 参重载 | `app/common/utils/file_upload_utils.py` | `FileUploadUtils.upload(MultipartFile)` |
+
+需要清理时统一加 `# Java dead code` 标记并单独提交；本轮未改。
+
+### 7.4 生成器模板（P3-6）
+
+`config/vm*` 下是 ruoyi-generator 的原始 Java/Vue 模板，代码生成器按字节复刻
+（`tests/test_gen_controller.py` 对拍）。它们不是给 Python 团队的日常模板：
+即使生成 Python 目标，输出也会与 Java 不一致，因此**不改造**，仅在
+`MAPPING_GENERATOR.md` 说明用途。
 
 改完代码后请重跑这几项，并把结果与基线对照；如果数字变了，先问「是不是我多写/漏写了一个端点」，
 再问「是不是我改了一个 `msg`」。
