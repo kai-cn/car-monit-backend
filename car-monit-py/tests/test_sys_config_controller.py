@@ -251,7 +251,9 @@ class TestRouteTable:
 
         response = http.get("/system/config/configKey/sys.index.skinName")
 
-        assert response.json() == {"code": 200, "msg": "操作成功", "data": "skin-blue"}
+        # Java: selectConfigByKey 返回 String ⇒ 命中 AjaxResult.success(String msg)
+        # 重载，值落在 msg 上、没有 data 键。
+        assert response.json() == {"code": 200, "msg": "skin-blue"}
         assert service.of("select_config_by_key") == [
             ("select_config_by_key", "sys.index.skinName")
         ]
@@ -308,7 +310,7 @@ class TestPermissions:
         response = get_config_key("sys.index.skinName")
 
         assert response["code"] == 200
-        assert response["data"] == "skin-blue"
+        assert response["msg"] == "skin-blue"
 
     def test_a_partial_permission_does_not_pass(self) -> None:
         authenticate(permissions={"system:config:*"})
@@ -445,18 +447,18 @@ class TestGetInfo:
 
 class TestGetConfigKey:
     def test_a_miss_returns_an_empty_string_not_null(self, service: Any) -> None:
-        """Java 最后一行是 ``StringUtils.EMPTY``。"""
+        """Java 最后一行是 ``StringUtils.EMPTY``；空串仍然只是空串。"""
         service.by_key_result = ""
 
         response = get_config_key("sys.absent")
 
-        assert response["data"] == ""
-        assert "data" in response
+        assert response["msg"] == ""
+        assert "data" not in response
 
     def test_a_hit_returns_the_stored_value(self, service: Any) -> None:
         service.by_key_result = "true"
 
-        assert get_config_key("sys.account.captchaEnabled")["data"] == "true"
+        assert get_config_key("sys.account.captchaEnabled")["msg"] == "true"
 
     def test_the_key_is_not_trimmed(self, service: Any) -> None:
         """``@PathVariable`` 不做 trim；缓存键就是原样的串。"""

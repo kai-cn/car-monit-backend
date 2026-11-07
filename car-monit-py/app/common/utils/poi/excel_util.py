@@ -131,6 +131,9 @@ logger = logging.getLogger("app.common.utils.poi.excel_util")
 FORMULA_REGEX_STR = r"=|-|\+|@"
 #: Java: ``ExcelUtil.FORMULA_STR``
 FORMULA_STR: Tuple[str, ...] = ("=", "-", "+", "@")
+#: POI 的单元格文本上限：``XSSFCell.checkCellValue`` 超过就抛 IllegalArgumentException，
+#: 表现是"有样式、没值"。``template_export`` 也用它。
+MAX_CELL_TEXT_LENGTH = 32767
 #: Java: ``ExcelUtil.sheetSize``
 SHEET_SIZE = 65536
 #: Java: ``DecimalFormat("######0.00")`` —— 由 :func:`_format_double_00` 实现
@@ -634,6 +637,10 @@ class ExcelUtil(Generic[T]):
                 number = to_double(value) if "." in text else to_int(value)
                 if number is None:
                     raise TypeError("java.lang.NullPointerException: numeric cell value is null")
+                # Java: POI 只有 ``setCellValue(double)``，整数也被加宽成 double，
+                # 文件里是 ``<v>1.0</v>``。openpyxl 写 ``1.0`` 时会归一成 ``<v>1</v>``
+                # （它按最短形式落盘），所以这里**无法**复刻那个字面量；数值本身两端相等、
+                # Excel 显示也相同（General 格式），差异只在存储字面量，登记在 COMPATIBILITY。
                 cell.value = number
         elif attr.cell_type is ColumnType.IMAGE:
             # Java 会把图片锚进单元格并 addPicture；本工程没有任何字段用 IMAGE，
@@ -1043,7 +1050,16 @@ class ExcelUtil(Generic[T]):
         """Java: ``cell.setCellValue(String)`` —— 强制字符串类型.
 
         POI 里以 ``=`` 开头的字符串仍然只是字符串；openpyxl 会把它当公式，所以拨回来。
+
+        超过 32767 字符时 POI 在 ``setCellValue`` 里抛 ``IllegalArgumentException``，
+        被 ``addCell`` 的 ``catch (Exception)`` 吞掉 —— 结果就是"有样式、没值"的空格
+        （实测 ``/base/geometry/export`` 的路串列）。openpyxl 不拦，这里自己拦。
         """
+        if text is not None and len(text) > MAX_CELL_TEXT_LENGTH:
+            raise ValueError(
+                "java.lang.IllegalArgumentException: The content of the cell is too long. "
+                "Cells can only hold 32767 characters"
+            )
         cell.value = text
         if getattr(cell, "data_type", None) == "f":
             cell.data_type = "s"

@@ -38,6 +38,8 @@ from __future__ import annotations
 import io
 import re
 from copy import copy
+from datetime import date, datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
@@ -45,6 +47,8 @@ from openpyxl import load_workbook
 from openpyxl.cell.cell import Cell
 from openpyxl.worksheet.worksheet import Worksheet
 
+from app.common.utils.date_utils import java_date_to_string
+from app.common.utils.poi.excel_util import MAX_CELL_TEXT_LENGTH
 from app.settings import PROJECT_ROOT
 
 #: classpath 根 ``templates/export/xxx.xlsx`` 在 Python 侧的对应目录是
@@ -189,7 +193,7 @@ def _render_list(worksheet: Worksheet, marker: _ListMarker, data: Mapping[str, A
             target_cell._style = copy(cell_style)
         for position, field in enumerate(marker.fields):
             column = marker.first_column + position
-            worksheet.cell(row=target, column=column).value = _resolve(item, field)
+            worksheet.cell(row=target, column=column).value = _cell_value(_resolve(item, field))
         # 标记末尾之后、模板行内剩余的列清空（例如 M2 之后的 N2）。
         for column in range(
             marker.first_column + len(marker.fields), marker.last_column + 1
@@ -200,6 +204,57 @@ def _render_list(worksheet: Worksheet, marker: _ListMarker, data: Mapping[str, A
         # 没有数据：把模板行整段清空，避免把 {{$fe:...}} 原样发出去。
         for column in range(marker.first_column, marker.last_column + 1):
             worksheet.cell(row=template_row, column=column).value = None
+
+
+def _cell_value(value: Any) -> Any:
+    """EasyPOI 的模板格子等价于 ``String.valueOf(getter())``，按 Java 声明类型出文本.
+
+    * ``java.sql.Timestamp``（Python 侧 ``datetime``）→ ``2026-02-03 16:19:19.572``
+      —— 小数秒去尾零、至少保留 1 位，全零是 ``.0``；
+    * ``java.util.Date``（Python 侧 ``date``）→ ``Thu Aug 21 00:00:00 CST 2025``；
+    * ``BigDecimal`` → ``Decimal`` 的 ``str``，**保留标度**（``225.30`` 不塌成 ``225.3``）；
+    * ``Boolean`` → ``true``/``false``（不是 Python 的 ``True``）；
+    * 模板引用了实体上没有的属性 / 值为 null → 空格子；
+    * 文本超过 32767 字符 → POI 在 ``setCellValue`` 里抛错、被上层吞掉 → 空格子。
+
+    金额、时间两列在两端的表现差异全部来自"Java 写的是文本、openpyxl 写的是原生
+    数值/日期对象"，所以这里统一转成 Java 的那段文本再写进去。
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        text = "true" if value else "false"
+    elif isinstance(value, datetime):
+        text = value.strftime("%Y-%m-%d %H:%M:%S") + "." + _timestamp_fraction(value)
+    elif isinstance(value, date):
+        text = java_date_to_string(datetime(value.year, value.month, value.day))
+    elif isinstance(value, Decimal):
+        text = format(value, "f")
+    elif isinstance(value, float):
+        text = _java_double_to_string(value)
+    elif isinstance(value, str):
+        text = value
+    else:
+        text = str(value)
+    if len(text) > MAX_CELL_TEXT_LENGTH:
+        return None
+    return text
+
+
+def _timestamp_fraction(value: datetime) -> str:
+    """``Timestamp.toString`` 的小数秒：9 位定长后去尾零，全零留一位 ``0``."""
+    fraction = "%09d" % (value.microsecond * 1000)
+    return fraction.rstrip("0") or "0"
+
+
+def _java_double_to_string(value: float) -> str:
+    """``Double.toString``：最短可回读表示，整数值也带 ``.0``."""
+    if value != value or value in (float("inf"), float("-inf")):
+        return str(value)
+    text = repr(value)
+    if "." not in text and "e" not in text and "E" not in text:
+        text += ".0"
+    return text
 
 
 def _resolve(item: Any, field: str) -> Any:
