@@ -23,12 +23,14 @@ from __future__ import annotations
 import logging
 import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import AsyncIterator
 
 import anyio.to_thread
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.base.base_config_service_area_controller import router as base_config_service_area_router
 from app.api.base.car_warning_config_controller import router as base_car_warning_config_router
@@ -639,6 +641,20 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     # Java: FlowTemplateController -- ``/flow/flowtemplate/**``。7 个映射，无权限；
     # ``/flowlist`` 在头部插一条虚拟节点（``id=-1`` / ``nodeKey=tj``）。
     application.include_router(flow_template_router)
+
+    # Java: ResourcesConfig#addResourceHandlers --
+    #   registry.addResourceHandler(Constants.RESOURCE_PREFIX + "/**")
+    #           .addResourceLocations("file:" + RuoYiConfig.getProfile() + "/");
+    # 上传/头像在库里存的是相对 url（``/profile/upload/...``、``/profile/avatar/...``），
+    # 前端 <img :src> 直接用它，必须由后端提供静态映射，否则这些 url 全部 404。
+    #
+    # check_dir=False：Java 的资源处理器在目录不存在时不影响启动，只在请求时 404；
+    # StaticFiles 默认 check_dir=True 会在 create_app() 时抛 RuntimeError，改变启动行为。
+    application.mount(
+        "/profile",
+        StaticFiles(directory=Path(settings.ruoyi.profile), check_dir=False),
+        name="profile",
+    )
 
     if settings.app.health_endpoint_enabled:
         application.include_router(health_router)
