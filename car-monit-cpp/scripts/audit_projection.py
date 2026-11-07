@@ -19,8 +19,56 @@ JAVA = os.path.dirname(ROOT)
 SPECS = os.path.join(ROOT, "src", "cm", "web", "specs")
 
 VO_RE = re.compile(r'<sql\s+id="(select\w*Vo|\w*Vo)">\s*(.*?)\s*</sql>', re.S)
-COL_RE = re.compile(r'\b(\w+)\.([a-z_][a-z0-9_]*)')
+# 列名大小写不敏感（XML 里既有 t.id 也有 t.ID / t.BILL_OID），统一按小写比较
+COL_RE = re.compile(r'\b(\w+)\.([A-Za-z_][A-Za-z0-9_]*)')
 FIELD_RE = re.compile(r'\n\s*\{"(\w+)",\s*(?:"(\w+)"|nullptr),')
+
+
+def spec_fields(body):
+    """解析 spec 的字段初始化列表，返回 [(json, column, inVo)]。
+
+    ⚠️ 必须解析第 12 个参数 inVo：Spec::selectColumns() 会跳过 inVo=false 的列
+    （Java 的 <sql id="selectXxxVo"> 没投影它，但它仍可作 WHERE 左值）。
+    只看前两个字段会把这类"只作条件、不投影"的列误报成多投影。
+    """
+    out = []
+    for m in FIELD_RE.finditer(body):
+        json_name = m.group(1)
+        column = m.group(2) if m.group(2) else None
+        # 从 '{' 开始扫到配对的 '}'，再按深度 0 的逗号切分
+        start = m.start() + m.group(0).index('{')
+        depth = 0
+        end = None
+        for i in range(start, len(body)):
+            ch = body[i]
+            if ch in '([{':
+                depth += 1
+            elif ch in ')]}':
+                depth -= 1
+                if depth == 0:
+                    end = i
+                    break
+        args = []
+        if end is not None:
+            cur, d = '', 0
+            for ch in body[start + 1:end]:
+                if ch in '([{':
+                    d += 1
+                elif ch in ')]}':
+                    d -= 1
+                if ch == ',' and d == 0:
+                    args.append(cur.strip())
+                    cur = ''
+                else:
+                    cur += ch
+            args.append(cur.strip())
+        # 参数位：0 json / 1 column / 2 fmt / 3 cond / 4 excel / 5 pk / 6 autoIncrement
+        #         / 7 insertable / 8 updatable / 9 condColumn / 10 dflt / 11 inVo
+        in_vo = True
+        if len(args) >= 12 and args[11] == 'false':
+            in_vo = False
+        out.append((json_name, column, in_vo))
+    return out
 
 
 def java_xml_for(entity_pkg):
@@ -43,15 +91,14 @@ def spec_files():
 
 
 def parse_specs(text):
-    """返回 [(spec函数名, table, [(json, column_or_None)])]"""
+    """返回 [(spec函数名, table, [(json, column_or_None, inVo)])]"""
     out = []
     for m in re.finditer(r'const Spec&\s+(\w+)\(\)\s*\{(.*?)\n\}\n', text, re.S):
         body = m.group(2)
         tm = re.search(r's\.table\s*=\s*"([^"]+)"', body)
         if not tm:
             continue
-        fields = [(j, c) for j, c in FIELD_RE.findall(body)]
-        out.append((m.group(1), tm.group(1), fields))
+        out.append((m.group(1), tm.group(1), spec_fields(body)))
     return out
 
 
@@ -89,6 +136,10 @@ def main():
                             hits.append((fn, src))
             if not hits:
                 continue
+            # 同一个表可能被别的 Mapper（join 查询）也引用，优先用与实体同名的 XML，
+            # 否则会拿 CarConfimFreeMapper 的 Vo 去比 car_info，报出一屏假差异
+            cls = fname[4:] if fname.startswith("spec") else fname
+            hits.sort(key=lambda h: 0 if h[0] == cls + "Mapper.xml" else 1)
             cols = None
             src_used = None
             for fn, src in hits:
@@ -99,7 +150,8 @@ def main():
             if cols is None:
                 continue
             comparable += 1
-            projected = {c.lower() for _j, c in fields if c}
+            # 只比对真正会被 SELECT 出来的列（inVo=true）；inVo=false 的列只作 WHERE 左值
+            projected = {c.lower() for _j, c, in_vo in fields if c and in_vo}
             extra = sorted(projected - cols)
             if extra:
                 diff_entities.append((fname, table, src_used, extra))

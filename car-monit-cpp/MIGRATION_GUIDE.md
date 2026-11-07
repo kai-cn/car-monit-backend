@@ -542,6 +542,31 @@ Java 侧 Lettuce 用连接池；C++ 改造前是**单连接 + 全局互斥**，3
 线程退出后 `CLIENT LIST` 回落到 2 行（回收生效）；错误密码/错误端口下
 `get→nullopt`、`set→false`、`del→0`、`pttl→-2`、`keys→[]`，与改造前一致。
 
+### 5.7 spec 的"生成 + 手改"同步流程（Java 侧改 XML 后必须做什么）
+
+`src/cm/web/specs/*CrudSpecs.cpp` 由 `scripts/gen_crud_spec.py` 从 Java 实体 + Mapper XML 生成，
+但部分形态生成器表达不了（`car_info` 的无条件 `not exists` 子查询、`createInfo` 派生列等），
+这些是**手改补丁**。因此**不能重新生成后直接覆盖**，否则补丁会被冲掉。
+
+Java 侧改动 Mapper XML / 实体注解后的固定流程：
+
+1. `python scripts/gen_crud_spec.py --area <base|manager|flow|system|...> --out /tmp/spec.cpp`，
+   只生成到临时文件，**不覆盖**仓库内 spec；
+2. `diff /tmp/spec.cpp src/cm/web/specs/<Area>CrudSpecs.cpp`，逐条判断：
+   - 纯字段/条件变化 → 采纳；
+   - 涉及手改补丁段（文件内有 `// 手改` 注释）→ 手工合并；
+3. 跑三个审计脚本，必须全部为 0/无 `!!`：
+   - `python scripts/audit_spec_keys.py`（实体字段与 SPEC 键的差集）
+   - `python scripts/audit_projection.py`（SPEC 的 SELECT 列 vs Java `<sql id="selectXxxVo">`）
+   - `python scripts/audit_cond_columns.py`（XML `<if>` 的条件左值 vs spec 的 condColumn，
+     输出需人工复核：`<if>` 里嵌对象条件会产生噪声）
+4. `python scripts/audit_sql_bindings.py` 确认值位置没有残留 `Db::lit`；
+5. 编译 + `carmonit_tests`，再按 `FINAL_DIFFERENCES.md` §7 的验证脚本清单跑相关端到端。
+
+> `audit_projection.py` 在 2026-11-07 修过三处漏判：不解析 `Field.inVo`（把"只作条件不投影"
+> 的列误报成多投影）、列名大小写敏感（`t.ID` 被漏掉）、同一张表被别的 Mapper join 引用时
+> 选错 XML。修复前 52 个可比 spec 报 11 个多投影，修复后为 0。
+
 ---
 
 ## 6. 层 5：横切关注点
