@@ -1,4 +1,5 @@
 // 出站 HTTP 客户端的单测：URL 解析、query 编码、状态/首部解析、chunked 成帧、上限与 TLS。
+#include <atomic>
 #include <string>
 #include <thread>
 #include <vector>
@@ -120,6 +121,88 @@ static void testPlainRequest() {
     CK(seen.find("Host: 127.0.0.1:" + std::to_string(port) + "\r\n") != std::string::npos);
 }
 
+/** Forest BackOffRetryer 语义：GET 失败重试 2 次；POST 默认不重试，显式开启才重试 */
+static void testRetry() {
+    using namespace cm::net;
+    // 服务端：前 failures 次返回 500，之后返回 200；记录收到的请求数
+    auto runServer = [](int failures, int expectMaxAccepts, std::atomic<int>& served) {
+        Fd lfd = listenTcp("127.0.0.1", 0, 16);
+        if (!isValid(lfd)) return std::pair<Fd, int>(kInvalid, 0);
+        sockaddr_in sa{};
+        socklen_t sl = sizeof(sa);
+        ::getsockname(asSocket(lfd), reinterpret_cast<sockaddr*>(&sa), &sl);
+        const int port = ntohs(sa.sin_port);
+        std::thread th([&served, lfd, failures, expectMaxAccepts] {
+            for (int i = 0; i < expectMaxAccepts; ++i) {
+                std::string peer;
+                Fd sfd = acceptTcp(lfd, peer);
+                if (!isValid(sfd)) break;
+                ++served;
+                char buf[8192];
+                while (true) {
+                    const long n = readSome(sfd, buf, sizeof(buf));
+                    if (n <= 0) break;
+                    if (std::string(buf, static_cast<size_t>(n)).find("\r\n\r\n") != std::string::npos) break;
+                }
+                const bool ok = served > failures;
+                const std::string resp = ok
+                    ? "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok"
+                    : "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 3\r\nConnection: close\r\n\r\nbad";
+                writeAll(sfd, resp.data(), resp.size());
+                closeTcp(sfd);
+            }
+        });
+        th.detach();
+        return std::pair<Fd, int>(lfd, port);
+    };
+
+    cm::net::HttpOptions opt;
+    opt.connectTimeoutMs = 2000;
+    opt.readTimeoutMs = 2000;
+    opt.retryIntervalMs = 10;  // 测试不睡满 1s
+
+    // GET：第 1 次 500，第 2 次 200 ⇒ 重试生效
+    {
+        std::atomic<int> served{0};
+        auto [lfd, port] = runServer(1, 4, served);
+        CK(isValid(lfd));
+        if (isValid(lfd)) {
+            const auto r = cm::net::HttpClient::get("http://127.0.0.1:" + std::to_string(port) + "/x", {}, opt);
+            CK_EQ(r.status, 200);
+            CK_EQ(served.load(), 2);
+            closeTcp(lfd);
+        }
+    }
+    // POST 默认不重试：两次都 500，服务端只应收到 1 次
+    {
+        std::atomic<int> served{0};
+        auto [lfd, port] = runServer(2, 4, served);
+        CK(isValid(lfd));
+        if (isValid(lfd)) {
+            const auto r = cm::net::HttpClient::post("http://127.0.0.1:" + std::to_string(port) + "/x", "b",
+                                                     "text/plain", {}, opt);
+            CK_EQ(r.status, 500);
+            CK_EQ(served.load(), 1);
+            closeTcp(lfd);
+        }
+    }
+    // POST + retryNonIdempotent=true：重试一次后成功
+    {
+        std::atomic<int> served{0};
+        auto [lfd, port] = runServer(1, 4, served);
+        CK(isValid(lfd));
+        if (isValid(lfd)) {
+            cm::net::HttpOptions o2 = opt;
+            o2.retryNonIdempotent = true;
+            const auto r = cm::net::HttpClient::post("http://127.0.0.1:" + std::to_string(port) + "/x", "b",
+                                                     "text/plain", {}, o2);
+            CK_EQ(r.status, 200);
+            CK_EQ(served.load(), 2);
+            closeTcp(lfd);
+        }
+    }
+}
+
 static void testBuildQuery() {
     auto q = cm::net::buildQuery({{"carNo", "赣AK7388"}, {"n", "1 2+3/"}});
     // 空格 -> '+'（Apache httpclient URLEncodedUtils.format 的行为），'+' 自身要转 %2B
@@ -214,6 +297,7 @@ void run_http_client_tests() {
     testParseUrl();
     testTlsTransport();
     testPlainRequest();
+    testRetry();
     testBuildQuery();
     testParseResponse();
     testChunked();

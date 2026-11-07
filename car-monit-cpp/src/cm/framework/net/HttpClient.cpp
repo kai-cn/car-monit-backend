@@ -3,6 +3,7 @@
 
 #include <cctype>
 #include <cerrno>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -11,6 +12,7 @@
 #include <memory>
 #include <mutex>
 #include <sstream>
+#include <thread>
 
 #include "cm/framework/net/Os.hpp"
 
@@ -521,10 +523,12 @@ std::string HttpClient::defaultCaBundle() {
 #endif
 }
 
-HttpResponse HttpClient::send(const std::string& method, const std::string& url,
-                              const std::string& body,
-                              const std::vector<std::pair<std::string, std::string>>& headers,
-                              const HttpOptions& opt) {
+namespace {
+
+/** 单次尝试（不含重试）。对应 Forest 的一次 invocation。 */
+HttpResponse sendOnce(const std::string& method, const std::string& url, const std::string& body,
+                      const std::vector<std::pair<std::string, std::string>>& headers,
+                      const HttpOptions& opt) {
     HttpResponse r;
     Url u = parseUrl(url);
     if (!u.ok) {
@@ -616,6 +620,31 @@ HttpResponse HttpClient::send(const std::string& method, const std::string& url,
         return over;
     }
     return r;
+}
+
+} // namespace
+
+HttpResponse HttpClient::send(const std::string& method, const std::string& url,
+                              const std::string& body,
+                              const std::vector<std::pair<std::string, std::string>>& headers,
+                              const HttpOptions& opt) {
+    // 重试语义对齐 Forest 1.6.0 BackOffRetryer：
+    //   retry-count=2、间隔 min(2^n × 1000, max-retry-interval=1000)、异常或非 2xx 都重试。
+    // 差异：非幂等方法默认不重试（Forest 是全局配置，POST 也会重试）；
+    //       查询型 POST 由调用方置 retryNonIdempotent=true 显式打开。
+    const bool idempotent = method == "GET" || method == "HEAD" || method == "OPTIONS";
+    const int retries = (idempotent || opt.retryNonIdempotent) ? (opt.maxRetryCount > 0 ? opt.maxRetryCount : 0) : 0;
+    for (int attempt = 0;; ++attempt) {
+        HttpResponse r = sendOnce(method, url, body, headers, opt);
+        const bool failed = !r.error.empty() || !r.is2xx();
+        if (!failed || attempt >= retries) return r;
+        // 2^attempt × 1000，上限 retryIntervalMs（与 BackOffRetryer.nextInterval 一致）
+        long long interval = 1000LL << (attempt > 20 ? 20 : attempt);
+        if (opt.retryIntervalMs >= 0 && interval > opt.retryIntervalMs) interval = opt.retryIntervalMs;
+        if (interval > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(interval));
+        }
+    }
 }
 
 HttpResponse HttpClient::get(const std::string& url,

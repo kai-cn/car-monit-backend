@@ -12,8 +12,10 @@
 //
 // ⚠️ 与 Java 的差异：
 //   * 不自动跟随重定向（Forest/httpclient 对 GET 默认跟随）：原样返回 3xx 与 Location。
-//   * 不做重试：Java 的重试会让一次失败的外部调用最长占 3×60s，
-//     这里把重试交给调用方，避免悄悄放大超时。
+//   * 重试对齐 Forest 的 BackOffRetryer（retry-count=2、间隔 min(2^n×1000, 1s)、
+//     传输异常或非 2xx 都重试），但**非幂等方法默认不重试**（Forest 是全局配置）；
+//     查询型 POST 需调用方显式置 `retryNonIdempotent=true`。
+//     注意最坏耗时：3 次尝试 × 单次超时 + 2×1s（默认 60s 读超时下约 182s）。
 #include <optional>
 #include <string>
 #include <utility>
@@ -57,6 +59,15 @@ struct HttpOptions {
     /** CA 证书包路径（PEM）。空 = 用默认：CM_CA_BUNDLE 环境变量 →
      *  third_party/cacert.pem → 系统 CA 路径。仅 https 使用。 */
     std::string caBundle;
+    /** 失败重试次数（对应 Java Forest 全局 `retry-count: 2`）。
+     *  触发条件与 Java 一致：传输层异常或非 2xx；间隔取 min(2^n × 1000, retryIntervalMs)。 */
+    int maxRetryCount{2};
+    /** 单次重试间隔上限（Forest `max-retry-interval: 1000`） */
+    int retryIntervalMs{1000};
+    /** 非幂等方法（POST/PUT/DELETE/PATCH）是否也重试。
+     *  Java 的 Forest 配置是全局的、POST 也会重试；这里默认关闭，避免把"写"操作重放。
+     *  查询型 POST（如 roadPath `/api/routes/query`）由调用方显式打开。 */
+    bool retryNonIdempotent{false};
 };
 
 class HttpClient {

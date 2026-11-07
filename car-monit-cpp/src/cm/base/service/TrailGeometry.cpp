@@ -241,7 +241,11 @@ std::optional<std::string> shortestRoadPath(const std::vector<std::string>& node
         body["includeCoordinates"] = Json("TRUE");
         body["queryMode"] = Json("LENIENT");
         const auto url = cm::config::AppConfig::instance().getString("roadPathUrl") + "/api/routes/query";
-        const auto resp = cm::net::HttpClient::post(url, body.dump(), "application/json");
+        // 这里虽然是 POST，但语义是只读查询（/api/routes/query），与 Java 一样允许重试；
+        // HttpClient 默认只重试幂等方法，所以显式打开。
+        cm::net::HttpOptions opt;
+        opt.retryNonIdempotent = true;
+        const auto resp = cm::net::HttpClient::post(url, body.dump(), "application/json", {}, opt);
         if (!resp.is2xx()) return std::nullopt;
         Json j = cm::utils::parse_cached_json(resp.body);
         const Json* success = field(j, "success");
