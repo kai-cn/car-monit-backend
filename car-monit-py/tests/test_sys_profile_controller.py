@@ -622,7 +622,7 @@ class TestAvatar:
         written = get_settings().ruoyi.avatar_path + os.sep + url[len("/profile/avatar/") :]
         assert os.path.isfile(written)
 
-    def test_a_disallowed_extension_is_a_masked_io_error(
+    def test_a_disallowed_extension_keeps_the_upload_hint(
         self, http_lenient: TestClient, profile_dir: str
     ) -> None:
         response = http_lenient.post(
@@ -631,10 +631,9 @@ class TestAvatar:
         )
 
         payload = response.json()
-        # 2 参 upload 把 InvalidExtensionException 包成 IOException -> 通用处理器；
-        # P1-6 起非业务异常文案统一脱敏（原始提示只进日志）。
+        # 校验类错误提升为业务异常后，客户端仍能看到"允许哪些后缀"的提示。
         assert payload["code"] == 500
-        assert payload["msg"] == GENERIC_ERROR_MESSAGE
+        assert payload["msg"].startswith("文件[a.exe]后缀[exe]不正确，请上传")
 
     def test_a_missing_part_is_a_validation_error(
         self, http: TestClient, service: _FakeUserService
