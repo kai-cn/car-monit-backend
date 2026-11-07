@@ -656,9 +656,7 @@ async fn current_user(
     let user_id = user.user.user_id;
     // Java: getEpsId() 直接取登录用户的 deptId（principal 异常时为 -1）。
     let dept_id = user.user.dept_id.unwrap_or(-1);
-    let head_office = head_office_dept_ids(&state, &user)
-        .await?
-        .contains(&dept_id);
+    let head_office = head_office_dept_ids(&state).await?.contains(&dept_id);
     let procurement_manager = procurement_manager(&state, &user).await?;
 
     let mut object = Map::new();
@@ -687,9 +685,8 @@ async fn current_user(
 /// （即 tree 层级 1/2 的部门本身就是总公司，租户命中的那些也算）。
 async fn head_office_dept_ids(
     state: &AppState,
-    user: &LoginUser,
 ) -> Result<std::collections::HashSet<i64>, AppError> {
-    let depts = super::sys_dept::select_dept_list(state, user, &HashMap::new()).await?;
+    let depts = super::sys_dept::select_dept_list(state, &HashMap::new()).await?;
     let mut level_ids: std::collections::HashSet<i64> = std::collections::HashSet::new();
     for dept in &depts {
         // Java: `dept.getTreeLeavel().equals(1)` —— treeLeavel 为 null 时是 NPE（msg 为 null 的 500）。
