@@ -188,6 +188,61 @@ class TestSourcePrecedence:
             reset_settings_cache()
 
 
+class TestFailClosedSecrets:
+    """非 local 环境：仓库内置密钥/口令必须被拒绝（fail-closed）。"""
+
+    def test_local_keeps_builtin_demo_values(self) -> None:
+        from app.settings import AppSettings
+
+        loaded = AppSettings(is_localhost="local")
+        assert loaded.token.secret == "abcdefghijklmnopqrstuvwxyz"
+
+    def test_non_local_rejects_builtin_demo_values(self) -> None:
+        from pydantic import ValidationError
+
+        from app.settings import AppSettings
+
+        with pytest.raises(ValidationError) as excinfo:
+            AppSettings(is_localhost="prod")
+        message = str(excinfo.value)
+        assert "TOKEN__SECRET" in message
+        assert "SPRING__DATASOURCE__DRUID__MASTER__PASSWORD" in message
+        assert "HENGDA__SECRET" in message
+
+    def test_non_local_accepts_real_secrets(self) -> None:
+        from app.settings import AppSettings
+
+        loaded = AppSettings(
+            is_localhost="prod",
+            token={"secret": "real-jwt-secret"},
+            spring={"datasource": {"druid": {"master": {"password": "real-db-password"}}}},
+            hengda={"secret": "real-hengda-secret"},
+        )
+        assert loaded.token.secret == "real-jwt-secret"
+
+    def test_oss_keys_are_checked_only_when_enabled(self) -> None:
+        from pydantic import ValidationError
+
+        from app.settings import AppSettings
+
+        # app.oss_enabled 默认 False -> 不校验 OSS 演示凭据
+        AppSettings(
+            is_localhost="prod",
+            token={"secret": "s"},
+            spring={"datasource": {"druid": {"master": {"password": "p"}}}},
+            hengda={"secret": "h"},
+        )
+
+        with pytest.raises(ValidationError, match="OSS__ACCESS_KEY"):
+            AppSettings(
+                is_localhost="prod",
+                token={"secret": "s"},
+                spring={"datasource": {"druid": {"master": {"password": "p"}}}},
+                hengda={"secret": "h"},
+                app={"oss_enabled": True},
+            )
+
+
 @pytest.fixture(scope="module")
 def settings():
     """Fresh settings object (bypasses the process-wide lru_cache)."""

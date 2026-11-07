@@ -33,7 +33,7 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qs, urlparse
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -644,6 +644,35 @@ class AppSettings(BaseSettings):
             YamlConfigSettingsSource(settings_cls, _yaml_path()),
             file_secret_settings,
         )
+
+    @model_validator(mode="after")
+    def _reject_insecure_secrets_outside_local(self) -> "AppSettings":
+        """生产环境 fail-closed：仍在使用仓库内置密钥/口令时拒绝启动。
+
+        ``is_localhost == "local"``（默认）是开发/测试逃生口，保留 Java 的
+        ``root/root`` 等演示值；任何其它取值（prod / staging / test ...）都必须
+        通过环境变量换成真实值，否则直接抛 ``ValidationError`` 让进程起不来。
+        OSS 凭据只在 ``app.oss_enabled=true`` 时校验，避免未启用对象存储的部署
+        被无关配置卡住。
+        """
+        if (self.is_localhost or "").strip().lower() == "local":
+            return self
+
+        insecure: List[str] = []
+        if (self.token.secret or "").strip() in ("", "abcdefghijklmnopqrstuvwxyz"):
+            insecure.append("TOKEN__SECRET")
+        if (self.spring.datasource.druid.master.password or "").strip() in ("", "root"):
+            insecure.append("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD")
+        if (self.hengda.secret or "").strip() in ("", "b48381c4b98311ea90b100155d14fa3b"):
+            insecure.append("HENGDA__SECRET")
+        if self.app.oss_enabled:
+            if (self.oss.access_key or "").strip() in ("", "jtwl_access_key"):
+                insecure.append("OSS__ACCESS_KEY")
+            if (self.oss.secret_key or "").strip() in ("", "minio.prod"):
+                insecure.append("OSS__SECRET_KEY")
+        if insecure:
+            raise ValueError("非 local 环境禁止使用仓库内置密钥/口令，请通过环境变量设置: " + ", ".join(insecure))
+        return self
 
     # -- derived helpers -------------------------------------------------
     @property
