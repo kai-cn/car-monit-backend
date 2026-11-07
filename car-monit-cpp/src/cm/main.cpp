@@ -149,5 +149,7 @@ int main(int argc, char** argv) {
     server.stop();
     // 先停接收再排空操作日志队列（对应 Java 的 ShutterManager 顺序）
     cm::aspect::OperLogAspect::instance().stop();
+    // 排空异步日志队列（否则最后几条日志会随进程退出丢失）
+    cm::log::Logger::instance().shutdown();
     return 0;
 }

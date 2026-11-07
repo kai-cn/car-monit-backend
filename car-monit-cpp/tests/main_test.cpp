@@ -1,6 +1,8 @@
-// 迁移一致性单元测试（对应 Java 侧的 JUnit/断言）
+﻿// 迁移一致性单元测试（对应 Java 侧的 JUnit/断言）
 #include <cmath>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
 #include <string>
 
 #include "cm/common/compat/Path.hpp"
@@ -16,6 +18,7 @@
 #include "cm/common/utils/IdUtils.hpp"
 #include "cm/common/utils/JavaCollections.hpp"
 #include "cm/common/utils/StringUtils.hpp"
+#include "cm/common/utils/Logger.hpp"
 #include "cm/common/utils/sql/SqlUtil.hpp"
 #include "cm/framework/aspect/OperLogAspect.hpp"
 #include "cm/framework/db/Db.hpp"
@@ -422,6 +425,28 @@ static void testRequestDeadline() {
     closeTcp(lfd);
 }
 
+/** 异步日志：入队顺序、shutdown 排空、文件落盘 */
+static void testAsyncLogger() {
+    const std::string dir = "logs_async_test";
+    std::error_code ec;
+    std::filesystem::remove_all(dir, ec);
+    auto& lg = cm::log::Logger::instance();
+    lg.init(dir, "debug");
+    for (int i = 0; i < 5; ++i) {
+        LOG_INFO("test", "async-line-" << i);
+    }
+    lg.shutdown();
+    std::ifstream in(dir + "/carmonit.log", std::ios::binary);
+    std::string all((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    CHECK(all.find("async-line-0") != std::string::npos);
+    CHECK(all.find("async-line-4") != std::string::npos);  // shutdown 必须排空
+    // 顺序：0 在 49 之前
+    CHECK(all.find("async-line-0") < all.find("async-line-4"));
+    std::filesystem::remove_all(dir, ec);
+    // 恢复默认（后续没有日志，但避免影响进程退出路径）
+    lg.init("logs", "debug");
+}
+
 /** Spring URL 层规则的顺序与语义（SecurityConfig 是逐条 antMatchers，先命中先生效） */
 static void testSecurityUrlRules() {
     using Rule = cm::web::AuthType;
@@ -650,6 +675,7 @@ int main() {
     testChunkSizeLine();
     testChunkedRequest();
     testRequestDeadline();
+    testAsyncLogger();
     testUtf8PathCompat();
     testOperLogHelpers();
     testOperLogBuild();
