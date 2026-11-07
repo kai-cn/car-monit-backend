@@ -16,6 +16,12 @@ Alembic 只作为「结构对照工具」，不接管 schema：
   97 个 XML mapper 才是 SQL 的唯一权威，映射成 ORM 元数据会导致漂移。
 * 因此 ``--autogenerate`` 只会输出「删除全部表」的差异；请只用
   ``alembic current`` / 手工 SQL 检查库结构。
+
+基线（P2-13）
+-------------
+``versions/0001_baseline_existing_schema.py`` 是空迁移，只用于记录"当前结构已被
+登记"。已有库执行一次 ``alembic stamp 0001_baseline`` 即可；后续增量变更才写
+真正的 ``op.*``，并同步修改对应的 MyBatis XML。
 """
 
 from __future__ import annotations
