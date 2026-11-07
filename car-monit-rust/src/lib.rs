@@ -145,6 +145,11 @@ pub fn build_router(state: AppState) -> Router {
             state.clone(),
             api::meta::meta_middleware,
         ))
+        // Java: SameUrlDataInterceptor 在 @PreAuthorize/@Log 之前、鉴权之后执行。
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            middleware::repeat_submit::repeat_submit_middleware,
+        ))
         .layer(axum::middleware::from_fn({
             let state = state.clone();
             move |request, next| {
