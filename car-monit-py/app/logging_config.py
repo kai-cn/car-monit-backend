@@ -175,6 +175,18 @@ class _CappedRotatingFileHandler(logging.handlers.RotatingFileHandler):
             _prune_logs(Path(self.baseFilename).parent, self.max_total_bytes)
 
 
+def _clear_handlers(logger: logging.Logger) -> None:
+    """Close and remove handlers so ``configure_logging`` is re-entrant.
+
+    ``reset_logging()`` 只把 ``_CONFIGURED`` 清掉；再次调用 ``configure_logging``
+    时若不先摘掉旧 handler，``app.middleware.trace_id`` 这类专用 logger 会
+    累积多份 ``sys-slow.log``（同一个文件被两个 handler 各写一遍）。
+    """
+    for handler in logger.handlers:
+        handler.close()
+    logger.handlers.clear()
+
+
 def _rotating_handler(path: Path, level: int, formatter: logging.Formatter, settings: AppSettings) -> logging.Handler:
     handler = _CappedRotatingFileHandler(
         filename=path,
@@ -225,7 +237,7 @@ def configure_logging(settings: AppSettings) -> None:
         )
 
     root = logging.getLogger()
-    root.handlers.clear()
+    _clear_handlers(root)
     # logback: <root level="info"> with console + file_info + file_error
     root.setLevel(logging.INFO)
     root.addHandler(console)
@@ -237,6 +249,7 @@ def configure_logging(settings: AppSettings) -> None:
     # trace 日志**只**进 sys-slow.log：否则每个请求的 [请求完成] 会同时写 info 文件，
     # 日志量翻倍且掩盖真正的 INFO 业务日志。
     trace_logger = logging.getLogger("app.middleware.trace_id")
+    _clear_handlers(trace_logger)
     trace_logger.addHandler(slow_file)
     trace_logger.propagate = False
     trace_logger.setLevel(logging.INFO)
@@ -244,10 +257,14 @@ def configure_logging(settings: AppSettings) -> None:
     # logback: SqlLogInterceptor 同样 additivity="false" 只挂 file_slow。本工程的
     # ``app.config.database`` 还兼任 p6spy 的逐条 SQL 输出（Java 写 stdout），
     # 因此保留向 root 传播，交给 console；DEBUG 已被 info/error 的精确级别过滤挡住。
-    logging.getLogger("app.config.database").addHandler(slow_file)
+    database_logger = logging.getLogger("app.config.database")
+    _clear_handlers(database_logger)
+    database_logger.addHandler(slow_file)
 
     # logback: <logger name="sys-user" ...> -> user access log
-    logging.getLogger("app.user_access").addHandler(user_file)
+    user_logger = logging.getLogger("app.user_access")
+    _clear_handlers(user_logger)
+    user_logger.addHandler(user_file)
 
     # logback.xml hard-codes com.ruoyi=info / org.springframework=warn; application.yml
     # overrides them via logging.level.* -- exactly the precedence implemented here.
