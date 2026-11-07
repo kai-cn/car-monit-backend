@@ -544,7 +544,10 @@ class TestMenuFlagsRegression:
 #: ``COUNT(*)`` 能真正校验"数据查询"和"count 查询"是同一套过滤条件。``sys_oper_log`` /
 #: ``sys_logininfor`` 会随用例自己增长，所以走下面的结构断言，不钉数值。
 EXACT_TOTALS: Tuple[Tuple[str, str], ...] = (
-    ("/system/user/list", "SELECT COUNT(*) FROM sys_user WHERE del_flag = '0'"),
+    # ``SysUserController#list`` 无条件 ``user.setUserType("1")``（"查询本单位的机构用户"），
+    # 基准必须带上这一条，否则库里出现任何非机构用户（例如别的会话写面对拍留下的
+    # ``PARITY_J``，其 ``user_type`` 是空串）就误报双端不一致 —— 而两端 HTTP 实测是一致的。
+    ("/system/user/list", "SELECT COUNT(*) FROM sys_user WHERE del_flag = '0' AND user_type = '1'"),
     ("/system/post/list", "SELECT COUNT(*) FROM sys_post"),
     ("/system/role/list", "SELECT COUNT(*) FROM sys_role WHERE del_flag = '0'"),
     ("/system/config/list", "SELECT COUNT(*) FROM sys_config"),
