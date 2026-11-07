@@ -242,10 +242,13 @@ fn ext_allowed(original: &str) -> Option<String> {
 /// Java: `ossTemplate.putObject(bucket, fileName, stream)` -> 本地落盘。
 fn store_file(state: &AppState, file_name: &str, bytes: &[u8]) -> Result<(), AppError> {
     let dir = upload_dir(&state.settings.ruoyi.profile);
-    std::fs::create_dir_all(&dir)
-        .map_err(|err| AppError::Service(format!("创建上传目录失败: {err}")))?;
-    std::fs::write(dir.join(file_name), bytes)
-        .map_err(|err| AppError::Service(format!("写入文件失败: {err}")))
+    // 落盘是阻塞 IO，移出 tokio worker（Java 在 Servlet 线程里做同样的事）。
+    tokio::task::block_in_place(|| {
+        std::fs::create_dir_all(&dir)
+            .map_err(|err| AppError::Service(format!("创建上传目录失败: {err}")))?;
+        std::fs::write(dir.join(file_name), bytes)
+            .map_err(|err| AppError::Service(format!("写入文件失败: {err}")))
+    })
 }
 
 /// Java: `fileLog` —— 记录允许的文件类型；不支持的返回 -1。

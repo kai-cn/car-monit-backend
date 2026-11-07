@@ -77,7 +77,7 @@ pub async fn login(
     }
 
     let encoded = user.password.clone().unwrap_or_default();
-    if !password::matches(&body.password(), &encoded) {
+    if !password::matches(&body.password(), &encoded).await {
         record_logininfor(
             &state.db,
             &username,

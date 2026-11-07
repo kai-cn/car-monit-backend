@@ -254,10 +254,10 @@ async fn update_pwd(
     let old_password = params.get("oldPassword").cloned().unwrap_or_default();
     let new_password = params.get("newPassword").cloned().unwrap_or_default();
     let encoded = user.user.password.clone().unwrap_or_default();
-    if !password::matches(&old_password, &encoded) {
+    if !password::matches(&old_password, &encoded).await {
         return Ok(AjaxResult::error("修改密码失败，旧密码错误"));
     }
-    if password::matches(&new_password, &encoded) {
+    if password::matches(&new_password, &encoded).await {
         return Ok(AjaxResult::error("新密码不能与旧密码相同"));
     }
     if password_invalid(&new_password) {
@@ -265,7 +265,7 @@ async fn update_pwd(
             "对不起，密码长度8-20位且至少包含大写字母、小写字母、数字和特殊符号！",
         ));
     }
-    let new_encoded = password::encode(&new_password)?;
+    let new_encoded = password::encode(&new_password).await?;
     let rows =
         sqlx::query("update sys_user set password = ?, update_time = now() where user_name = ?")
             .bind(&new_encoded)
@@ -318,10 +318,13 @@ async fn avatar(
     let dir = std::path::PathBuf::from(&state.settings.ruoyi.profile)
         .join("avatar")
         .join(&date_path);
-    std::fs::create_dir_all(&dir)
-        .map_err(|err| AppError::Service(format!("创建头像目录失败: {err}")))?;
-    std::fs::write(dir.join(&stored), &bytes)
-        .map_err(|err| AppError::Service(format!("保存头像失败: {err}")))?;
+    // 落盘是阻塞 IO，移出 tokio worker。
+    tokio::task::block_in_place(|| {
+        std::fs::create_dir_all(&dir)
+            .map_err(|err| AppError::Service(format!("创建头像目录失败: {err}")))?;
+        std::fs::write(dir.join(&stored), &bytes)
+            .map_err(|err| AppError::Service(format!("保存头像失败: {err}")))
+    })?;
     let avatar_path = format!("/profile/avatar/{date_path}/{stored}");
 
     let rows = sqlx::query("update sys_user set avatar = ? where user_name = ?")

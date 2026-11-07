@@ -205,12 +205,18 @@ async fn store_upload(
     bytes: &[u8],
 ) -> Result<String, AppError> {
     let (relative, path) = prepare_upload(state, original, content_type)?;
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|err| AppError::Service(format!("创建上传目录失败: {err}")))?;
-    }
-    std::fs::write(&path, bytes)
-        .map_err(|err| AppError::Service(format!("写入文件失败: {err}")))?;
+    let bytes = bytes.to_vec();
+    // 落盘是阻塞 IO，移出 tokio worker。
+    tokio::task::spawn_blocking(move || {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|err| AppError::Service(format!("创建上传目录失败: {err}")))?;
+        }
+        std::fs::write(&path, &bytes)
+            .map_err(|err| AppError::Service(format!("写入文件失败: {err}")))
+    })
+    .await
+    .map_err(|err| AppError::Service(format!("写入任务失败: {err}")))??;
     Ok(relative)
 }
 

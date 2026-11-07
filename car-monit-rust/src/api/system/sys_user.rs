@@ -1213,7 +1213,7 @@ async fn add(
         );
         object.insert(
             "password".to_string(),
-            Value::String(password::encode(&raw_password)?),
+            Value::String(password::encode(&raw_password).await?),
         );
     }
     if !apply_dept(&state, &mut entity).await? {
@@ -1386,7 +1386,7 @@ async fn reset_pwd(
         .and_then(Value::as_i64)
         .ok_or_else(|| AppError::Service("userId不能为空".to_string()))?;
     let rows = sqlx::query("update sys_user set password = ?, update_by = ? where user_id = ?")
-        .bind(password::encode(&raw_password)?)
+        .bind(password::encode(&raw_password).await?)
         .bind(user.user.user_name.clone().unwrap_or_default())
         .bind(user_id)
         .execute(&state.db)
@@ -1554,7 +1554,7 @@ async fn import_data(
             if let Some(object) = entity.as_object_mut() {
                 object.insert(
                     "password".to_string(),
-                    Value::String(password::encode(&init_password)?),
+                    Value::String(password::encode(&init_password).await?),
                 );
                 object.insert(
                     "createBy".to_string(),

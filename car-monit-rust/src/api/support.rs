@@ -124,8 +124,10 @@ pub fn export_excel(
     headers: &[String],
     rows: &[Vec<Value>],
 ) -> Result<AjaxResult, AppError> {
-    let filename =
-        excel::export_workbook(&state.settings.ruoyi.profile, sheet_name, headers, rows)?;
+    // Excel 生成与落盘是 CPU/IO 重活，移出 tokio worker（Java 在 Servlet 线程里做同样的事）。
+    let filename = tokio::task::block_in_place(|| {
+        excel::export_workbook(&state.settings.ruoyi.profile, sheet_name, headers, rows)
+    })?;
     // Java ExcelUtil.exportExcel：文件落盘，响应里只有 msg=文件名。
     Ok(AjaxResult::success_msg(filename))
 }
@@ -136,7 +138,7 @@ pub fn export_download(
     headers: &[String],
     rows: &[Vec<Value>],
 ) -> Result<Response, AppError> {
-    let bytes = excel::export_bytes(sheet_name, headers, rows)?;
+    let bytes = tokio::task::block_in_place(|| excel::export_bytes(sheet_name, headers, rows))?;
     Ok(Response::builder()
         .header(CONTENT_TYPE, "application/octet-stream;charset=UTF-8")
         .header(CONTENT_DISPOSITION, "attachment")

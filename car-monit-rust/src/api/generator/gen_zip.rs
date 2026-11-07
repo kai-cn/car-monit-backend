@@ -61,6 +61,11 @@ fn dos_stamp() -> (u16, u16) {
 
 /// 按给定顺序打包条目；同名条目由调用方先行去重（Java 会在 putNextEntry 抛 ZipException）。
 pub fn build(entries: &[(String, Vec<u8>)]) -> Vec<u8> {
+    // ZIP 组装是 CPU/内存重活，移出 tokio worker。
+    tokio::task::block_in_place(|| build_inner(entries))
+}
+
+fn build_inner(entries: &[(String, Vec<u8>)]) -> Vec<u8> {
     let (time, date) = dos_stamp();
     let mut out: Vec<u8> = Vec::new();
     let mut central: Vec<u8> = Vec::new();
