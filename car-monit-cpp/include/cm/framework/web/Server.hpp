@@ -4,8 +4,10 @@
 // ⚠️ 限制（见 COMPATIBILITY.md）：
 //   * 不支持 HTTP/2、TLS、WebSocket；chunked 请求体自 2026-11-07 起支持（与内嵌 Tomcat 一致）
 //   * 工作线程数固定（默认 32，可用 CM_WORKERS 覆盖），Tomcat 默认 maxThreads=800
+//   * 过载保护：待处理连接队列上限 max(100, workers×2)；请求行+头 60s 整体截止（防 slowloris）
 //   * 请求体定界支持 Content-Length 与 Transfer-Encoding: chunked，上限 200MB（对齐 spring.servlet.multipart）
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -45,9 +47,12 @@ public:
     /** 在一个已连接的 socket 上解析一次请求（可单测）。
      *  buffer 既是入参也是出参：keep-alive 下同一连接的下一个请求可能已经在里面，
      *  解析完当前请求后剩余字节会留在 buffer 中。
+     *  deadline 是"请求行 + 请求头"的整体截止时间（slowloris 防护）；默认 max() 表示不限。
      */
     static bool readRequest(cm::net::Fd fd, std::string& buffer, cm::http::HttpRequest& req,
-                            bool& closeAfter);
+                            bool& closeAfter,
+                            std::chrono::steady_clock::time_point deadline =
+                                std::chrono::steady_clock::time_point::max());
 
 private:
     void acceptLoop();

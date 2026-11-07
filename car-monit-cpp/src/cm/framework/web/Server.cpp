@@ -54,8 +54,22 @@ std::string trimCr(std::string s) {
     return s;
 }
 
+using Clock = std::chrono::steady_clock;
+
+/** 把 socket 超时设为"距离截止时间还剩多久"，返回是否还有时间。
+ *  slowloris 的关键：SO_RCVTIMEO 是每次 recv 的期限，攻击者只要在期限内发 1 个字节就能续命；
+ *  这里按整体 deadline 收紧，对应 Tomcat 的 connectionTimeout（从 accept 到请求头读完）。
+ *  deadline == max() 表示"沿用 socket 现有的间隔超时"（请求体阶段）。 */
+bool armDeadline(cm::net::Fd fd, Clock::time_point deadline) {
+    if (deadline == Clock::time_point::max()) return true;
+    const auto left = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - Clock::now()).count();
+    if (left <= 0) return false;
+    cm::net::setTimeout(fd, static_cast<int>(left));
+    return true;
+}
+
 /** 从缓冲区读出一行（含 \r\n），返回是否成功 */
-bool readLine(cm::net::Fd fd, std::string& buf, std::string& line) {
+bool readLine(cm::net::Fd fd, std::string& buf, std::string& line, Clock::time_point deadline) {
     for (;;) {
         size_t p = buf.find("\r\n");
         if (p != std::string::npos) {
@@ -63,6 +77,7 @@ bool readLine(cm::net::Fd fd, std::string& buf, std::string& line) {
             buf.erase(0, p + 2);
             return true;
         }
+        if (!armDeadline(fd, deadline)) return false;
         char tmp[4096];
         const long n = cm::net::readSome(fd, tmp, sizeof(tmp));
         if (n <= 0) return false;
@@ -71,8 +86,10 @@ bool readLine(cm::net::Fd fd, std::string& buf, std::string& line) {
     }
 }
 
-bool readExact(cm::net::Fd fd, std::string& buf, size_t n, std::string& out) {
+bool readExact(cm::net::Fd fd, std::string& buf, size_t n, std::string& out,
+               Clock::time_point deadline) {
     while (buf.size() < n) {
+        if (!armDeadline(fd, deadline)) return false;
         char tmp[65536];
         size_t want = std::min(sizeof(tmp), n - buf.size());
         const long r = cm::net::readSome(fd, tmp, want);
@@ -262,10 +279,11 @@ void Server::workerLoop() {
     }
 }
 
-bool Server::readRequest(cm::net::Fd fd, std::string& buf, cm::http::HttpRequest& req, bool& closeAfter) {
+bool Server::readRequest(cm::net::Fd fd, std::string& buf, cm::http::HttpRequest& req, bool& closeAfter,
+                         Clock::time_point deadline) {
     closeAfter = false;
     std::string line;
-    if (!readLine(fd, buf, line)) return false;
+    if (!readLine(fd, buf, line, deadline)) return false;
     if (line.empty()) return false;
     {
         std::istringstream ss(line);
@@ -288,7 +306,7 @@ bool Server::readRequest(cm::net::Fd fd, std::string& buf, cm::http::HttpRequest
     std::string contentLength;
     bool chunked = false;
     for (;;) {
-        if (!readLine(fd, buf, line)) return false;
+        if (!readLine(fd, buf, line, deadline)) return false;
         if (line.empty()) break;
         size_t colon = line.find(':');
         if (colon == std::string::npos) continue;
@@ -300,6 +318,10 @@ bool Server::readRequest(cm::net::Fd fd, std::string& buf, cm::http::HttpRequest
         req.headers[name] = value;
         if (name == "cookie") cm::http::HttpRequest::parseCookies(value, req.cookies);
     }
+    // 头部已读完：恢复"每次 recv 60s 空闲超时"，请求体按间隔超时读取 ——
+    // Tomcat 的 connectionTimeout 只管到请求头，200MB 上传不能在同一个 60s 总限里被砍掉。
+    cm::net::setTimeout(fd, 60000);
+    const Clock::time_point bodyDeadline = Clock::time_point::max();
     // 请求体上限：与 application.yaml 的 max-request-size(200MB) 对齐
     constexpr unsigned long long kMaxBodyBytes = 200ULL * 1024 * 1024;
     if (chunked) {
@@ -308,14 +330,14 @@ bool Server::readRequest(cm::net::Fd fd, std::string& buf, cm::http::HttpRequest
         std::string body;
         for (;;) {
             std::string sizeLine;
-            if (!readLine(fd, buf, sizeLine)) return false;
+            if (!readLine(fd, buf, sizeLine, bodyDeadline)) return false;
             unsigned long long chunkLen = 0;
             if (!parseChunkSizeLine(sizeLine, kMaxBodyBytes, chunkLen)) return false;
             if (chunkLen == 0) {
                 // 末尾可选 trailer：读到空行为止
                 for (;;) {
                     std::string trailer;
-                    if (!readLine(fd, buf, trailer)) return false;
+                    if (!readLine(fd, buf, trailer, bodyDeadline)) return false;
                     if (trailer.empty()) break;
                 }
                 break;
@@ -323,10 +345,10 @@ bool Server::readRequest(cm::net::Fd fd, std::string& buf, cm::http::HttpRequest
             if (body.size() + chunkLen > kMaxBodyBytes) return false;
             // readExact 是覆盖写（不是追加），必须经临时串再拼到 body，否则多块之间会互相覆盖
             std::string chunk;
-            if (!readExact(fd, buf, static_cast<size_t>(chunkLen), chunk)) return false;
+            if (!readExact(fd, buf, static_cast<size_t>(chunkLen), chunk, bodyDeadline)) return false;
             body += chunk;
             std::string crlf;
-            if (!readLine(fd, buf, crlf)) return false;  // 每块数据后的 CRLF
+            if (!readLine(fd, buf, crlf, bodyDeadline)) return false;  // 每块数据后的 CRLF
         }
         req.body = std::move(body);
     } else {
@@ -340,7 +362,7 @@ bool Server::readRequest(cm::net::Fd fd, std::string& buf, cm::http::HttpRequest
         }
         if (len > 0) {
             if (len > kMaxBodyBytes) return false;
-            if (!readExact(fd, buf, len, req.body)) return false;
+            if (!readExact(fd, buf, len, req.body, bodyDeadline)) return false;
         }
     }
     std::string ct = lower(req.getHeader("content-type"));
@@ -490,7 +512,10 @@ void Server::handleConnection(cm::net::Fd fd, const std::string& peer) {
         cm::http::HttpRequest req;
         req.remote_addr = peer;
         bool closeAfter = false;
-        if (!readRequest(fd, buf, req, closeAfter)) break;
+        // 每个请求重新计时：请求行 + 请求头必须在 60s 内读完（Tomcat connectionTimeout / keepAliveTimeout）。
+        // 只卡这 60s 而不是每次 recv 60s，否则每 59s 发 1 个字节就能永久占住一个 worker（slowloris）。
+        const auto deadline = Clock::now() + std::chrono::seconds(60);
+        if (!readRequest(fd, buf, req, closeAfter, deadline)) break;
         cm::http::ApiResponse resp = dispatch(req);
         writeResponse(fd, resp, !closeAfter);
         if (closeAfter) break;

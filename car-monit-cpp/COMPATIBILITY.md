@@ -117,6 +117,11 @@ C++ 对应实现位置：
 * 影响：长耗时请求会占满 worker；没有 GC，循环引用会泄漏（代码全部使用 `unique_ptr` /
   值语义，未引入 `shared_ptr` 环）。
 * 调优：`CM_WORKERS` 建议 ≥ CPU 核数 × 4；慢 SQL 会直接降低并发。
+* 过载保护（2026-11-07 补齐）：
+  * 待处理连接队列上限 `max(100, workers×2)`（对齐 Tomcat `acceptCount=100`），满了直接关闭新连接；
+  * 请求行 + 请求头必须在 **60s** 内读完（对齐 `connectionTimeout`/`keepAliveTimeout`），
+    按整体截止时间而不是每次 `recv` 计时 —— 否则每 59s 发 1 字节就能永久占住 worker（slowloris）；
+  * 请求体仍按"每次 recv 60s 空闲超时"读取，200MB 上传不会被头部总限误杀。
 
 ### ⚠️ 2.6 时间与时区
 

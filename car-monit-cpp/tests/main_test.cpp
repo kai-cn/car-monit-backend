@@ -386,6 +386,41 @@ static void testChunkedRequest() {
     closeTcp(lfd);
 }
 
+/** slowloris 防护：请求头没发完就停住，必须在截止时间被断开，而不是每来 1 个字节续命 */
+static void testRequestDeadline() {
+    using namespace cm::net;
+    Fd lfd = listenTcp("127.0.0.1", 0, 8);
+    CHECK(isValid(lfd));
+    if (!isValid(lfd)) return;
+    sockaddr_in sa{};
+    socklen_t sl = sizeof(sa);
+    ::getsockname(asSocket(lfd), reinterpret_cast<sockaddr*>(&sa), &sl);
+    const int port = ntohs(sa.sin_port);
+    Fd cfd = connectTcp("127.0.0.1", port, 2000);
+    std::string peer;
+    Fd sfd = isValid(cfd) ? acceptTcp(lfd, peer) : kInvalid;
+    CHECK(isValid(sfd));
+    if (isValid(sfd)) {
+        // 请求行 + 一个头，然后故意不发结束的空行
+        const std::string partial = "GET /health HTTP/1.1\r\nHost: x\r\n";
+        CHECK(writeAll(cfd, partial.data(), partial.size()));
+        std::string buf;
+        bool closeAfter = false;
+        cm::http::HttpRequest r;
+        const auto t0 = std::chrono::steady_clock::now();
+        CHECK(!cm::web::Server::readRequest(
+            sfd, buf, r, closeAfter, std::chrono::steady_clock::now() + std::chrono::milliseconds(300)));
+        const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::steady_clock::now() - t0).count();
+        // 到点即失败：既不能立刻成功，也不能等到 socket 的默认 60s
+        CHECK(ms >= 250);
+        CHECK(ms < 3000);
+    }
+    closeTcp(sfd);
+    closeTcp(cfd);
+    closeTcp(lfd);
+}
+
 /** Spring URL 层规则的顺序与语义（SecurityConfig 是逐条 antMatchers，先命中先生效） */
 static void testSecurityUrlRules() {
     using Rule = cm::web::AuthType;
@@ -613,6 +648,7 @@ int main() {
     testSecurityUrlRules();
     testChunkSizeLine();
     testChunkedRequest();
+    testRequestDeadline();
     testUtf8PathCompat();
     testOperLogHelpers();
     testOperLogBuild();
