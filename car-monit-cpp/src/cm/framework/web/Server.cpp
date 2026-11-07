@@ -167,7 +167,12 @@ bool serveStatic(const std::string& method, const std::string& path, cm::http::A
 } // namespace
 
 Server::Server(std::string host, int port, int workers, int backlog)
-    : host_(std::move(host)), port_(port), workers_(workers <= 0 ? 32 : workers), backlog_(backlog) {}
+    : host_(std::move(host)),
+      port_(port),
+      workers_(workers <= 0 ? 32 : workers),
+      backlog_(backlog),
+      // Tomcat 的 acceptCount 默认 100：这里作为"已 accept 但还没被 worker 取走"的队列上限
+      queue_cap_(workers_ * 2 > 100 ? static_cast<size_t>(workers_) * 2 : 100) {}
 
 Server::~Server() { stop(); }
 
@@ -219,9 +224,24 @@ void Server::acceptLoop() {
             if (!running_.load()) break;
             continue;
         }
+        bool queued = false;
         {
             std::lock_guard<std::mutex> lk(queue_mu_);
-            queue_.emplace(fd, ip);
+            // 队列有界：worker 全卡住时不能让 fd/内存无限增长。
+            // 满了就直接关闭 —— 等价于 Tomcat acceptCount 用尽后 OS 拒绝新连接，不产生 HTTP 响应。
+            if (queue_.size() < queue_cap_) {
+                queue_.emplace(fd, ip);
+                queued = true;
+            }
+        }
+        if (!queued) {
+            const unsigned long long n = queue_overflow_.fetch_add(1) + 1;
+            if (n == 1 || n % 1000 == 0) {
+                LOG_WARN("Server", "连接队列已满（上限 " + std::to_string(queue_cap_) +
+                                       "），已拒绝连接数=" + std::to_string(n));
+            }
+            cm::net::closeTcp(fd);
+            continue;
         }
         queue_cv_.notify_one();
     }

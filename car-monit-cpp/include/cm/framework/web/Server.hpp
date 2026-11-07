@@ -59,6 +59,9 @@ private:
     int port_;
     int workers_;
     int backlog_;
+    /** 待处理连接队列上限：对齐 Tomcat acceptCount=100，且不少于 workers×2 */
+    size_t queue_cap_{100};
+    std::atomic<unsigned long long> queue_overflow_{0};
     cm::net::Fd listen_fd_{cm::net::kInvalid};
     std::atomic<bool> running_{false};
     std::vector<std::thread> threads_;
