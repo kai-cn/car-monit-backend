@@ -45,9 +45,9 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// 日志同时写 stdout 与按天滚动的文件；与 Java logback 的双通道一致。
-/// 返回的 guard 必须存活到进程结束，否则后台写线程会被提前关闭。
-fn init_tracing(settings: &Settings) -> Option<tracing_appender::non_blocking::WorkerGuard> {
+/// 日志同时写 stdout 与按天/按大小滚动的文件；与 Java logback 的双通道一致。
+/// 返回的 handle 必须存活到进程结束，否则后台写线程会被提前关闭。
+fn init_tracing(settings: &Settings) -> Option<car_monit_rust::logging::LogHandle> {
     let filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("info,car_monit_rust=debug"));
 
@@ -55,16 +55,15 @@ fn init_tracing(settings: &Settings) -> Option<tracing_appender::non_blocking::W
 
     match std::fs::create_dir_all(&settings.log.dir) {
         Ok(()) => {
-            // Java logback: 按天滚动并保留 log.max-history 天；这里按文件数保留同样数量。
-            let file_appender = tracing_appender::rolling::Builder::new()
-                .rotation(tracing_appender::rolling::Rotation::DAILY)
-                .filename_prefix("car-monit.log")
-                .max_log_files(settings.log.max_history.max(1) as usize)
-                .build(&settings.log.dir);
-            let file_appender = match file_appender {
-                Ok(appender) => appender,
+            let handle = match car_monit_rust::logging::start(
+                &settings.log.dir,
+                "car-monit.log",
+                car_monit_rust::logging::parse_size(&settings.log.max_file_size),
+                settings.log.max_history,
+            ) {
+                Ok(handle) => handle,
                 Err(err) => {
-                    eprintln!("日志文件 appender 初始化失败，仅输出到 stdout: {err}");
+                    eprintln!("日志文件 writer 初始化失败，仅输出到 stdout: {err}");
                     let _ = tracing_subscriber::registry()
                         .with(filter)
                         .with(stdout_layer)
@@ -72,16 +71,15 @@ fn init_tracing(settings: &Settings) -> Option<tracing_appender::non_blocking::W
                     return None;
                 }
             };
-            let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
             let file_layer = tracing_subscriber::fmt::layer()
-                .with_writer(non_blocking)
+                .with_writer(handle.writer())
                 .with_ansi(false);
             let _ = tracing_subscriber::registry()
                 .with(filter)
                 .with(stdout_layer)
                 .with(file_layer)
                 .try_init();
-            Some(guard)
+            Some(handle)
         }
         Err(err) => {
             eprintln!(
