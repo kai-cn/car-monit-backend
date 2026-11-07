@@ -1,0 +1,53 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: standard
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+    - bodyclose
+    - rowserrcheck
+    - sqlclosecheck
+    - misspell
+    - unconvert
+  settings:
+    errcheck:
+      check-type-assertions: false
+      check-blank: false
+      exclude-functions:
+        # 关闭连接/回滚失败无法补救，且调用点都显式忽略。
+        - (*database/sql.DB).Close
+        - (*database/sql.Rows).Close
+        - (*gorm.io/gorm.DB).Rollback
+    staticcheck:
+      checks:
+        - all
+        - -SA1019 # 兼容层仍在使用已弃用 API（如 Java 兼容序列化）
+  exclusions:
+    rules:
+      # 测试文件允许忽略部分错误（setup/teardown）。
+      - path: _test\.go
+        linters:
+          - errcheck
+          - bodyclose
+      # 生成器/模板引擎大量使用类型断言与反射，按 Java 语义复刻，保持原样。
+      - path: internal/modules/generator/velocity\.go
+        linters:
+          - staticcheck
+          - unconvert
+      # 显式忽略错误的位置已带注释说明原因（读写请求体、关闭文件）。
+      - path: internal/(middleware|modules/systemaux|modules/ops)/
+        linters:
+          - errcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

@@ -1,0 +1,13 @@
+bin/
+docs/
+src/
+scripts/
+.qoder/
+.idea/
+.git/
+.gitignore
+*.exe
+*.log
+*.prof
+coverage.out
+configs/config.yaml

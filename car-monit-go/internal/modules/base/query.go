@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"car-monit-go/internal/platform/sqlx"
 )
 
 type condKind int
@@ -157,12 +159,7 @@ func buildWhereWith(prefix string, conds []cond, get func(string) string) (strin
 }
 
 // placeholders 生成 "?, ?, ?"。
-func placeholders(n int) string {
-	if n <= 0 {
-		return ""
-	}
-	return strings.TrimSuffix(strings.Repeat("?,", n), ",")
-}
+func placeholders(n int) string { return sqlx.Placeholders(n) }
 
 // argString 读取查询参数（已 trim）。
 func argString(c *gin.Context, name string) string { return strings.TrimSpace(c.Query(name)) }

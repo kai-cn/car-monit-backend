@@ -1,4 +1,9 @@
-// Package excelx 放各模块 xlsx 写手共用的单元格兜底。
+// JAVA 对照: com/ruoyi/common/utils/poi/ExcelUtil.java（单元格写入规则）
+// 类/职责: 各模块 xlsx 写手共用的单元格兜底 —— 复刻 POI 对非法字符、公式注入与数值格式的处理
+// 对应 Go 文件: internal/excelx/cell.go
+//
+// 退役计划（Java 下线后）：其中“XML 1.0 非法字符落 ?”“以 = - + @ 开头补 TAB”等规则是为
+// 与 Java 导出逐格一致而保留；只保留 Excel 本身必需的部分即可，规则由 cell_test.go 钉住。
 package excelx
 
 import (

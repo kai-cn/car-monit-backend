@@ -331,6 +331,22 @@ internal/router             路由注册表
 | 车辆监管：20 个 manager 控制器 + 大屏 | 已完成（含 admin 登录联调） |
 | 数据接入：ODS/DWD 基础数据与快照流水（26 控制器） | 已完成（含 list/detail/export 联调） |
 | 流程：7 个 flow 控制器（55 个映射） | 已完成（含申请→委托→审批链路测试） |
-| Kafka 消费 / ES 索引 / 月分表写路径 | 配置就绪，代码待接入 |
+| Kernel/数据接入：Kafka 消费 / ES 索引 / 月分表写路径 | 配置就绪，代码未接线（归属见 §1.7） |
+| 定时任务：`vehicleMonitoringTask` / `snapshotFlowSyncTask` / `syncHistoryTrack` | 未迁移，保存任务时拒绝 |
 
 > 各模块完成后，本表状态与实际 `internal/modules/**` 目录、路由清单同步更新；未完成的接口不会静默返回假数据。
+
+## 5. Java 退役后的清理清单
+
+双端共存期为了“逐字节/逐格一致”引入了若干兼容层，Java 服务下线后可按下列顺序清理（每步都有测试或对拍兜底）：
+
+| 兼容层 | 位置 | 退役动作 |
+|---|---|---|
+| HashMap 桶序序列化 | `internal/web/javamap.go` | 删除，`AjaxResult` 改普通 struct（前端不依赖键序） |
+| Fastjson2 缓存格式 | `internal/cache/fastjson.go` | 删除 `ToJava/SetJava` 路径，改回 `encoding/json`；保留 `FromJava` 一个版本消化历史键 |
+| POI 单元格怪癖 | `internal/excelx/cell.go` | 只保留 Excel 必需规则；删除非法字符落 `?`、`= - + @` 补 TAB 等对拍规则 |
+| 错误消息的 Java 原文 | `internal/web/errors.go`、各模块 | 逐步替换为业务化文案；`msg` 变化会影响前端提示，需同步前端 |
+| JSON 键序 / 字段语义的 `DIFF` 注释 | 全仓库 300+ 处 | 保留关键差异说明，删除纯对拍用途的注释 |
+
+**清理前置条件**：至少一个完整回归周期内不再需要与 Java 双端比对（`scripts/parity/**` 全部停用），
+且前端已完成一次联调。

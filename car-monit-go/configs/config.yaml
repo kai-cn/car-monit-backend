@@ -47,6 +47,7 @@ spring:
 
 token:
   header: Authorization
+  # 本地开发默认值；生产必须通过 CARMONIT_TOKEN_SECRET 注入（非 local 环境使用默认值会启动失败）
   secret: abcdefghijklmnopqrstuvwxyz
   expireTime: 120
 
@@ -86,8 +87,9 @@ generator-code:
 
 oss:
   endpoint: http://172.30.100.102:9002
-  accessKey: jtwl_access_key
-  secretKey: minio.prod
+  # 密钥不入库：通过 CARMONIT_OSS_ACCESS_KEY / CARMONIT_OSS_SECRET_KEY 注入
+  accessKey: ""
+  secretKey: ""
   bucketName: developer
 
 forest:
@@ -98,7 +100,8 @@ forest:
 
 hengda:
   appid: YHZS
-  secret: b48381c4b98311ea90b100155d14fa3b
+  # 密钥不入库：通过 CARMONIT_HENGDA_SECRET 注入
+  secret: ""
 
 vehicleMonitor:
   baseUrl: http://127.0.0.1:9903   # car-monit-api 的 Go 端（configs/config.verify.yaml，Redis db1）；Java 端在 9902（Redis db0）

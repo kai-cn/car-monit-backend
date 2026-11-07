@@ -15,6 +15,7 @@ import (
 
 	"car-monit-go/internal/app"
 	"car-monit-go/internal/auth"
+	"car-monit-go/internal/logx"
 	"car-monit-go/internal/model"
 	"car-monit-go/internal/service/menusvc"
 	"car-monit-go/internal/web"
@@ -92,7 +93,7 @@ func (h *AuthHandler) GetRouters(c *gin.Context) {
 	}
 	menus, err := h.menus.SelectMenuTreeByUserId(c.Request.Context(), userID)
 	if err != nil {
-		h.app.Log.Error("查询菜单失败", "err", err)
+		logx.WithTrace(c.Request.Context(), h.app.Log).Error("查询菜单失败", "err", err)
 		web.JSON(c, web.ErrorMsg(err.Error()))
 		return
 	}

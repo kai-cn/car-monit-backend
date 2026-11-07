@@ -352,6 +352,16 @@ func applyEnvOverrides(c *Config) {
 			c.Instance.DatacenterID = n
 		}
 	}
+	// 密钥类配置只从环境变量注入，避免出现在版本库里的 YAML。
+	if v := os.Getenv("CARMONIT_OSS_ACCESS_KEY"); v != "" {
+		c.Oss.AccessKey = v
+	}
+	if v := os.Getenv("CARMONIT_OSS_SECRET_KEY"); v != "" {
+		c.Oss.SecretKey = v
+	}
+	if v := os.Getenv("CARMONIT_HENGDA_SECRET"); v != "" {
+		c.Hengda.Secret = v
+	}
 }
 
 func buildDSN(n DatabaseNode) string {
@@ -379,6 +389,10 @@ func validate(c *Config) error {
 	}
 	if c.Token.Secret == "" {
 		return fmt.Errorf("token.secret 不能为空")
+	}
+	// 非本地环境禁止使用仓库里的示例密钥。
+	if !strings.EqualFold(c.IsLocalhost, "local") && c.Token.Secret == "abcdefghijklmnopqrstuvwxyz" {
+		return fmt.Errorf("token.secret 仍为示例值；请通过 CARMONIT_TOKEN_SECRET 注入生产密钥")
 	}
 	if c.Token.ExpireTime <= 0 {
 		c.Token.ExpireTime = 120

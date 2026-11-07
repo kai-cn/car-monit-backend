@@ -11,6 +11,9 @@
 //  5. null 字段一律不写（fastjson2 默认行为）。
 //
 // ToJava 负责写出这种格式（Go 独有的缓存键也顺带对齐），FromJava 负责读回 Java 写的值。
+//
+// 退役计划（Java 下线后）：两端不再共用 Redis 即可删除 ToJava/SetJava 路径，
+// 统一改回 encoding/json；`FromJava` 仍需保留一个版本用于消化历史键。
 package cache
 
 import (

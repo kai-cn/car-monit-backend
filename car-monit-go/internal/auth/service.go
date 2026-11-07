@@ -24,6 +24,7 @@ import (
 
 	"car-monit-go/internal/cache"
 	"car-monit-go/internal/config"
+	"car-monit-go/internal/logx"
 	"car-monit-go/internal/model"
 	"car-monit-go/internal/web"
 )
@@ -254,8 +255,11 @@ func (s *Service) recordLogininfor(ctx context.Context, username, status, msg, i
 	if username == "" {
 		username = ""
 	}
+	// 异步 goroutine 会脱离请求 context，这里把 traceId 显式带过去，避免审计日志丢链路。
+	traceID := logx.TraceFromContext(ctx)
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		base := logx.ContextWithTrace(context.Background(), traceID)
+		ctx, cancel := context.WithTimeout(base, 3*time.Second)
 		defer cancel()
 		err := s.db.WithContext(ctx).Exec(`
 			insert into sys_logininfor (user_name, status, ipaddr, login_location, browser, os, msg, login_time)
@@ -263,7 +267,7 @@ func (s *Service) recordLogininfor(ctx context.Context, username, status, msg, i
 			username, logininforStatus(status), ip, addressByIP(ip), browserName(ua), osName(ua), msg, time.Now(),
 		).Error
 		if err != nil {
-			s.log.Warn("写入登录日志失败", "err", err)
+			logx.WithTrace(ctx, s.log).Warn("写入登录日志失败", "err", err)
 		}
 	}()
 }
