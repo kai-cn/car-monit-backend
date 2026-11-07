@@ -49,6 +49,7 @@
 | jjwt 0.9.1 | jwt-cpp、libjwt | **OpenSSL HMAC + 自研 JWT** | 必须复刻 jjwt 的 Base64 secret 解码怪癖 |
 | BCryptPasswordEncoder | libbcrypt、bcrypt-cpp | **vendored libbcrypt** | 与 Spring 同算法同格式 |
 | Jackson | nlohmann/json、RapidJSON | **nlohmann ordered_json** | 保序输出、支持自定义桶序重排 |
+| Forest / Apache httpclient | cpr、cpp-httplib | **自研 `cm::net::HttpClient`** | http/https 都支持；TLS 用 vendored mbedTLS（不依赖系统 OpenSSL），强制校验证书链与主机名 |
 | fastjson2（Redis） | — | **nlohmann** | ⚠️ 不写 `@type`，见 COMPATIBILITY §2.2 |
 | application.yml | yaml-cpp | **自研最小 YAML 解析器** | 无系统 yaml-cpp 时仍可构建；支持嵌套/列表/行内注释 |
 | @ConfigurationProperties | — | **`AppConfig`** | 显式绑定 + 环境变量覆盖（`CM_*` / Spring 风格） |

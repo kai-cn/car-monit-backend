@@ -69,6 +69,8 @@ quartz 的 changeStatus/jobLog clean（DB 语义一致）与 run（❌ 明确拒
 ### 3.2 去掉 OpenSSL / zlib 硬依赖
 - `src/cm/common/utils/crypto/{Digest,Base64,Rsa}.cpp`：MD5、SHA-1、SHA-256、SHA-512、HMAC、Base64、RSA-OAEP(SHA-1 + MGF1)、SPKI/PEM 解析、CSPRNG（Linux `getrandom`→`/dev/urandom`；Windows `SystemFunction036`）。支撑 JWT HS512 与 MySQL `caching_sha2_password` 的 full-auth。
 - `src/cm/common/utils/Deflate.cpp`：zlib 兼容 DEFLATE；系统有 zlib 时优先用（`CM_HAVE_ZLIB`），没有时输出合法的 stored 块。
+- 出站 HTTPS 不引系统 OpenSSL，改为 vendor `third_party/mbedtls`（Apache-2.0，仅 `library/*.c` + `include/`）；
+  CA 用 `third_party/cacert.pem`。Windows 只额外链 `ws2_32` 与 `bcrypt.lib`（CNG 熵源）。
 - 正确性不自证：`bash scripts/verify_crypto_vs_openssl.sh` 与 `openssl` CLI 逐条对拍 —— 摘要/HMAC/Base64 **完全一致**，RSA-OAEP 由本实现加密、`openssl pkeyutl -decrypt` 还原成功。SHA-256/SHA-512 的 K 表按 FIPS 180-4 定义（素数立方根小数前 32/64 位）整数运算生成并与公开表核对。
 
 ### 3.3 修复路由致命缺陷

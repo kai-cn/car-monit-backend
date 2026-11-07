@@ -20,6 +20,7 @@
 #include "cm/framework/config/AppConfig.hpp"
 #include "cm/framework/db/Db.hpp"
 #include "cm/framework/http/HttpResponse.hpp"
+#include "cm/framework/net/HttpClient.hpp"
 #include "cm/framework/redis/RedisClient.hpp"
 #include "cm/framework/security/TokenService.hpp"
 #include "cm/framework/web/Router.hpp"
@@ -60,6 +61,13 @@ int main(int argc, char** argv) {
 
     cm::log::Logger::instance().init(cfg.logDir, cfg.logLevel);
     LOG_INFO("main", "car-monit-cpp 启动，配置目录=" + (config_dir.empty() ? "config" : config_dir));
+
+    // ---- 出站 HTTPS：注入 CA 证书包（留空则走 CM_CA_BUNDLE / third_party/cacert.pem）----
+    cm::net::HttpClient::setDefaultCaBundle(cfg.httpCaBundle);
+    LOG_INFO("main", "出站 HTTPS CA=" +
+                         (cm::net::HttpClient::defaultCaBundle().empty()
+                              ? std::string("(未找到，https 请求会失败)")
+                              : cm::net::HttpClient::defaultCaBundle()));
 
     // ---- MySQL ----
     cm::db::DbConfig dbc;

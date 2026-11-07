@@ -88,6 +88,30 @@ if (WIN32)
     target_link_libraries(carmonit_core PUBLIC ws2_32)
 endif()
 
+# ---------------------------------------------------------------------------
+# mbedTLS（vendored，Apache-2.0）：出站 HTTPS 的 TLS 实现
+#
+# 为什么 vendor 而不是 find_package(OpenSSL)：
+#   * 与本工程 "clone 即可构建" 的目标一致，Windows 上不需要额外装 OpenSSL 开发包；
+#   * 明文与 TLS 共用 cm::net 的 socket，只需把 mbedtls 的 BIO 回调接到 readSome/writeSome。
+# 只编 library/*.c 与 include/，不含 programs / tests / docs（那部分占 30MB+）。
+# ---------------------------------------------------------------------------
+file(GLOB MBEDTLS_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mbedtls/library/*.c
+)
+add_library(mbedtls_cm STATIC ${MBEDTLS_SOURCES})
+target_include_directories(mbedtls_cm PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mbedtls/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mbedtls/library
+)
+set_target_properties(mbedtls_cm PROPERTIES C_STANDARD 99)
+if (WIN32)
+    # 熵源走 CNG。⚠️ 必须写 bcrypt.lib 全名：只写 bcrypt 会被解析成上面的 third_party/bcrypt 目标
+    target_link_libraries(mbedtls_cm PUBLIC ws2_32 bcrypt.lib)
+endif()
+target_link_libraries(carmonit_core PUBLIC mbedtls_cm)
+target_compile_definitions(carmonit_core PUBLIC CM_HAVE_TLS=1)
+
 if (CAR_MONIT_BUILD_ASAN)
     target_compile_options(carmonit_core PUBLIC -fsanitize=address -fno-omit-frame-pointer)
     target_link_options(carmonit_core PUBLIC -fsanitize=address)
@@ -114,6 +138,9 @@ if (CAR_MONIT_BUILD_TESTS)
     add_executable(carmonit_tests ${CAR_MONIT_TEST_SOURCES})
     target_link_libraries(carmonit_tests PRIVATE carmonit_core)
     target_include_directories(carmonit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    # 测试若要读仓库内文件（如 third_party/cacert.pem），用源码目录而不是运行时工作目录
+    target_compile_definitions(carmonit_tests PRIVATE
+        CM_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
     add_test(NAME carmonit_tests COMMAND carmonit_tests)
 endif()
 
@@ -133,4 +160,12 @@ option(CAR_MONIT_BUILD_REDIS_VERIFY "构建 Redis 验收工具 carmonit_redis_ve
 if (CAR_MONIT_BUILD_REDIS_VERIFY)
     add_executable(carmonit_redis_verify tools/redis_verify/main.cpp)
     target_link_libraries(carmonit_redis_verify PRIVATE carmonit_core)
+endif()
+
+# 出站 HTTPS 验收工具（默认不构建）：真实站点握手 + 证书校验 + 失败路径
+#   cmake -B build -DCAR_MONIT_BUILD_HTTP_VERIFY=ON
+option(CAR_MONIT_BUILD_HTTP_VERIFY "构建 HTTPS 验收工具 carmonit_http_verify" OFF)
+if (CAR_MONIT_BUILD_HTTP_VERIFY)
+    add_executable(carmonit_http_verify tools/http_verify/main.cpp)
+    target_link_libraries(carmonit_http_verify PRIVATE carmonit_core)
 endif()

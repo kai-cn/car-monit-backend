@@ -1,14 +1,16 @@
 #pragma once
-// 极简出站 HTTP/1.1 客户端（零第三方依赖，建在 cm::net 的传输原语之上）。
+// 极简出站 HTTP/1.1 客户端（零第三方 HTTP 依赖，建在 cm::net 的传输原语之上）。
 //
 // 对应 Java：Forest（`@Get`/`@Post` 声明式客户端）+ Apache httpclient，
 // 配置见 application.yml 的 `vehicleMonitor.baseUrl` / `forest.variables.hendaUrl` /
 // `roadPathUrl` / `oss.endpoint`，超时 60s、`BackOffRetryer` 重试 2 次
 // （异常边界逐条分析见 COMPATIBILITY.md §5.1）。
 //
+// 传输层：http 走明文 socket；https 走 vendored mbedTLS（third_party/mbedtls）。
+// 两条路径共用同一套请求构造与响应解析，只有字节收发不同。
+// TLS 强制校验证书链与主机名，CA 来自 third_party/cacert.pem（可用配置覆盖）。
+//
 // ⚠️ 与 Java 的差异：
-//   * 不支持 https（没有 TLS 实现）。遇到 https:// 直接返回传输层错误，
-//     调用方按 Java 的 catch 分支处理（多数上游本来就是 http，只有腾讯地图是 https）。
 //   * 不自动跟随重定向（Forest/httpclient 对 GET 默认跟随）：原样返回 3xx 与 Location。
 //   * 不做重试：Java 的重试会让一次失败的外部调用最长占 3×60s，
 //     这里把重试交给调用方，避免悄悄放大超时。
@@ -52,10 +54,17 @@ struct HttpOptions {
     int connectTimeoutMs{10000};
     int readTimeoutMs{60000};
     long long maxBodyBytes{8LL * 1024 * 1024};
+    /** CA 证书包路径（PEM）。空 = 用默认：CM_CA_BUNDLE 环境变量 →
+     *  third_party/cacert.pem → 系统 CA 路径。仅 https 使用。 */
+    std::string caBundle;
 };
 
 class HttpClient {
 public:
+    /** 进程级默认 CA 包（由 main 从 AppConfig 注入，对应 `cm.http.ca-bundle`） */
+    static void setDefaultCaBundle(const std::string& path);
+    static std::string defaultCaBundle();
+
     static HttpResponse get(const std::string& url,
                             const std::vector<std::pair<std::string, std::string>>& headers = {},
                             const HttpOptions& opt = {});

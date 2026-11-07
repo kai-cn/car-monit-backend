@@ -257,7 +257,8 @@ python scripts/verify_flow_approval.py --port 9991
 
 ## 8. 剩余风险与建议顺序
 
-1. **先补出站 HTTP 客户端**（一次性解锁 8 条外部依赖接口，且能对本地 stub 验证超时/失败边界）；同时把 `hengda` 的 MD5 自拼接 quirk 与"失败塌缩成 null"照抄，不做参数化修复。
+1. ~~**先补出站 HTTP 客户端**~~ ✅ 已完成：`cm::net::HttpClient` 覆盖 http/https（TLS 用 vendored mbedTLS，强制校验证书链与主机名，CA=`third_party/cacert.pem`），
+   `carmonit_http_verify` 实测 `apis.map.qq.com` 200/180ms，不受信 CA 与不存在主机名均正确报错；`hengda` 的 MD5 自拼接 quirk 与"失败塌缩成 null"已照抄。
 2. ~~**再补 INFLATE + xlsx 读取器**~~ ✅ 已完成：INFLATE 三种块类型对拍通过（根因是距离基值表抄成了长度表那一路，见 `Inflate.cpp` 顶部），xlsx 读取器已接进 `carinfo/import` 与 `exceptrecord/import`。剩下的是 `system/user/importData`（easypoi `@Excel` 注解那套，机制不同）与 easypoi 模板的版式复刻（⚠️3 仍在）。
 3. ~~**S3 SigV4 客户端**~~ ✅ 已实现（7 条 SysFile 端点 + `verify_sys_file.py` 40 项对本地 fake S3 通过，fake_s3 用 Python 标准库独立重算签名）。⚠️ 仍未对**真实 MinIO** 验证过，只验到签名与协议层。
 4. **统一 SQL 失败的降级语义**（⚠️10）：现在只有模板导出与新增的导入链路改成抛异常（`mustRun`），其余仍是"失败变空结果"，需要一轮全量改 + 回归。

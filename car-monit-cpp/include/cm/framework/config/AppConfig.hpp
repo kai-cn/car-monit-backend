@@ -114,6 +114,10 @@ public:
     std::string roadPathUrl{"http://36.200.30.117:8080"};
     bool isLocalhost{true};
 
+    // ---- 出站 HTTPS（vendored mbedTLS）----
+    /** CA 证书包路径；空 = CM_CA_BUNDLE → third_party/cacert.pem → 系统 CA */
+    std::string httpCaBundle;
+
     // ---- 分表 ----
     bool shardingEnabled{true};
     std::string shardingTablePrefix{"ods_rt_szdn_snapshot_flow_"};

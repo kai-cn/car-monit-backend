@@ -221,6 +221,7 @@ void AppConfig::apply() {
     txServiceUrl = getString("tx-service-url", txServiceUrl);
     roadPathUrl = getString("roadPathUrl", roadPathUrl);
     isLocalhost = getString("isLocalhost", "local") == "local";
+    httpCaBundle = getString("cm.http.ca-bundle", httpCaBundle);
 
     shardingEnabled = getBool("snapshot.flow.sharding.enabled", shardingEnabled);
     shardingTablePrefix = getString("snapshot.flow.sharding.table-prefix", shardingTablePrefix);

@@ -39,13 +39,14 @@ curl -s http://127.0.0.1:9989/health
 
 > 构建只需要 CMake + 一个 C++20 编译器：clone 下来无需 Conan/vcpkg、无需 OpenSSL/zlib 开发包。
 > 内置实现的正确性由 `bash scripts/verify_crypto_vs_openssl.sh` 与 OpenSSL CLI 对拍证明。
+> 出站 HTTPS 用 vendor 的 mbedTLS（`third_party/mbedtls`），同样不需要系统装 OpenSSL。
 
 | 依赖 | 版本要求 | 用途 | 安装（Debian/Ubuntu） |
 |---|---|---|---|
 | CMake | ≥ 3.16 | 构建 | `apt install cmake` |
 | GCC / Clang | 支持 C++20（GCC ≥ 10） | 编译 | `apt install g++` |
-| OpenSSL | 1.1 / 3.x | JWT HS512、Base64、MD5 | `apt install libssl-dev` |
-| zlib | 1.x | PNG / XLSX 压缩 | `apt install zlib1g-dev` |
+| OpenSSL | 1.1 / 3.x | **仅**对拍脚本 `verify_crypto_vs_openssl.sh` 需要（可选） | `apt install libssl-dev` |
+| zlib | 1.x | PNG / XLSX 压缩（可选，没有则用内置 DEFLATE） | `apt install zlib1g-dev` |
 | pthread | 系统自带 | 线程池 | — |
 | MySQL | 8.0（端口 **3307**） | 业务库 `carmonitdb` | `docker compose up -d mysql` |
 | Redis | 6/7（端口 **6379**） | token、验证码、字典缓存 | `docker compose up -d redis` |
@@ -53,7 +54,8 @@ curl -s http://127.0.0.1:9989/health
 CentOS/RHEL：`yum install cmake gcc-c++`（zlib-devel 可选）。
 macOS：`brew install cmake`。Windows：MinGW-w64 GCC 13+（或 MSVC + CMake）均可，socket 走 Winsock2 兼容层。
 
-**无需联网**：`third_party/` 已 vendor 了 nlohmann/json（`ordered_json`）与 libbcrypt。
+**无需联网**：`third_party/` 已 vendor 了 nlohmann/json（`ordered_json`）、libbcrypt、mbedTLS（Apache-2.0）
+与 CA 证书包 `cacert.pem`。
 
 ---
 

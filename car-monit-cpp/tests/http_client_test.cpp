@@ -1,8 +1,10 @@
-// 出站 HTTP 客户端的单测：URL 解析、query 编码、状态/首部解析、chunked 成帧、上限与 TLS 拒绝。
+// 出站 HTTP 客户端的单测：URL 解析、query 编码、状态/首部解析、chunked 成帧、上限与 TLS。
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "cm/framework/net/HttpClient.hpp"
+#include "cm/framework/net/Os.hpp"
 
 extern int g_fails;
 #define fails g_fails
@@ -50,11 +52,72 @@ static void testParseUrl() {
     CK(!badPort.ok || badPort.port <= 0);  // 端口非数字要落到默认或报错，不能静默变负数
 }
 
-static void testTlsRejected() {
-    // 未实现 TLS：必须是明确的传输层错误，而不是崩或当作 http 发出去
+static void testTlsTransport() {
+#ifdef CM_HAVE_TLS
+    // 有 TLS 实现：用仓库内的 CA 包做负向验证（不可达地址 → 传输层错误，不崩、不当作明文发出去）
+    cm::net::HttpOptions opt;
+    opt.caBundle = std::string(CM_TEST_SOURCE_DIR) + "/third_party/cacert.pem";
+    opt.connectTimeoutMs = 700;
+    opt.readTimeoutMs = 700;
+    CK(!cm::net::HttpClient::defaultCaBundle().empty() || !opt.caBundle.empty());
+    HttpResponse refused = cm::net::HttpClient::get("https://127.0.0.1:1/x", {}, opt);
+    CK(!refused.ok());
+    CK(!refused.error.empty());
+    // CA 路径不存在时必须明确报错，而不是悄悄跳过校验
+    cm::net::HttpOptions noCa = opt;
+    noCa.caBundle = std::string(CM_TEST_SOURCE_DIR) + "/third_party/does-not-exist.pem";
+    HttpResponse noCaResp = cm::net::HttpClient::get("https://127.0.0.1:1/x", {}, noCa);
+    CK(!noCaResp.ok());
+    CK(noCaResp.error.find("CA") != std::string::npos);
+#else
+    // 无 TLS 构建：必须是明确的传输层错误，而不是崩或当作 http 发出去
     HttpResponse r = cm::net::HttpClient::get("https://apis.map.qq.com/ws/direction/v1/driving");
     CK(!r.ok());
     CK(r.error.find("TLS") != std::string::npos);
+#endif
+}
+
+/** 明文链路端到端：请求行、Host 头（非默认端口要带端口）、响应解析 */
+static void testPlainRequest() {
+    using namespace cm::net;
+    Fd lfd = listenTcp("127.0.0.1", 0, 8);
+    CK(isValid(lfd));
+    if (!isValid(lfd)) return;
+    sockaddr_in sa{};
+    socklen_t sl = sizeof(sa);
+    ::getsockname(asSocket(lfd), reinterpret_cast<sockaddr*>(&sa), &sl);
+    const int port = ntohs(sa.sin_port);
+
+    std::string seen;
+    std::thread server([&] {
+        std::string peer;
+        Fd sfd = acceptTcp(lfd, peer);
+        if (!isValid(sfd)) return;
+        char buf[4096];
+        while (seen.find("\r\n\r\n") == std::string::npos) {
+            const long n = readSome(sfd, buf, sizeof(buf));
+            if (n <= 0) break;
+            seen.append(buf, static_cast<size_t>(n));
+        }
+        const std::string resp =
+            "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok";
+        writeAll(sfd, resp.data(), resp.size());
+        closeTcp(sfd);
+    });
+
+    cm::net::HttpOptions opt;
+    opt.connectTimeoutMs = 2000;
+    opt.readTimeoutMs = 2000;
+    HttpResponse r = cm::net::HttpClient::get("http://127.0.0.1:" + std::to_string(port) + "/x?a=1", {}, opt);
+    server.join();
+    closeTcp(lfd);
+
+    CK_EQ(r.status, 200);
+    CK_EQ(r.body, std::string("ok"));
+    CK(r.error.empty());
+    CK(seen.rfind("GET /x?a=1 HTTP/1.1\r\n", 0) == 0);
+    // 非默认端口必须出现在 Host 里（默认 80/443 会被省略）
+    CK(seen.find("Host: 127.0.0.1:" + std::to_string(port) + "\r\n") != std::string::npos);
 }
 
 static void testBuildQuery() {
@@ -149,7 +212,8 @@ static void testTimeoutAndUnreachable() {
 
 void run_http_client_tests() {
     testParseUrl();
-    testTlsRejected();
+    testTlsTransport();
+    testPlainRequest();
     testBuildQuery();
     testParseResponse();
     testChunked();
