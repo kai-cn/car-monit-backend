@@ -20,7 +20,7 @@ from typing import List, Optional
 
 from pydantic import Field, field_serializer
 
-from app.common.core.domain.domain_model import DomainModel
+from app.common.core.domain.domain_model import DomainModel, JavaDecimal
 from app.common.utils.json_utils import format_date_time
 
 
@@ -35,7 +35,7 @@ class PCCarStatisticsDetailVO(DomainModel):
     #: 逃费类型（字典：1少轴2屏蔽3货车客标4有入无出5绿通换挂）
     escaped_type: Optional[str] = None
     #: 逃费金额 —— SQL 别名 ``escapedAmount``
-    escaped_amount: Decimal = Field(default=Decimal("0"))
+    escaped_amount: JavaDecimal = Field(default=Decimal("0"))
     #: 录入单位 —— 列表 SQL 没有查这一列，恒为 ``None``
     org_name: Optional[str] = None
     #: 创建时间
@@ -58,20 +58,20 @@ class PCCarStatisticsVO(DomainModel):
     org_name: Optional[str] = None
 
     escaped_type10_num: int = 0
-    escaped_type10_amount: Decimal = Field(default=Decimal("0"))
+    escaped_type10_amount: JavaDecimal = Field(default=Decimal("0"))
     escaped_type20_num: int = 0
-    escaped_type20_amount: Decimal = Field(default=Decimal("0"))
+    escaped_type20_amount: JavaDecimal = Field(default=Decimal("0"))
     escaped_type30_num: int = 0
-    escaped_type30_amount: Decimal = Field(default=Decimal("0"))
+    escaped_type30_amount: JavaDecimal = Field(default=Decimal("0"))
     escaped_type40_num: int = 0
-    escaped_type40_amount: Decimal = Field(default=Decimal("0"))
+    escaped_type40_amount: JavaDecimal = Field(default=Decimal("0"))
     escaped_type50_num: int = 0
-    escaped_type50_amount: Decimal = Field(default=Decimal("0"))
+    escaped_type50_amount: JavaDecimal = Field(default=Decimal("0"))
     escaped_type60_num: int = 0
-    escaped_type60_amount: Decimal = Field(default=Decimal("0"))
+    escaped_type60_amount: JavaDecimal = Field(default=Decimal("0"))
 
     total_num: int = 0
-    total_amount: Decimal = Field(default=Decimal("0"))
+    total_amount: JavaDecimal = Field(default=Decimal("0"))
 
     #: 明细列表。Java 字段名 ``detailVOList``，getter 是 ``getDetailVOList()``，Jackson 的
     #: Bean 命名规则把 ``DetailVOList`` 首字母降格后得到 ``detailVOList``（``VO`` 保持大写）。

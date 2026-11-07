@@ -12,6 +12,7 @@ from decimal import Decimal
 from typing import Any, List, Optional
 
 from app.common.core.domain.base_plus_entity import BasePlusEntity
+from app.common.core.domain.domain_model import JavaDecimal
 
 
 class CarConfimFree(BasePlusEntity):
@@ -38,9 +39,9 @@ class CarConfimFree(BasePlusEntity):
     #: 录入人员
     user_names: Optional[str] = None
     #: 拆分金额（Java ``BigDecimal``）
-    amount: Optional[Decimal] = None
+    amount: Optional[JavaDecimal] = None
     #: 处理金额（Java ``BigDecimal``）
-    aduit_amount: Optional[Decimal] = None
+    aduit_amount: Optional[JavaDecimal] = None
     #: 异常流水ids
     except_ids: Optional[str] = None
     #: 逃费类型s
@@ -56,11 +57,11 @@ class CarConfimFree(BasePlusEntity):
     car_aduit_free_list: Optional[List[Any]] = None
     car_except_record_list: Optional[List[Any]] = None
     #: 应缴金额（Java ``BigDecimal``）
-    total_amount: Optional[Decimal] = None
+    total_amount: Optional[JavaDecimal] = None
     #: 收费金额（Java ``BigDecimal``）
-    charge_amount: Optional[Decimal] = None
+    charge_amount: Optional[JavaDecimal] = None
     #: 差额（Java ``BigDecimal``）
-    dif_amount: Optional[Decimal] = None
+    dif_amount: Optional[JavaDecimal] = None
     #: 时间查询 :入口时间
     apply_time1: Optional[str] = None
     apply_time2: Optional[str] = None
@@ -72,13 +73,13 @@ class CarConfimFree(BasePlusEntity):
     #: 异常流水次数
     confim_free_num: Optional[int] = None
     #: 异常流水金额（Java ``BigDecimal``）
-    confim_free_amount: Optional[Decimal] = None
+    confim_free_amount: Optional[JavaDecimal] = None
     escaped_type: Optional[str] = None
     comfim_free_type: Optional[str] = None
     #: 车辆数量 —— Java 初值 ``0``（``getPCCarStatistics`` 的 ``count(distinct car_no) number``）
     number: int = 0
     #: 逃费金额 —— Java 初值 ``BigDecimal.ZERO``（``sum(ifnull(dif_amount,0)) escapedAmount``）
-    escaped_amount: Decimal = Decimal("0")
+    escaped_amount: JavaDecimal = Decimal("0")
 
 
 __all__ = ["CarConfimFree"]

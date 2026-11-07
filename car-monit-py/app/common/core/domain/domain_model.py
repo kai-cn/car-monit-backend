@@ -34,9 +34,15 @@ silently dropped, not a 400 -- so the same tolerance is required here.
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Annotated, Any, ClassVar, Dict, Optional, Tuple
+from typing import Annotated, Any, ClassVar, Dict, Optional, Tuple, Union
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, model_serializer
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    PlainSerializer,
+    model_serializer,
+)
 from pydantic.alias_generators import to_camel
 
 
@@ -74,10 +80,9 @@ class DomainModel(BaseModel):
         # Rows arriving from SQLAlchemy are mappings, not attributes.
         from_attributes=True,
         # Java: a ``BigDecimal`` property is written by Jackson as a JSON **number**
-        # (``"chargeAmount":12.00``), never as a quoted string. pydantic's own JSON mode
-        # would emit ``"12.00"`` -- a string -- which breaks every arithmetic use on the
-        # frontend. 标度保留见 :func:`decimal_to_java_number`，残余差异记录在 COMPATIBILITY.md。
-        json_encoders={Decimal: decimal_to_java_number},
+        # (``"chargeAmount":12.00``), never as a quoted string. 该行为由 :data:`JavaDecimal`
+        # 的 ``PlainSerializer`` 承担（pydantic v2 的 ``json_encoders`` 已弃用）。
+        # 标度保留见 :func:`decimal_to_java_number`，残余差异记录在 COMPATIBILITY.md。
     )
 
     #: Field names whose value must be dropped when empty -- Java ``@JsonInclude(NON_EMPTY)``.
@@ -150,5 +155,12 @@ def _coerce_to_java_string(value: Any) -> Any:
 #: “Java 里是 ``String``、但客户端可能发数字”的字段类型（对应 Jackson 的标量强制转换）。
 JavaString = Annotated[Optional[str], BeforeValidator(_coerce_to_java_string)]
 
+#: Java ``BigDecimal`` 字段类型：JSON 序列化按 Jackson ``NumberSerializer`` 输出数字。
+#: 只在 ``mode="json"`` 时生效；``model_dump()``（python 模式）仍返回 ``Decimal``。
+JavaDecimal = Annotated[
+    Decimal,
+    PlainSerializer(decimal_to_java_number, return_type=Union[int, float], when_used="json"),
+]
 
-__all__ = ["DomainModel", "OptionalModel", "JavaString", "to_camel", "Optional"]
+
+__all__ = ["DomainModel", "OptionalModel", "JavaDecimal", "JavaString", "to_camel", "Optional"]

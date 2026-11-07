@@ -8,11 +8,11 @@
 
 from __future__ import annotations
 
-from decimal import Decimal
 from typing import ClassVar, Optional
 
 from app.common.annotation.excel import Excel, ExcelFields
 from app.common.core.domain.base_plus_entity import BasePlusEntity
+from app.common.core.domain.domain_model import JavaDecimal
 
 
 class CarAduitFree(BasePlusEntity):
@@ -37,7 +37,7 @@ class CarAduitFree(BasePlusEntity):
     #: 处理人员
     user_names: Optional[str] = None
     #: 拆分金额（Java ``BigDecimal``）
-    amount: Optional[Decimal] = None
+    amount: Optional[JavaDecimal] = None
     #: 备用字段1
     back_col1: Optional[str] = None
     #: 备用字段2

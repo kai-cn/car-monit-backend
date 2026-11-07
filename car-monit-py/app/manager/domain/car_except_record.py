@@ -11,13 +11,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from decimal import Decimal
 from typing import Any, ClassVar, Optional
 
 from pydantic import field_serializer, field_validator
 
 from app.common.annotation.excel import Excel, ExcelFields
 from app.common.core.domain.base_plus_entity import BasePlusEntity
+from app.common.core.domain.domain_model import JavaDecimal
 from app.common.utils.json_utils import format_date_time, parse_date_time
 
 
@@ -49,11 +49,11 @@ class CarExceptRecord(BasePlusEntity):
     #: 出口时间
     out_time: Optional[datetime] = None
     #: 应缴金额
-    total_amount: Optional[Decimal] = None
+    total_amount: Optional[JavaDecimal] = None
     #: 收费金额
-    charge_amount: Optional[Decimal] = None
+    charge_amount: Optional[JavaDecimal] = None
     #: 差额
-    dif_amount: Optional[Decimal] = None
+    dif_amount: Optional[JavaDecimal] = None
     #: 逃费类型（字典：1少轴2屏蔽3货车客标4有入无出5绿通换挂）
     escaped_type: Optional[str] = None
     #: 备注
@@ -89,7 +89,7 @@ class CarExceptRecord(BasePlusEntity):
     #: 异常流水次数
     except_num: Optional[int] = None
     #: 异常流水金额
-    except_amount: Optional[Decimal] = None
+    except_amount: Optional[JavaDecimal] = None
     #: 查询时间
     in_time_str: Optional[str] = None
     #: 查询时间
