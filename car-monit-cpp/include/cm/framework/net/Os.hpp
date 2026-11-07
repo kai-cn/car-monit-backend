@@ -57,17 +57,25 @@ inline Fd fromSocket(int s) { return s < 0 ? kInvalid : static_cast<Fd>(s); }
 inline void ensureWs2() {}
 #endif
 
-/** 最近一次 socket 错误的人类可读信息（对应 Java 的 SocketException message） */
+/** 最近一次 socket 错误的人类可读信息（对应 Java 的 SocketException message）。
+ *  ⚠️ 必须走宽字符版：FormatMessage**A** 返回的是系统 ANSI 码页（中文 Windows 上是 GBK），
+ *  那串字节混进响应后 nlohmann 的 dump() 会当成非法 UTF-8 抛异常，
+ *  而异常是从异常处理路径里抛的 ⇒ 整个进程 terminate。 */
 inline std::string lastError() {
 #ifdef _WIN32
     const int e = WSAGetLastError();
-    char* msg = nullptr;
+    wchar_t* msg = nullptr;
     std::string out;
-    if (FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+    if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
                            FORMAT_MESSAGE_IGNORE_INSERTS,
-                       nullptr, e, 0, reinterpret_cast<char*>(&msg), 0, nullptr) != 0 &&
+                       nullptr, e, 0, reinterpret_cast<LPWSTR>(&msg), 0, nullptr) != 0 &&
         msg != nullptr) {
-        out = msg;
+        const int len = ::lstrlenW(msg);
+        const int need = WideCharToMultiByte(CP_UTF8, 0, msg, len, nullptr, 0, nullptr, nullptr);
+        if (need > 0) {
+            out.resize(static_cast<size_t>(need));
+            WideCharToMultiByte(CP_UTF8, 0, msg, len, out.data(), need, nullptr, nullptr);
+        }
         LocalFree(msg);
         while (!out.empty() && (out.back() == '\r' || out.back() == '\n' || out.back() == ' ')) {
             out.pop_back();

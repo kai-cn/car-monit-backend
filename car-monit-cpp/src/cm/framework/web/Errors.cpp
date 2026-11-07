@@ -9,7 +9,7 @@ cm::http::ApiResponse unauthorized(const std::string& uri) {
     cm::http::ApiResponse r;
     r.status = 200;
     r.content_type = "application/json;charset=utf-8";
-    r.body = a.dump();
+    r.body = a.dump();   // AjaxResult::dump 走 dumpLenient：URI 里的非法字节不能把进程带下去
     return r;
 }
 
@@ -26,7 +26,7 @@ cm::http::ApiResponse containerError(int status, const std::string& path) {
     cm::http::ApiResponse r;
     r.status = status;
     r.content_type = "application/json";
-    r.body = j.dump();
+    r.body = cm::dumpLenient(j);
     return r;
 }
 

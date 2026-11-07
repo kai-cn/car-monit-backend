@@ -14,6 +14,14 @@ namespace cm {
 
 using Json = nlohmann::ordered_json;
 
+/** 序列化但**不因非法 UTF-8 抛异常**（默认 strict 模式会抛 type_error.316）。
+ *  用在错误信封和 404/401 这类响应上：msg 可能是操作系统/数据库给的本地码页文本
+ *  （中文 Windows 上的 GBK），而这些地方正处在异常处理路径上 —— 再抛一次就是 terminate，
+ *  整个服务跟着没。Java 侧 Jackson 不会为这件事抛，所以这里也必须把字节替换掉后照样应答。 */
+inline std::string dumpLenient(const Json& j) {
+    return j.dump(-1, ' ', false, nlohmann::detail::error_handler_t::replace);
+}
+
 /** 便捷构造 / 读取函数 */
 inline Json jnull() { return Json(nullptr); }
 inline Json jarr() { return Json::array(); }

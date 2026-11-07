@@ -142,6 +142,6 @@ Json AjaxResult::toJson() const {
     return out;
 }
 
-std::string AjaxResult::dump() const { return toJson().dump(); }
+std::string AjaxResult::dump() const { return cm::dumpLenient(toJson()); }
 
 } // namespace cm::core::domain

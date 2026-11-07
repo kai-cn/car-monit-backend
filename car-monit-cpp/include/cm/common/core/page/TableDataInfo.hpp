@@ -31,7 +31,7 @@ public:
         j["msg"] = msg ? Json(*msg) : Json(nullptr);
         return j;
     }
-    std::string dump() const { return toJson().dump(); }
+    std::string dump() const { return cm::dumpLenient(toJson()); }
 };
 
 } // namespace cm::core::page
