@@ -345,8 +345,11 @@ class TestDateUtils:
         assert date_utils.time_distance(end, start) == "1天3小时4分钟"
 
     def test_get_timestamp_new2_is_two_days_earlier(self) -> None:
+        # 两个方法各读一次 datetime.now() 再截到毫秒：只要这两次读跨过了某个毫秒边界，
+        # 差值就是 1天23:59:59.999xxx，``.days`` 掉到 1 —— 原来的 ``1 < delta.days`` 因此偶发失败。
+        # 按秒比较才是"整两天"这个语义，且不受调度抖动影响。
         delta = date_utils.get_timestamp() - date_utils.get_timestamp_new2()
-        assert 1 < delta.days <= 2
+        assert 1.99 < delta.total_seconds() / 86400 <= 2, delta
 
 
 class TestSqlUtils:
