@@ -152,6 +152,11 @@ pub fn build_router(state: AppState) -> Router {
                 async move { middleware::auth::auth_middleware(state, request, next).await }
             }
         }))
+        // Java: XssFilter 在安全链之前清洗 body/参数（HIGHEST_PRECEDENCE）。
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            middleware::xss::xss_middleware,
+        ))
         // CORS 必须在最外层：预检请求在鉴权之前响应。
         .layer(cors_layer())
         // TraceId / 安全头 / CORS 头写法：Java 的 Filter 在业务之前就写好了，401/404/405 也带。
