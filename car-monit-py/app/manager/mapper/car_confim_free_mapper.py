@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from app.base.mapper.ods_sql import If, build_conditions, map_result_row, map_row
 from app.config.database import session_scope
@@ -246,6 +246,31 @@ class CarConfimFreeMapper(ManagerListMapper):
         with session_scope() as session:
             row = session.execute(text(sql), {"carId": car_id, "id": entity_id}).first()
         return None if row is None else row[0]
+
+    # 大屏 ``/exceptRecordList`` 批量版：一条 SQL 取回本页所有 ``car_id`` 的候选行，
+    # ``find_in_set`` 在 Python 侧按逗号切分复刻，避免每行一次往返。
+    def select_org_ids(self, pairs: Sequence[Tuple[str, str]]) -> Dict[Tuple[str, str], Optional[str]]:
+        result: Dict[Tuple[str, str], Optional[str]] = {
+            (car_id, entity_id): None for car_id, entity_id in pairs
+        }
+        car_ids = sorted({car_id for car_id, _ in pairs if car_id})
+        if not car_ids:
+            return result
+
+        statement = text(
+            "select car_id, except_ids, org_id from car_confim_free "
+            "where car_id in :carIds"
+        ).bindparams(bindparam("carIds", expanding=True))
+        with session_scope() as session:
+            rows = session.execute(statement, {"carIds": car_ids}).all()
+
+        for row in rows:
+            row_car_id, except_ids, org_id = row[0], row[1], row[2]
+            tokens = {token for token in str(except_ids or "").split(",") if token}
+            for pair in result:
+                if pair[0] == row_car_id and str(pair[1]) in tokens and result[pair] is None:
+                    result[pair] = org_id
+        return result
 
     # Java: List<CarConfimFree> getPCCarStatistics(CarConfimFreeQueryRo queryRo)
     def get_pc_car_statistics(self, query_ro: Any) -> List[Any]:

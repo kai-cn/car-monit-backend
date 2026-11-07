@@ -543,6 +543,36 @@ def test_except_record_list_enriches_every_row(monkeypatch: Any) -> None:
     assert record.calls[-1][1][0].car_no == "京A"
 
 
+def test_except_record_list_uses_batch_queries(monkeypatch: Any) -> None:
+    """P2-1：批量方法可用时不再逐行调用 ``select_org_id`` / ``count_by_car_id``."""
+    rows = [
+        CarExceptRecord(id="E1", car_id="C1", car_no="京A1"),
+        CarExceptRecord(id="E2", car_id="C2", car_no="京A2"),
+    ]
+    confim = _FakeService(select_org_ids={("C1", "E1"): "ORG-1", ("C2", "E2"): None})
+
+    class _BatchCount(_FakeService):
+        def count_by_car_ids(self, car_ids: Any) -> Dict[str, int]:
+            self.calls.append(("count_by_car_ids", (list(car_ids),)))
+            return {"C1": 2}
+
+    ad = _BatchCount()
+    fakes = _inject(
+        monkeypatch,
+        car_except_record=_FakeService(select_list=rows),
+        car_confim_free=confim,
+        car_aduit_free=ad,
+    )
+
+    body = _client(fakes).get(f"{PREFIX}/exceptRecordList").json()
+
+    assert [row["orgId"] for row in body["rows"]] == ["ORG-1", None]
+    assert [row["supplementaryStatus"] for row in body["rows"]] == ["1", "0"]
+    assert confim.called("select_org_id") == []
+    assert ad.called("count_by_car_id") == []
+    assert ad.called("count_by_car_ids")[0][0] == ["C1", "C2"]
+
+
 def test_except_record_list_keeps_the_default_status(monkeypatch: Any) -> None:
     rows = [CarExceptRecord(id="E1", car_id="C1")]
     record = _FakeService(select_list=rows)

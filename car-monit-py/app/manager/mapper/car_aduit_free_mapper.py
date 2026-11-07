@@ -8,9 +8,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from app.base.mapper.ods_sql import If, map_result_row
 from app.common.core.page.page_helper import PageList, select_page, take_page
@@ -240,6 +240,19 @@ class CarAduitFreeMapper(ManagerListMapper):
         with session_scope() as session:
             row = session.execute(text(sql), {"carId": car_id}).first()
         return 0 if row is None or row[0] is None else int(row[0])
+
+    # 大屏 ``/exceptRecordList`` 批量版：一条 ``group by`` 取回本页所有车辆的补缴条数。
+    def count_by_car_ids(self, car_ids: Sequence[Optional[str]]) -> Dict[str, int]:
+        clean_ids = sorted({car_id for car_id in car_ids if car_id})
+        if not clean_ids:
+            return {}
+        statement = text(
+            "select car_id, count(1) from car_aduit_free "
+            "where del_flag = '0' and car_id in :carIds group by car_id"
+        ).bindparams(bindparam("carIds", expanding=True))
+        with session_scope() as session:
+            rows = session.execute(statement, {"carIds": clean_ids}).all()
+        return {str(row[0]): int(row[1] or 0) for row in rows}
 
     # ---------------------------------------------------------------- PC 堵漏增收
 

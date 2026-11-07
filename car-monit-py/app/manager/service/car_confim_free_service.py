@@ -29,7 +29,7 @@
 from __future__ import annotations
 
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from app.common.core.domain.ajax_result import AjaxResult
 from app.common.utils.common_util import delete_end, is_blank, is_not_blank, is_null
@@ -157,6 +157,10 @@ class CarConfimFreeService(ManagerCrudService):
     # Java: String selectOrgId(String carId, String id)
     def select_org_id(self, car_id: str, entity_id: str) -> Optional[str]:
         return self._mapper.select_org_id(car_id, entity_id)
+
+    # 大屏批量版：一次查询补全本页的 ``orgId``（逐行调用是 N+1）。
+    def select_org_ids(self, pairs: Sequence[Tuple[str, str]]) -> Dict[Tuple[str, str], Optional[str]]:
+        return self._mapper.select_org_ids(pairs)
 
     # ---------------------------------------------------------------- 保存
 

@@ -15,7 +15,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from app.common.core.domain.ajax_result import AjaxResult
 from app.common.utils.common_util import is_not_blank
@@ -97,6 +97,10 @@ class CarAduitFreeService(ManagerCrudService):
     def count_by_car_id(self, car_id: Optional[str]) -> int:
         """大屏 ``/exceptRecordList`` 逐行判断是否已有补缴记录（> 0 → 补缴状态置 ``1``）。"""
         return self._mapper.count_by_car_id(car_id)
+
+    def count_by_car_ids(self, car_ids: Sequence[Optional[str]]) -> Dict[str, int]:
+        """大屏批量版：一次 ``group by`` 取回本页所有车辆的补缴条数。"""
+        return self._mapper.count_by_car_ids(car_ids)
 
     # ---------------------------------------------------------------- PC 堵漏增收
 
