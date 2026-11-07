@@ -43,6 +43,7 @@ from typing import Any, Optional
 from app.base.service.forest.http_base_info_api_service import HttpBaseInfoApiService
 from app.common.constant.constants import SECTION_LIST
 from app.common.core.redis.redis_cache import RedisCache, get_redis_cache
+from app.config.database import transactional
 
 #: Java: ``@Component("vehicleMonitoringTask")``
 BEAN_NAME = "vehicleMonitoringTask"
@@ -158,6 +159,7 @@ class VehicleMonitoringTask:
     # ------------------------------------------------------------ 7 个同步方法
 
     # Java: @Transactional public void syncOrgInfo()
+    @transactional
     def sync_org_info(self) -> None:
         """同步机构信息 -> ``ods_yhgl_v_base_org``."""
         rows = self.http_base_info_api_service.get_org_info_list()
@@ -165,6 +167,7 @@ class VehicleMonitoringTask:
         self.ods_yhgl_v_base_org_service.save_batch(rows)
 
     # Java: @Transactional public void syncSectionInfo()
+    @transactional
     def sync_section_info(self) -> None:
         """同步路段信息 -> ``ods_szdn_section``，**并刷新 Redis ``SECTION_LIST``**.
 
@@ -186,6 +189,7 @@ class VehicleMonitoringTask:
         self.redis_cache.set_cache_list(SECTION_LIST, rows)
 
     # Java: @Transactional public void syncGantryInfo()
+    @transactional
     def sync_gantry_info(self) -> None:
         """同步门架信息 -> ``ods_szdn_gantry``."""
         rows = self.http_base_info_api_service.get_gantry_info_list()
@@ -193,6 +197,7 @@ class VehicleMonitoringTask:
         self.ods_szdn_gantry_service.save_batch(rows)
 
     # Java: @Transactional public void syncServiceAreaInfoInfo()
+    @transactional
     def sync_service_area_info_info(self) -> None:
         """同步服务区信息 -> ``dwd_lczt_fwqjcxx``（方法名双 ``Info``，Java 原文）."""
         rows = self.http_base_info_api_service.get_service_area_info_list()
@@ -200,6 +205,7 @@ class VehicleMonitoringTask:
         self.dwd_lczt_fwqjcxx_service.save_batch(rows)
 
     # Java: @Transactional public void syncTollBoothInfoInfo()
+    @transactional
     def sync_toll_booth_info_info(self) -> None:
         """同步收费所信息 -> ``dwd_lczt_sfsjcxx``（方法名双 ``Info``，Java 原文）."""
         rows = self.http_base_info_api_service.get_toll_booth_info_list()
@@ -207,6 +213,7 @@ class VehicleMonitoringTask:
         self.dwd_lczt_sfsjcxx_service.save_batch(rows)
 
     # Java: @Transactional public void syncSfzjcxxInfoInfo()
+    @transactional
     def sync_sfzjcxx_info_info(self) -> None:
         """同步收费站基础信息位置 -> ``dwd_lczt_sfzjcxx``（方法名双 ``Info``，Java 原文）."""
         rows = self.http_base_info_api_service.get_sfzjcxx_info_list()
@@ -214,6 +221,7 @@ class VehicleMonitoringTask:
         self.dwd_lczt_sfzjcxx_service.save_batch(rows)
 
     # Java: @Transactional public void syncTollStationInfo()
+    @transactional
     def sync_toll_station_info(self) -> None:
         """同步收费站信息 -> ``ods_szdn_toll``（这个**没有**双 ``Info``）."""
         rows = self.http_base_info_api_service.get_toll_station_info_list()

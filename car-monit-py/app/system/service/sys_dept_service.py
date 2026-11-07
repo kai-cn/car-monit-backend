@@ -42,6 +42,7 @@ from app.common.utils import security_utils as SecurityUtils
 from app.framework.aspectj.data_scope_aspect import apply_data_scope
 from app.system.mapper.sys_dept_mapper import SysDeptMapper
 from app.system.mapper.sys_role_mapper import SysRoleMapper
+from app.config.database import transactional
 
 
 class SysDeptService:
@@ -168,6 +169,7 @@ class SysDeptService:
     # ---------------------------------------------------------------- 增删改
 
     # Java: int insertDept(SysDept dept)
+    @transactional
     def insert_dept(self, dept: SysDept) -> int:
         """新增部门，返回受影响行数（恒为 1）。
 
@@ -220,6 +222,7 @@ class SysDeptService:
         return count
 
     # Java: int updateDept(SysDept dept)
+    @transactional
     def update_dept(self, dept: SysDept) -> int:
         """修改部门。前半段与 :meth:`insert_dept` 逐字相同，后半段多一次租户批量刷新。"""
         # 修改部门编码
@@ -346,6 +349,7 @@ class SysDeptService:
         return sql
 
     # Java: public void saveAll(List<SysDept> depts)
+    @transactional
     def save_all(self, depts: Optional[Sequence[SysDept]]) -> None:
         """先清 ``create_by = '-9999'`` 的种子数据，再逐条插入。
 

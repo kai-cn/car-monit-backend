@@ -29,6 +29,7 @@ from app.base.mapper.ods_lwzxsfsj_fee_gantry_fusion01_mapper import (
 )
 from app.base.service.abstract_crud_service import AbstractCrudService
 from app.common.core.domain.ajax_result import AjaxResult
+from app.config.database import transactional
 
 
 class OdsLwzxsfsjFeeGantryFusion01Service(AbstractCrudService):
@@ -39,6 +40,7 @@ class OdsLwzxsfsjFeeGantryFusion01Service(AbstractCrudService):
     id_attribute = "id"
 
     # Java: AjaxResult deleteOdsLwzxsfsjFeeGantryFusion01ByIds(String[] bigIds)
+    @transactional
     def delete_by_ids(self, ids: Sequence[str]) -> AjaxResult:  # type: ignore[override]
         return super().delete_by_ids(ids, "delete_ods_lwzxsfsj_fee_gantry_fusion01_by_ids")
 

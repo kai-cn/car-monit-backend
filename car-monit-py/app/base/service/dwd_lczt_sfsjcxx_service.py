@@ -15,6 +15,7 @@ from typing import Sequence
 from app.base.mapper.dwd_lczt_sfsjcxx_mapper import DwdLcztSfsjcxxMapper
 from app.base.service.abstract_crud_service import AbstractCrudService
 from app.common.core.domain.ajax_result import AjaxResult
+from app.config.database import transactional
 
 
 class DwdLcztSfsjcxxService(AbstractCrudService):
@@ -25,10 +26,12 @@ class DwdLcztSfsjcxxService(AbstractCrudService):
     id_attribute = "agent_pk"
 
     # Java: AjaxResult deleteDwdLcztSfsjcxxByIds(String[] agentPks)
+    @transactional
     def delete_by_ids(self, ids: Sequence[str]) -> AjaxResult:  # type: ignore[override]
         return super().delete_by_ids(ids, "delete_dwd_lczt_sfsjcxx_by_ids")
 
     # Java: AjaxResult deleteDwdLcztSfsjcxxById(String agentPk)
+    @transactional
     def delete_by_id(self, entity_id: str) -> AjaxResult:
         return AjaxResult.success_data(self._mapper.delete_by_id(entity_id))
 

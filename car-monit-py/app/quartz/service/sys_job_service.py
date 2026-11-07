@@ -67,6 +67,7 @@ from app.quartz.util.schedule_utils import (
     get_job_key,
 )
 from app.quartz.util.scheduler import JobDataMap, Scheduler, get_scheduler
+from app.config.database import transactional
 
 
 class SysJobService:
@@ -122,6 +123,7 @@ class SysJobService:
     # ---------------------------------------------------------------- 暂停 / 恢复
 
     # Java: @Transactional public int pauseJob(SysJob job) throws SchedulerException
+    @transactional
     def pause_job(self, job: SysJob) -> int:
         """暂停任务：先改库，**改成功才**动调度器（``if (rows > 0)``）."""
         job_id = job.job_id
@@ -134,6 +136,7 @@ class SysJobService:
         return rows
 
     # Java: @Transactional public int resumeJob(SysJob job) throws SchedulerException
+    @transactional
     def resume_job(self, job: SysJob) -> int:
         """恢复任务：先改库，改成功才动调度器."""
         job_id = job.job_id
@@ -148,6 +151,7 @@ class SysJobService:
     # ---------------------------------------------------------------- 删除
 
     # Java: @Transactional public int deleteJob(SysJob job) throws SchedulerException
+    @transactional
     def delete_job(self, job: SysJob) -> int:
         """删除任务后，所对应的 trigger 也将被删除.
 
@@ -163,6 +167,7 @@ class SysJobService:
         return rows
 
     # Java: @Transactional public void deleteJobByIds(Long[] jobIds) throws SchedulerException
+    @transactional
     def delete_job_by_ids(self, job_ids: List[int]) -> None:
         """批量删除调度信息（逐条查、逐条删；查不到就是 NPE，见模块 docstring）."""
         for job_id in job_ids:
@@ -172,6 +177,7 @@ class SysJobService:
     # ---------------------------------------------------------------- 状态
 
     # Java: @Transactional public int changeStatus(SysJob job) throws SchedulerException
+    @transactional
     def change_status(self, job: SysJob) -> int:
         """任务调度状态修改：只认 ``"0"`` / ``"1"``，其余返回 0."""
         rows = 0
@@ -185,6 +191,7 @@ class SysJobService:
     # ---------------------------------------------------------------- 立即执行
 
     # Java: @Transactional public void run(SysJob job) throws SchedulerException
+    @transactional
     def run(self, job: SysJob) -> None:
         """立即运行任务一次.
 
@@ -201,6 +208,7 @@ class SysJobService:
     # ---------------------------------------------------------------- 新增 / 修改
 
     # Java: @Transactional public int insertJob(SysJob job) throws SchedulerException, TaskException
+    @transactional
     def insert_job(self, job: SysJob) -> int:
         """新增任务（**强制** ``status = PAUSE``，插入与注册在同一个事务里）."""
         job.status = Status.PAUSE.value
@@ -212,6 +220,7 @@ class SysJobService:
         return rows
 
     # Java: @Transactional public int updateJob(SysJob job) throws SchedulerException, TaskException
+    @transactional
     def update_job(self, job: SysJob) -> int:
         """更新任务的时间表达式（先查旧值拿 ``jobGroup``，再改库，改成功才动调度器）."""
         properties = self.select_job_by_id(job.job_id)

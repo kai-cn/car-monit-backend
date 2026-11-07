@@ -44,6 +44,7 @@ from app.manager.domain.car_warning_info import CarWarningInfo
 from app.manager.domain.vo.bigscreen.car_location_param import CarLocationParam
 from app.manager.mapper.car_warning_info_mapper import CarWarningInfoMapper
 from app.manager.service.manager_service import SAVE_SUCCESS_MESSAGE, ManagerCrudService
+from app.config.database import transactional
 
 #: Java: ``String formattedDate = sdf.format(new Date());`` 的格式。
 DATE_PATTERN = "%Y%m%d"
@@ -113,6 +114,7 @@ class CarWarningInfoService(ManagerCrudService):
     # ---------------------------------------------------------------- 保存
 
     # Java: AjaxResult saveCarWarningInfo(CarWarningInfo carWarningInfo)
+    @transactional
     def save(self, entity: Any) -> AjaxResult:
         # Java: Long userId = 1L;  —— 硬编码，不是当前登录用户
         user_id = 1

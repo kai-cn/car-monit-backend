@@ -113,6 +113,7 @@ from app.system.domain.ro.upload_by_url_ro import UploadByUrlRo
 from app.system.domain.sys_file import SysFile
 from app.system.mapper.sys_file_mapper import SysFileMapper
 from app.system.service.forest.file_api import FileApi, get_file_api
+from app.config.database import transactional
 
 logger = logging.getLogger("app.system.service.sys_file_service")
 
@@ -321,6 +322,7 @@ class SysFileService:
     # ------------------------------------------------------------------ 上传
 
     # Java: AjaxResult uploadFile(MultipartFile file)
+    @transactional
     def upload_file(self, file: Any) -> AjaxResult:
         """单文件上传。**先 putObject 再读库**（与 ``upload_files`` 的顺序**相反**）。"""
         file_name = simple_uuid() + FileUtil.DOT + _to_java_string(FileUtil.ext_name(file.filename))
@@ -470,6 +472,7 @@ class SysFileService:
         return AjaxResult.success_data(result_maps)
 
     # Java: AjaxResult uploadFileId(Long fileId, MultipartFile files)
+    @transactional
     def upload_file_id(self, file_id: Optional[int], file: Any) -> AjaxResult:
         """按指定主键"先删后插"再上传。``file_log_id`` 失败也不影响上传判断。"""
         result_maps: List[Dict[str, str]] = []
@@ -603,6 +606,7 @@ class SysFileService:
         return None
 
     # Java: AjaxResult uploadBase64Picture(String base64Picture, SysFile sysFile)
+    @transactional
     def upload_base64_picture(self, base64_picture: Optional[str], entity: SysFile) -> AjaxResult:
         """base64 图片上传：**先写库再上传**，失败回 ``error()``（默认文案「操作失败」）。"""
         # Java: byte[] decode = Base64.decode(base64Picture);  —— 非法输入返回 null

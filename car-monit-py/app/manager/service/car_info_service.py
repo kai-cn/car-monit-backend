@@ -39,6 +39,7 @@ from app.manager.domain.vo.bigscreen.car_location_param import CarLocationParam
 from app.manager.domain.vo.bigscreen.car_location_vo import CarLocationVO
 from app.manager.mapper.car_info_mapper import CarInfoMapper
 from app.manager.service.manager_service import SAVE_SUCCESS_MESSAGE, ManagerCrudService
+from app.config.database import transactional
 
 #: Java: ``AjaxResult.error("车牌号存在重复，请确定！")``
 DUPLICATE_CAR_NO_MESSAGE = "车牌号存在重复，请确定！"
@@ -115,6 +116,7 @@ class CarInfoService(ManagerCrudService):
     # ---------------------------------------------------------------- 保存
 
     # Java: AjaxResult saveCarInfo(CarInfo carInfo)
+    @transactional
     def save(self, entity: Any) -> AjaxResult:
         user_id = _current_user_id()
         entity.car_no = is_null(entity.car_no)  # 去掉空格
@@ -152,11 +154,13 @@ class CarInfoService(ManagerCrudService):
     # ---------------------------------------------------------------- 删除
 
     # Java: AjaxResult deleteCarInfoByIds(String[] ids) —— **不**刷新缓存
+    @transactional
     def delete_by_ids(self, entity_ids: Sequence[str]) -> AjaxResult:
         count = self._mapper.delete_by_ids(entity_ids)
         return AjaxResult.success_data(count)
 
     # Java: AjaxResult deleteCarInfoById(String id) —— 刷新缓存
+    @transactional
     def delete_by_id(self, entity_id: str) -> AjaxResult:
         count = self._mapper.delete_by_id(entity_id)
         self.update_redis_car_list()

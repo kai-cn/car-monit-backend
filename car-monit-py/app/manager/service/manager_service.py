@@ -40,6 +40,7 @@ from typing import Any, List, Optional, Sequence
 
 from app.common.core.domain.ajax_result import AjaxResult
 from app.common.utils.common_util import is_not_blank
+from app.config.database import transactional
 
 #: Java: ``AjaxResult.success("操作成功！", ...)`` 的文案（**带全角感叹号**）。
 SAVE_SUCCESS_MESSAGE = "操作成功！"
@@ -68,6 +69,7 @@ class ManagerCrudService:
     # ---------------------------------------------------------------- 保存
 
     # Java: AjaxResult saveXxx(Xxx x)  —— 新增与修改共用一个入口
+    @transactional
     def save(self, entity: Any) -> AjaxResult:
         if not is_not_blank(getattr(entity, "id", None)):
             self._mapper.insert(entity)
@@ -79,12 +81,14 @@ class ManagerCrudService:
     # ---------------------------------------------------------------- 删除
 
     # Java: AjaxResult deleteXxxByIds(String[] ids)
+    @transactional
     def delete_by_ids(self, entity_ids: Sequence[str]) -> AjaxResult:
         count = self._mapper.delete_by_ids(entity_ids)
         self.after_change()
         return AjaxResult.success_data(count)
 
     # Java: AjaxResult deleteXxxById(String id)
+    @transactional
     def delete_by_id(self, entity_id: str) -> AjaxResult:
         count = self._mapper.delete_by_id(entity_id)
         self.after_change()

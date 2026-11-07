@@ -22,6 +22,7 @@ from app.base.service.abstract_crud_service import AbstractCrudService
 from app.common.constant.constants import CAR_WARNING_CONFIG_LIST
 from app.common.core.domain.ajax_result import AjaxResult
 from app.common.core.redis.redis_cache import RedisCache, get_redis_cache
+from app.config.database import transactional
 
 
 class CarWarningConfigService(AbstractCrudService):
@@ -43,6 +44,7 @@ class CarWarningConfigService(AbstractCrudService):
         return self._redis_cache
 
     # Java: AjaxResult saveCarWarningConfig(CarWarningConfig carWarningConfig)
+    @transactional
     def save(self, entity: Any) -> AjaxResult:
         result = super().save(entity)
         # Java: this.cacheWarningConfig();
@@ -56,6 +58,7 @@ class CarWarningConfigService(AbstractCrudService):
         self.redis_cache.set_cache_object(CAR_WARNING_CONFIG_LIST, list(self._mapper.select_list(query)))
 
     # Java: AjaxResult deleteCarWarningConfigByIds(String[] ids)
+    @transactional
     def delete_by_ids(self, ids: Sequence[str]) -> AjaxResult:  # type: ignore[override]
         result = super().delete_by_ids(ids, "delete_car_warning_config_by_ids")
         # Java: this.cacheWarningConfig();
@@ -63,6 +66,7 @@ class CarWarningConfigService(AbstractCrudService):
         return result
 
     # Java: AjaxResult deleteCarWarningConfigById(String id)
+    @transactional
     def delete_by_id(self, entity_id: str) -> AjaxResult:
         count = self._mapper.delete_car_warning_config_by_id(entity_id)
         # Java: this.cacheWarningConfig();

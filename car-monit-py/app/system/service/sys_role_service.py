@@ -51,6 +51,7 @@ from app.system.mapper.sys_role_dept_mapper import SysRoleDeptMapper
 from app.system.mapper.sys_role_mapper import SysRoleMapper
 from app.system.mapper.sys_role_menu_mapper import SysRoleMenuMapper
 from app.system.mapper.sys_user_role_mapper import SysUserRoleMapper
+from app.config.database import transactional
 
 #: Java: ``Constants.ROLE_DELIMETER``.
 ROLE_DELIMETER = ","
@@ -182,6 +183,7 @@ class SysRoleService:
     # ------------------------------------------------------------------ 增删改
 
     # Java: int insertRole(SysRole role)
+    @transactional
     def insert_role(self, role: SysRole) -> int:
         """新增角色 + 菜单关联。
 
@@ -193,6 +195,7 @@ class SysRoleService:
         return self.insert_role_menu(role)
 
     # Java: int updateRole(SysRole role)
+    @transactional
     def update_role(self, role: SysRole) -> int:
         """修改角色 + 重建菜单关联（先全删再插，**不是**合并）。"""
         # 修改角色信息
@@ -207,6 +210,7 @@ class SysRoleService:
         return self._mapper.update_role(role)
 
     # Java: int authDataScope(SysRole role)
+    @transactional
     def auth_data_scope(self, role: SysRole) -> int:
         """修改数据权限：先删 ``sys_role_dept`` 再按 ``deptIds`` 重建。
 
@@ -250,6 +254,7 @@ class SysRoleService:
         return rows
 
     # Java: int deleteRoleById(Long roleId)
+    @transactional
     def delete_role_by_id(self, role_id: int) -> int:
         """删除单个角色（软删），先清两张关联表。
 
@@ -264,6 +269,7 @@ class SysRoleService:
         return self._mapper.delete_role_by_id(role_id)
 
     # Java: int deleteRoleByIds(Long[] roleIds)
+    @transactional
     def delete_role_by_ids(self, role_ids: Sequence[int]) -> int:
         """批量删除。先**逐个**校验，全部通过才动数据。
 

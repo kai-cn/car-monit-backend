@@ -49,6 +49,7 @@ from app.flow.service.flow_template_service import (
     get_service as get_template_service,
 )
 from app.system.service.sys_dept_service import SysDeptService
+from app.config.database import transactional
 
 #: Java: ``AjaxResult.success("操作成功！", ...)`` 的文案（**带全角感叹号**）。
 SAVE_SUCCESS_MESSAGE = "操作成功！"
@@ -135,6 +136,7 @@ class FlowNameService:
     # ---------------------------------------------------------------- 同步
 
     # Java: AjaxResult tbFlow(FlowName flowName)
+    @transactional
     def tb_flow(self, flow_name: FlowName) -> AjaxResult:
         """把系统预置流程复制到所有 ``is_uint = '1'`` 的部门（入参不用）。"""
         user_id = get_user_id()

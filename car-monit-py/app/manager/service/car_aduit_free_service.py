@@ -25,6 +25,7 @@ from app.manager.domain.vo.bigscreen.income_statistic_param import IncomeStatist
 from app.manager.domain.vo.pc_income_statics_vo import PCIncomeStaticsVO
 from app.manager.mapper.car_aduit_free_mapper import CarAduitFreeMapper
 from app.manager.service.manager_service import SAVE_SUCCESS_MESSAGE, ManagerCrudService
+from app.config.database import transactional
 
 
 class CarAduitFreeService(ManagerCrudService):
@@ -45,6 +46,7 @@ class CarAduitFreeService(ManagerCrudService):
     # ---------------------------------------------------------------- 保存
 
     # Java: AjaxResult saveCarAduitFree(CarAduitFree carAduitFree)
+    @transactional
     def save(self, entity: Any) -> AjaxResult:
         if is_not_blank(entity.id):
             # 修改
@@ -57,16 +59,19 @@ class CarAduitFreeService(ManagerCrudService):
     # ---------------------------------------------------------------- 删除
 
     # Java: AjaxResult deleteCarAduitFreeByIds(String[] ids)
+    @transactional
     def delete_by_ids(self, entity_ids: Sequence[str]) -> AjaxResult:
         count = self._mapper.delete_by_ids(entity_ids)
         return AjaxResult.success_data(count)
 
     # Java: AjaxResult deleteCarAduitFreeById(String id)
+    @transactional
     def delete_by_id(self, entity_id: str) -> AjaxResult:
         count = self._mapper.delete_by_id(entity_id)
         return AjaxResult.success_data(count)
 
     # Java: AjaxResult deleteCarAduitFreeByConfirmId(String fkId)
+    @transactional
     def delete_by_confirm_id(self, fk_id: Optional[str]) -> AjaxResult:
         """按补缴单删除明细 —— **物理删除**，``fkId`` 为空白时不执行。"""
         count = 0

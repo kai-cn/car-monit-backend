@@ -14,6 +14,7 @@ from typing import Any, List, Sequence
 from app.base.mapper.ods_szdn_gantry_mapper import OdsSzdnGantryMapper
 from app.base.service.abstract_crud_service import AbstractCrudService
 from app.common.core.domain.ajax_result import AjaxResult
+from app.config.database import transactional
 
 
 class OdsSzdnGantryService(AbstractCrudService):
@@ -28,10 +29,12 @@ class OdsSzdnGantryService(AbstractCrudService):
         return self._mapper.select_list_new(query)
 
     # Java: AjaxResult deleteOdsSzdnGantryByIds(String[] ids)
+    @transactional
     def delete_by_ids(self, ids: Sequence[str]) -> AjaxResult:  # type: ignore[override]
         return super().delete_by_ids(ids, "delete_ods_szdn_gantry_by_ids")
 
     # Java: AjaxResult deleteOdsSzdnGantryById(String id)
+    @transactional
     def delete_by_id(self, entity_id: str) -> AjaxResult:
         return AjaxResult.success_data(self._mapper.delete_by_id(entity_id))
 

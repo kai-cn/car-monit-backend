@@ -48,6 +48,7 @@ from typing import Any, List, Optional, Sequence
 from app.common.core.domain.ajax_result import AjaxResult
 from app.common.utils.common_util import is_not_blank
 from app.common.utils.string_utils import is_not_blank as string_is_not_blank
+from app.config.database import transactional
 
 #: Java: ``AjaxResult.success("操作成功！", ...)`` 的文案（**带全角感叹号**）。
 SAVE_SUCCESS_MESSAGE = "操作成功！"
@@ -80,6 +81,7 @@ class AbstractCrudService:
     # ---------------------------------------------------------------- 保存
 
     # Java: AjaxResult saveXxx(Xxx x)  —— 新增与修改共用一个入口
+    @transactional
     def save(self, entity: Any) -> AjaxResult:
         """``id`` 有值 -> ``updateById``；否则 -> ``insert``。两种情况的返回体相同。"""
         current_id = getattr(entity, self.id_attribute, None)
@@ -116,6 +118,7 @@ class AbstractCrudService:
     # ---------------------------------------------------------------- 删除
 
     # Java: AjaxResult deleteXxxByIds(String[] ids)
+    @transactional
     def delete_by_ids(self, entity_ids: Sequence[Any], mapper_method: str) -> AjaxResult:
         """``mapper_method`` 是 XML 语句名转成的 snake_case 方法名（如
         ``delete_ods_szdn_section_by_ids``）—— 每个 XML 的语句 id 不同，
