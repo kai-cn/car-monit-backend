@@ -1,0 +1,12 @@
+# 统一换行符：仓库 core.autocrlf=true 会让 Windows 检出成 CRLF，
+# 导致 gofmt -l / CI 与本地结果不一致。
+*.go text eol=lf
+*.mod text eol=lf
+*.sum text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sql text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+Makefile text eol=lf
+Dockerfile text eol=lf
