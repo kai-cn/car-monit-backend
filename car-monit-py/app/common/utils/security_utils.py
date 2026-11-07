@@ -72,8 +72,9 @@ def get_username() -> str:
     """
     try:
         return get_login_user().get_username()
-    except Exception:
-        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from None
+    except Exception as exc:
+        # 保留原始异常链：业务文案不变，但日志里能看到真正原因（P2-6）。
+        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from exc
 
 
 def get_user_id() -> Optional[int]:
@@ -87,8 +88,9 @@ def get_user_id() -> Optional[int]:
             return -1
         login_user = _cast_login_user(user_obj)
         return login_user.user.user_id
-    except Exception:
-        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from None
+    except Exception as exc:
+        # 保留原始异常链：业务文案不变，但日志里能看到真正原因（P2-6）。
+        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from exc
 
 
 def get_user_real_name() -> str:
@@ -99,8 +101,9 @@ def get_user_real_name() -> str:
             return "用户"
         login_user = _cast_login_user(user_obj)
         return login_user.user.nick_name
-    except Exception:
-        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from None
+    except Exception as exc:
+        # 保留原始异常链：业务文案不变，但日志里能看到真正原因（P2-6）。
+        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from exc
 
 
 def get_eps_id() -> int:
@@ -111,8 +114,9 @@ def get_eps_id() -> int:
             return -1
         login_user = _cast_login_user(user_obj)
         return login_user.user.dept_id
-    except Exception:
-        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from None
+    except Exception as exc:
+        # 保留原始异常链：业务文案不变，但日志里能看到真正原因（P2-6）。
+        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from exc
 
 
 def get_eps() -> str:
@@ -123,8 +127,9 @@ def get_eps() -> str:
             return ""
         login_user = _cast_login_user(user_obj)
         return login_user.user.eps_name
-    except Exception:
-        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from None
+    except Exception as exc:
+        # 保留原始异常链：业务文案不变，但日志里能看到真正原因（P2-6）。
+        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from exc
 
 
 def get_tenant_id() -> int:
@@ -135,8 +140,9 @@ def get_tenant_id() -> int:
             return -1
         login_user = _cast_login_user(user_obj)
         return login_user.user.tenant_id
-    except Exception:
-        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from None
+    except Exception as exc:
+        # 保留原始异常链：业务文案不变，但日志里能看到真正原因（P2-6）。
+        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from exc
 
 
 def get_dept_sub_code() -> str:
@@ -147,8 +153,9 @@ def get_dept_sub_code() -> str:
             return "-1"
         login_user = _cast_login_user(user_obj)
         return login_user.user.sub_code
-    except Exception:
-        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from None
+    except Exception as exc:
+        # 保留原始异常链：业务文案不变，但日志里能看到真正原因（P2-6）。
+        raise CustomException("获取用户账户异常", HttpStatus.UNAUTHORIZED) from exc
 
 
 # --------------------------------------------------------------------------- 上下文
@@ -162,8 +169,8 @@ def get_login_user() -> LoginUser:
     """
     try:
         return _cast_login_user(get_authentication().get_principal())
-    except Exception:
-        raise CustomException("获取用户信息异常", HttpStatus.UNAUTHORIZED) from None
+    except Exception as exc:
+        raise CustomException("获取用户信息异常", HttpStatus.UNAUTHORIZED) from exc
 
 
 def get_authentication() -> Optional[Authentication]:

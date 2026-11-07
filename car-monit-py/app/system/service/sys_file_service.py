@@ -509,8 +509,8 @@ class SysFileService:
                 FileUtil.io_copy(s3_object.get_object_content(), response.get_output_stream())
             finally:
                 s3_object.close()
-        except Exception:  # noqa: BLE001 - Java: catch (Exception e) { /* 注释掉日志 */ }
-            pass
+        except Exception:  # noqa: BLE001 - 响应已开始，客户端拿空 body；异常只进日志
+            logger.exception("[文件下载失败] bucket=%s file=%s", bucket, file_name)
 
     # Java: void getFile(String bucket, String fileName, OutputStream os)
     def get_file_to_output_stream(self, bucket: str, file_name: str, output_stream: BinaryIO) -> None:
@@ -521,8 +521,10 @@ class SysFileService:
                 FileUtil.io_copy(s3_object.get_object_content(), output_stream)
             finally:
                 s3_object.close()
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception:  # noqa: BLE001 - 输出流由调用方管理，这里只记录
+            logger.exception(
+                "[文件下载失败] bucket=%s file=%s (output stream)", bucket, file_name
+            )
 
     # Java: void getFileToUrl(String bucket, String fileName, String fileUrl)
     def get_file_to_url(self, bucket: str, file_name: str, file_url: str) -> None:
@@ -537,8 +539,8 @@ class SysFileService:
                         break
                     fos.write(chunk)
             object_content.close()
-        except Exception as exc:  # noqa: BLE001 - Java: log.error(...) 后吞掉
-            logger.error("文件读取异常: %s", exc)
+        except Exception:  # noqa: BLE001 - Java: log.error(...) 后吞掉
+            logger.exception("[文件读取失败] bucket=%s file=%s url=%s", bucket, file_name, file_url)
 
     # Java: S3Object getFileObject(Long sysFileId)
     def get_file_object(self, sys_file_id: Any) -> Optional[S3Object]:
