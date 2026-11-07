@@ -583,4 +583,39 @@ mod tests {
         assert!(name.ends_with("TraceIdFilter"), "{name}");
         assert!(name.chars().count() <= 36, "{name}");
     }
+
+    #[tokio::test]
+    async fn format_contains_java_pattern_elements() {
+        use tracing_subscriber::layer::SubscriberExt;
+
+        let dir = tempfile::tempdir().expect("tempdir");
+        let handle = start_appender(dir.path(), "sys-info", true, 1024, 60).expect("start");
+        let layer = tracing_subscriber::fmt::layer()
+            .event_format(JavaLogFormat {
+                console: false,
+                logger_width: 36,
+            })
+            .with_writer(handle.writer())
+            .with_ansi(false);
+        let subscriber = tracing_subscriber::registry().with(layer);
+        let guard = tracing::subscriber::set_default(subscriber);
+
+        with_trace_id("abc123".to_string(), async {
+            tracing::info!(target: "com.ruoyi.test", "hello {}", 1);
+        })
+        .await;
+
+        drop(guard);
+        drop(handle);
+        let files: Vec<_> = std::fs::read_dir(dir.path())
+            .expect("read dir")
+            .flatten()
+            .map(|entry| entry.path())
+            .collect();
+        let text = std::fs::read_to_string(&files[0]).expect("read log");
+        assert!(text.contains("INFO "), "{text}");
+        assert!(text.contains("[abc123]"), "{text}");
+        assert!(text.contains("com.ruoyi.test:"), "{text}");
+        assert!(text.contains("hello 1"), "{text}");
+    }
 }
