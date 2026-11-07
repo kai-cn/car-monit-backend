@@ -4,7 +4,10 @@
 // 职责: 响应头层面的对等 —— 链路 TraceId、Spring Security 默认安全头、Spring Cors 的头写法。
 // 对应关系: Filter(order=1) + CorsFilter -> 最外层 middleware（401/404/405 也要带上这些头，Java 就是在业务之前 setHeader 的）。
 
-use axum::extract::Request;
+use std::net::SocketAddr;
+use std::time::Instant;
+
+use axum::extract::{ConnectInfo, Request};
 use axum::http::header::{
     HeaderName, HeaderValue, ACCESS_CONTROL_ALLOW_CREDENTIALS, ACCESS_CONTROL_ALLOW_ORIGIN, ALLOW,
     VARY,
@@ -12,10 +15,17 @@ use axum::http::header::{
 use axum::middleware::Next;
 use axum::response::Response;
 
+use crate::common::utils::client_ip;
+use crate::logging;
+
 /// Java: `TraceIdFilter.TRACE_ID_HEADER`（配置项 `monitor.trace-id-header` 的默认值）。
 const TRACE_ID: &str = "x-trace-id";
 /// Java: `CorsConfig` 回显的请求头名。
 const ALLOW_HEADERS: &str = "access-control-allow-headers";
+/// Java: `TraceIdFilter` 的 logger 名（决定 sys-slow appender）。
+const TRACE_FILTER_TARGET: &str = "com.ruoyi.common.core.monitor.TraceIdFilter";
+/// Java: `TraceIdFilter.doFilter` 里的慢请求阈值（硬编码 3000ms）。
+const SLOW_REQUEST_MILLIS: u128 = 3000;
 
 /// Java: `TRACE_ID_PREFIX` 为空串，所以生成的 id 不带任何前缀。
 fn generate_trace_id() -> String {
@@ -38,7 +48,29 @@ pub async fn web_filter(request: Request, next: Next) -> Response {
         (trace_id, headers.contains_key("origin"))
     };
 
-    let mut response = next.run(request).await;
+    let method = request.method().as_str().to_string();
+    let path = request.uri().path().to_string();
+    let ip = client_ip(
+        request.headers(),
+        request
+            .extensions()
+            .get::<ConnectInfo<SocketAddr>>()
+            .map(|info| info.0),
+    );
+    let trace_for_log = trace_id.clone();
+    let started = Instant::now();
+
+    // Java: TraceIdFilter 在 MDC 里放 traceId，所有业务日志都带它。
+    let response = logging::with_trace_id(trace_id.clone(), async move {
+        let response = next.run(request).await;
+        let cost = started.elapsed().as_millis();
+        let status = response.status().as_u16();
+        log_trace_filter(&method, &path, &ip, status, cost, &trace_for_log);
+        response
+    })
+    .await;
+
+    let mut response = response;
     let out = response.headers_mut();
 
     let value = HeaderValue::from_str(&trace_id).unwrap_or_else(|_| HeaderValue::from_static("0"));
@@ -74,6 +106,51 @@ pub async fn web_filter(request: Request, next: Next) -> Response {
         }
     }
     response
+}
+
+/// Java: `TraceIdFilter.logResponse` + `doFilter.finally` 的慢请求告警。
+fn log_trace_filter(method: &str, path: &str, ip: &str, status: u16, cost: u128, trace_id: &str) {
+    if status >= 500 {
+        tracing::error!(
+            target: TRACE_FILTER_TARGET,
+            "[服务器错误响应] Path={}, Status={}, 耗时={}ms, TraceId={}, IP={}",
+            path,
+            status,
+            cost,
+            trace_id,
+            ip
+        );
+    } else if status >= 400 {
+        tracing::warn!(
+            target: TRACE_FILTER_TARGET,
+            "[客户端错误响应] Path={}, Status={}, 耗时={}ms, TraceId={}, IP={}",
+            path,
+            status,
+            cost,
+            trace_id,
+            ip
+        );
+    } else {
+        tracing::info!(
+            target: TRACE_FILTER_TARGET,
+            "[请求完成] Path={}, Status={}, 耗时={}ms, TraceId={}",
+            path,
+            status,
+            cost,
+            trace_id
+        );
+    }
+    if cost >= SLOW_REQUEST_MILLIS {
+        tracing::warn!(
+            target: TRACE_FILTER_TARGET,
+            "[慢请求告警] Path={}, 耗时={}ms, Method={}, IP={}, TraceId={}",
+            path,
+            cost,
+            method,
+            ip,
+            trace_id
+        );
+    }
 }
 
 #[cfg(test)]
