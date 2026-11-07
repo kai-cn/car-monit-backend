@@ -109,7 +109,14 @@ class RedisCache:
 
     # Java: public Collection<String> keys(String pattern)
     def keys(self, pattern: str) -> List[str]:
-        return list(self.client.keys(pattern))
+        """用 ``SCAN`` 取代 ``KEYS``：语义等价，但不会阻塞整个 Redis。
+
+        ``KEYS`` 在百万级 keyspace 上会持有单线程事件循环数百毫秒到数秒，
+        ``/monitor/online``、字典缓存刷新等调用会直接拖垮所有并发请求。
+        ``SCAN`` 是游标增量遍历，代价是极端情况下可能返回重复键，
+        这里用 ``set`` 去重（顺序本来就和 Java 的 ``Set`` 一样不保证）。
+        """
+        return sorted({str(key) for key in self.client.scan_iter(match=pattern, count=1000)})
 
     # ------------------------------------------------------------------ list ops
 

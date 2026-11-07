@@ -92,13 +92,12 @@ class DeadLetterQueueService:
 
     # Java: public long getRetryQueueSize()
     def get_retry_queue_size(self) -> int:
-        keys = self.client.keys(DLQ_RETRY_KEY_PREFIX + "*")
-        return len(keys) if keys else 0
+        # ``KEYS`` -> ``SCAN``：死信队列可能很大，不能阻塞 Redis 主线程。
+        return len({key for key in self.client.scan_iter(match=DLQ_RETRY_KEY_PREFIX + "*", count=1000)})
 
     # Java: public long getDeadLetterQueueSize()
     def get_dead_letter_queue_size(self) -> int:
-        keys = self.client.keys(DLQ_DLQ_KEY_PREFIX + "*")
-        return len(keys) if keys else 0
+        return len({key for key in self.client.scan_iter(match=DLQ_DLQ_KEY_PREFIX + "*", count=1000)})
 
     # ---------------------------------------------------------------- helpers
 
@@ -109,7 +108,7 @@ class DeadLetterQueueService:
         顺序取决于 Redis ``KEYS`` 的返回顺序（无序），这里保持同样的"无序"语义。
         """
         messages: List[CdcMessage] = []
-        for key in self.client.keys(prefix + "*"):
+        for key in self.client.scan_iter(match=prefix + "*", count=1000):
             value = self.client.get(key)
             if value is None:
                 continue
