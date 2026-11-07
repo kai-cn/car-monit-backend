@@ -43,6 +43,11 @@ API_ROUTES = (
 )
 BUSINESS_ROOTS = ("/manager", "/base", "/flow")
 FRAMEWORK_ROOTS = ("/system", "/monitor", "/tool", "/oss", "/common", "/v3", "/swagger")
+# 顶层单段路由不在任何 root 下，但都是登录后立刻要用的只读接口，归进框架档一起比：
+#   /getInfo /getRouters —— 前端取当前用户信息与菜单
+#   /downTemplate/:x     —— 下载导入模板（ExcelUtil 落盘型，附件流由 compare_export_all 逐格比）
+#   /test/**             —— 脚手架演示表，Java 侧同样注册了（只读部分比一下不要钱）
+FRAMEWORK_EXTRA = ("/getInfo", "/getRouters", "/downTemplate", "/test")
 
 
 def in_tier(path, tier):
@@ -51,7 +56,7 @@ def in_tier(path, tier):
     if tier == "business":
         return path.startswith(BUSINESS_ROOTS) and not any(r.match(path) for r in API_ROUTES)
     if tier == "framework":
-        return path.startswith(FRAMEWORK_ROOTS)
+        return path.startswith(FRAMEWORK_ROOTS) or path.startswith(FRAMEWORK_EXTRA)
     return True
 
 

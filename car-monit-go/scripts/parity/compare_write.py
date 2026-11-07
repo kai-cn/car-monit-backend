@@ -120,6 +120,39 @@ RESOURCES = [
      "body": {"flowOid": "@MARK@_fo_@SALT@", "flowType": "1", "nodeOrder": 1,
               "nodeKey": "@MARK@_nk_@SALT@", "nodeName": "@MARK@_nn_@SALT@",
               "configType": "1", "configId": "1", "configName": "配置", "returnNum": 0}},
+    # 覆盖率盘点（check_coverage.py）里剩下的纯 CRUD 资源族，都是 POST/PUT/DELETE base
+    # + GET base/:id 齐全的那批：新增一律用标记值定位，删除只删自己建行。
+    {"base": "/manager/exceptrecord", "pk": "id", "table": "car_except_record", "marker": "carNo"},
+    {"base": "/manager/gantrycar", "pk": "id", "table": "gantry_car"},
+    {"base": "/manager/gantrytrade", "pk": "id", "table": "gantry_trade_info"},
+    {"base": "/manager/suspicious", "pk": "id", "table": "car_suspicious",
+     "actions": [("PUT", "/check", {"isExcept": "0"})]},
+    {"base": "/manager/aduitfree", "pk": "id", "table": "car_aduit_free"},
+    # 这三张 flow 表在共享库里是空的（"无样本行"），必须自带 body 才跑得起来。
+    {"base": "/flow/applyinfo", "pk": "id", "table": "flow_apply_info", "marker": "billOid",
+     "body": {"billOid": "@MARK@_bo_@SALT@", "bussType": "1", "flowRuid": "@MARK@_fr_@SALT@",
+              "msgTitle": "@MARK@_mt_@SALT@", "msgContext": "内容", "msgType": "1",
+              "msgUrl": "http://parity", "applyName": "@MARK@_an_@SALT@",
+              "currentOid": "1", "flowStatus": "1"}},
+    {"base": "/flow/currentnode", "pk": "id", "table": "flow_current_node", "marker": "nodeKey",
+     "body": {"flowOid": "1", "currentOid": "1", "nodeOrder": 1,
+              "nodeKey": "@MARK@_nk_@SALT@", "nodeName": "@MARK@_nn_@SALT@",
+              "configType": "1", "configId": "1", "configName": "配置",
+              "billOid": "@MARK@_bo_@SALT@"}},
+    {"base": "/flow/messagedispose", "pk": "id", "table": "flow_message_dispose",
+     "marker": "bussName",
+     "body": {"mid": "@MARK@_mid_@SALT@", "bussId": "@MARK@_bi_@SALT@",
+              "bussName": "@MARK@_bn_@SALT@", "msgStatus": "1", "disposeOther": "0"}},
+    # 这三张 dwd 表的主键是 agent_pk（Java 的 DeleteMapping 是 /{agentPks}），
+    # locate() 会把 pk 蛇化成列名，所以 pk 写 JSON 键 agentPk。
+    {"base": "/base/fwqjcxx", "pk": "agentPk", "table": "dwd_lczt_fwqjcxx"},
+    {"base": "/base/sfsjcxx", "pk": "agentPk", "table": "dwd_lczt_sfsjcxx"},
+    {"base": "/base/sfzjcxx", "pk": "agentPk", "table": "dwd_lczt_sfzjcxx"},
+    # 共享库里 sys_upgrade_info 这张表不存在（Java 侧 §9 的缺表族），照样跑一遍：
+    # 两端的 POST/PUT/DELETE 都该失败，失败形态属"同为 500 的错误文本"一族。
+    # 表不在 ⇒ 取不到样本行，body 只能自带（内容无所谓，重点是两端都要失败在同一处）。
+    {"base": "/system/upgradeInfo", "pk": "id", "table": "sys_upgrade_info", "marker": "version",
+     "body": {"version": "@MARK@_ver_@SALT@", "content": "内容", "status": "0"}},
 ]
 
 # 只做导入对拍、没有写生命周期的资源落在这些表里，--clean 时一并扫掉。
@@ -133,8 +166,16 @@ def snake(name):
 
 
 def num(x):
+    """请求体里的数字型取值。
+
+    19 位雪花 id 只能当字符串传：写成 JSON 数字的话，Go 侧 map[string]any 会按 float64
+    解码，精度一丢就查不到那行（Java 的 String 字段拿的是原始 token，不受影响）。
+    真实浏览器同样存不下 19 位数字，前端只会传字符串，所以这里保守到 15 位以内才转 int。
+    """
     s = str(x)
-    return int(s) if s.lstrip("-").isdigit() else s
+    if s.lstrip("-").isdigit() and len(s.lstrip("-")) <= 15:
+        return int(s)
+    return s
 
 
 def fill_tpl(value, salt, digits):
@@ -279,6 +320,19 @@ def run_resource(tk_j, tk_g, res, log):
             log.append({"res": base, "step": "PUT", "diff": d[:8],
                         "java": json.dumps(pj, ensure_ascii=False)[:260],
                         "go": json.dumps(pg, ensure_ascii=False)[:260]})
+
+    # 业务动作端点（如可疑车辆核实）：只在自己刚建的那一行上做，做完仍由 DELETE 收干净。
+    for method, sub, extra in res.get("actions", ()):
+        aj, ag = dict(extra), dict(extra)
+        aj[pk], ag[pk] = num(idj), num(idg)
+        rj = pp.req(pp.JAVA, base + sub, tk_j, method, aj)
+        rg = pp.req(pp.GO, base + sub, tk_g, method, ag)
+        tag = "%s %s%s" % (method, base, sub)
+        d = pp.diff(norm(rj), norm(rg), tag)
+        if d:
+            log.append({"res": base, "step": tag, "diff": d[:8],
+                        "java": json.dumps(rj, ensure_ascii=False)[:260],
+                        "go": json.dumps(rg, ensure_ascii=False)[:260]})
 
     if res.get("delete", True):
         dj = pp.req(pp.JAVA, base + "/%s" % idj, tk_j, "DELETE")

@@ -203,7 +203,8 @@ func (h *handler) tableSave(c *gin.Context, spec *tableSpec) {
 		return
 	}
 
-	id := bodyString(body, pkKey)
+	id, hasID := bodyStringValue(body, pkKey)
+	result := any(id)
 	if isNotBlank(id) {
 		// JAVA 对照: updateFill 只对 BasePlusEntity 生效（其他表没有 update_time/update_by 列）。
 		if spec.audit {
@@ -223,12 +224,19 @@ func (h *handler) tableSave(c *gin.Context, spec *tableSpec) {
 			// JAVA 对照: @TableId(type = IdType.ASSIGN_UUID)
 			id = newUUID()
 			cols[spec.pk] = id
+			result = id
 		case spec.audit:
 			// JAVA 对照: BasePlusEntity.id + 全局 id-type: ASSIGN_ID（19 位雪花号字符串）
 			id = nextSnowflakeID()
 			cols[spec.pk] = id
+			result = id
 		default:
 			delete(cols, spec.pk)
+			if !hasID {
+				// 请求体里根本没有主键这个键：Java 实体的主键仍是 null，
+				// AjaxResult.success("操作成功！", null) 不写 data 键。
+				result = nil
+			}
 		}
 		if spec.audit {
 			h.insertAudit(c, cols)
@@ -241,7 +249,7 @@ func (h *handler) tableSave(c *gin.Context, spec *tableSpec) {
 	if spec.afterChange != nil {
 		spec.afterChange(h, c)
 	}
-	web.JSON(c, web.SuccessFull("操作成功！", id))
+	web.JSON(c, web.SuccessFull("操作成功！", result))
 }
 
 // tableDelete 对应 DELETE /{ids} —— XML 里是逻辑删（update set del_flag='1'）或物理删。

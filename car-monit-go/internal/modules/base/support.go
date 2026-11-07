@@ -307,6 +307,17 @@ func jsonBody(c *gin.Context) (map[string]any, error) {
 }
 
 // bodyString 读取请求体里的字符串字段（null/缺失 -> ""）。
+// bodyStringValue 取请求体里某个键的字符串值，并区分「键不存在/是 null」与「键存在但值是空串」。
+// JAVA 对照: @RequestBody 绑定时缺键 ⇒ 实体字段是 null，显式给 "" ⇒ 字段是空串；
+// 这个差别会一路带到响应里（AjaxResult.success(msg, data) 只在 data 非 null 时写 data 键）。
+func bodyStringValue(body map[string]any, key string) (string, bool) {
+	v, ok := body[key]
+	if !ok || v == nil {
+		return "", false
+	}
+	return bodyString(body, key), true
+}
+
 func bodyString(body map[string]any, key string) string {
 	v, ok := body[key]
 	if !ok || v == nil {

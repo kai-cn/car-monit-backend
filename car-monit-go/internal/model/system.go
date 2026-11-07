@@ -147,11 +147,14 @@ func (m SysMenu) MarshalJSON() ([]byte, error) {
 }
 
 // Meta 对应 SysMenuServiceImpl.buildMenus 中的 meta 结构。
+//
+// JAVA 对照: MetaVo 在这里只走三参构造（title/icon/noCache），link 从不赋值，
+// 但它是实例字段 ⇒ Jackson 恒输出 "link": null，所以这里不能用 omitempty 把它省掉。
 type Meta struct {
-	Title   string `json:"title"`
-	Icon    string `json:"icon"`
-	NoCache bool   `json:"noCache"`
-	Link    string `json:"link,omitempty"`
+	Title   string  `json:"title"`
+	Icon    string  `json:"icon"`
+	NoCache bool    `json:"noCache"`
+	Link    *string `json:"link"`
 }
 
 // RouterVo 对应 com/ruoyi/system/domain/vo/RouterVo.java。
