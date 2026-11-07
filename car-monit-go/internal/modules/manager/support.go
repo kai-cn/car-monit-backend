@@ -19,6 +19,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
 	"car-monit-go/internal/app"
 	"car-monit-go/internal/auth"
@@ -370,7 +371,12 @@ func pickColumns(body map[string]any, allowed map[string]string) map[string]any 
 
 // insertRow 执行 INSERT（对应 BaseMapper.insert），返回主键。
 func (h *handler) insertRow(ctx context.Context, table string, cols map[string]any) error {
-	return h.app.DB.WithContext(ctx).Table(table).Create(cols).Error
+	return insertRowTx(h.app.DB.WithContext(ctx), table, cols)
+}
+
+// insertRowTx 是 insertRow 的事务版本：调用方已在 db.Transaction 内时使用，保证同一事务。
+func insertRowTx(tx *gorm.DB, table string, cols map[string]any) error {
+	return tx.Table(table).Create(cols).Error
 }
 
 // mpNonNullCols 对应 MyBatis-Plus 的默认字段策略 NOT_NULL：null 属性不进 INSERT/UPDATE 的列清单，
@@ -394,11 +400,16 @@ func mpNonNullCols(cols map[string]any) map[string]any {
 //
 // JAVA 对照: 实体上的 @TableLogic 会让 MP 在 updateById 时追加 del_flag = '0'。
 func (h *handler) updateRow(ctx context.Context, table, id string, cols map[string]any) (int64, error) {
+	return updateRowTx(h.app.DB.WithContext(ctx), table, id, cols)
+}
+
+// updateRowTx 是 updateRow 的事务版本。
+func updateRowTx(tx *gorm.DB, table, id string, cols map[string]any) (int64, error) {
 	if len(cols) == 0 {
 		return 0, nil
 	}
-	tx := h.app.DB.WithContext(ctx).Table(table).Where("id = ? AND del_flag = '0'", id).Updates(cols)
-	return tx.RowsAffected, tx.Error
+	res := tx.Table(table).Where("id = ? AND del_flag = '0'", id).Updates(cols)
+	return res.RowsAffected, res.Error
 }
 
 // softDeleteByIDs 对应 mapper 里的 deleteXxxByIds：update ... set del_flag = '1' where id in (...)。
