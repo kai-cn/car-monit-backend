@@ -22,6 +22,8 @@ import (
 	"car-monit-go/internal/config"
 	"car-monit-go/internal/database"
 	"car-monit-go/internal/logx"
+	"car-monit-go/internal/middleware"
+	"car-monit-go/internal/modules/quartz"
 	"car-monit-go/internal/router"
 
 	// 业务模块通过 init() 向 router 注册路由。
@@ -30,7 +32,6 @@ import (
 	_ "car-monit-go/internal/modules/generator"
 	_ "car-monit-go/internal/modules/manager"
 	_ "car-monit-go/internal/modules/ops"
-	_ "car-monit-go/internal/modules/quartz"
 	_ "car-monit-go/internal/modules/system"
 	_ "car-monit-go/internal/modules/systemaux"
 )
@@ -74,6 +75,10 @@ func main() {
 		Addr:              addr,
 		Handler:           engine,
 		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       60 * time.Second,
+		// 导出类接口（xlsx 生成 + 附件流）可能耗时较长，写超时放宽到 5 分钟。
+		WriteTimeout: 5 * time.Minute,
+		IdleTimeout:  120 * time.Second,
 	}
 
 	go func() {
@@ -89,11 +94,20 @@ func main() {
 	<-quit
 
 	logger.Info("收到退出信号，开始优雅停机")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
+	// 先停 HTTP 入口，不再接收新请求。
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Error("优雅停机失败", "err", err)
 	}
+	// 再收敛定时任务（限 15s），避免任务写到一半被进程退出打断。
+	schedCtx, schedCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	quartz.ShutdownShared(schedCtx)
+	schedCancel()
+	// 最后排空操作日志队列（限 5s）。
+	logCtx, logCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	middleware.StopOperLog(logCtx)
+	logCancel()
 	logger.Info("服务已退出")
 }
 

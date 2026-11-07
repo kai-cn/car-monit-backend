@@ -130,9 +130,10 @@ func (s *Scheduler) Start(ctx context.Context) error {
 	return nil
 }
 
-// Stop 停止调度器（对应 scheduler.shutdown()）。
-// DIFF: main.go 不属于本模块，优雅停机时不会调用 Stop；进程退出由操作系统回收。
-func (s *Scheduler) Stop() {
+// Stop 停止调度器并等待在途任务收敛（对应 scheduler.shutdown(true)）。
+// DIFF: 原实现只取消定时器、不等在途任务；现在由 main 在优雅停机时调用并限时等待，
+// 避免任务写到一半被进程退出打断。
+func (s *Scheduler) Stop(ctx context.Context) {
 	s.stop()
 	s.mu.Lock()
 	for key, e := range s.entries {
@@ -140,6 +141,24 @@ func (s *Scheduler) Stop() {
 		delete(s.entries, key)
 	}
 	s.mu.Unlock()
+
+	done := make(chan struct{})
+	go func() {
+		s.wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-ctx.Done():
+		s.log.Warn("等待在途定时任务超时，强制退出")
+	}
+}
+
+// ShutdownShared 供 main 在优雅停机时调用；调度器未初始化时为 no-op。
+func ShutdownShared(ctx context.Context) {
+	if schedInst != nil {
+		schedInst.Stop(ctx)
+	}
 }
 
 // Clear 对应 scheduler.clear()：移除全部任务。
