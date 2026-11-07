@@ -700,7 +700,7 @@ Java 侧 `404` 错误页的 `path` 保留原始尾斜杠，因此削完仍路由
 已知残余偏差：`DELETE /oss/object/{b}/{o}`（不带尾斜杠）Java 回「方法不支持」—— Java 的映射声明本身就带
 尾斜杠，归一之后两种写法只能对齐其中一个。
 
-### 10.9 A 段的上游被打断：`car-monit-api-rust`(9911) 连不上库（2026-11-06，环境阻塞，非代码差异）
+### 10.9 A 段的上游被打断：`car-monit-api-rust`(9911) 连不上库（2026-11-06 发现，2026-11-07 已解除）
 
 复跑 GET 全量时 KNOWN 从 3 条变成 9 条（FAIL 始终是 0），根因不在本仓库：
 Rust backend 的 `vehicleMonitor.baseUrl` 指向 `car-monit-api-rust`（9911），而那个进程从
@@ -764,14 +764,25 @@ Rust 侧上游 500 时的包装文案 `HTTP 500 ErrorContent=<响应体>` 是 Fo
 3 → 9 这种变化在控制台里看不出是哪几条、为什么，容易把环境事故当成「已容忍的差异」翻过去。
 现在 `compare.py` 会连同 FAIL/WARN 一起打印 `--- KNOWN (n) ---` 和每条的第一手差异。
 
+**2026-11-07 12:26 复核：账号已解锁，A 段回到基线。** 9911 的锁报错最后一条是
+2026-11-06T08:18:18Z，之后没有再出现；`GET http://127.0.0.1:9911/base/feeGantry/list` 现在回
+`200 + total=200`，而且**没有任何重启**（印证了「池子自己会恢复」的判断）。同口径复跑：
+
+| 复跑项 | 11-06（锁住时） | 11-07（解锁后） | 基线（§10.1） |
+|---|---|---|---|
+| `/base` 切片（70 条 GET） | 59 OK / 1 WARN / 0 FAIL / 8 KNOWN | **65 OK / 1 WARN / 0 FAIL / 2 KNOWN / 2 SKIP** | 65 / 1 / 0 / 2 / 2 |
+| 链路矩阵（24 条） | 12 OK / 0 WARN / 12 FAIL | **20 OK / 4 WARN / 0 FAIL** | 20 / 4 / 0 |
+| GET 全量（297 条） | 274 OK / 11 WARN / 0 FAIL / 9 KNOWN | **280 OK / 10 WARN / 3 KNOWN / 3 SKIP**（另 1 条 FAIL 见下） | 280 / 11 / 0 / 3 / 3 |
+
+全量里那条 `FAIL` 是 `/system/dict/data/type/{dictType}` 的 `data[i].params` 多键 ——
+§9.1 记录过的缓存成型顺序假象（db15 里那批 dict 缓存是带 `params` 的形状写的），
+不是代码差异：单独复跑该端点 2 条全 OK（`build/parity-1107.md`）。
+A 段到此**恢复为「已对齐」**，11-06 的「待复核」结论作废。
+
 ## 11. 结论
 
 - GET 全量 297 条（真实 api 上游 + 双端分库 + **修正后的 compare.py**，2026-11-05 凌晨）：
   **OK 280 / WARN 11 / FAIL 0 / KNOWN 3 / SKIP 3**。
-- 2026-11-06 复跑同一条命令：**OK 274 / WARN 11 / FAIL 0 / KNOWN 9 / SKIP 3**
-  （`build/parity-1106c.md`）。少的 6 条 OK 全部是打到 9911 的透传，成因为上游 api 的
-  GaussDB 账号被锁（§10.9），**双端代码没有任何新差异**；这一轮同时把 `/monitor/online/list`
-  的口径改成按 `rows.*` 免比值（§10.7），并把 KNOWN 明细打印出来，环境事故不再只体现在计数上。
   11 条 WARN 分成三类：
   1. 5 条 `MSG-DIFF`（`sys_upgrade_info` 缺表 ×4、`/base/fitting/list` 的 Java mapper 反射异常）——
      两端同为 500，只差包装文案；
@@ -782,10 +793,18 @@ Rust 侧上游 500 时的包装文案 `HTTP 500 ErrorContent=<响应体>` 是 Fo
      跨重启会变（实测同一进程内 4 次完全一致，两次重启之间从 `sub, crud, tree` 变成 `tree, crud, sub`）；
      Rust 只能对齐其中一次，记 WARN。`data.info` 是 Redis INFO 的键序。
   3. 1 条 `/monitor/online/list` 的行数/total —— 两端各自的会话库（db0/db15）天然不同。
+- 2026-11-06 复跑同一条命令：**OK 274 / WARN 11 / FAIL 0 / KNOWN 9 / SKIP 3**（`build/parity-1106c.md`）。
+  少的 6 条 OK 全部是打到 9911 的透传，成因为上游 api 的 GaussDB 账号被锁（§10.9），
+  **双端代码没有任何新差异**；这一轮同时把 `/monitor/online/list` 的口径改成按 `rows.*` 免比值（§10.7），
+  并把 KNOWN 明细打印出来，环境事故不再只体现在计数上。
+- 2026-11-07 上游解锁后复跑：**OK 280 / WARN 10 / FAIL 1 / KNOWN 3 / SKIP 3**（`build/parity-1107.md`），
+  与上一行的基线一致。那条 FAIL 是 `/system/dict/data/type/{dictType}` 的 `data[i].params` 多键，
+  §9.1 记录过的缓存成型顺序假象 —— 单独复跑该端点 2 条全 OK。
+  10 条 WARN 比基线少 1 条，少的是 `/monitor/online/list`：它的 `LEN-WARN` 只在两端会话条数不等时出现，
+  这次两边条数恰好相同。
 - A 段 backend→api：链路矩阵 **20 OK / 4 WARN / 0 FAIL**，`/base` 透传 **65 OK / 1 WARN / 0 FAIL / 2 KNOWN / 2 SKIP**（§10.1）。
-  2026-11-06 复跑为 **12 OK / 0 WARN / 12 FAIL** 与 **59 OK / 1 WARN / 0 FAIL / 8 KNOWN / 2 SKIP**：
-  链路矩阵多的 12 条 FAIL 与透传多的 6 条 KNOWN 都落在需要 9911 的链路上，是 9911 连不上 GaussDB
-  造成的，**这一段本轮记为「待复核」，不能算「已对齐」**（§10.9）。
+  2026-11-06 曾因 9911 连不上 GaussDB 退化成 12 OK / 12 FAIL 与 59 OK / 8 KNOWN，
+  2026-11-07 账号解锁后按同一命令复跑，**两项都回到上表的基线**（§10.9）。
 - B 段业务（`/manager`、`/flow` 129 条 GET）：**129 OK / 0 WARN / 0 FAIL**（§10.2）。
 - C 段框架（`/system`、`/monitor`、`/tool`、`/common`、`/flow` 121 条 GET）：热缓存后 109 OK / 6 WARN / 0 FAIL；
   修掉四类框架层差异后，`/system/user` 家族与 `/monitor/online`、`/monitor/cache` 的值差异也一并收口（§10.4、§10.7）。
