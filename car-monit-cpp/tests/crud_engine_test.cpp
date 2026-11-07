@@ -2,6 +2,7 @@
 // 这一层是 base/manager/flow 三个区域 400+ 个同构接口的共同实现，
 // 它错了就是成片错，所以每条语义都单独断言。
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -412,6 +413,26 @@ static void testParamWireLiteral() {
     // 非法数值伪装：按文本 hex 编码，不会变成 SQL 结构
     CK_EQ(cm::db::paramWireLiteral(integer("1; drop table x")),
           std::string("_utf8mb4 0x313b2064726f70207461626c652078"));
+
+    // bind(double) 必须输出"最短且可往返"的十进制：固定 %.15g 会抹掉第 16/17 位有效数字
+    {
+        cm::db::Params ps;
+        cm::db::bind(ps, 0.1);
+        CK_EQ(cm::db::paramWireLiteral(ps[0]), std::string("0.1"));  // 常见值不产生 0.100000… 噪声
+        ps.clear();
+        cm::db::bind(ps, 116.5);
+        CK_EQ(cm::db::paramWireLiteral(ps[0]), std::string("116.5"));
+        // 这个值 %.15g 无法往返，必须用 17 位
+        const double hi = 0.123456789012345678;
+        ps.clear();
+        cm::db::bind(ps, hi);
+        CK(std::strtod(cm::db::paramWireLiteral(ps[0]).c_str(), nullptr) == hi);
+        // 19 位整数附近的 double 也必须无损往返
+        const double big = 9007199254740993.0;  // 2^53 + 1，double 实际只能表示 2^53
+        ps.clear();
+        cm::db::bind(ps, big);
+        CK(std::strtod(cm::db::paramWireLiteral(ps[0]).c_str(), nullptr) == big);
+    }
 }
 
 void run_crud_engine_tests() {

@@ -8,6 +8,7 @@
 //   * Int / Double 保留调用方已有的规范十进制文本，语义等价于原先未加引号的字面量；
 //   * Null 与空串严格区分（对应 MyBatis 的 null 与 ''）。
 #include <cstdio>
+#include <cstdlib>
 #include <optional>
 #include <string>
 #include <vector>
@@ -118,7 +119,13 @@ inline std::string bind(Params& p, double v) {
     Param x;
     x.kind = ParamKind::Double;
     char buf[64];
-    std::snprintf(buf, sizeof(buf), "%.15g", v);
+    // double 需要 17 位有效数字才能无损往返；固定 "%.15g" 会把第 16/17 位抹掉。
+    // 这里按"最短且可 strtod 往返"输出：常见值仍是 116.5 / 0.1，高精度值不再被无条件截断。
+    int prec = 15;
+    for (;; ++prec) {
+        std::snprintf(buf, sizeof(buf), "%.*g", prec, v);
+        if (prec >= 17 || std::strtod(buf, nullptr) == v) break;
+    }
     x.text = buf;
     p.push_back(std::move(x));
     return "?";
