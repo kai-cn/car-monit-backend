@@ -27,6 +27,9 @@ _py.log
 .env
 .env.local
 
+# 双端校验工装缓存的实时 JWT，不入库
+evidence/_par_tokens.json
+
 # IDE
 .idea/
 .vscode/

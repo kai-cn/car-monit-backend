@@ -4746,3 +4746,90 @@ Java 里 `JwtException` 逃出过滤器后，容器做 **ERROR 派发到 `/error
 11. **§28.3 请求级事务**：是否要把“一次请求一个事务”补回来？当前每个 Mapper 方法自己提交，
     `insertRole` / `updateRole` / `authDataScope` / `deleteRoleByIds` 都不具备原子性。
     补的话建议与 `LogAspect` 迁移一起做（两者都在切面层，改动面重合）。
+
+## 45. 双端一致性校验轮的四处修复（2026-11-05）`[需注意]`
+
+接线与逐档数据见 `evidence/_par_report.md`；工装是 `evidence/_par_*.py`。
+复验口径：交付接线 Java(:9788/db0)↔apiJava(:9902) / Python(:9789/db7)↔apiPy(:9901)，
+钉版把 Python 的 `vehicleMonitor.baseUrl` 也指到 9902 用来归因。
+
+### 45.1 Forest 不看上游状态码（已修）
+
+- **现象**：`/base/feerecords/{bigId}` 上游 500 时，Java 给 `{"code":500,"msg":"HTTP 500 ErrorContent={…}"}`，
+  Python 给 `{"code":200,"msg":"操作成功","data":{…错误体…}}`。
+- **Java 依据**：Forest 非 2xx 抛 `HttpProtocolException`，文案就是 `HTTP <status> ErrorContent=<响应体>`；
+  `GlobalExceptionHandler` 再 `AjaxResult.error(e.getMessage())`。原先模块注释里"本项目调用点都不检查状态码，
+  所以这里也只在 JSON 解析失败时抛错"的前提是错的 —— 只有 `feestationexit` 检查的是**响应体内的** `code`。
+- **改动**：`app/base/service/forest/forest_client.py` 新增 `_parse_response()`，GET/POST 共用；
+  同时把**空响应体**返回 `None`（Java 侧反序列化成 `null`，`/base/snapshotflow/earliest-time` 的 Java 形态
+  就是 200 + 0 字节，Python 原来会抛"响应不是合法 JSON"）。
+- **复验**：第 1 档 14 一致 → **19 一致**（20 条里只剩 Java 自身的日期反序列化缺陷）；
+  钉版从 11 一致 → **19 一致**。
+
+### 45.2 hutool `JSONObject` 透传不丢 null（已修）
+
+- **现象**：`/base/feestationexit/list` 的 `rows[0]`，Java 没有 `cid`/`enaxlecount` 等 null 键，Python 有。
+- **判据**（不是全局 null 策略）：`/manager/carinfo/list` 两端都照发 111 个 null 键，
+  而 `/base/feestationexit/list` Java 一个都没有 —— 差别只在返回 `JSONObject` 的那个客户端。
+- **改动**：`app/base/service/forest/http_ods_lwzxsfsj_fee_station_exit01_service.py` 增加
+  `_drop_null_members()`，递归删掉 null 成员后再交给控制器（列表与详情两个方法都走）。
+- **复验**：该档两条 MISSING 消失。
+
+### 45.3 `AjaxResult.success(String)` 重载落错键（已修）
+
+- **现象**：`/system/config/configKey/{configKey}` Java 是 `{"msg":"skin-blue","code":200}`（没有 `data`），
+  Python 是 `{"msg":"操作成功","code":200,"data":"skin-blue"}`。Go 端早已复刻成 `msg`。
+- **Java 依据**：`selectConfigByKey` 返回 `String`，静态分派命中 `success(String msg)`；
+  三参构造里 `data` 为 null 时**不放** `data` 键。
+- **改动**：`app/api/system/sys_config_controller.py` 改用 `AjaxResult.success_message(...)`，
+  同步修正 4 条断言了错误形态的用例（`tests/test_sys_config_controller.py`）。
+
+### 45.4 导出层的四个渲染规则（已修）+ 金额列的字段类型（已修）
+
+模板导出（EasyPOI 型）Java 侧等价于 `String.valueOf(getter())`，Python 原来把原生
+`datetime` / `Decimal` / `float` 直接交给 openpyxl，于是：
+
+| 规则 | Java 形态 | 改动 |
+|---|---|---|
+| `java.util.Date`（Python 侧 `date`） | `Thu Aug 21 00:00:00 CST 2025` | `template_export._cell_value` 用 `java_date_to_string` |
+| `java.sql.Timestamp`（Python 侧 `datetime`） | `2026-02-03 16:19:19.572`；无小数是 `.0` | `_timestamp_fraction`：9 位定长后去尾零、至少 1 位 |
+| `BigDecimal` | `225.30` / `16075.00`（标度可见） | `format(value, "f")` 保标度 |
+| 文本超 32767 字符 | POI 抛错被 `addCell` 吞 → "有样式无值"空格 | `_cell_value` / `_set_string` 置空（`MAX_CELL_TEXT_LENGTH`） |
+| 模板引用了实体上没有的属性 | 空格子 | `_resolve` 返回 `None` 时不写值（原已正确） |
+
+金额列的标度**在模型层就丢了**：`car_info` 的五列金额与 `buss_test.amount` 在 Java 是
+`BigDecimal`、库里是 `decimal(19,2)`，Python 却标成 `Optional[float]` ⇒ `16075.00` 塌成
+`16075.0`。已改成 `Optional[Decimal]`（`app/manager/domain/car_info.py`、`buss_test.py`）。
+
+**复验**：导出 58 条 35 一致 → **46 一致**。`/manager/{carinfo,busstest,confimfree,exceptrecord,aduitfree,
+gantrycar,gantrytrade}/export`、`/base/{geometry,snapshotflow,feerecords}/export`、`/manager/querylog/export`
+全部逐格 0 差异。
+
+### 45.5 三处"写入器表示差"：不是逻辑差，改不动也不该硬改
+
+| 差异 | 证据 | 结论 |
+|---|---|---|
+| ExcelUtil 数值格：Java `<v>1.0</v>`，Python 文件里是 `<v>1</v>` | POI 只有 `setCellValue(double)`，整数被加宽；openpyxl 落盘按最短形式，实测 `ws['A1']=1.0` 存进去读回是 `int 1` | 数值两端相等、Excel 显示也相同（General）。要复刻 `1.0` 只能把格子写成文本，那会把**单元格类型**弄错（Java 是 `n`），是更假的"一致"。留在 FORMAT 桶里 |
+| 审计堆栈：Java `\r\n`，Python `\n\n` | 实测 openpyxl 写入 `'line1\r\nline2'` 读回 `'line1\n\nline2'`（CR 被规范化）；库里的文本两端同源 | 同上，`/monitor/jobLog/export` 的 85 格全在这一类 |
+| JSON 金额标度：Java `225.30`，Python `225.3` | pydantic `model_dump(mode="json")` 把 `Decimal` 转成 `float`（`to_jsonable` 注释也这么写），orjson 拿到的已是 float | 数值相等，字面不同。真要复刻需在 ORJSON 层用 `orjson.Fragment(str(Decimal))` 注入裸数字 —— 那是响应层的设计变更，影响**所有** decimal 列，需单独一轮 |
+
+### 45.6 本轮顺带修掉的两个既有用例抖动（缺陷非本轮引入）
+
+1. `tests/integration/test_real_backend.py::…test_total_equals_the_row_count[/system/user/list]`：
+   基准 SQL 是 `SELECT COUNT(*) FROM sys_user WHERE del_flag='0'`，而
+   `SysUserController#list` 无条件 `user.setUserType("1")`（注释就是"查询本单位的机构用户"），
+   SQL 里体现为 `AND u.user_type = '1'`。库里只要存在非机构用户的未删除行，两边就对不上 ——
+   本轮期间别的写面对拍会话留下了 `PARITY_J`（`user_type` 为空串，工号还在 `990160`→`990172` 之间变动），
+   该用例就报 7 vs 8；而**两端 HTTP 实测始终同为 7、互相一致** —— 所以是用例基准条件不全，不是双端差异。
+   已把基准补成 `… WHERE del_flag='0' AND user_type='1'`；其余 `EXACT_TOTALS` 条目逐个核对过
+   控制器（`post/role/config/dict/data/notice/file`、`base/{section,toll,gantry,org}` 的 list
+   都没有这类无条件 `set…()`，那几行 `setTenantId` 在 Java 里本来就是注释掉的），只有这一条需要改。
+   （`PARITY_J` / `PARITY_G` 是别的会话留下的行，本轮未删。）
+2. `tests/test_common_utils.py::TestDateUtils::test_get_timestamp_new2_is_two_days_earlier`：
+   依赖 `get_timestamp()` 与 `get_timestamp_new2()` 两次 `datetime.now()` 落在**同一毫秒**：
+   各自截到毫秒后，一旦跨毫秒边界，差值就是 `1天23:59:59.999xxx`，`delta.days` 掉到 1。
+   整套并发跑时偶发失败，单跑必过。已改成按秒比较
+   `1.99 < delta.total_seconds() / 86400 <= 2`。
+
+稳定性复验：这两条所在的两组用例连跑 5 轮，每轮 27 项 0 失败；整套 `pytest`
+（3646 项，`--junit-xml` 计数）`failures=0 errors=0 skipped=0`，约 41s。
