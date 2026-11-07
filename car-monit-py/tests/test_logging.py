@@ -95,6 +95,33 @@ class TestLogCapacity:
             assert handler.backupCount == settings.logging.file_backup_count
             assert handler.max_total_bytes == settings.logging.file_max_total_bytes
 
+    def test_rollover_prune_never_deletes_active_log_files(self, tmp_path) -> None:
+        """目录预算清理必须保护四个活动文件（P1-9 回归）。"""
+        import logging.handlers
+
+        from app.logging_config import _ACTIVE_LOG_FILES, _CappedRotatingFileHandler
+
+        for name in _ACTIVE_LOG_FILES:
+            (tmp_path / name).write_bytes(b"x" * 100)
+        old_rotated = tmp_path / "sys-info.log.20260101"
+        old_rotated.write_bytes(b"x" * 100)
+
+        handler = _CappedRotatingFileHandler(
+            filename=tmp_path / "sys-info.log",
+            maxBytes=1,
+            backupCount=10,
+            max_total_bytes=100,
+            encoding="utf-8",
+        )
+        try:
+            handler.doRollover()
+        finally:
+            handler.close()
+
+        for name in _ACTIVE_LOG_FILES:
+            assert (tmp_path / name).exists()
+        assert not old_rotated.exists()
+
     def test_prune_drops_oldest_files_until_within_budget(self, tmp_path) -> None:
         import os
 

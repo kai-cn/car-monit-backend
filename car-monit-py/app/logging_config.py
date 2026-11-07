@@ -54,6 +54,11 @@ JAVA_TO_PY_LOGGER: Dict[str, List[str]] = {
 _CONSOLE_PATTERN = "%(asctime)s [%(threadName)s] %(levelname)-5s [%(trace_id)s] %(name)s - %(message)s"
 _FILE_PATTERN = "%(asctime)s [%(threadName)s] %(levelname)-5s [%(trace_id)s] %(name)s:%(lineno)d - %(message)s"
 
+#: 四个**活动**日志文件。目录预算清理永远跳过它们，否则滚动一次就可能把
+#: 正在写的 ``sys-info.log`` 删掉（Windows 上还会因文件被占用而删不掉，
+#: Linux 上则会让后续写入落到已删除的 inode）。
+_ACTIVE_LOG_FILES = ("sys-info.log", "sys-error.log", "sys-slow.log", "sys-user.log")
+
 _CONFIGURED = False
 
 
@@ -139,6 +144,7 @@ class _CappedRotatingFileHandler(logging.handlers.RotatingFileHandler):
     """``RotatingFileHandler`` + 目录总量预算 + 磁盘写满时降级.
 
     1. 每次滚动后按目录预算清理最旧的日志，避免 4 个 appender 叠加把磁盘写满。
+       清理时永远保护四个活动文件名（见 :data:`_ACTIVE_LOG_FILES`）。
     2. 写入失败（``OSError``，典型是磁盘满/权限变更）时只打印一次告警；
        连续失败 3 次后自动停用该 handler，业务请求不受影响。
     """
@@ -172,7 +178,12 @@ class _CappedRotatingFileHandler(logging.handlers.RotatingFileHandler):
     def doRollover(self) -> None:  # noqa: N802
         super().doRollover()
         if self.max_total_bytes > 0:
-            _prune_logs(Path(self.baseFilename).parent, self.max_total_bytes)
+            directory = Path(self.baseFilename).parent
+            _prune_logs(
+                directory,
+                self.max_total_bytes,
+                protect={str(directory / name) for name in _ACTIVE_LOG_FILES},
+            )
 
 
 def _clear_handlers(logger: logging.Logger) -> None:
@@ -230,10 +241,7 @@ def configure_logging(settings: AppSettings) -> None:
         _prune_logs(
             log_path,
             settings.logging.file_max_total_bytes,
-            protect={
-                str(log_path / name)
-                for name in ("sys-info.log", "sys-error.log", "sys-slow.log", "sys-user.log")
-            },
+            protect={str(log_path / name) for name in _ACTIVE_LOG_FILES},
         )
 
     root = logging.getLogger()
