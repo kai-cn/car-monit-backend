@@ -179,10 +179,11 @@ def export(config: ConfigParam) -> AjaxResult:
 def get_config_key(config_key: str) -> AjaxResult:
     """根据参数键名查询参数值. Java: ``@GetMapping(value = "/configKey/{configKey}")``.
 
-    没有 ``@PreAuthorize``，登录即可。查不到时 ``data`` 是**空串**
-    （``StringUtils.EMPTY``），不是 ``null``。
+    没有 ``@PreAuthorize``，登录即可。``selectConfigByKey`` 的返回类型是 ``String``，
+    所以 Java 的重载解析命中的是 ``AjaxResult.success(String msg)`` —— 参数值落在
+    **``msg``** 里、没有 ``data`` 键；查不到时是空串（``StringUtils.EMPTY``），不是 ``null``。
     """
-    return AjaxResult.success_data(_config_service().select_config_by_key(config_key))
+    return AjaxResult.success_message(_config_service().select_config_by_key(config_key))
 
 
 @router.get("/{config_id}", response_model=None)

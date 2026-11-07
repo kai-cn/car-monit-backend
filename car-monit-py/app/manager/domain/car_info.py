@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 from datetime import date
+from decimal import Decimal
 from typing import Any, ClassVar, List, Optional
 
 from app.common.annotation.excel import Excel, ExcelFields
@@ -32,17 +33,21 @@ class CarInfo(BasePlusEntityInputNew):
     #: 逃费类型名称
     escaped_type_name: Optional[str] = None
     #: 逃费金额（元）
-    escaped_amount: Optional[float] = None
+    #:
+    #: 五列金额在 Java 侧都是 ``BigDecimal``、库里是 ``decimal(19,2)``。标度（两位小数）
+    #: 只在 ``Decimal`` 上存在，而 EasyPOI 模板导出写的是 ``String.valueOf(getter())``
+    #: —— 用 ``float`` 会把 ``16075.00`` 塌成 ``16075.0``，导出的格子就跟 Java 不一致。
+    escaped_amount: Optional[Decimal] = None
     #: 逃费次数(反改)
     escaped_num: Optional[int] = None
     #: 累计追缴金额（元）
-    return_amount: Optional[float] = None
+    return_amount: Optional[Decimal] = None
     #: 应缴金额
-    total_amount: Optional[float] = None
+    total_amount: Optional[Decimal] = None
     #: 收费金额
-    charge_amount: Optional[float] = None
+    charge_amount: Optional[Decimal] = None
     #: 差额
-    dif_amount: Optional[float] = None
+    dif_amount: Optional[Decimal] = None
     #: 处理单位id
     auit_org_id: Optional[str] = None
     #: 处理单位

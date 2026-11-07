@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 from datetime import date
+from decimal import Decimal
 from typing import ClassVar, Optional
 
 from app.common.annotation.excel import Excel, ExcelFields
@@ -22,8 +23,8 @@ class BussTest(BasePlusEntity):
     bill_name: Optional[str] = None
     #: 业务名称(字典：1业务2其他)
     bill_type: Optional[str] = None
-    #: 金额
-    amount: Optional[float] = None
+    #: 金额（Java: ``BigDecimal``，库里 ``decimal(19,2)`` —— 模板导出要保住两位小数的标度）
+    amount: Optional[Decimal] = None
     #: 部门id
     dept_id: Optional[int] = None
     #: 人员id

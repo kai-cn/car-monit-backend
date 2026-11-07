@@ -20,9 +20,12 @@ Java 侧全部是 ``@BaseRequest(baseURL = "#{vehicleMonitor.baseUrl}")`` + ``@G
 2. **重试**：``forest.retryer`` 是 ``BackOffRetryer``，``retry-count: 2`` ——
    只重试**传输层**异常，业务 4xx/5xx 不重试（Forest 同样不重试，它把非 2xx
    交给 ``onError``/默认抛 ``ForestNetworkException``）。
-3. **非 2xx 不抛**：Forest 默认在状态码非 2xx 时会尝试反序列化响应体；本项目四个
-   客户端的调用点都不检查 HTTP 状态码（``feestationexit`` 检查的是**响应体里的**
-   ``code``）。所以这里也只在 JSON 解析失败时抛错。
+3. **非 2xx 抛错**：Forest 对非 2xx 响应抛 ``HttpProtocolException``，文案是
+   ``HTTP <status> ErrorContent=<响应体>``；RuoYi 的 ``GlobalExceptionHandler`` 再把它
+   原样塞进 ``AjaxResult.error(e.getMessage())``，所以 backend 的响应是
+   ``{"code":500,"msg":"HTTP 500 ErrorContent={...}"}``（实测 ``/base/feerecords/{bigId}``）。
+   另外**空响应体**（``/base/snapshotflow/earliest-time`` 的 Java 形态）在 Java 侧反序列化成
+   ``null`` 而不是解析失败，所以这里返回 ``None``。
 """
 
 from __future__ import annotations
@@ -86,6 +89,25 @@ def to_query_params(entity: Any) -> Dict[str, str]:
     return params
 
 
+def _parse_response(response: httpx.Response, url: str) -> Any:
+    """Java: Forest 的 ``HttpProtocolHandler`` 响应处理。
+
+    * 非 2xx —— 抛 ``HttpProtocolException``，文案 ``HTTP <status> ErrorContent=<body>``；
+    * 空响应体 —— 反序列化成 ``null``（Java 侧 ``String``/对象返回值都是这个形态）；
+    * 其余 —— 正常 JSON 解析。
+    """
+    if not response.is_success:
+        raise ForestException(f"HTTP {response.status_code} ErrorContent={response.text}")
+    if not response.content or not response.text.strip():
+        return None
+    try:
+        return response.json()
+    except ValueError as exc:
+        raise ForestException(
+            f"响应不是合法 JSON: {url} -> {response.text[:200]!r}"
+        ) from exc
+
+
 def forest_get(
     base_url: str,
     path: str,
@@ -111,12 +133,7 @@ def forest_get(
                 headers=_CONNECTION_CLOSE_HEADER,
             ) as client:
                 response = client.get(url, params=params)
-            try:
-                return response.json()
-            except ValueError as exc:
-                raise ForestException(
-                    f"响应不是合法 JSON: {url} -> {response.text[:200]!r}"
-                ) from exc
+            return _parse_response(response, url)
         except httpx.TransportError as exc:
             # Forest 的 BackOffRetryer 只对连接 / 读超时这类异常重试。
             last_error = exc
@@ -162,12 +179,7 @@ def forest_post(
                 headers=_CONNECTION_CLOSE_HEADER,
             ) as client:
                 response = client.post(url, json=payload)
-            try:
-                return response.json()
-            except ValueError as exc:
-                raise ForestException(
-                    f"响应不是合法 JSON: {url} -> {response.text[:200]!r}"
-                ) from exc
+            return _parse_response(response, url)
         except httpx.TransportError as exc:
             last_error = exc
             if attempt + 1 >= attempts:
