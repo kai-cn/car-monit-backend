@@ -21,6 +21,7 @@
 #include "cm/common/utils/Logger.hpp"
 #include "cm/common/utils/sql/SqlUtil.hpp"
 #include "cm/framework/aspect/OperLogAspect.hpp"
+#include "cm/framework/config/Yaml.hpp"
 #include "cm/framework/db/Db.hpp"
 #include "cm/framework/http/HttpRequest.hpp"
 #include "cm/framework/net/Os.hpp"
@@ -447,6 +448,32 @@ static void testAsyncLogger() {
     lg.init("logs", "debug");
 }
 
+/** YAML 子集：不支持的语法必须报 warning，不能静默取缺省值 */
+static void testYamlWarnings() {
+    const std::string text =
+        "a: 1\n"
+        "a: 2\n"              // 重复键
+        "b: |\n"              // 块标量
+        "  line1\n"
+        "c: &anchor v\n"      // 锚点
+        "d: *anchor\n"        // 别名
+        "---\n"               // 多文档
+        "e:\n"
+        "\tf: 1\n";           // Tab 缩进
+    std::vector<std::string> warns;
+    const cm::yaml::Node n = cm::yaml::parse(text, &warns);
+    CHECK(warns.size() >= 5);
+    // 重复键：后出现的覆盖前一个（与解析器原行为一致，只是现在会告警）
+    CHECK_EQ(n.getInt("a"), 2LL);
+    // 正常配置不应产生任何 warning
+    std::vector<std::string> none;
+    const cm::yaml::Node ok = cm::yaml::parse(
+        "server:\n  port: 8080\nlist:\n  - a\n  - b\ninline: [1, 2]\n", &none);
+    CHECK(none.empty());
+    CHECK_EQ(ok.getInt("server.port"), 8080LL);
+    CHECK_EQ(ok.find("list")->seq.size(), static_cast<size_t>(2));
+}
+
 /** Spring URL 层规则的顺序与语义（SecurityConfig 是逐条 antMatchers，先命中先生效） */
 static void testSecurityUrlRules() {
     using Rule = cm::web::AuthType;
@@ -676,6 +703,7 @@ int main() {
     testChunkedRequest();
     testRequestDeadline();
     testAsyncLogger();
+    testYamlWarnings();
     testUtf8PathCompat();
     testOperLogHelpers();
     testOperLogBuild();

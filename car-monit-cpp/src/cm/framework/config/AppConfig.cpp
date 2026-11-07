@@ -6,6 +6,9 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <vector>
+
+#include "cm/common/utils/Logger.hpp"
 
 namespace cm::config {
 
@@ -107,10 +110,18 @@ void AppConfig::load(const std::string& dir) {
     else dir_ = "config";
 
     std::string app = dir_ + "/application.yaml";
-    root_ = yaml::parseFile(app);
-    if (std::filesystem::exists(dir_ + "/application.yml")) root_ = yaml::parseFile(dir_ + "/application.yml");
-    druidRoot_ = yaml::parseFile(dir_ + "/application-druid.yaml");
-    if (druidRoot_.isNull()) druidRoot_ = yaml::parseFile(dir_ + "/application-druid.yml");
+    std::vector<std::string> warnings;
+    root_ = yaml::parseFile(app, &warnings);
+    if (std::filesystem::exists(dir_ + "/application.yml")) {
+        root_ = yaml::parseFile(dir_ + "/application.yml", &warnings);
+    }
+    druidRoot_ = yaml::parseFile(dir_ + "/application-druid.yaml", &warnings);
+    if (druidRoot_.isNull()) druidRoot_ = yaml::parseFile(dir_ + "/application-druid.yml", &warnings);
+
+    // 不支持的 YAML 语法不能静默：否则配置"看起来改了"实际读到缺省值
+    for (const auto& w : warnings) {
+        LOG_WARN("config", app + " " + w);
+    }
 
     apply();
 }

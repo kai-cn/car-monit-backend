@@ -1,8 +1,12 @@
 #pragma once
 // 极简 YAML 子集解析器（对应 Spring Boot 的 application.yml 使用范围）
 //
-// 支持：缩进映射、`- ` 序列、内联数组 [a, b]、单/双引号、行内注释、空文档。
-// 不支持：锚点、多文档、块标量（| / >）。项目配置未使用这些特性。
+// 支持：缩进映射、`- ` 序列、内联数组 [a, b]、内联映射 {k: v}、单/双引号、行内注释、空文档。
+// 不支持：锚点/别名（& / *）、多文档（--- / ...）、块标量（| / >）、Tab 缩进。
+//
+// ⚠️ 不支持的语法**不会静默当成普通值**：parse() 会通过 warnings 出参逐条报告
+//    （含行号），AppConfig::load 会把它打出来。这样配置写复杂了能立刻发现，
+//    而不是"读到了缺省值却以为生效了"。
 #include <map>
 #include <memory>
 #include <optional>
@@ -71,7 +75,8 @@ struct Node {
     }
 };
 
-Node parse(const std::string& text);
-Node parseFile(const std::string& path);
+/** 解析文本；warnings 非空时收集"遇到了不支持的语法"的说明（含行号） */
+Node parse(const std::string& text, std::vector<std::string>* warnings = nullptr);
+Node parseFile(const std::string& path, std::vector<std::string>* warnings = nullptr);
 
 } // namespace cm::yaml

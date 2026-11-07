@@ -12,6 +12,7 @@ namespace {
 struct Line {
     int indent{0};
     std::string text;
+    int no{0};  ///< 原始行号（1 起，报错用）
 };
 
 std::string rtrim(const std::string& s) {
@@ -118,6 +119,13 @@ bool isSeqLine(const std::string& t) { return t == "-" || (t.size() > 1 && t[0] 
 
 struct Parser {
     std::vector<Line> lines;
+    std::vector<std::string>* warnings{nullptr};
+
+    void warn(int lineNo, const std::string& what) {
+        if (warnings != nullptr) {
+            warnings->push_back("第 " + std::to_string(lineNo) + " 行: " + what);
+        }
+    }
 
     Node parseBlock(size_t& i, int indent) {
         if (i >= lines.size()) return Node{};
@@ -130,11 +138,15 @@ struct Parser {
         node.type = Node::Type::Map;
         while (i < lines.size() && lines[i].indent == indent && !isSeqLine(lines[i].text)) {
             std::string line = lines[i].text;
+            const int lineNo = lines[i].no;
             auto colon = findKeyColon(line);
             if (colon == std::string::npos) { ++i; continue; }
             std::string key = unquote(line.substr(0, colon));
             std::string rest = line.substr(colon + 1);
             ++i;
+            if (node.map.count(key) != 0) {
+                warn(lineNo, "重复键 '" + key + "'（后出现的覆盖前一个）");
+            }
             if (rest.empty()) {
                 if (i < lines.size() && lines[i].indent > indent) {
                     node.map[key] = parseBlock(i, lines[i].indent);
@@ -218,12 +230,15 @@ struct Parser {
 
 } // namespace
 
-Node parse(const std::string& text) {
+Node parse(const std::string& text, std::vector<std::string>* warnings) {
     Parser p;
+    p.warnings = warnings;
     std::istringstream is(text);
     std::string raw;
     bool first = true;
+    int lineNo = 0;
     while (std::getline(is, raw)) {
+        ++lineNo;
         if (first) {
             if (raw.size() >= 3 && static_cast<unsigned char>(raw[0]) == 0xEF &&
                 static_cast<unsigned char>(raw[1]) == 0xBB && static_cast<unsigned char>(raw[2]) == 0xBF) {
@@ -232,28 +247,58 @@ Node parse(const std::string& text) {
             first = false;
         }
         if (!raw.empty() && raw.back() == '\r') raw.pop_back();
+        // 多文档分隔符：不支持，只按第一个文档解析
+        {
+            std::string t = rtrim(raw);
+            if (t == "---" || t == "...") {
+                p.warn(lineNo, "多文档分隔符 '" + t + "'（不支持，按单文档解析）");
+                continue;
+            }
+        }
         std::string no_comment = stripComment(raw);
         if (no_comment.empty()) continue;
         int indent = 0;
+        bool tabIndent = false;
         for (char c : no_comment) {
             if (c == ' ') ++indent;
-            else if (c == '\t') indent += 2;
+            else if (c == '\t') { indent += 2; tabIndent = true; }
             else break;
         }
+        if (tabIndent) p.warn(lineNo, "使用 Tab 缩进（YAML 不允许，已按 2 空格处理）");
         std::string text_part = no_comment.substr(no_comment.find_first_not_of(" \t"));
-        p.lines.push_back({indent, text_part});
+        // 不支持的值语法：块标量 | / >，锚点 &，别名 *
+        {
+            const size_t colon = Parser::findKeyColon(text_part);
+            std::string value = colon == std::string::npos ? text_part : text_part.substr(colon + 1);
+            size_t b = 0;
+            while (b < value.size() && (value[b] == ' ' || value[b] == '\t')) ++b;
+            if (b < value.size()) {
+                const char c0 = value[b];
+                if (c0 == '|' || c0 == '>') {
+                    p.warn(lineNo, std::string("块标量 '") + c0 + "'（不支持，按空值处理）");
+                } else if (c0 == '&') {
+                    p.warn(lineNo, "锚点 '&'（不支持，按普通字符串处理）");
+                } else if (c0 == '*') {
+                    p.warn(lineNo, "别名 '*'（不支持，按普通字符串处理）");
+                }
+            }
+        }
+        p.lines.push_back({indent, text_part, lineNo});
     }
     if (p.lines.empty()) return Node{};
     size_t i = 0;
     return p.parseBlock(i, p.lines[0].indent);
 }
 
-Node parseFile(const std::string& path) {
+Node parseFile(const std::string& path, std::vector<std::string>* warnings) {
     std::ifstream in(path, std::ios::binary);
-    if (!in) return Node{};
+    if (!in) {
+        if (warnings != nullptr) warnings->push_back("配置文件不存在或不可读: " + path);
+        return Node{};
+    }
     std::ostringstream os;
     os << in.rdbuf();
-    return parse(os.str());
+    return parse(os.str(), warnings);
 }
 
 } // namespace cm::yaml
