@@ -814,3 +814,42 @@ A 段到此**恢复为「已对齐」**，11-06 的「待复核」结论作废�
 - `manager_crud!` 11 张表写入：**10 OK / 1 WARN / 0 FAIL**（§7.7，路径变量改造后复跑不变）。
 - `/system/*` 等 14 个新增端点 × 两种请求体：**不一致 0**（§7.9，复跑不变）。
 - `/monitor/job` 四张矩阵、两个 Excel 导入端点仍全绿（§7.4、§8）。
+
+## 12. 复跑前的环境自检（2026-11-07 暂停点记录）
+
+本轮所有结论都依赖本机这一组进程，**少一个都会把双端对比变成假差异**：
+
+| 依赖 | 地址 | 起法 | 自检 |
+|---|---|---|---|
+| MySQL（backend 的业务库） | `127.0.0.1:3307/carmonitdb`，`root/root` | 服务 `mysql8`（`D:\work\mysql-8.0.30-winx64`，`my.ini` 里 port=3307） | `netstat -ano \| grep :3307` |
+| Redis（缓存 + 登录态） | `127.0.0.1:6379`，Java=db0 / Rust=db15 | portable 安装 `D:\work\Redis-8.10.2-Windows-x64-msys2\redis-server.exe`，**没有注册成服务** | `netstat -ano \| grep :6379` |
+| Java backend | `127.0.0.1:9988` | `java -Xmx2g -jar ruoyi-admin.jar --server.port=9988 --vehicleMonitor.baseUrl=http://127.0.0.1:9902` | `curl :9988/getInfo` |
+| Rust backend | `127.0.0.1:9990` | `build/run-rust.cmd`（端口与「关调度器」都由环境变量覆盖） | `curl :9990/getInfo` |
+| api（Java 实现，A 段基准） | `127.0.0.1:9902` | `car-monit-api` 的 `pro-business-api` | `curl :9902/base/gantry/list` |
+| api（Rust 实现，A 段对端） | `127.0.0.1:9911` | `car-monit-api-rust` 自己的启动配方 | `curl :9911/healthz` + 一条 `/base/feeGantry/list` |
+
+**暂停时的真实状态**（不是我改了什么，是环境本身）：
+
+- 3307 与 6379 **都不在监听**：`mysql8`/`mysql5` 两个服务都是 `Stopped`（StartMode=Manual），
+  Redis 既无服务也无进程。`mysql-8.0.30-winx64/data/LAPTOP-R2ABR5SO.err` 的最后一次启动尝试是
+  2026-11-03T11:08，失败链是 `ibdata1 must be writable` → `Failed to initialize DD Storage Engine`
+  → `Data Dictionary initialization failed` → `Aborting`；最后一次 `ready for connections` 是 2026-10-31。
+- `D:` 一度 100% 满（0 字节可用）。清掉我自己的可再生工件（`target/debug/incremental` 约 4GB、
+  旧的 `build/java*.log` / `build/rust-9990.log`）后剩约 1.2GB —— **这仍然不够 MySQL 稳定跑**，
+  `ibdata1 must be writable` 就是这么来的。C: 也只剩 4.4GB。
+- 因为上面两条，两个 backend 实例会停在 `starting on port ...` 那一行、不 bind 端口；
+  本轮我已把自己起的实例停干净了，临时文件（`config/application-schedprobe.yaml`、
+  `build/run-schedprobe.cmd`）也删了。
+
+**恢复顺序**：先腾出磁盘 → 起 MySQL（3307）与 Redis → 起两个 backend →
+**先 `curl` 一次 `/system/dict/data/type/{dictType}` 暖 dict 缓存**（§9.1 的成型顺序假象）→
+再跑 `compare.py`。跑之前务必确认 `PARITY_JAVA_BASE`/`PARITY_RUST_BASE` 指向的是
+本工作流的那一对（9988/9990）：这台机器上同时还有 9788、9989、9903 等别人的实例。
+
+**唯一还没做完的确认项**：6 个 `@Scheduled` 的真实触发观测（已得到「在确认窗口内跑一次并留证」的同意）。
+方法已经验证到一半：临时 profile `schedprobe`（`config/application-schedprobe.yaml` + `APP_PROFILE=schedprobe`）
+可以只覆盖端口与开关，把上游指到一个没人监听的端口（9998），这样 `manualFullSync` /
+`syncIncrementalData` 在拿不到 `earliestSnapshottime` 时就早退，**只证明调度确实发生、不在共用库上真的做全量回写或 DDL**。
+按 cron，`0 0/5 * * * *` 的 manualFullSync 最多等 5 分钟就能观测到，`0 0 * * * ?` 的 syncIncrementalData
+要等到整点；剩下 4 个（月级 / 周级）只能靠「同一条 run_loop 已被前两条实证 + next-fire 与 Java 逐条一致 +
+任务体可被 Quartz 触发（`job_invoke_matrix` 里就有 `partitionMaintenanceTask.createFuturePartitions()`）」间接收口。
