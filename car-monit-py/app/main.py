@@ -229,6 +229,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     finally:
         # Java: ``ShutdownManager`` + Druid ``destroy``
         _shutdown_quartz(settings)
+        # Java: Spring 销毁 ``threadPoolTaskExecutor`` / ``scheduledExecutorService`` 两个
+        # bean 时调用各自的 ``shutdown()``。Python 侧这两个池是进程级单例（模块级变量），
+        # 容器销毁不会自动触发；漏掉这一步，解释器退出时会留下 50 + 200 个 worker 线程，
+        # 进程无法干净退出（uvicorn 重载/测试反复 create_app 时还会累积线程）。
+        _shutdown_thread_pools()
         dispose_engine()
         close_redis()
         logger.info("[应用] 已优雅关闭")
@@ -278,6 +283,22 @@ def _shutdown_quartz(settings: AppSettings) -> None:
 
     shutdown_scheduler()
     reset_job_log_service()
+
+
+def _shutdown_thread_pools() -> None:
+    """Java: ``ThreadPoolConfig`` 两个 bean 的 ``destroyMethod``.
+
+    Java 里 ``ThreadPoolTaskExecutor`` 与 ``scheduledExecutorService`` 都是 Spring bean，
+    容器关闭时由 ``DisposableBean#destroy()`` 依次 ``shutdown()``。本工程把它们落成
+    进程级单例（:mod:`app.framework.config.thread_pool_config` /
+    :mod:`app.framework.manager.async_manager`），必须在 lifespan 收尾时显式回收，
+    否则遗留的非 daemon worker 线程会让进程卡在退出阶段。
+    """
+    from app.framework.config.thread_pool_config import reset_thread_pool_task_executor
+    from app.framework.manager.async_manager import reset_async_manager
+
+    reset_async_manager()
+    reset_thread_pool_task_executor()
 
 
 def _apply_tomcat_thread_parity(settings: AppSettings) -> None:
