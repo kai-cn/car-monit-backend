@@ -39,7 +39,6 @@ from typing import Any, List, Optional
 import pytest
 
 from app.common.core.text.convert import to_long_array, to_str_array
-from app.config.exception_handlers import _java_message
 
 # --------------------------------------------------------------------------- toStrArray
 
@@ -89,17 +88,15 @@ def test_to_str_array_custom_split() -> None:
 
 
 def test_to_str_array_none_raises_java_npe() -> None:
-    """``null.split(",")`` 是 NPE，``getMessage()`` 为 ``null``（不是英文字符串）.
+    """``null.split(",")`` 是 NPE，抛 ``AttributeError`` + Java 异常哨兵文案.
 
-    抛 ``AttributeError`` + ``java.lang.NullPointerException`` 哨兵是为了让
-    ``GlobalExceptionHandler`` 还原成 ``{"msg":null,"code":500}``。抛 ``TypeError``
-    会把 Python 的英文文案泄进 ``msg``。
+    抛 ``TypeError`` 会让日志里出现 Python 的英文文案；哨兵文案保证日志可读。
+    P1-6 起非业务异常不再回传客户端，HTTP 层统一返回 ``系统繁忙，请稍后重试``，
+    NPE 的原始文案只进 ``sys-error.log``。
     """
     with pytest.raises(AttributeError) as error:
         to_str_array(None)
     assert "java.lang.NullPointerException" in str(error.value)
-    # 关键：整条响应里的 msg 必须是 null
-    assert _java_message(error.value) is None
 
 
 def test_to_long_array_does_not_raise_on_none() -> None:
