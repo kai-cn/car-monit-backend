@@ -20,9 +20,11 @@
 #include "cm/framework/aspect/OperLogAspect.hpp"
 #include "cm/framework/db/Db.hpp"
 #include "cm/framework/http/HttpRequest.hpp"
+#include "cm/framework/net/Os.hpp"
 #include "cm/framework/security/Jwt.hpp"
 #include "cm/framework/security/SecurityUtils.hpp"
 #include "cm/framework/web/Router.hpp"
+#include "cm/framework/web/Server.hpp"
 
 // 各测试文件共用的失败计数（tests/*.cpp 通过 extern 引用）
 int g_fails = 0;
@@ -298,6 +300,92 @@ void run_inflate_tests();
 void run_xlsx_tests();
 void run_trail_geo_tests();
 
+/** chunked 请求体的 chunk-size 行解析（十六进制 + chunk-ext + 上限） */
+static void testChunkSizeLine() {
+    using cm::web::Server;
+    const unsigned long long max = 200ULL * 1024 * 1024;  // 0xC800000
+    unsigned long long v = 0;
+    // 基本十六进制（大小写均可）
+    CHECK(Server::parseChunkSizeLine("1A3", max, v));
+    CHECK_EQ(v, 419ULL);
+    CHECK(Server::parseChunkSizeLine("a", max, v));
+    CHECK_EQ(v, 10ULL);
+    CHECK(Server::parseChunkSizeLine("ff", max, v));
+    CHECK_EQ(v, 255ULL);
+    // 结束块
+    CHECK(Server::parseChunkSizeLine("0", max, v));
+    CHECK_EQ(v, 0ULL);
+    // chunk-ext 被忽略；首尾空白被裁掉
+    CHECK(Server::parseChunkSizeLine("a;ext=1", max, v));
+    CHECK_EQ(v, 10ULL);
+    CHECK(Server::parseChunkSizeLine(" 1a3 ", max, v));
+    CHECK_EQ(v, 419ULL);
+    CHECK(Server::parseChunkSizeLine("0;name=value", max, v));
+    CHECK_EQ(v, 0ULL);
+    // 非法输入：空行、非法字符、负号、只有 ext
+    CHECK(!Server::parseChunkSizeLine("", max, v));
+    CHECK(!Server::parseChunkSizeLine("zz", max, v));
+    CHECK(!Server::parseChunkSizeLine("-5", max, v));
+    CHECK(!Server::parseChunkSizeLine(";ext=1", max, v));
+    // 上限边界：正好 200MB 通过，多 1 字节拒绝
+    CHECK(Server::parseChunkSizeLine("C800000", max, v));
+    CHECK_EQ(v, max);
+    CHECK(!Server::parseChunkSizeLine("C800001", max, v));
+    // 无符号溢出必须被拦截，而不是回绕成小值
+    CHECK(!Server::parseChunkSizeLine("FFFFFFFFFFFFFFFFFF", max, v));
+}
+
+/** chunked 请求体整链路：多块拼接、chunk-ext、trailer、keep-alive 缓冲残留 */
+static void testChunkedRequest() {
+    using namespace cm::net;
+    Fd lfd = listenTcp("127.0.0.1", 0, 8);
+    CHECK(isValid(lfd));
+    if (!isValid(lfd)) return;
+    sockaddr_in sa{};
+    socklen_t sl = sizeof(sa);
+    ::getsockname(asSocket(lfd), reinterpret_cast<sockaddr*>(&sa), &sl);
+    const int port = ntohs(sa.sin_port);
+    Fd cfd = connectTcp("127.0.0.1", port, 2000);
+    std::string peer;
+    Fd sfd = isValid(cfd) ? acceptTcp(lfd, peer) : kInvalid;
+    CHECK(isValid(cfd));
+    CHECK(isValid(sfd));
+    if (isValid(cfd) && isValid(sfd)) {
+        // 一次写出两个请求：第一个 chunked（多块 + chunk-ext + trailer），
+        // 第二个用 Content-Length 缺省，用于验证 keep-alive 下剩余字节不被吞掉
+        const std::string reqs =
+            "POST /login HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n"
+            "Content-Type: application/x-www-form-urlencoded\r\n\r\n"
+            "5\r\nusern\r\n"
+            "3\r\n" "ame\r\n"
+            "6;ext=1\r\n&pwd=1\r\n"
+            "0\r\nX-Trailer: v\r\n\r\n"
+            "GET /health HTTP/1.1\r\nHost: x\r\n\r\n";
+        CHECK(writeAll(cfd, reqs.data(), reqs.size()));
+        std::string buf;
+        bool closeAfter = false;
+        cm::http::HttpRequest r1;
+        CHECK(cm::web::Server::readRequest(sfd, buf, r1, closeAfter));
+        CHECK_EQ(r1.body, std::string("username&pwd=1"));
+        CHECK_EQ(r1.path, std::string("/login"));
+        // 第二个请求必须能继续从同一 buffer 中解析出来
+        cm::http::HttpRequest r2;
+        CHECK(cm::web::Server::readRequest(sfd, buf, r2, closeAfter));
+        CHECK_EQ(r2.path, std::string("/health"));
+        CHECK(r2.body.empty());
+        // 非法十六进制块大小 → 拒绝，而不是把后续字节当 body
+        const std::string bad =
+            "POST /login HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n"
+            "zz\r\nabc\r\n0\r\n\r\n";
+        CHECK(writeAll(cfd, bad.data(), bad.size()));
+        cm::http::HttpRequest r3;
+        CHECK(!cm::web::Server::readRequest(sfd, buf, r3, closeAfter));
+    }
+    closeTcp(sfd);
+    closeTcp(cfd);
+    closeTcp(lfd);
+}
+
 /** Spring URL 层规则的顺序与语义（SecurityConfig 是逐条 antMatchers，先命中先生效） */
 static void testSecurityUrlRules() {
     using Rule = cm::web::AuthType;
@@ -523,6 +611,8 @@ int main() {
     testUrlDecode();
     testXlsxWriter();
     testSecurityUrlRules();
+    testChunkSizeLine();
+    testChunkedRequest();
     testUtf8PathCompat();
     testOperLogHelpers();
     testOperLogBuild();

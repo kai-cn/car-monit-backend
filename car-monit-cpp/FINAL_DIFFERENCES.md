@@ -83,7 +83,7 @@
 | ⚠️5 | 固定 32 工作线程（`CM_WORKERS`），无 GC；长耗时外部调用会占满 worker | 并发模型不同，慢上游会整站排队 | 部署时按核数放大；外部调用必须设超时 | §2.5、§5.1 |
 | ⚠️6 | 日期固定按 `+08:00`（Java 跟随 JVM 时区） | 部署到别的时区会不一致 | 容器内 `TZ=Asia/Shanghai`（compose 已设） | §2.6 |
 | ⚠️7 | `BigDecimal` 按 double 最短形式输出（`1.10 → 1.1`）。本轮又多一处实证：`listByCarId` 回退分支把远程轨迹写成 `track_josn` 时，Java 的 fastjson2 会把 `"116.500"` 转成 BigDecimal 再原样写回 `116.500`，C++ 的 JSON 数值只有 double ⇒ 写成 `116.5`，**这串文本会落库** | 前端若按字符串比较会不同；导出另有 `*Str` 文本列 | 金额透传原始文本；`verify_list_by_car_id.py` 用一条 ⚠️ 断言把这个丢失钉住，别让它悄悄扩散 | §2.7 |
-| ⚠️8 | **不支持 chunked 请求体**（返回 411），需 `Content-Length`；上限 200MB 与 Java 一致 | 极少数流式上传客户端受影响 | 网关缓冲后转发 | §2.8 |
+| ⚠️8 | ~~**不支持 chunked 请求体**（返回 411）~~ **已于 2026-11-07 补齐**：支持 `Transfer-Encoding: chunked`（chunk-ext + trailer），上限 200MB 与 Java 一致 | 无（已对齐） | — | §2.8 |
 | ⚠️9 | 日志：非 Logback 逐字节格式，无 MDC/traceId 自动注入 | 日志采集格式需适配 | 显式传 traceId | §2.10 |
 | ⚠️10 | **SQL 执行失败被降级成空结果**（Java 是 `BadSqlGrammar` → code 500）——模板导出路径已改成失败即抛，其余路径未统一 | "接口返回空"可能是真失败 | 查 `logs/carmonit.log` 的 `[WARN] Db - 查询失败` | §2.12 |
 | ⚠️11 | Windows 本地开发机 `std::filesystem` 按 GBK 解释 UTF-8 路径（Java/JDK 无此问题） | 中文名文件读写会失败 | `cm::compat::fsPath/fsUtf8` 已在全部落盘点接入；Linux/Docker 不涉及 | §2.11 |

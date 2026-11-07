@@ -264,7 +264,8 @@ Kaptcha 在 Java 里输出 JPEG；C++ 自绘 PNG。`uuid`/`img`(base64) 字段�
 
 ### 7.9 大文件上传
 
-C++ 不支持 `Transfer-Encoding: chunked` 请求体（返回 411），需要 `Content-Length`。
+C++ 支持 `Transfer-Encoding: chunked` 请求体（2026-11-07 起，与内嵌 Tomcat 一致），
+也支持常规 `Content-Length`。
 浏览器表单上传、curl `-F` 都带长度，正常；部分流式客户端需在网关缓冲。
 
 ### 7.10 不要“顺手修复”Java 的怪行为

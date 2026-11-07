@@ -280,21 +280,48 @@ bool Server::readRequest(cm::net::Fd fd, std::string& buf, cm::http::HttpRequest
         req.headers[name] = value;
         if (name == "cookie") cm::http::HttpRequest::parseCookies(value, req.cookies);
     }
+    // 请求体上限：与 application.yaml 的 max-request-size(200MB) 对齐
+    constexpr unsigned long long kMaxBodyBytes = 200ULL * 1024 * 1024;
     if (chunked) {
-        // ⚠️ 不支持 chunked
-        return false;
-    }
-    size_t len = 0;
-    if (!contentLength.empty()) {
-        try {
-            len = static_cast<size_t>(std::stoull(contentLength));
-        } catch (...) {
-            len = 0;
+        // HTTP/1.1 chunked 请求体（Transfer-Encoding: chunked）。
+        // Java 侧内嵌 Tomcat 原生支持，这里补齐以保持行为一致（此前是直接断开连接）。
+        std::string body;
+        for (;;) {
+            std::string sizeLine;
+            if (!readLine(fd, buf, sizeLine)) return false;
+            unsigned long long chunkLen = 0;
+            if (!parseChunkSizeLine(sizeLine, kMaxBodyBytes, chunkLen)) return false;
+            if (chunkLen == 0) {
+                // 末尾可选 trailer：读到空行为止
+                for (;;) {
+                    std::string trailer;
+                    if (!readLine(fd, buf, trailer)) return false;
+                    if (trailer.empty()) break;
+                }
+                break;
+            }
+            if (body.size() + chunkLen > kMaxBodyBytes) return false;
+            // readExact 是覆盖写（不是追加），必须经临时串再拼到 body，否则多块之间会互相覆盖
+            std::string chunk;
+            if (!readExact(fd, buf, static_cast<size_t>(chunkLen), chunk)) return false;
+            body += chunk;
+            std::string crlf;
+            if (!readLine(fd, buf, crlf)) return false;  // 每块数据后的 CRLF
         }
-    }
-    if (len > 0) {
-        if (len > 200ULL * 1024 * 1024) return false;
-        if (!readExact(fd, buf, len, req.body)) return false;
+        req.body = std::move(body);
+    } else {
+        size_t len = 0;
+        if (!contentLength.empty()) {
+            try {
+                len = static_cast<size_t>(std::stoull(contentLength));
+            } catch (...) {
+                len = 0;
+            }
+        }
+        if (len > 0) {
+            if (len > kMaxBodyBytes) return false;
+            if (!readExact(fd, buf, len, req.body)) return false;
+        }
     }
     std::string ct = lower(req.getHeader("content-type"));
     if (ct.find("application/x-www-form-urlencoded") != std::string::npos) {
@@ -502,6 +529,33 @@ static const char* reasonPhrase(int status) {
         case 505: return "HTTP Version Not Supported";
         default: return "";
     }
+}
+
+bool Server::parseChunkSizeLine(const std::string& line, unsigned long long maxBytes,
+                                unsigned long long& outSize) {
+    outSize = 0;
+    // chunk-size 后面可能跟 chunk-ext（;name=value），只取分号前的十六进制
+    const size_t semi = line.find(';');
+    const std::string hexPart =
+        cm::utils::StringUtils::trim(semi == std::string::npos ? line : line.substr(0, semi));
+    if (hexPart.empty()) return false;
+    unsigned long long v = 0;
+    for (char c : hexPart) {
+        unsigned long long digit;
+        if (c >= '0' && c <= '9')
+            digit = static_cast<unsigned long long>(c - '0');
+        else if (c >= 'a' && c <= 'f')
+            digit = static_cast<unsigned long long>(c - 'a' + 10);
+        else if (c >= 'A' && c <= 'F')
+            digit = static_cast<unsigned long long>(c - 'A' + 10);
+        else
+            return false;  // 非法十六进制
+        if (v > (maxBytes - digit) / 16) return false;  // 溢出或超上限
+        v = v * 16 + digit;
+        if (v > maxBytes) return false;
+    }
+    outSize = v;
+    return true;
 }
 
 void Server::writeResponse(cm::net::Fd fd, const cm::http::ApiResponse& resp, bool keepAlive) {

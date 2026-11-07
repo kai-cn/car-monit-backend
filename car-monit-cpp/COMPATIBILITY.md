@@ -136,8 +136,8 @@ C++ 对应实现位置：
 ### ⚠️ 2.8 请求体大小与分块传输
 
 * Java：`max-request-size=200MB`，支持 `Transfer-Encoding: chunked`。
-* C++：200MB 上限一致；**不支持 chunked 请求体**（返回 411 Length Required），需
-  `Content-Length`。补偿：Nginx/网关层缓冲后转发。
+* C++：200MB 上限一致；**chunked 请求体已支持**（2026-11-07 补齐，按 chunk-size 逐块读取，
+  支持 chunk-ext 与末尾 trailer），与内嵌 Tomcat 行为一致。
 
 ### ⚠️ 2.9 静态资源与前端
 
