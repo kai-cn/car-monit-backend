@@ -80,6 +80,42 @@ class TestSlowLogIsolation:
         assert trace_logger.handlers[0].baseFilename.endswith("sys-slow.log")  # type: ignore[attr-defined]
 
 
+class TestLogCapacity:
+    """容量保护：单文件阈值 / 保留份数可配，目录总量按最旧优先清理。"""
+
+    def test_rotating_handlers_use_configured_caps(self) -> None:
+        from app.logging_config import _CappedRotatingFileHandler
+        from app.settings import get_settings
+
+        settings = get_settings()
+        handlers = [h for h in logging.getLogger().handlers if isinstance(h, _CappedRotatingFileHandler)]
+        assert len(handlers) == 2  # root: sys-info + sys-error
+        for handler in handlers:
+            assert handler.maxBytes == settings.logging.file_max_bytes
+            assert handler.backupCount == settings.logging.file_backup_count
+            assert handler.max_total_bytes == settings.logging.file_max_total_bytes
+
+    def test_prune_drops_oldest_files_until_within_budget(self, tmp_path) -> None:
+        import os
+
+        from app.logging_config import _prune_logs
+
+        old = tmp_path / "old.log"
+        newer = tmp_path / "newer.log"
+        current = tmp_path / "sys-info.log"
+        for path in (old, newer, current):
+            path.write_bytes(b"x" * 100)
+        os.utime(old, (1, 1))
+        os.utime(newer, (2, 2))
+
+        freed = _prune_logs(tmp_path, 100, protect={str(current)})
+
+        assert freed == 200
+        assert not old.exists()
+        assert not newer.exists()
+        assert current.exists()
+
+
 class TestTraceIdFilter:
     """Java: ``%X{traceId}`` MDC 占位符。"""
 

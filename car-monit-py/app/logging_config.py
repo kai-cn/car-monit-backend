@@ -36,8 +36,9 @@ from __future__ import annotations
 import logging
 import logging.handlers
 import os
+import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional, Set
 
 from app.common.core.context.trace_context import get_trace_id
 from app.settings import AppSettings, PROJECT_ROOT
@@ -99,11 +100,89 @@ def _log_dir() -> Path:
     return path
 
 
-def _rotating_handler(path: Path, level: int, formatter: logging.Formatter) -> logging.Handler:
-    handler = logging.handlers.RotatingFileHandler(
+def _prune_logs(directory: Path, max_total_bytes: int, protect: Optional[Set[str]] = None) -> int:
+    """Delete the oldest rotated files until the directory fits ``max_total_bytes``.
+
+    Java 的 logback 只按"单文件 100MB × 60 天"限制，4 个 appender 各自为政，
+    总量没有上限；磁盘满时日志写入失败并连带影响请求。这里补一层目录级预算：
+    超出预算就从最旧的文件开始删，返回释放掉的字节数。
+    """
+    protect = protect or set()
+    candidates = []
+    total = 0
+    for entry in directory.glob("*.log*"):
+        if not entry.is_file():
+            continue
+        try:
+            stat = entry.stat()
+        except OSError:
+            continue
+        total += stat.st_size
+        if str(entry) not in protect:
+            candidates.append((stat.st_mtime, stat.st_size, entry))
+
+    freed = 0
+    for _, size, path in sorted(candidates, key=lambda item: item[0]):
+        if total <= max_total_bytes:
+            break
+        try:
+            path.unlink()
+        except OSError:
+            # Windows 上文件被其它 handler 占用时删不掉，跳过即可
+            continue
+        total -= size
+        freed += size
+    return freed
+
+
+class _CappedRotatingFileHandler(logging.handlers.RotatingFileHandler):
+    """``RotatingFileHandler`` + 目录总量预算 + 磁盘写满时降级.
+
+    1. 每次滚动后按目录预算清理最旧的日志，避免 4 个 appender 叠加把磁盘写满。
+    2. 写入失败（``OSError``，典型是磁盘满/权限变更）时只打印一次告警；
+       连续失败 3 次后自动停用该 handler，业务请求不受影响。
+    """
+
+    def __init__(self, *args, max_total_bytes: int = 0, **kwargs) -> None:  # noqa: ANN002, ANN003
+        super().__init__(*args, **kwargs)
+        self.max_total_bytes = max_total_bytes
+        self._failures = 0
+        self._failed = False
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self._failed = False
+        super().emit(record)
+        if self._failed:
+            self._failures += 1
+            if self._failures >= 3:
+                self.disabled = True
+        else:
+            self._failures = 0
+
+    def handleError(self, record: logging.LogRecord) -> None:  # noqa: N802
+        """Suppress the per-record stderr traceback that ``logging`` would print."""
+        self._failed = True
+        if self._failures == 0:
+            print(
+                f"[日志警告] 无法写入 {self.baseFilename}，磁盘可能已满；"
+                f"该文件日志将在连续失败后停用",
+                file=sys.stderr,
+            )
+
+    def doRollover(self) -> None:  # noqa: N802
+        super().doRollover()
+        if self.max_total_bytes > 0:
+            _prune_logs(Path(self.baseFilename).parent, self.max_total_bytes)
+
+
+def _rotating_handler(path: Path, level: int, formatter: logging.Formatter, settings: AppSettings) -> logging.Handler:
+    handler = _CappedRotatingFileHandler(
         filename=path,
-        maxBytes=100 * 1024 * 1024,  # logback: <maxFileSize>100MB</maxFileSize>
-        backupCount=30,  # logback: <maxHistory>60</maxHistory> (days -> rotations)
+        # logback: <maxFileSize>100MB</maxFileSize>
+        maxBytes=max(1, settings.logging.file_max_bytes),
+        # logback: <maxHistory>60</maxHistory> (days -> rotations)
+        backupCount=max(0, settings.logging.file_backup_count),
+        max_total_bytes=max(0, settings.logging.file_max_total_bytes),
         encoding="utf-8",
     )
     handler.setLevel(level)
@@ -126,12 +205,24 @@ def configure_logging(settings: AppSettings) -> None:
     console.setFormatter(console_formatter)
     console.addFilter(TraceIdFilter())
 
-    info_file = _rotating_handler(log_path / "sys-info.log", logging.INFO, file_formatter)
+    info_file = _rotating_handler(log_path / "sys-info.log", logging.INFO, file_formatter, settings)
     info_file.addFilter(_LevelFilter(logging.INFO))
-    error_file = _rotating_handler(log_path / "sys-error.log", logging.ERROR, file_formatter)
+    error_file = _rotating_handler(log_path / "sys-error.log", logging.ERROR, file_formatter, settings)
     error_file.addFilter(_LevelFilter(logging.ERROR))
-    slow_file = _rotating_handler(log_path / "sys-slow.log", logging.INFO, file_formatter)
-    user_file = _rotating_handler(log_path / "sys-user.log", logging.INFO, file_formatter)
+    slow_file = _rotating_handler(log_path / "sys-slow.log", logging.INFO, file_formatter, settings)
+    user_file = _rotating_handler(log_path / "sys-user.log", logging.INFO, file_formatter, settings)
+
+    # 滚动只在写满单文件时触发；启动时先按目录预算清一次历史日志，
+    # 4 个文件同时逼近 100MB 时不会把磁盘写满。
+    if settings.logging.file_max_total_bytes > 0:
+        _prune_logs(
+            log_path,
+            settings.logging.file_max_total_bytes,
+            protect={
+                str(log_path / name)
+                for name in ("sys-info.log", "sys-error.log", "sys-slow.log", "sys-user.log")
+            },
+        )
 
     root = logging.getLogger()
     root.handlers.clear()
