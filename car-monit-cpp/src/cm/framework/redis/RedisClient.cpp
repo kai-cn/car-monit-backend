@@ -381,17 +381,51 @@ RedisCache& RedisCache::instance() {
     return cache;
 }
 
-void RedisCache::init(const RedisConfig& cfg) { client_.connect(cfg); }
-
-std::optional<std::string> RedisCache::get(const std::string& key) { return client_.get(key); }
-bool RedisCache::set(const std::string& key, const std::string& value) { return client_.set(key, value); }
-bool RedisCache::set(const std::string& key, const std::string& value, long long ttlSeconds) {
-    return client_.setex(key, value, ttlSeconds);
+void RedisCache::init(const RedisConfig& cfg) {
+    std::lock_guard<std::mutex> lk(cfg_mu_);
+    cfg_ = cfg;
+    initialized_ = true;
+    generation_.fetch_add(1);  // 重新 init 时让已有线程连接下次访问重建
 }
-bool RedisCache::del(const std::string& key) { return client_.del({key}) > 0; }
-bool RedisCache::expire(const std::string& key, long long seconds) { return client_.expire(key, seconds); }
-bool RedisCache::exists(const std::string& key) { return client_.exists(key); }
-long long RedisCache::pttlMs(const std::string& key) { return client_.pttl(key); }
-std::vector<std::string> RedisCache::keys(const std::string& pattern) { return client_.keys(pattern); }
+
+RedisConfig RedisCache::config() const {
+    std::lock_guard<std::mutex> lk(cfg_mu_);
+    return cfg_;
+}
+
+RedisClient& RedisCache::client() {
+    // 每线程一条连接：不跨线程共享套接字，也不需要全局锁。
+    // 线程退出时 unique_ptr 析构，RedisClient::~RedisClient() -> close() 回收连接。
+    static thread_local std::unique_ptr<RedisClient> tls_client;
+    static thread_local unsigned seen_generation = 0;
+    const unsigned gen = generation_.load();
+    if (!tls_client || seen_generation != gen) {
+        auto c = std::make_unique<RedisClient>();
+        const RedisConfig cfg = config();
+        // connect 内部会执行 AUTH + SELECT；失败也保留对象，后续命令的
+        // ensureConnected() 会继续用同一份 cfg 重连（与改造前失败行为一致）。
+        c->connect(cfg);
+        tls_client = std::move(c);
+        seen_generation = gen;
+    }
+    return *tls_client;
+}
+
+std::optional<std::string> RedisCache::get(const std::string& key) { return client().get(key); }
+bool RedisCache::set(const std::string& key, const std::string& value) {
+    return client().set(key, value);
+}
+bool RedisCache::set(const std::string& key, const std::string& value, long long ttlSeconds) {
+    return client().setex(key, value, ttlSeconds);
+}
+bool RedisCache::del(const std::string& key) { return client().del({key}) > 0; }
+bool RedisCache::expire(const std::string& key, long long seconds) {
+    return client().expire(key, seconds);
+}
+bool RedisCache::exists(const std::string& key) { return client().exists(key); }
+long long RedisCache::pttlMs(const std::string& key) { return client().pttl(key); }
+std::vector<std::string> RedisCache::keys(const std::string& pattern) {
+    return client().keys(pattern);
+}
 
 } // namespace cm::redis

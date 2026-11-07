@@ -477,6 +477,20 @@ C++ 对重载 `operator+` 的**操作数求值顺序不作保证**，
 | 首次见到的模板 | 1 次 | 3 次（PREPARE + SET + EXECUTE） |
 | 已缓存模板 | 1 次 | 2 次（SET + EXECUTE） |
 
+### 5.6 Redis 连接模型（对应 Lettuce 连接池）
+
+Java 侧 Lettuce 用连接池；C++ 改造前是**单连接 + 全局互斥**，32 个 worker 全排一把锁。现在改为：
+
+| 项 | 说明 |
+|---|---|
+| 每线程一条连接 | `RedisCache::client()` 返回 `thread_local std::unique_ptr<RedisClient>`，不跨线程共享套接字，无全局锁 |
+| 线程生命周期 | main / 32 worker / 1 operlog 各持有自己的连接；线程退出时 `unique_ptr` 析构 → `close()` 回收套接字 |
+| AUTH / SELECT | 在 `RedisClient::connect()` 内执行，**每一条新连接**都会执行；不存在"只有池里第一条"的陷阱 |
+| 断线自愈 | 命令前 `ensureConnected()`：无连接则用保存的 `cfg_` 重连；失败返回 `nullopt/false`，不抛异常 |
+| 配置变更 | `RedisCache::init()` 递增 generation；线程下次访问时发现 generation 变化就重建连接 |
+| 失败语义 | 与改造前逐条一致：`get` 失败 → `nullopt`；`set/exists/expire` 失败 → `false`；`pttl` 失败 → `-2`；`keys` 失败 → 空数组 |
+| 连接数 | ≈ 线程数（默认 34），远低于 Redis `maxclients` 默认 10000 |
+
 ---
 
 ## 6. 层 5：横切关注点

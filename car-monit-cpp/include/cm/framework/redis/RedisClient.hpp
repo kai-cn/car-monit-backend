@@ -5,7 +5,9 @@
 //   Java 侧 RedisConfig 使用 FastJson2JsonRedisSerializer，value 是带 "@type" 的 JSON；
 //   C++ 侧写入纯 JSON（无 @type），读取时两种都兼容。若与 Java 版本共用同一个 Redis，
 //   C++ 写入的 key 不能被 Java 读取（反之可以）。
+#include <atomic>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -87,12 +89,19 @@ private:
     std::mutex mu_;
 };
 
-/** 对应 Java RedisCache（带前缀/过期时间的便捷封装） */
+/** 对应 Java RedisCache（带前缀/过期时间的便捷封装）
+ *
+ *  连接模型：每线程一条独立连接（thread_local），不再所有 worker 共用一条套接字。
+ *  - 新建连接在 connect() 内执行 AUTH + SELECT，池化不会漏掉这两个命令；
+ *  - 线程退出时 thread_local unique_ptr 析构 -> RedisClient::close()，连接回收；
+ *  - 某线程连接断开后，下一次命令的 ensureConnected() 会用同一份 cfg 自动重连；
+ *  - 失败/超时行为不变：命令级重试一次连接，失败返回 nullopt/false，不抛异常。 */
 class RedisCache {
 public:
     static RedisCache& instance();
     void init(const RedisConfig& cfg);
-    RedisClient& client() { return client_; }
+    /** 当前线程的连接（懒创建）；首次调用时按 init 保存的配置 connect */
+    RedisClient& client();
 
     std::optional<std::string> get(const std::string& key);
     bool set(const std::string& key, const std::string& value);
@@ -105,7 +114,11 @@ public:
 
 private:
     RedisCache() = default;
-    RedisClient client_;
+    RedisConfig config() const;
+    RedisConfig cfg_;
+    mutable std::mutex cfg_mu_;
+    bool initialized_{false};
+    std::atomic<unsigned> generation_{0};
 };
 
 } // namespace cm::redis
