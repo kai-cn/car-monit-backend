@@ -45,6 +45,8 @@ async fn main() -> anyhow::Result<()> {
     )
     .with_graceful_shutdown(shutdown_signal())
     .await?;
+    // Java: ShutdownManager @PreDestroy（logger 名 sys-user）。
+    tracing::info!(target: "sys-user", "====关闭后台任务任务线程池====");
     Ok(())
 }
 

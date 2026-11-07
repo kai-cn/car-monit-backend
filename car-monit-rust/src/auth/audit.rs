@@ -22,6 +22,10 @@ pub fn record_logininfor(
 ) {
     let pool = pool.clone();
     let username = username.to_string();
+    let log_username = username.clone();
+    let log_status = status.to_string();
+    let log_message = message.to_string();
+    // Java: AsyncFactory.recordLogininfor 先写 sys-user 日志，再落库。
     // Java: AsyncFactory 把登录结果映射为 sys_logininfor.status（0 成功 / 1 失败）。
     let status = match status {
         "Success" | "Logout" | "Register" => "0",
@@ -36,6 +40,16 @@ pub fn record_logininfor(
     let os = meta.os.clone();
 
     tokio::spawn(async move {
+        // Java: `sys_user_logger.info("[" + ip + "][" + address + "][" + username + "][" + status + "][" + message + "]")`
+        tracing::info!(
+            target: "sys-user",
+            "[{}][{}][{}][{}][{}]",
+            ip,
+            location,
+            log_username,
+            log_status,
+            log_message
+        );
         let result = sqlx::query(
             r#"
             insert into sys_logininfor
