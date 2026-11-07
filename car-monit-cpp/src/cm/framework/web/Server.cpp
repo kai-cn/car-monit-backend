@@ -451,19 +451,62 @@ void Server::handleConnection(cm::net::Fd fd, const std::string& peer) {
     cm::net::closeTcp(fd);
 }
 
+// 标准 reason phrase（与 Tomcat 内置表一致）。HttpServletResponse 允许为空，
+// 但 Tomcat 会写出标准文案，客户端日志/抓包常依赖它，因此这里完整覆盖而不是只列常用几个。
+static const char* reasonPhrase(int status) {
+    switch (status) {
+        case 100: return "Continue";
+        case 101: return "Switching Protocols";
+        case 200: return "OK";
+        case 201: return "Created";
+        case 202: return "Accepted";
+        case 203: return "Non-Authoritative Information";
+        case 204: return "No Content";
+        case 205: return "Reset Content";
+        case 206: return "Partial Content";
+        case 300: return "Multiple Choices";
+        case 301: return "Moved Permanently";
+        case 302: return "Found";
+        case 303: return "See Other";
+        case 304: return "Not Modified";
+        case 307: return "Temporary Redirect";
+        case 308: return "Permanent Redirect";
+        case 400: return "Bad Request";
+        case 401: return "Unauthorized";
+        case 402: return "Payment Required";
+        case 403: return "Forbidden";
+        case 404: return "Not Found";
+        case 405: return "Method Not Allowed";
+        case 406: return "Not Acceptable";
+        case 407: return "Proxy Authentication Required";
+        case 408: return "Request Timeout";
+        case 409: return "Conflict";
+        case 410: return "Gone";
+        case 411: return "Length Required";
+        case 412: return "Precondition Failed";
+        case 413: return "Payload Too Large";
+        case 414: return "URI Too Long";
+        case 415: return "Unsupported Media Type";
+        case 416: return "Range Not Satisfiable";
+        case 417: return "Expectation Failed";
+        case 422: return "Unprocessable Entity";
+        case 425: return "Too Early";
+        case 429: return "Too Many Requests";
+        case 431: return "Request Header Fields Too Large";
+        case 451: return "Unavailable For Legal Reasons";
+        case 500: return "Internal Server Error";
+        case 501: return "Not Implemented";
+        case 502: return "Bad Gateway";
+        case 503: return "Service Unavailable";
+        case 504: return "Gateway Timeout";
+        case 505: return "HTTP Version Not Supported";
+        default: return "";
+    }
+}
+
 void Server::writeResponse(cm::net::Fd fd, const cm::http::ApiResponse& resp, bool keepAlive) {
     std::ostringstream head;
-    head << "HTTP/1.1 " << resp.status << " " << (resp.status == 200 ? "OK"
-                                            : resp.status == 201 ? "Created"
-                                            : resp.status == 204 ? "No Content"
-                                            : resp.status == 400 ? "Bad Request"
-                                            : resp.status == 401 ? "Unauthorized"
-                                            : resp.status == 403 ? "Forbidden"
-                                            : resp.status == 404 ? "Not Found"
-                                            : resp.status == 405 ? "Method Not Allowed"
-                                            : resp.status == 500 ? "Internal Server Error"
-                                                                 : "OK")
-         << "\r\n";
+    head << "HTTP/1.1 " << resp.status << " " << reasonPhrase(resp.status) << "\r\n";
     head << "Content-Type: " << resp.content_type << "\r\n";
     head << "Content-Length: " << resp.body.size() << "\r\n";
     for (const auto& [k, v] : resp.headers) head << k << ": " << v << "\r\n";
