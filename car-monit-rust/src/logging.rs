@@ -574,12 +574,93 @@ where
     }
 }
 
+/// Rust 模块 target -> Java 全类名。
+/// 只收录在 Java 侧真实存在、且职责对应的类；Rust 特有的调度/分页诊断
+/// （task/mod.rs、api/support.rs）以及启动日志没有同等 Java 类，保持原 target。
+const JAVA_TARGETS: &[(&str, &str)] = &[
+    (
+        "car_monit_rust::api::base::cdc",
+        "com.ruoyi.base.service.cdc.DeadLetterQueueService",
+    ),
+    (
+        "car_monit_rust::api::base::geometry",
+        "com.ruoyi.web.controller.base.GeometryController",
+    ),
+    (
+        "car_monit_rust::api::base::ods_lwzxsfsj_fee_station_exit01",
+        "com.ruoyi.web.controller.base.OdsLwzxsfsjFeeStationExit01Controller",
+    ),
+    (
+        "car_monit_rust::api::common::common",
+        "com.ruoyi.web.controller.common.CommonController",
+    ),
+    (
+        "car_monit_rust::api::common::down_template",
+        "com.ruoyi.web.controller.common.DownTemplateController",
+    ),
+    (
+        "car_monit_rust::api::manager::buss_test",
+        "com.ruoyi.web.controller.manager.BussTestController",
+    ),
+    (
+        "car_monit_rust::api::system::sys_file",
+        "com.ruoyi.system.service.impl.SysFileServiceImpl",
+    ),
+    (
+        "car_monit_rust::auth::audit",
+        "com.ruoyi.framework.manager.factory.AsyncFactory",
+    ),
+    (
+        "car_monit_rust::service::hen_da",
+        "com.ruoyi.base.service.impl.HenDaServiceImpl",
+    ),
+    (
+        "car_monit_rust::service::job_invoke",
+        "com.ruoyi.quartz.util.JobInvokeUtil",
+    ),
+    (
+        "car_monit_rust::service::road_path",
+        "com.ruoyi.base.service.impl.RoadPathImpl",
+    ),
+    (
+        "car_monit_rust::service::snapshot_flow_enhanced",
+        "com.ruoyi.base.service.enhanced.SnapshotFlowEnhancedService",
+    ),
+    (
+        "car_monit_rust::task::partition_maintenance",
+        "com.ruoyi.quartz.task.PartitionMaintenanceTask",
+    ),
+    (
+        "car_monit_rust::task::remote",
+        "com.ruoyi.base.service.forest.HttpOdsRtSzdnSnapshotFlowAddcodeService",
+    ),
+    (
+        "car_monit_rust::task::sharding_table",
+        "com.ruoyi.base.task.ShardingTableTask",
+    ),
+    (
+        "car_monit_rust::task::snapshot_flow_sync",
+        "com.ruoyi.quartz.task.SnapshotFlowSyncTask",
+    ),
+    (
+        "car_monit_rust::task::view_maintenance",
+        "com.ruoyi.base.task.ViewMaintenanceTask",
+    ),
+];
+
 /// Rust 模块 target -> Java 全类名。没有 Java 对应类的模块保持原 target。
 fn display_target(target: &str) -> &str {
-    match target {
-        SQLX_QUERY_TARGET => SQL_LOG_TARGET,
-        other => other,
+    if target == SQLX_QUERY_TARGET {
+        return SQL_LOG_TARGET;
     }
+    for (rust, java) in JAVA_TARGETS {
+        if let Some(rest) = target.strip_prefix(rust) {
+            if rest.is_empty() || rest.starts_with("::") {
+                return java;
+            }
+        }
+    }
+    target
 }
 
 /// Java logback 的 `%L`：SQLx 事件映射到 SqlLogInterceptor.java 的调用行。
@@ -662,26 +743,52 @@ fn thread_name() -> String {
     current_log_thread()
 }
 
-/// Java `%logger{36}`：超长时把左侧包名缩成首字母，保留最后一段。
-fn abbreviate_logger(name: &str, width: usize) -> String {
-    if name.chars().count() <= width {
+/// Java logback `%logger{target}` 的 TargetLengthBasedClassNameAbbreviator。
+///
+/// 规则（逐段照搬 logback 1.2.3）：
+/// 1. 名称长度 < target 时原样返回；
+/// 2. 没有包分隔符（`.` / Rust 模块用 `::`）时原样返回；
+/// 3. `toTrim = 总长度 - target`，从左到右处理除最后一段外的每一段：
+///    `toTrim > 0` 时只保留首字符，否则整段保留；每处理一段扣减丢弃的字符数；
+/// 4. 最后一段永远整段保留（允许最终长度超过 target，logback 就是这样）。
+fn abbreviate_logger(name: &str, target: usize) -> String {
+    let length = name.chars().count();
+    if length < target {
         return name.to_string();
     }
     let separator = if name.contains("::") { "::" } else { "." };
-    let parts: Vec<&str> = name.split(separator).collect();
-    let Some(last) = parts.last() else {
+    if !name.contains(separator) {
         return name.to_string();
-    };
-    let mut out = last.to_string();
-    for part in parts[..parts.len().saturating_sub(1)].iter().rev() {
-        let first = part.chars().next().unwrap_or('?');
-        out = format!("{first}{separator}{out}");
-        if out.chars().count() > width {
+    }
+    let segments: Vec<&str> = name.split(separator).collect();
+    if segments.len() == 1 {
+        return name.to_string();
+    }
+
+    let mut to_trim = length.saturating_sub(target);
+    let mut out = String::with_capacity(length);
+    for (index, segment) in segments.iter().enumerate() {
+        if index > 0 {
+            out.push_str(separator);
+        }
+        if index == segments.len() - 1 {
+            out.push_str(segment);
             break;
         }
-    }
-    if out.chars().count() > width {
-        out = out.chars().skip(out.chars().count() - width).collect();
+        let available = segment.chars().count();
+        let keep = if to_trim > 0 {
+            if available < 1 {
+                available
+            } else {
+                1
+            }
+        } else {
+            available
+        };
+        to_trim = to_trim.saturating_sub(available.saturating_sub(keep));
+        if keep > 0 {
+            out.extend(segment.chars().take(keep));
+        }
     }
     out
 }
@@ -802,11 +909,57 @@ mod tests {
         assert!(!old.exists(), "早于 maxHistory 的文件应被删除");
     }
 
+    /// 期望值由 logback 1.2.3 TargetLengthBasedClassNameAbbreviator 算法逐段计算。
     #[test]
-    fn logger_abbreviation_keeps_last_segment() {
-        let name = abbreviate_logger("com.ruoyi.common.core.monitor.TraceIdFilter", 36);
-        assert!(name.ends_with("TraceIdFilter"), "{name}");
-        assert!(name.chars().count() <= 36, "{name}");
+    fn logger_abbreviation_matches_logback_exactly() {
+        assert_eq!(
+            abbreviate_logger("com.ruoyi.common.core.monitor.TraceIdFilter", 36),
+            "c.r.c.core.monitor.TraceIdFilter"
+        );
+        assert_eq!(
+            abbreviate_logger("com.ruoyi.common.core.monitor.SqlLogInterceptor", 36),
+            "c.r.c.core.monitor.SqlLogInterceptor"
+        );
+        assert_eq!(
+            abbreviate_logger("com.ruoyi.common.core.monitor.TraceIdFilter", 20),
+            "c.r.c.c.m.TraceIdFilter"
+        );
+        // 最后一段永远整段保留，允许超过 target（logback 的真实行为）。
+        assert_eq!(
+            abbreviate_logger("a.b.SuperLongClassNameHere", 10),
+            "a.b.SuperLongClassNameHere"
+        );
+        // 没有分隔符时原样返回，不做左截断。
+        assert_eq!(
+            abbreviate_logger("averylongnamethatisverylong", 10),
+            "averylongnamethatisverylong"
+        );
+        // Rust 模块路径把 `::` 当作包分隔符，规则与 Java 点号一致。
+        assert_eq!(
+            abbreviate_logger("car_monit_rust::api::system::sys_user", 36),
+            "c::api::system::sys_user"
+        );
+    }
+
+    #[test]
+    fn module_targets_map_to_java_fqcn() {
+        assert_eq!(
+            display_target("car_monit_rust::task::snapshot_flow_sync"),
+            "com.ruoyi.quartz.task.SnapshotFlowSyncTask"
+        );
+        assert_eq!(
+            display_target("car_monit_rust::api::base::cdc"),
+            "com.ruoyi.base.service.cdc.DeadLetterQueueService"
+        );
+        // 没有 Java 对应类的 Rust 模块保持原 target。
+        assert_eq!(
+            display_target("car_monit_rust::api::support"),
+            "car_monit_rust::api::support"
+        );
+        assert_eq!(
+            display_target("car_monit_rust::task"),
+            "car_monit_rust::task"
+        );
     }
 
     #[tokio::test]

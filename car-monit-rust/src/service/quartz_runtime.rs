@@ -133,7 +133,10 @@ pub fn start_jobs(state: &AppState) {
         let rows = match rows {
             Ok(rows) => rows,
             Err(err) => {
-                tracing::warn!("[定时任务] 加载 sys_job 失败: {err}");
+                tracing::warn!(
+                    target: "com.ruoyi.quartz.service.impl.SysJobServiceImpl",
+                    "[定时任务] 加载 sys_job 失败: {err}"
+                );
                 return;
             }
         };
@@ -142,7 +145,12 @@ pub fn start_jobs(state: &AppState) {
             if let Err(err) = create_schedule_job(&state, &job).await {
                 // Java: @PostConstruct 抛出去就直接启动失败；Rust 侧记录后跳过，
                 // 否则一条脏数据会让整个服务起不来。
-                tracing::error!("[定时任务] 装载 job {} 失败: {}", job.job_id, err.message());
+                tracing::error!(
+                    target: "com.ruoyi.quartz.service.impl.SysJobServiceImpl",
+                    "[定时任务] 装载 job {} 失败: {}",
+                    job.job_id,
+                    err.message()
+                );
             }
         }
     });
@@ -300,6 +308,7 @@ async fn run_job(state: &AppState, job: &JobRow) {
     };
     if let Err(err) = &outcome {
         tracing::error!(
+            target: "com.ruoyi.quartz.util.AbstractQuartzJob",
             "[定时任务] job {} ({}) 执行失败: {err}",
             job.job_id,
             job.job_name
@@ -322,7 +331,10 @@ async fn run_job(state: &AppState, job: &JobRow) {
     if let Err(err) =
         support::insert_entity(&state.db, "sys_job_log", &body, support::AutoFill::NONE).await
     {
-        tracing::warn!("[定时任务] 写入 sys_job_log 失败: {err}");
+        tracing::warn!(
+            target: "com.ruoyi.quartz.util.AbstractQuartzJob",
+            "[定时任务] 写入 sys_job_log 失败: {err}"
+        );
     }
 }
 
