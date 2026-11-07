@@ -28,12 +28,12 @@ Python 是怎么做的
 -------------------------------------------
 1. **只有入参是 ``BaseEntity`` 时才会写**。``dataScopeFilter`` 里有一句
    ``if (StringUtils.isNotNull(params) && params instanceof BaseEntity)``。
-2. **``params.dataScope`` 不会自动清空**。切面只在**进入**方法时 ``put``，从不清除；
-   RuoYi 上游版本有一个 ``clearDataScope`` 的 ``@After``，但本项目的
+2. **``params.dataScope`` 在 Java 里不会自动清空**。切面只在**进入**方法时 ``put``，
+   从不清除；RuoYi 上游版本有一个 ``clearDataScope`` 的 ``@After``，但本项目的
    ``DataScopeAspect`` **没有**它。于是同一个实体对象被复用、而第二次调用**没有**
    生成任何片段（例如角色全变成了 ``dataScope=1``，或调用方换成了管理员）时，
-   第一次写进去的**陈旧片段会留在线程内继续生效**。注意：两次都有片段时是 ``put``
-   **覆盖**，不是 ``AND`` 叠加。Python 保持同样的"脏"行为。
+   第一次写进去的**陈旧片段会留在线程内继续生效**。**本工程修正**：每次进入
+   :func:`apply_data_scope` 先删掉 ``params["dataScope"]``，再按本次结果重新写入。
 3. **超级管理员不过滤**（``!currentUser.isAdmin()``），无登录用户也不过滤。
 4. ``dataScope`` 为 ``1``（全部数据）时直接 ``break`` 并把已拼接的内容**清空**。
 5. ``sqlString.substring(4)`` 砍掉开头固定的 ``" OR "``，所以最终片段是
@@ -43,8 +43,9 @@ Python 是怎么做的
 
 安全说明
 --------
-片段里拼接的是 ``deptId`` / ``userId`` / ``roleId`` —— 全部来自数据库的 ``Long``，
-不来自请求参数，因此与 Java 一样不存在注入面。**不要**把这里改成接受字符串参数。
+片段里拼接的是 ``deptId`` / ``userId`` / ``roleId``。它们来自数据库的 ``Long``，
+不是请求参数；:func:`_id` 仍然强制走 :class:`int` 转换，任何非数字值都按 ``null``
+处理并记录告警，确保即使上游模型被绕过也不会把字符串拼进 SQL。
 """
 
 from __future__ import annotations
@@ -126,9 +127,14 @@ def data_scope_filter(login_user: LoginUser, dept_alias: str, user_alias: str) -
 def apply_data_scope(entity: Optional[BaseEntity], dept_alias: str, user_alias: str = "") -> None:
     """Java: ``@DataScope`` 切面的 ``handleDataScope`` + ``dataScopeFilter``.
 
-    与 Java 一致：未登录、超级管理员、入参不是 ``BaseEntity`` 时**什么都不做**
-    （包括不清理上一次残留的 ``params["dataScope"]``）。
+    与 Java 的差异（P2-8）：进入时先清掉 ``params["dataScope"]``。Java 从不清理，
+    实体对象复用时会把上一次的片段带进下一次查询；先删后写才是正确语义。
+    未登录、超级管理员、入参不是 ``BaseEntity`` 时仍然不生成片段 —— 但残留片段
+    同样会被删掉。
     """
+    if isinstance(entity, BaseEntity):
+        entity.params.pop(DATA_SCOPE, None)
+
     login_user = _current_login_user()
     if login_user is None:
         return
@@ -151,8 +157,15 @@ def _id(value: Optional[int]) -> str:
 
     保持同样的字面量：``deptId`` 为 ``null`` 时 SQL 片段就是
     ``d.dept_id = null``（永远不成立），而不是抛异常。
+    非数字值（正常路径不可能出现）一律按 ``null`` 处理，避免字符串进入 SQL。
     """
-    return "null" if value is None else str(value)
+    if value is None:
+        return "null"
+    try:
+        return str(int(value))
+    except (TypeError, ValueError):
+        logger.warning("[数据权限] 非数字 id 已按 null 处理: %r", value)
+        return "null"
 
 
 __all__ = [
