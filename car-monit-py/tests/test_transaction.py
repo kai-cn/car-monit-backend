@@ -21,7 +21,30 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
+from app.base.service.abstract_crud_service import AbstractCrudService
+from app.base.service.zdata_trail_tracks_service import ZdataTrailTracksService
 from app.config import database
+from app.manager.service.manager_service import ManagerCrudService
+
+
+class _FailingBatchMapper:
+    """前 N 条写入成功，第 ``fail_at`` 条抛异常（用来验证批量整体回滚）。"""
+
+    def __init__(self, fail_at: int = 2) -> None:
+        self.calls = 0
+        self.fail_at = fail_at
+
+    def _touch(self) -> None:
+        self.calls += 1
+        with database.session_scope():
+            if self.calls == self.fail_at:
+                raise ValueError("batch boom")
+
+    def insert(self, _entity: Any) -> None:
+        self._touch()
+
+    def update_by_id(self, _entity: Any) -> None:
+        self._touch()
 
 
 class FakeSession:
@@ -224,3 +247,36 @@ def test_real_rollback_discards_both_statements(
     # 第二条 work 的两条 INSERT 都随异常回滚，表里仍只有第一次提交的两行。
     with engine.connect() as connection:
         assert connection.execute(text("select count(*) from tx_probe")).scalar() == 2
+
+
+@pytest.mark.parametrize(
+    "factory",
+    [
+        lambda mapper: ManagerCrudService(mapper=mapper),
+        lambda mapper: AbstractCrudService(mapper=mapper),
+        lambda mapper: ZdataTrailTracksService(mapper=mapper),
+    ],
+)
+def test_save_batch_rolls_back_the_whole_batch(
+    sessions: List[FakeSession], factory: Any
+) -> None:
+    """saveBatch 中途失败时不能留下半截数据（manager/base/zdata 三条路径）."""
+    with pytest.raises(ValueError, match="batch boom"):
+        factory(_FailingBatchMapper(fail_at=2)).save_batch([object(), object()])
+
+    assert len(sessions) == 1
+    assert sessions[0].commits == 0
+    assert sessions[0].rollbacks == 1
+
+
+def test_update_batch_by_id_rolls_back_the_whole_batch(
+    sessions: List[FakeSession],
+) -> None:
+    with pytest.raises(ValueError, match="batch boom"):
+        ManagerCrudService(mapper=_FailingBatchMapper(fail_at=2)).update_batch_by_id(
+            [object(), object()]
+        )
+
+    assert len(sessions) == 1
+    assert sessions[0].commits == 0
+    assert sessions[0].rollbacks == 1

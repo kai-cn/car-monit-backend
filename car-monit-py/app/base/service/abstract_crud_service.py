@@ -101,6 +101,7 @@ class AbstractCrudService:
         return True
 
     # Java: boolean saveBatch(Collection<T> entityList)
+    @transactional
     def save_batch(self, entity_list: Sequence[Any]) -> bool:
         """MP 的 ``saveBatch`` —— 逐条插入。
 

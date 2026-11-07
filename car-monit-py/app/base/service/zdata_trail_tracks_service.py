@@ -30,6 +30,7 @@ from app.base.domain.zdata_trail_tracks import ZdataTrailTracks
 from app.base.mapper.zdata_trail_tracks_mapper import ZdataTrailTracksMapper
 from app.common.utils.common_util import is_null
 from app.common.utils.string_utils import is_not_blank
+from app.config.database import transactional
 
 
 class ZdataTrailTracksService:
@@ -92,6 +93,7 @@ class ZdataTrailTracksService:
         return self._mapper.remove_real_data(car_no_list)
 
     # Java: boolean saveBatch(Collection<ZdataTrailTracks> entityList)
+    @transactional
     def save_batch(self, entity_list: List[ZdataTrailTracks]) -> bool:
         """MP 的 ``saveBatch`` —— 逐条插入（与逐条 ``insert`` 等价）。"""
         for entity in entity_list:
