@@ -56,6 +56,9 @@ class AsyncManager:
             max_workers=self.CORE_POOL_SIZE,
             thread_name_prefix="schedule-pool",
             queue_capacity=capacity,
+            # 审计/登录日志属于"脱离请求"的后台写入：队列满时也不能继承调用方的
+            # traceId / SecurityContext / 事务 ContextVar，否则会误加入别人的事务。
+            caller_runs_isolated=True,
         )
 
     # Java: public static AsyncManager me()
