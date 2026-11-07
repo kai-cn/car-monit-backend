@@ -515,12 +515,9 @@ async fn import(
         .map_err(|err| AppError::BadRequest(err.to_string()))?
     {
         if field.file_name().is_some() {
-            file_name = field.file_name().unwrap_or_default().to_string();
-            bytes = field
-                .bytes()
-                .await
-                .map_err(|err| AppError::BadRequest(err.to_string()))?
-                .to_vec();
+            let upload = support::read_multipart_field(field).await?;
+            file_name = upload.file_name;
+            bytes = upload.bytes;
         }
     }
     // Java: `fileName.lastIndexOf(".xlsx") == -1`

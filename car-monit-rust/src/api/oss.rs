@@ -174,16 +174,11 @@ async fn upload(
 ) -> Result<Response, AppError> {
     let mut stored: Option<(String, Vec<u8>, String)> = None;
     while let Some(field) = multipart.next_field().await.ok().flatten() {
-        let name = field.file_name().unwrap_or_default().to_string();
-        let content_type = field
-            .content_type()
-            .unwrap_or("application/octet-stream")
-            .to_string();
-        let bytes = field.bytes().await.map_err(|err| {
-            // Java: 读流失败同样走 GlobalExceptionHandler。
-            AppError::Service(err.to_string())
-        })?;
-        stored = Some((name, bytes.to_vec(), content_type));
+        let upload = support::read_multipart_field(field).await?;
+        let content_type = upload
+            .content_type
+            .unwrap_or_else(|| "application/octet-stream".to_string());
+        stored = Some((upload.file_name, upload.bytes, content_type));
     }
     let (fallback_name, body, content_type) = stored.unwrap_or_default();
     let object_name = object_name.unwrap_or(fallback_name);

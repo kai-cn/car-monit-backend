@@ -26,6 +26,9 @@ use tower_http::services::ServeDir;
 use crate::error::not_found_response;
 use crate::state::AppState;
 
+/// Java: `spring.servlet.multipart.max-request-size: 200MB`。
+const MAX_REQUEST_BYTES: usize = 200 * 1024 * 1024;
+
 /// Java: ResourcesConfig.corsFilter —— allowCredentials + allowedOriginPattern("*")
 fn cors_layer() -> CorsLayer {
     CorsLayer::new()
@@ -125,6 +128,8 @@ pub fn build_router(state: AppState) -> Router {
     let router = router
         .fallback(any(fallback))
         .with_state(state.clone())
+        // Java: spring.servlet.multipart.max-request-size: 200MB（单文件 40MB 在 handler 内校验）。
+        .layer(axum::extract::DefaultBodyLimit::max(MAX_REQUEST_BYTES))
         // 方法不匹配先由路由层产出 405，这里立刻换成 Java 的响应体，再交给 @Log/鉴权之外层。
         .layer(axum::middleware::from_fn(method_not_allowed_mapper))
         // @PreAuthorize + @Log 元数据中间件（必须位于认证内侧）。

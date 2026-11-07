@@ -1478,11 +1478,7 @@ async fn import_data(
     {
         match field.name() {
             Some("file") | Some("files") => {
-                file_bytes = field
-                    .bytes()
-                    .await
-                    .map_err(|err| AppError::BadRequest(err.to_string()))?
-                    .to_vec();
+                file_bytes = support::read_multipart_field(field).await?.bytes;
             }
             Some("updateSupport") => {
                 update_support = field

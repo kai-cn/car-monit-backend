@@ -56,6 +56,43 @@ pub fn ids_param(value: &str) -> Vec<String> {
     value.split(',').map(str::to_string).collect()
 }
 
+/// Java: `spring.servlet.multipart.max-file-size: 40MB`。
+pub const MAX_UPLOAD_FILE_BYTES: usize = 40 * 1024 * 1024;
+
+/// 一个 multipart 文件字段（保留 Java `MultipartFile` 用到的三要素）。
+pub struct MultipartUpload {
+    pub file_name: String,
+    pub content_type: Option<String>,
+    pub bytes: Vec<u8>,
+}
+
+/// 按 40MB 上限读取 multipart 文件字段；超限时返回 Java
+/// `MaxUploadSizeExceededException` 的文案（HTTP 200 + code 500）。
+pub async fn read_multipart_field(
+    mut field: axum::extract::multipart::Field<'_>,
+) -> Result<MultipartUpload, AppError> {
+    let file_name = field.file_name().unwrap_or_default().to_string();
+    let content_type = field.content_type().map(str::to_string);
+    let mut bytes = Vec::new();
+    while let Some(chunk) = field
+        .chunk()
+        .await
+        .map_err(|err| AppError::BadRequest(err.to_string()))?
+    {
+        if bytes.len().saturating_add(chunk.len()) > MAX_UPLOAD_FILE_BYTES {
+            return Err(AppError::Service(
+                "Maximum upload size exceeded".to_string(),
+            ));
+        }
+        bytes.extend_from_slice(&chunk);
+    }
+    Ok(MultipartUpload {
+        file_name,
+        content_type,
+        bytes,
+    })
+}
+
 /// Java: `toAjax(int rows)` —— rows > 0 返回成功，否则返回错误。
 pub fn to_ajax(rows: u64) -> AjaxResult {
     if rows > 0 {

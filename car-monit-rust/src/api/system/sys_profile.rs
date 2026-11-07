@@ -295,14 +295,9 @@ async fn avatar(
         .map_err(|err| AppError::BadRequest(err.to_string()))?
     {
         if field.name() == Some("avatarfile") {
-            original = field.file_name().unwrap_or_default().to_string();
-            uploaded = Some(
-                field
-                    .bytes()
-                    .await
-                    .map_err(|err| AppError::BadRequest(err.to_string()))?
-                    .to_vec(),
-            );
+            let upload = crate::api::support::read_multipart_field(field).await?;
+            original = upload.file_name;
+            uploaded = Some(upload.bytes);
         }
     }
     let Some(bytes) = uploaded else {
