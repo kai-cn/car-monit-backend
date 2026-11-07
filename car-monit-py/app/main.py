@@ -234,6 +234,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # 容器销毁不会自动触发；漏掉这一步，解释器退出时会留下 50 + 200 个 worker 线程，
         # 进程无法干净退出（uvicorn 重载/测试反复 create_app 时还会累积线程）。
         _shutdown_thread_pools()
+        _close_http_client()
         dispose_engine()
         close_redis()
         logger.info("[应用] 已优雅关闭")
@@ -299,6 +300,13 @@ def _shutdown_thread_pools() -> None:
 
     reset_async_manager()
     reset_thread_pool_task_executor()
+
+
+def _close_http_client() -> None:
+    """关闭 Forest 等外部 HTTP 调用共用的进程级 ``httpx.Client``。"""
+    from app.base.service.forest.forest_client import close_http_client
+
+    close_http_client()
 
 
 def _apply_tomcat_thread_parity(settings: AppSettings) -> None:

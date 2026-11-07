@@ -43,6 +43,7 @@ from typing import BinaryIO, Optional
 
 import httpx
 
+from app.base.service.forest.forest_client import get_http_client
 from app.settings import get_settings
 
 logger = logging.getLogger("app.system.service.forest.file_api")
@@ -76,20 +77,18 @@ class FileApi:
     def _download(self, url: str, kind: str) -> bytes:
         last_error: Optional[BaseException] = None
         # Forest: retry-count = 2 -> 共 3 次（首次 + 2 次重试）
+        client = get_http_client()
+        timeout = httpx.Timeout(
+            self.timeout_ms / 1000.0, connect=self.connect_timeout_ms / 1000.0
+        )
         for attempt in range(self.retry_count + 1):
             try:
-                with httpx.Client(
-                    timeout=httpx.Timeout(
-                        self.timeout_ms / 1000.0, connect=self.connect_timeout_ms / 1000.0
-                    ),
-                    follow_redirects=True,
-                ) as client:
-                    response = client.request(_HTTP_METHOD, url)
-                    # Forest 的默认反序列化对本项目的 byte[] 不做状态码判断（
-                    # ``ResponseProcessor`` 直接把 body 交出去）；这里同样只取 body，
-                    # 不因 4xx/5xx 抛错 —— 下载到一张 404 页面时后端行为与 Java 一致
-                    # （把页面当图片存进 OSS）。
-                    return response.content
+                response = client.request(_HTTP_METHOD, url, timeout=timeout, follow_redirects=True)
+                # Forest 的默认反序列化对本项目的 byte[] 不做状态码判断（
+                # ``ResponseProcessor`` 直接把 body 交出去）；这里同样只取 body，
+                # 不因 4xx/5xx 抛错 —— 下载到一张 404 页面时后端行为与 Java 一致
+                # （把页面当图片存进 OSS）。
+                return response.content
             except Exception as exc:  # noqa: BLE001 - Forest 会重试所有传输层异常
                 last_error = exc
                 logger.warning(
