@@ -126,7 +126,7 @@ Python 的装饰器先执行，顺序反了。唯一受影响的端点恒定 500
 | integration | `tests/integration/test_real_backend.py` | 真 MySQL + 真 Redis（`-m integration`） |
 
 约定：断言响应体时**断言 `list(body)` 的键序**，不要只断言 `body["code"]`。
-`pytest` 的 `addopts` 已带 `-q`；全量约 **3600** 条（含 1 条联调 skip），跑一遍约 1 分钟。
+`pytest` 的 `addopts` 已带 `-q`；全量 **3605** 条（含 1 条联调 skip），覆盖率 72.85%。
 
 ## 6. 回归与对拍
 
@@ -156,7 +156,7 @@ python scripts/gen_mapping_docs.py                 # 重写 MAPPING_{BASE,MANAGE
 | 域字段 | 可比 115，属性/Excel/导出列 **零缺口** |
 | 响应信封 | 可比 501 全部归类：`AjaxResult`→`AjaxResult` 359、`TableDataInfo`→`TableDataInfo` 100、`AjaxResult`→`Response` 24、`void`→`Response` 8、`R`→`R` 5、`String`→`str` 5 |
 | 文案 | Java 148 种 / Python 155 种，两侧缺口均 **0** |
-| 用例 | **约 3600 passed / 0 failed / 1 skipped（联调）** |
+| 用例 | **3605 passed / 0 failed / 1 skipped（联调）** |
 | 对照表 | 5 份 `MAPPING_*.md`：54 个控制器 / 341 个端点，且生成器幂等 |
 | 自检 | smoke **5/5** |
 
@@ -197,6 +197,14 @@ python scripts/gen_mapping_docs.py                 # 重写 MAPPING_{BASE,MANAGE
 （`tests/test_gen_controller.py` 对拍）。它们不是给 Python 团队的日常模板：
 即使生成 Python 目标，输出也会与 Java 不一致，因此**不改造**，仅在
 `MAPPING_GENERATOR.md` 说明用途。
+
+### 7.5 工作区噪音（P3-4 / P3-5）：已确认无残留
+
+- `git ls-files evidence` 只有 `.py` / `.md` / `.txt` 审计工装，**没有** `.pyc`；
+  `*.py[cod]` 与 `__pycache__/` 已在 `.gitignore` 全局忽略。
+- `_py.log` 已在 `.gitignore` 第 30 行附近忽略；根目录不再有未跟踪的日志。
+- `evidence/` 里的临时脚本是双端对拍的可复现证据，保留；如需清理应单独评审，
+  不要与代码提交混在一起。
 
 改完代码后请重跑这几项，并把结果与基线对照；如果数字变了，先问「是不是我多写/漏写了一个端点」，
 再问「是不是我改了一个 `msg`」。
