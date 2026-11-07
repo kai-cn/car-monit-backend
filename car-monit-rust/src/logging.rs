@@ -1,21 +1,48 @@
-// 来源: ruoyi-admin/src/main/resources/logback.xml（按天 + 单文件 100MB + maxHistory）
-// 职责: tracing-subscriber 的文件 writer：按 UTC 日期滚动、单文件按大小切分、按天保留。
-// 为什么不用 flexi_logger：flexi_logger 接的是 `log` 门面，tracing 事件要经 `tracing-log`
-// 桥接后才进得去，会丢掉 span/结构化字段，且与当前 fmt layer 的格式/EnvFilter 产生两套输出。
-// 这里实现一个 `MakeWriter` 直接挂到 `tracing_subscriber::fmt::layer`，格式、路径、按天行为不变。
+// 来源: ruoyi-admin/src/main/resources/logback.xml
+// 职责: 复刻 logback 的四个文件 appender + 日志格式 + 本地时区按天/按大小滚动。
+// 对应关系:
+//   sys-info/sys-error/sys-slow/sys-user appender -> start_appender("sys-*")
+//   log.pattern -> JavaLogFormat
+//   SizeAndTimeBasedFNATP -> RollingWriter(max_bytes)
+//   maxHistory -> cleanup()
 
+use std::fmt;
 use std::fs::{File, OpenOptions};
+use std::future::Future;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender, TrySendError};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 
-use chrono::{Days, NaiveDate, Utc};
-use tracing_subscriber::fmt::MakeWriter;
+use chrono::{Days, Local, NaiveDate, TimeZone};
+use tracing::field::{Field, Visit};
+use tracing::{Event, Subscriber};
+use tracing_subscriber::fmt::format::Writer;
+use tracing_subscriber::fmt::{FmtContext, FormatEvent, FormatFields, MakeWriter};
+use tracing_subscriber::registry::LookupSpan;
 
 const CHANNEL_CAPACITY: usize = 1024;
 const DATE_LEN: usize = 10;
+const TRACE_ID_TARGET: &str = "com.ruoyi.common.core.monitor.TraceIdFilter";
+const SQL_LOG_TARGET: &str = "com.ruoyi.common.core.monitor.SqlLogInterceptor";
+const USER_LOG_TARGET: &str = "sys-user";
+
+tokio::task_local! {
+    static TRACE_ID: String;
+}
+
+/// 让日志格式能读到当前请求的 traceId（Java 用 MDC）。
+pub async fn with_trace_id<F>(trace_id: String, future: F) -> F::Output
+where
+    F: Future,
+{
+    TRACE_ID.scope(trace_id, future).await
+}
+
+pub fn current_trace_id() -> String {
+    TRACE_ID.try_with(|value| value.clone()).unwrap_or_default()
+}
 
 enum Command {
     Write(Vec<u8>),
@@ -45,7 +72,6 @@ impl LogHandle {
 impl Drop for LogHandle {
     fn drop(&mut self) {
         if let Ok(sender) = self.tx.lock() {
-            // 阻塞发送，保证后台线程收到 Shutdown 后再 join。
             let _ = sender.send(Command::Shutdown);
         }
         if let Some(join) = self.join.take() {
@@ -78,7 +104,6 @@ impl Write for LogGuard {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .try_send(Command::Write(buf.to_vec()));
-        // 与 tracing-appender 的 non_blocking 一致：缓冲满/线程退出时丢弃，不让日志拖垮业务。
         match result {
             Ok(()) | Err(TrySendError::Full(_)) | Err(TrySendError::Disconnected(_)) => {
                 Ok(buf.len())
@@ -96,10 +121,12 @@ impl Write for LogGuard {
     }
 }
 
-/// 启动文件日志后台线程；`dir` 仍来自 `log.dir`，prefix 仍为 `car-monit.log`。
-pub fn start(
+/// 启动一个文件 appender。
+/// `indexed` = Java fileNamePattern 是否含 `%i`（只有 sys-info/sys-error 含）。
+pub fn start_appender(
     dir: impl AsRef<Path>,
-    prefix: &str,
+    name: &str,
+    indexed: bool,
     max_bytes: u64,
     max_history: u32,
 ) -> io::Result<LogHandle> {
@@ -108,8 +135,9 @@ pub fn start(
     let (tx, rx) = sync_channel(CHANNEL_CAPACITY);
     let writer = RollingWriter {
         dir,
-        prefix: prefix.to_string(),
-        max_bytes: max_bytes.max(1),
+        name: name.to_string(),
+        indexed,
+        max_bytes: if indexed { max_bytes.max(1) } else { u64::MAX },
         max_history: max_history.max(1),
         date: String::new(),
         index: 0,
@@ -117,7 +145,7 @@ pub fn start(
         size: 0,
     };
     let join = std::thread::Builder::new()
-        .name("car-monit-log".to_string())
+        .name(format!("log-{name}"))
         .spawn(move || writer.run(rx))?;
     Ok(LogHandle {
         tx: Arc::new(Mutex::new(tx)),
@@ -146,7 +174,8 @@ pub fn parse_size(text: &str) -> u64 {
 
 struct RollingWriter {
     dir: PathBuf,
-    prefix: String,
+    name: String,
+    indexed: bool,
     max_bytes: u64,
     max_history: u32,
     date: String,
@@ -157,12 +186,15 @@ struct RollingWriter {
 
 impl RollingWriter {
     fn run(mut self, rx: Receiver<Command>) {
+        if let Err(err) = self.ensure_active() {
+            eprintln!("初始化日志文件 {} 失败: {err}", self.name);
+        }
         self.cleanup();
         while let Ok(command) = rx.recv() {
             match command {
                 Command::Write(bytes) => {
                     if let Err(err) = self.write_bytes(&bytes) {
-                        eprintln!("写日志文件失败: {err}");
+                        eprintln!("写日志文件 {} 失败: {err}", self.name);
                     }
                 }
                 Command::Flush => {
@@ -179,20 +211,25 @@ impl RollingWriter {
     }
 
     fn write_bytes(&mut self, bytes: &[u8]) -> io::Result<()> {
-        let today = Utc::now().format("%Y-%m-%d").to_string();
+        let today = local_date();
         if self.date != today {
-            self.file = None;
-            self.date = today;
-            self.index = 0;
-            self.size = 0;
+            self.archive_active(&self.date.clone())?;
+            self.date = today.clone();
+            self.index = self.next_index(&today);
+            self.open_active()?;
             self.cleanup();
         }
         if self.file.is_none() {
-            self.open_segment()?;
+            self.open_active()?;
         }
-        if self.size > 0 && self.size.saturating_add(bytes.len() as u64) > self.max_bytes {
-            self.index = self.index.saturating_add(1);
-            self.open_segment()?;
+        if self.indexed
+            && self.size > 0
+            && self.size.saturating_add(bytes.len() as u64) > self.max_bytes
+        {
+            let date = self.date.clone();
+            self.archive_active(&date)?;
+            self.index = self.next_index(&date);
+            self.open_active()?;
         }
         let file = self.file.as_mut().expect("日志文件已打开");
         file.write_all(bytes)?;
@@ -200,28 +237,118 @@ impl RollingWriter {
         Ok(())
     }
 
-    fn open_segment(&mut self) -> io::Result<()> {
-        loop {
-            let path = self.segment_path();
-            let size = std::fs::metadata(&path).map(|meta| meta.len()).unwrap_or(0);
-            if size >= self.max_bytes {
-                self.index = self.index.saturating_add(1);
-                continue;
+    fn ensure_active(&mut self) -> io::Result<()> {
+        let today = local_date();
+        let active = self.active_path();
+        let metadata = std::fs::metadata(&active).ok();
+        if let Some(metadata) = metadata {
+            let modified_date = metadata
+                .modified()
+                .ok()
+                .and_then(|time| {
+                    Local
+                        .timestamp_opt(
+                            time.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64,
+                            0,
+                        )
+                        .single()
+                })
+                .map(|time| time.format("%Y-%m-%d").to_string())
+                .unwrap_or_else(|| today.clone());
+            self.date = modified_date.clone();
+            self.index = self.next_index(&modified_date);
+            if metadata.len() > 0 {
+                self.open_active()?;
+                if modified_date != today {
+                    self.archive_active(&modified_date)?;
+                } else if self.indexed && self.size >= self.max_bytes {
+                    self.archive_active(&self.date.clone())?;
+                } else {
+                    return Ok(());
+                }
             }
-            let file = OpenOptions::new().create(true).append(true).open(&path)?;
-            self.file = Some(file);
-            self.size = size;
+        }
+        self.date = today.clone();
+        self.index = self.next_index(&today);
+        self.file = None;
+        self.size = 0;
+        self.open_active()
+    }
+
+    fn open_active(&mut self) -> io::Result<()> {
+        let path = self.active_path();
+        let size = std::fs::metadata(&path).map(|meta| meta.len()).unwrap_or(0);
+        let file = OpenOptions::new().create(true).append(true).open(&path)?;
+        self.file = Some(file);
+        self.size = size;
+        Ok(())
+    }
+
+    fn archive_active(&mut self, date: &str) -> io::Result<()> {
+        let Some(mut file) = self.file.take() else {
             return Ok(());
+        };
+        let _ = file.flush();
+        drop(file);
+        if self.size == 0 {
+            self.size = 0;
+            return Ok(());
+        }
+        let active = self.active_path();
+        let archive = self.archive_path(date, self.index);
+        if !self.indexed && archive.exists() {
+            let mut source = File::open(&active)?;
+            let mut target = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&archive)?;
+            io::copy(&mut source, &mut target)?;
+            std::fs::remove_file(&active)?;
+        } else {
+            std::fs::rename(&active, &archive)?;
+        }
+        self.size = 0;
+        Ok(())
+    }
+
+    fn active_path(&self) -> PathBuf {
+        self.dir.join(format!("{}.log", self.name))
+    }
+
+    fn archive_path(&self, date: &str, index: u32) -> PathBuf {
+        if self.indexed {
+            self.dir
+                .join(format!("{}.{}.{}.log", self.name, date, index))
+        } else {
+            self.dir.join(format!("{}.{}.log", self.name, date))
         }
     }
 
-    fn segment_path(&self) -> PathBuf {
-        let name = if self.index == 0 {
-            format!("{}.{}", self.prefix, self.date)
-        } else {
-            format!("{}.{}.{}", self.prefix, self.date, self.index)
+    fn next_index(&self, date: &str) -> u32 {
+        if !self.indexed {
+            return 0;
+        }
+        let mut next = 0;
+        let Ok(entries) = std::fs::read_dir(&self.dir) else {
+            return next;
         };
-        self.dir.join(name)
+        let prefix = format!("{}.{}.", self.name, date);
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let Some(name) = name.to_str() else {
+                continue;
+            };
+            let Some(rest) = name.strip_prefix(&prefix) else {
+                continue;
+            };
+            let Some(number) = rest.strip_suffix(".log") else {
+                continue;
+            };
+            if let Ok(index) = number.parse::<u32>() {
+                next = next.max(index.saturating_add(1));
+            }
+        }
+        next
     }
 
     fn flush(&mut self) -> io::Result<()> {
@@ -231,13 +358,13 @@ impl RollingWriter {
         Ok(())
     }
 
-    /// Java logback `maxHistory`：删除早于 `today - max_history` 天的文件（含旧命名）。
+    /// Java logback `maxHistory`：删除早于 `today - max_history` 天的归档文件。
     fn cleanup(&self) {
-        let today = Utc::now().date_naive();
+        let today = Local::now().date_naive();
         let Some(cutoff) = today.checked_sub_days(Days::new(self.max_history as u64)) else {
             return;
         };
-        let prefix = format!("{}.", self.prefix);
+        let prefix = format!("{}.", self.name);
         let Ok(entries) = std::fs::read_dir(&self.dir) else {
             return;
         };
@@ -263,6 +390,145 @@ impl RollingWriter {
     }
 }
 
+fn local_date() -> String {
+    Local::now().format("%Y-%m-%d").to_string()
+}
+
+/// Java: log.pattern / log.console.pattern。
+#[derive(Debug, Clone, Copy)]
+pub struct JavaLogFormat {
+    pub console: bool,
+    pub logger_width: usize,
+}
+
+impl<S, N> FormatEvent<S, N> for JavaLogFormat
+where
+    S: Subscriber + for<'a> LookupSpan<'a>,
+    N: for<'a> FormatFields<'a> + 'static,
+{
+    fn format_event(
+        &self,
+        _ctx: &FmtContext<'_, S, N>,
+        mut writer: Writer<'_>,
+        event: &Event<'_>,
+    ) -> fmt::Result {
+        let metadata = event.metadata();
+        let now = Local::now();
+        if self.console {
+            write!(
+                writer,
+                "{} [{}] {:<5} [{}] {} - ",
+                now.format("%H:%M:%S%.3f"),
+                thread_name(),
+                metadata.level().as_str(),
+                current_trace_id(),
+                abbreviate_logger(metadata.target(), self.logger_width)
+            )?;
+        } else {
+            write!(
+                writer,
+                "{} [{}] {:<5} [{}] {}:{} - ",
+                now.format("%Y-%m-%d %H:%M:%S%.3f"),
+                thread_name(),
+                metadata.level().as_str(),
+                current_trace_id(),
+                abbreviate_logger(metadata.target(), self.logger_width),
+                metadata.line().unwrap_or(0)
+            )?;
+        }
+        let mut visitor = MessageVisitor::default();
+        event.record(&mut visitor);
+        if let Some(message) = visitor.message {
+            write!(writer, "{message}")?;
+        }
+        for (key, value) in visitor.fields {
+            write!(writer, " {key}={value}")?;
+        }
+        writeln!(writer)
+    }
+}
+
+fn thread_name() -> String {
+    std::thread::current()
+        .name()
+        .unwrap_or_default()
+        .to_string()
+}
+
+/// Java `%logger{36}`：超长时把左侧包名缩成首字母，保留最后一段。
+fn abbreviate_logger(name: &str, width: usize) -> String {
+    if name.chars().count() <= width {
+        return name.to_string();
+    }
+    let separator = if name.contains("::") { "::" } else { "." };
+    let parts: Vec<&str> = name.split(separator).collect();
+    let Some(last) = parts.last() else {
+        return name.to_string();
+    };
+    let mut out = last.to_string();
+    for part in parts[..parts.len().saturating_sub(1)].iter().rev() {
+        let first = part.chars().next().unwrap_or('?');
+        out = format!("{first}{separator}{out}");
+        if out.chars().count() > width {
+            break;
+        }
+    }
+    if out.chars().count() > width {
+        out = out.chars().skip(out.chars().count() - width).collect();
+    }
+    out
+}
+
+#[derive(Default)]
+struct MessageVisitor {
+    message: Option<String>,
+    fields: Vec<(String, String)>,
+}
+
+impl MessageVisitor {
+    fn record(&mut self, field: &Field, value: String) {
+        if field.name() == "message" {
+            self.message = Some(value);
+        } else {
+            self.fields.push((field.name().to_string(), value));
+        }
+    }
+}
+
+impl Visit for MessageVisitor {
+    fn record_debug(&mut self, field: &Field, value: &dyn fmt::Debug) {
+        self.record(field, format!("{value:?}"));
+    }
+
+    fn record_str(&mut self, field: &Field, value: &str) {
+        self.record(field, value.to_string());
+    }
+
+    fn record_i64(&mut self, field: &Field, value: i64) {
+        self.record(field, value.to_string());
+    }
+
+    fn record_u64(&mut self, field: &Field, value: u64) {
+        self.record(field, value.to_string());
+    }
+
+    fn record_bool(&mut self, field: &Field, value: bool) {
+        self.record(field, value.to_string());
+    }
+
+    fn record_f64(&mut self, field: &Field, value: f64) {
+        self.record(field, value.to_string());
+    }
+}
+
+pub fn is_slow_target(target: &str) -> bool {
+    matches!(target, TRACE_ID_TARGET | SQL_LOG_TARGET)
+}
+
+pub fn is_user_target(target: &str) -> bool {
+    target == USER_LOG_TARGET
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -277,9 +543,9 @@ mod tests {
     }
 
     #[test]
-    fn writer_rotates_by_size_and_keeps_daily_name() {
+    fn writer_uses_active_file_and_indexed_archive() {
         let dir = tempfile::tempdir().expect("tempdir");
-        let handle = start(dir.path(), "car-monit.log", 10, 60).expect("start");
+        let handle = start_appender(dir.path(), "sys-info", true, 10, 60).expect("start");
         let mut writer = handle.writer().make_writer();
         writer.write_all(b"1234567890").expect("write first");
         writer.write_all(b"abcde").expect("write second");
@@ -292,21 +558,29 @@ mod tests {
             .map(|entry| entry.file_name().to_string_lossy().to_string())
             .collect();
         files.sort();
-        assert_eq!(files.len(), 2, "{files:?}");
+        assert!(files.iter().any(|name| name == "sys-info.log"), "{files:?}");
         assert!(
-            files[0].starts_with("car-monit.log."),
-            "第一天文件沿用原命名: {files:?}"
+            files
+                .iter()
+                .any(|name| name.ends_with(".0.log") && name.starts_with("sys-info.")),
+            "{files:?}"
         );
-        assert!(files[1].ends_with(".1"), "超过 10 字节后切到 .1: {files:?}");
     }
 
     #[test]
     fn cleanup_removes_old_daily_files() {
         let dir = tempfile::tempdir().expect("tempdir");
-        let old = dir.path().join("car-monit.log.2020-01-01");
+        let old = dir.path().join("sys-info.2020-01-01.0.log");
         std::fs::write(&old, b"old").expect("write old");
-        let handle = start(dir.path(), "car-monit.log", 10, 1).expect("start");
+        let handle = start_appender(dir.path(), "sys-info", true, 10, 1).expect("start");
         drop(handle);
         assert!(!old.exists(), "早于 maxHistory 的文件应被删除");
+    }
+
+    #[test]
+    fn logger_abbreviation_keeps_last_segment() {
+        let name = abbreviate_logger("com.ruoyi.common.core.monitor.TraceIdFilter", 36);
+        assert!(name.ends_with("TraceIdFilter"), "{name}");
+        assert!(name.chars().count() <= 36, "{name}");
     }
 }
