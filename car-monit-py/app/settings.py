@@ -529,6 +529,10 @@ class AppSection(_Section):
     request_thread_limit: int = 200
     # CORS 白名单；为空时 local 退回 Java 的"允许所有来源"，非 local 拒绝跨域。
     cors: CorsSection = Field(default_factory=CorsSection)
+    # 异步线程池（AsyncManager / ThreadPoolTaskExecutor）的待执行队列上限。
+    # Java 的 ThreadPoolTaskExecutor 是 queueCapacity=1000 + CallerRunsPolicy；
+    # ScheduledExecutorService 虽为无界队列，这里同样按这个上限收紧。
+    executor_queue_capacity: int = 1000
 
 
 # ---------------------------------------------------------------------------

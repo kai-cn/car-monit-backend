@@ -13,10 +13,11 @@ Python equivalent
 -----------------
 ``ThreadPoolExecutor(max_workers=50, thread_name_prefix="schedule-pool")``.
 
-Deviations, all of them harmless:
-* ``ThreadPoolExecutor`` has an unbounded queue, so ``CallerRunsPolicy`` has no counterpart --
-  the pool never rejects. Java only hits that branch when 50 threads plus the queue (also
-  unbounded) are saturated, which cannot happen either.
+Deviations:
+* 队列现在**有界**（``app.executor_queue_capacity``，默认 1000）。Java 的
+  ``ScheduledThreadPoolExecutor`` 用无界 ``DelayedWorkQueue``，突发审计写入会把内存顶爆；
+  这里改用 :class:`~app.common.utils.bounded_executor.BoundedThreadPoolExecutor`，
+  队列满时按 ``CallerRunsPolicy`` 在调用线程执行（不丢任务、不无限积压）。
 * The 10 ms delay is dropped. It exists in Java to let the HTTP response be flushed first;
   here the task is submitted to another thread, which achieves the same thing without
   adding a timer wheel. The delay is kept as a documented constant.
@@ -30,8 +31,9 @@ from __future__ import annotations
 
 import logging
 import threading
-from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
+
+from app.common.utils.bounded_executor import BoundedThreadPoolExecutor, default_queue_capacity
 
 logger = logging.getLogger("app.framework.manager.async_manager")
 
@@ -48,10 +50,12 @@ class AsyncManager:
     _instance: Optional["AsyncManager"] = None
     _lock = threading.Lock()
 
-    def __init__(self) -> None:
-        self._executor = ThreadPoolExecutor(
+    def __init__(self, queue_capacity: Optional[int] = None) -> None:
+        capacity = queue_capacity or default_queue_capacity() or 1000
+        self._executor = BoundedThreadPoolExecutor(
             max_workers=self.CORE_POOL_SIZE,
             thread_name_prefix="schedule-pool",
+            queue_capacity=capacity,
         )
 
     # Java: public static AsyncManager me()
