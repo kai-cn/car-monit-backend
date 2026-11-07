@@ -6,6 +6,8 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 
 	"car-monit-go/internal/app"
@@ -13,6 +15,9 @@ import (
 )
 
 // Health 返回进程状态、数据库与 Redis 连通性。
+//
+// DIFF: 依赖不可用时返回 HTTP 503（业务 code 仍是 500），让容器编排/网关能据此摘流或重启；
+// Java 侧没有该端点。HTTP 状态是为探活语义服务的，不参与 Java 返回体对拍。
 func Health(a *app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -25,10 +30,12 @@ func Health(a *app.App) gin.HandlerFunc {
 		if err := a.Cache.Client().Ping(ctx).Err(); err != nil {
 			redisStatus = "DOWN"
 		}
+		httpStatus := http.StatusOK
 		if dbStatus == "DOWN" || redisStatus == "DOWN" {
 			status = "DOWN"
+			httpStatus = http.StatusServiceUnavailable
 		}
-		web.JSON(c, web.AJ(web.StatusSuccess, status, gin.H{
+		c.JSON(httpStatus, web.AJ(web.StatusSuccess, status, gin.H{
 			"database": dbStatus,
 			"redis":    redisStatus,
 			"version":  a.Cfg.RuoYi.Version,

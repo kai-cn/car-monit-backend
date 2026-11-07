@@ -145,3 +145,11 @@ xss:
   enabled: true
   excludes: /system/notice
   urlPatterns: "/system/*,/monitor/*,/tool/*"
+
+# 雪花 ID 机器标识（Go 新增，对应 MyBatis-Plus IdWorker 的 workerId/datacenterId）。
+# -1 = 按主机名自动推导；取值范围 0~31。
+# 多副本部署必须保证 (datacenter-id, worker-id) 组合唯一，否则同一毫秒内会生成重复主键。
+# 也可用环境变量 CARMONIT_WORKER_ID / CARMONIT_DATACENTER_ID 覆盖（优先于本段）。
+instance:
+  worker-id: -1
+  datacenter-id: -1

@@ -25,6 +25,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"car-monit-go/internal/idgen"
 	"car-monit-go/internal/middleware"
 	"car-monit-go/internal/router"
 	"car-monit-go/internal/web"
@@ -909,7 +910,9 @@ func (h *handler) syncSuspiciousCar(c *gin.Context, rawList []json.RawMessage) e
 
 // ---------------------------------------------------------------- 工具
 
-func newSnowflakeID() string { return strconv.FormatInt(time.Now().UnixNano(), 10) }
+// newSnowflakeID 对应 MyBatis-Plus IdWorker.nextId()（car_suspicious 主键）。
+// DIFF: 原实现用 UnixNano，未带机器位；统一到 internal/idgen 后多副本不会碰撞。
+func newSnowflakeID() string { return idgen.NextString() }
 
 func carVehicleOfSync(carType string) string {
 	switch carType {

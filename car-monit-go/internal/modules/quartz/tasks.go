@@ -10,10 +10,12 @@
 //
 // DIFF: 任务方法的参数由 JobInvokeUtil 规则推断（Java 用反射按声明类型精确匹配），
 // Go 侧在方法内显式断言参数个数与类型，个数/类型不符时返回与 Java 反射一致的语义错误。
-// DIFF: 依赖尚未迁移业务服务（carTrackInfoService / httpBaseInfoApiService / GaussDB 同步等）的任务
-// 以 "not migrated" 错误占位：调用会被写入 sys_job_log（status=1，exception_info 说明原因），
-// 不会 panic，也不会静默成功。唯一天然空实现的是 OrgTask.syncOrgInfo（Java 方法体已被注释掉）
-// 与 TrackTask.syncHistoryTrackNoCar（同样被注释掉）。
+//
+// DIFF: 依赖数据接入面（Kafka / Elasticsearch / GaussDB 同步 / HttpBaseInfoApi）的任务
+// 本轮**不注册**：它们无法在 Go 侧独立完成，注册成占位会让运维误以为可用。
+// 未注册的目标统一由 invoke.go 的 unmigratedTargets 在保存任务时直接拒绝，
+// 并在响应里说明归属（数据接入仍由 Java 服务承担）。唯一天然空实现的是
+// OrgTask.syncOrgInfo（Java 方法体已被注释）与 TrackTask.syncHistoryTrackNoCar（同样被注释）。
 package quartz
 
 import (
@@ -104,7 +106,7 @@ func builtinTaskBeans(a *app.App) []*taskBean {
 				return manager.RunSyncSuspiciousCar(a)
 			},
 			// JAVA 对照: TrackTask.syncHistoryTrack -> carTrackInfoService.syncHistoryTrack + geometryService.updateRedisList()
-			"syncHistoryTrack": notMigrated(a, "trackTask.syncHistoryTrack", "历史轨迹同步（ICarTrackInfoService/IGeometryService 未迁移）"),
+			// 依赖 ICarTrackInfoService / IGeometryService 与远端轨迹接口，属数据接入面，未注册。
 			// JAVA 对照: TrackTask.saveCarExcept -> carExceptRecordService.saveCarExcept(...)
 			"saveCarExcept": func(ctx context.Context, args []any) error {
 				if err := wantArgs("trackTask.saveCarExcept", args, 0); err != nil {
@@ -125,16 +127,6 @@ func builtinTaskBeans(a *app.App) []*taskBean {
 			},
 		}},
 
-		{name: "vehicleMonitoringTask", methods: map[string]TaskFunc{
-			"syncOrgInfo":             notMigrated(a, "vehicleMonitoringTask.syncOrgInfo", "机构信息同步（HttpBaseInfoApiService 未迁移）"),
-			"syncSectionInfo":         notMigrated(a, "vehicleMonitoringTask.syncSectionInfo", "路段信息同步（HttpBaseInfoApiService 未迁移）"),
-			"syncGantryInfo":          notMigrated(a, "vehicleMonitoringTask.syncGantryInfo", "门架信息同步（HttpBaseInfoApiService 未迁移）"),
-			"syncServiceAreaInfoInfo": notMigrated(a, "vehicleMonitoringTask.syncServiceAreaInfoInfo", "服务区信息同步（HttpBaseInfoApiService 未迁移）"),
-			"syncTollBoothInfoInfo":   notMigrated(a, "vehicleMonitoringTask.syncTollBoothInfoInfo", "收费所信息同步（HttpBaseInfoApiService 未迁移）"),
-			"syncSfzjcxxInfoInfo":     notMigrated(a, "vehicleMonitoringTask.syncSfzjcxxInfoInfo", "收费站位置同步（HttpBaseInfoApiService 未迁移）"),
-			"syncTollStationInfo":     notMigrated(a, "vehicleMonitoringTask.syncTollStationInfo", "收费站信息同步（HttpBaseInfoApiService 未迁移）"),
-		}},
-
 		{name: "partitionMaintenanceTask", methods: map[string]TaskFunc{
 			"createFuturePartitions": func(ctx context.Context, args []any) error {
 				if err := wantArgs("partitionMaintenanceTask.createFuturePartitions", args, 0); err != nil {
@@ -149,22 +141,6 @@ func builtinTaskBeans(a *app.App) []*taskBean {
 				return checkPartitionHealth(ctx, a)
 			},
 		}},
-
-		{name: "snapshotFlowSyncTask", methods: map[string]TaskFunc{
-			"syncFullData":          notMigrated(a, "snapshotFlowSyncTask.syncFullData", "门架抓拍流水全量同步（GaussDB/分表 Mapper 未迁移）"),
-			"manualFullSync":        notMigrated(a, "snapshotFlowSyncTask.manualFullSync", "门架抓拍流水全量同步（GaussDB/分表 Mapper 未迁移）"),
-			"manualIncrementalSync": notMigrated(a, "snapshotFlowSyncTask.manualIncrementalSync", "门架抓拍流水增量同步（GaussDB/分表 Mapper 未迁移）"),
-			"syncIncrementalData":   notMigrated(a, "snapshotFlowSyncTask.syncIncrementalData", "门架抓拍流水增量同步（GaussDB/分表 Mapper 未迁移）"),
-			"syncSingleMonth":       notMigrated(a, "snapshotFlowSyncTask.syncSingleMonth", "门架抓拍流水单月同步（GaussDB/分表 Mapper 未迁移）"),
-			"preCreateTables":       notMigrated(a, "snapshotFlowSyncTask.preCreateTables", "分表预创建（ShardingTableUtil 未迁移）"),
-		}},
-	}
-}
-
-// notMigrated 生成占位实现：方法存在（可通过保存校验），但执行时明确失败。
-func notMigrated(a *app.App, name, reason string) TaskFunc {
-	return func(ctx context.Context, args []any) error {
-		return fmt.Errorf("%s 未迁移：%s", name, reason)
 	}
 }
 

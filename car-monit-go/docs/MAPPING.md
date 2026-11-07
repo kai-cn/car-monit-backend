@@ -199,9 +199,26 @@
 
 ## 4. 消息队列 / 搜索引擎 / 分表
 
+> **归属决策（2026-11-08）**：Go 版本承担 HTTP API、认证授权、审计与业务定时任务；
+> **Kafka 消费 / Elasticsearch 索引写入 / GaussDB 同步 / 分表预创建仍由 Java 侧（或独立数据接入服务）承担**。
+> 本仓库中的 `internal/stream/{kafka,es,idempotent,sharding}` 是可复用的实现骨架，但**未接线**：
+> `main` 不启动消费者、没有调用方、也未做数据对拍。仅把 `kafka.enabled` / `elasticsearch.enabled`
+> 打开不会有任何效果（启动日志会显式告警）。
+>
+> 因此，依赖数据接入面的定时任务**不再注册**，在保存任务时直接拒绝（Java 允许保存、执行时才失败），
+> 拒绝原因见 `internal/modules/quartz/invoke.go` 的 `unmigratedTargets`。这是有意的行为偏离，
+> 目的是避免运维看到“保存成功”却只能在 `sys_job_log` 里发现持续失败。
+
 | Java 组件 | Go 目标 | 状态 |
 |---|---|---|
-| Kafka `SnapshotFlowConsumer` 等消费者 | `internal/stream/kafka`（待接入） | 配置已就绪（`kafka.enabled` 默认 false） |
-| Elasticsearch 索引写入 | `internal/stream/es`（待接入） | 配置已就绪（`elasticsearch.enabled` 默认 false） |
-| ShardingSphere 月分表规则 | 各 ODS 模块按 `snapshot.flow.sharding.*` 拼接表名 | 配置已就绪 |
-| 定时维护任务（`ruoyi-*/task`） | `internal/modules/quartz` 任务注册表 | 随 quartz 模块迁移 |
+| Kafka `SnapshotFlowConsumer` / `Debezium*Consumer` | `internal/stream/kafka` | **未接线**（骨架 + 单测，无调用方） |
+| Elasticsearch 索引写入 / 检索 | `internal/stream/es` | **未接线**（仅 Kafka 链路会调用） |
+| 幂等键（Redis SETNX） | `internal/stream/idempotent` | **未接线**（供 Kafka 链路使用） |
+| ShardingSphere 月分表规则 | `internal/stream/sharding` + base 模块自实现 | 表名计算已迁移；base 未复用本包（待收敛） |
+| 定时维护任务（`ruoyi-*/task`） | `internal/modules/quartz` 任务注册表 | 已迁移：`ryTask`、`orgTask`、`trackTask`（4/5 方法）、`partitionMaintenanceTask` |
+| `vehicleMonitoringTask`（7 个同步方法） | — | **未迁移**（依赖 `HttpBaseInfoApiService`），保存时拒绝 |
+| `snapshotFlowSyncTask`（6 个同步方法） | — | **未迁移**（依赖 GaussDB + 分表 Mapper），保存时拒绝 |
+| `trackTask.syncHistoryTrack` | — | **未迁移**（依赖 `ICarTrackInfoService`/`IGeometryService`），保存时拒绝 |
+
+**Java 下线前置条件**：补齐并灰度验证上述 Kafka→MySQL 分表 / ES / 幂等 / GaussDB 同步链路，
+或在部署拓扑中保留一个只负责数据接入的 Java 实例。

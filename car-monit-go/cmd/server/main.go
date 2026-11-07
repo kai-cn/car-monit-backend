@@ -21,6 +21,7 @@ import (
 	"car-monit-go/internal/cache"
 	"car-monit-go/internal/config"
 	"car-monit-go/internal/database"
+	"car-monit-go/internal/idgen"
 	"car-monit-go/internal/logx"
 	"car-monit-go/internal/middleware"
 	"car-monit-go/internal/modules/quartz"
@@ -47,6 +48,23 @@ func main() {
 	}
 
 	logger := logx.New(cfg)
+
+	// 雪花 ID 的实例标识必须在任何写入之前确定：多副本共用 (datacenterId, workerId)
+	// 会在同一毫秒内生成重复主键。未配置时按主机名自动推导并打印，便于排障。
+	idSource, err := idgen.Init(cfg.Instance.WorkerID, cfg.Instance.DatacenterID)
+	if err != nil {
+		logger.Error("初始化雪花 ID 生成器失败", "err", err)
+		os.Exit(1)
+	}
+	workerID, datacenterID := idgen.IDs()
+	logger.Info("雪花 ID 实例标识", "workerId", workerID, "datacenterId", datacenterID, "source", idSource)
+
+	// 数据接入边界：Kafka / Elasticsearch / CDC / GaussDB 同步尚未接入 Go 版本，
+	// 仅打开配置不会生效。这里显式告警，避免误以为“配置已就绪 = 功能可用”。
+	if cfg.Kafka.Enabled || cfg.Elasticsearch.Enabled {
+		logger.Warn("Kafka/ES 配置已启用，但 Go 版本未接线；数据接入仍由 Java 服务承担，请勿据此下线 Java",
+			"kafkaEnabled", cfg.Kafka.Enabled, "elasticsearchEnabled", cfg.Elasticsearch.Enabled)
+	}
 
 	db, err := database.Open(cfg, logger)
 	if err != nil {

@@ -6,6 +6,10 @@
 // DIFF: Spring Kafka 的 @KafkaListener + 容器工厂由框架托管；Go 显式构造 Reader/Writer 并运行消费循环。
 // DIFF: 手工确认 MANUAL_IMMEDIATE → handler 成功后才 CommitMessages；失败消息写入 DLQ 后仍提交。
 // DIFF: max.poll.records=500 → 每次 ReadBatch 以 MaxBytes/MaxWait 聚合，单批上限由 BatchSize 截断。
+//
+// 状态: **未接线**。main 未启动消费者，仓库内也没有任何调用方；Go 版本的数据接入
+// （MySQL 分表写入 + ES 索引 + 幂等键）本轮不交付，归属见 docs/MAPPING.md §4。
+// 启用前置条件：补齐分表写入/ES 写入/幂等键三条链路并在 main 中显式启动，且完成对拍。
 package kafka
 
 import (

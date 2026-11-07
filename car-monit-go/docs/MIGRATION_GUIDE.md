@@ -57,6 +57,7 @@ level=INFO msg=服务启动 addr=:9989 config=configs/config.yaml
   - `CARMONIT_REDIS_ADDR` / `CARMONIT_REDIS_PASSWORD`
   - `CARMONIT_TOKEN_SECRET`
   - `CARMONIT_KAFKA_BOOTSTRAP_SERVERS`
+  - `CARMONIT_WORKER_ID` / `CARMONIT_DATACENTER_ID`：雪花 ID 机器位（0~31，见 §1.7）
 - 注意：`logging.level.com.ruoyi` 这类含点号键会被 Viper 解析为嵌套 map，`internal/logx` 会递归读取并取最详细级别（debug > info > warn > error）。
 
 ### 1.4 验证清单
@@ -64,9 +65,13 @@ level=INFO msg=服务启动 addr=:9989 config=configs/config.yaml
 1. **探活**（Go 新增端点）：
 
    ```bash
-   curl -s http://127.0.0.1:9989/healthz
+   curl -s -w '\nHTTP %{http_code}\n' http://127.0.0.1:9989/healthz
    # {"code":200,"msg":"UP","data":{"database":"UP","redis":"UP","version":"3.8.7"}}
+   # HTTP 200
    ```
+
+   DB 或 Redis 不可用时返回 `{"code":500,"msg":"DOWN",...}` 且 **HTTP 503**，
+   便于容器编排直接重启坏实例（Java 侧没有该端点，属 Go 新增）。
 
 2. **验证码**：
 
@@ -162,6 +167,43 @@ Redis 共存（`internal/cache/fastjson.go` + `internal/cache/javatypes.go`）�
 实现要点（详细清单见 `docs/PROGRESS.md` §3）：响应信封与 `data` 键语义、`id`/`password`/`salt` 等可空字段、
 三态日期（`yyyy-MM-dd` / `yyyy-MM-dd HH:mm:ss` / Jackson 默认 ISO-8601）、Jackson 派生属性（`admin`/`default`/`children`）、
 各 Mapper XML 的投影列与排序，以及 MyBatis-Plus `insertFill/updateFill` 的审计字段边界（insert 不写 `update_by`/`update_time`）。
+
+### 1.7 数据接入边界与实例标识（2026-11-08 加固）
+
+**① 数据接入不随 Go API 交付。** Kafka 消费、ES 索引写入、GaussDB 同步、分表预创建仍由 Java 侧
+（或独立数据接入服务）承担，原因与清单见 [MAPPING.md §4](./MAPPING.md#4-消息队列--搜索引擎--分表)。
+`internal/stream/**` 只是实现骨架且未接线；打开 `kafka.enabled` / `elasticsearch.enabled` 不会生效，
+启动日志会打印：
+
+```
+level=WARN msg="Kafka/ES 配置已启用，但 Go 版本未接线；数据接入仍由 Java 服务承担，请勿据此下线 Java"
+```
+
+依赖数据接入面的定时任务在保存时会被拒绝（而不是“保存成功、执行必失败”）：
+
+```
+任务 vehicleMonitoringTask.syncOrgInfo 尚未迁移到 Go 版本（机构信息同步依赖 HttpBaseInfoApiService）；
+该能力仍由 Java 数据接入服务承担，请在 Java 侧配置或等待后续版本
+```
+
+**② 多副本必须区分雪花 ID 机器位。** `sys_*.id` 与业务表的 19 位主键由
+`internal/idgen` 生成（与 MyBatis-Plus `IdWorker` 位宽一致：41 位毫秒 + 5 位机房 + 5 位机器 + 12 位序列）。
+
+| 配置项 | 环境变量 | 默认 | 说明 |
+|---|---|---|---|
+| `instance.worker-id` | `CARMONIT_WORKER_ID` | -1（按主机名哈希） | 0~31；多副本必须唯一 |
+| `instance.datacenter-id` | `CARMONIT_DATACENTER_ID` | -1（回落 0） | 0~31；跨机房部署时区分 |
+
+启动时会打印实际生效的标识与来源：
+
+```
+level=INFO msg="雪花 ID 实例标识" workerId=7 datacenterId=0 source=hostname
+```
+
+- 单实例：保持 -1 即可（主机名推导稳定）。
+- 多副本：**必须**为每个副本显式设置不同的 `CARMONIT_WORKER_ID`（或不同的组合），
+  否则同一毫秒内可能生成重复主键，表现为插入时 `Duplicate entry`。
+- 取值范围越界会在配置校验阶段直接启动失败，而不是运行期才暴露。
 
 ### 1.5 常见问题
 
@@ -268,9 +310,13 @@ internal/router             路由注册表
 | 轨迹几何/设备统计 | 路网 Geometry + TrailDevBO | 返回空数组/0 | `changeTrailInfo`、`carLocation` 等仍返回完整轨迹点，仅缺路网叠加 |
 | 图片证明材料 | Word 模板嵌入图片 | 纯文本 docx | `exportAbnormalPassage` 下载协议一致，内容简化为关键字段 |
 | CORS | 反射 Origin + credentials | 相同 | 无变化 |
-| 操作日志 | AOP 切面 | 显式路由中间件 | 需在注册路由时选择是否挂载 |
-| Kafka/ES | Spring Kafka / ES Client | 待接入（配置已就绪） | 见第 4 节进度 |
-| 健康检查 | 无 | 新增 `/healthz` | 仅新增，不影响既有接口 |
+| 操作日志 | AOP 切面 + AsyncManager 线程池 | 显式路由中间件 + 固定 2 worker / 1024 队列 | 需在注册路由时选择是否挂载；超过 2000 字节的请求/响应只截断不完整落库，文件流不采集 |
+| 事务边界 | `@Transactional` 方法级代理 | `db.Transaction` 显式包裹 | 用户/角色/部门/字典/流程/任务/可疑车辆核实/异常流水/代码生成已对齐；新增多写逻辑必须显式加事务 |
+| 权限与审计 | `@PreAuthorize` / `@Log` 注解 | `middleware.Perm` / `middleware.OperLog` | 2026-11-08 已逐条对齐 manager 手写控制器；Java 中被注释的注解（如 `/manager/suspicious/check`）仍不挂 |
+| 雪花 ID | MyBatis-Plus `IdWorker`（MAC/进程推导） | `internal/idgen`（配置/主机名推导） | 多副本必须设置唯一 `CARMONIT_WORKER_ID`，见 §1.7 |
+| 未迁移的数据接入任务 | 保存成功、执行时报错 | **保存阶段直接拒绝** | 有意偏离：避免“保存成功但永不成功”的假象 |
+| Kafka/ES | Spring Kafka / ES Client | 未接线（仅骨架） | 数据接入仍由 Java 承担，见 §1.7 与 MAPPING §4 |
+| 健康检查 | 无 | 新增 `/healthz`，DOWN 时 HTTP 503 | 仅新增，不影响既有接口 |
 
 ## 4. 迁移进度
 

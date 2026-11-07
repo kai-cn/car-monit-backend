@@ -202,6 +202,14 @@ type GeneratorCode struct {
 	} `mapstructure:"mybatis-plus"`
 }
 
+// Instance 是 Go 新增的实例标识，对应 MyBatis-Plus IdWorker 的 workerId / datacenterId。
+// -1 表示按主机名自动推导；多副本部署必须保证 (datacenterId, workerId) 组合唯一，
+// 否则雪花 ID 会在同一毫秒内碰撞（见 internal/idgen 与部署文档）。
+type Instance struct {
+	WorkerID     int64 `mapstructure:"worker-id"`
+	DatacenterID int64 `mapstructure:"datacenter-id"`
+}
+
 // JAVA 对照: application.yml 全量顶层配置
 type Config struct {
 	RuoYi          RuoYi          `mapstructure:"ruoyi"`
@@ -223,6 +231,7 @@ type Config struct {
 	VehicleMonitor VehicleMonitor `mapstructure:"vehicleMonitor"`
 	Xss            Xss            `mapstructure:"xss"`
 	GeneratorCode  GeneratorCode  `mapstructure:"generator-code"`
+	Instance       Instance       `mapstructure:"instance"`
 	IsLocalhost    string         `mapstructure:"isLocalhost"`
 	TxServiceURL   string         `mapstructure:"tx-service-url"`
 	RoadPathURL    string         `mapstructure:"roadPathUrl"`
@@ -301,6 +310,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("snapshot.flow.sharding.sharding-field", "snapshottime")
 	v.SetDefault("snapshot.flow.sharding.sharding-type", "month")
 	v.SetDefault("generator-code.mybatis-plus.enable", false)
+	v.SetDefault("instance.worker-id", -1)
+	v.SetDefault("instance.datacenter-id", -1)
 }
 
 // applyEnvOverrides 提供与 Spring Boot 等价的少量关键环境变量覆盖。
@@ -330,6 +341,16 @@ func applyEnvOverrides(c *Config) {
 	}
 	if v := os.Getenv("CARMONIT_KAFKA_BOOTSTRAP_SERVERS"); v != "" {
 		c.Kafka.BootstrapServers = strings.Split(v, ",")
+	}
+	if v := os.Getenv("CARMONIT_WORKER_ID"); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+			c.Instance.WorkerID = n
+		}
+	}
+	if v := os.Getenv("CARMONIT_DATACENTER_ID"); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+			c.Instance.DatacenterID = n
+		}
 	}
 }
 
@@ -361,6 +382,13 @@ func validate(c *Config) error {
 	}
 	if c.Token.ExpireTime <= 0 {
 		c.Token.ExpireTime = 120
+	}
+	// 雪花 ID 的机器位/机房位各 5 bit；-1 表示按主机名自动推导。
+	if c.Instance.WorkerID < -1 || c.Instance.WorkerID > 31 {
+		return fmt.Errorf("instance.worker-id 必须在 0~31 或 -1(自动) 之间，当前 %d", c.Instance.WorkerID)
+	}
+	if c.Instance.DatacenterID < -1 || c.Instance.DatacenterID > 31 {
+		return fmt.Errorf("instance.datacenter-id 必须在 0~31 或 -1(自动) 之间，当前 %d", c.Instance.DatacenterID)
 	}
 	return nil
 }

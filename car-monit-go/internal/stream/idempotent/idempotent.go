@@ -3,6 +3,8 @@
 // 对应 Go 文件: internal/stream/idempotent/idempotent.go
 //
 // DIFF: Spring @Value 注入 prefix/expire-time；Go 由调用方传入（通常取 config.Idempotent.Redis）。
+//
+// 状态: **未接线**。仅在 Kafka 消费链路（未接线）中使用；API 进程当前不引用本包。
 package idempotent
 
 import (

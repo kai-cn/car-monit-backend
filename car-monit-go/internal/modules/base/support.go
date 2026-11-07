@@ -15,7 +15,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +22,7 @@ import (
 
 	"car-monit-go/internal/app"
 	"car-monit-go/internal/auth"
+	"car-monit-go/internal/idgen"
 	"car-monit-go/internal/model"
 	"car-monit-go/internal/web"
 )
@@ -34,12 +34,7 @@ type handler struct {
 
 func newHandler(a *app.App) *handler { return &handler{app: a} }
 
-// 雪花号状态（对应 MyBatis-Plus IdWorker 的 synchronized 生成器）。
-var (
-	snowflakeMu         sync.Mutex
-	lastSnowflakeMillis int64 = -1
-	snowflakeSeq        int64
-)
+// 雪花号由 internal/idgen 统一生成（见 nextSnowflakeID）。
 
 // ---------------------------------------------------------------------------
 // com.ruoyi.common.utils.CommonUtil
@@ -109,29 +104,9 @@ func newUUIDDashed() string { return uuid.NewString() }
 
 // nextSnowflakeID 对应 MyBatis-Plus IdWorker.nextId()（全局 id-type: ASSIGN_ID）。
 //
-// DIFF: 位宽与 MP 一致（41 位毫秒 | 22 位序列，datacenter/worker 固定 0）；
-// 具体数值不可比（时间相关），只保证 19 位、单实例内单调递增。
-func nextSnowflakeID() string {
-	const epoch = int64(1288834974657)
-	snowflakeMu.Lock()
-	defer snowflakeMu.Unlock()
-	now := time.Now().UnixMilli()
-	if now < lastSnowflakeMillis {
-		now = lastSnowflakeMillis
-	}
-	if now == lastSnowflakeMillis {
-		snowflakeSeq = (snowflakeSeq + 1) & 0xFFF
-		if snowflakeSeq == 0 {
-			for now <= lastSnowflakeMillis {
-				now = time.Now().UnixMilli()
-			}
-		}
-	} else {
-		snowflakeSeq = 0
-	}
-	lastSnowflakeMillis = now
-	return strconv.FormatInt(((now-epoch)<<22)|snowflakeSeq, 10)
-}
+// DIFF: 生成器统一到 internal/idgen，由 instance.worker-id / datacenter-id（或环境变量）
+// 决定机器位，多副本部署不再共用写死的 workerId。
+func nextSnowflakeID() string { return idgen.NextString() }
 
 // ---------------------------------------------------------------------------
 // 分页查询

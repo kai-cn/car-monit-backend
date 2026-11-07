@@ -19,7 +19,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -31,6 +30,7 @@ import (
 	"gorm.io/gorm"
 
 	"car-monit-go/internal/app"
+	"car-monit-go/internal/idgen"
 	"car-monit-go/internal/web"
 )
 
@@ -293,36 +293,12 @@ func excelSend(c *gin.Context, filename string, err error) {
 // ---------------------------------------------------------------------------
 // 雪花主键
 // JAVA 对照: com/ruoyi/common/utils/uuid/SnowflakeIdWorker（sys_file 主键）
-// DIFF: Java 用独立 Bean 的雪花算法；Go 侧在本包内实现等价的时间戳+序号生成器。
+// DIFF: 生成器统一到 internal/idgen，workerId/datacenterId 由配置或环境变量决定，
+// 多副本部署不会共用同一个机器位。
 // ---------------------------------------------------------------------------
 
-type snowflake struct {
-	mu       sync.Mutex
-	lastMS   int64
-	sequence int64
-}
-
-var idWorker = &snowflake{}
-
-const snowflakeEpoch = int64(1288834974657)
-
-func (s *snowflake) Next() int64 {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	now := time.Now().UnixMilli()
-	if now == s.lastMS {
-		s.sequence = (s.sequence + 1) & 0xFFF
-		if s.sequence == 0 {
-			for now <= s.lastMS {
-				now = time.Now().UnixMilli()
-			}
-		}
-	} else {
-		s.sequence = 0
-	}
-	s.lastMS = now
-	return ((now - snowflakeEpoch) << 22) | (1 << 12) | s.sequence
-}
+// nextSnowflakeID 等价于 SnowflakeIdWorker.nextId()。
+func nextSnowflakeID() int64 { return idgen.NextInt64() }
 
 // uuidString 对应 StringUtils.getUUID()（去横线）。
 func uuidString() string { return strings.ReplaceAll(uuid.NewString(), "-", "") }

@@ -6,6 +6,9 @@
 // DIFF: Java 使用 RestHighLevelClient + QueryBuilders；Go 直接调用 _doc/_bulk/_search REST API，
 // 查询 DSL 由调用方传入（模块内按 Java 查询条件构造），响应返回原始命中文档。
 // DIFF: 未实现 HTTPS/账号认证（application.yml 未配置）；如启用安全集群，在此扩展 Transport。
+//
+// 状态: **未接线**。仅由 Kafka 消费者（同样未接线）调用；Go 版本不承担 ES 索引写入，
+// 归属见 docs/MAPPING.md §4。
 package es
 
 import (

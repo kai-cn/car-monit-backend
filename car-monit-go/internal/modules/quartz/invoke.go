@@ -173,10 +173,39 @@ func (i *Invoker) resolveBean(beanName string) *taskBean {
 	return nil
 }
 
+// unmigratedTargets 记录"Java 有、Go 未迁移"的数据接入任务。
+//
+// DIFF: Java 允许保存这些任务（执行时才失败）；Go 版本在保存阶段直接拒绝，
+// 避免运维看到"保存成功"却只能在 sys_job_log 里发现持续失败。
+// 归属决策见 docs/MAPPING.md §4 与 docs/MIGRATION_GUIDE.md「数据接入边界」。
+var unmigratedTargets = map[string]string{
+	"trackTask.syncHistoryTrack": "历史轨迹同步依赖 ICarTrackInfoService/IGeometryService 与远端轨迹接口",
+
+	"vehicleMonitoringTask.syncOrgInfo":             "机构信息同步依赖 HttpBaseInfoApiService",
+	"vehicleMonitoringTask.syncSectionInfo":         "路段信息同步依赖 HttpBaseInfoApiService",
+	"vehicleMonitoringTask.syncGantryInfo":          "门架信息同步依赖 HttpBaseInfoApiService",
+	"vehicleMonitoringTask.syncServiceAreaInfoInfo": "服务区信息同步依赖 HttpBaseInfoApiService",
+	"vehicleMonitoringTask.syncTollBoothInfoInfo":   "收费所信息同步依赖 HttpBaseInfoApiService",
+	"vehicleMonitoringTask.syncSfzjcxxInfoInfo":     "收费站位置同步依赖 HttpBaseInfoApiService",
+	"vehicleMonitoringTask.syncTollStationInfo":     "收费站信息同步依赖 HttpBaseInfoApiService",
+
+	"snapshotFlowSyncTask.syncFullData":          "门架抓拍流水全量同步依赖 GaussDB 与分表 Mapper",
+	"snapshotFlowSyncTask.manualFullSync":        "门架抓拍流水全量同步依赖 GaussDB 与分表 Mapper",
+	"snapshotFlowSyncTask.manualIncrementalSync": "门架抓拍流水增量同步依赖 GaussDB 与分表 Mapper",
+	"snapshotFlowSyncTask.syncIncrementalData":   "门架抓拍流水增量同步依赖 GaussDB 与分表 Mapper",
+	"snapshotFlowSyncTask.syncSingleMonth":       "门架抓拍流水单月同步依赖 GaussDB 与分表 Mapper",
+	"snapshotFlowSyncTask.preCreateTables":       "分表预创建依赖 ShardingTableUtil",
+}
+
 // ValidateTarget 在保存任务时做一次快速失败校验（DIFF: Java 直到执行时才暴露错误）。
 func (i *Invoker) ValidateTarget(invokeTarget string) error {
 	if err := CheckInvokeTarget(invokeTarget); err != nil {
 		return err
+	}
+	key := GetBeanName(invokeTarget) + "." + GetMethodName(invokeTarget)
+	if reason, ok := unmigratedTargets[key]; ok {
+		return fmt.Errorf("任务 %s 尚未迁移到 Go 版本（%s）；该能力仍由 Java 数据接入服务承担，"+
+			"请在 Java 侧配置或等待后续版本", invokeTarget, reason)
 	}
 	bean := i.resolveBean(GetBeanName(invokeTarget))
 	if bean == nil {
