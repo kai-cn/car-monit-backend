@@ -11,6 +11,7 @@ use std::fs::{File, OpenOptions};
 use std::future::Future;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender, TrySendError};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
@@ -39,7 +40,11 @@ const SQL_MAPPER_PLACEHOLDER: &str = "sqlx::query";
 
 tokio::task_local! {
     static TRACE_ID: String;
+    /// Java Servlet 请求线程名（`http-nio-<port>-exec-<n>` 形态）。
+    static LOG_THREAD: String;
 }
+
+static REQUEST_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 /// 让日志格式能读到当前请求的 traceId（Java 用 MDC）。
 pub async fn with_trace_id<F>(trace_id: String, future: F) -> F::Output
@@ -49,8 +54,49 @@ where
     TRACE_ID.scope(trace_id, future).await
 }
 
+/// 进入一次请求：绑定 traceId + 请求逻辑线程名。
+/// Java 每个请求跑在 Tomcat 工作线程上（`http-nio-<port>-exec-<n>`）；
+/// Rust 是异步任务模型，这里给每个请求分配稳定序号，输出同等形态的线程名。
+pub async fn with_request_context<F>(trace_id: String, port: u16, future: F) -> F::Output
+where
+    F: Future,
+{
+    let sequence = REQUEST_SEQUENCE.fetch_add(1, Ordering::Relaxed) + 1;
+    let thread = format!("http-nio-{port}-exec-{sequence}");
+    TRACE_ID
+        .scope(trace_id, LOG_THREAD.scope(thread, future))
+        .await
+}
+
+/// 后台任务线程名（调度器/Quartz）；未标注时回退到操作系统线程名。
+pub async fn with_log_thread<F>(thread: impl Into<String>, future: F) -> F::Output
+where
+    F: Future,
+{
+    LOG_THREAD.scope(thread.into(), future).await
+}
+
 pub fn current_trace_id() -> String {
     TRACE_ID.try_with(|value| value.clone()).unwrap_or_default()
+}
+
+/// 当前日志线程名：请求逻辑线程 > 显式后台线程名 > 真实线程名。
+pub fn current_log_thread() -> String {
+    LOG_THREAD
+        .try_with(|value| value.clone())
+        .unwrap_or_else(|_| {
+            let actual = std::thread::current()
+                .name()
+                .unwrap_or_default()
+                .to_string();
+            // 不把 Rust 运行时实现细节（tokio-rt-worker / tokio-runtime-worker）透到日志里；
+            // Java 后台任务跑在调度线程上，这里用 Spring 默认调度线程名做等价占位。
+            if actual.starts_with("tokio-") {
+                "scheduling-1".to_string()
+            } else {
+                actual
+            }
+        })
 }
 
 enum Command {
@@ -613,10 +659,7 @@ fn write_slow_sql_box(
 }
 
 fn thread_name() -> String {
-    std::thread::current()
-        .name()
-        .unwrap_or_default()
-        .to_string()
+    current_log_thread()
 }
 
 /// Java `%logger{36}`：超长时把左侧包名缩成首字母，保留最后一段。
@@ -850,6 +893,49 @@ mod tests {
         assert!(text.contains("TraceId: abc123"), "{text}");
         assert!(!text.contains("elapsed_secs="), "{text}");
         assert!(!text.contains("slow_threshold="), "{text}");
+    }
+
+    #[tokio::test]
+    async fn request_thread_names_follow_tomcat_shape() {
+        let (first_trace, first_thread) = with_request_context("t1".to_string(), 9989, async {
+            (current_trace_id(), current_log_thread())
+        })
+        .await;
+        let second_thread =
+            with_request_context("t2".to_string(), 9989, async { current_log_thread() }).await;
+
+        assert_eq!(first_trace, "t1");
+        assert!(
+            first_thread.starts_with("http-nio-9989-exec-"),
+            "{first_thread}"
+        );
+        assert!(
+            second_thread.starts_with("http-nio-9989-exec-"),
+            "{second_thread}"
+        );
+        assert_ne!(first_thread, second_thread);
+        let first_number = first_thread
+            .rsplit('-')
+            .next()
+            .and_then(|value| value.parse::<u64>().ok())
+            .expect("请求序号");
+        let second_number = second_thread
+            .rsplit('-')
+            .next()
+            .and_then(|value| value.parse::<u64>().ok())
+            .expect("请求序号");
+        assert!(second_number > first_number);
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+    async fn tokio_worker_name_is_not_exposed() {
+        let thread = tokio::spawn(async { current_log_thread() })
+            .await
+            .expect("join");
+        assert_eq!(thread, "scheduling-1");
+
+        let named = with_log_thread("quartzScheduler_Worker-1", async { current_log_thread() }).await;
+        assert_eq!(named, "quartzScheduler_Worker-1");
     }
 
     #[test]

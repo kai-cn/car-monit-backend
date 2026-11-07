@@ -166,7 +166,8 @@ pub fn build_router(state: AppState) -> Router {
         // CORS 必须在最外层：预检请求在鉴权之前响应。
         .layer(cors_layer())
         // TraceId / 安全头 / CORS 头写法：Java 的 Filter 在业务之前就写好了，401/404/405 也带。
-        .layer(axum::middleware::from_fn(
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
             middleware::web_filter::web_filter,
         ));
 

@@ -7,7 +7,7 @@
 use std::net::SocketAddr;
 use std::time::Instant;
 
-use axum::extract::{ConnectInfo, Request};
+use axum::extract::{ConnectInfo, Request, State};
 use axum::http::header::{
     HeaderName, HeaderValue, ACCESS_CONTROL_ALLOW_CREDENTIALS, ACCESS_CONTROL_ALLOW_ORIGIN, ALLOW,
     VARY,
@@ -17,6 +17,7 @@ use axum::response::Response;
 
 use crate::common::utils::client_ip;
 use crate::logging;
+use crate::state::AppState;
 
 /// Java: `TraceIdFilter.TRACE_ID_HEADER`（配置项 `monitor.trace-id-header` 的默认值）。
 const TRACE_ID: &str = "x-trace-id";
@@ -32,7 +33,7 @@ fn generate_trace_id() -> String {
     uuid::Uuid::new_v4().simple().to_string()
 }
 
-pub async fn web_filter(request: Request, next: Next) -> Response {
+pub async fn web_filter(State(state): State<AppState>, request: Request, next: Next) -> Response {
     // 借读请求头要先结束借用，后面才能把 request 移动去改 URI。
     let (trace_id, has_origin) = {
         let headers = request.headers();
@@ -60,8 +61,10 @@ pub async fn web_filter(request: Request, next: Next) -> Response {
     let trace_for_log = trace_id.clone();
     let started = Instant::now();
 
-    // Java: TraceIdFilter 在 MDC 里放 traceId，所有业务日志都带它。
-    let response = logging::with_trace_id(trace_id.clone(), async move {
+    // Java: TraceIdFilter 在 MDC 里放 traceId，所有业务日志都带它；
+    // 同时绑定本请求的 Servlet 逻辑线程名（http-nio-<port>-exec-<n>）。
+    let port = state.settings.server.port;
+    let response = logging::with_request_context(trace_id.clone(), port, async move {
         let response = next.run(request).await;
         let cost = started.elapsed().as_millis();
         let status = response.status().as_u16();
