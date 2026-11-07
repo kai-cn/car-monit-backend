@@ -444,7 +444,7 @@ SQLAlchemy 自带的 `sqlalchemy.engine` echo 会打印方言探测语句
 | `mybatis-plus.*` | Python 侧用 SQLAlchemy Core 执行手写 SQL，无 MyBatis 运行时 |
 | `pagehelper.*` | 分页改为显式 `count` 查询，见 Phase 3 的 `page_helper` |
 | `generator-code.*` | 代码生成器（`ruoyi-generator`）迁移时另行处理 |
-| `xss.*` | XSS 过滤在 Phase 3 随 `XssFilter` 一起迁移 |
+| ~~`xss.*`~~ | 已生效，见 §46.1（`XssMiddleware` 使用 `enabled` / `excludes` / `urlPatterns`） |
 
 这些字段保留在 `config/application.yml` 里，**目的是让 Java 开发者可以逐行 diff 原配置**，
 而不是「配置被悄悄丢掉」。
@@ -1891,7 +1891,10 @@ if (userService.resetUserPwd(userName, SecurityUtils.encryptPassword(newPassword
 由 `ResourcesConfig` 的 `/profile/**` → `file:{ruoyi.profile}` 映射提供静态访问。
 
 **Python 实现**
-同样返回相对 url，同样写入 `sys_user.avatar`。`app/main.py` 里已挂同一条静态映射。
+同样返回相对 url，同样写入 `sys_user.avatar`。`app/main.py` 已挂
+`StaticFiles(directory=settings.ruoyi.profile, check_dir=False)` 到 `/profile`，
+与 Java `ResourcesConfig#addResourceHandlers` 等价（目录不存在时不影响启动，仅请求 404）。
+回归用例见 `tests/test_profile_static.py`（§46.2）。
 
 **客户端/运维注意**
 - 数据库里**没有**域名，也没有 `http://`；换域名/换端口时**不需要**刷数据。
@@ -4833,3 +4836,58 @@ gantrycar,gantrytrade}/export`、`/base/{geometry,snapshotflow,feerecords}/expor
 
 稳定性复验：这两条所在的两组用例连跑 5 轮，每轮 27 项 0 失败；整套 `pytest`
 （3646 项，`--junit-xml` 计数）`failures=0 errors=0 skipped=0`，约 41s。
+
+## 46. P0/P1/P2 修复后的口径更新（2026-11-07）`[无影响]`
+
+本节修正评审报告指出的两处"声明与实现不符"，并登记 P1 决策带来的行为变化。
+逐项提交记录见 `git log --grep="fix(P0|fix(P1|fix(P2"`。
+
+### 46.1 XSS 过滤已落地（P0-2）`[无影响]`
+
+- **实现**：`app/middleware/xss.py` 1:1 移植 `HTMLFilter` + `EscapeUtil.clean`，
+  ASGI 层清洗，挂在过滤器链最外层（对应 `FilterConfig` 的 `HIGHEST_PRECEDENCE`）。
+- **范围**：仅非 `GET` / `DELETE`；URL 命中 `/system/*`、`/monitor/*`、`/tool/*`；
+  排除 `/system/notice`；清洗 query / form / JSON body 中的**字符串值**，并 `trim`。
+- **配置**：`xss.enabled` / `xss.excludes` / `xss.urlPatterns` 全部生效（§10 的旧声明作废）。
+- **回归**：`tests/test_xss_filter.py`（含 `/system/notice` 豁免、GET 不改写、嵌套 JSON）。
+- **差异**：清洗发生在 ASGI 层，`request.get_json()` 之后读取的是清洗后的值；Java 是
+  `HttpServletRequestWrapper`，同样在进入 MVC 前完成，可观察结果一致。
+
+### 46.2 `/profile/**` 静态映射已落地（P0-3）`[无影响]`
+
+- `app/main.py`：`mount("/profile", StaticFiles(directory=Profile, check_dir=False))`。
+  `check_dir=False` 复刻 Java "目录不存在也不影响启动、请求时才 404"。
+- 回归：`tests/test_profile_static.py`（挂载点存在、任意子路径可读、目录缺失不抛）。
+- 与 Java 的差异：Starlette 的 `StaticFiles` 不提供目录列表；Java 默认也没有，等价。
+
+### 46.3 异常文案按业务/非业务分流（P1-6）`[需注意]`
+
+| 异常 | 返回文案 | 说明 |
+|---|---|---|
+| `RuoYiBaseException` / `ServiceException` / `CustomException` / `BeanValidationError` | 原 `message` | 业务校验/提示，前端直接弹给用户 |
+| 其它 `RuntimeError` / `Exception`（含 SQLAlchemy、`AttributeError` NPE 哨兵） | `系统繁忙，请稍后重试` | 详情含 traceId 只进 `sys-error.log` |
+| 上传校验（文件名过长、超大小、后缀不允许） | 原始提示 | `FileUploadUtils` 把它们提升为业务异常；真正的 I/O 故障仍脱敏 |
+
+因此 Java 曾经"逐字返回 `e.getMessage()`"的若干 NPE 用例（如 `DELETE /monitor/job/999999`
+的 `{"msg":null}`）现在统一为上面的通用文案——这是有意偏离，回归用例已同步。
+
+### 46.4 P1 其它决策登记 `[需注意]`
+
+| 项 | 变化 | 回退方式 |
+|---|---|---|
+| P1-1 | 请求线程池默认 200（与 Druid `maxActive` 对齐） | `APP__REQUEST_THREAD_LIMIT=800` |
+| P1-5 | 非 `local` 环境使用内置演示密钥/口令时**拒绝启动** | 配真实 `TOKEN__SECRET` / DB 口令 / `HENGDA__SECRET` |
+| P1-8 | CORS 白名单；非 `local` 留空 = 拒绝跨域，`local` 留空 = Java 全开 | `APP__CORS__ALLOWED_ORIGINS` |
+| P1-4/P1-9 | 日志按 logback 精确分级；trace 只进 slow；容量可配且按目录预算清理 | `LOGGING__FILE_*` |
+| P1-3 | lifespan 先停线程池 / 关闭 HTTP 客户端，再释放 DB/Redis | —（P2-16 因此关闭） |
+
+### 46.5 已关闭 / 转为方案说明的 P2 项
+
+- **P2-16 关闭**：关闭顺序已改为"先停池（含 httpx.Client），再关 DB/Redis"。
+- **P2-10（行映射 `model_construct` + 直接 ORJSONResponse）**：风险偏高（逐行校验同时
+  承担类型强制与日期/金额标度转换），本轮不改代码，方案与前置条件见 `ARCHITECTURE.md`
+  「未实施的高风险优化」。
+- **P2-11（合并 3 层 `BaseHTTPMiddleware`）**：涉及 `contextvars` 在纯 ASGI 中间件中的
+  手工传播与安全过滤器顺序，本轮不改代码，方案同上。
+- **P2-12**：CI 已加 `ruff + pytest`，并按当前 73% 设置 70% 覆盖率门槛。
+- **P2-13**：Alembic 增加空基线 `0001_baseline`，已有库执行一次 `alembic stamp`。
