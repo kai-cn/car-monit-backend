@@ -22,6 +22,13 @@ endif()
 option(CAR_MONIT_BUILD_TESTS "Build unit tests" ON)
 option(CAR_MONIT_BUILD_ASAN "Build with AddressSanitizer" OFF)
 
+# 源码与字符串字面量都是 UTF-8（无 BOM）。MSVC 默认按本地代码页(936)解码，
+# 会把中文串拆坏（C4819 / C2001 / C3872）。/utf-8 必须由工程自身保证，
+# 否则换个构建目录就编不过；NOMINMAX 避免 <windows.h> 的 min/max 宏污染 std::min/max。
+if (MSVC)
+    add_compile_options(/utf-8 /DNOMINMAX)
+endif()
+
 find_package(Threads REQUIRED)
 
 # 本工程自带 SHA-1/SHA-256/SHA-512/HMAC/RSA-OAEP 与 DEFLATE 实现
