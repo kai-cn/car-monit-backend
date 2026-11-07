@@ -4,6 +4,9 @@
 //   CarSuspiciousController#gethistoryInfo（GET /manager/suspicious/history/{id}）
 // 加上 CarSuspiciousServiceImpl.selectCarSuspiciousById / selectCarSuspiciousHistoryById
 // 与 CarQueryLogServiceImpl.queryLog。
+// 另有两条依赖外部接口的轨迹入口：
+//   CarTrackInfoController#listByCarId（GET /manager/cartrackinfo/listByCarId）
+//   CarTrackInfoController#carSnapShot（GET /manager/cartrackinfo/carSnapShot）
 //
 // 这三条都只是"把同一段轨迹计算套在不同入口上"，真正的回退链在 TrailGeometry.hpp 顶部。
 // 需要照抄的行为：
@@ -24,6 +27,7 @@
 #include <map>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "cm/base/service/TrailGeometry.hpp"
@@ -37,7 +41,9 @@
 #include "cm/common/utils/JsonUtils.hpp"
 #include "cm/common/utils/StringUtils.hpp"
 #include "cm/framework/aspect/OperLogAspect.hpp"
+#include "cm/framework/config/AppConfig.hpp"
 #include "cm/framework/db/Db.hpp"
+#include "cm/framework/net/HttpClient.hpp"
 #include "cm/framework/security/SecurityUtils.hpp"
 #include "cm/framework/web/Router.hpp"
 #include "cm/framework/web/crud/CrudSpec.hpp"
@@ -358,7 +364,7 @@ cm::http::ApiResponse changeTrailInfo(RequestContext& ctx) {
     Json body = cm::parse_json(ctx.req.body);
     // queryLog 在轨迹计算**之前**，且写的是 fastjson2 的紧凑形态（丢 null）——
     // 与响应里 Jackson 的完整形态不是同一份文本。
-    queryLog(cm::aspect::fastJsonCompact(body, {}), "1", "1");
+    queryLog(cm::aspect::fastJsonCompact(body, {}, true), "1", "1");   // POJO ⇒ 字段名排序
 
     Json trailInfo = projectTrailInfo(body);
     const bool tracksOk = body.contains("tracks") && !body["tracks"].is_null();
@@ -456,6 +462,113 @@ cm::http::ApiResponse historyById(RequestContext& ctx) {
     return BaseController::ok(AjaxResult::success(row));
 }
 
+// ---------------------------------------------------------------- 外部接口（Forest）
+// com.ruoyi.base.service.forest.HttpSysUtilApiService：
+//   @BaseRequest(baseURL = "#{vehicleMonitor.baseUrl}/base/sysutil")
+// 两条都没有 try/catch，所以上游连不上就是异常 → HTTP 200 + code:500（与全站约定一致）。
+std::string sysutilUrl(const std::string& path) {
+    return cm::config::AppConfig::instance().vehicleMonitorBaseUrl + "/base/sysutil" + path;
+}
+
+/** TrailDevCountBO 的空壳：控制器两条分支都手搭这一个对象（字段声明序见 Java 类）。 */
+Json emptyTrailDevCount() {
+    Json d = Json::object();
+    d["exceptNum"] = Json(0);
+    d["trailDevList"] = Json::array();
+    d["trailList"] = Json(nullptr);
+    d["exceptMsg"] = Json(nullptr);
+    return d;
+}
+
+/** GET /manager/cartrackinfo/listByCarId
+ *  本地查不到才回退远程，而**回退命中时会写库**（先按车牌删、再 saveBatch），
+ *  这个写副作用是 Java 原样，不是这里的发明。 */
+cm::http::ApiResponse listByCarId(RequestContext& ctx) {
+    Json query = cm::web::crud::bindQuery(cm::web::crud::specZdataTrailTracks(), ctx);
+    // Java: setCarNo(CommonUtil.isNull(getCarNo())) 顺带 trim，再 blank 兜成 "-1"（查不到而不是查全表）
+    std::string carNo = CommonUtil::isNull(cm::jstr(query, "carNo"));
+    if (StringUtils::isBlank(carNo)) carNo = "-1";
+    query["carNo"] = Json(carNo);
+
+    auto local = cm::web::carTrackQueryLocal(ctx, query);
+    Json rtnList = std::move(local.rtnList);
+    long long totalNum = local.total;
+
+    // 判的是 DB 行数：track_josn 全空的行进不了 rtnList，但照样算"有数据"⇒ 不回退
+    if (!local.hasRows) {
+        // @Query CarParaVO 只带非 null 属性，声明序 carNo/pageNum/pageSize（实机抓包核对）
+        std::vector<std::pair<std::string, std::string>> params = {
+            {"carNo", carNo}, {"pageNum", "1"}, {"pageSize", "20"}};
+        auto resp = cm::net::HttpClient::getWithQuery(sysutilUrl("/carTrackQueryByCarNo"), params);
+        if (!resp.ok()) throw cm::exception::ServiceException(resp.error);
+        // Forest 的目标类型是 TableDataInfo：空响应体解出 null，紧接着 .getRows() 就是 NPE
+        if (resp.body.empty()) throw cm::exception::NullPointerException();
+        Json body = Json::parse(resp.body);
+        const Json rows = body.is_object() && body.contains("rows") ? body["rows"] : Json(nullptr);
+        if (rows.is_array() && !rows.empty()) {
+            std::vector<Json> addlist;    // 落库那份：只带非 null 属性（MyBatis-Plus NOT_NULL）
+            for (const auto& row : rows) {
+                Json info = projectTrailInfo(row);
+                const bool hasTracks = row.is_object() && row.contains("tracks") &&
+                                       !row["tracks"].is_null();
+                // Java: trailInfo.getTracks() 是 null 的话下一句 getPlateKey() 就 NPE ⇒ 500
+                if (!hasTracks) throw cm::exception::NullPointerException();
+                Json entity = row["tracks"];
+                entity["plateKey"] = Json(CommonUtil::isNull(cm::jstr(entity, "plateKey")));
+                entity["pointCount"] = Json(static_cast<long long>(0));
+                const Json trailList = info["trailList"];
+                if (!trailList.is_null()) {
+                    // 存的是 fastjson2 的形态（按名排序、null 省略），不是 Jackson 那份
+                    entity["trackJosn"] = Json(cm::aspect::fastJsonCompact(trailList, {}, true));
+                    entity["pointCount"] = Json(static_cast<long long>(trailList.size()));
+                }
+                addlist.push_back(entity);
+                // 响应里的 tracks 就是这同一个被改过的对象 ⇒ 序列化时带上这三处修改
+                info["tracks"] = projectTracks(entity);
+                info["raodTrailList"] = Json::array();
+                info["trailDevCountBO"] = emptyTrailDevCount();
+                rtnList.push_back(std::move(info));
+            }
+            // 这条链路上没有事务：删先提交、再逐条插（插到一半失败，删掉的也回不来）
+            Db::instance().execute("delete from zdata_trail_tracks t where plate_key in (" +
+                                   Db::lit(carNo) + ")");
+            for (const auto& e : addlist) {
+                Db::instance().execute(
+                    cm::web::crud::buildInsert(cm::web::crud::specZdataTrailTracks(), e));
+            }
+            totalNum = body.contains("total") && body["total"].is_number()
+                           ? static_cast<long long>(body["total"].get<double>()) : 0;
+        }
+    }
+    // 手搭的 TableDataInfo：code=200 / msg=查询成功 / total 先是 PageInfo(carlist)，回退命中后换成远程的 total
+    return BaseController::ok(BaseController::dataTable(rtnList, totalNum));
+}
+
+/** GET /manager/cartrackinfo/carSnapShot —— 整条链路都是外部接口，
+ *  两个前置条件不齐就直接给个空的 success。 */
+cm::http::ApiResponse carSnapShot(RequestContext& ctx) {
+    Json bo = cm::web::bindTrailBoQuery(ctx);
+    // stateType 过了 isNull（顺带 trim），pointUuid 没过 —— 这个不对称照抄
+    const std::string stateType = CommonUtil::isNull(cm::jstr(bo, "stateType"));
+    const std::string pointUuid = cm::jstr(bo, "pointUuid");
+    if (StringUtils::isBlank(stateType) || StringUtils::isBlank(pointUuid)) {
+        return BaseController::ok(AjaxResult::success());   // 没有 data 键
+    }
+    auto resp = cm::net::HttpClient::getWithQuery(sysutilUrl("/getByTrailBo"),
+                                                  cm::web::flattenTrailBoQuery(bo));
+    if (!resp.ok()) throw cm::exception::ServiceException(resp.error);
+    if (resp.body.empty()) {
+        // Forest 解出 null ⇒ AjaxResult.success((Object) null) ⇒ 依旧没有 data 键
+        return BaseController::ok(AjaxResult::success());
+    }
+    Json body = Json::parse(resp.body);
+    if (!body.is_object()) {
+        throw cm::exception::ServiceException("can not cast to TrailBo, value : " + resp.body);
+    }
+    // 声明的返回类型是 TrailBo 本体：上游要是返 AjaxResult 信封，32 个键会全成 null
+    return BaseController::ok(AjaxResult::success(projectTrailBoJson(body)));
+}
+
 }  // namespace
 
 void registerManagerTrailInfoControllers(Router& r) {
@@ -464,6 +577,8 @@ void registerManagerTrailInfoControllers(Router& r) {
     r.get("/manager/suspicious/listFileCarNo",
           [](RequestContext& ctx) { return listFileCarNo(ctx); });
     r.get("/manager/suspicious/history/{id}", [](RequestContext& ctx) { return historyById(ctx); });
+    r.get("/manager/cartrackinfo/listByCarId", [](RequestContext& ctx) { return listByCarId(ctx); });
+    r.get("/manager/cartrackinfo/carSnapShot", [](RequestContext& ctx) { return carSnapShot(ctx); });
 }
 
 }  // namespace cm::web

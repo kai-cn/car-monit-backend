@@ -77,8 +77,14 @@ std::string subAtMost(const std::string& s, size_t chars);
 std::string realAddressByIP(const std::string& ip);
 
 /** 对应 JSON.toJSONString(obj)：fastjson2 默认丢掉 null 值（与 Jackson 的输出相反），
- *  并按 PropertyPreExcludeFilter 排除敏感属性 */
-std::string fastJsonCompact(const Json& value, const std::vector<std::string>& excludes);
+ *  并按 PropertyPreExcludeFilter 排除敏感属性。
+ *  pojoFieldOrder：序列化的对象是不是 **POJO**。fastjson2 的对象写出器把字段按名字排序
+ *  （实机对拍 2.0.43 确认），而 AjaxResult/paramMap 这类 Map 走的是容器自己的顺序 ——
+ *  两种顺序不一样，调用方必须说清楚是哪一种。
+ *  ⚠️ @Log 的 operParam 那里拿的是 `joinPoint.getArgs()`，Java 到底是哪种取决于方法签名
+ *  （POJO 入参排序、Map 入参不排），这里按老的插入序不动，逐条核过再改。 */
+std::string fastJsonCompact(const Json& value, const std::vector<std::string>& excludes,
+                            bool pojoFieldOrder = false);
 
 /** 对应 ServletUtils.getParamMap()：值为同名多值按 ',' 拼接的字符串，
  *  键顺序是 Java HashMap 的桶序（不是出现顺序） */

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,7 @@
 #include "cm/common/exception/Exceptions.hpp"
 #include "cm/common/utils/CommonUtil.hpp"
 #include "cm/common/utils/StringUtils.hpp"
+#include "cm/framework/aspect/OperLogAspect.hpp"
 #include "cm/framework/db/Db.hpp"
 #include "cm/framework/web/Router.hpp"
 #include "cm/framework/web/crud/CrudSpec.hpp"
@@ -136,6 +138,212 @@ cm::db::Result mustRun(const std::string& sql) {
 
 Json projectTrailBoJson(const Json& src) { return projectTrailBo(src); }
 
+// ---------------------------------------------------------------- 轨迹本地查询
+// listByCarByTime 与 listByCarId 共用；对应 ZdataTrailTracksServiceImpl.carTrackQuery
+// 加上控制器里那段 track_josn → List<TrailBo> 的展开。
+CarTrackLocal carTrackQueryLocal(RequestContext& ctx, const Json& q) {
+    const auto& sp = specZdataTrailTracks();
+    auto p = [&](const char* k) { return cm::jstr(q, k); };
+    const std::string carNo = p("carNo");
+    const std::string plateKey = p("plateKey");
+    const std::string apply1 = p("applyTime1");
+    const std::string apply2 = p("applyTime2");
+    const std::string entoll = p("entollstationid");
+
+    // getCyly 与 getHistoryTrail 共享的那三段条件
+    auto baseWhere = [&]() {
+        std::string w = " WHERE 1=1";
+        if (!StringUtils::isBlank(carNo)) w += " and t.plate_key = " + Db::lit(carNo);
+        if (!StringUtils::isBlank(apply1))
+            w += " and t.enter_time >= STR_TO_DATE(" + Db::lit(apply1) + ",'%Y-%m-%d')";
+        if (!StringUtils::isBlank(apply2))
+            w += " and t.enter_time < date_add(STR_TO_DATE(" + Db::lit(apply2)
+                 + ",'%Y-%m-%d'), interval 1 day)";
+        return w;
+    };
+
+    std::vector<std::string> uuidList;
+    std::map<std::string, long long> passCount;
+    if (p("isCylx") == "1") {
+        const std::string cy =
+            "SELECT uuid, passCount FROM (SELECT t.uuid, gc.passCount, ROW_NUMBER() OVER ("
+            "PARTITION BY t.plate_key, t.entollstationid, t.extollstationid "
+            "ORDER BY t.enter_time DESC) as rn FROM zdata_trail_tracks t INNER JOIN ("
+            "SELECT plate_key, entollstationid, extollstationid, COUNT(*) as passCount "
+            "FROM zdata_trail_tracks t" + baseWhere() +
+            " GROUP BY plate_key, entollstationid, extollstationid ORDER BY passCount DESC LIMIT 3) gc"
+            " ON t.plate_key = gc.plate_key AND t.entollstationid = gc.entollstationid"
+            " AND t.extollstationid = gc.extollstationid) a WHERE rn = 1 order by passCount desc";
+        // startPage() 拦到的是**第一条**查询，也就是 getCyly；后面的 getHistoryTrail 不分页
+        const auto page0 = ctx.pageRequest();
+        cm::db::Result cyres;
+        if (page0.enabled) {
+            cyres = cm::db::queryPage("select count(1) from (" + cy + ") cm_tmp", cy, page0).rows;
+        } else {
+            cyres = mustRun(cy);
+        }
+        for (const auto& row : cyres.rows) {
+            const std::string u = row.str("uuid");
+            if (u.empty()) continue;
+            uuidList.push_back(u);
+            // Collectors.toMap：同一个 uuid 出现两次会抛 IllegalStateException -> 500
+            if (passCount.count(u)) throw cm::exception::ServiceException("Duplicate key " + u);
+            passCount[u] = row.i64("passCount");
+        }
+    }
+
+    std::string where = baseWhere();
+    if (!StringUtils::isBlank(plateKey))
+        where += " and t.plate_key like concat('%', " + Db::lit(plateKey) + ", '%')";
+    if (!StringUtils::isBlank(entoll))
+        where += " and t.entollstationid = " + Db::lit(entoll);
+    if (!uuidList.empty()) {
+        where += " and uuid in (";
+        for (size_t i = 0; i < uuidList.size(); ++i) {
+            if (i) where += ",";
+            where += Db::lit(uuidList[i]);
+        }
+        where += ")";
+    }
+    // 列清单照抄 getHistoryTrail 的 select：不是实体的全部列，
+    // 没选到的属性 MyBatis 不填，Java 响应里就是 null
+    static const std::string COLS =
+        "t.uuid, t.type, t.point_count, t.plate_key, t.enter_time, t.exit_time, t.create_time,"
+        " t.enter_locationcode, t.exit_locationcode, t.track_josn, t.enaxlecount,"
+        " t.entolllaneid, t.entollstationid, t.entollstationname, t.envehicleclass,"
+        " t.envehicleid, t.envehicletype, t.enweight, t.extolllaneid, t.extollstationid,"
+        " t.extollstationname, t.exvehicleclass, t.exvehicleid, t.exvehicletype, t.exweight,"
+        " t.start_lon, t.strat_lat, t.end_lon, t.end_lat";
+    const auto page = ctx.pageRequest();
+    const std::string order = !page.orderBy.empty() ? " ORDER BY " + page.orderBy
+                                                     : " ORDER BY t.enter_time desc";
+    const std::string sql = "SELECT " + COLS + " FROM zdata_trail_tracks t" + where + order;
+
+    std::vector<cm::db::Row> carlist;
+    long long total = 0;
+    if (p("isCylx") == "1") {
+        // 这条不分页，PageInfo(list) 拿不到 Page => total 退化成 list.size()
+        carlist = mustRun(sql).rows;
+        total = static_cast<long long>(carlist.size());
+    } else if (page.enabled) {
+        auto pr = cm::db::queryPage("SELECT COUNT(1) FROM zdata_trail_tracks t" + where, sql, page);
+        carlist = pr.rows.rows;
+        total = pr.total;
+    } else {
+        carlist = mustRun(sql).rows;
+        total = static_cast<long long>(carlist.size());
+    }
+
+    Json rtnList = Json::array();
+    for (const auto& row : carlist) {
+        Json tracks = rowToJson(sp, row);
+        const std::string keyValue = cm::jstr(tracks, "trackJosn");
+        // Java: 只有 track_josn 非空的行才进 rtnList（total 里却仍然算它们）
+        if (StringUtils::isBlank(keyValue)) continue;
+
+        // isCylx=1 时 plateKey 会被追加"(通行N次)"，且发生在序列化之前
+        std::string plate = cm::jstr(tracks, "plateKey");
+        auto it = passCount.find(cm::jstr(tracks, "uuid"));
+        if (it != passCount.end()) plate += "(通行" + std::to_string(it->second) + "次)";
+        tracks["plateKey"] = Json(plate);
+
+        tracks["trailPoints"] = Json("");
+        tracks["trackJosn"] = Json("");
+        // service 里的四个 new BigDecimal(...)：空值跳过，非法数字照样抛出去（Java 也是 500）
+        for (auto& kv : std::vector<std::pair<const char*, const char*>>{
+                 {"startLon", "startLonDec"}, {"stratLat", "stratLatDec"},
+                 {"endLon", "endLonDec"}, {"endLat", "endLatDec"}}) {
+            const std::string v = cm::jstr(tracks, kv.first);
+            if (!StringUtils::isBlank(v)) tracks[kv.second] = Json(std::stod(v));
+        }
+
+        Json trailList = Json::array();
+        for (const auto& e : Json::parse(keyValue)) trailList.push_back(projectTrailBo(e));
+
+        Json devCount = Json::object();
+        devCount["exceptNum"] = Json(0);
+        devCount["trailDevList"] = Json::array();  // 字段名是 TrailDevList，Jackson 首字母小写
+        devCount["trailList"] = Json(nullptr);
+        devCount["exceptMsg"] = Json(nullptr);
+
+        Json info = Json::object();
+        info["trailUuid"] = Json(CommonUtil::isNull(plate));
+        info["enterTime"] = Json(nullptr);
+        info["tracks"] = std::move(tracks);
+        info["trailList"] = std::move(trailList);
+        info["raodTrailList"] = Json::array();  // getCarGeometry 那段没被调用，恒为空数组
+        info["trailDevCountBO"] = std::move(devCount);
+        rtnList.push_back(std::move(info));
+    }
+    return CarTrackLocal{std::move(rtnList), total, !carlist.empty()};
+}
+
+// ---------------------------------------------------------------- TrailBo 的查询参数
+// Spring 把 query 绑到 TrailBo 的属性上，Forest 再把这个对象拍平回 query string。
+// 两步都得按声明序，所以共用 TRAIL_BO 那张表。
+// 绑出来的值一律存**文本**（数字属性保留调用方给的标度，BigDecimal.toString() 就是那个样子），
+// 因为这份对象只用于 isNoneBlank 判断和出站拍平，响应里那份 TrailBo 是上游返的。
+Json bindTrailBoQuery(RequestContext& ctx) {
+    Json out = Json::object();
+    for (const auto& [name, kind] : TRAIL_BO) {
+        if (kind == Tk::Obj) continue;   // gantryIpBO.a=x 这种嵌套写法不支持（见 FINAL_DIFFERENCES）
+        auto raw = ctx.optParam(name);
+        if (!raw) continue;              // 没传 ⇒ 属性保持 null，键根本不出现
+        if (kind == Tk::Str) {
+            out[name] = Json(*raw);      // String 属性的 "" 是值，不是 null
+            continue;
+        }
+        const std::string v = CommonUtil::isNull(*raw);
+        if (v.empty()) continue;         // 数字/布尔转换器：空串 ⇒ null
+        if (kind == Tk::Bool) {
+            // Spring 的 StringToBooleanConverter 认这八个字面量（大小写不敏感），其余抛异常
+            static const std::vector<std::pair<const char*, bool>> kBool = {
+                {"true", true}, {"on", true}, {"yes", true}, {"1", true},
+                {"false", false}, {"off", false}, {"no", false}, {"0", false}};
+            bool hit = false;
+            for (const auto& [text, val] : kBool) {
+                if (StringUtils::equalsIgnoreCase(v, text)) {
+                    out[name] = Json(val ? "true" : "false");
+                    hit = true;
+                    break;
+                }
+            }
+            if (!hit) throw cm::exception::ServiceException(
+                        "Failed to convert property value of type 'java.lang.String' to required "
+                        "type 'java.lang.Boolean' for property '" + std::string(name) + "'");
+            continue;
+        }
+        try {
+            size_t pos = 0;
+            std::stod(v, &pos);
+            if (pos != v.size()) throw std::invalid_argument(v);
+        } catch (...) {
+            throw cm::exception::ServiceException(
+                "Failed to convert property value of type 'java.lang.String' to required type "
+                "'java.math.BigDecimal' for property '" + std::string(name) + "'");
+        }
+        out[name] = Json(v);   // 原样文本，保住标度（116.500 不能变成 116.5）
+    }
+    return out;
+}
+
+std::vector<std::pair<std::string, std::string>> flattenTrailBoQuery(const Json& bo) {
+    // 实机抓包（Forest 1.5.x）：null 省略、BigDecimal 原样带标度、布尔小写、
+    // 嵌套对象转 JSON 文本、空串渲染成**没有等号**的裸键名。
+    std::vector<std::pair<std::string, std::string>> out;
+    for (const auto& [name, kind] : TRAIL_BO) {
+        if (!bo.contains(name) || bo[name].is_null()) continue;
+        const Json& v = bo[name];
+        std::string text = v.is_string() ? v.get<std::string>()
+                                         : (v.is_boolean() ? std::string(v.get<bool>() ? "true"
+                                                                                        : "false")
+                                                           : cm::aspect::fastJsonCompact(v, {}, true));
+        out.emplace_back(std::string(name), std::move(text));
+    }
+    return out;
+}
+
+
 const Spec& suspiciousHistorySpec() {
     static const Spec s = [] {
         Spec s = specCarSuspicious();
@@ -193,142 +401,8 @@ void registerManagerExtraControllers(Router& r) {
     // Java 里"查远程接口"那一大段（httpSysUtilApiService.carTrackQueryByTime）整块被注释掉了，
     // 只剩本地 SQL，所以这条不需要外部依赖就能 1:1 复刻。
     r.get("/manager/cartrackinfo/listByCarByTime", [](RequestContext& ctx) -> cm::http::ApiResponse {
-        const auto& sp = specZdataTrailTracks();
-        Json q = bindQuery(sp, ctx);
-        auto p = [&](const char* k) { return cm::jstr(q, k); };
-        const std::string carNo = p("carNo");
-        const std::string plateKey = p("plateKey");
-        const std::string apply1 = p("applyTime1");
-        const std::string apply2 = p("applyTime2");
-        const std::string entoll = p("entollstationid");
-
-        // getCyly 与 getHistoryTrail 共享的那三段条件
-        auto baseWhere = [&]() {
-            std::string w = " WHERE 1=1";
-            if (!StringUtils::isBlank(carNo)) w += " and t.plate_key = " + Db::lit(carNo);
-            if (!StringUtils::isBlank(apply1))
-                w += " and t.enter_time >= STR_TO_DATE(" + Db::lit(apply1) + ",'%Y-%m-%d')";
-            if (!StringUtils::isBlank(apply2))
-                w += " and t.enter_time < date_add(STR_TO_DATE(" + Db::lit(apply2)
-                     + ",'%Y-%m-%d'), interval 1 day)";
-            return w;
-        };
-
-        std::vector<std::string> uuidList;
-        std::map<std::string, long long> passCount;
-        if (p("isCylx") == "1") {
-            const std::string cy =
-                "SELECT uuid, passCount FROM (SELECT t.uuid, gc.passCount, ROW_NUMBER() OVER ("
-                "PARTITION BY t.plate_key, t.entollstationid, t.extollstationid "
-                "ORDER BY t.enter_time DESC) as rn FROM zdata_trail_tracks t INNER JOIN ("
-                "SELECT plate_key, entollstationid, extollstationid, COUNT(*) as passCount "
-                "FROM zdata_trail_tracks t" + baseWhere() +
-                " GROUP BY plate_key, entollstationid, extollstationid ORDER BY passCount DESC LIMIT 3) gc"
-                " ON t.plate_key = gc.plate_key AND t.entollstationid = gc.entollstationid"
-                " AND t.extollstationid = gc.extollstationid) a WHERE rn = 1 order by passCount desc";
-            // startPage() 拦到的是**第一条**查询，也就是 getCyly；后面的 getHistoryTrail 不分页
-            const auto page0 = ctx.pageRequest();
-            cm::db::Result cyres;
-            if (page0.enabled) {
-                cyres = cm::db::queryPage("select count(1) from (" + cy + ") cm_tmp", cy, page0).rows;
-            } else {
-                cyres = mustRun(cy);
-            }
-            for (const auto& row : cyres.rows) {
-                const std::string u = row.str("uuid");
-                if (u.empty()) continue;
-                uuidList.push_back(u);
-                // Collectors.toMap：同一个 uuid 出现两次会抛 IllegalStateException -> 500
-                if (passCount.count(u)) throw cm::exception::ServiceException("Duplicate key " + u);
-                passCount[u] = row.i64("passCount");
-            }
-        }
-
-        std::string where = baseWhere();
-        if (!StringUtils::isBlank(plateKey))
-            where += " and t.plate_key like concat('%', " + Db::lit(plateKey) + ", '%')";
-        if (!StringUtils::isBlank(entoll))
-            where += " and t.entollstationid = " + Db::lit(entoll);
-        if (!uuidList.empty()) {
-            where += " and uuid in (";
-            for (size_t i = 0; i < uuidList.size(); ++i) {
-                if (i) where += ",";
-                where += Db::lit(uuidList[i]);
-            }
-            where += ")";
-        }
-        // 列清单照抄 getHistoryTrail 的 select：不是实体的全部列，
-        // 没选到的属性 MyBatis 不填，Java 响应里就是 null
-        static const std::string COLS =
-            "t.uuid, t.type, t.point_count, t.plate_key, t.enter_time, t.exit_time, t.create_time,"
-            " t.enter_locationcode, t.exit_locationcode, t.track_josn, t.enaxlecount,"
-            " t.entolllaneid, t.entollstationid, t.entollstationname, t.envehicleclass,"
-            " t.envehicleid, t.envehicletype, t.enweight, t.extolllaneid, t.extollstationid,"
-            " t.extollstationname, t.exvehicleclass, t.exvehicleid, t.exvehicletype, t.exweight,"
-            " t.start_lon, t.strat_lat, t.end_lon, t.end_lat";
-        const auto page = ctx.pageRequest();
-        const std::string order = !page.orderBy.empty() ? " ORDER BY " + page.orderBy
-                                                        : " ORDER BY t.enter_time desc";
-        const std::string sql = "SELECT " + COLS + " FROM zdata_trail_tracks t" + where + order;
-
-        std::vector<cm::db::Row> carlist;
-        long long total = 0;
-        if (p("isCylx") == "1") {
-            // 这条不分页，PageInfo(list) 拿不到 Page => total 退化成 list.size()
-            carlist = mustRun(sql).rows;
-            total = static_cast<long long>(carlist.size());
-        } else if (page.enabled) {
-            auto pr = cm::db::queryPage("SELECT COUNT(1) FROM zdata_trail_tracks t" + where, sql, page);
-            carlist = pr.rows.rows;
-            total = pr.total;
-        } else {
-            carlist = mustRun(sql).rows;
-            total = static_cast<long long>(carlist.size());
-        }
-
-        Json rtnList = Json::array();
-        for (const auto& row : carlist) {
-            Json tracks = rowToJson(sp, row);
-            const std::string keyValue = cm::jstr(tracks, "trackJosn");
-            // Java: 只有 track_josn 非空的行才进 rtnList（total 里却仍然算它们）
-            if (StringUtils::isBlank(keyValue)) continue;
-
-            // isCylx=1 时 plateKey 会被追加"(通行N次)"，且发生在序列化之前
-            std::string plate = cm::jstr(tracks, "plateKey");
-            auto it = passCount.find(cm::jstr(tracks, "uuid"));
-            if (it != passCount.end()) plate += "(通行" + std::to_string(it->second) + "次)";
-            tracks["plateKey"] = Json(plate);
-
-            tracks["trailPoints"] = Json("");
-            tracks["trackJosn"] = Json("");
-            // service 里的四个 new BigDecimal(...)：空值跳过，非法数字照样抛出去（Java 也是 500）
-            for (auto& kv : std::vector<std::pair<const char*, const char*>>{
-                     {"startLon", "startLonDec"}, {"stratLat", "stratLatDec"},
-                     {"endLon", "endLonDec"}, {"endLat", "endLatDec"}}) {
-                const std::string v = cm::jstr(tracks, kv.first);
-                if (!StringUtils::isBlank(v)) tracks[kv.second] = Json(std::stod(v));
-            }
-
-            Json trailList = Json::array();
-            for (const auto& e : Json::parse(keyValue)) trailList.push_back(projectTrailBo(e));
-
-            Json devCount = Json::object();
-            devCount["exceptNum"] = Json(0);
-            devCount["trailDevList"] = Json::array();  // 字段名是 TrailDevList，Jackson 首字母小写
-            devCount["trailList"] = Json(nullptr);
-            devCount["exceptMsg"] = Json(nullptr);
-
-            Json info = Json::object();
-            info["trailUuid"] = Json(CommonUtil::isNull(plate));
-            info["enterTime"] = Json(nullptr);
-            info["tracks"] = std::move(tracks);
-            info["trailList"] = std::move(trailList);
-            info["raodTrailList"] = Json::array();  // getCarGeometry 那段没被调用，恒为空数组
-            info["trailDevCountBO"] = std::move(devCount);
-            rtnList.push_back(std::move(info));
-        }
-        // rspData 是手搭的 TableDataInfo：code=200 / msg=查询成功 / total 来自 PageInfo(carlist)
-        return BaseController::ok(BaseController::dataTable(rtnList, total));
+        auto local = carTrackQueryLocal(ctx, bindQuery(specZdataTrailTracks(), ctx));
+        return BaseController::ok(BaseController::dataTable(local.rtnList, local.total));
     });
 
     // GET /manager/exceptrecord/exceptRecordCount

@@ -70,18 +70,34 @@ std::string rawUri(const cm::http::HttpRequest& req) {
     return uri;
 }
 
-Json compactJson(const Json& v, const std::vector<std::string>& extra) {
+/** 对应 fastjson2 `JSON.toJSONString(...)`。两种顺序必须分开：
+ *  * pojoFieldOrder=true —— **POJO**：fastjson2 的对象写出器按字段名排序
+ *      （实测 2.0.43：声明序 zzUuid/lon/middle/… 打出来是 countNum,directionIn,emptyStr,lon,nested,zzUuid），
+ *      而 nlohmann 的 ordered_json 保留插入序 ⇒ 这里显式排一次。
+ *  * pojoFieldOrder=false —— **Map**（AjaxResult extends HashMap、paramMap 那些）：
+ *      照插入序输出，调用方自己负责把键摆成 Java 容器的那个顺序。
+ *  ⚠️ 递归时沿用同一档：混着来的那处（jsonResult 里 data 挂 POJO）本来就只对了外层。 */
+Json compactJson(const Json& v, const std::vector<std::string>& extra, bool pojoFieldOrder) {
     if (v.is_object()) {
-        Json o = Json::object();
+        std::vector<std::pair<std::string, Json>> items;
         for (auto it = v.begin(); it != v.end(); ++it) {
             if (it->is_null() || excluded(it.key(), extra)) continue;
-            o[it.key()] = compactJson(*it, extra);
+            items.emplace_back(it.key(), compactJson(*it, extra, pojoFieldOrder));
         }
+        if (pojoFieldOrder) {
+            // Java 的比较器是 String.compareTo（UTF-16 code unit）；UTF-8 字节序对纯 ASCII 键
+            // 完全一致，字段名不会有非 ASCII，所以不再单独解码。
+            std::sort(items.begin(), items.end(),
+                      [](const std::pair<std::string, Json>& a,
+                         const std::pair<std::string, Json>& b) { return a.first < b.first; });
+        }
+        Json o = Json::object();
+        for (auto& kv : items) o[kv.first] = std::move(kv.second);
         return o;
     }
     if (v.is_array()) {
         Json a = Json::array();
-        for (const auto& e : v) a.push_back(compactJson(e, extra));
+        for (const auto& e : v) a.push_back(compactJson(e, extra, pojoFieldOrder));
         return a;
     }
     return v;
@@ -111,8 +127,9 @@ std::string realAddressByIP(const std::string& ip) {
     return "XX XX";
 }
 
-std::string fastJsonCompact(const Json& value, const std::vector<std::string>& excludes) {
-    return compactJson(value, excludes).dump();
+std::string fastJsonCompact(const Json& value, const std::vector<std::string>& excludes,
+                            bool pojoFieldOrder) {
+    return compactJson(value, excludes, pojoFieldOrder).dump();
 }
 
 bool paramMapEmpty(const cm::http::HttpRequest& req) {

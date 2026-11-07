@@ -2,9 +2,9 @@
 
 口径：Java 侧按 @*Mapping 注解逐条统计，覆盖 ruoyi-admin / ruoyi-quartz / ruoyi-generator。
 
-Java 端点总数：**497**；C++ 已注册并匹配：**482**；未匹配：**15**。
+Java 端点总数：**497**；C++ 已注册并匹配：**491**；未匹配：**6**。
 
-C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**553**。
+C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由，如 /health）：**564**。
 
 | 控制器 | HTTP | 路径 | Java 方法 | @PreAuthorize | C++ 状态 |
 |---|---|---|---|---|---|
@@ -219,7 +219,7 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | CarExceptRecordController | PUT | `/manager/exceptrecord` | edit |  | ✅ |
 | CarExceptRecordController | DELETE | `/manager/exceptrecord/{*}` | remove |  | ✅ |
 | CarExceptRecordController | GET | `/manager/exceptrecord/getConfirmId/{*}` | getConfirmId |  | ✅ |
-| CarExceptRecordController | POST | `/manager/exceptrecord/import` | doImport |  | ❌ |
+| CarExceptRecordController | POST | `/manager/exceptrecord/import` | doImport |  | ✅ |
 | CarFeeRecordController | GET | `/manager/feerecord/list` | list |  | ✅ |
 | CarFeeRecordController | GET | `/manager/feerecord/export` | export |  | ✅ |
 | CarFeeRecordController | GET | `/manager/feerecord/{*}` | getInfo |  | ✅ |
@@ -233,7 +233,7 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | CarInfoController | POST | `/manager/carinfo` | add |  | ✅ |
 | CarInfoController | PUT | `/manager/carinfo` | edit |  | ✅ |
 | CarInfoController | DELETE | `/manager/carinfo/{*}` | remove |  | ✅ |
-| CarInfoController | POST | `/manager/carinfo/import` | doImport |  | ❌ |
+| CarInfoController | POST | `/manager/carinfo/import` | doImport |  | ✅ |
 | CarQueryLogController | GET | `/manager/querylog/list` | list |  | ✅ |
 | CarQueryLogController | GET | `/manager/querylog/{*}` | getInfo |  | ✅ |
 | CarQueryLogController | POST | `/manager/querylog` | add |  | ✅ |
@@ -272,7 +272,7 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | CarSuspiciousCheckController | DELETE | `/manager/suspiciouscheck/{*}` | remove |  | ✅ |
 | CarSuspiciousController | GET | `/manager/suspicious/list` | list |  | ✅ |
 | CarSuspiciousController | GET | `/manager/suspicious/listCarNo` | listCarNo |  | ✅ |
-| CarSuspiciousController | GET | `/manager/suspicious/listFileCarNo` | listFileCarNo |  | ❌ |
+| CarSuspiciousController | GET | `/manager/suspicious/listFileCarNo` | listFileCarNo |  | ✅ |
 | CarSuspiciousController | GET | `/manager/suspicious/exportAbnormalPassage` | exportAbnormalPassage |  | ❌ |
 | CarSuspiciousController | GET | `/manager/suspicious/listAll` | listAll |  | ✅ |
 | CarSuspiciousController | GET | `/manager/suspicious/export` | export |  | ✅ |
@@ -280,16 +280,16 @@ C++ 已注册路由（源码枚举，含少量 Java 没有的框架扩展路由�
 | CarSuspiciousController | POST | `/manager/suspicious` | add |  | ✅ |
 | CarSuspiciousController | PUT | `/manager/suspicious` | edit |  | ✅ |
 | CarSuspiciousController | DELETE | `/manager/suspicious/{*}` | remove |  | ✅ |
-| CarSuspiciousController | PUT | `/manager/suspicious/check` | check |  | ❌ |
-| CarSuspiciousController | POST | `/manager/suspicious/syncSuspiciousCarTask` | syncSuspiciousCarTask |  | ❌ |
+| CarSuspiciousController | PUT | `/manager/suspicious/check` | check |  | ✅ |
+| CarSuspiciousController | POST | `/manager/suspicious/syncSuspiciousCarTask` | syncSuspiciousCarTask |  | ✅ |
 | CarSuspiciousController | GET | `/manager/suspicious/listHistory` | listHistory |  | ✅ |
-| CarSuspiciousController | GET | `/manager/suspicious/history/{*}` | gethistoryInfo |  | ❌ |
+| CarSuspiciousController | GET | `/manager/suspicious/history/{*}` | gethistoryInfo |  | ✅ |
 | CarSuspiciousController | GET | `/manager/suspicious/exportHistory` | exportHistory |  | ✅ |
 | CarTrackInfoController | GET | `/manager/cartrackinfo/list` | list |  | ✅ |
-| CarTrackInfoController | GET | `/manager/cartrackinfo/listByCarId` | listByCarId |  | ❌ |
+| CarTrackInfoController | GET | `/manager/cartrackinfo/listByCarId` | listByCarId |  | ✅ |
 | CarTrackInfoController | GET | `/manager/cartrackinfo/listByCarByTime` | listByCarByTime |  | ✅ |
-| CarTrackInfoController | PUT | `/manager/cartrackinfo/changeTrailInfo` | changeTrailInfo |  | ❌ |
-| CarTrackInfoController | GET | `/manager/cartrackinfo/carSnapShot` | carSnapShot |  | ❌ |
+| CarTrackInfoController | PUT | `/manager/cartrackinfo/changeTrailInfo` | changeTrailInfo |  | ✅ |
+| CarTrackInfoController | GET | `/manager/cartrackinfo/carSnapShot` | carSnapShot |  | ✅ |
 | CarTrackInfoController | GET | `/manager/cartrackinfo/export` | export |  | ✅ |
 | CarTrackInfoController | GET | `/manager/cartrackinfo/{*}` | getInfo |  | ✅ |
 | CarTrackInfoController | POST | `/manager/cartrackinfo` | add |  | ✅ |

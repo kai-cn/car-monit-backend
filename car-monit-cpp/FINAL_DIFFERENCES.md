@@ -14,13 +14,13 @@
 | 指标 | 数值 |
 |---|---|
 | Java 端点总数 | **497** |
-| 已迁移并路径匹配 | **489**（98.4%） |
-| 未迁移 | **8**（逐条见 §4） |
-| C++ 已注册路由（含 Java 没有的扩展） | **562** |
+| 已迁移并路径匹配 | **491**（98.8%） |
+| 未迁移 | **6**（逐条见 §4） |
+| C++ 已注册路由（含 Java 没有的扩展） | **564** |
 | CRUD Spec 覆盖实体 | 59，`verify_generated_sql` 在真实库 0 异常 |
 | 实体字段 ↔ JSON 键缺口 | `audit_spec_keys` 报告 **0** |
 | 单元测试 | 10 文件 / 514 处断言调用点（含 INFLATE 三种块类型、真实 deflate 的 xlsx 对拍、GpsUtil 对 Python 独立实现的对拍） |
-| 端到端断言（实机，需 MySQL+Redis） | 17 个脚本；本轮复跑 7 个共 **267** 项全通过（suspicious_check 33、trail 几何 54、import 61、bigscreen 22、suspicious/history 41、track_by_time 34、template_export 22）；`verify_generated_sql` 另有 59 个实体逐条建 SQL 跑真实库，0 异常。其余脚本需 fake S3 / 桩服务，随各自批次验过 |
+| 端到端断言（实机，需 MySQL+Redis） | 18 个脚本；本轮复跑 14 个共 **380** 项全通过（suspicious_check 33、sync_suspicious 27、trail 几何 54、import 61、bigscreen 22、suspicious/history 41、track_by_time 34、template_export 22、operlog 18、cn_export 16、user_excel 14、gen 31、tb_flow 20、**list_by_car_id 47**）；`verify_generated_sql` 另有 59 个实体逐条建 SQL 跑真实库，0 异常。其余脚本需 fake S3 / 桩服务，随各自批次验过。⚠️ 本轮末次改动（`compactJson` 的 POJO/Map 排序开关、`FormatMessageW`、错误信封 `dumpLenient`）复跑时 MySQL/Redis 已经下线，只有单测 + 手工 curl 验到，**下一次拉起依赖服务后要把上面 14 个脚本整套重跑一遍** |
 | `@Log` 操作日志规则 | 234 条，C++ 已能写 `sys_oper_log` |
 
 一句话结论：**接口契约（路径、方法、状态码、错误码、JSON 结构与键序、分页与鉴权语义）已对齐到"拿真实数据回归"的程度；剩余差异集中在外部依赖（对象存储、外部 HTTP、模板引擎）与 Excel 读取，且全部是显式标注的缺口，没有静默假数据。**
@@ -65,6 +65,10 @@
 | 34 | **`syncSuspiciousCar` 里那段 Redis 扫描是"跑了但结果被丢掉"**：`addFlag` 是 `"task"` 时，代码仍然先执行 `keys(car_uspicious + yyyyMMdd + "*")`，`redis` 分支收集到的 `trailInfoList` 随后被 `trailInfoList = paraTrailInfoList;` 无条件覆盖。所以那次 KEYS + 若干 GET 对输出没有任何影响 —— 但它是 Java 每次请求都会付出的开销，不算死代码，去掉就是行为不一致。另外 `userId` 写死 `1L`（不是登录人），`create_time/update_time` 用的是 `getTimestampNew2()` —— 名字像"取当前时间"，实际是**当前时间减 2 天**。 | `verify_sync_suspicious.py` |
 | 33 | **MyBatis-Plus 的审计列填充取决于父类，不是一刀切**：17 张表的实体 extends `BasePlusEntity` / `BasePlusEntityInput`，这两个父类声明了 `fill = FieldFill.INSERT/UPDATE` ⇒ insert 补 create_by/create_time/eps_id（tenantId 只在 epsId 恰好为空时才补，Java 的复制粘贴错误），update 补 update_by/update_time。其余父类（`BasePlusEntityNew` / `…InputNew` / `…Long` / `BaseEntity` / `BaseUuidEntity`）**一个都没有** —— 例如 `car_info`（InputNew）与 `car_suspicious`（Long）的 updateById 就不动审计列。因为 `update_time` 就在 `selectXxxVo` 里，少写了列表接口立刻能看出来 | `Spec::auditFillInsert/Update`（由生成器读父类源码得出），`verify_suspicious_check.py` |
 | 32 | **同一份实体在不同层的形态不同**：Jackson 响应 = 声明序 + null 全输出（`ZdataTrailTracks` 51 键、`TrailBo` 32 键）；fastjson2 缓存/query_condition = 按名排序 + null 省略；`TrailInfo.enterTime` 没有 `@JsonFormat` ⇒ 输出 epoch 毫秒数字，而 `tracks.enterTime` 有 ⇒ 输出 `"yyyy-MM-dd HH:mm:ss"`。三者混用就是不一致 | `projectViaSpec`/`projectTrailInfo`，`verify_trail_geo.py` |
+| 35 | **fastjson2 的对象写出器按字段名排序，Map 不排**：`JSON.toJSONString(TrailInfo/TrailBo)` 是字母序，而 `AjaxResult`(HashMap) 是桶序 —— 同一条链路上并存两种形态。C++ 的 `ordered_json` 只保留插入序，所以 `fastJsonCompact` 加了 `pojoFieldOrder` 让调用方声明是哪一种 | 实机对拍 fastjson2 2.0.43（声明序 `zzUuid/lon/middle/…` 打出来是 `countNum,directionIn,emptyStr,lon,nested,zzUuid`）；Map 那一侧由单测 `testOperLogAspect` 钉住 |
+| 36 | **Forest `@Query(POJO)` 的拍平规则**：按声明序、null 整个省略、BigDecimal 保标度（`116.500` 就是 `116.500`）、布尔小写、嵌套对象转 JSON 文本、空串渲染成裸键名；`CarParaVO` 因此只出 `carNo&pageNum&pageSize` 三项 | 实机抓 Forest 1.5.9 发出的请求行；`verify_list_by_car_id.py` 断言上游收到的 query（与 C++ 的等号差异见 ⚠️17） |
+| 37 | **Spring 的参数绑定发生在进方法之前**：`carSnapShot?lon=abc` 走不到 `isNoneBlank` 判断，直接 `BindException` ⇒ `code:500`；空串对数字/布尔属性落成 null（属性保持缺省、拍平时省略），对 String 属性则是 `""`（照样拍平出去） | `verify_list_by_car_id.py` 的 `lon=abc` / `directionIn=maybe` 两条用例（文案见 ⚠️18） |
+| 38 | **`carSnapShot` 两个字段的空白判断不对称**：`stateType` 过了 `CommonUtil.isNull`（顺带 trim），`pointUuid` 没过。任一空白就直接 `AjaxResult.success()` ⇒ 响应**没有 `data` 键** | `verify_list_by_car_id.py` 的三条缺参用例 |
 
 ---
 
@@ -78,7 +82,7 @@
 | ⚠️4 | 无 Quartz 调度器：`sys_job` CRUD 与 `changeStatus`/`jobLog` 语义一致，但 `PUT /monitor/job/run` **明确返回未实现**，调度需外部触发 | 定时任务不会自转 | 外部 cron/systemd/K8s 调 HTTP；或 Java 继续承担调度 | §2.4、`PORTING_REPORT` §6.6 |
 | ⚠️5 | 固定 32 工作线程（`CM_WORKERS`），无 GC；长耗时外部调用会占满 worker | 并发模型不同，慢上游会整站排队 | 部署时按核数放大；外部调用必须设超时 | §2.5、§5.1 |
 | ⚠️6 | 日期固定按 `+08:00`（Java 跟随 JVM 时区） | 部署到别的时区会不一致 | 容器内 `TZ=Asia/Shanghai`（compose 已设） | §2.6 |
-| ⚠️7 | `BigDecimal` 按 double 最短形式输出（`1.10 → 1.1`） | 前端若按字符串比较会不同；导出另有 `*Str` 文本列 | 金额透传原始文本 | §2.7 |
+| ⚠️7 | `BigDecimal` 按 double 最短形式输出（`1.10 → 1.1`）。本轮又多一处实证：`listByCarId` 回退分支把远程轨迹写成 `track_josn` 时，Java 的 fastjson2 会把 `"116.500"` 转成 BigDecimal 再原样写回 `116.500`，C++ 的 JSON 数值只有 double ⇒ 写成 `116.5`，**这串文本会落库** | 前端若按字符串比较会不同；导出另有 `*Str` 文本列 | 金额透传原始文本；`verify_list_by_car_id.py` 用一条 ⚠️ 断言把这个丢失钉住，别让它悄悄扩散 | §2.7 |
 | ⚠️8 | **不支持 chunked 请求体**（返回 411），需 `Content-Length`；上限 200MB 与 Java 一致 | 极少数流式上传客户端受影响 | 网关缓冲后转发 | §2.8 |
 | ⚠️9 | 日志：非 Logback 逐字节格式，无 MDC/traceId 自动注入 | 日志采集格式需适配 | 显式传 traceId | §2.10 |
 | ⚠️10 | **SQL 执行失败被降级成空结果**（Java 是 `BadSqlGrammar` → code 500）——模板导出路径已改成失败即抛，其余路径未统一 | "接口返回空"可能是真失败 | 查 `logs/carmonit.log` 的 `[WARN] Db - 查询失败` | §2.12 |
@@ -87,10 +91,13 @@
 | ⚠️13 | `multipart` 上传类接口的 `oper_param` 记空串；JSON 请求体记"请求体本身"而非绑定后的实体（键序/未知键取舍可能不同） | 仅日志可读性 | §6.6 三条偏离已逐条说明 | §6.6 |
 | ⚠️14 | 静态资源/前端：`config/static` 代替 classpath，无 swagger-ui / druid 控制台（Java 侧本来就 `denyAll`） | 运维入口缺失 | 用 `ENDPOINTS_INVENTORY.md`；`GET /health` 是 C++ 扩展 | §2.9、§5 |
 | ⚠️15 | 无 Apache POI / Kafka / Elasticsearch / ShardingSphere / MinIO SDK / OSS SDK | 见 §4 未实现清单 | 逐条替代方案在 §5 表 | §5 |
+| ⚠️16 | fastjson2 的**对象**写出器按字段名排序、**Map** 按容器序 —— C++ 的 `Json` 是 `ordered_json`，只会保留插入序，所以 `fastJsonCompact` 必须显式声明是哪一种（`pojoFieldOrder`）。`@Log` 的 `oper_param`/`json_result` 拿的是 `joinPoint.getArgs()`，到底是 POJO 还是 Map 取决于方法签名，本轮没逐条核，仍按插入序输出 | 日志里的键序可能与 Java 不同（POJO 入参那几处） | 已确认的三处 POJO 序列化（`queryLog` 的 `TrailInfo`、`track_josn` 的 `TrailBo` 列表、Forest 拍平里的嵌套 BO）显式传 `true`；其余维持现状，改动时按签名逐条判定 | §2.16、契约 35 |
+| ⚠️17 | Forest 把空串查询参数渲染成**没有等号**的裸键名（`…&isQuery`），C++ 的 `buildQuery` 一律带等号（`…&isQuery=`）。`buildQuery` 同时服务 `postForm`，那里 `a=` 才是正确形态，所以没有改传输层 | Servlet 侧 `getParameter` 两种都返回 `""`，实测上游行为一致 | 只在出站 URL 的字面文本上不同；`verify_list_by_car_id.py` 断言的是"键照样带上" | §5.1、契约 36 |
+| ⚠️18 | Spring 绑定失败（如 `carSnapShot?lon=abc`）的 `BindException` 文案模板照抄了 `Failed to convert property value of type 'java.lang.String' to required type 'java.math.BigDecimal' for property 'lon'`，但**子串没跟真实 Spring 5.3 逐字对拍**（本机跑不起 Java 侧） | 只有失败响应的 `msg` 文本；`code:500` 与 HTTP 200 的形态是对的 | 有 Java 环境时用 `lon=abc` 打一次原始应用对拍文案 | 契约 37 |
 
 ---
 
-## 4. ❌ 未迁移的 15 条端点（按前置能力分组，分组计数与 15 对账）
+## 4. ❌ 未迁移的端点（当前 6 条；历史上按前置能力分组，分组标题里的条数是各自批次的快照）
 
 依据：逐条读 Java 源码（controller → service impl → mapper XML → application.yml/SecurityConfig），
 不靠猜。分组小计：9 + 7 + 7 + 4 + 3 + 1 + 2 + 2 = **35**。
@@ -126,13 +133,13 @@
 | `POST /tool/gen/importTable`、`PUT /tool/gen`、`GET /tool/gen/synchDb/{tableName}` | 需 `GenUtils.initTable/initColumnField`（类型→javaType/htmlType 映射表、`information_schema.columns` 读列）与 `validateEdit` 的树/子表校验分支 |
 | `GET /tool/gen/preview/{id}`、`/download/{t}`、`/genCode/{t}`、`/batchGenCode` | 28 份 Velocity 模板渲染 + zip（zip 写出器本轮已为 xlsx 落地） |
 
-### D. CarTrackInfoController —— 剩 2 条
+### D. CarTrackInfoController —— 0 条（全部落地）
 
-| 端点 | 阻塞点 |
+| 端点 | 状态 |
 |---|---|
-| `GET /manager/cartrackinfo/listByCarId` | 本地为空才回退 `httpSysUtilApiService.carTrackQueryByCarNo`（`127.0.0.1:9901`），且**回退时写 Redis + 落库**（读接口带写副作用，必须照抄） |
+| `GET /manager/cartrackinfo/listByCarId` | ✅ 已实现：本地查询与 `listByCarByTime` 共用同一份 `carTrackQueryLocal`；本地**一行都没有**才回退 `carTrackQueryByCarNo`，回退命中时照抄那个"GET 却写库"的副作用（`removeRealData(请求车牌)` + `saveBatch(远程 tracks)`，无事务 ⇒ 删先提交）。验证走脚本自带的假上游（`CM_VEHICLEMONITOR_BASEURL` 指过去），47 项断言 |
 | ~~`PUT /manager/cartrackinfo/changeTrailInfo`~~ ✅ | 已实现：`carQueryLogService.queryLog` 落日志 + 三级回退几何 + `trailDevCountBO`；`query_condition` 写的是 fastjson2 丢 null 的形态 |
-| `GET /manager/cartrackinfo/carSnapShot` | 纯外部：`/base/sysutil/getByTrailBo`，整个 `TrailBo` 被拍平成 query string |
+| `GET /manager/cartrackinfo/carSnapShot` | ✅ 已实现：`stateType`/`pointUuid` 不齐就直接 `success()`（没有 `data` 键）；齐了把整个 `TrailBo` 拍平成 query string 打 `getByTrailBo`。拍平规则（声明序、null 省略、BigDecimal 保标度、空串也带上）是**实机抓 Forest 1.5.x 的请求行**钉下来的，见 §3 |
 
 ### E/F/G/H. 其余 7 条
 
@@ -145,16 +152,16 @@
 > ~~`POST /manager/carinfo/import`、`POST /manager/exceptrecord/import`~~ —— 已迁移（xlsx 读取器可用后落地，见 §2 契约 23–26 与 `scripts/verify_import.py` 的 61 项实机断言）。
 > 另注：`POST /system/user/importData` 已在路由表里（未计作"未覆盖"），但它走的是另一套机制（`@Excel` 注解反查 + `updateSupport` 的部门/角色校验），目前仍返回**显式错误**而不是假成功。
 
-### 小结：按"缺什么能力"重排（8 条）
+### 小结：按"缺什么能力"重排（未迁移 6 条）
 
 | 缺的能力 | 条数 | 端点 |
 |---|---|---|
-| **无（纯移植工作量）** | **2** | `file/uploadFileEnc`、`busstest/syncCurrentTrack` |
-| S3 / MinIO 客户端（SigV4） | 7 | `file/upload`、`uploadSupplier`、`uploadPdf`、`uploadFile`、`uploadFileId`、`GET /{bucket}/{obj}`、`GET /view/{bucket}/{obj}`（已实现，缺真实 MinIO 才能验签名之外的分支） |
-| S3 + 出站 HTTP | 1 | `file/uploadByUrl` |
-| 出站 HTTP（外部服务在场才能验） | 3 | `cartrackinfo/listByCarId`、`cartrackinfo/carSnapShot`、`snapshotflow/earliest-time`（`geometry/getHenDa`、`syncAllGeometry`、`syncAllGeometry1` 已实现，仍缺真实 GeoServer；`listByCarByTime` 的远程分支在 Java 里整块被注释，故早已作为纯本地端点落地） |
+| **无（纯移植工作量）** | **1** | `busstest/syncCurrentTrack` —— 实现本身不难，难在它会把 `car_info` 整表刷成 `status='0', track_josn=NULL` 并重写 Redis 缓存，开发库上不能拿真实数据跑 |
 | docx 模板填充 | 1 | `suspicious/exportAbnormalPassage` |
-| GenUtils / Velocity + zip | 7 | `gen/importTable`、`PUT /tool/gen`、`gen/synchDb`、`preview`、`download`、`genCode`、`batchGenCode`（前三条已落地，剩 4 条要 Velocity 渲染 13 个 `vmplus/` 模板） |
+| GenUtils / Velocity + zip | 4 | `gen/preview/{*}`、`gen/download/{*}`、`gen/genCode/{*}`、`gen/batchGenCode`（要渲染 13 个 `vmplus/` 模板 + `HashSet` 的导入顺序 + deflate 打包） |
+
+> "已注册、但只有降级/失败分支被验到"的那批不在这 6 条里：`file/*` 7 条缺真实 MinIO（`verify_sys_file.py` 需要 `fake_s3.py` + `logs/cfg_fake`）、`geometry/getHenDa`/`syncAllGeometry`/`syncAllGeometry1` 与 `snapshotflow/earliest-time` 缺真实 GeoServer/上游服务（`verify_henda.py` 用 `logs/cfg_stub`）。
+> `cartrackinfo/listByCarId` 与 `carSnapShot` 这两条本轮**把成功分支也验到了**：`verify_list_by_car_id.py` 自带一个假上游，C++ 侧用 `CM_VEHICLEMONITOR_BASEURL` 指过去，因此远程返回、`track_josn` 回写、以及那个"GET 写库"的副作用都是可观察的。
 
 > ~~xlsx 读取（INFLATE + sharedStrings）~~ —— 0 条：读取器已可用，`carinfo/import` 与 `exceptrecord/import` 已迁移。
 > ~~`suspicious/listFileCarNo`、`suspicious/history/{id}`、`cartrackinfo/changeTrailInfo`~~ —— 已迁移（几何三级回退链，见契约 28–31）。本机既无 roadPath 也无腾讯服务，实测跑的是**降级路径**（最终落到本地 geometry 表拼接），与 Java 在同环境下的行为一致；两条出站分支只做到"签名/请求体拼串"级别的单测钉死。
@@ -190,6 +197,10 @@
 | `changeTrailInfo` 里 `trailInfo.setTrailList(josnList)` 是自我赋值 | `josnList` 本来就是从 `trailInfo.getTrailList()` 取的；照抄不改 | `CarTrackInfoController:312` |
 | `check` 里算出来的 `escapedType` 没人用 | `escapedType.indexOf(addCheckType) > -1` 是**子串**判重（码 "1" 会因为已积累的 "10," 含 '1' 而被当成重复跳过；值为空串时 `indexOf("")==0` 永远跳过），拼完 `deleteEnd` 之后却把请求上的 `escapedType` 写进 updatebo —— 计算结果是死值，照抄不"接通" | `ManagerSuspiciousWriteControllers.cpp` |
 | `check` 的两张表是**物理** delete，且排在可能 NPE 的循环之前 | `isExcept!="1"` 且 `checkList` 为 null 时：先删空 → for-each NPE → 500 → 靠 `@Transactional` 回滚。C++ 的 `Transaction` 析构默认回滚，所以正常返回路径必须逐个显式 commit，否则"500 之后旧行应该还在"这条就守不住 | `verify_suspicious_check.py` 的回滚用例 |
+| `GET /manager/cartrackinfo/listByCarId` 是**读接口却写库** | 本地查空才回退远程，远程一有数据就 `redisCache.setCacheObject(car_history_trail+车牌)` + `removeRealData(请求车牌)` + `saveBatch(远程 tracks)`；且这条链路上没有 `@Transactional` ⇒ 删先提交，插一半失败也回不来。⚠️ 删的是**请求**车牌、插的是**远程返回**的车牌，两个值可以不一样 | `verify_list_by_car_id.py`（两条断言分别钉住"删请求车牌"和"插远程车牌"） |
+| `listByCarId` 的回退判据是 `carlist.size() > 0`，不是展开后的 `rtnList` | `track_josn` 全为 NULL 的行进不了 `rows`，但照样算"有数据"⇒ 远程回退不触发，响应是 `rows:[], total:N` | `verify_list_by_car_id.py` 的 `QODER挂B` 夹具 |
+| `carSnapShot` 的 `TrailBo` 是**外部接口的返回类型**，不是本项目实体 | 上游若回 `AjaxResult` 信封（大概率），fastjson2/Jackson 解不出任何 TrailBo 字段 ⇒ 响应 `data` 是 32 个全 null 的键，而不是报错。C++ 一致照抄 | `verify_list_by_car_id.py` 的"上游返信封"用例 |
+| 远程轨迹写回 `track_josn` 用的是 **fastjson2** 文本（排序 + 丢 null），响应里的 `trailList` 用的是 **Jackson**（声明序 + null 全输出） | 同一个对象在同一次响应里出现两种序列化形态 | `verify_list_by_car_id.py` 两条键序断言 |
 
 ### C++ 侧自己埋的坑（移植时必须防复发）
 
@@ -198,6 +209,8 @@
 | `Db::lit("0")` 命中 `lit(bool)` 重载 | `const char*` → `bool` 是**标准转换**，优先级高于 → `const std::string&` 的用户定义转换，于是 `del_flag` 这类字面量被写成 `1`。实测 car_info 的 `del_flag` 就这么错了 | 加了 `lit(const char*)` 精确匹配重载；新代码传字符串字面量不会再掉进 bool |
 | 生成器与库里 spec 不完全一致 | `car_info` 那段无条件的 `not exists (… group by …)` 与两处 `createInfo` 派生列是手工补进去的；生成器还表达不了（试过改成逐字照抄 WHERE，被 RuoYi 的 `<where>` 标签骗出 `" and >"` 这种垃圾，已回退） | 已在 `gen_crud_spec.py` 注释里写明；**不要盲目重新生成**，先 diff 再落地 |
 | `syncSuspiciousCarTask` 签名三参数由调用方提供、无时间窗 | 可无限重放、可离线伪造 | §5.1、§4.5 |
+| 出站 HTTP 失败时把**操作系统的错误文本**塞进异常 message | Windows 上 `FormatMessageA` 返回系统 ANSI 码页（中文机是 GBK），那串字节进到 `AjaxResult.msg` 后 `nlohmann::dump()` 按 strict 抛 `type_error.316` —— 而它正是在异常处理路径里抛的，没人再接 ⇒ `terminate` ⇒ **整个进程下线**（本轮实机扫尾时真把服务打死了，后面几个脚本连不上服务其实都是这个） | `Os.hpp::lastError()` 走 `FormatMessageW` + `WideCharToMultiByte(CP_UTF8)`；错误信封/401/404 三处序列化改成 `dumpLenient`（非法字节替换成 U+FFFD，照样应答）。新增的 `verify_list_by_car_id.py` 里"上游连不上"就是这条的回归位 |
+| 以为 `JSON.toJSONString` 只有一种键序 | fastjson2 对 **POJO** 按字段名排序、对 **Map** 按容器序；`compactJson` 一开始无条件排序，把 `json_result` 的 `{msg,code}` 排成 `{code,msg}` | 改成调用方显式声明 `pojoFieldOrder`；是单测 `testOperLogAspect` 先抓到的（不是实机），说明错误信封这类"全局共用的序列化位"必须挂在单测上 |
 
 ---
 
@@ -214,6 +227,7 @@
 | 大屏 | `python scripts/verify_bigscreen.py 9991 "$TOKEN"` | 22 | pass=22 fail=0 | §2.15、缓存与规则链路 |
 | 代码生成 | `python scripts/verify_gen.py 9991 "$TOKEN"` | 31 | pass=31 fail=0 | §2.7–8、§4.5、columnList 的 `code:0` |
 | 模板导出 | `python scripts/verify_template_export.py 9991 "$TOKEN"` | 22 | pass=22 fail=0 | ⚠️3、§4.10 条件修复 |
+| 轨迹远程分支 | `python scripts/verify_list_by_car_id.py 9991 "$TOKEN"` | 47 | pass=47 fail=0 | §4 D、契约 35–38、⚠️7/16/17/18（脚本自带假上游，需 `CM_VEHICLEMONITOR_BASEURL`） |
 | 审批流 | `python scripts/verify_flow_approval.py --port 9991` | 27 | ALL PASSED | 多表事务 + 回滚（`Transaction`） |
 | 覆盖率 | `python scripts/gen_inventory.py` | — | 462/497 | §4 |
 
