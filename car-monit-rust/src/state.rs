@@ -29,6 +29,13 @@ pub struct AppState {
 
 impl AppState {
     pub async fn connect(settings: Settings) -> anyhow::Result<Self> {
+        // Java: `oss.info=true` 会创建 OssEndpoint，但 `oss.enable=false` 时没有 OssTemplate
+        // 可供注入，Spring 启动直接失败；这里保持同样的启动失败语义。
+        if settings.oss.info && !settings.oss.enable {
+            anyhow::bail!(
+                "oss.info=true 需要同时 oss.enable=true（Java OssAutoConfiguration 缺少 OssTemplate）"
+            );
+        }
         let settings = Arc::new(settings);
 
         let (host, port, db) = settings.mysql_endpoint()?;

@@ -73,7 +73,8 @@ async fn method_not_allowed_mapper(
 }
 
 /// 附录 B 的 501 条控制器端点 + 认证入口（不含 state/中间件，便于自检与复用）。
-pub fn build_api_routes() -> Router<AppState> {
+/// 不包含 `/oss/**`：Java 的 `OssEndpoint` 只在 `oss.info=true` 时创建（见 `build_router`）。
+fn api_routes_without_oss() -> Router<AppState> {
     use api::meta;
     let router = Router::new()
         .route(
@@ -106,14 +107,21 @@ pub fn build_api_routes() -> Router<AppState> {
         .merge(api::base::routes())
         .merge(api::manager::routes())
         .merge(api::flow::routes())
-        .merge(api::generator::routes())
-        // Java: ruoyi-common 的 OssEndpoint（基线曾漏记这个控制器）。
-        .merge(api::oss::routes());
+        .merge(api::generator::routes());
     router
 }
 
+/// 附录 B 的基线路由（含 `/oss/**`），供 `route_parity` 逐条对拍使用。
+pub fn build_api_routes() -> Router<AppState> {
+    api_routes_without_oss().merge(api::oss::routes())
+}
+
 pub fn build_router(state: AppState) -> Router {
-    let mut router = build_api_routes();
+    let mut router = api_routes_without_oss();
+    // Java: `OssAutoConfiguration.ossEndpoint` 仅 `oss.info=true` 时创建 Bean；默认不注册。
+    if state.settings.oss.info {
+        router = router.merge(api::oss::routes());
+    }
 
     if state.settings.app.health_endpoint_enabled {
         router = router.route("/health", get(api::health::health));
