@@ -221,17 +221,17 @@ class TestInsert:
             assert column not in sql
         assert "del_flag" not in sql
 
-    def test_a_given_eps_id_blocks_the_tenant_fill(
+    def test_a_given_eps_id_still_fills_the_tenant(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Java 的 ``if (epsId == null)`` 守卫 —— 传了 ``epsId`` 就**不**填 ``tenantId``。"""
+        """P2-7：``tenant_id`` 以自己的值为判据，不再被调用方传入的 ``eps_id`` 阻断。"""
         _patch_session(monkeypatch, _Result(rowcount=1))
         entity = BaseConfigServiceArea(fwqbm="S001", eps_id=99)
 
         BaseConfigServiceAreaMapper().insert(entity)
 
         assert entity.eps_id == 99
-        assert entity.tenant_id is None
+        assert entity.tenant_id == 22
 
     def test_the_generated_id_is_written_back(self, monkeypatch: pytest.MonkeyPatch) -> None:
         factory = _patch_session(monkeypatch, _Result(rowcount=1))
