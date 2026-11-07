@@ -2,6 +2,7 @@
 #include "cm/web/BaseController.hpp"
 #include "cm/common/constant/UserConstants.hpp"
 #include "cm/framework/security/SecurityUtils.hpp"
+#include "cm/framework/web/RepeatSubmit.hpp"
 #include "cm/framework/web/Router.hpp"
 #include "cm/system/service/SysConfigService.hpp"
 #include "cm/system/domain/SysConfig.hpp"
@@ -54,6 +55,8 @@ void registerSysConfigController(cm::web::Router& r) {
 
     // POST /system/config
     r.post("/system/config", [](RequestContext& ctx) -> cm::http::ApiResponse {
+        // Java 侧这个方法打了 @RepeatSubmit（全项目唯一一处）
+        if (auto repeat = cm::web::checkRepeatSubmit(ctx.req, "/system/config")) return *repeat;
         auto body = ctx.body();
         cm::domain::SysConfig config;
         config.fromJson(body);

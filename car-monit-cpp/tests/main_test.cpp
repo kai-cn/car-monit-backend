@@ -27,6 +27,7 @@
 #include "cm/framework/net/Os.hpp"
 #include "cm/framework/security/Jwt.hpp"
 #include "cm/framework/security/SecurityUtils.hpp"
+#include "cm/framework/web/RepeatSubmit.hpp"
 #include "cm/framework/web/Router.hpp"
 #include "cm/framework/web/Server.hpp"
 
@@ -444,8 +445,8 @@ static void testAsyncLogger() {
     // 顺序：0 在 49 之前
     CHECK(all.find("async-line-0") < all.find("async-line-4"));
     std::filesystem::remove_all(dir, ec);
-    // 恢复默认（后续没有日志，但避免影响进程退出路径）
-    lg.init("logs", "debug");
+    // 不再重启后台线程：shutdown 后保持停止，后续日志走同步写分支；
+    // 进程退出时 Logger 析构会再次 shutdown（对已停止状态是幂等的）。
 }
 
 /** YAML 子集：不支持的语法必须报 warning，不能静默取缺省值 */
@@ -472,6 +473,21 @@ static void testYamlWarnings() {
     CHECK(none.empty());
     CHECK_EQ(ok.getInt("server.port"), 8080LL);
     CHECK_EQ(ok.find("list")->seq.size(), static_cast<size_t>(2));
+}
+
+/** @RepeatSubmit 判定：参数相同且间隔 < 5s（Java `interval()` 默认 5000）才算重复；兼容 fastjson2 形态 */
+static void testRepeatSubmit() {
+    const std::string url = "/system/config";
+    const std::string params = "{\"configName\":\"x\"}";
+    const long long now = 1762500000000LL;
+    // Java 写入形态：@type + 嵌套 Long 带 L
+    const std::string javaText = "{\"@type\":\"java.util.HashMap\",\"/system/config\":{\"repeatParams\":"
+                                 "\"{\\\"configName\\\":\\\"x\\\"}\",\"repeatTime\":1762499996000L}}";
+    CHECK(cm::web::repeatSubmitHit(javaText, url, params, now, 5000));   // 4s 前
+    CHECK(!cm::web::repeatSubmitHit(javaText, url, params, now + 1000, 5000));  // 恰好 5s：严格 < 才命中
+    CHECK(!cm::web::repeatSubmitHit(javaText, url, "{\"configName\":\"y\"}", now, 5000));
+    CHECK(!cm::web::repeatSubmitHit("", url, params, now, 5000));
+    CHECK(!cm::web::repeatSubmitHit("{bad", url, params, now, 5000));
 }
 
 /** Spring URL 层规则的顺序与语义（SecurityConfig 是逐条 antMatchers，先命中先生效） */
@@ -704,6 +720,7 @@ int main() {
     testRequestDeadline();
     testAsyncLogger();
     testYamlWarnings();
+    testRepeatSubmit();
     testUtf8PathCompat();
     testOperLogHelpers();
     testOperLogBuild();
