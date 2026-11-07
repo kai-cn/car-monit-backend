@@ -75,16 +75,20 @@ class MilliSecondFormatter(logging.Formatter):
         return f"{base}.{int(record.msecs):03d}"
 
 
-class _LevelRangeFilter(logging.Filter):
-    """Java ``LevelFilter`` equivalent: accept exactly one level, deny everything else."""
+class _LevelFilter(logging.Filter):
+    """Java ``LevelFilter`` equivalent: accept exactly one level, deny everything else.
+
+    logback 的 ``LevelFilter`` 是**精确匹配**单一级别（``onMatch=ACCEPT`` /
+    ``onMismatch=DENY``），不是"该级别及以上"的阈值过滤。``sys-info.log`` 因此只收
+    INFO：DEBUG（p6spy 风格的逐条 SQL）不会落盘，WARNING/ERROR 也不会。
+    """
 
     def __init__(self, level: int) -> None:
         super().__init__()
         self.level = level
 
     def filter(self, record: logging.LogRecord) -> bool:
-        # An empty record name marker keeps this filter usable on the root logger.
-        return record.levelno == self.level or (self.level <= logging.INFO and record.levelno < logging.WARNING and record.levelno >= self.level)
+        return record.levelno == self.level
 
 
 def _log_dir() -> Path:
@@ -122,9 +126,10 @@ def configure_logging(settings: AppSettings) -> None:
     console.setFormatter(console_formatter)
     console.addFilter(TraceIdFilter())
 
-    info_file = _rotating_handler(log_path / "sys-info.log", logging.DEBUG, file_formatter)
-    info_file.addFilter(_LevelRangeFilter(logging.DEBUG))
+    info_file = _rotating_handler(log_path / "sys-info.log", logging.INFO, file_formatter)
+    info_file.addFilter(_LevelFilter(logging.INFO))
     error_file = _rotating_handler(log_path / "sys-error.log", logging.ERROR, file_formatter)
+    error_file.addFilter(_LevelFilter(logging.ERROR))
     slow_file = _rotating_handler(log_path / "sys-slow.log", logging.INFO, file_formatter)
     user_file = _rotating_handler(log_path / "sys-user.log", logging.INFO, file_formatter)
 
@@ -136,9 +141,19 @@ def configure_logging(settings: AppSettings) -> None:
     root.addHandler(info_file)
     root.addHandler(error_file)
 
-    # logback: dedicated slow-log appenders for the trace filter and SQL interceptor.
-    for slow_logger in ("app.middleware.trace_id", "app.config.database"):
-        logging.getLogger(slow_logger).addHandler(slow_file)
+    # logback: <logger name="com.ruoyi.common.core.monitor.TraceIdFilter" level="info"
+    #          additivity="false"><appender-ref ref="file_slow"/></logger>
+    # trace 日志**只**进 sys-slow.log：否则每个请求的 [请求完成] 会同时写 info 文件，
+    # 日志量翻倍且掩盖真正的 INFO 业务日志。
+    trace_logger = logging.getLogger("app.middleware.trace_id")
+    trace_logger.addHandler(slow_file)
+    trace_logger.propagate = False
+    trace_logger.setLevel(logging.INFO)
+
+    # logback: SqlLogInterceptor 同样 additivity="false" 只挂 file_slow。本工程的
+    # ``app.config.database`` 还兼任 p6spy 的逐条 SQL 输出（Java 写 stdout），
+    # 因此保留向 root 传播，交给 console；DEBUG 已被 info/error 的精确级别过滤挡住。
+    logging.getLogger("app.config.database").addHandler(slow_file)
 
     # logback: <logger name="sys-user" ...> -> user access log
     logging.getLogger("app.user_access").addHandler(user_file)

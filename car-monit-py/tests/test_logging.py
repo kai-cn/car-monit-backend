@@ -54,6 +54,32 @@ class TestLoggerLevels:
             assert logger.propagate is True
 
 
+class TestLevelFilter:
+    """Java ``LevelFilter`` 是精确匹配单一级别，不是"该级别及以上"。"""
+
+    def test_accepts_only_configured_level(self) -> None:
+        from app.logging_config import _LevelFilter
+
+        level_filter = _LevelFilter(logging.INFO)
+
+        def record(level: int) -> logging.LogRecord:
+            return logging.LogRecord("x", level, __file__, 1, "msg", None, None)
+
+        assert level_filter.filter(record(logging.INFO)) is True
+        for level in (logging.DEBUG, logging.WARNING, logging.ERROR):
+            assert level_filter.filter(record(level)) is False
+
+
+class TestSlowLogIsolation:
+    """Java: ``TraceIdFilter`` / ``SqlLogInterceptor`` 的 ``additivity="false"``。"""
+
+    def test_trace_logger_only_feeds_slow_file(self) -> None:
+        trace_logger = logging.getLogger("app.middleware.trace_id")
+        assert trace_logger.propagate is False
+        assert len(trace_logger.handlers) == 1
+        assert trace_logger.handlers[0].baseFilename.endswith("sys-slow.log")  # type: ignore[attr-defined]
+
+
 class TestTraceIdFilter:
     """Java: ``%X{traceId}`` MDC 占位符。"""
 
