@@ -115,6 +115,13 @@ impl RedisCache {
         Ok(value)
     }
 
+    /// `/health` 探活：等价 `PING`。
+    pub async fn ping(&self) -> Result<(), AppError> {
+        let mut conn = self.conn.clone();
+        let _: String = redis::cmd("PING").query_async(&mut conn).await?;
+        Ok(())
+    }
+
     /// Java: `RedisTemplate<String,String>.opsForValue().get(key)` —— 原始字符串。
     pub async fn get_string(&self, key: &str) -> Result<Option<String>, AppError> {
         let mut conn = self.conn.clone();

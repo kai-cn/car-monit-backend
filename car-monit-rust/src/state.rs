@@ -86,6 +86,7 @@ impl AppState {
     /// 单次探活，供 /health 使用。
     pub async fn check_health(&self) -> Result<(), AppError> {
         sqlx::query("select 1").execute(&self.db).await?;
+        self.redis.ping().await?;
         Ok(())
     }
 }

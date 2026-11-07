@@ -98,6 +98,19 @@ fn init_tracing(settings: &Settings) -> Option<tracing_appender::non_blocking::W
 }
 
 async fn shutdown_signal() {
+    // Java: Spring Boot 优雅停机同时响应 SIGTERM（容器/K8s 滚动发布）。
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix::{signal, SignalKind};
+        if let Ok(mut terminate) = signal(SignalKind::terminate()) {
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => {}
+                _ = terminate.recv() => {}
+            }
+            tracing::info!("shutdown signal received");
+            return;
+        }
+    }
     let _ = tokio::signal::ctrl_c().await;
     tracing::info!("shutdown signal received");
 }
