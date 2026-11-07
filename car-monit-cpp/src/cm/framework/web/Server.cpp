@@ -173,11 +173,10 @@ bool serveStatic(const std::string& method, const std::string& path, cm::http::A
     if (!std::filesystem::is_regular_file(file)) return false;
     std::ifstream in(file, std::ios::binary);
     if (!in) return false;
-    std::ostringstream ss;
-    ss << in.rdbuf();
     out.status = 200;
     out.content_type = contentTypeFor(path);
-    out.body = ss.str();
+    // 不在这里读内容：大文件（视频/导出包）走流式，避免整个文件进 RSS
+    out.file_path = cm::compat::fsUtf8(file);
     return true;
 }
 
@@ -604,18 +603,37 @@ bool Server::parseChunkSizeLine(const std::string& line, unsigned long long maxB
 }
 
 void Server::writeResponse(cm::net::Fd fd, const cm::http::ApiResponse& resp, bool keepAlive) {
+    const bool fromFile = !resp.file_path.empty();
+    unsigned long long fileSize = 0;
+    if (fromFile) {
+        std::error_code ec;
+        fileSize = std::filesystem::file_size(cm::compat::fsPath(resp.file_path), ec);
+        if (ec) fileSize = 0;
+    }
     std::ostringstream head;
     head << "HTTP/1.1 " << resp.status << " " << reasonPhrase(resp.status) << "\r\n";
     head << "Content-Type: " << resp.content_type << "\r\n";
-    head << "Content-Length: " << resp.body.size() << "\r\n";
+    head << "Content-Length: " << (fromFile ? fileSize : resp.body.size()) << "\r\n";
     for (const auto& [k, v] : resp.headers) head << k << ": " << v << "\r\n";
     head << "Connection: " << (keepAlive ? "keep-alive" : "close") << "\r\n\r\n";
-    std::string data = head.str() + resp.body;
-    size_t sent = 0;
-    while (sent < data.size()) {
-        const long n = cm::net::writeSome(fd, data.data() + sent, data.size() - sent);
+    const std::string header = head.str();
+    if (!cm::net::writeAll(fd, header.data(), header.size())) return;
+    if (!fromFile) {
+        if (!cm::net::writeAll(fd, resp.body.data(), resp.body.size())) return;
+        return;
+    }
+    // 文件按 64KB 分块流式写出：大文件不占 RSS，也不需要一次性构造 body+头
+    std::ifstream in(cm::compat::fsPath(resp.file_path), std::ios::binary);
+    if (!in) {
+        LOG_WARN("Server", "静态文件打开失败: " + resp.file_path);
+        return;
+    }
+    char buf[64 * 1024];
+    while (in) {
+        in.read(buf, sizeof(buf));
+        const std::streamsize n = in.gcount();
         if (n <= 0) break;
-        sent += static_cast<size_t>(n);
+        if (!cm::net::writeAll(fd, buf, static_cast<size_t>(n))) break;
     }
 }
 

@@ -23,6 +23,9 @@ struct ApiResponse {
     std::string content_type{"application/json;charset=UTF-8"};
     std::string body;
     std::map<std::string, std::string> headers;
+    /** 非空表示响应体来自文件：writeResponse 按 Content-Length 分块流式写出，
+     *  不把整个文件读进内存。此时 body 被忽略。 */
+    std::string file_path;
 
     static ApiResponse json(const Json& j,
                             const std::string& ct = "application/json;charset=UTF-8") {
