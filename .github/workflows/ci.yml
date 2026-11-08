@@ -199,15 +199,14 @@ jobs:
 
       - name: golangci-lint
         # v7 才支持 golangci-lint v2.x；v6 + v2.1.6 会因参数/安装不兼容直接失败。
-        # only-new-issues：仓库现有 49 个历史 lint 问题（errcheck 6 / ineffassign 1 /
-        # staticcheck 12 / unused 30），不在本轮改业务代码；门禁只拦本次改动新增的问题，
-        # 历史债单独排期清理（见 docs/ci-cd-pipeline-plan.md §4）。
+        # 基线固定为 origin/master 的 merge-base：新分支首次推送时 push 事件没有 before
+        # 提交，only-new-issues 会把历史 49 条全部当成新增；merge-base 在 master 上等价于
+        # "只比上一个提交"，在迁移分支上则只拦分支自己引入的问题。
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.1.6
           working-directory: car-monit-go
-          args: --timeout=5m
-          only-new-issues: true
+          args: --timeout=5m --new-from-merge-base=origin/master
 
       - name: 权限点对拍（分支带脚本时）
         # 从 car-monit-go-V2 的 car-monit-go-ci.yml 迁入；master 没有该脚本，自动跳过。
@@ -525,8 +524,29 @@ jobs:
       - name: 安装依赖
         run: python3 -m pip install -r requirements.txt
 
+      - name: 打印生效配置并探活
+        # 容器 job 里服务必须用服务名；这一步把解析结果与连通性打出来，
+        # 失败时能直接看出是"配置没覆盖"还是"网络不通"，不用再靠猜。
+        run: |
+          python3 - <<'PY'
+          from app.settings import get_settings
+          s = get_settings()
+          print("redis:", s.spring.redis.host, s.spring.redis.port)
+          print("jdbc:", s.spring.datasource.druid.master.url.split("@")[-1])
+          PY
+          python3 - <<'PY'
+          import socket
+          for host, port in (("mysql", 3306), ("redis", 6379)):
+              try:
+                  with socket.create_connection((host, port), timeout=5):
+                      print(f"{host}:{port} OK")
+              except Exception as e:
+                  print(f"{host}:{port} FAIL {e}")
+                  raise
+          PY
+
       - name: 集成测试
-        run: python3 -m pytest tests/integration -v -m integration
+        run: python3 -m pytest tests/integration -v -rs -m integration
 
   # ---------------------------------------------------------------------------
   # 与 Java 端点对拍：需要可达的两端基址，仅手动触发。
