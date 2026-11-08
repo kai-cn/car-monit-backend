@@ -85,7 +85,8 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: car-monit-go
-          file: ./Dockerfile
+          # build-push-action 的 file 相对 workspace 根解析，不是相对 context
+          file: car-monit-go/Dockerfile
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -118,7 +119,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: car-monit-rust
-          file: ./Dockerfile
+          file: car-monit-rust/Dockerfile
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -151,7 +152,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: car-monit-py
-          file: ./Dockerfile
+          file: car-monit-py/Dockerfile
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
