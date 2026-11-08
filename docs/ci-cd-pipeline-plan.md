@@ -177,6 +177,24 @@ JDK：扫描全仓所有 `pom.xml`，**只有 `java.version=1.8` 一个值**；�
 
 迁移分支的三条失败（go-V2 / rust-V2 / py-V2）来自首推时的旧 workflow：go 是 v6+v2 lint 不兼容、rust 同一个 TZ 用例、py 同一个 `USER` 冲突；旧 workflow 已在同步提交中删除，新 `ci.yml` 只在 `master`/PR 触发，因此分支不会再有新 run。
 
+## 4.3 最终验证结果（2026-11-08，master `2449ce2`）
+
+| workflow | 分支 | run | 结果 |
+|---|---|---|---|
+| `ci` | `master` | 42493225126 | **success**（changes / java / go / rust / py / cpp 全绿；integration、go-perms-audit、rust-parity 手动触发，跳过） |
+| `cd` | `master` | 42493225088 | **success**（image-java / image-go / image-rust / image-py 四个镜像均构建并推送到 GHCR） |
+
+迁移分支没有再触发新 run：它们的新 `ci.yml` 只在 `push: master` 与 `pull_request: master` 时运行，推到分支本身不会产生 run。历史三条失败来自首推时的旧 workflow，已在同步提交中删除：
+
+| 分支 | 历史 run | 历史失败原因 | 现状 |
+|---|---|---|---|
+| `car-monit-go-V2` | 42485227575 | 旧 workflow 的 `golangci-lint`（v6 + golangci-lint v2 不兼容） | 旧 workflow 已删除；新 ci 未在此分支触发（未运行） |
+| `car-monit-rust-V2` | 42485240651 | `oss_client` 的 `+08:00` 断言（runner UTC） | 同上（TZ 修复已同步到分支） |
+| `car-monit-py-V2` | 42485257375 | `USER=runner` 与 pydantic-settings `user` 字段冲突 | 同上（`env -u USER` 已同步） |
+| `car-monit-cpp-local` | 无 | 首次推送时无 workflow | 已新增统一 YAML；push 不触发，PR 到 master 时才跑 |
+
+C++ 分支的 `vcpkg_installed` 被 `car-monit-cpp/.gitignore` 忽略、并未入库，因此 `_cpp.yml` 已补回退逻辑：仓库内有 `vcpkg_installed/x64-windows` 就直接用，没有则用 runner 自带的 vcpkg manifest 安装**（该回退路径尚未实跑验证）**。
+
 ## 5. 实施进度
 
 | 阶段 | 状态 | 文件 |
