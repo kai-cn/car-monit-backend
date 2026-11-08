@@ -476,10 +476,13 @@ class TestUpdateDictType:
         assert service.update_dict_type(_dict_type(1, "new_type")) == 0
         assert cache.cleared == 0
 
-    def test_the_children_are_still_renamed_when_the_parent_fails(
+    def test_a_zero_row_parent_update_still_commits_the_child_rename(
         self, service: SysDictTypeService, mappers: Any
     ) -> None:
-        """**已知缺口**：Java 有 ``@Transactional``，Python 没有 —— 没有回滚。"""
+        """``row == 0`` 不是异常：Java 的 ``@Transactional`` 同样提交（不回滚）.
+
+        真正会回滚的是**抛异常**，见 ``test_transaction.py`` 的事务用例。
+        """
         type_mapper, data_mapper = mappers
         type_mapper.by_id = {1: _dict_type(1, "old_type")}
         type_mapper.update_result = 0

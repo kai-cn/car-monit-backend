@@ -370,3 +370,54 @@ def test_update_user_rolls_back_all_writes_when_a_later_step_fails(
     assert sessions[0].commits == 0
     assert sessions[0].rollbacks == 1
     assert sessions[0].closes == 1
+
+
+class _DictTypeThenExplodeOnUpdateMapper:
+    """``update_dict_type`` 的真实顺序：子表改名成功，主表更新抛异常."""
+
+    def __init__(self) -> None:
+        self.calls: List[tuple] = []
+
+    def select_dict_type_by_id(self, dict_id: int) -> Any:
+        from app.common.core.domain.entity.sys_dict_type import SysDictType
+
+        with database.session_scope():
+            self.calls.append(("select", dict_id))
+        return SysDictType(dict_id=dict_id, dict_type="old_type")
+
+    def update_dict_data_type(self, old_dict_type: str, new_dict_type: str) -> int:
+        with database.session_scope():
+            self.calls.append(("child", old_dict_type, new_dict_type))
+        return 1
+
+    def update_dict_type(self, entity: Any) -> int:
+        with database.session_scope():
+            self.calls.append(("parent", entity.dict_type))
+        raise ValueError("parent boom")
+
+
+def test_update_dict_type_rolls_back_the_child_rename_on_failure(
+    sessions: List[FakeSession],
+) -> None:
+    """子表改名与主表更新必须在同一事务里 —— 删掉 @transactional 会拆成两次提交."""
+    from app.common.core.domain.entity.sys_dict_type import SysDictType
+    from app.system.service.sys_dict_type_service import SysDictTypeService
+
+    mappers = _DictTypeThenExplodeOnUpdateMapper()
+    service = SysDictTypeService(
+        dict_type_mapper=mappers,
+        dict_data_mapper=mappers,
+    )
+
+    with pytest.raises(ValueError, match="parent boom"):
+        service.update_dict_type(SysDictType(dict_id=1, dict_type="new_type"))
+
+    assert mappers.calls == [
+        ("select", 1),
+        ("child", "old_type", "new_type"),
+        ("parent", "new_type"),
+    ]
+    assert len(sessions) == 1
+    assert sessions[0].commits == 0
+    assert sessions[0].rollbacks == 1
+    assert sessions[0].closes == 1

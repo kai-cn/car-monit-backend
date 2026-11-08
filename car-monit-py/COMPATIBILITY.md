@@ -90,7 +90,7 @@
 | 72 | 两个字典 `export` **已实现** | `[需注意]` | Phase 3.18；不再是“被 `/{id}` 兜住回 500”，见 §37.1 |
 | 73 | `@Log` 未迁移 → 字典管理不写 `sys_oper_log` | `[需注意]` | 含 `clearCache`，见 §32.3 |
 | 74 | 字典预热 `init()` **不在启动时调用** | `[需注意]` | 首个请求回源填充，结果一致，见 §32.4 |
-| 75 | `updateDictType` 无事务 → 子表先改 | `[需注意]` | 与 §28.3 同一缺口，见 §32.5 |
+| 75 | `updateDictType` 两处写入前改为同一事务提交（`@transactional`） | `[需注意]` | 抛异常回滚、`row==0` 仍提交，见 §32.5 |
 | 76 | `substring(0, len)` 是空操作：缓存键带尾逗号 | `[无影响]` | 照抄 XML 对应的 Java 原文，见 §32.6 |
 | 77 | `selectDictLabel` **没有** `limit 1` | `[无影响]` | 重复数据 → `TooManyResultsException` → 500，见 §32.7 |
 | 78 | 两个 `insertDictXxx` **不回写**主键 | `[无影响]` | 没有 `useGeneratedKeys`，见 §32.8 |
@@ -2389,7 +2389,7 @@ get_dict_type_service().init()
 
 **回归用例** `tests/test_sys_dict_type_service.py::TestInit`（含"构造服务不连库"一条）。
 
-### 32.5 `updateDictType` **没有**事务 → 子表先改 `[需注意]`
+### 32.5 `updateDictType` 带 `@transactional`，抛异常时整体回滚 `[需注意]`
 
 Java 的 `updateDictType` 是全切片唯一带 `@Transactional` 的方法，顺序是：
 
@@ -2398,15 +2398,19 @@ Java 的 `updateDictType` 是全切片唯一带 `@Transactional` 的方法，顺
 3. `updateDictType(dict)` —— 主表改名；
 4. `row > 0` 时清缓存。
 
-Python 侧第 2、3 步**不在同一事务里**（§28.3 的缺口）。第 3 步失败时，子表
-已经改成新名字，库里会留下"子项指向一个不存在的类型"的孤儿行。
+Python 侧已用 `@transactional` 把第 2、3 步放进同一个 Session（与 `update_user`
+相同的 REQUIRED 语义）：第 3 步**抛异常**时子表改名随事务回滚，不会留下"子项指向
+一个不存在的类型"的孤儿行。注意 `row == 0` 不是异常：Java 的 `@Transactional` 同样
+**提交**，此时子表改名会保留 —— 两侧一致。
 
 顺序本身是照抄的，不能调换：先改主表会让第 2 步拿不到旧名字（`oldDict` 是**改之前**
 查出来的，所以下标顺序只影响失败时的残留形态，不影响成功路径）。
 
 **回归用例**
-`tests/test_sys_dict_type_service.py::TestUpdateDictType::test_the_children_are_still_renamed_when_the_parent_fails`
-（该用例**主动钉住**这个缺口，补事务后应改写成期望回滚）。
+`tests/test_transaction.py::test_update_dict_type_rolls_back_the_child_rename_on_failure`
+（FakeSession 断言 `commits=0 / rollbacks=1`；删掉装饰器会拆成两次提交并立刻变红）。
+`tests/test_sys_dict_type_service.py::TestUpdateDictType::test_a_zero_row_parent_update_still_commits_the_child_rename`
+钉住 `row == 0` 仍提交的语义。
 
 ### 32.6 `selectDictDataByTypeMore` 的两处原文缺陷 `[无影响]`
 
