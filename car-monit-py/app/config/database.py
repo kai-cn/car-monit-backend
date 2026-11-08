@@ -51,6 +51,7 @@ from __future__ import annotations
 
 import functools
 import logging
+import threading
 import time
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -65,6 +66,13 @@ logger = logging.getLogger("app.config.database")
 
 _engine: Optional[Engine] = None
 _session_factory: Optional[sessionmaker] = None
+
+#: 首次建 Engine / sessionmaker 的互斥锁。HTTP 首请求与 ``/health`` 可能并发触发，
+#: 不加锁会在同一进程里建出多个连接池（后建的那个被覆盖、连接泄漏）。
+#: 顺序固定为 "session_factory -> engine"（``get_session_factory`` 内部会取 engine 锁），
+#: ``dispose_engine`` 也用同一顺序，避免锁序反转。
+_engine_lock = threading.Lock()
+_session_factory_lock = threading.Lock()
 
 #: Java: ``TransactionSynchronizationManager`` 的“当前线程是否已有事务”判断。
 #: 用 ``ContextVar`` 而不是 ``threading.local``：端点在线程池里执行，anyio 会把
@@ -165,18 +173,22 @@ def _register_slow_sql_listener(engine: Engine, threshold_ms: int) -> None:
 
 
 def get_engine() -> Engine:
-    """Return the process-wide engine, creating it on first use."""
+    """Return the process-wide engine, creating it on first use (thread-safe)."""
     global _engine
     if _engine is None:
-        _engine = _create_engine(get_settings())
+        with _engine_lock:
+            if _engine is None:
+                _engine = _create_engine(get_settings())
     return _engine
 
 
 def get_session_factory() -> sessionmaker:
-    """Return the process-wide ``sessionmaker``."""
+    """Return the process-wide ``sessionmaker`` (thread-safe)."""
     global _session_factory
     if _session_factory is None:
-        _session_factory = sessionmaker(bind=get_engine(), expire_on_commit=False, future=True)
+        with _session_factory_lock:
+            if _session_factory is None:
+                _session_factory = sessionmaker(bind=get_engine(), expire_on_commit=False, future=True)
     return _session_factory
 
 
@@ -315,8 +327,11 @@ def check_connection() -> bool:
 def dispose_engine() -> None:
     """Release pooled connections (called from the FastAPI shutdown hook)."""
     global _engine, _session_factory
-    if _engine is not None:
-        _engine.dispose()
-        logger.info("[数据源] 连接池已释放")
-    _engine = None
-    _session_factory = None
+    # 与 get_session_factory 相同的锁序（factory -> engine），避免与首建并发时竞态。
+    with _session_factory_lock:
+        with _engine_lock:
+            if _engine is not None:
+                _engine.dispose()
+                logger.info("[数据源] 连接池已释放")
+            _engine = None
+            _session_factory = None
