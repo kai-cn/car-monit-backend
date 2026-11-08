@@ -22,6 +22,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"car-monit-go/internal/platform/sqlx"
 	"car-monit-go/internal/web"
 )
 
@@ -169,17 +170,5 @@ func queryPage[T any](ctx context.Context, db *gorm.DB, baseSQL string, args []a
 	return rows, total, nil
 }
 
-// inPlaceholders 生成 `a, b, c` 形式的占位符，替代 MyBatis 的 <foreach>。
-func inPlaceholders(n int) string {
-	if n <= 0 {
-		return ""
-	}
-	var b strings.Builder
-	for i := 0; i < n; i++ {
-		if i > 0 {
-			b.WriteString(", ")
-		}
-		b.WriteString("?")
-	}
-	return b.String()
-}
+// inPlaceholders 生成 `?, ?, ?` 形式的占位符，替代 MyBatis 的 <foreach>。
+func inPlaceholders(n int) string { return sqlx.SpacePlaceholders(n) }

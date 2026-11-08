@@ -1,5 +1,13 @@
 # 迁移工作进度（接口返回逐一对比阶段）
 
+> **2026-11-08 基建收敛批次**：新增 `internal/platform/conv`，把散落在 base/manager/
+> systemaux/flow/system/generator/ops 的 `strPtr/isNull/strOf/isNotBlank/isBlank/splitCSV`
+> 收敛为唯一实现，各模块只保留同签名薄包装（调用点与 NULL/trim 语义不变）。
+> `placeholders/inPlaceholders` 统一委托 `internal/platform/sqlx`，并为 MyBatis 空集合
+> 语义补 `PlaceholdersOrNull`。**收敛过程中测试发现 `sqlx.SpacePlaceholders` 生成
+> `"?, ?, ?,"`（尾部多逗号）的既有缺陷，已修复并补单测**；ops 的 IN 拼接因此从手写
+> 循环改为统一实现。新增 `conv`/`sqlx` 单测覆盖 null、trim、CSV 尾空串与空集合。
+>
 > **2026-11-08 golangci-lint 实跑批次**：本机安装 v2.1.6 并真实执行（非仅留配置）。
 > 首轮 89 个问题全部收敛到 0：修复 3 处 errcheck、2 处 goimports、1 处 ineffassign、
 > 2 处可简化表达式；删除 27 个迁移遗留的死函数/常量；对 Java 语义必须保留的

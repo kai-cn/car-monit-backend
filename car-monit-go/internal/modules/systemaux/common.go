@@ -30,6 +30,8 @@ import (
 	"car-monit-go/internal/app"
 	"car-monit-go/internal/excelx"
 	"car-monit-go/internal/idgen"
+	"car-monit-go/internal/platform/conv"
+	"car-monit-go/internal/platform/sqlx"
 	"car-monit-go/internal/web"
 )
 
@@ -81,21 +83,16 @@ func numVal(p *int64) int64 {
 }
 
 // isNull 对应 CommonUtil.isNull：null -> ""，否则 trim。
-func isNull(p *string) string {
-	if p == nil {
-		return ""
-	}
-	return strings.TrimSpace(*p)
-}
+func isNull(p *string) string { return conv.Null(p) }
 
 // isBlank 对应 StringUtils.isBlank / CommonUtil.isBlank。
-func isBlank(s string) bool { return strings.TrimSpace(s) == "" }
+func isBlank(s string) bool { return conv.Blank(s) }
 
 // isNotEmpty 对应 StringUtils.isNotEmpty（不 trim，null 视为空）。
 func isNotEmpty(p *string) bool { return p != nil && *p != "" }
 
 // isNotBlank 对应 StringUtils.isNotBlank / CommonUtil.isNotBlank（trim 后非空）。
-func isNotBlank(p *string) bool { return p != nil && strings.TrimSpace(*p) != "" }
+func isNotBlank(p *string) bool { return conv.NotBlank(p) }
 
 // deleteEnd 对应 CommonUtil.deleteEnd：只删一个结尾逗号。
 func deleteEnd(s string) string {
@@ -161,12 +158,7 @@ func parseLongArray(name, raw string) ([]int64, error) {
 }
 
 // inPlaceholders 生成 "?,?,?"；调用方保证 n > 0。
-func inPlaceholders(n int) string {
-	if n <= 0 {
-		return "NULL"
-	}
-	return strings.TrimSuffix(strings.Repeat("?,", n), ",")
-}
+func inPlaceholders(n int) string { return sqlx.PlaceholdersOrNull(n) }
 
 // int64Args 把 []int64 转成 []any，便于与 inPlaceholders 配合。
 func int64Args(ids []int64) []any {

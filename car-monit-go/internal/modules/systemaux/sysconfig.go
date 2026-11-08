@@ -22,6 +22,7 @@ import (
 	"car-monit-go/internal/auth"
 	"car-monit-go/internal/middleware"
 	"car-monit-go/internal/model"
+	"car-monit-go/internal/platform/conv"
 	"car-monit-go/internal/router"
 	"car-monit-go/internal/web"
 )
@@ -423,7 +424,7 @@ func (h *configHandler) ClearCache(c *gin.Context) {
 }
 
 // strPtr 返回字符串指针，便于复用指针 DTO。
-func strPtr(s string) *string { return &s }
+func strPtr(s string) *string { return conv.Str(s) }
 
 // orParamTypeError 在解析失败且 err 为空时给出通用的类型不匹配文案。
 func orParamTypeError(err error) error {

@@ -21,7 +21,16 @@ func SpacePlaceholders(n int) string {
 	if n <= 0 {
 		return ""
 	}
-	return strings.TrimSuffix(strings.Repeat("?, ", n), " ")
+	return strings.Repeat("?, ", n-1) + "?"
+}
+
+// PlaceholdersOrNull 生成 n 个逗号分隔的占位符；n<=0 时返回 "NULL"，
+// 对应 MyBatis <foreach> 遇到空集合时 `in (NULL)` 的等价写法。
+func PlaceholdersOrNull(n int) string {
+	if n <= 0 {
+		return "NULL"
+	}
+	return Placeholders(n)
 }
 
 // AnySlice 把 []string 转成 []any，供 database/sql 的可变参数展开。

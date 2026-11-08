@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 
 	"car-monit-go/internal/app"
+	"car-monit-go/internal/platform/conv"
 	"car-monit-go/internal/web"
 )
 
@@ -111,4 +112,4 @@ func orEmpty(v *string) string {
 }
 
 // isNull 对应 CommonUtil.isNull：null -> ""，否则 toString().trim()。
-func isNull(s string) string { return strings.TrimSpace(s) }
+func isNull(s string) string { return conv.Null(s) }

@@ -24,6 +24,7 @@ import (
 	"car-monit-go/internal/auth"
 	"car-monit-go/internal/idgen"
 	"car-monit-go/internal/model"
+	"car-monit-go/internal/platform/conv"
 	"car-monit-go/internal/web"
 )
 
@@ -41,60 +42,25 @@ func newHandler(a *app.App) *handler { return &handler{app: a} }
 // ---------------------------------------------------------------------------
 
 // isNull 对应 CommonUtil.isNull：null -> ""，否则 toString().trim()。
-func isNull(v any) string {
-	switch x := v.(type) {
-	case nil:
-		return ""
-	case string:
-		return strings.TrimSpace(x)
-	case *string:
-		if x == nil {
-			return ""
-		}
-		return strings.TrimSpace(*x)
-	case *int64:
-		if x == nil {
-			return ""
-		}
-		return strconv.FormatInt(*x, 10)
-	case *int:
-		if x == nil {
-			return ""
-		}
-		return strconv.Itoa(*x)
-	case *float64:
-		if x == nil {
-			return ""
-		}
-		return strconv.FormatFloat(*x, 'f', -1, 64)
-	default:
-		return strings.TrimSpace(fmt.Sprint(x))
-	}
-}
+func isNull(v any) string { return conv.Null(v) }
 
-// strOf 把可空字符串取成普通字符串（nil -> ""）。
-func strOf(v any) string { return isNull(v) }
+// strOf 把可空字符串取成普通字符串（nil -> ""，不 trim）。
+func strOf(v any) string { return conv.Value(v) }
 
 // strPtr 生成可空字符串指针。
-func strPtr(s string) *string { return &s }
+func strPtr(s string) *string { return conv.Str(s) }
 
 // isNotBlank 对应 CommonUtil.isNotBlank（StringUtils.isNotBlank）。
-func isNotBlank(v any) bool { return isNull(v) != "" }
+func isNotBlank(v any) bool { return conv.NotBlank(v) }
 
 // isBlank 对应 CommonUtil.isBlank（StringUtils.isBlank）。
-func isBlank(v any) bool { return isNull(v) == "" }
+func isBlank(v any) bool { return conv.Blank(v) }
 
 // deleteEnd 对应 CommonUtil.deleteEnd：去掉末尾一个逗号。
 func deleteEnd(v any) string { return strings.TrimSuffix(isNull(v), ",") }
 
 // splitCSV 对应 Java 的 String.split(",")：丢弃结果中的尾部空串。
-func splitCSV(s string) []string {
-	parts := strings.Split(s, ",")
-	for len(parts) > 0 && parts[len(parts)-1] == "" {
-		parts = parts[:len(parts)-1]
-	}
-	return parts
-}
+func splitCSV(s string) []string { return conv.SplitCSV(s) }
 
 // newUUID 对应 MyBatis-Plus IdWorker.get32UUID()：32 位无连字符 UUID。
 func newUUID() string { return strings.ReplaceAll(uuid.NewString(), "-", "") }
