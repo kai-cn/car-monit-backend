@@ -1,61 +1,39 @@
-﻿#include "cm/framework/kafka/KafkaClient.hpp"
+#include "cm/framework/kafka/KafkaClient.hpp"
 
 #include <algorithm>
-#include <cstdio>
-#include <thread>
+#include <atomic>
+#include <chrono>
+#include <cstring>
+#include <map>
+
+#include <librdkafka/rdkafka.h>
 
 #include "cm/common/utils/Logger.hpp"
-#include "cm/framework/net/Os.hpp"
 
 namespace cm::kafka {
 namespace {
 
-constexpr int16_t API_PRODUCE = 0;
-constexpr int16_t API_FETCH = 1;
-constexpr int16_t API_LIST_OFFSETS = 2;
-constexpr int16_t API_METADATA = 3;
-constexpr int16_t API_OFFSET_COMMIT = 8;
-constexpr int16_t API_OFFSET_FETCH = 9;
-constexpr int16_t API_FIND_COORDINATOR = 10;
-constexpr int16_t API_JOIN_GROUP = 11;
-constexpr int16_t API_HEARTBEAT = 12;
-constexpr int16_t API_LEAVE_GROUP = 13;
-constexpr int16_t API_SYNC_GROUP = 14;
+int64_t nowMillis() {
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
 
-// Kafka 错误码（只列会改变控制流的）
-constexpr int16_t ERR_NONE = 0;
-constexpr int16_t ERR_UNKNOWN_TOPIC_OR_PARTITION = 3;
-constexpr int16_t ERR_NOT_LEADER = 6;
-constexpr int16_t ERR_COORDINATOR_NOT_AVAILABLE = 15;
-constexpr int16_t ERR_NOT_COORDINATOR = 16;
-constexpr int16_t ERR_ILLEGAL_GENERATION = 22;
-constexpr int16_t ERR_UNKNOWN_MEMBER_ID = 25;
-constexpr int16_t ERR_REBALANCE_IN_PROGRESS = 27;
-constexpr int16_t ERR_FENCED_LEADER_EPOCH = 70;
-constexpr int16_t ERR_MEMBER_ID_REQUIRED = 79;
+std::string errText(const std::string& what, rd_kafka_resp_err_t err) {
+    return what + ": " + rd_kafka_err2str(err);
+}
 
-bool readExact(cm::net::Fd fd, char* buf, size_t n) {
-    size_t got = 0;
-    while (got < n) {
-        const long r = cm::net::readSome(fd, buf + got, n - got);
-        if (r <= 0) return false;
-        got += static_cast<size_t>(r);
+/** 设置一个配置项；失败时回填 err 并返回 false（不销毁 conf） */
+bool setConf(rd_kafka_conf_t* conf, const char* name, const std::string& value, std::string& err) {
+    char errbuf[512];
+    if (rd_kafka_conf_set(conf, name, value.c_str(), errbuf, sizeof(errbuf)) != RD_KAFKA_CONF_OK) {
+        err = std::string("kafka 配置 ") + name + "=" + value + " 失败: " + errbuf;
+        return false;
     }
     return true;
 }
 
-bool isSessionError(int16_t code) {
-    return code == ERR_ILLEGAL_GENERATION || code == ERR_UNKNOWN_MEMBER_ID ||
-           code == ERR_REBALANCE_IN_PROGRESS || code == ERR_MEMBER_ID_REQUIRED;
-}
-
-std::string errText(const std::string& what, int16_t code) {
-    return what + " (kafka error=" + std::to_string(code) + ")";
-}
-
-int64_t nowMillis() {
-    using namespace std::chrono;
-    return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+bool setConf(rd_kafka_conf_t* conf, const char* name, int value, std::string& err) {
+    return setConf(conf, name, std::to_string(value), err);
 }
 
 } // namespace
@@ -90,804 +68,347 @@ std::vector<BrokerAddr> parseBootstrapServers(const std::string& text) {
 }
 
 // ---------------------------------------------------------------------------
-// KafkaConnection
-// ---------------------------------------------------------------------------
-KafkaConnection::~KafkaConnection() { close(); }
-
-bool KafkaConnection::connect(const std::string& clientId, const BrokerAddr& addr,
-                              int connectTimeoutMs, int socketTimeoutMs, std::string& err) {
-    close();
-    clientId_ = clientId.empty() ? std::string("car-monit-cpp") : clientId;
-    cm::net::Fd fd = cm::net::connectTcp(addr.host, addr.port, connectTimeoutMs, &err);
-    if (!cm::net::isValid(fd)) return false;
-    cm::net::setTimeout(fd, socketTimeoutMs);
-    cm::net::setNoDelay(fd);
-    fd_ = cm::net::toStorage(fd);
-    addr_ = addr;
-    correlation_ = 0;
-    return true;
-}
-
-void KafkaConnection::close() {
-    if (cm::net::validStorage(fd_)) {
-        cm::net::closeTcp(cm::net::fromStorage(fd_));
-        fd_ = cm::net::kInvalidStorage;
-    }
-}
-
-bool KafkaConnection::request(int16_t apiKey, int16_t apiVersion, const std::string& body,
-                              std::string& payload, std::string& err) {
-    if (!isOpen()) {
-        err = "Kafka 连接未建立";
-        return false;
-    }
-    Writer w;
-    w.i16(apiKey);
-    w.i16(apiVersion);
-    ++correlation_;
-    w.i32(correlation_);
-    // ⚠️ client_id 不能为 null：Kafka 把它写进 GroupMetadataValue，
-    // 为 null 时 broker 在 SyncGroup 落盘阶段 NPE（实测 error=-1 UNKNOWN_SERVER_ERROR）。
-    w.str(clientId_);
-    w.raw(body);
-
-    std::string frame;
-    {
-        Writer h;
-        h.i32(static_cast<int32_t>(w.buf.size()));
-        frame = h.buf + w.buf;
-    }
-    const auto fd = cm::net::fromStorage(fd_);
-    if (!cm::net::writeAll(fd, frame.data(), frame.size(), &err)) {
-        close();
-        return false;
-    }
-    char lenBuf[4];
-    if (!readExact(fd, lenBuf, 4)) {
-        err = "读取 Kafka 响应长度失败（连接关闭/超时）";
-        close();
-        return false;
-    }
-    Reader lr(lenBuf, 4);
-    const int32_t len = lr.i32();
-    if (len < 0) {
-        err = "Kafka 响应长度为负";
-        close();
-        return false;
-    }
-    payload.assign(static_cast<size_t>(len), '\0');
-    if (len > 0 && !readExact(fd, payload.data(), static_cast<size_t>(len))) {
-        err = "读取 Kafka 响应体失败";
-        close();
-        return false;
-    }
-    // 响应头 v0（所有非 flexible 版本）：correlation_id(INT32)，其后才是响应体。
-    // ⚠️ 必须在这里剥掉：漏读会让每个响应整体偏移 4 字节（实测表现为字段长度离谱）。
-    if (payload.size() < 4) {
-        err = "Kafka 响应过短";
-        close();
-        return false;
-    }
-    Reader hr(payload);
-    const int32_t corr = hr.i32();
-    if (corr != correlation_) {
-        err = "Kafka correlation id 不匹配";
-        close();
-        return false;
-    }
-    payload.erase(0, 4);
-    return true;
-}
-
-// ---------------------------------------------------------------------------
 // KafkaConsumer
 // ---------------------------------------------------------------------------
-KafkaConsumer::KafkaConsumer(KafkaConfig cfg) : cfg_(std::move(cfg)) {}
+struct KafkaConsumer::Impl {
+    rd_kafka_t* rk{nullptr};
+    /** open() 等待首次分配期间提前拉到的消息，由首次 poll() 交还业务层 */
+    std::vector<ConsumedRecord> pending;
+    /** 最近一次 poll 的各分区“下一条待消费位点”（commit 时写入 librdkafka） */
+    std::map<int32_t, int64_t> nextOffsets;
+};
 
+KafkaConsumer::KafkaConsumer(KafkaConfig cfg) : cfg_(std::move(cfg)) {}
 KafkaConsumer::~KafkaConsumer() { close(); }
 
-BrokerAddr KafkaConsumer::firstBootstrap() const {
-    const auto list = parseBootstrapServers(cfg_.bootstrapServers);
-    if (!list.empty()) return list.front();
-    return BrokerAddr{"127.0.0.1", 9092};
-}
-
-void KafkaConsumer::resetSession() {
-    joined_ = false;
-    generation_ = -1;
-    memberId_.clear();
-    leaderId_.clear();
-    partitions_.clear();
-    nextOffset_.clear();
-    pendingCommit_.clear();
-    pending_.clear();
-}
-
-void KafkaConsumer::close() {
-    if (joined_ && coord_ && coord_->isOpen()) {
-        Writer w;
-        w.str(cfg_.groupId);
-        w.str(memberId_);
-        std::string payload, err;
-        coord_->request(API_LEAVE_GROUP, 1, w.buf, payload, err);
-    }
-    joined_ = false;
-    if (fetchConn_) fetchConn_->close();
-    if (coord_) coord_->close();
-    fetchConn_.reset();
-    coord_.reset();
-}
-
-bool KafkaConsumer::ensureCoordinator(std::string& err) {
-    if (coord_ && coord_->isOpen() && !coordAddr_.host.empty()) return true;
-    const auto boot = firstBootstrap();
-    KafkaConnection tmp;
-    std::string localErr;
-    if (!tmp.connect(cfg_.clientId, boot, cfg_.connectTimeoutMs, cfg_.socketTimeoutMs, localErr)) {
-        err = "连接 bootstrap " + boot.toString() + " 失败: " + localErr;
-        return false;
-    }
-    Writer w;
-    // FindCoordinator v1 的字段顺序是 key(STRING) 然后 key_type(INT8)；
-    // 顺序颠倒会让 broker 读到错误长度（实测 BufferUnderflow）。
-    w.str(cfg_.groupId);
-    w.i8(0);  // key_type = 0（消费组）
-    std::string payload;
-    if (!tmp.request(API_FIND_COORDINATOR, 1, w.buf, payload, localErr)) {
-        err = "FindCoordinator 失败: " + localErr;
-        return false;
-    }
-    Reader r(payload);
-    r.i32();  // throttle
-    const int16_t code = r.i16();
-    std::string msg;
-    r.nullableStr(msg);
-    const int32_t node = r.i32();
-    (void)node;
-    const std::string host = r.str();
-    const int32_t port = r.i32();
-    if (!r.ok()) {
-        err = "FindCoordinator 响应解析失败";
-        return false;
-    }
-    if (code != ERR_NONE) {
-        err = errText("FindCoordinator", code) + (msg.empty() ? "" : " " + msg);
-        return false;
-    }
-    coordAddr_ = BrokerAddr{host, port};
-    coord_ = std::make_unique<KafkaConnection>();
-    if (!coord_->connect(cfg_.clientId, coordAddr_, cfg_.connectTimeoutMs, cfg_.socketTimeoutMs,
-                         localErr)) {
-        err = "连接 coordinator " + coordAddr_.toString() + " 失败: " + localErr;
-        coord_.reset();
-        return false;
-    }
-    return true;
-}
-
-bool KafkaConsumer::refreshMetadata(std::string& err) {
-    const auto boot = firstBootstrap();
-    KafkaConnection tmp;
-    std::string localErr;
-    if (!tmp.connect(cfg_.clientId, boot, cfg_.connectTimeoutMs, cfg_.socketTimeoutMs, localErr)) {
-        err = "连接 bootstrap 失败: " + localErr;
-        return false;
-    }
-    Writer w;
-    w.i32(1);
-    w.str(cfg_.topic);
-    std::string payload;
-    if (!tmp.request(API_METADATA, 1, w.buf, payload, localErr)) {
-        err = "Metadata 请求失败: " + localErr;
-        return false;
-    }
-    Reader r(payload);
-    const int32_t brokerCount = r.arrayLen();
-    std::map<int32_t, BrokerAddr> brokers;
-    for (int32_t i = 0; i < brokerCount && r.ok(); ++i) {
-        const int32_t node = r.i32();
-        const std::string host = r.str();
-        const int32_t port = r.i32();
-        std::string rack;
-        r.nullableStr(rack);
-        brokers[node] = BrokerAddr{host, port};
-    }
-    r.i32();  // controller_id
-    const int32_t topicCount = r.arrayLen();
-    bool found = false;
-    int16_t topicError = 0;
-    for (int32_t i = 0; i < topicCount && r.ok(); ++i) {
-        topicError = r.i16();
-        const std::string name = r.str();
-        r.i8();  // is_internal
-        const int32_t partCount = r.arrayLen();
-        std::vector<int32_t> parts;
-        int32_t leader = -1;
-        for (int32_t p = 0; p < partCount && r.ok(); ++p) {
-            r.i16();  // partition error
-            const int32_t index = r.i32();
-            const int32_t leaderId = r.i32();
-            const int32_t replicas = r.arrayLen();
-            for (int32_t k = 0; k < replicas; ++k) r.i32();
-            const int32_t isr = r.arrayLen();
-            for (int32_t k = 0; k < isr; ++k) r.i32();
-            parts.push_back(index);
-            if (leader < 0) leader = leaderId;
-        }
-        if (name == cfg_.topic) {
-            found = true;
-            std::sort(parts.begin(), parts.end());
-            partitions_ = parts;
-            const auto it = brokers.find(leader);
-            if (it != brokers.end()) {
-                leaderAddr_ = it->second;
-            }
-        }
-    }
-    if (!r.ok()) {
-        err = "Metadata 响应解析失败";
-        return false;
-    }
-    if (!found || partitions_.empty()) {
-        err = "topic " + cfg_.topic + " 不存在或无分区（error=" + std::to_string(topicError) + "）";
-        return false;
-    }
-    if (leaderAddr_.host.empty()) {
-        err = "topic " + cfg_.topic + " 的分区 leader 不在 broker 列表中";
-        return false;
-    }
-    return true;
-}
-
-bool KafkaConsumer::joinGroup(std::string& err) {
-    if (!ensureCoordinator(err)) return false;
-    std::string localErr;
-    if (!refreshMetadata(localErr)) {
-        err = localErr;
-        return false;
-    }
-    // 订阅元数据（consumer protocol v0）：version + topics + userData
-    Writer meta;
-    meta.i16(0);
-    meta.i32(1);
-    meta.str(cfg_.topic);
-    meta.nullableBytes(false, "");
-
-    Writer w;
-    w.str(cfg_.groupId);
-    w.i32(cfg_.sessionTimeoutMs);
-    w.i32(cfg_.maxPollIntervalMs);
-    w.str(memberId_);
-    w.str("consumer");
-    w.i32(1);
-    w.str("range");
-    w.bytes(meta.buf);
-
-    std::string payload;
-    if (!coord_->request(API_JOIN_GROUP, 2, w.buf, payload, localErr)) {
-        err = "JoinGroup 请求失败: " + localErr;
-        return false;
-    }
-    Reader r(payload);
-    r.i32();  // throttle
-    const int16_t code = r.i16();
-    if (code != ERR_NONE) {
-        err = errText("JoinGroup", code);
-        return false;
-    }
-    generation_ = r.i32();
-    const std::string protocol = r.str();
-    (void)protocol;
-    leaderId_ = r.str();
-    const std::string assignedId = r.str();
-    if (!assignedId.empty()) memberId_ = assignedId;
-    const int32_t memberCount = r.arrayLen();
-    for (int32_t i = 0; i < memberCount && r.ok(); ++i) {
-        r.str();       // member_id
-        r.bytes();     // metadata
-    }
-    if (!r.ok()) {
-        err = "JoinGroup 响应解析失败";
-        return false;
-    }
-    return true;
-}
-
-bool KafkaConsumer::syncGroup(std::string& err) {
-    // leader 需要下发分配方案；单成员时就是把所有分区给自己
-    Writer assign;
-    assign.i16(0);
-    assign.i32(1);
-    assign.str(cfg_.topic);
-    assign.i32(static_cast<int32_t>(partitions_.size()));
-    for (int32_t p : partitions_) assign.i32(p);
-    assign.nullableBytes(false, "");
-
-    Writer w;
-    w.str(cfg_.groupId);
-    w.i32(generation_);
-    w.str(memberId_);
-    const bool isLeader = (memberId_ == leaderId_);
-    w.i32(isLeader ? 1 : 0);
-    if (isLeader) {
-        w.str(memberId_);
-        w.bytes(assign.buf);
-    }
-
-    std::string payload, localErr;
-    if (!coord_->request(API_SYNC_GROUP, 1, w.buf, payload, localErr)) {
-        err = "SyncGroup 请求失败: " + localErr;
-        return false;
-    }
-    Reader r(payload);
-    r.i32();  // throttle
-    const int16_t code = r.i16();
-    if (code != ERR_NONE) {
-        err = errText("SyncGroup", code);
-        return false;
-    }
-    std::string assignment;
-    assignment = r.bytes();
-    if (!r.ok()) {
-        err = "SyncGroup 响应解析失败";
-        return false;
-    }
-    Reader ar(assignment);
-    if (assignment.size() >= 2) {
-        ar.i16();  // version
-        const int32_t topicCount = ar.arrayLen();
-        std::vector<int32_t> parts;
-        for (int32_t t = 0; t < topicCount && ar.ok(); ++t) {
-            const std::string name = ar.str();
-            const int32_t cnt = ar.arrayLen();
-            for (int32_t i = 0; i < cnt; ++i) {
-                const int32_t p = ar.i32();
-                if (name == cfg_.topic) parts.push_back(p);
-            }
-        }
-        if (ar.ok() && !parts.empty()) {
-            std::sort(parts.begin(), parts.end());
-            partitions_ = parts;
-        }
-    }
-    if (partitions_.empty()) {
-        err = "SyncGroup 返回空分配";
-        return false;
-    }
-    return true;
-}
-
-bool KafkaConsumer::heartbeat(std::string& err) {
-    Writer w;
-    w.str(cfg_.groupId);
-    w.i32(generation_);
-    w.str(memberId_);
-    std::string payload, localErr;
-    if (!coord_->request(API_HEARTBEAT, 1, w.buf, payload, localErr)) {
-        err = "Heartbeat 请求失败: " + localErr;
-        return false;
-    }
-    Reader r(payload);
-    r.i32();
-    const int16_t code = r.i16();
-    if (code != ERR_NONE) {
-        if (isSessionError(code)) resetSession();
-        err = errText("Heartbeat", code);
-        return false;
-    }
-    lastHeartbeat_ = std::chrono::steady_clock::now();
-    return true;
-}
-
-bool KafkaConsumer::listOffsets(std::string& err) {
-    Writer w;
-    w.i32(-1);  // replica_id
-    w.i32(1);   // 一个 topic
-    w.str(cfg_.topic);
-    w.i32(static_cast<int32_t>(partitions_.size()));
-    for (int32_t p : partitions_) {
-        w.i32(p);
-        w.i64(cfg_.fromBeginning ? -2 : -1);  // earliest / latest
-    }
-    std::string payload, localErr;
-    if (!coord_->request(API_LIST_OFFSETS, 1, w.buf, payload, localErr)) {
-        err = "ListOffsets 请求失败: " + localErr;
-        return false;
-    }
-    Reader r(payload);
-    const int32_t topicCount = r.arrayLen();
-    for (int32_t t = 0; t < topicCount && r.ok(); ++t) {
-        r.str();
-        const int32_t partCount = r.arrayLen();
-        for (int32_t i = 0; i < partCount && r.ok(); ++i) {
-            const int32_t partition = r.i32();
-            const int16_t code = r.i16();
-            r.i64();  // timestamp
-            const int64_t offset = r.i64();
-            if (code == ERR_NONE) nextOffset_[partition] = offset;
-        }
-    }
-    if (!r.ok()) {
-        err = "ListOffsets 响应解析失败";
-        return false;
-    }
-    return true;
-}
-
-bool KafkaConsumer::fetchOffsets(std::string& err) {
-    Writer w;
-    w.str(cfg_.groupId);
-    w.i32(1);
-    w.str(cfg_.topic);
-    w.i32(static_cast<int32_t>(partitions_.size()));
-    for (int32_t p : partitions_) w.i32(p);
-
-    std::string payload, localErr;
-    if (!coord_->request(API_OFFSET_FETCH, 3, w.buf, payload, localErr)) {
-        err = "OffsetFetch 请求失败: " + localErr;
-        return false;
-    }
-    Reader r(payload);
-    r.i32();  // throttle
-    const int32_t topicCount = r.arrayLen();
-    std::map<int32_t, int64_t> committed;
-    for (int32_t t = 0; t < topicCount && r.ok(); ++t) {
-        r.str();
-        const int32_t partCount = r.arrayLen();
-        for (int32_t i = 0; i < partCount && r.ok(); ++i) {
-            const int32_t partition = r.i32();
-            const int64_t offset = r.i64();
-            r.str();  // metadata
-            r.i16();  // error
-            if (offset >= 0) committed[partition] = offset;
-        }
-    }
-    const int16_t topError = r.i16();
-    if (!r.ok()) {
-        err = "OffsetFetch 响应解析失败";
-        return false;
-    }
-    if (topError != ERR_NONE) {
-        err = errText("OffsetFetch", topError);
-        return false;
-    }
-    nextOffset_.clear();
-    bool needListOffsets = false;
-    for (int32_t p : partitions_) {
-        const auto it = committed.find(p);
-        if (it != committed.end()) {
-            nextOffset_[p] = it->second;
-        } else {
-            needListOffsets = true;
-        }
-    }
-    if (needListOffsets) {
-        if (!listOffsets(err)) return false;
-    }
-    return true;
-}
-
 bool KafkaConsumer::open(std::string& err) {
-    resetSession();
-    if (!ensureCoordinator(err)) return false;
-    // 先用 coordinator 拿 metadata（同时校验 topic 存在）
-    if (!refreshMetadata(err)) return false;
-    if (fetchConn_) fetchConn_->close();
-    fetchConn_ = std::make_unique<KafkaConnection>();
-    std::string localErr;
-    if (!fetchConn_->connect(cfg_.clientId, leaderAddr_, cfg_.connectTimeoutMs,
-                             cfg_.socketTimeoutMs, localErr)) {
-        err = "连接分区 leader " + leaderAddr_.toString() + " 失败: " + localErr;
-        fetchConn_.reset();
-        return false;
-    }
-    if (!joinGroup(err)) return false;
-    if (!syncGroup(err)) return false;
-    if (!fetchOffsets(err)) return false;
-    if (!heartbeat(err)) return false;
-    joined_ = true;
-    LOG_INFO("kafka", "已加入消费组 group=" + cfg_.groupId + " topic=" + cfg_.topic +
-                          " generation=" + std::to_string(generation_) +
-                          " partitions=" + std::to_string(partitions_.size()));
-    return true;
-}
+    close();
+    err.clear();
+    impl_ = std::make_unique<Impl>();
 
-bool KafkaConsumer::runFetch(int maxWaitMs, std::string& err) {
-    if (!fetchConn_ || !fetchConn_->isOpen()) {
-        err = "fetch 连接未建立";
+    rd_kafka_conf_t* conf = rd_kafka_conf_new();
+    const bool configured =
+        setConf(conf, "bootstrap.servers", cfg_.bootstrapServers, err) &&
+        setConf(conf, "client.id", cfg_.clientId.empty() ? "car-monit-cpp" : cfg_.clientId, err) &&
+        setConf(conf, "group.id", cfg_.groupId, err) &&
+        // Java：enable.auto.commit=false + MANUAL_IMMEDIATE ⇒ 手动提交、手动存位点
+        setConf(conf, "enable.auto.commit", std::string("false"), err) &&
+        setConf(conf, "enable.auto.offset.store", std::string("false"), err) &&
+        setConf(conf, "auto.offset.reset", cfg_.fromBeginning ? "earliest" : "latest", err) &&
+        setConf(conf, "session.timeout.ms", cfg_.sessionTimeoutMs, err) &&
+        setConf(conf, "max.poll.interval.ms", cfg_.maxPollIntervalMs, err) &&
+        setConf(conf, "fetch.max.bytes", cfg_.fetchMaxBytes, err) &&
+        setConf(conf, "socket.timeout.ms", cfg_.socketTimeoutMs, err) &&
+        setConf(conf, "socket.connection.setup.timeout.ms", cfg_.connectTimeoutMs, err) &&
+        // Java 默认 RangeAssignor / read_uncommitted，保持逐项对齐
+        setConf(conf, "partition.assignment.strategy", std::string("range"), err) &&
+        setConf(conf, "isolation.level", std::string("read_uncommitted"), err);
+    if (!configured) {
+        rd_kafka_conf_destroy(conf);
         return false;
     }
-    Writer w;
-    w.i32(-1);          // replica_id
-    w.i32(maxWaitMs);   // max_wait_ms
-    w.i32(1);           // min_bytes
-    w.i32(cfg_.fetchMaxBytes);
-    w.i8(0);            // isolation_level = read_uncommitted
-    w.i32(1);
-    w.str(cfg_.topic);
-    w.i32(static_cast<int32_t>(partitions_.size()));
-    for (int32_t p : partitions_) {
-        w.i32(p);
-        w.i64(nextOffset_.count(p) ? nextOffset_[p] : (cfg_.fromBeginning ? 0 : -1));
-        w.i32(cfg_.fetchMaxBytes);
-    }
-    std::string payload, localErr;
-    if (!fetchConn_->request(API_FETCH, 4, w.buf, payload, localErr)) {
-        err = "Fetch 请求失败: " + localErr;
-        if (fetchConn_) fetchConn_->close();
+
+    char errbuf[512];
+    rd_kafka_t* rk = rd_kafka_new(RD_KAFKA_CONSUMER, conf, errbuf, sizeof(errbuf));
+    if (!rk) {
+        err = std::string("创建 Kafka 消费者失败: ") + errbuf;
         return false;
     }
-    Reader r(payload);
-    r.i32();  // throttle
-    const int32_t topicCount = r.arrayLen();
-    bool gotAny = false;
-    int16_t firstError = ERR_NONE;
-    for (int32_t t = 0; t < topicCount && r.ok(); ++t) {
-        r.str();
-        const int32_t partCount = r.arrayLen();
-        for (int32_t i = 0; i < partCount && r.ok(); ++i) {
-            const int32_t partition = r.i32();
-            const int16_t code = r.i16();
-            r.i64();  // high watermark
-            r.i64();  // last stable offset
-            const int32_t aborted = r.arrayLen();
-            for (int32_t a = 0; a < aborted; ++a) {
-                r.i64();
-                r.i64();
+    // 把主队列事件转交给 consumer 队列，保证 consumer_poll 能驱动再平衡
+    rd_kafka_poll_set_consumer(rk);
+
+    rd_kafka_topic_partition_list_t* topics = rd_kafka_topic_partition_list_new(1);
+    rd_kafka_topic_partition_list_add(topics, cfg_.topic.c_str(), RD_KAFKA_PARTITION_UA);
+    const rd_kafka_resp_err_t sub = rd_kafka_subscribe(rk, topics);
+    rd_kafka_topic_partition_list_destroy(topics);
+    if (sub) {
+        err = errText("订阅 topic=" + cfg_.topic + " 失败", sub);
+        rd_kafka_destroy(rk);
+        return false;
+    }
+    impl_->rk = rk;
+
+    // 等待首次分区分配：分配完成后 open() 才算成功（与自研版 joinGroup 成功语义一致）。
+    // 等待期间若已拉到消息，先缓存，避免丢弃。
+    const int64_t deadline = nowMillis() + std::max(5000, cfg_.connectTimeoutMs);
+    while (nowMillis() < deadline) {
+        rd_kafka_message_t* msg = rd_kafka_consumer_poll(rk, 200);
+        if (msg) {
+            if (!msg->err) {
+                ConsumedRecord rec;
+                if (msg->key) {
+                    rec.key.assign(static_cast<const char*>(msg->key), msg->key_len);
+                    rec.hasKey = true;
+                }
+                if (msg->payload) {
+                    rec.value.assign(static_cast<const char*>(msg->payload), msg->len);
+                }
+                rec.partition = msg->partition;
+                rec.offset = msg->offset;
+                rd_kafka_timestamp_type_t tstype = RD_KAFKA_TIMESTAMP_NOT_AVAILABLE;
+                const int64_t ts = rd_kafka_message_timestamp(msg, &tstype);
+                rec.timestamp = (tstype == RD_KAFKA_TIMESTAMP_NOT_AVAILABLE) ? 0 : ts;
+                impl_->pending.push_back(std::move(rec));
+                impl_->nextOffsets[msg->partition] = msg->offset + 1;
             }
-            std::string records;
-            const bool hasRecords = r.nullableBytes(records);
-            if (code != ERR_NONE) {
-                if (firstError == ERR_NONE) firstError = code;
-                continue;
-            }
-            if (!hasRecords || records.empty()) continue;
-            std::vector<ConsumedRecord> parsed;
-            std::string parseErr;
-            if (!parseRecordSet(records, parsed, parseErr)) {
-                err = "RecordBatch 解析失败: " + parseErr;
-                return false;
-            }
-            const int64_t base = nextOffset_.count(partition) ? nextOffset_[partition] : 0;
-            for (auto& rec : parsed) {
-                rec.partition = partition;
-                if (rec.offset < base) continue;  // 位点之前的旧数据（重复抓取）丢弃
-                pending_.push_back(std::move(rec));
-                gotAny = true;
-            }
-            if (!parsed.empty()) {
-                nextOffset_[partition] = parsed.back().offset + 1;
-            }
+            rd_kafka_message_destroy(msg);
+        }
+        rd_kafka_topic_partition_list_t* assigned = nullptr;
+        if (rd_kafka_assignment(rk, &assigned) == RD_KAFKA_RESP_ERR_NO_ERROR && assigned) {
+            const bool hasAssignment = assigned->cnt > 0;
+            rd_kafka_topic_partition_list_destroy(assigned);
+            if (hasAssignment) return true;
         }
     }
-    if (!r.ok()) {
-        err = "Fetch 响应解析失败";
-        return false;
-    }
-    if (firstError == ERR_NOT_LEADER || firstError == ERR_UNKNOWN_TOPIC_OR_PARTITION ||
-        firstError == ERR_FENCED_LEADER_EPOCH) {
-        err = "分区 leader 已变更（error=" + std::to_string(firstError) + "）";
-        resetSession();
-        return false;
-    }
-    if (firstError != ERR_NONE) {
-        err = "Fetch 分区错误 error=" + std::to_string(firstError);
-        return false;
-    }
-    return gotAny || pending_.empty();
+
+    err = "等待消费组分配超时（group=" + cfg_.groupId + " topic=" + cfg_.topic +
+          " servers=" + cfg_.bootstrapServers + "）";
+    close();
+    return false;
 }
 
 bool KafkaConsumer::poll(std::vector<ConsumedRecord>& out, int maxWaitMs, std::string& err) {
     out.clear();
-    if (!joined_) {
-        if (!open(err)) return false;
+    err.clear();
+    if (!impl_ || !impl_->rk) {
+        err = "Kafka 消费者未打开";
+        return false;
     }
-    if (pending_.empty()) {
-        const auto now = std::chrono::steady_clock::now();
-        if (now - lastHeartbeat_ >= std::chrono::milliseconds(cfg_.heartbeatIntervalMs)) {
-            if (!heartbeat(err)) {
-                joined_ = false;
-                return false;
-            }
-        }
-        if (!runFetch(maxWaitMs, err)) {
-            joined_ = false;
+    rd_kafka_t* rk = impl_->rk;
+    const size_t limit = static_cast<size_t>(std::max(1, cfg_.maxPollRecords));
+
+    while (out.size() < limit && !impl_->pending.empty()) {
+        out.push_back(std::move(impl_->pending.front()));
+        impl_->pending.erase(impl_->pending.begin());
+    }
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(maxWaitMs);
+    while (out.size() < limit) {
+        const auto remain = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                deadline - std::chrono::steady_clock::now())
+                                .count();
+        const int waitMs = static_cast<int>(std::max<long long>(0, remain));
+        rd_kafka_message_t* msg = rd_kafka_consumer_poll(rk, waitMs);
+        if (!msg) break;  // 超时/本批已空
+        if (msg->err) {
+            const rd_kafka_resp_err_t e = msg->err;
+            rd_kafka_message_destroy(msg);
+            if (e == RD_KAFKA_RESP_ERR__PARTITION_EOF) continue;
+            err = errText("拉取消息失败", e);
             return false;
         }
-    }
-    if (pending_.empty()) return true;  // 本次没有新消息（不是错误）
+        ConsumedRecord rec;
+        if (msg->key) {
+            rec.key.assign(static_cast<const char*>(msg->key), msg->key_len);
+            rec.hasKey = true;
+        }
+        if (msg->payload) {
+            rec.value.assign(static_cast<const char*>(msg->payload), msg->len);
+        }
+        rec.partition = msg->partition;
+        rec.offset = msg->offset;
+        rd_kafka_timestamp_type_t tstype = RD_KAFKA_TIMESTAMP_NOT_AVAILABLE;
+        const int64_t ts = rd_kafka_message_timestamp(msg, &tstype);
+        rec.timestamp = (tstype == RD_KAFKA_TIMESTAMP_NOT_AVAILABLE) ? 0 : ts;
+        rd_kafka_message_destroy(msg);
 
-    const size_t n = std::min<size_t>(pending_.size(), static_cast<size_t>(std::max(1, cfg_.maxPollRecords)));
-    out.assign(std::make_move_iterator(pending_.begin()),
-               std::make_move_iterator(pending_.begin() + static_cast<std::ptrdiff_t>(n)));
-    pending_.erase(pending_.begin(), pending_.begin() + static_cast<std::ptrdiff_t>(n));
-    for (const auto& rec : out) pendingCommit_[rec.partition] = rec.offset + 1;
+        impl_->nextOffsets[rec.partition] = rec.offset + 1;
+        out.push_back(std::move(rec));
+        if (waitMs == 0 && out.size() >= limit) break;
+    }
     return true;
 }
 
 bool KafkaConsumer::commit(std::string& err) {
-    if (pendingCommit_.empty()) return true;
-    if (!coord_ || !coord_->isOpen()) {
-        err = "coordinator 连接未建立，无法提交位点";
+    err.clear();
+    if (!impl_ || !impl_->rk) {
+        err = "Kafka 消费者未打开";
         return false;
     }
-    Writer w;
-    w.str(cfg_.groupId);
-    w.i32(generation_);
-    w.str(memberId_);
-    w.i64(-1);  // retention_time
-    w.i32(1);
-    w.str(cfg_.topic);
-    w.i32(static_cast<int32_t>(pendingCommit_.size()));
-    for (const auto& kv : pendingCommit_) {
-        w.i32(kv.first);
-        w.i64(kv.second);
-        w.str("");
+    if (impl_->nextOffsets.empty()) return true;
+
+    rd_kafka_topic_partition_list_t* offsets =
+        rd_kafka_topic_partition_list_new(static_cast<int>(impl_->nextOffsets.size()));
+    for (const auto& kv : impl_->nextOffsets) {
+        rd_kafka_topic_partition_t* p =
+            rd_kafka_topic_partition_list_add(offsets, cfg_.topic.c_str(), kv.first);
+        p->offset = kv.second;
     }
-    std::string payload, localErr;
-    if (!coord_->request(API_OFFSET_COMMIT, 2, w.buf, payload, localErr)) {
-        err = "OffsetCommit 请求失败: " + localErr;
+    rd_kafka_resp_err_t e = rd_kafka_offsets_store(impl_->rk, offsets);
+    rd_kafka_topic_partition_list_destroy(offsets);
+    if (e) {
+        err = errText("保存消费位点失败", e);
         return false;
     }
-    Reader r(payload);
-    const int32_t topicCount = r.arrayLen();
-    int16_t bad = ERR_NONE;
-    for (int32_t t = 0; t < topicCount && r.ok(); ++t) {
-        r.str();
-        const int32_t partCount = r.arrayLen();
-        for (int32_t i = 0; i < partCount && r.ok(); ++i) {
-            r.i32();
-            const int16_t code = r.i16();
-            if (code != ERR_NONE && bad == ERR_NONE) bad = code;
-        }
-    }
-    if (!r.ok()) {
-        err = "OffsetCommit 响应解析失败";
+    // 同步提交（MANUAL_IMMEDIATE：处理成功立即提交）
+    e = rd_kafka_commit(impl_->rk, nullptr, 0);
+    if (e) {
+        err = errText("提交消费位点失败", e);
         return false;
     }
-    if (bad != ERR_NONE) {
-        if (isSessionError(bad)) resetSession();
-        err = errText("OffsetCommit", bad);
-        return false;
-    }
-    pendingCommit_.clear();
+    impl_->nextOffsets.clear();
     return true;
 }
 
-// ---------------------------------------------------------------------------
-// KafkaProducer
-// ---------------------------------------------------------------------------
-KafkaProducer::KafkaProducer(KafkaConfig cfg) : cfg_(std::move(cfg)) {}
+bool KafkaConsumer::committedOffsets(std::map<int32_t, int64_t>& out, std::string& err) {
+    out.clear();
+    err.clear();
+    if (!impl_ || !impl_->rk) {
+        err = "Kafka 消费者未打开";
+        return false;
+    }
+    rd_kafka_topic_partition_list_t* assigned = nullptr;
+    if (rd_kafka_assignment(impl_->rk, &assigned) != RD_KAFKA_RESP_ERR_NO_ERROR || !assigned) {
+        err = "获取分区分配失败";
+        return false;
+    }
+    const rd_kafka_resp_err_t e = rd_kafka_committed(impl_->rk, assigned, 5000);
+    if (e) {
+        rd_kafka_topic_partition_list_destroy(assigned);
+        err = errText("查询已提交位点失败", e);
+        return false;
+    }
+    for (int i = 0; i < assigned->cnt; ++i) {
+        const rd_kafka_topic_partition_t& p = assigned->elems[i];
+        if (p.err == RD_KAFKA_RESP_ERR__NO_OFFSET || p.offset < 0) continue;
+        out[p.partition] = p.offset;
+    }
+    rd_kafka_topic_partition_list_destroy(assigned);
+    return true;
+}
 
+void KafkaConsumer::rewind(const std::vector<ConsumedRecord>& records) {
+    if (!impl_ || !impl_->rk || records.empty()) return;
+    std::map<int32_t, int64_t> firstOffsets;
+    for (const auto& r : records) {
+        auto it = firstOffsets.find(r.partition);
+        if (it == firstOffsets.end() || r.offset < it->second) firstOffsets[r.partition] = r.offset;
+    }
+    rd_kafka_topic_partition_list_t* targets =
+        rd_kafka_topic_partition_list_new(static_cast<int>(firstOffsets.size()));
+    for (const auto& kv : firstOffsets) {
+        rd_kafka_topic_partition_t* p =
+            rd_kafka_topic_partition_list_add(targets, cfg_.topic.c_str(), kv.first);
+        p->offset = kv.second;
+    }
+    rd_kafka_error_t* seekErr = rd_kafka_seek_partitions(impl_->rk, targets, 3000);
+    rd_kafka_topic_partition_list_destroy(targets);
+    if (seekErr) {
+        LOG_WARN("KafkaClient", std::string("位点回退失败 err=") +
+                                    rd_kafka_error_string(seekErr));
+        rd_kafka_error_destroy(seekErr);
+    }
+    impl_->nextOffsets.clear();
+}
+
+void KafkaConsumer::close() {
+    if (!impl_ || !impl_->rk) {
+        impl_.reset();
+        return;
+    }
+    rd_kafka_consumer_close(impl_->rk);
+    rd_kafka_destroy(impl_->rk);
+    impl_->rk = nullptr;
+    impl_.reset();
+}
+
+bool KafkaConsumer::joined() const {
+    if (!impl_ || !impl_->rk) return false;
+    rd_kafka_topic_partition_list_t* assigned = nullptr;
+    if (rd_kafka_assignment(impl_->rk, &assigned) != RD_KAFKA_RESP_ERR_NO_ERROR || !assigned) {
+        return false;
+    }
+    const bool has = assigned->cnt > 0;
+    rd_kafka_topic_partition_list_destroy(assigned);
+    return has;
+}
+
+// ---------------------------------------------------------------------------
+// KafkaProducer（仅 DLQ）
+// ---------------------------------------------------------------------------
+struct KafkaProducer::Impl {
+    rd_kafka_t* rk{nullptr};
+    std::atomic<int> failures{0};
+    std::string lastError;
+};
+
+namespace {
+
+void deliveryReport(rd_kafka_t*, const rd_kafka_message_t* msg, void* opaque) {
+    auto* impl = static_cast<KafkaProducer::Impl*>(opaque);
+    if (!impl) return;
+    if (msg->err) {
+        impl->lastError = rd_kafka_err2str(msg->err);
+        impl->failures.fetch_add(1);
+    }
+}
+
+} // namespace
+
+KafkaProducer::KafkaProducer(KafkaConfig cfg) : cfg_(std::move(cfg)) {}
 KafkaProducer::~KafkaProducer() { close(); }
 
 void KafkaProducer::close() {
-    if (conn_) conn_->close();
-    conn_.reset();
-}
-
-bool KafkaProducer::ensureLeader(const std::string& topic, std::string& err) {
-    if (conn_ && conn_->isOpen() && topic_ == topic && !leader_.host.empty()) return true;
-    const auto boot = parseBootstrapServers(cfg_.bootstrapServers);
-    KafkaConnection tmp;
-    std::string localErr;
-    const BrokerAddr first = boot.empty() ? BrokerAddr{"127.0.0.1", 9092} : boot.front();
-    if (!tmp.connect(cfg_.clientId, first, cfg_.connectTimeoutMs, cfg_.socketTimeoutMs, localErr)) {
-        err = "连接 bootstrap 失败: " + localErr;
-        return false;
+    if (!impl_ || !impl_->rk) {
+        impl_.reset();
+        return;
     }
-    Writer w;
-    w.i32(1);
-    w.str(topic);
-    std::string payload;
-    if (!tmp.request(API_METADATA, 1, w.buf, payload, localErr)) {
-        err = "Metadata 请求失败: " + localErr;
-        return false;
-    }
-    Reader r(payload);
-    const int32_t brokerCount = r.arrayLen();
-    std::map<int32_t, BrokerAddr> brokers;
-    for (int32_t i = 0; i < brokerCount && r.ok(); ++i) {
-        const int32_t node = r.i32();
-        const std::string host = r.str();
-        const int32_t port = r.i32();
-        std::string rack;
-        r.nullableStr(rack);
-        brokers[node] = BrokerAddr{host, port};
-    }
-    r.i32();  // controller
-    const int32_t topicCount = r.arrayLen();
-    int32_t leader = -1;
-    for (int32_t t = 0; t < topicCount && r.ok(); ++t) {
-        r.i16();
-        const std::string name = r.str();
-        r.i8();
-        const int32_t partCount = r.arrayLen();
-        for (int32_t p = 0; p < partCount && r.ok(); ++p) {
-            r.i16();
-            const int32_t index = r.i32();
-            const int32_t leaderId = r.i32();
-            const int32_t replicas = r.arrayLen();
-            for (int32_t k = 0; k < replicas; ++k) r.i32();
-            const int32_t isr = r.arrayLen();
-            for (int32_t k = 0; k < isr; ++k) r.i32();
-            if (name == topic && index == 0) leader = leaderId;
-        }
-    }
-    if (!r.ok()) {
-        err = "Metadata 响应解析失败";
-        return false;
-    }
-    const auto it = brokers.find(leader);
-    if (it == brokers.end()) {
-        err = "未找到 topic " + topic + " 的分区 0 leader";
-        return false;
-    }
-    leader_ = it->second;
-    topic_ = topic;
-    conn_ = std::make_unique<KafkaConnection>();
-    if (!conn_->connect(cfg_.clientId, leader_, cfg_.connectTimeoutMs, cfg_.socketTimeoutMs,
-                        localErr)) {
-        err = "连接 leader " + leader_.toString() + " 失败: " + localErr;
-        conn_.reset();
-        return false;
-    }
-    return true;
+    rd_kafka_flush(impl_->rk, cfg_.socketTimeoutMs);
+    rd_kafka_destroy(impl_->rk);
+    impl_->rk = nullptr;
+    impl_.reset();
 }
 
 bool KafkaProducer::send(const std::string& topic, const std::string& value, std::string& err) {
-    // Java 侧 `retries=3` 是"可重试错误"的语义；topic 首次自动创建属于 metadata
-    // 等待（max.block.ms=60s），所以这里用更长的窗口覆盖 auto-create，而不是只重试 3 次。
-    const int maxAttempts = 12;  // ≈ 12 × 400ms = 4.8s
-    for (int attempt = 0; attempt < maxAttempts; ++attempt) {
-        std::string localErr;
-        if (!ensureLeader(topic, localErr)) {
-            err = localErr;
-            std::this_thread::sleep_for(std::chrono::milliseconds(400));
-            continue;
-        }
-        Writer w;
-        w.nullableStr(false, "");  // transactional_id
-        w.i16(-1);                 // acks = all
-        w.i32(30000);
-        w.i32(1);
-        w.str(topic);
-        w.i32(1);
-        w.i32(0);  // partition
-        w.bytes(buildRecordBatch("", value, nowMillis()));
-        std::string payload;
-        if (!conn_->request(API_PRODUCE, 3, w.buf, payload, localErr)) {
-            err = localErr;
-            if (conn_) conn_->close();
-            continue;
-        }
-        Reader r(payload);
-        const int32_t topicCount = r.arrayLen();
-        int16_t code = ERR_NONE;
-        for (int32_t t = 0; t < topicCount && r.ok(); ++t) {
-            r.str();
-            const int32_t partCount = r.arrayLen();
-            for (int32_t i = 0; i < partCount && r.ok(); ++i) {
-                r.i32();
-                const int16_t c = r.i16();
-                r.i64();
-                r.i64();
-                if (c != ERR_NONE && code == ERR_NONE) code = c;
-            }
-        }
-        if (!r.ok()) {
-            err = "Produce 响应解析失败";
+    err.clear();
+    if (!impl_) impl_ = std::make_unique<Impl>();
+    if (!impl_->rk) {
+        rd_kafka_conf_t* conf = rd_kafka_conf_new();
+        const bool configured =
+            setConf(conf, "bootstrap.servers", cfg_.bootstrapServers, err) &&
+            setConf(conf, "client.id",
+                    (cfg_.clientId.empty() ? "car-monit-cpp" : cfg_.clientId) + "-dlq", err) &&
+            // 对齐 Java KafkaConfig.producerFactory：acks=all、retries=3、幂等
+            setConf(conf, "acks", std::string("all"), err) &&
+            setConf(conf, "message.send.max.retries", 3, err) &&
+            setConf(conf, "enable.idempotence", std::string("true"), err) &&
+            setConf(conf, "socket.timeout.ms", cfg_.socketTimeoutMs, err);
+        if (!configured) {
+            rd_kafka_conf_destroy(conf);
             return false;
         }
-        if (code == ERR_NONE) return true;
-        err = errText("Produce", code);
-        if (code == ERR_NOT_LEADER || code == ERR_UNKNOWN_TOPIC_OR_PARTITION) {
-            leader_ = BrokerAddr{};
-            if (conn_) conn_->close();
+        rd_kafka_conf_set_dr_msg_cb(conf, deliveryReport);
+        rd_kafka_conf_set_opaque(conf, impl_.get());
+
+        char errbuf[512];
+        rd_kafka_t* rk = rd_kafka_new(RD_KAFKA_PRODUCER, conf, errbuf, sizeof(errbuf));
+        if (!rk) {
+            err = std::string("创建 Kafka 生产者失败: ") + errbuf;
+            return false;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(400));
+        impl_->rk = rk;
     }
-    return false;
+
+    impl_->failures.store(0);
+    impl_->lastError.clear();
+    const rd_kafka_resp_err_t e = rd_kafka_producev(
+        impl_->rk, RD_KAFKA_V_TOPIC(topic.c_str()),
+        RD_KAFKA_V_VALUE(const_cast<char*>(value.data()), value.size()),
+        RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY), RD_KAFKA_V_END);
+    if (e) {
+        err = errText("投递消息失败 topic=" + topic, e);
+        return false;
+    }
+    const rd_kafka_resp_err_t f = rd_kafka_flush(impl_->rk, cfg_.socketTimeoutMs);
+    if (f) {
+        err = errText("等待消息投递完成超时 topic=" + topic, f);
+        return false;
+    }
+    if (impl_->failures.load() > 0) {
+        err = "消息投递失败 topic=" + topic + ": " + impl_->lastError;
+        return false;
+    }
+    return true;
 }
 
 } // namespace cm::kafka

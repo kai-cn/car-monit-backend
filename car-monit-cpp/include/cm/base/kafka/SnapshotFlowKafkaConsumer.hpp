@@ -61,6 +61,12 @@ public:
     long long successCount() const { return success_.load(); }
     long long failCount() const { return fail_.load(); }
     long long retryCount() const { return retry_.load(); }
+    /** 已消费消息总数（吞吐统计用） */
+    long long parsedCount() const { return parsed_.load(); }
+    /** 端到端延迟：消息 CreateTime → 处理完成（毫秒），供验收/监控使用 */
+    long long latencyCount() const { return latency_count_.load(); }
+    long long latencyTotalMs() const { return latency_total_ms_.load(); }
+    long long latencyMaxMs() const { return latency_max_ms_.load(); }
 
 private:
     SnapshotFlowKafkaConsumer() = default;
@@ -75,6 +81,10 @@ private:
     std::atomic<long long> success_{0};
     std::atomic<long long> fail_{0};
     std::atomic<long long> retry_{0};
+    std::atomic<long long> parsed_{0};
+    std::atomic<long long> latency_count_{0};
+    std::atomic<long long> latency_total_ms_{0};
+    std::atomic<long long> latency_max_ms_{0};
 };
 
 /** 构造 ES 文档（对应 BeanUtils.copyProperties(data, SnapshotFlowDocument) + fastjson2 序列化） */

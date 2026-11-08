@@ -1,22 +1,24 @@
 #pragma once
-// 最小 Kafka 客户端（消费者 + DLQ 生产者）。
+// Kafka 客户端（传输层 = librdkafka，C API）。
 //
 // 对应 Java：
 //   * KafkaConfig.consumerFactory / kafkaListenerContainerFactory（batch + MANUAL_IMMEDIATE）
 //   * SnapshotFlowKafkaConsumerV2（消费/重试/死信）
 //   * KafkaTemplate<String,String>（仅用于发送 DLQ）
 //
-// 选择非 flexible 协议版本（Metadata v1 / JoinGroup v2 / SyncGroup v1 / Heartbeat v1 /
-// OffsetFetch v3 / OffsetCommit v2 / ListOffsets v1 / Fetch v4 / Produce v3），
-// Kafka 0.10~2.8 全支持，没有 tagged fields，报文可逐字节核对。
-#include <chrono>
+// 这里只保留“配置 + 消费者/生产者门面”，协议、组协调、再平衡、压缩、CRC 全部交给
+// librdkafka；业务语义（批量 500、手动提交、幂等、重试 3×1s、DLQ、写库失败不提交）
+// 仍在 cm::base::kafka::SnapshotFlowKafkaConsumer。
+//
+// 与 Java 配置的逐项对应（见 KafkaConfig 注释）：
+//   enable.auto.commit=false + enable.auto.offset.store=false ⇒ MANUAL_IMMEDIATE
+//   max.poll.records=500 由 poll() 每次最多返回 500 条实现
+//   max.poll.interval.ms / session.timeout.ms / fetch.max.bytes 直接透传
 #include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "cm/framework/kafka/KafkaCodec.hpp"
 
 namespace cm::kafka {
 
@@ -31,7 +33,6 @@ struct KafkaConfig {
     std::string dlqTopic{"ods-rt-szdn-snapshot-flow-dlq"};
 
     int sessionTimeoutMs{60000};    // kafka.consumer.session-timeout-ms
-    int heartbeatIntervalMs{20000}; // 同步心跳（Java 3s，这里在两次 poll 之间发）
     int fetchMaxBytes{52428800};    // kafka.consumer.fetch-max-bytes
     int maxPollRecords{500};        // kafka.consumer.max-poll-records
     int maxPollIntervalMs{300000};  // kafka.consumer.max-poll-interval-ms
@@ -51,102 +52,71 @@ struct BrokerAddr {
     std::string toString() const { return host + ":" + std::to_string(port); }
 };
 
-/** 单条 TCP 连接，请求/响应同步往返（header v1） */
-class KafkaConnection {
-public:
-    KafkaConnection() = default;
-    ~KafkaConnection();
-    KafkaConnection(const KafkaConnection&) = delete;
-    KafkaConnection& operator=(const KafkaConnection&) = delete;
-
-    bool connect(const std::string& clientId, const BrokerAddr& addr, int connectTimeoutMs,
-                 int socketTimeoutMs, std::string& err);
-    void close();
-    bool isOpen() const { return fd_ >= 0; }
-
-    /** 发送请求并读回完整响应体（去掉 4 字节长度前缀） */
-    bool request(int16_t apiKey, int16_t apiVersion, const std::string& body, std::string& payload,
-                 std::string& err);
-
-    const BrokerAddr& addr() const { return addr_; }
-
-private:
-    long long fd_{-1};
-    BrokerAddr addr_;
-    std::string clientId_{"car-monit-cpp"};
-    int32_t correlation_{0};
+struct ConsumedRecord {
+    std::string key;
+    bool hasKey{false};
+    std::string value;
+    int32_t partition{0};
+    int64_t offset{0};
+    int64_t timestamp{0};
 };
 
 /**
- * 消费者：单 topic、单 group、range 分配、手动提交。
+ * 消费者：单 topic、单 group、手动提交。
  * 线程不安全（每个消费线程一个实例，与 Java concurrency=3 一致）。
  */
 class KafkaConsumer {
 public:
     explicit KafkaConsumer(KafkaConfig cfg);
     ~KafkaConsumer();
+    KafkaConsumer(const KafkaConsumer&) = delete;
+    KafkaConsumer& operator=(const KafkaConsumer&) = delete;
 
-    /** 连接 broker + 加入消费组 + 拉取已提交位点。失败可重试调用。 */
+    /** 创建消费者 + 订阅 + 等待首次分区分配。失败可重试调用。 */
     bool open(std::string& err);
 
-    /** 拉取一批（最多 maxPollRecords 条）；返回 false 表示本次无数据/需重建连接 */
+    /** 拉取一批（最多 maxPollRecords 条）；返回 false 表示需要重建消费者 */
     bool poll(std::vector<ConsumedRecord>& out, int maxWaitMs, std::string& err);
 
     /** 提交上次 poll 返回记录的下一个位点（MANUAL_IMMEDIATE 语义） */
     bool commit(std::string& err);
 
+    /** 查询当前分组的已提交位点（partition -> 下一条位点）；无提交的分区不返回 */
+    bool committedOffsets(std::map<int32_t, int64_t>& out, std::string& err);
+
+    /** 把一批消息回退到各分区的最小位点（写库失败时用于立即重投，不丢消息） */
+    void rewind(const std::vector<ConsumedRecord>& records);
+
     void close();
 
-    bool joined() const { return joined_; }
+    bool joined() const;
     const KafkaConfig& config() const { return cfg_; }
 
 private:
-    bool ensureCoordinator(std::string& err);
-    bool refreshMetadata(std::string& err);
-    bool joinGroup(std::string& err);
-    bool syncGroup(std::string& err);
-    bool heartbeat(std::string& err);
-    bool fetchOffsets(std::string& err);
-    bool listOffsets(std::string& err);
-    bool runFetch(int maxWaitMs, std::string& err);
-    BrokerAddr firstBootstrap() const;
-    void resetSession();
-
+    struct Impl;
     KafkaConfig cfg_;
-    std::unique_ptr<KafkaConnection> coord_;
-    std::unique_ptr<KafkaConnection> fetchConn_;
-    BrokerAddr coordAddr_;
-    BrokerAddr leaderAddr_;
-    std::string memberId_;
-    std::string leaderId_;
-    int32_t generation_{-1};
-    std::vector<int32_t> partitions_;
-    std::map<int32_t, int64_t> nextOffset_;
-    std::map<int32_t, int64_t> pendingCommit_;
-    std::vector<ConsumedRecord> pending_;
-    std::chrono::steady_clock::time_point lastHeartbeat_{};
-    bool joined_{false};
+    std::unique_ptr<Impl> impl_;
 };
 
-/** 仅用于 DLQ：acks=all、retries=3、无 key */
+/** 仅用于 DLQ：acks=all、enable.idempotence=true、retries=3 */
 class KafkaProducer {
 public:
+    /** 定义在 .cpp；投递回调需要访问，故在 public 段前置声明 */
+    struct Impl;
     explicit KafkaProducer(KafkaConfig cfg);
     ~KafkaProducer();
+    KafkaProducer(const KafkaProducer&) = delete;
+    KafkaProducer& operator=(const KafkaProducer&) = delete;
 
     bool send(const std::string& topic, const std::string& value, std::string& err);
     void close();
 
 private:
-    bool ensureLeader(const std::string& topic, std::string& err);
-
     KafkaConfig cfg_;
-    std::unique_ptr<KafkaConnection> conn_;
-    BrokerAddr leader_;
-    std::string topic_;
+    std::unique_ptr<Impl> impl_;
 };
 
-/** "host1:port1,host2:port2" -> 列表 */
+/** "host1:port1,host2:port2" -> 列表（配置校验/日志用） */
 std::vector<BrokerAddr> parseBootstrapServers(const std::string& text);
 
 } // namespace cm::kafka

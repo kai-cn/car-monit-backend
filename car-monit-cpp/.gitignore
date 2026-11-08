@@ -1,5 +1,6 @@
 build/
 build-*/
+vcpkg_installed/
 logs/
 *.o
 *.a

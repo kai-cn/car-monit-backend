@@ -4,10 +4,10 @@ project(car_monit_cpp VERSION 1.0.0 LANGUAGES C CXX)
 # ---------------------------------------------------------------------------
 # car-monit-backend 的 C++20 1:1 迁移工程
 #
-# 设计目标：
-#   * 不依赖网络即可构建（第三方库已 vendor 到 third_party/）
-#   * 只依赖系统自带的 OpenSSL / zlib / pthread
-#   * 目录结构尽量与 Java 包名一一对应，方便 Java 开发人员对照
+# 依赖策略：第三方库走 vcpkg manifest（见 vcpkg.json），不再自研协议/序列化轮子。
+# 配置时必须带 vcpkg 工具链（否则找不到依赖）：
+#   cmake -B build -DCMAKE_TOOLCHAIN_FILE=<vcpkg-root>/scripts/buildsystems/vcpkg.cmake
+# 目录结构尽量与 Java 包名一一对应，方便 Java 开发人员对照。
 # ---------------------------------------------------------------------------
 
 set(CMAKE_CXX_STANDARD 20)
@@ -30,6 +30,9 @@ if (MSVC)
 endif()
 
 find_package(Threads REQUIRED)
+
+# Kafka 传输层：librdkafka（vcpkg manifest）
+find_package(RdKafka CONFIG REQUIRED)
 
 # 本工程自带 SHA-1/SHA-256/SHA-512/HMAC/RSA-OAEP 与 DEFLATE 实现
 # （src/cm/common/utils/crypto/*、src/cm/common/utils/Deflate.cpp），
@@ -56,8 +59,13 @@ if (NOT WIN32)
 endif()
 
 add_library(bcrypt STATIC ${BCRYPT_SOURCES})
+# ⚠️ 只把 include/ 暴露给调用方（调用方写 <bcrypt/bcrypt.h>）。
+# include/bcrypt 不能放进 PUBLIC：那里有 bcrypt.h，会把 Windows SDK 的 <bcrypt.h> 顶掉，
+# 导致 ncrypt.h / wincrypt.h 编译失败。
 target_include_directories(bcrypt PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/bcrypt/include
+)
+target_include_directories(bcrypt PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/bcrypt/include/bcrypt
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/bcrypt/src
 )
@@ -81,6 +89,7 @@ target_include_directories(carmonit_core PUBLIC
 )
 target_link_libraries(carmonit_core PUBLIC
     bcrypt
+    RdKafka::rdkafka
     Threads::Threads
     ${CMAKE_DL_LIBS}
 )
@@ -130,6 +139,18 @@ endif()
 
 add_executable(car-monit-cpp src/cm/main.cpp)
 target_link_libraries(car-monit-cpp PRIVATE carmonit_core)
+
+# 未使用 vcpkg 工具链的 applocal 时，把依赖的 DLL 拷到可执行文件目录
+# （例如 rdkafka.dll / rdkafka++.dll / lz4.dll）
+function(car_monit_deploy_runtime_dlls target)
+    if (WIN32)
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_RUNTIME_DLLS:${target}> $<TARGET_FILE_DIR:${target}>
+            COMMAND_EXPAND_LISTS)
+    endif()
+endfunction()
+car_monit_deploy_runtime_dlls(car-monit-cpp)
 
 install(TARGETS car-monit-cpp RUNTIME DESTINATION bin)
 install(DIRECTORY config/ DESTINATION config)
@@ -184,3 +205,11 @@ if (CAR_MONIT_BUILD_KAFKA_VERIFY)
     add_executable(carmonit_kafka_verify tools/kafka_verify/main.cpp)
     target_link_libraries(carmonit_kafka_verify PRIVATE carmonit_core)
 endif()
+
+# 所有可执行文件统一部署 vcpkg 依赖的 DLL
+foreach(_tgt carmonit_tests carmonit_db_verify carmonit_redis_verify carmonit_http_verify
+               carmonit_kafka_verify)
+    if (TARGET ${_tgt})
+        car_monit_deploy_runtime_dlls(${_tgt})
+    endif()
+endforeach()

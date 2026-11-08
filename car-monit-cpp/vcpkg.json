@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "car-monit-cpp",
+  "version": "1.0.0",
+  "description": "car-monit-backend 的 C++ 迁移工程（vcpkg manifest 模式）",
+  "builtin-baseline": "6fdd23fa0a9479a9f9a1c48178696f60cf39255d",
+  "dependencies": [
+    "librdkafka"
+  ]
+}

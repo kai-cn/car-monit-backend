@@ -1,10 +1,10 @@
-// Kafka 协议层 + 快照流分表/ES 文档映射的单测（不依赖真实 broker）。
+// Kafka 客户端配置 + 快照流分表/ES 文档映射的单测（不依赖真实 broker）。
 #include <string>
 #include <vector>
 
 #include "cm/base/kafka/SnapshotFlowKafkaConsumer.hpp"
 #include "cm/base/repository/SnapshotFlowRepository.hpp"
-#include "cm/framework/kafka/KafkaCodec.hpp"
+#include "cm/framework/kafka/KafkaClient.hpp"
 
 using cm::Json;
 
@@ -27,96 +27,39 @@ extern int g_fails;
         }                                                                   \
     } while (0)
 
-static void testCrc32c() {
-    // RFC 3720 标准向量
-    CK_EQ(cm::kafka::crc32c("123456789", 9), 0xE3069283u);
-    CK_EQ(cm::kafka::crc32c("", 0), 0u);
+/** KafkaConfig 的默认值必须与 Java KafkaConfig/application.yml 一致 */
+static void testKafkaConfigDefaults() {
+    cm::kafka::KafkaConfig cfg;
+    CK_EQ(cfg.groupId, std::string("snapshot-flow-consumer-group"));
+    CK_EQ(cfg.maxPollRecords, 500);
+    CK_EQ(cfg.maxPollIntervalMs, 300000);
+    CK_EQ(cfg.fetchMaxBytes, 52428800);
+    CK_EQ(cfg.sessionTimeoutMs, 60000);
+    CK_EQ(cfg.concurrency, 3);
+    CK(cfg.fromBeginning);  // auto-offset-reset=earliest
 }
 
-static void testBatchRoundTripSingle() {
-    const std::string value = "{\"operationType\":\"INSERT\",\"data\":{\"bigId\":\"9001\",\"platenumber\":\"云A12345\"}}";
-    const std::string batch = cm::kafka::buildRecordBatch("", value, 1762500000000LL);
-    std::vector<cm::kafka::ConsumedRecord> out;
-    std::string err;
-    CK(cm::kafka::parseRecordSet(batch, out, err));
-    CK(err.empty());
-    CK_EQ(out.size(), static_cast<size_t>(1));
-    if (out.size() == 1) {
-        CK_EQ(out[0].value, value);
-        CK(!out[0].hasKey);  // 空 key == null key
-        CK_EQ(out[0].offset, 0LL);
-        CK_EQ(out[0].timestamp, 1762500000000LL);
+static void testBootstrapParse() {
+    auto one = cm::kafka::parseBootstrapServers("127.0.0.1:9092");
+    CK_EQ(one.size(), static_cast<size_t>(1));
+    if (one.size() == 1) {
+        CK_EQ(one[0].host, std::string("127.0.0.1"));
+        CK_EQ(one[0].port, 9092);
     }
-}
 
-static void testBatchRoundTripMulti() {
-    std::vector<std::pair<std::string, std::string>> records;
-    records.emplace_back("k1", "v1");
-    records.emplace_back("", "中文值-2");
-    records.emplace_back("k3", std::string(1000, 'x'));
-    const std::string batch = cm::kafka::buildRecordBatch(records, 1762500001000LL);
-    std::vector<cm::kafka::ConsumedRecord> out;
-    std::string err;
-    CK(cm::kafka::parseRecordSet(batch, out, err));
-    CK_EQ(out.size(), static_cast<size_t>(3));
-    if (out.size() == 3) {
-        CK_EQ(out[0].key, std::string("k1"));
-        CK_EQ(out[0].value, std::string("v1"));
-        CK(out[0].hasKey);
-        CK_EQ(out[1].value, std::string("中文值-2"));
-        CK(!out[1].hasKey);
-        CK_EQ(out[2].value.size(), static_cast<size_t>(1000));
-        CK_EQ(out[2].offset, 2LL);
+    auto two = cm::kafka::parseBootstrapServers("10.0.0.1:9092, 10.0.0.2:9093");
+    CK_EQ(two.size(), static_cast<size_t>(2));
+    if (two.size() == 2) {
+        CK_EQ(two[1].host, std::string(" 10.0.0.2"));
+        CK_EQ(two[1].port, 9093);
     }
-}
 
-static void testBatchTrailingTruncation() {
-    const std::string batch =
-        cm::kafka::buildRecordBatch("k", "v", 1762500000000LL);
-    // 模拟抓取窗口在批次中间截断：解析器应保留已解析内容而不是报错
-    std::string truncated = batch.substr(0, batch.size() - 3);
-    std::vector<cm::kafka::ConsumedRecord> out;
-    std::string err;
-    CK(cm::kafka::parseRecordSet(truncated, out, err));
-    CK_EQ(out.size(), static_cast<size_t>(0));
-}
+    auto noPort = cm::kafka::parseBootstrapServers("broker.local");
+    CK_EQ(noPort.size(), static_cast<size_t>(1));
+    if (noPort.size() == 1) CK_EQ(noPort[0].port, 9092);
 
-static void testLegacyMessageSet() {
-    // 手工构造 magic=0 的 message set：offset + size + crc + magic + attrs + keyLen + key + valLen + value
-    using cm::kafka::Writer;
-    Writer msg;
-    msg.i8(0);   // magic
-    msg.i8(0);   // attributes
-    msg.i32(-1); // key = null
-    msg.i32(2);
-    msg.raw("hi");
-    Writer out;
-    out.i64(7);                            // offset
-    out.i32(static_cast<int32_t>(msg.buf.size()));  // size
-    out.raw(msg.buf);                      // 注意：真实报文这里先有 4 字节 crc，但解析器会跳过前 4 字节
-    // 上面的写法把 magic 放在了 crc 的位置；重新按真实布局构造：
-    Writer real;
-    real.i64(7);
-    Writer body;
-    body.i32(0);  // crc 占位
-    body.i8(0);   // magic
-    body.i8(0);   // attrs
-    body.i32(-1); // key
-    body.i32(2);
-    body.raw("hi");
-    real.i32(static_cast<int32_t>(body.buf.size()));
-    real.raw(body.buf);
-
-    std::vector<cm::kafka::ConsumedRecord> records;
-    std::string err;
-    CK(cm::kafka::parseRecordSet(real.buf, records, err));
-    CK_EQ(records.size(), static_cast<size_t>(1));
-    if (records.size() == 1) {
-        CK_EQ(records[0].offset, 7LL);
-        CK_EQ(records[0].value, std::string("hi"));
-        CK(!records[0].hasKey);
-    }
-    (void)out;
+    CK_EQ(cm::kafka::parseBootstrapServers("").size(), static_cast<size_t>(0));
+    CK_EQ(cm::kafka::parseBootstrapServers(",,").size(), static_cast<size_t>(0));
 }
 
 static void testShardingRoute() {
@@ -167,11 +110,8 @@ static void testEsDocument() {
 }
 
 void run_kafka_tests() {
-    testCrc32c();
-    testBatchRoundTripSingle();
-    testBatchRoundTripMulti();
-    testBatchTrailingTruncation();
-    testLegacyMessageSet();
+    testKafkaConfigDefaults();
+    testBootstrapParse();
     testShardingRoute();
     testEsDocument();
 }

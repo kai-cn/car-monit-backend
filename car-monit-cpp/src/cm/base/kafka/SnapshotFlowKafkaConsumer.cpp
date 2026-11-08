@@ -205,12 +205,24 @@ SnapshotFlowKafkaConsumer::BatchOutcome SnapshotFlowKafkaConsumer::processBatch(
     const std::vector<cm::kafka::ConsumedRecord>& records) {
     BatchOutcome out;
     out.parsed = static_cast<int>(records.size());
+    parsed_.fetch_add(out.parsed);
     std::vector<Json> toSave;
     std::vector<Json> esDocs;
     std::vector<std::string> processedIds;
     std::vector<cm::kafka::ConsumedRecord> failed;
 
     for (const auto& rec : records) {
+        // 端到端延迟（CreateTime → 处理完成）；无时间戳（-1/0）的消息不计入
+        if (rec.timestamp > 0) {
+            const long long lag = nowMillis() - rec.timestamp;
+            if (lag >= 0) {
+                latency_count_.fetch_add(1);
+                latency_total_ms_.fetch_add(lag);
+                long long prev = latency_max_ms_.load();
+                while (lag > prev && !latency_max_ms_.compare_exchange_weak(prev, lag)) {
+                }
+            }
+        }
         std::string processedId;
         bool processed = false;
         bool skipped = false;
@@ -320,10 +332,11 @@ void SnapshotFlowKafkaConsumer::runLoop(int index) {
             if (batch.empty()) continue;
             BatchOutcome outcome = processBatch(batch);
             if (!outcome.commit) {
-                // 位点不提交：关掉连接重新入组，OffsetFetch 会回到上次提交的位置重投
-                LOG_WARN("SnapshotFlowKafka", "批次处理失败，不提交位点，等待重投");
+                // 位点不提交 + 回退到本批最小位点：立即重投（写库失败不丢消息）
+                LOG_WARN("SnapshotFlowKafka", "批次处理失败，不提交位点，回退位点等待重投");
+                consumer.rewind(batch);
                 std::this_thread::sleep_for(std::chrono::seconds(1));
-                break;
+                continue;
             }
             if (!consumer.commit(err)) {
                 LOG_WARN("SnapshotFlowKafka", "提交位点失败: " + err);

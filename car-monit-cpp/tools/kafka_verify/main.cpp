@@ -16,6 +16,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <cstdio>
+#include <map>
 #include <string>
 #include <thread>
 #include <vector>
@@ -123,8 +124,11 @@ int main(int argc, char** argv) {
     cm::base::kafka::SnapshotFlowKafkaConsumer::instance().configure(kc);
     cm::base::kafka::SnapshotFlowKafkaConsumer::instance().start();
     report(true, "消费线程已启动");
+    const auto consumeStart = std::chrono::steady_clock::now();
     std::this_thread::sleep_for(std::chrono::seconds(seconds));
     cm::base::kafka::SnapshotFlowKafkaConsumer::instance().stop();
+    const double elapsedSec =
+        std::chrono::duration<double>(std::chrono::steady_clock::now() - consumeStart).count();
 
     // 统计结果：消费按月份路由到分表（不一定是活跃表），逐表求和
     long long rows = 0;
@@ -144,7 +148,17 @@ int main(int argc, char** argv) {
     std::printf("---\n");
     const long long ok = cm::base::kafka::SnapshotFlowKafkaConsumer::instance().successCount();
     const long long failed = cm::base::kafka::SnapshotFlowKafkaConsumer::instance().failCount();
-    std::printf("--- 结果: 入库行数=%lld 成功计数=%lld 失败计数=%lld ---\n", rows, ok, failed);
+    const long long parsed = cm::base::kafka::SnapshotFlowKafkaConsumer::instance().parsedCount();
+    const long long latCount = cm::base::kafka::SnapshotFlowKafkaConsumer::instance().latencyCount();
+    const long long latTotal = cm::base::kafka::SnapshotFlowKafkaConsumer::instance().latencyTotalMs();
+    const long long latMax = cm::base::kafka::SnapshotFlowKafkaConsumer::instance().latencyMaxMs();
+    std::printf("--- 结果: 入库行数=%lld 成功计数=%lld 失败计数=%lld 消费条数=%lld ---\n", rows, ok,
+                failed, parsed);
+    // 吞吐与端到端延迟（CreateTime → 处理完成）
+    const double throughput = elapsedSec > 0 ? static_cast<double>(parsed) / elapsedSec : 0.0;
+    const double avgLatency = latCount > 0 ? static_cast<double>(latTotal) / latCount : 0.0;
+    std::printf("--- 吞吐: %.1f 条/秒 (窗口 %.1fs) | 延迟: 平均 %.1fms 最大 %lldms (样本 %lld) ---\n",
+                throughput, elapsedSec, avgLatency, latMax, latCount);
     report(ok > 0, "拉取并处理了消息", "success=" + std::to_string(ok));
     report(rows > 0, "MySQL 有落库数据", "rows=" + std::to_string(rows));
 
@@ -163,6 +177,56 @@ int main(int argc, char** argv) {
     if (expectFail && *expectFail) {
         report(failed >= std::atoll(expectFail), "失败计数符合预期",
                "failed=" + std::to_string(failed) + " expect>=" + expectFail);
+    }
+
+    // ---- DLQ 条数：独立消费组从最早开始读死信 topic（topic 应每轮重建，否则会累计历史） ----
+    long long dlqCount = 0;
+    {
+        cm::kafka::KafkaConfig dlqCfg = kc;
+        dlqCfg.topic = kc.dlqTopic;
+        dlqCfg.groupId = kc.groupId + "-dlq-counter";
+        dlqCfg.fromBeginning = true;
+        cm::kafka::KafkaConsumer counter(dlqCfg);
+        std::string err;
+        if (!counter.open(err)) {
+            report(false, "DLQ 查询消费者启动", err);
+        } else {
+            while (true) {
+                std::vector<cm::kafka::ConsumedRecord> batch;
+                if (!counter.poll(batch, 1500, err)) {
+                    report(false, "DLQ 读取失败", err);
+                    break;
+                }
+                if (batch.empty()) break;
+                dlqCount += static_cast<long long>(batch.size());
+            }
+            counter.close();
+        }
+    }
+    std::printf("--- DLQ 条数=%lld topic=%s ---\n", dlqCount, kc.dlqTopic.c_str());
+    const char* expectDlq = std::getenv("CM_VERIFY_EXPECT_DLQ");
+    if (expectDlq && *expectDlq) {
+        report(dlqCount == std::atoll(expectDlq), "DLQ 条数符合预期",
+               "dlq=" + std::to_string(dlqCount) + " expect=" + expectDlq);
+    }
+
+    // ---- 位点提交：主消费线程停止后，用同一消费组查询已提交位点 ----
+    {
+        cm::kafka::KafkaConsumer probe(kc);
+        std::string err;
+        std::map<int32_t, int64_t> committed;
+        if (!probe.open(err)) {
+            report(false, "查询位点提交", err);
+        } else if (!probe.committedOffsets(committed, err)) {
+            report(false, "查询位点提交", err);
+        } else {
+            for (const auto& kv : committed) {
+                std::printf("--- 提交位点: partition=%d nextOffset=%lld ---\n", kv.first, kv.second);
+            }
+            report(!committed.empty(), "存在已提交位点",
+                   "partitions=" + std::to_string(committed.size()));
+        }
+        probe.close();
     }
 
     std::printf("%d passed, %d failed\n", reportFailures == 0 ? 1 : 0, reportFailures);
