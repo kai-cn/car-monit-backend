@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import functools
 import hashlib
+import math
 import os
 import re
 import sys
@@ -103,19 +104,76 @@ class _Section(BaseModel):
 
 #: 历史上写死在仓库里的演示密钥的 SHA-256。仓库里不再保存明文，改用指纹比对，
 #: 这样既能把旧值判为不合格，也不会让 secret-scanner 再次命中本文件。
-_LEGACY_DEMO_SECRET_HASHES = {
-    "token": "71c480df93d6ae2f1efad1447c66c9525e316218cf51fc8d9ed832f2daf18b73",
-    "hengda": "a737ccdc1d94cdd4a7b12ccdb331842ad4f906789dec9836b1b39149aa06c19b",
-    "oss_access": "4b0fbf2b9c8d51681b45f30e10c59f138d4bb1d6e1c21dee91305451e640aeb1",
-    "oss_secret": "ac954063fbdb82a9017d48afab023b1e66d6efece76d869da4928b9e4cdf9df3",
+#: 每类密钥可以有多个历史值（含 ``.env.example`` 曾内置的开发占位值）。
+_LEGACY_DEMO_SECRET_HASHES: Dict[str, frozenset[str]] = {
+    "token": frozenset(
+        {
+            "71c480df93d6ae2f1efad1447c66c9525e316218cf51fc8d9ed832f2daf18b73",
+            # .env.example 曾内置的 dev-only-jwt-secret-please-change
+            "18454d8884a8854fd4ea49f5c3b30e50b7c8e70daee080b600ae8e2276b138a1",
+        }
+    ),
+    "hengda": frozenset(
+        {
+            "a737ccdc1d94cdd4a7b12ccdb331842ad4f906789dec9836b1b39149aa06c19b",
+            # .env.example 曾内置的 dev-only-hengda-secret-please-change
+            "717a6d42bf653af4e9316af9cf5addd3d18532d0e3f9ba4d160db0d3ffc550f1",
+        }
+    ),
+    "oss_access": frozenset({"4b0fbf2b9c8d51681b45f30e10c59f138d4bb1d6e1c21dee91305451e640aeb1"}),
+    "oss_secret": frozenset({"ac954063fbdb82a9017d48afab023b1e66d6efece76d869da4928b9e4cdf9df3"}),
 }
+
+#: 示例/占位值的常见标记。真实随机密钥几乎不可能包含这些词，命中即视为未替换。
+_PLACEHOLDER_SECRET_MARKERS = (
+    "please-change",
+    "please_change",
+    "change-me",
+    "change_me",
+    "changeme",
+    "placeholder",
+    "dev-only",
+    "dev_only",
+    "example-secret",
+    "example_secret",
+    "your-secret",
+    "your_secret",
+    "replace-me",
+    "replace_me",
+)
+
+#: 密钥最短长度。低于它的值熵太低（典型如 "secret"、"123456"），生产上等价于没设。
+_MIN_SECRET_LENGTH = 32
+
+#: 每字符最小 Shannon 熵（bits）。32 位随机十六进制约 3.9，随机 URL-safe 约 4.7；
+#: 低于 3.0 基本是可预测的重复/序列字符串。
+_MIN_SECRET_ENTROPY_BITS = 3.0
 
 
 def _is_legacy_demo_secret(value: Optional[str], kind: str) -> bool:
     if not value:
         return False
     digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
-    return digest == _LEGACY_DEMO_SECRET_HASHES[kind]
+    return digest in _LEGACY_DEMO_SECRET_HASHES[kind]
+
+
+def _is_weak_secret(value: str) -> bool:
+    """长度不足、熵过低或明显是占位值的密钥。
+
+    ``.env.example`` 里的 ``dev-only-*-please-change`` 已在指纹黑名单里；这里再挡
+    一类"长得像随机、其实还是示例"的值（``your-secret-here``、``changeme-...``）。
+    """
+    text = value.strip()
+    lowered = text.lower()
+    if any(marker in lowered for marker in _PLACEHOLDER_SECRET_MARKERS):
+        return True
+    if len(text) < _MIN_SECRET_LENGTH:
+        return True
+    counts: Dict[str, int] = {}
+    for char in text:
+        counts[char] = counts.get(char, 0) + 1
+    entropy = -sum((count / len(text)) * math.log2(count / len(text)) for count in counts.values())
+    return entropy < _MIN_SECRET_ENTROPY_BITS
 
 
 class RuoYiSection(_Section):
@@ -712,32 +770,42 @@ class AppSettings(BaseSettings):
     def insecure_secret_env_vars(self) -> List[str]:
         """缺失或仍在使用仓库内置密钥/口令时，返回对应环境变量名（空列表 = 合格）。
 
-        令牌 / Hengda / OSS 的内置演示值在**任何环境**都不允许；DB 的 ``root`` 只在
-        ``IS_LOCALHOST=local`` 时保留（本机自带 MySQL 的口令），非 local 必须换掉。
-        “缺失”一律失败：不再有静默的内置默认值。
+        令牌 / Hengda / OSS 的内置演示值在**任何环境**都不允许，且额外做长度/熵/
+        占位词校验（``dev-only-*-please-change`` 一类示例值全部判为不合格）；
+        DB 的 ``root`` 只在 ``IS_LOCALHOST=local`` 时保留（本机自带 MySQL 的口令），
+        非 local 必须换掉。“缺失”一律失败：不再有静默的内置默认值。
         """
         is_local = (self.is_localhost or "").strip().lower() == "local"
         insecure: List[str] = []
-        if (self.token.secret or "").strip() == "" or _is_legacy_demo_secret(self.token.secret, "token"):
+
+        token = (self.token.secret or "").strip()
+        if token == "" or _is_legacy_demo_secret(token, "token") or _is_weak_secret(token):
             insecure.append("TOKEN__SECRET")
+
         db_password = (self.spring.datasource.druid.master.password or "").strip()
         if db_password == "" or (db_password == "root" and not is_local):
             insecure.append("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD")
-        if (self.hengda.secret or "").strip() == "" or _is_legacy_demo_secret(self.hengda.secret, "hengda"):
+
+        hengda = (self.hengda.secret or "").strip()
+        if hengda == "" or _is_legacy_demo_secret(hengda, "hengda") or _is_weak_secret(hengda):
             insecure.append("HENGDA__SECRET")
+
         if self.app.oss_enabled:
-            if (self.oss.access_key or "").strip() == "" or _is_legacy_demo_secret(self.oss.access_key, "oss_access"):
+            access_key = (self.oss.access_key or "").strip()
+            if access_key == "" or _is_legacy_demo_secret(access_key, "oss_access"):
                 insecure.append("OSS__ACCESS_KEY")
-            if (self.oss.secret_key or "").strip() == "" or _is_legacy_demo_secret(self.oss.secret_key, "oss_secret"):
+            secret_key = (self.oss.secret_key or "").strip()
+            if secret_key == "" or _is_legacy_demo_secret(secret_key, "oss_secret"):
                 insecure.append("OSS__SECRET_KEY")
         return insecure
 
     @model_validator(mode="after")
     def _reject_insecure_secrets(self) -> "AppSettings":
-        """密钥 fail-closed：缺失或仍是仓库内置值时拒绝启动（不区分环境）。
+        """密钥 fail-closed：缺失、仍是仓库内置值或明显占位值时拒绝启动（不区分环境）。
 
-        本地开发把 ``.env.example`` 复制成 ``.env`` 并填真实/开发值即可；仓库里
-        不再保存任何演示密钥明文（旧值按 SHA-256 指纹判为不合格）。
+        本地开发把 ``.env.example`` 复制成 ``.env`` 后必须显式填写真实/开发值；
+        仓库里不再包含可直接启动的密钥明文（历史值按 SHA-256 指纹判为不合格，
+        长度/熵/占位词不达标的示例值同样不合格）。
         OSS 凭据只在 ``app.oss_enabled=true`` 时校验。
         """
         insecure = self.insecure_secret_env_vars()

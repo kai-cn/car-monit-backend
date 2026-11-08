@@ -47,7 +47,9 @@ class TestTokenSection:
     def test_expire_time_is_minutes_and_reads_120(self, settings) -> None:
         assert settings.token.header == "Authorization"
         # 密钥不再有内置默认值；测试进程由 conftest 注入测试专用值。
-        assert settings.token.secret == "dGVzdC1vbmx5LWp3dC1zZWNyZXQtZm9yLXRlc3Rz"
+        assert settings.token.secret == (
+            "cHl0ZXN0LW9ubHktand0LXNpZ25pbmcta2V5LTAxMjM0NTY3ODlhYmNkZWZnaGlqa2xtbg=="
+        )
         # 注意：Java 注释写「默认30分钟」，实际配置是 120
         assert settings.token.expire_time == 120
 
@@ -129,6 +131,8 @@ class TestPythonOnlySwitches:
         assert settings.app.kafka_enabled is False
         assert settings.app.oss_enabled is False
         assert settings.app.elasticsearch_enabled is True
+        # 请求线程池上限默认与 Druid maxActive 对齐（不是 Tomcat 的 800）
+        assert settings.app.request_thread_limit == 200
 
 
 class TestSpringHelpers:
@@ -190,13 +194,31 @@ class TestSourcePrecedence:
 
 
 class TestFailClosedSecrets:
-    """密钥缺失/内置演示值必须拒绝启动（所有环境；local 不再豁免）."""
+    """密钥缺失/内置演示值/占位值必须拒绝启动（所有环境；local 不再豁免）.
+
+    统一用 ``_env_file=None`` 隔离 cwd 的 ``.env``：否则本地开发机按文档建了
+    ``.env`` 后，"密钥缺失"用例会被 dotenv 悄悄补齐而变成假绿。
+    """
 
     _REQUIRED = (
         "TOKEN__SECRET",
         "SPRING__DATASOURCE__DRUID__MASTER__PASSWORD",
         "HENGDA__SECRET",
     )
+
+    _VALID_TOKEN = (
+        "cHl0ZXN0LW9ubHktand0LXNpZ25pbmcta2V5LTAxMjM0NTY3ODlhYmNkZWZnaGlqa2xtbg=="
+    )
+    _VALID_HENGDA = "pytest-only-hengda-signing-key-4d8e1a6b2f9c0357"
+
+    def _base(self) -> dict:
+        """一套合法配置；各用例只在需要验证的分支上做替换。"""
+        return {
+            "is_localhost": "prod",
+            "token": {"secret": self._VALID_TOKEN},
+            "spring": {"datasource": {"druid": {"master": {"password": "prod-db-password"}}}},
+            "hengda": {"secret": self._VALID_HENGDA},
+        }
 
     def _clear_required(self, monkeypatch) -> None:
         for name in self._REQUIRED:
@@ -209,7 +231,7 @@ class TestFailClosedSecrets:
 
         self._clear_required(monkeypatch)
         with pytest.raises(ValidationError) as excinfo:
-            AppSettings(is_localhost="local")
+            AppSettings(_env_file=None, is_localhost="local")
         message = str(excinfo.value)
         assert "TOKEN__SECRET" in message
         assert "SPRING__DATASOURCE__DRUID__MASTER__PASSWORD" in message
@@ -225,13 +247,73 @@ class TestFailClosedSecrets:
         monkeypatch.setenv("HENGDA__SECRET", "b48381c4b98311ea90b100155d14fa3b")
 
         with pytest.raises(ValidationError, match="TOKEN__SECRET"):
-            AppSettings(is_localhost="local")
+            AppSettings(_env_file=None, is_localhost="local")
+
+    @pytest.mark.parametrize(
+        ("name", "override"),
+        [
+            ("TOKEN__SECRET", {"token": {"secret": "dev-only-jwt-secret-please-change"}}),
+            ("HENGDA__SECRET", {"hengda": {"secret": "dev-only-hengda-secret-please-change"}}),
+        ],
+    )
+    def test_env_example_placeholders_are_rejected_on_each_branch(
+        self, name: str, override: dict
+    ) -> None:
+        """``.env.example`` 曾内置的两个占位值必须在 prod 下被拒绝。
+
+        每个分支单独提供**其它合法密钥**，这样删掉 token/hengda 的任一指纹判断
+        都会立刻变红，而不是被"token 先报错"掩盖。
+        """
+        from pydantic import ValidationError
+
+        from app.settings import AppSettings
+
+        values = self._base()
+        values.update(override)
+        with pytest.raises(ValidationError, match=name):
+            AppSettings(_env_file=None, **values)
+
+    def test_env_example_ships_no_active_secret_or_profile_value(self) -> None:
+        """示例文件必须让部署者显式生成密钥/选择环境，不能直接启动。"""
+        from app.settings import PROJECT_ROOT
+
+        lines = (PROJECT_ROOT / ".env.example").read_text(encoding="utf-8").splitlines()
+        active = [line.strip() for line in lines if line.strip() and not line.lstrip().startswith("#")]
+        forbidden_prefixes = (
+            "IS_LOCALHOST=",
+            "TOKEN__SECRET=",
+            "HENGDA__SECRET=",
+            "SPRING__DATASOURCE__DRUID__MASTER__PASSWORD=",
+        )
+        assert [line for line in active if line.startswith(forbidden_prefixes)] == []
+
+    def test_legacy_hengda_fingerprint_is_rejected_independently(self) -> None:
+        from pydantic import ValidationError
+
+        from app.settings import AppSettings
+
+        values = self._base()
+        values["hengda"] = {"secret": "b48381c4b98311ea90b100155d14fa3b"}
+        with pytest.raises(ValidationError, match="HENGDA__SECRET"):
+            AppSettings(_env_file=None, **values)
+
+    @pytest.mark.parametrize("weak", ["short-secret", "a" * 40, "your-secret-here-" + "0" * 20])
+    def test_short_low_entropy_and_placeholder_values_are_rejected(self, weak: str) -> None:
+        """长度/熵/占位词校验挡住与 ``.env.example`` 同类的示例值。"""
+        from pydantic import ValidationError
+
+        from app.settings import AppSettings
+
+        values = self._base()
+        values["token"] = {"secret": weak}
+        with pytest.raises(ValidationError, match="TOKEN__SECRET"):
+            AppSettings(_env_file=None, **values)
 
     def test_local_still_allows_the_bundled_mysql_root_password(self, monkeypatch) -> None:
         from app.settings import AppSettings
 
         monkeypatch.setenv("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD", "root")
-        loaded = AppSettings(is_localhost="local")
+        loaded = AppSettings(_env_file=None, is_localhost="local")
         assert loaded.spring.datasource.druid.master.password == "root"
 
     def test_non_local_rejects_root_db_password(self, monkeypatch) -> None:
@@ -241,17 +323,12 @@ class TestFailClosedSecrets:
 
         monkeypatch.setenv("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD", "root")
         with pytest.raises(ValidationError, match="SPRING__DATASOURCE__DRUID__MASTER__PASSWORD"):
-            AppSettings(is_localhost="prod")
+            AppSettings(_env_file=None, is_localhost="prod")
 
     def test_real_secrets_are_accepted(self) -> None:
         from app.settings import AppSettings
 
-        loaded = AppSettings(
-            is_localhost="prod",
-            token={"secret": "real-jwt-secret"},
-            spring={"datasource": {"druid": {"master": {"password": "real-db-password"}}}},
-            hengda={"secret": "real-hengda-secret"},
-        )
+        loaded = AppSettings(_env_file=None, **self._base())
         assert loaded.insecure_secret_env_vars() == []
 
     def test_oss_keys_are_checked_only_when_enabled(self) -> None:
@@ -259,17 +336,33 @@ class TestFailClosedSecrets:
 
         from app.settings import AppSettings
 
-        base = {
-            "is_localhost": "prod",
-            "token": {"secret": "s"},
-            "spring": {"datasource": {"druid": {"master": {"password": "p"}}}},
-            "hengda": {"secret": "h"},
-        }
+        values = self._base()
         # app.oss_enabled 默认 False -> 不校验 OSS 凭据
-        AppSettings(**base)
+        AppSettings(_env_file=None, **values)
 
         with pytest.raises(ValidationError, match="OSS__ACCESS_KEY"):
-            AppSettings(**base, app={"oss_enabled": True})
+            AppSettings(_env_file=None, **values, app={"oss_enabled": True})
+
+    @pytest.mark.parametrize(
+        ("name", "oss"),
+        [
+            ("OSS__ACCESS_KEY", {"access_key": "jtwl_access_key", "secret_key": "minio.prod"}),
+            ("OSS__SECRET_KEY", {"access_key": "AKIAIOSFODNN7EXAMPLE", "secret_key": "minio.prod"}),
+        ],
+    )
+    def test_oss_legacy_values_are_rejected_on_each_branch(
+        self, name: str, oss: dict
+    ) -> None:
+        """OSS 的两个指纹分支各自独立覆盖（删除任一条都会变红）。"""
+        from pydantic import ValidationError
+
+        from app.settings import AppSettings
+
+        values = self._base()
+        values["app"] = {"oss_enabled": True}
+        values["oss"] = oss
+        with pytest.raises(ValidationError, match=name):
+            AppSettings(_env_file=None, **values)
 
 
 class TestYamlPath:

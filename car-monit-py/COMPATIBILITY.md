@@ -4904,7 +4904,7 @@ gantrycar,gantrytrade}/export`、`/base/{geometry,snapshotflow,feerecords}/expor
 | 项 | 变化 | 回退方式 |
 |---|---|---|
 | P1-1 | 请求线程池默认 200（与 Druid `maxActive` 对齐） | `APP__REQUEST_THREAD_LIMIT=800` |
-| P1-5 | 密钥 fail-closed（所有环境）：缺失或仍是仓库内置演示值则拒绝启动；本地开发复制 `.env.example` 为 `.env` | 配真实 `TOKEN__SECRET` / DB 口令 / `HENGDA__SECRET` |
+| P1-5 | 密钥 fail-closed（所有环境）：缺失、仍是仓库内置演示值、或命中占位词/长度（≥32）/熵（≥3.0 bits/char）校验时拒绝启动；`.env.example` 不再内置可直接启动的密钥，`IS_LOCALHOST` 也改为注释形式强制显式选择 | 按 `.env.example` 的说明生成随机值并配置 `TOKEN__SECRET` / DB 口令 / `HENGDA__SECRET` |
 | P1-8 | CORS 白名单；非 `local` 留空 = 拒绝跨域，`local` 留空 = 仅回环地址（localhost / 127.0.0.1 / [::1]） | `APP__CORS__ALLOWED_ORIGINS` |
 | P1-4/P1-9 | 日志按 logback 精确分级；trace 只进 slow；容量可配且按目录预算清理 | `LOGGING__FILE_*` |
 | P1-3 | lifespan 先停线程池 / 关闭 HTTP 客户端，再释放 DB/Redis | —（P2-16 因此关闭） |

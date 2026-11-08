@@ -27,9 +27,12 @@ from app.settings import reset_settings_cache
 
 # 密钥严格化后不再有静默默认值；测试进程用显式的测试专用值，
 # 真实联调可通过同名环境变量覆盖（例如 DB 口令 root）。
-os.environ.setdefault("TOKEN__SECRET", "dGVzdC1vbmx5LWp3dC1zZWNyZXQtZm9yLXRlc3Rz")
+os.environ.setdefault(
+    "TOKEN__SECRET",
+    "cHl0ZXN0LW9ubHktand0LXNpZ25pbmcta2V5LTAxMjM0NTY3ODlhYmNkZWZnaGlqa2xtbg==",
+)
 os.environ.setdefault("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD", "test-db-password")
-os.environ.setdefault("HENGDA__SECRET", "test-only-hengda-secret")
+os.environ.setdefault("HENGDA__SECRET", "pytest-only-hengda-signing-key-4d8e1a6b2f9c0357")
 
 
 @pytest.fixture(autouse=True)
