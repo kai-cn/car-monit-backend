@@ -5,6 +5,14 @@ name: ci
 # 迁移分支（car-monit-go-V2 / car-monit-rust-V2）与主分支目录结构一致，
 # 本文件可直接 cherry-pick 过去复用。
 #
+# 运行环境：Linux 构建 job 统一跑在 openEuler 24.03 LTS 容器
+# （runs-on: ubuntu-latest + container: openeuler/openeuler:24.03-lts；GitHub 托管 runner
+# 没有 openEuler 镜像，只能用容器方式）。
+#
+# 例外（已在对应 job 上注明）：
+# - C++ 走 windows-latest + MSVC：工程是 MSVC 专用（/utf-8、NOMINMAX）+ vcpkg x64-windows，
+#   Linux/ARM64 需要另一套构建配置，当前不在容器链路内。
+#
 # 未纳入：
 # - car-monit-cpp / car-monit-kotlin / car-monit-csharp：仓库内只有迁移 prompt 与 docs，
 #   没有任何源码或 CMakeLists.txt / gradle / csproj，无法建构建流水线（见 docs/ci-cd-pipeline-plan.md）。
@@ -96,15 +104,23 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.java == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          # 全仓所有 pom 只有 java.version=1.8；21/25 在本仓库无出处。
-          java-version: '8'
-          cache: maven
+      - name: 安装 OpenJDK 8 + Maven（欧拉仓库无 Temurin）
+        # 欧拉 24.03 官方仓库提供 java-1.8.0-openjdk-devel（8u412）；Temurin 不在欧拉仓库。
+        # OpenJDK 8 与 Temurin 8 同属 TCK 兼容实现，编译/运行行为一致，但不再与开发者本机
+        # 的 Temurin 发行版逐字节一致（只影响排障时的 JVM 构建号，不影响字节码目标 1.8）。
+        run: |
+          set -euo pipefail
+          dnf install -y java-1.8.0-openjdk-devel tar gzip curl
+          java -version
+          curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz -o /tmp/maven.tgz
+          tar -xzf /tmp/maven.tgz -C /opt
+          ln -sf /opt/apache-maven-3.9.9/bin/mvn /usr/local/bin/mvn
+          mvn -v
 
       - name: 编译（PR 快速门禁）
         run: mvn -B -q -DskipTests compile
@@ -138,6 +154,8 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.go == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
     defaults:
       run:
         working-directory: car-monit-go
@@ -147,10 +165,14 @@ jobs:
           # only-new-issues 要用 push 前的提交做 diff；多次提交的 push 需要完整历史
           fetch-depth: 0
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.24.x'
-          cache-dependency-path: car-monit-go/go.sum
+      - name: 安装 Go 1.24（欧拉仓库没有 1.24）
+        run: |
+          set -euo pipefail
+          dnf install -y tar gzip curl git
+          curl -fsSL https://go.dev/dl/go1.24.13.linux-amd64.tar.gz -o /tmp/go.tgz
+          tar -C /usr/local -xzf /tmp/go.tgz
+          echo "/usr/local/go/bin" >> "$GITHUB_PATH"
+          /usr/local/go/bin/go version
 
       - name: gofmt
         run: |
@@ -162,9 +184,9 @@ jobs:
           fi
 
       - name: go mod tidy 校验
-        run: |
-          go mod tidy
-          git diff --exit-code -- go.mod go.sum
+        # 容器内工作目录不是 git 仓库，`git diff` 会退化成 --no-index 比较两个文件；
+        # Go 1.23+ 的 `tidy -diff` 不依赖 git，有差异时非零退出。
+        run: go mod tidy -diff
 
       - name: build
         run: go build -buildvcs=false ./...
@@ -177,15 +199,14 @@ jobs:
 
       - name: golangci-lint
         # v7 才支持 golangci-lint v2.x；v6 + v2.1.6 会因参数/安装不兼容直接失败。
-        # only-new-issues：仓库现有 49 个历史 lint 问题（errcheck 6 / ineffassign 1 /
-        # staticcheck 12 / unused 30），不在本轮改业务代码；门禁只拦本次改动新增的问题，
-        # 历史债单独排期清理（见 docs/ci-cd-pipeline-plan.md §4）。
+        # 基线固定为 origin/master 的 merge-base：新分支首次推送时 push 事件没有 before
+        # 提交，only-new-issues 会把历史 49 条全部当成新增；merge-base 在 master 上等价于
+        # "只比上一个提交"，在迁移分支上则只拦分支自己引入的问题。
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.1.6
           working-directory: car-monit-go
-          args: --timeout=5m
-          only-new-issues: true
+          args: --timeout=5m --new-from-merge-base=origin/master
 
       - name: 权限点对拍（分支带脚本时）
         # 从 car-monit-go-V2 的 car-monit-go-ci.yml 迁入；master 没有该脚本，自动跳过。
@@ -312,21 +333,29 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    env:
+      # oss_client 用例断言 Java 实测的 +08:00 本地偏移，runner 默认 UTC 会失败。
+      # 与 api 侧同一处理：固定作业时区为应用目标时区，不放宽断言。
+      TZ: Asia/Shanghai
+    container:
+      image: openeuler/openeuler:24.03-lts
     defaults:
       run:
         working-directory: car-monit-rust
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          # 与 car-monit-rust/rust-toolchain.toml 保持一致；改版本时两处一起改。
-          toolchain: 1.90.0
-          components: rustfmt, clippy
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: car-monit-rust
+      - name: 安装 Rust 1.90 + 构建工具（rustup 官方链路）
+        run: |
+          set -euo pipefail
+          # tzdata 必须显式装：chrono 的 Local 依赖 zoneinfo，缺失时会退回 UTC，
+          # 让 oss_client 的 +08:00 断言假失败。
+          dnf install -y curl git gcc gcc-c++ make tar gzip tzdata
+          echo "时区检查: $(date '+%Y-%m-%dT%H:%M:%S%z')"
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | sh -s -- -y --profile minimal --default-toolchain 1.90.0 --component rustfmt --component clippy
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/rustc" --version
 
       - name: fmt
         # 迁移期先只做提示：全量 `cargo fmt --all` 会重排整个 crate，等单独提交。
@@ -378,34 +407,45 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.py == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
     defaults:
       run:
         working-directory: car-monit-py
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: pip
-          cache-dependency-path: car-monit-py/requirements.txt
+      - name: 从源码安装 Python 3.12（欧拉仓库没有 3.12）
+        # pyproject 要求 >=3.12；欧拉 24.03 仓库只到 3.11，因此源码编译（约 3-5 分钟）。
+        run: |
+          set -euo pipefail
+          dnf install -y gcc gcc-c++ make openssl-devel libffi-devel bzip2-devel \
+            zlib-devel xz-devel sqlite-devel tar gzip curl
+          curl -fsSL https://www.python.org/ftp/python/3.12.10/Python-3.12.10.tgz -o /tmp/py.tgz
+          tar -xzf /tmp/py.tgz -C /tmp
+          cd /tmp/Python-3.12.10
+          ./configure --prefix=/usr/local --with-ensurepip=install --quiet
+          make -j"$(nproc)" --quiet
+          make install --quiet
+          ln -sf /usr/local/bin/python3.12 /usr/local/bin/python3
+          /usr/local/bin/python3 -m pip --version
 
       - name: 安装依赖
-        run: pip install -r requirements.txt
+        run: python3 -m pip install -r requirements.txt
 
       - name: 语法门禁
-        run: python -m compileall -q app
+        run: python3 -m compileall -q app
 
       - name: 单元测试 + 覆盖率
         run: |
-          python -m pytest -q -m "not integration" \
+          python3 -m pytest -q -m "not integration" \
             --cov=app --cov-report=term-missing --cov-report=xml
 
       - name: 构建 wheel / sdist
         if: github.event_name != 'pull_request'
         run: |
-          pip install build
-          python -m build
+          python3 -m pip install build
+          python3 -m build
 
       - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request'
@@ -436,14 +476,20 @@ jobs:
     needs: changes
     if: github.event_name == 'workflow_dispatch' && inputs.run_integration
     runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
+    # 容器 job 与 services 在同一 Docker 网络：服务用「服务名 + 容器内端口」访问，
+    # 不能用宿主端口映射（127.0.0.1:3307）。
+    env:
+      SPRING__REDIS__HOST: redis
+      SPRING__REDIS__PORT: '6379'
+      SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://mysql:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
     services:
       mysql:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: ci-placeholder-password
           MYSQL_DATABASE: carmonitdb
-        ports:
-          - 3307:3306
         options: >-
           --health-cmd="mysqladmin ping -h127.0.0.1 -uroot -pci-placeholder-password"
           --health-interval=5s
@@ -451,8 +497,6 @@ jobs:
           --health-retries=30
       redis:
         image: redis:7-alpine
-        ports:
-          - 6379:6379
         options: >-
           --health-cmd="redis-cli ping"
           --health-interval=5s
@@ -464,22 +508,52 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: pip
-          cache-dependency-path: car-monit-py/requirements.txt
+      - name: 安装 Python 3.12 与 mysql 客户端
+        run: |
+          set -euo pipefail
+          dnf install -y gcc gcc-c++ make openssl-devel libffi-devel bzip2-devel \
+            zlib-devel xz-devel sqlite-devel tar gzip curl mariadb
+          curl -fsSL https://www.python.org/ftp/python/3.12.10/Python-3.12.10.tgz -o /tmp/py.tgz
+          tar -xzf /tmp/py.tgz -C /tmp
+          cd /tmp/Python-3.12.10
+          ./configure --prefix=/usr/local --with-ensurepip=install --quiet
+          make -j"$(nproc)" --quiet
+          make install --quiet
+          ln -sf /usr/local/bin/python3.12 /usr/local/bin/python3
+          python3 --version
+          mysql --version
 
       - name: 导入基线 schema
         run: |
-          mysql --default-character-set=utf8mb4 -h127.0.0.1 -P3307 -uroot -pci-placeholder-password carmonitdb \
+          mysql --default-character-set=utf8mb4 -hmysql -P3306 -uroot -pci-placeholder-password carmonitdb \
             < ../car-monit-rust/docs/01-baseline/schema.carmonitdb.local.sql
 
       - name: 安装依赖
-        run: pip install -r requirements.txt
+        run: python3 -m pip install -r requirements.txt
+
+      - name: 打印生效配置并探活
+        # 容器 job 里服务必须用服务名；这一步把解析结果与连通性打出来，
+        # 失败时能直接看出是"配置没覆盖"还是"网络不通"，不用再靠猜。
+        run: |
+          python3 - <<'PY'
+          from app.settings import get_settings
+          s = get_settings()
+          print("redis:", s.spring.redis.host, s.spring.redis.port)
+          print("jdbc:", s.spring.datasource.druid.master.url.split("@")[-1])
+          PY
+          python3 - <<'PY'
+          import socket
+          for host, port in (("mysql", 3306), ("redis", 6379)):
+              try:
+                  with socket.create_connection((host, port), timeout=5):
+                      print(f"{host}:{port} OK")
+              except Exception as e:
+                  print(f"{host}:{port} FAIL {e}")
+                  raise
+          PY
 
       - name: 集成测试
-        run: python -m pytest tests/integration -v -m integration
+        run: python3 -m pytest tests/integration -v -rs -m integration
 
   # ---------------------------------------------------------------------------
   # 与 Java 端点对拍：需要可达的两端基址，仅手动触发。
