@@ -3762,6 +3762,10 @@ OSHI 的 `getSystemCpuLoadTicks()` 在 Linux 上返回 **tick**（`HZ = 100`）�
 psutil 的 `cpu_times()` 返回**秒**。为了保持 `Cpu.total` 与 Java 侧同一量级，
 `_TICKS_PER_SECOND = 100.0` 把秒乘回 tick 口径。
 
+另外 `OSHI_WAIT_SECOND = 1000` 的**固定 1 秒采样等待**也照抄（Java
+`Util.sleep(1000)`），不是 Python 新增的耗时；要缩短只能改常量并接受
+`Cpu` 百分比精度变化。测试通过 monkeypatch 该常量把等待降到 0。
+
 百分比字段（`sys` / `used` / `wait` / `free`）是**比值**，与单位无关，所以这条差异
 except `total` 之外看不出来。Windows 上 psutil 不给 `nice` / `irq` / `softirq` /
 `steal` / `iowait`，一律按 0 处理（OSHI 在 Windows 上同样恒为 0）。
