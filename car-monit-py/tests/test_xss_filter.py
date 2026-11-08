@@ -23,17 +23,18 @@ from app.common.utils.escape_util import clean
 from app.middleware.xss import XssMiddleware
 
 
-def _xss_settings(enabled: bool = True) -> Any:
+def _xss_settings(enabled: bool = True, max_body_bytes: int = 1024 * 1024) -> Any:
     return SimpleNamespace(
         xss=SimpleNamespace(
             enabled=enabled,
             url_patterns="/system/*,/monitor/*,/tool/*",
             excludes="/system/notice",
+            max_body_bytes=max_body_bytes,
         )
     )
 
 
-def _build_app(enabled: bool = True) -> TestClient:
+def _build_app(enabled: bool = True, max_body_bytes: int = 1024 * 1024) -> TestClient:
     app = FastAPI()
 
     @app.get("/system/echo")
@@ -45,6 +46,17 @@ def _build_app(enabled: bool = True) -> TestClient:
             "body": (await request.body()).decode("utf-8"),
             "content_length": request.headers.get("content-length"),
         }
+
+    @app.post("/system/raw")
+    async def raw(request: Request) -> Any:
+        return {"hex": (await request.body()).hex()}
+
+    @app.post("/system/upload")
+    async def upload(request: Request) -> Any:
+        parsed = await request.form()
+        upload_file = parsed.get("file")
+        content = await upload_file.read() if hasattr(upload_file, "read") else b""
+        return {"note": parsed.get("note"), "file": content.decode("utf-8")}
 
     @app.post("/system/form")
     async def form(request: Request) -> Any:
@@ -81,7 +93,7 @@ def _build_app(enabled: bool = True) -> TestClient:
             "body": (await request.body()).decode("utf-8"),
         }
 
-    app.add_middleware(XssMiddleware, settings=_xss_settings(enabled))
+    app.add_middleware(XssMiddleware, settings=_xss_settings(enabled, max_body_bytes))
     return TestClient(app)
 
 
@@ -184,6 +196,44 @@ class TestXssMiddleware:
         payload = client.post(f"/system/echo?q={token}", json={"name": token}).json()
         assert payload["q"] == token
         assert json.loads(payload["body"]) == {"name": token}
+
+    def test_oversized_json_body_returns_413(self) -> None:
+        """body 超过 ``xss.max_body_bytes`` 时不进入清洗，直接 413."""
+        client = _build_app(max_body_bytes=16)
+        response = client.post("/system/echo", json={"name": "x" * 100})
+        assert response.status_code == 413
+        assert response.json()["msg"].startswith("请求体超过 XSS 清洗上限")
+
+    def test_oversized_form_body_returns_413(self) -> None:
+        client = _build_app(max_body_bytes=16)
+        response = client.post(
+            "/system/form",
+            content="q=" + "a" * 100,
+            headers={"content-type": "application/x-www-form-urlencoded"},
+        )
+        assert response.status_code == 413
+
+    def test_non_utf8_json_body_is_passed_through(self) -> None:
+        """非法 UTF-8 不能静默替换字节：原样交给下游，由下游按自己的规则报错."""
+        client = _build_app()
+        payload = b'{"name":"\xd5\xe3<script>x</script>"}'
+        response = client.post(
+            "/system/raw", content=payload, headers={"content-type": "application/json"}
+        )
+        assert response.status_code == 200
+        assert bytes.fromhex(response.json()["hex"]) == payload
+
+    def test_multipart_body_is_not_rewritten(self) -> None:
+        """multipart 只处理文件原样透传；文本字段不清洗（与 Java 的差异已登记）."""
+        client = _build_app()
+        token = "<script>x</script>"
+        response = client.post(
+            "/system/upload",
+            files={"file": ("a.txt", b"<script>file</script>", "text/plain")},
+            data={"note": token},
+        )
+        assert response.status_code == 200
+        assert response.json() == {"note": token, "file": "<script>file</script>"}
 
     def test_create_app_registers_xss_as_the_outermost_middleware(self) -> None:
         from app.main import create_app

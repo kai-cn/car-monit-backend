@@ -324,6 +324,9 @@ class XssSection(_Section):
     enabled: bool = True
     excludes: str = "/system/notice"
     url_patterns: str = "/system/*,/monitor/*,/tool/*"
+    #: Python-only：清洗前允许缓冲的 JSON/form body 上限（默认 1MB）。
+    #: 超过上限直接回 413，避免恶意大包让中间件无限占用内存；``0`` = 不限制。
+    max_body_bytes: int = 1024 * 1024
 
 
 class OssSection(_Section):

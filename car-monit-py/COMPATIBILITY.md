@@ -4859,7 +4859,12 @@ gantrycar,gantrytrade}/export`、`/base/{geometry,snapshotflow,feerecords}/expor
 - **范围**：仅非 `GET` / `DELETE`；URL 命中 `/system/*`、`/monitor/*`、`/tool/*`；
   排除 `/system/notice`；清洗 query / form / JSON body 中的**字符串值**，并 `trim`。
 - **配置**：`xss.enabled` / `xss.excludes` / `xss.urlPatterns` 全部生效（§10 的旧声明作废）。
-- **回归**：`tests/test_xss_filter.py`（含 `/system/notice` 豁免、GET 不改写、嵌套 JSON）。
+- **Python-only 保护**：`xss.max_body_bytes`（默认 1MB）限制清洗前缓冲的 body 大小，
+  超过直接回 HTTP 413；Java 没有等价行为（其风险由容器线程模型承担）。``0`` = 不限制。
+- **非 UTF-8**：body / query 严格按 UTF-8 解码，失败则**不清洗、原样放行**并记 WARNING；
+  不再用 `errors="replace"` 静默改写字节（否则会破坏下游 JSON/form 解析）。
+- **回归**：`tests/test_xss_filter.py`（含 `/system/notice` 豁免、GET 不改写、嵌套 JSON、
+  multipart 透传、大 body 413、非 UTF-8 透传）。
 - **差异**：清洗发生在 ASGI 层，`request.get_json()` 之后读取的是清洗后的值；Java 是
   `HttpServletRequestWrapper`，同样在进入 MVC 前完成，可观察结果一致。
 

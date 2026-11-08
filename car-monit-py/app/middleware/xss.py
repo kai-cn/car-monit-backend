@@ -33,6 +33,11 @@ Python 等价实现
 * ``multipart/form-data`` 的**文本字段**没有清洗：Java 的 Servlet 容器会解析 multipart
   并让 wrapper 清洗字段值；Python 侧重建 multipart 会破坏文件流，故只保留文件原样。
   本项目命中 XSS 过滤的 multipart 端点只有 ``/system/file`` 的上传，没有文本字段。
+* ``xss.max_body_bytes``（Python-only，默认 1MB）：清洗前最多缓冲这么多字节；
+  超过上限时直接返回 413，避免恶意大包把中间件内存放大。``0`` 表示不限制。
+* body / query 不是合法 UTF-8 时**不清洗、按原样放行**（并记 WARNING）。
+  Java 的 ``getInputStream`` 用容器已解码的字符流，Python 若用 ``errors="replace"``
+  重编码会静默改写内容，反而破坏下游的 JSON 解析。
 * Java 的 ``getParameterMap`` 不走 ``getParameterValues``，审计日志可能看到未清洗值；
   Python 在进入路由前统一清洗 query/form，所有下游（包括审计）看到的是清洗后的值。
   这是比 Java 更严格的行为，不影响安全语义。
@@ -40,6 +45,7 @@ Python 等价实现
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 from urllib.parse import parse_qsl, urlencode
@@ -58,11 +64,22 @@ _JSON_CONTENT_TYPE = "application/json"
 _FORM_CONTENT_TYPE = "application/x-www-form-urlencoded"
 
 
+class _BodyTooLarge(Exception):
+    """body 超过 ``xss.max_body_bytes``；由中间件转成 413."""
+
+
 def _header(headers: List[Tuple[bytes, bytes]], name: bytes) -> str:
     for key, value in headers:
         if key.lower() == name:
             return value.decode("latin-1")
     return ""
+
+
+def _content_length(headers: List[Tuple[bytes, bytes]]) -> Optional[int]:
+    raw = _header(headers, b"content-length").strip()
+    if not raw.isdigit():
+        return None
+    return int(raw)
 
 
 def _servlet_pattern_match(pattern: str, path: str) -> bool:
@@ -101,16 +118,48 @@ def _clean_values(query: str) -> str:
     return urlencode(cleaned, doseq=True, encoding="utf-8", errors="replace")
 
 
-async def _read_body(receive: Receive) -> bytes:
+async def _read_body(receive: Receive, limit: int) -> bytes:
+    """读完整个请求体；``limit > 0`` 时超过上限抛 :class:`_BodyTooLarge`.
+
+    超限时继续把剩余 chunk 读掉（不保存），避免连接层残留半截请求体。
+    """
     chunks: List[bytes] = []
+    total = 0
     while True:
         message = await receive()
         if message["type"] != "http.request":
             break
-        chunks.append(message.get("body", b""))
+        chunk = message.get("body", b"")
+        total += len(chunk)
+        if limit > 0 and total > limit:
+            if message.get("more_body", False):
+                while True:
+                    extra = await receive()
+                    if extra["type"] != "http.request" or not extra.get("more_body", False):
+                        break
+            raise _BodyTooLarge
+        chunks.append(chunk)
         if not message.get("more_body", False):
             break
     return b"".join(chunks)
+
+
+async def _send_body_too_large(send: Send, limit: int) -> None:
+    """Java 没有等价行为：超过 Python-only 的 XSS 缓冲上限时直接 413."""
+    body = json.dumps(
+        {"code": 500, "msg": f"请求体超过 XSS 清洗上限（{limit} 字节）"}
+    ).encode("utf-8")
+    await send(
+        {
+            "type": "http.response.start",
+            "status": 413,
+            "headers": [
+                (b"content-type", b"application/json;charset=utf-8"),
+                (b"content-length", str(len(body)).encode("latin-1")),
+            ],
+        }
+    )
+    await send({"type": "http.response.body", "body": body})
 
 
 def _replay(body: bytes) -> Receive:
@@ -166,37 +215,42 @@ class XssMiddleware:
         query = scope.get("query_string", b"")
         if query:
             try:
-                cleaned_query = _clean_values(
-                    query.decode("utf-8", errors="replace")
-                )
+                cleaned_query = _clean_values(query.decode("utf-8"))
                 scope["query_string"] = cleaned_query.encode("utf-8")
+            except UnicodeDecodeError:
+                logger.warning("[XSS] query 不是合法 UTF-8，按原样放行")
             except Exception:  # noqa: BLE001 - 清洗失败时按原样放行，不能打断请求
                 logger.warning("[XSS] query 清洗失败，按原样放行", exc_info=True)
 
         content_type = _header(headers, b"content-type").lower()
         new_body: Optional[bytes] = None
-        body: Optional[bytes] = None
-        if content_type.startswith(_JSON_CONTENT_TYPE):
-            body = await _read_body(receive)
+        is_json = content_type.startswith(_JSON_CONTENT_TYPE)
+        is_form = content_type.startswith(_FORM_CONTENT_TYPE)
+        if is_json or is_form:
+            limit = int(getattr(self._settings.xss, "max_body_bytes", 0) or 0)
+            declared = _content_length(headers)
+            if limit > 0 and declared is not None and declared > limit:
+                await _send_body_too_large(send, limit)
+                return
+            try:
+                body = await _read_body(receive, limit)
+            except _BodyTooLarge:
+                await _send_body_too_large(send, limit)
+                return
             try:
                 if body:
-                    text = body.decode("utf-8", errors="replace")
-                    new_body = java_trim(escape_util.clean(text)).encode("utf-8")
+                    text = body.decode("utf-8")  # 严格解码：非法字节不静默改写
+                    if is_json:
+                        new_body = java_trim(escape_util.clean(text)).encode("utf-8")
+                    else:
+                        new_body = _clean_values(text).encode("utf-8")
                 else:
                     new_body = body
-            except Exception:  # noqa: BLE001 - 同上
-                logger.warning("[XSS] JSON body 清洗失败，按原样放行", exc_info=True)
+            except UnicodeDecodeError:
+                logger.warning("[XSS] body 不是合法 UTF-8，跳过清洗并按原样放行")
                 new_body = body
-        elif content_type.startswith(_FORM_CONTENT_TYPE):
-            body = await _read_body(receive)
-            try:
-                if body:
-                    text = body.decode("utf-8", errors="replace")
-                    new_body = _clean_values(text).encode("utf-8")
-                else:
-                    new_body = body
             except Exception:  # noqa: BLE001 - 同上
-                logger.warning("[XSS] form body 清洗失败，按原样放行", exc_info=True)
+                logger.warning("[XSS] body 清洗失败，按原样放行", exc_info=True)
                 new_body = body
 
         if new_body is not None:
