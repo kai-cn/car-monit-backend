@@ -36,9 +36,6 @@ import (
 // misfireThreshold 对应 ScheduleConfig 中的 org.quartz.jobStore.misfireThreshold=12000。
 const misfireThreshold = 12 * time.Second
 
-// maxMisfiresToHandleAtATime 对应 maxMisfiresToHandleAtATime=10（用于限制补跑次数）。
-const maxMisfiresToHandleAtATime = 10
-
 // jobEntry 等价于一个 JobDetail + CronTrigger。
 type jobEntry struct {
 	sched *Scheduler
@@ -339,8 +336,7 @@ func (e *jobEntry) loop() {
 // advance 计算下一次触发时间，并按 misfire 策略处理“已经错过”的触发点。
 // JAVA 对照: CronTrigger 的 misfire 指令。
 //
-// DIFF: 精确复刻 Quartz 需要重放每一次错过的触发；这里按 maxMisfiresToHandleAtATime 的意图
-// 收敛为“错过的触发最多补跑一次”：
+// DIFF: 精确复刻 Quartz 需要重放每一次错过的触发；这里收敛为“错过的触发最多补跑一次”：
 //   - 0（默认 / smart policy）：补跑一次后继续
 //   - 1（ignore misfires，忽略错过、立即触发执行）：补跑一次后继续
 //   - 2（fire and proceed，触发一次执行）：补跑一次后继续

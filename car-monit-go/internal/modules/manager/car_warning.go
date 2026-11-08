@@ -447,12 +447,3 @@ func (h *handler) queryWarningToday(c *gin.Context) []*carWarningInfo {
 	}
 	return *(dest.(*[]*carWarningInfo))
 }
-
-// updateRedisWarningList 对应 updateRedisWarningList（供定时任务调用）。
-func (h *handler) updateRedisWarningList(c *gin.Context) {
-	rows := h.queryWarningToday(c)
-	_ = h.app.Cache.SetJava(c.Request.Context(), carWarningListKey, rows, time.Duration(cacheTTL), cache.CarWarningInfoJava)
-}
-
-// sliceLenOf 返回 *[]T 的长度。
-func sliceLenOf(dest any) int64 { return sliceLen(dest) }

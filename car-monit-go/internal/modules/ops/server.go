@@ -18,6 +18,7 @@ package ops
 
 import (
 	"fmt"
+	"go/build"
 	"math"
 	"net"
 	"os"
@@ -239,7 +240,7 @@ func collectJvm(memory *mem.VirtualMemoryStat) *serverJvm {
 		Usage:     javaFloat(javaRound(javaDiv(used, total, 4)*100, 2)),
 		Name:      "Go " + runtime.Version() + " " + runtime.GOOS + "/" + runtime.GOARCH,
 		Version:   runtime.Version(),
-		Home:      runtime.GOROOT(),
+		Home:      build.Default.GOROOT,
 		StartTime: processStartTime.Format("2006-01-02 15:04:05"),
 		RunTime:   javaTimeDistance(time.Now(), processStartTime),
 		InputArgs: "[" + strings.Join(os.Args, ", ") + "]",

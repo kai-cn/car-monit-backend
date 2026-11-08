@@ -316,18 +316,12 @@ func (h *handler) suspiciousCheck(c *gin.Context) {
 	// 删除异常车辆信息（物理删除）
 	_ = h.app.DB.WithContext(ctx).Exec("DELETE FROM car_except_record WHERE car_id = ?", carID).Error
 
-	escapedType := ""
 	escapedAmount := 0.0
 	for _, check := range checkList {
-		addCheckType := isNull(check.EscapedType)
-		if !strings.Contains(escapedType, addCheckType) {
-			escapedType += addCheckType + ","
-		}
 		if check.DifAmount != nil {
 			escapedAmount += *check.DifAmount
 		}
 	}
-	escapedType = deleteEnd(escapedType)
 
 	if isExcept == "1" {
 		// 查询车辆（重点车辆库）

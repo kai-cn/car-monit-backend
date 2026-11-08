@@ -304,9 +304,10 @@ func readBalanced(text string, openPos int) (string, int, error) {
 			index = after
 			continue
 		}
-		if ch == '(' {
+		switch ch {
+		case '(':
 			depth++
-		} else if ch == ')' {
+		case ')':
 			depth--
 			if depth == 0 {
 				return text[openPos+1 : index], index + 1, nil
