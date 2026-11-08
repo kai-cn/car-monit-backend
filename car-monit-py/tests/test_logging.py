@@ -252,6 +252,90 @@ class TestTraceIdFilter:
         assert record.trace_id == "-"
 
 
+class _RecordingHandler(logging.Handler):
+    def __init__(self) -> None:
+        super().__init__()
+        self.records: list = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.records.append(record)
+
+
+def _traced_client():
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from app.middleware.trace_id import TraceIdMiddleware
+
+    app = FastAPI()
+
+    @app.get("/ok")
+    def ok() -> dict:
+        return {"ok": True}
+
+    app.add_middleware(TraceIdMiddleware, settings=get_settings())
+    return TestClient(app)
+
+
+class TestTraceIdInRequestLogs:
+    """日志的 trace 列必须拿到真实值 —— Java 是先打日志、再 clear()."""
+
+    def _handler(self) -> _RecordingHandler:
+        handler = _RecordingHandler()
+        handler.addFilter(TraceIdFilter())
+        return handler
+
+    def test_completion_log_keeps_the_trace_id(self) -> None:
+        logger = logging.getLogger("app.middleware.trace_id")
+        handler = self._handler()
+        logger.addHandler(handler)
+        try:
+            response = _traced_client().get("/ok", headers={"X-Trace-Id": "CLIENT-TRACE-123"})
+        finally:
+            logger.removeHandler(handler)
+            handler.close()
+
+        assert response.headers["x-trace-id"] == "CLIENT-TRACE-123"
+        completion = [
+            record
+            for record in handler.records
+            if record.getMessage().startswith("[请求完成]")
+        ]
+        assert completion
+        assert completion[-1].trace_id == "CLIENT-TRACE-123"
+
+    def test_slow_request_log_keeps_the_trace_id(self, monkeypatch) -> None:
+        """回归 sys-slow.log 里的 ``[-] ... TraceId=CLIENT-TRACE-123``."""
+        from app.middleware import trace_id as trace_id_module
+
+        class _Clock:
+            calls = 0
+
+            def perf_counter(self) -> float:
+                type(self).calls += 1
+                # 第一次是 dispatch 的 start，之后都返回 4s，稳定触发慢请求阈值。
+                return 0.0 if type(self).calls == 1 else 4.0
+
+        monkeypatch.setattr(trace_id_module, "time", _Clock())
+        logger = logging.getLogger("app.middleware.trace_id")
+        handler = self._handler()
+        logger.addHandler(handler)
+        try:
+            response = _traced_client().get("/ok", headers={"X-Trace-Id": "CLIENT-SLOW-123"})
+        finally:
+            logger.removeHandler(handler)
+            handler.close()
+
+        assert response.headers["x-trace-id"] == "CLIENT-SLOW-123"
+        slow = [
+            record
+            for record in handler.records
+            if record.getMessage().startswith("[慢请求告警]")
+        ]
+        assert slow
+        assert slow[-1].trace_id == "CLIENT-SLOW-123"
+
+
 class TestMilliSecondFormatter:
     """Logback ``%d{HH:mm:ss.SSS}`` —— Python 的 %(asctime)s 没有毫秒指令。"""
 
