@@ -297,6 +297,32 @@ Linux 构建 job 改为 `runs-on: ubuntu-latest` + `container: openeuler/openeul
 
 > 结论：V3 的 Java 目标实现本身可构建；剩余红灯一半是 V3 自身的 lint 债（需 V3 负责人清理），一半是已修好的跨平台工装。后者需等 runner 恢复后复验。
 
+## 12. 两类红灯的区分（务必分开读）
+
+| 形态 | 判定依据 | 含义 |
+|---|---|---|
+| **额度/runner 未分配** | job `started_at` 与 `completed_at` 相差 1–2 秒、`steps: []`、`runner_id: 0`、`runner_name: ""`；run 长期 `pending` | **代码没跑过**，不是失败。不要当成代码红 |
+| **代码/工装失败** | job 有 `runner_name`（如 `GitHub Actions 1000000524`）、有具体失败 step、日志可下载 | 真实失败，需要修 |
+
+本轮出现的 `changes` job 连续两次 2 秒 failure 属于**第一类**（run `42512454499`、`42514310305`），后续 job 全部 skipped。
+
+## 13. rust / py 两处既有债的处理（2026-11-09）
+
+### rust：按 api 侧方式固定时区，不改断言
+
+- `oss_client::bucket_rows_take_owner_from_root` 断言 `+08:00`，runner 默认 UTC。
+- **处理**：恢复原断言（`starts_with("2021-05-06T08:36:40.000")` + `ends_with("+08:00")`），在 rust job 加 `env: TZ: Asia/Shanghai`；容器内**显式安装 `tzdata`**，否则 chrono 的 `Local` 会退回 UTC 造成假失败。
+- 本地验证：`TZ=Asia/Shanghai cargo test --lib oss_client` → **5 passed**。
+- 已同步：master `2e05d12`、V3 `6db5fc2`、rust-V2 `d2338ac`、go-V2 `099cf01`、py-V2 `f099ee1`、cpp-local `824936d`。
+
+### py：两个独立原因，都已根治
+
+1. **生成器路径分隔符**：`gen_mapping_docs.py` 用 `config["controller_dir"].replace("/", "\\")` 匹配 Java 路径，Linux 上是 `/` → 匹配为 0，产出空表。改为两侧统一 posix 比较（`test_mapping_docs.py` 同步同口径）。
+2. **文档确实过期**：V3 分支新增 `BigScreenExportController`（`ruoyi-admin/.../manager/bigscreen/`），但 `MAPPING_MANAGER.md` §4 没有它。已在 V3 工作树重跑生成器，`MAPPING_BASE.md` / `MAPPING_MANAGER.md` 更新。
+- 本地验证（V3 工作树）：`pytest tests/test_mapping_docs.py` → **16 passed**（含 `test_generator_is_idempotent`）。
+
+**V3 上仍存在的真实失败（未改业务代码）**：`go` job 的 `golangci-lint` 报 V3 自身引入的 unused / ST1005 问题，属 V3 代码质量债。
+
 ## 5. 实施进度
 
 | 阶段 | 状态 | 文件 |
