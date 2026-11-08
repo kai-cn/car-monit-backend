@@ -119,6 +119,6 @@ curl -X DELETE 'http://backend:port/monitor/bigscreen/gray/stats-api-first' -H '
 
 | 缺口 | 当前 backend 行为 | api 补齐后 |
 |---|---|---|
-| 展示导出 `plate_color_name` 列 | 旧同步 Excel 已含；V3 展示导出列由 api 白名单控制，暂不含 | api 增加该列后加入 `ExportPolicy` 默认字段 |
-| `/api/v3/export/capabilities` | 404 → 全字段维度过滤拒绝 | 返回 `fullDimensionFilters=true` 后自动放开（5 分钟探测） |
+| 展示导出 `plate_color_name` | fee 已支持并默认输出；snapshot 仍未声明，显式请求会 400 | api 在 snapshot `displayFields` 声明后自动可用 |
+| `/api/v3/export/capabilities` | **已实现**：按表矩阵放开（trail 维度过滤仍拒绝） | — |
 | 导出字节级续传 | `/resume` 按原参数重新提交（`resumeMode=resubmit`） | api 提供 pause/resume 后改为真正续传 |
