@@ -19,7 +19,12 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.base.domain.ZdataTrailFitting;
 import com.ruoyi.base.service.IZdataTrailFittingService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
+import com.ruoyi.common.core.page.PageDomain;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.core.page.TableSupport;
+import com.ruoyi.integration.api.ApiClientException;
+import com.ruoyi.integration.api.ApiPageResult;
+import com.ruoyi.integration.api.TrafficApiClient;
 
 /**
  * 车辆出入口拟合轨迹Controller
@@ -34,15 +39,26 @@ public class ZdataTrailFittingController extends BaseController {
     @Autowired
     private IZdataTrailFittingService zdataTrailFittingService;
 
+    @Autowired
+    private TrafficApiClient trafficApiClient;
+
     /**
-     * 查询车辆出入口拟合轨迹列表
+     * 查询车辆出入口拟合轨迹列表（统一走 api，不在请求线程直查分表）
      */
     @GetMapping("/list")
     public TableDataInfo list(ZdataTrailFitting zdataTrailFitting) {
-        startPage();
-        // zdataTrailFitting.setTenantId(SecurityUtils.getTenantId()); // 查询我自己单位的租户
-        List<ZdataTrailFitting> list = zdataTrailFittingService.selectZdataTrailFittingList(zdataTrailFitting);
-        return getDataTable(list);
+        PageDomain page = TableSupport.buildPageRequest();
+        int pageNum = page.getPageNum() == null ? 1 : page.getPageNum();
+        int pageSize = page.getPageSize() == null ? 10 : page.getPageSize();
+        try {
+            ApiPageResult<ZdataTrailFitting> result =
+                    trafficApiClient.trailFittingPage(zdataTrailFitting,
+                            pageNum, pageSize, ZdataTrailFitting.class);
+            return FlowApiSupport.page(result);
+        } catch (ApiClientException e) {
+            logger.warn("[拟合轨迹] api 查询失败 code={} msg={}", e.getCode(), e.getMessage());
+            return FlowApiSupport.error(e);
+        }
     }
 
 

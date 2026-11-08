@@ -10,17 +10,24 @@ import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.constant.HttpStatus;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.page.PageDomain;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.core.page.TableSupport;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.common.utils.poi.ExcelUtil;
+import com.ruoyi.integration.api.ApiClientException;
+import com.ruoyi.integration.api.ApiPageResult;
+import com.ruoyi.integration.api.TrafficApiClient;
 import com.ruoyi.manager.domain.CarTrackInfo;
 import com.ruoyi.manager.service.ICarQueryLogService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
+import com.ruoyi.manager.service.bigscreen.FeatureSwitchService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -54,6 +61,15 @@ public class CarTrackInfoController extends BaseController {
     @Autowired
     private ICarQueryLogService carQueryLogService;
 
+    @Autowired
+    private TrafficApiClient trafficApiClient;
+
+    @Autowired
+    private FeatureSwitchService featureSwitchService;
+
+    @Value("${bigscreen.trail.mode:api}")
+    private String trailMode;
+
 
 
     /**
@@ -77,128 +93,107 @@ public class CarTrackInfoController extends BaseController {
     @GetMapping("/listByCarId")
     public TableDataInfo listByCarId(ZdataTrailTracks zdataTrailTracks) {
 
-        // ----------------------- 查询自己表结构
         zdataTrailTracks.setCarNo(CommonUtil.isNull(zdataTrailTracks.getCarNo()));
         if (CommonUtil.isBlank(zdataTrailTracks.getCarNo())) {
             zdataTrailTracks.setCarNo("-1");
         }
 
-        startPage();
-        List<ZdataTrailTracks> carlist = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
+        PageDomain page = TableSupport.buildPageRequest();
+        int pageNum = page.getPageNum() == null ? 1 : page.getPageNum();
+        int pageSize = page.getPageSize() == null ? 10 : page.getPageSize();
 
-        // 如果查询数据为空
-        long totalNum = new PageInfo(carlist).getTotal();
-
-        List<TrailInfo> rtnList = new ArrayList<>();
-        if (null != carlist && carlist.size() > 0) {
-            for (ZdataTrailTracks tracksBo : carlist) {
-                String keyValue = tracksBo.getTrackJosn(); // 行驶轨迹
-                List<TrailBo> josnList = new ArrayList<TrailBo>();
-                if (CommonUtil.isNotBlank(keyValue)) {
-                    josnList = JSON.parseArray(keyValue, TrailBo.class);
-                    tracksBo.setTrailPoints("");  // 行驶轨迹
-                    tracksBo.setTrackJosn("");
-                    String carNo = CommonUtil.isNull(tracksBo.getPlateKey());
-                    TrailInfo trailInfo = new TrailInfo();
-                    trailInfo.setTracks(tracksBo);
-                    trailInfo.setTrailList(josnList);
-                    trailInfo.setTrailUuid(carNo);
-
-                    // 路线
-                    List<Geometry> raodTrailList = new ArrayList<>();
-                    trailInfo.setRaodTrailList(raodTrailList);
-
-                    // 集合列表
-                    TrailDevCountBO trailDevCountBO = new TrailDevCountBO();
-                    Integer exceptNum = 0;
-                    List<TrailDevBO> TrailDevList = new ArrayList<>();
-                    trailDevCountBO.setExceptNum(exceptNum);
-                    trailDevCountBO.setTrailDevList(TrailDevList);
-                    trailInfo.setTrailDevCountBO(trailDevCountBO);
-
-
-                    rtnList.add(trailInfo);
-                }
-            }
-        }else{
-            // ----------------------- 查询接口
-            CarParaVO carParaVO = new CarParaVO();
-            carParaVO.setCarNo(zdataTrailTracks.getCarNo()); // 车牌号
-           /* carParaVO.setApplyTime1(zdataTrailTracks.getApplyTime1());
-            carParaVO.setApplyTime2(zdataTrailTracks.getApplyTime2());*/
-            carParaVO.setPageNum(1);
-            carParaVO.setPageSize(20);
-
-            TableDataInfo tableDataInfo = httpSysUtilApiService.carTrackQueryByCarNo(carParaVO);
-
-            List<TrailInfo> trailList = new ArrayList<>();
-            if (null != tableDataInfo.getRows() && tableDataInfo.getRows().size() > 0) {
-                String trackJosn =JSON.toJSONString(tableDataInfo.getRows());
-                trailList = JSON.parseArray(trackJosn, TrailInfo.class);
-               /* trailList = trailList.stream().sorted(Comparator.comparing(TrailInfo::getEnterTime).reversed())
-                        .collect(Collectors.toList());*/
-
-                // 车辆的轨迹
-                String historyKey = Constants.car_history_trail + zdataTrailTracks.getCarNo();
-                redisCache.setCacheObject(historyKey, trailList);
-
-                List<String> carNoList = new ArrayList<>();
-                // 找到下一个位置
-                List<ZdataTrailTracks> addlist = new ArrayList<>();
-                carNoList.add(zdataTrailTracks.getCarNo());
-                for (TrailInfo trailInfo : trailList) {
-
-                    //  ------------------新增
-                    ZdataTrailTracks tracksBo = trailInfo.getTracks();
-                    String carNo = CommonUtil.isNull(tracksBo.getPlateKey());
-                    List<TrailBo> josnList = trailInfo.getTrailList(); // trailPoints
-
-
-                    tracksBo.setPlateKey(carNo);
-                    tracksBo.setPointCount(0L);
-                    if (null != josnList) {
-                        tracksBo.setTrackJosn(JSON.toJSONString(josnList));
-                        tracksBo.setPointCount(Long.parseLong(josnList.size() + ""));
-                    }
-                    addlist.add(tracksBo);
-
-
-                    // 路线
-                    List<Geometry> raodTrailList = new ArrayList<>();
-                    trailInfo.setRaodTrailList(raodTrailList);
-
-                    // 集合列表
-                    TrailDevCountBO trailDevCountBO = new TrailDevCountBO();
-                    Integer exceptNum = 0;
-                    List<TrailDevBO> TrailDevList = new ArrayList<>();
-                    trailDevCountBO.setExceptNum(exceptNum);
-                    trailDevCountBO.setTrailDevList(TrailDevList);
-                    trailInfo.setTrailDevCountBO(trailDevCountBO);
-
-                    rtnList.add(trailInfo);
-
-                }
-
-                if (carNoList.size() > 0){
-                    zdataTrailTracksService.removeRealData(carNoList);
-                }
-                if (addlist.size() > 0) {
-                    zdataTrailTracksService.saveBatch(addlist);
-                }
-
-
-                totalNum = tableDataInfo.getTotal();
+        // 在线列表统一走 api；不再回写本地 zdata_trail_tracks（本地物化已移除）
+        if (apiFirst()) {
+            try {
+                CarParaVO carParaVO = new CarParaVO();
+                carParaVO.setCarNo(zdataTrailTracks.getCarNo());
+                carParaVO.setApplyTime1(zdataTrailTracks.getApplyTime1());
+                carParaVO.setApplyTime2(zdataTrailTracks.getApplyTime2());
+                ApiPageResult<TrailInfo> apiPage = trafficApiClient.trailPage(carParaVO,
+                        pageNum, pageSize);
+                cacheHistoryTrail(zdataTrailTracks.getCarNo(), apiPage.getRows());
+                return pageResult(apiPage.getRows(), apiPage.getTotal());
+            } catch (ApiClientException e) {
+                logger.warn("[轨迹在线] api 查询失败，回退本地只读 code={} msg={}",
+                        e.getCode(), e.getMessage());
             }
         }
 
+        // 兜底：本地旧表只读（不再写回、不再物化）
+        startPage();
+        List<ZdataTrailTracks> carlist = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
         TableDataInfo rspData = new TableDataInfo();
         rspData.setCode(HttpStatus.SUCCESS);
         rspData.setMsg("查询成功");
-        rspData.setRows(rtnList);
-        rspData.setTotal(totalNum);
+        rspData.setRows(buildTrailInfos(carlist));
+        rspData.setTotal(new PageInfo(carlist).getTotal());
         return rspData;
+    }
 
+    /**
+     * 轨迹在线查询是否 api 优先：运行期开关 + 配置模式（local 强制本地）。
+     */
+    private boolean apiFirst() {
+        return featureSwitchService.isEnabled(FeatureSwitchService.TRAIL_API)
+                && !"local".equalsIgnoreCase(trailMode == null ? "" : trailMode.trim());
+    }
 
+    /**
+     * 旧本地表行 → TrailInfo（只读兜底路径）。
+     */
+    private List<TrailInfo> buildTrailInfos(List<ZdataTrailTracks> carlist) {
+        List<TrailInfo> rtnList = new ArrayList<>();
+        if (null == carlist || carlist.isEmpty()) {
+            return rtnList;
+        }
+        for (ZdataTrailTracks tracksBo : carlist) {
+            String keyValue = tracksBo.getTrackJosn();
+            if (CommonUtil.isBlank(keyValue)) {
+                continue;
+            }
+            List<TrailBo> josnList = JSON.parseArray(keyValue, TrailBo.class);
+            tracksBo.setTrailPoints("");
+            tracksBo.setTrackJosn("");
+            rtnList.add(newTrailInfo(tracksBo, josnList));
+        }
+        return rtnList;
+    }
+
+    private TrailInfo newTrailInfo(ZdataTrailTracks tracksBo, List<TrailBo> josnList) {
+        String carNo = CommonUtil.isNull(tracksBo.getPlateKey());
+        TrailInfo trailInfo = new TrailInfo();
+        trailInfo.setTracks(tracksBo);
+        trailInfo.setTrailList(josnList);
+        trailInfo.setTrailUuid(carNo);
+        trailInfo.setRaodTrailList(new ArrayList<Geometry>());
+        TrailDevCountBO trailDevCountBO = new TrailDevCountBO();
+        trailDevCountBO.setExceptNum(0);
+        trailDevCountBO.setTrailDevList(new ArrayList<TrailDevBO>());
+        trailInfo.setTrailDevCountBO(trailDevCountBO);
+        return trailInfo;
+    }
+
+    /**
+     * 轨迹缓存仍保留（预警详情 trailFwqList 依赖 car_history_trail），但不再落库。
+     */
+    private void cacheHistoryTrail(String carNo, List<TrailInfo> trailList) {
+        if (CommonUtil.isBlank(carNo) || null == trailList || trailList.isEmpty()) {
+            return;
+        }
+        try {
+            redisCache.setCacheObject(Constants.car_history_trail + carNo, trailList);
+        } catch (RuntimeException e) {
+            logger.warn("[轨迹在线] 写 Redis 轨迹缓存失败 carNo={} reason={}", carNo, e.getMessage());
+        }
+    }
+
+    private TableDataInfo pageResult(List<TrailInfo> rows, long total) {
+        TableDataInfo rspData = new TableDataInfo();
+        rspData.setCode(HttpStatus.SUCCESS);
+        rspData.setMsg("查询成功");
+        rspData.setRows(rows == null ? new ArrayList<TrailInfo>() : rows);
+        rspData.setTotal(total);
+        return rspData;
     }
 
 
@@ -249,45 +244,33 @@ public class CarTrackInfoController extends BaseController {
         return tableDataInfo;*/
 
 
-        // ----------------------- 查询自己表结构
-        startPage();
-        List<ZdataTrailTracks> carlist = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
-        List<TrailInfo> rtnList = new ArrayList<>();
-        if (null != carlist && carlist.size() > 0) {
-            for (ZdataTrailTracks tracksBo : carlist) {
-                String keyValue = tracksBo.getTrackJosn(); // 行驶轨迹
-                List<TrailBo> josnList = new ArrayList<TrailBo>();
-                if (CommonUtil.isNotBlank(keyValue)) {
-                    josnList = JSON.parseArray(keyValue, TrailBo.class);
-                    tracksBo.setTrailPoints("");  // 行驶轨迹
-                    tracksBo.setTrackJosn("");
-                    String carNo = CommonUtil.isNull(tracksBo.getPlateKey());
-                    TrailInfo trailInfo = new TrailInfo();
-                    trailInfo.setTracks(tracksBo);
-                    trailInfo.setTrailList(josnList);
-                    trailInfo.setTrailUuid(carNo);
+        PageDomain page = TableSupport.buildPageRequest();
+        int pageNum = page.getPageNum() == null ? 1 : page.getPageNum();
+        int pageSize = page.getPageSize() == null ? 10 : page.getPageSize();
 
-                    // 路线
-                    List<Geometry> raodTrailList = new ArrayList<>();
-                    trailInfo.setRaodTrailList(raodTrailList);
-
-                    // 集合列表
-                    TrailDevCountBO trailDevCountBO = new TrailDevCountBO();
-                    Integer exceptNum = 0;
-                    List<TrailDevBO> TrailDevList = new ArrayList<>();
-                    trailDevCountBO.setExceptNum(exceptNum);
-                    trailDevCountBO.setTrailDevList(TrailDevList);
-                    trailInfo.setTrailDevCountBO(trailDevCountBO);
-
-                    rtnList.add(trailInfo);
-                }
+        // 有车牌时走 api；时间-only 查询 api 契约要求 carNo，继续走本地旧表（只读）
+        if (apiFirst() && CommonUtil.isNotBlank(zdataTrailTracks.getCarNo())) {
+            try {
+                CarParaVO carParaVO = new CarParaVO();
+                carParaVO.setCarNo(zdataTrailTracks.getCarNo());
+                carParaVO.setApplyTime1(zdataTrailTracks.getApplyTime1());
+                carParaVO.setApplyTime2(zdataTrailTracks.getApplyTime2());
+                ApiPageResult<TrailInfo> apiPage = trafficApiClient.trailPage(carParaVO,
+                        pageNum, pageSize);
+                cacheHistoryTrail(zdataTrailTracks.getCarNo(), apiPage.getRows());
+                return pageResult(apiPage.getRows(), apiPage.getTotal());
+            } catch (ApiClientException e) {
+                logger.warn("[轨迹按时间] api 查询失败，回退本地只读 code={} msg={}",
+                        e.getCode(), e.getMessage());
             }
         }
 
+        startPage();
+        List<ZdataTrailTracks> carlist = zdataTrailTracksService.carTrackQuery(zdataTrailTracks);
         TableDataInfo rspData = new TableDataInfo();
         rspData.setCode(HttpStatus.SUCCESS);
         rspData.setMsg("查询成功");
-        rspData.setRows(rtnList);
+        rspData.setRows(buildTrailInfos(carlist));
         rspData.setTotal(new PageInfo(carlist).getTotal());
         return rspData;
     }

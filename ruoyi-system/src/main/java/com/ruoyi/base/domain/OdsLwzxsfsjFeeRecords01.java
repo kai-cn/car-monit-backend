@@ -597,6 +597,14 @@ public class OdsLwzxsfsjFeeRecords01 implements Custom {
     @TableField(exist = false)
     private String plateColor;
 
+    /** 车牌颜色名称（sys_dict_data plate_color 字典 label） */
+    @TableField(exist = false)
+    private String plateColorName;
+
+    /** 字典标记：UNKNOWN=字典未命中，已回退原始码 */
+    @TableField(exist = false)
+    private String plateColorMark;
+
     /** 门架名称 */
     @TableField(exist = false)
     private String gantryName;

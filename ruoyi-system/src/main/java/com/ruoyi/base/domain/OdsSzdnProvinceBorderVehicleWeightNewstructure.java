@@ -72,6 +72,14 @@ public class OdsSzdnProvinceBorderVehicleWeightNewstructure implements Custom {
     @Excel(name = "车牌颜色代码")
     private String plateColorCode;
 
+    /** 车牌颜色名称（sys_dict_data plate_color 字典 label） */
+    @com.baomidou.mybatisplus.annotation.TableField(exist = false)
+    private String plateColorName;
+
+    /** 字典标记：UNKNOWN=字典未命中，已回退原始码 */
+    @com.baomidou.mybatisplus.annotation.TableField(exist = false)
+    private String plateColorMark;
+
     /**
      * 车牌类型索引
      */

@@ -178,6 +178,14 @@ public class ZdataTrailTracks implements Custom {
     @TableField(exist = false)
     private String plateColor;
 
+    /** 车牌颜色名称（sys_dict_data plate_color 字典 label） */
+    @com.baomidou.mybatisplus.annotation.TableField(exist = false)
+    private String plateColorName;
+
+    /** 字典标记：UNKNOWN=字典未命中，已回退原始码 */
+    @com.baomidou.mybatisplus.annotation.TableField(exist = false)
+    private String plateColorMark;
+
     /** 车型 */
     @TableField(exist = false)
     private String carType;
