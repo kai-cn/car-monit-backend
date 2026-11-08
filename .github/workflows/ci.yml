@@ -15,7 +15,13 @@ on:
   pull_request:
     branches: [master]
   push:
-    branches: [master]
+    branches:
+      - master
+      # 迁移分支也跑 CI；PR 仍以 master 为基线
+      - car-monit-go-V2
+      - car-monit-rust-V2
+      - car-monit-py-V2
+      - car-monit-cpp-local
   workflow_dispatch:
     inputs:
       java_base:
@@ -306,10 +312,6 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
-    env:
-      # oss_client 用例断言 Java 实测的 +08:00 本地偏移；runner 默认 UTC 会失败。
-      # 这是应用的目标时区，不是为通过测试改业务断言。
-      TZ: Asia/Shanghai
     defaults:
       run:
         working-directory: car-monit-rust
@@ -395,10 +397,8 @@ jobs:
         run: python -m compileall -q app
 
       - name: 单元测试 + 覆盖率
-        # runner 自带 USER=runner，会被 pydantic-settings 当成 AppSettings.user 嵌套模型解析。
-        # 只对测试进程移除 USER，不改应用配置、不动业务代码。
         run: |
-          env -u USER python -m pytest -q -m "not integration" \
+          python -m pytest -q -m "not integration" \
             --cov=app --cov-report=term-missing --cov-report=xml
 
       - name: 构建 wheel / sdist
@@ -479,7 +479,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: 集成测试
-        run: env -u USER python -m pytest tests/integration -v -m integration
+        run: python -m pytest tests/integration -v -m integration
 
   # ---------------------------------------------------------------------------
   # 与 Java 端点对拍：需要可达的两端基址，仅手动触发。

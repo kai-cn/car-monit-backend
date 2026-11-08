@@ -39,6 +39,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic_settings import (
     BaseSettings,
+    EnvSettingsSource,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
 )
@@ -708,6 +709,26 @@ def _tz_offset(spring_tz: str) -> str:
 # ---------------------------------------------------------------------------
 # Root settings
 # ---------------------------------------------------------------------------
+class _AppEnvSettingsSource(EnvSettingsSource):
+    """OS 环境变量源：屏蔽与 section 同名的系统变量。
+
+    根配置没有 env_prefix，``user`` section 会和 shell / CI / 容器几乎必设的
+    ``USER`` 撞名（``USER=runner`` 会被当成嵌套模型去解析）。这里让 ``user``
+    只认显式的 ``APP_USER``（JSON），其他字段仍走默认规则。
+    """
+
+    _FIELD_ALIASES = {"user": "app_user"}
+
+    def get_field_value(self, field, field_name):
+        alias = self._FIELD_ALIASES.get(field_name)
+        if alias is not None:
+            raw = self.env_vars.get(alias)
+            if raw is None:
+                raw = self.env_vars.get(alias.upper())
+            return (raw, field_name, True)
+        return super().get_field_value(field, field_name)
+
+
 class AppSettings(BaseSettings):
     """Root configuration object; one attribute per ``application.yml`` top-level block."""
 
@@ -723,6 +744,9 @@ class AppSettings(BaseSettings):
     server: ServerSection = Field(default_factory=ServerSection)
     logging: LoggingSection = Field(default_factory=LoggingSection)
     monitor: MonitorSection = Field(default_factory=MonitorSection)
+    # 环境变量入口固定为 APP_USER。否则几乎每个 shell / CI / 容器都会设置的
+    # USER（如 USER=runner）会被当成嵌套模型解析，直接 SettingsError 起不来。
+    # 见下方 _AppEnvSettingsSource。
     user: UserSection = Field(default_factory=UserSection)
     spring: SpringSection = Field(default_factory=SpringSection)
     token: TokenSection = Field(default_factory=TokenSection)
@@ -761,7 +785,7 @@ class AppSettings(BaseSettings):
         """
         return (
             init_settings,
-            env_settings,
+            _AppEnvSettingsSource(settings_cls),
             dotenv_settings,
             YamlConfigSettingsSource(settings_cls, _yaml_path()),
             file_secret_settings,
