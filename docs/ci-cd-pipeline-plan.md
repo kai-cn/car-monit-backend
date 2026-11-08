@@ -125,6 +125,43 @@ JDK：扫描全仓所有 `pom.xml`，**只有 `java.version=1.8` 一个值**；�
 - 镜像构建、GHCR 推送、K8s 部署**均未实跑**（本机无 Docker/集群）。
 - 全部 YAML **已写好但未在 GitHub 上实跑**（本机不做长构建，仓库为私有且无 token），首次运行结论需在推送后回填。
 - `go mod tidy` 校验失败可能源于真实依赖漂移，不是 CI 配置问题。
+- **Go lint 历史债 49 条**（2026-11-08 本机 `golangci-lint v2.1.6` 实测）：errcheck 6、ineffassign 1、staticcheck 12、unused 30。这些是代码问题，不在本轮 CI 修复范围；`golangci-lint` 已改为 `only-new-issues: true`，只拦新增问题，历史债需单独排期清理。
+
+## 4.1 Actions 首次运行失败排查（2026-11-08）
+
+无 `GH_TOKEN`/`GITHUB_TOKEN`，拿不到 run/job 日志，以下结论来自静态审查 + 本机复现。
+
+**确定会失败（已修）**
+
+| 项 | 证据 | 修复 |
+|---|---|---|
+| Go：`golangci-lint-action@v6` + `golangci-lint v2.1.6` | action v7 README 明确 v7 对应 golangci-lint v2；v6 只覆盖 v1.x | 升到 `@v7` |
+| Go：49 条历史 lint 问题 | 本机 `golangci-lint run` 实测 49 issues | `only-new-issues: true`（保留门禁，只拦新增） |
+| `changes`：`dorny/paths-filter` 在 push 下需要 push 前的提交 | 该 action 文档：push 走 git diff；默认 `fetch-depth: 1` 时基线 commit 不可达 | `changes` 与 Go job 的 checkout 改 `fetch-depth: 0` |
+
+**本机复现通过（说明不是 CI 配置问题）**
+
+| 项 | 结果 |
+|---|---|
+| Java `mvn -B -q -DskipTests compile`（JDK 8 / Maven 3.9.9） | 通过 |
+| Java `mvn -B -DskipTests package` | 失败，但原因是 Windows 上 `ruoyi-admin.jar` 被本机运行中的 Java 进程占用（`rename` 失败），Linux runner 不受影响；jar 名为 `ruoyi-admin.jar`，与 workflow 的 `ruoyi-admin/target/*.jar` 匹配 |
+| Go `go build ./...` / `go vet ./...` / `go test ./...` / `go mod tidy -diff` | 全部通过 |
+| Python `pytest -m "not integration"`（3.12 venv） | 全部通过 |
+| Rust `cargo test --lib`（本机 1.90.0，与 `rust-toolchain.toml` 一致） | 94 passed / 0 failed |
+| `actionlint` 对全部 workflow | 无 schema / 表达式错误 |
+
+> 本机 `gofmt -l` 会报 12 个文件未格式化，但 diff 是整文件换行差异：Windows `core.autocrlf=true` 且仓库无 `.gitattributes`，工作树是 CRLF。Linux checkout 为 LF，该项在 CI 上应通过，因此没有对 Go 代码做格式化改动。
+
+**可能失败（无法在本机验证）**
+
+- cd 的四个镜像构建：本机无 Docker；Docker Hub 在本机网络被阻断（curl SSL 35），无法核对 `maven:3.9-eclipse-temurin-8`、`rust:1.90-bookworm` 等 tag 是否真实存在。
+- GHCR 推送权限：`GITHUB_TOKEN` + `packages: write` 是标准写法，但仓库/组织策略是否允许只能在首次运行确认。
+- Rust job：本机已装 1.90.0（与 `rust-toolchain.toml` 一致），`cargo test --lib` **94 passed**。
+
+**只是不规范（未改）**
+
+- Java job 先 `mvn test` 后 `mvn package`，会重复编译一次；不影响正确性。
+- Rust `fmt`/`clippy` 仍是非阻塞，属于迁移期既有约定。
 
 ## 5. 实施进度
 
