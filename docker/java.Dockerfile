@@ -5,7 +5,7 @@ FROM maven:3.9-eclipse-temurin-8 AS build
 WORKDIR /build
 COPY . .
 RUN mvn -B -q -DskipTests package \
- && cp ruoyi-admin/target/ruoyi-admin-*.jar /build/app.jar
+ && cp "$(ls ruoyi-admin/target/*.jar | head -n 1)" /build/app.jar
 
 FROM eclipse-temurin:8-jre
 
