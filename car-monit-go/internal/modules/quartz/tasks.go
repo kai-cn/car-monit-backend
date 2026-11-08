@@ -12,10 +12,15 @@
 // Go 侧在方法内显式断言参数个数与类型，个数/类型不符时返回与 Java 反射一致的语义错误。
 //
 // DIFF: 依赖数据接入面（Kafka / Elasticsearch / GaussDB 同步 / HttpBaseInfoApi）的任务
-// 本轮**不注册**：它们无法在 Go 侧独立完成，注册成占位会让运维误以为可用。
-// 未注册的目标统一由 invoke.go 的 unmigratedTargets 在保存任务时直接拒绝，
-// 并在响应里说明归属（数据接入仍由 Java 服务承担）。唯一天然空实现的是
-// OrgTask.syncOrgInfo（Java 方法体已被注释）与 TrackTask.syncHistoryTrackNoCar（同样被注释）。
+// 已由 internal/modules/base.DataSync 实现并在此注册：
+//   - vehicleMonitoringTask.*：GET vehicleMonitor 的 /base/*/listAll 后全量刷新 7 张基础表；
+//   - snapshotFlowSyncTask.*：GaussDB(vehicleMonitor HTTP 适配层) → MySQL 月度分表；
+//   - shardingTableTask.*：未来月份分表预创建（CREATE TABLE ... LIKE 模板表）。
+//
+// 仍不可用的是 trackTask.syncHistoryTrack（依赖 ICarTrackInfoService/IGeometryService），
+// 继续由 invoke.go 的 unmigratedTargets 在保存任务时拒绝。
+// 唯一天然空实现的是 OrgTask.syncOrgInfo（Java 方法体已被注释）与
+// TrackTask.syncHistoryTrackNoCar（同样被注释）。
 package quartz
 
 import (
@@ -24,11 +29,13 @@ import (
 	"time"
 
 	"car-monit-go/internal/app"
+	"car-monit-go/internal/modules/base"
 	"car-monit-go/internal/modules/manager"
 )
 
 // builtinTaskBeans 等价于 Spring 容器里所有 @Component 任务 Bean。
 func builtinTaskBeans(a *app.App) []*taskBean {
+	dataSync := base.NewDataSync(a)
 	return []*taskBean{
 		{name: "ryTask", methods: map[string]TaskFunc{
 			"ryMultipleParams": func(ctx context.Context, args []any) error {
@@ -139,6 +146,142 @@ func builtinTaskBeans(a *app.App) []*taskBean {
 					return err
 				}
 				return checkPartitionHealth(ctx, a)
+			},
+		}},
+
+		// JAVA 对照: VehicleMonitoringTask（sys_job 初始数据里的 103~109、111 行）
+		{name: "vehicleMonitoringTask", methods: map[string]TaskFunc{
+			"syncOrgInfo": func(ctx context.Context, args []any) error {
+				if err := wantArgs("vehicleMonitoringTask.syncOrgInfo", args, 0); err != nil {
+					return err
+				}
+				return dataSync.SyncOrgInfo(ctx)
+			},
+			"syncSectionInfo": func(ctx context.Context, args []any) error {
+				if err := wantArgs("vehicleMonitoringTask.syncSectionInfo", args, 0); err != nil {
+					return err
+				}
+				return dataSync.SyncSectionInfo(ctx)
+			},
+			"syncGantryInfo": func(ctx context.Context, args []any) error {
+				if err := wantArgs("vehicleMonitoringTask.syncGantryInfo", args, 0); err != nil {
+					return err
+				}
+				return dataSync.SyncGantryInfo(ctx)
+			},
+			"syncServiceAreaInfoInfo": func(ctx context.Context, args []any) error {
+				if err := wantArgs("vehicleMonitoringTask.syncServiceAreaInfoInfo", args, 0); err != nil {
+					return err
+				}
+				return dataSync.SyncServiceAreaInfo(ctx)
+			},
+			"syncTollBoothInfoInfo": func(ctx context.Context, args []any) error {
+				if err := wantArgs("vehicleMonitoringTask.syncTollBoothInfoInfo", args, 0); err != nil {
+					return err
+				}
+				return dataSync.SyncTollBoothInfo(ctx)
+			},
+			"syncSfzjcxxInfoInfo": func(ctx context.Context, args []any) error {
+				if err := wantArgs("vehicleMonitoringTask.syncSfzjcxxInfoInfo", args, 0); err != nil {
+					return err
+				}
+				return dataSync.SyncSfzjcxxInfo(ctx)
+			},
+			"syncTollStationInfo": func(ctx context.Context, args []any) error {
+				if err := wantArgs("vehicleMonitoringTask.syncTollStationInfo", args, 0); err != nil {
+					return err
+				}
+				return dataSync.SyncTollStationInfo(ctx)
+			},
+		}},
+
+		// JAVA 对照: SnapshotFlowSyncTask（Java 侧 @Scheduled 从未生效，这里暴露为可配置任务 Bean）
+		{name: "snapshotFlowSyncTask", methods: map[string]TaskFunc{
+			"syncFullData": func(ctx context.Context, args []any) error {
+				if err := wantArgs("snapshotFlowSyncTask.syncFullData", args, 0); err != nil {
+					return err
+				}
+				_, err := dataSync.SyncFullData(ctx)
+				return err
+			},
+			"manualFullSync": func(ctx context.Context, args []any) error {
+				if err := wantArgs("snapshotFlowSyncTask.manualFullSync", args, 0); err != nil {
+					return err
+				}
+				_, err := dataSync.SyncFullData(ctx)
+				return err
+			},
+			"syncIncrementalData": func(ctx context.Context, args []any) error {
+				if err := wantArgs("snapshotFlowSyncTask.syncIncrementalData", args, 0); err != nil {
+					return err
+				}
+				_, err := dataSync.SyncIncrementalData(ctx)
+				return err
+			},
+			"manualIncrementalSync": func(ctx context.Context, args []any) error {
+				if err := wantArgs("snapshotFlowSyncTask.manualIncrementalSync", args, 0); err != nil {
+					return err
+				}
+				_, err := dataSync.SyncIncrementalData(ctx)
+				return err
+			},
+			// DIFF: Java 签名是 syncSingleMonth(String month, AtomicInteger totalCount)，
+			// JobInvokeUtil 无法构造 AtomicInteger，实际不可调用；Go 只接收月份。
+			"syncSingleMonth": func(ctx context.Context, args []any) error {
+				if err := wantArgs("snapshotFlowSyncTask.syncSingleMonth", args, 1); err != nil {
+					return err
+				}
+				month, err := argString(args, 0)
+				if err != nil {
+					return err
+				}
+				_, err = dataSync.SyncSingleMonth(ctx, month)
+				return err
+			},
+			"preCreateTables": func(ctx context.Context, args []any) error {
+				if err := wantArgs("snapshotFlowSyncTask.preCreateTables", args, 1); err != nil {
+					return err
+				}
+				months, err := argInt(args, 0)
+				if err != nil {
+					return err
+				}
+				result, err := dataSync.PreCreateTables(ctx, months)
+				if err != nil {
+					return err
+				}
+				logInfo(a, result)
+				return nil
+			},
+		}},
+
+		// JAVA 对照: ShardingTableTask（@Scheduled 同样未生效；Bean 名与类名一致）
+		{name: "shardingTableTask", methods: map[string]TaskFunc{
+			"createShardingTables": func(ctx context.Context, args []any) error {
+				if err := wantArgs("shardingTableTask.createShardingTables", args, 0); err != nil {
+					return err
+				}
+				result, err := dataSync.PreCreateTables(ctx, 4)
+				if err != nil {
+					return err
+				}
+				logInfo(a, result)
+				return nil
+			},
+			"manualCreateTables": func(ctx context.Context, args []any) error {
+				if err := wantArgs("shardingTableTask.manualCreateTables", args, 1); err != nil {
+					return err
+				}
+				months, err := argInt(args, 0)
+				if err != nil {
+					return err
+				}
+				result, err := dataSync.PreCreateTables(ctx, months)
+				if err != nil {
+					return err
+				}
+				logInfo(a, result)
+				return nil
 			},
 		}},
 	}

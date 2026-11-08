@@ -170,19 +170,40 @@ Redis 共存（`internal/cache/fastjson.go` + `internal/cache/javatypes.go`）�
 
 ### 1.7 数据接入边界与实例标识（2026-11-08 加固）
 
-**① 数据接入不随 Go API 交付。** Kafka 消费、ES 索引写入、GaussDB 同步、分表预创建仍由 Java 侧
-（或独立数据接入服务）承担，原因与清单见 [MAPPING.md §4](./MAPPING.md#4-消息队列--搜索引擎--分表)。
-`internal/stream/**` 只是实现骨架且未接线；打开 `kafka.enabled` / `elasticsearch.enabled` 不会生效，
-启动日志会打印：
+**① 数据接入已接线（2026-11-08 更新）。** Kafka 消费、MySQL 月度分表写入、ES 索引、分表预创建、
+`vehicleMonitoringTask` / `snapshotFlowSyncTask` 均已实现，入口见
+[MAPPING.md §4](./MAPPING.md#4-消息队列--搜索引擎--分表)。
+
+| 能力 | 开关 | 行为 |
+|---|---|---|
+| Kafka → 分表 + ES | `kafka.enabled` | 启动消费者；未启用时日志提示“接入仍由 Java 承担” |
+| ES 索引 | `elasticsearch.enabled` | 只由 Kafka 消费链路与 ES 客户端写；关闭时跳过 |
+| GaussDB 同步 | `snapshot.flow.sync.enabled` + `source` | `source=http` 走 vehicleMonitor HTTP 适配层；`disabled` 时任务返回明确错误 |
+| 分表预创建 | `shardingTableTask.*` / `snapshotFlowSyncTask.preCreateTables(n)` | 由 sys_job 配置触发（Java 的 `@Scheduled` 因缺 `@EnableScheduling` 从未生效） |
+
+Kafka 消费开关示例（`configs/config.yaml`）：
+
+```yaml
+kafka:
+  enabled: true
+snapshot:
+  flow:
+    sync:
+      enabled: true       # 仅影响同步任务，不阻塞 Kafka 消费
+      source: http        # http | disabled
+      base-url: ""        # 空则回退 vehicleMonitor.baseUrl
+      page-size: 1000
+      workers: 4
+```
+
+未配置 Redis 时消费者仍可启动，但会打印“失去幂等保护”的告警；生产环境必须先确认 Redis 可用。
+GaussDB / ES / `section_list` 的未验证点见 MAPPING §4.1，联调前不要下线 Java 数据接入实例。
+
+`unmigratedTargets` 现在只剩 `trackTask.syncHistoryTrack`（依赖 `ICarTrackInfoService`/`IGeometryService`），
+保存该任务仍会直接被拒绝：
 
 ```
-level=WARN msg="Kafka/ES 配置已启用，但 Go 版本未接线；数据接入仍由 Java 服务承担，请勿据此下线 Java"
-```
-
-依赖数据接入面的定时任务在保存时会被拒绝（而不是“保存成功、执行必失败”）：
-
-```
-任务 vehicleMonitoringTask.syncOrgInfo 尚未迁移到 Go 版本（机构信息同步依赖 HttpBaseInfoApiService）；
+任务 trackTask.syncHistoryTrack 尚未迁移到 Go 版本（历史轨迹同步依赖 ...）；
 该能力仍由 Java 数据接入服务承担，请在 Java 侧配置或等待后续版本
 ```
 
@@ -315,7 +336,12 @@ internal/router             路由注册表
 | 权限与审计 | `@PreAuthorize` / `@Log` 注解 | `middleware.Perm` / `middleware.OperLog` | 2026-11-08 已逐条对齐 manager 手写控制器；Java 中被注释的注解（如 `/manager/suspicious/check`）仍不挂 |
 | 雪花 ID | MyBatis-Plus `IdWorker`（MAC/进程推导） | `internal/idgen`（配置/主机名推导） | 多副本必须设置唯一 `CARMONIT_WORKER_ID`，见 §1.7 |
 | 未迁移的数据接入任务 | 保存成功、执行时报错 | **保存阶段直接拒绝** | 有意偏离：避免“保存成功但永不成功”的假象 |
-| Kafka/ES | Spring Kafka / ES Client | 未接线（仅骨架） | 数据接入仍由 Java 承担，见 §1.7 与 MAPPING §4 |
+| Kafka/ES | Spring Kafka / ES Client | 已接线（`kafka.enabled` 控制） | 分表写失败不再静默 ack：本地重试 3 次后进死信队列；ES 失败仍只告警（同 Java），见 §1.7 与 MAPPING §4 |
+| 分表路由 | ShardingSphere 按 `snapshottime` 自动路由 | 按月份直接计算物理表 | 语义等价；不再依赖逻辑表与分片配置 |
+| 分表写入幂等 | 裸 INSERT（重复即失败） | `ON DUPLICATE KEY UPDATE big_id=big_id` | 有意偏离：让 Kafka 重试与重叠同步安全 |
+| 分表创建 | 依赖 ShardingTableTask 预创建 | 写入前按需 `CREATE TABLE ... LIKE` | 防止跨月首条消息因表不存在丢数据 |
+| `section_list` 缓存 | `rightPushAll`（不删除旧值） | 先 DEL 再 RPUSH | 修复 Java 侧每日同步无限追加的问题 |
+| 死信消息 | `{originalTopic,partition,offset,timestamp,reason,value}` | 相同信封 | 补 reason 字段，便于人工排查 |
 | 健康检查 | 无 | 新增 `/healthz`，DOWN 时 HTTP 503 | 仅新增，不影响既有接口 |
 
 ## 4. 迁移进度
@@ -331,8 +357,8 @@ internal/router             路由注册表
 | 车辆监管：20 个 manager 控制器 + 大屏 | 已完成（含 admin 登录联调） |
 | 数据接入：ODS/DWD 基础数据与快照流水（26 控制器） | 已完成（含 list/detail/export 联调） |
 | 流程：7 个 flow 控制器（55 个映射） | 已完成（含申请→委托→审批链路测试） |
-| Kernel/数据接入：Kafka 消费 / ES 索引 / 月分表写路径 | 配置就绪，代码未接线（归属见 §1.7） |
-| 定时任务：`vehicleMonitoringTask` / `snapshotFlowSyncTask` / `syncHistoryTrack` | 未迁移，保存任务时拒绝 |
+| Kernel/数据接入：Kafka 消费 / ES 索引 / 月分表写路径 | 已接线（默认关闭 Kafka），离线单测覆盖路由/幂等/重试；真实 Kafka/ES/GaussDB 未联调 |
+| 定时任务：`vehicleMonitoringTask` / `snapshotFlowSyncTask` / `shardingTableTask` | 8+6+2 个方法已注册为任务 Bean；`trackTask.syncHistoryTrack` 仍拒绝 |
 
 > 各模块完成后，本表状态与实际 `internal/modules/**` 目录、路由清单同步更新；未完成的接口不会静默返回假数据。
 

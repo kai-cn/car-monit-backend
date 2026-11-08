@@ -6,14 +6,15 @@
 // DIFF: Spring Kafka 的 @KafkaListener + 容器工厂由框架托管；Go 显式构造 Reader/Writer 并运行消费循环。
 // DIFF: 手工确认 MANUAL_IMMEDIATE → handler 成功后才 CommitMessages；失败消息写入 DLQ 后仍提交。
 // DIFF: max.poll.records=500 → 每次 ReadBatch 以 MaxBytes/MaxWait 聚合，单批上限由 BatchSize 截断。
+// DIFF: 死信消息按 Java sendToDLQ 的信封序列化（originalTopic/partition/offset/timestamp/reason/value）。
 //
-// 状态: **未接线**。main 未启动消费者，仓库内也没有任何调用方；Go 版本的数据接入
-// （MySQL 分表写入 + ES 索引 + 幂等键）本轮不交付，归属见 docs/MAPPING.md §4。
-// 启用前置条件：补齐分表写入/ES 写入/幂等键三条链路并在 main 中显式启动，且完成对拍。
+// 状态: main 在 `kafka.enabled=true` 时启动本消费者（见 cmd/server/main.go）；
+// 批次处理逻辑由 internal/modules/base.DataSync 实现（MySQL 分表 + ES + Redis 幂等）。
 package kafka
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -32,6 +33,10 @@ type Message struct {
 	Key       string
 	Value     string
 	Time      time.Time
+
+	// Reason 仅用于死信信封，不参与 Kafka 消息序列化。
+	// JAVA 对照: SnapshotFlowKafkaConsumerV2#sendToDLQ(record, reason)。
+	Reason string
 }
 
 // BatchHandler 对应 @KafkaListener 方法体（批量）。
@@ -138,13 +143,34 @@ func (c *Consumer) readBatch(ctx context.Context) ([]Message, error) {
 }
 
 // sendDLQ 对应 KafkaConfig 中的死信发送（acks=all + 幂等）。
+//
+// JAVA 对照: sendToDLQ —— 信封为 {originalTopic,partition,offset,timestamp,reason,value}。
 func (c *Consumer) sendDLQ(ctx context.Context, msgs []Message) {
 	if c.writer == nil {
 		return
 	}
 	wm := make([]kafka.Message, 0, len(msgs))
 	for _, m := range msgs {
-		wm = append(wm, kafka.Message{Key: []byte(m.Key), Value: []byte(m.Value)})
+		reason := m.Reason
+		if reason == "" {
+			reason = "批处理失败"
+		}
+		envelope, err := json.Marshal(map[string]any{
+			"originalTopic": m.Topic,
+			"partition":     m.Partition,
+			"offset":        m.Offset,
+			"timestamp":     m.Time.UnixMilli(),
+			"reason":        reason,
+			"value":         m.Value,
+		})
+		if err != nil {
+			c.log.Error("序列化死信消息失败", "offset", m.Offset, "err", err)
+			continue
+		}
+		wm = append(wm, kafka.Message{Value: envelope})
+	}
+	if len(wm) == 0 {
+		return
 	}
 	if err := c.writer.WriteMessages(ctx, wm...); err != nil {
 		c.log.Error("写入死信队列失败", "topic", c.dlq, "err", err)

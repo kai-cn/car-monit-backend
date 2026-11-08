@@ -143,6 +143,15 @@ snapshot:
       table-prefix: "ods_rt_szdn_snapshot_flow_"
       sharding-field: snapshottime
       sharding-type: month
+    # Go 新增：GaussDB(vehicleMonitor HTTP 适配层) → MySQL 分表同步。
+    # source=disabled 时同步任务返回明确错误；base-url 为空回退 vehicleMonitor.baseUrl。
+    # 本地无 GaussDB/vehicleMonitor 实例，联调前请核对 /base/snapshotflow/* 的响应结构。
+    sync:
+      enabled: false
+      source: http
+      base-url: ""
+      page-size: 1000
+      workers: 4
 
 xss:
   enabled: true

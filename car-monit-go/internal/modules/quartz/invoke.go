@@ -178,23 +178,11 @@ func (i *Invoker) resolveBean(beanName string) *taskBean {
 // DIFF: Java 允许保存这些任务（执行时才失败）；Go 版本在保存阶段直接拒绝，
 // 避免运维看到"保存成功"却只能在 sys_job_log 里发现持续失败。
 // 归属决策见 docs/MAPPING.md §4 与 docs/MIGRATION_GUIDE.md「数据接入边界」。
+//
+// 说明：vehicleMonitoringTask.* / snapshotFlowSyncTask.* / shardingTableTask.* 已在
+// internal/modules/base/datasync*.go 实现并注册（见 tasks.go），不再属于未迁移范围。
 var unmigratedTargets = map[string]string{
 	"trackTask.syncHistoryTrack": "历史轨迹同步依赖 ICarTrackInfoService/IGeometryService 与远端轨迹接口",
-
-	"vehicleMonitoringTask.syncOrgInfo":             "机构信息同步依赖 HttpBaseInfoApiService",
-	"vehicleMonitoringTask.syncSectionInfo":         "路段信息同步依赖 HttpBaseInfoApiService",
-	"vehicleMonitoringTask.syncGantryInfo":          "门架信息同步依赖 HttpBaseInfoApiService",
-	"vehicleMonitoringTask.syncServiceAreaInfoInfo": "服务区信息同步依赖 HttpBaseInfoApiService",
-	"vehicleMonitoringTask.syncTollBoothInfoInfo":   "收费所信息同步依赖 HttpBaseInfoApiService",
-	"vehicleMonitoringTask.syncSfzjcxxInfoInfo":     "收费站位置同步依赖 HttpBaseInfoApiService",
-	"vehicleMonitoringTask.syncTollStationInfo":     "收费站信息同步依赖 HttpBaseInfoApiService",
-
-	"snapshotFlowSyncTask.syncFullData":          "门架抓拍流水全量同步依赖 GaussDB 与分表 Mapper",
-	"snapshotFlowSyncTask.manualFullSync":        "门架抓拍流水全量同步依赖 GaussDB 与分表 Mapper",
-	"snapshotFlowSyncTask.manualIncrementalSync": "门架抓拍流水增量同步依赖 GaussDB 与分表 Mapper",
-	"snapshotFlowSyncTask.syncIncrementalData":   "门架抓拍流水增量同步依赖 GaussDB 与分表 Mapper",
-	"snapshotFlowSyncTask.syncSingleMonth":       "门架抓拍流水单月同步依赖 GaussDB 与分表 Mapper",
-	"snapshotFlowSyncTask.preCreateTables":       "分表预创建依赖 ShardingTableUtil",
 }
 
 // ValidateTarget 在保存任务时做一次快速失败校验（DIFF: Java 直到执行时才暴露错误）。

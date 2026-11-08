@@ -124,8 +124,26 @@ type SnapshotSharding struct {
 	ShardingType  string `mapstructure:"sharding-type"`
 }
 
+// SnapshotSync 是 Go 新增的 GaussDB 同步配置（Java 侧由 @Scheduled 触发，但未启用调度）。
+//
+// source=http 时通过 vehicleMonitor.baseUrl 的 /base/snapshotflow/* 读取上游；
+// source=disabled 时同步任务返回明确的"未配置"错误，不会静默成功。
+// base-url 为空时回退 vehicleMonitor.baseUrl。
+type SnapshotSync struct {
+	Enabled  bool   `mapstructure:"enabled"`
+	Source   string `mapstructure:"source"`
+	BaseURL  string `mapstructure:"base-url"`
+	PageSize int    `mapstructure:"page-size"`
+	Workers  int    `mapstructure:"workers"`
+}
+
+type SnapshotFlow struct {
+	Sharding SnapshotSharding `mapstructure:"sharding"`
+	Sync     SnapshotSync     `mapstructure:"sync"`
+}
+
 type Snapshot struct {
-	Flow SnapshotSharding `mapstructure:"flow"`
+	Flow SnapshotFlow `mapstructure:"flow"`
 }
 
 // Go 原生配置：替代 application-druid.yml 中的 JDBC/Druid 连接池。
@@ -309,6 +327,10 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("snapshot.flow.sharding.table-prefix", "ods_rt_szdn_snapshot_flow_")
 	v.SetDefault("snapshot.flow.sharding.sharding-field", "snapshottime")
 	v.SetDefault("snapshot.flow.sharding.sharding-type", "month")
+	v.SetDefault("snapshot.flow.sync.enabled", false)
+	v.SetDefault("snapshot.flow.sync.source", "http")
+	v.SetDefault("snapshot.flow.sync.page-size", 1000)
+	v.SetDefault("snapshot.flow.sync.workers", 4)
 	v.SetDefault("generator-code.mybatis-plus.enable", false)
 	v.SetDefault("instance.worker-id", -1)
 	v.SetDefault("instance.datacenter-id", -1)

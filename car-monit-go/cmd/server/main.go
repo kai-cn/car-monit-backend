@@ -24,11 +24,12 @@ import (
 	"car-monit-go/internal/idgen"
 	"car-monit-go/internal/logx"
 	"car-monit-go/internal/middleware"
+	"car-monit-go/internal/modules/base"
 	"car-monit-go/internal/modules/quartz"
 	"car-monit-go/internal/router"
+	"car-monit-go/internal/stream/kafka"
 
 	// 业务模块通过 init() 向 router 注册路由。
-	_ "car-monit-go/internal/modules/base"
 	_ "car-monit-go/internal/modules/flow"
 	_ "car-monit-go/internal/modules/generator"
 	_ "car-monit-go/internal/modules/manager"
@@ -59,12 +60,8 @@ func main() {
 	workerID, datacenterID := idgen.IDs()
 	logger.Info("雪花 ID 实例标识", "workerId", workerID, "datacenterId", datacenterID, "source", idSource)
 
-	// 数据接入边界：Kafka / Elasticsearch / CDC / GaussDB 同步尚未接入 Go 版本，
-	// 仅打开配置不会生效。这里显式告警，避免误以为“配置已就绪 = 功能可用”。
-	if cfg.Kafka.Enabled || cfg.Elasticsearch.Enabled {
-		logger.Warn("Kafka/ES 配置已启用，但 Go 版本未接线；数据接入仍由 Java 服务承担，请勿据此下线 Java",
-			"kafkaEnabled", cfg.Kafka.Enabled, "elasticsearchEnabled", cfg.Elasticsearch.Enabled)
-	}
+	// 数据接入：Kafka 消费者把门架抓拍流水写入 MySQL 月度分表与 ES。
+	// 关闭时（默认）数据接入仍由 Java 服务承担，Go 只提供查询/同步任务入口。
 
 	db, err := database.Open(cfg, logger)
 	if err != nil {
@@ -86,6 +83,32 @@ func main() {
 	defer c.Close()
 
 	a := app.New(cfg, db, c, logger)
+
+	var ingestCancel context.CancelFunc
+	ingestDone := make(chan struct{})
+	if cfg.Kafka.Enabled {
+		dataSync := base.NewDataSync(a)
+		consumer := kafka.NewConsumer(cfg, cfg.Kafka.Topic.SnapshotFlow, cfg.Kafka.Topic.SnapshotFlowDLQ,
+			dataSync.HandleSnapshotFlowBatch, logger)
+		ingestCtx, cancel := context.WithCancel(context.Background())
+		ingestCancel = cancel
+		go func() {
+			defer close(ingestDone)
+			logger.Info("Kafka 消费者已启动",
+				"topic", cfg.Kafka.Topic.SnapshotFlow, "dlq", cfg.Kafka.Topic.SnapshotFlowDLQ,
+				"group", cfg.Kafka.Consumer.GroupID, "esEnabled", cfg.Elasticsearch.Enabled)
+			if err := consumer.Run(ingestCtx); err != nil {
+				logger.Error("Kafka 消费者异常退出", "err", err)
+			}
+		}()
+	} else {
+		close(ingestDone)
+		logger.Info("Kafka 未启用（kafka.enabled=false），门架抓拍流水接入仍由 Java 服务承担")
+		if cfg.Elasticsearch.Enabled {
+			logger.Warn("Elasticsearch 已启用但 Kafka 未启用：Go 不会写入索引")
+		}
+	}
+
 	engine := router.Setup(a)
 
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
@@ -117,6 +140,15 @@ func main() {
 	// 先停 HTTP 入口，不再接收新请求。
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Error("优雅停机失败", "err", err)
+	}
+	// 再收敛 Kafka 消费者（限 15s）：停止拉取并提交当前批次的 offset。
+	if ingestCancel != nil {
+		ingestCancel()
+		select {
+		case <-ingestDone:
+		case <-time.After(15 * time.Second):
+			logger.Warn("Kafka 消费者未在 15s 内退出")
+		}
 	}
 	// 再收敛定时任务（限 15s），避免任务写到一半被进程退出打断。
 	schedCtx, schedCancel := context.WithTimeout(context.Background(), 15*time.Second)

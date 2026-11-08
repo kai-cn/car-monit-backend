@@ -1,5 +1,18 @@
 # 迁移工作进度（接口返回逐一对比阶段）
 
+> **2026-11-08 数据面批次（分支 `car-monit-go-V2`）**：把此前"未接线"的 `internal/stream/*` 真正接到
+> 运行时。新增 `internal/modules/base/datasync{,_source,_sync,_baseinfo}.go`：
+> Kafka 消费 → Redis SETNX 幂等 → 按 `snapshottime` 路由 MySQL 月度分表 → ES `_bulk` 索引，
+> 失败消息重试 3 次后按 Java 信封进死信队列；`main` 在 `kafka.enabled=true` 时启动消费者并参与优雅停机。
+> 同时实现 `vehicleMonitoringTask`（7 个基础表全量刷新，含 `section_list` 覆盖写）、
+> `snapshotFlowSyncTask`（全量/增量/单月/GaussDB HTTP 适配层）、`shardingTableTask`（分表预创建），
+> 三者注册为 quartz 任务 Bean；`unmigratedTargets` 只剩 `trackTask.syncHistoryTrack`。
+> **关键 DIFF**：分表路由不再依赖 ShardingSphere；INSERT 改为 `ON DUPLICATE KEY UPDATE` 保证重试幂等；
+> 写入前按需建表；分表写失败不再静默 ack。**未验证**：真实 Kafka/ES/GaussDB 联调、
+> ES 毫秒时间戳 mapping、vehicleMonitor 的 `earliest-time` 响应结构（见 MAPPING §4.1）。
+> 新增离线测试 `datasync_test.go`（sqlmock + httptest）与 Redis 集成测试（默认跳过，
+> `CARMONIT_TEST_REDIS=1` 启用）。
+>
 > **2026-11-08 加固批次（分支 `car-monit-go-V2`）**：按代码审阅结论做生产化整改，
 > 不改动 API 契约。已完成：manager 手写控制器的权限点与操作日志逐条对齐 Java（含被注释注解不加）、
 > 可疑车辆核实/批量同步、异常流水+车辆金额回写、代码生成 4 个多写流程补事务并把吞错改为返回 error、
