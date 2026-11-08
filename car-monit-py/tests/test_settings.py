@@ -312,6 +312,17 @@ class TestFailClosedSecrets:
         )
         assert [line for line in active if line.startswith(forbidden_prefixes)] == []
 
+    def test_each_legacy_fingerprint_kind_still_matches(self) -> None:
+        """四个指纹分支各自独立：删掉任一分支的比对都会让本用例变红."""
+        from app.settings import _is_legacy_demo_secret
+
+        assert _is_legacy_demo_secret("abcdefghijklmnopqrstuvwxyz", "token")
+        assert _is_legacy_demo_secret("b48381c4b98311ea90b100155d14fa3b", "hengda")
+        assert _is_legacy_demo_secret("jtwl_access_key", "oss_access")
+        assert _is_legacy_demo_secret("minio.prod", "oss_secret")
+        assert not _is_legacy_demo_secret(self._VALID_TOKEN, "token")
+        assert not _is_legacy_demo_secret(None, "token")
+
     def test_legacy_hengda_fingerprint_is_rejected_independently(self) -> None:
         from pydantic import ValidationError
 
