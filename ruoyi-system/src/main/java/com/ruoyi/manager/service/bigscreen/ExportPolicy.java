@@ -4,6 +4,7 @@ import com.ruoyi.integration.api.ApiClientException;
 import com.ruoyi.integration.api.ApiErrorCode;
 import com.ruoyi.integration.api.TrafficQueryContract;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -66,11 +67,19 @@ public final class ExportPolicy
         return mode;
     }
 
-    public static List<String> resolveDisplayFields(String type, List<String> requested)
+    public static List<String> resolveDisplayFields(String type, List<String> requested,
+                                                    boolean plateColorNameSupported)
     {
         if (requested == null || requested.isEmpty())
         {
-            return defaultDisplayFields(type);
+            List<String> defaults = new ArrayList<String>(defaultDisplayFields(type));
+            // api 只对 fee 展示列声明了 plate_color_name；未支持时不要请求空列
+            if (plateColorNameSupported && "fee".equals(type)
+                    && !defaults.contains("plate_color_name"))
+            {
+                defaults.add("plate_color_name");
+            }
+            return defaults;
         }
         if (requested.size() > MAX_DISPLAY_FIELDS)
         {
@@ -83,6 +92,11 @@ public final class ExportPolicy
             {
                 throw new ApiClientException(ApiErrorCode.INVALID_ARGUMENT, "export",
                         "展示字段路径不允许包含大字段: " + field + "，请使用全字段导出");
+            }
+            if ("plate_color_name".equals(field) && !plateColorNameSupported)
+            {
+                throw new ApiClientException(ApiErrorCode.INVALID_ARGUMENT, "export",
+                        "api 尚未支持 " + type + " 展示字段 plate_color_name");
             }
         }
         return requested;
@@ -125,9 +139,11 @@ public final class ExportPolicy
     /**
      * 全字段导出过滤能力校验。
      *
-     * @param dimensionEnabled api 是否已支持维度过滤（启动/运行期能力探测）
+     * @param type 导出表：snapshot/fee/trail
+     * @param capabilities api 能力探测结果（含按表/字段矩阵）
      */
-    public static void validateFullFilters(Map<String, String> fuzzyFields, boolean dimensionEnabled)
+    public static void validateFullFilters(String type, Map<String, String> fuzzyFields,
+                                           ExportCapabilityService.Capabilities capabilities)
     {
         if (fuzzyFields == null || fuzzyFields.isEmpty())
         {
@@ -140,15 +156,16 @@ public final class ExportPolicy
             {
                 continue;
             }
-            if (!dimensionEnabled)
-            {
-                throw new ApiClientException(ApiErrorCode.INVALID_ARGUMENT, "export",
-                        "全字段导出当前仅支持车牌/颜色过滤；维度过滤 " + field + " 待 api 补齐后再开放");
-            }
             if (!DIMENSION_FILTERS.contains(field))
             {
                 throw new ApiClientException(ApiErrorCode.INVALID_ARGUMENT, "export",
                         "全字段导出不支持过滤字段: " + field);
+            }
+            if (capabilities == null || !capabilities.supportsDimensionField(type, field))
+            {
+                throw new ApiClientException(ApiErrorCode.INVALID_ARGUMENT, "export",
+                        "全字段导出当前不支持 " + type + " 的维度过滤 " + field
+                                + "（api 按表能力矩阵未声明）");
             }
         }
     }
