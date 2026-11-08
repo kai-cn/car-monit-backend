@@ -251,7 +251,7 @@ bigscreen:
     mode: api
   # 全字段导出维度过滤能力：auto=探测 api /api/v3/export/capabilities；true/false=强制开关
   export:
-    full-dimension-filters: true
+    full-dimension-filters: auto
   # 灰度/回滚开关默认值（Redis cm:{env}:switch:{name} 可运行期覆盖）
   switches:
     stats-api-first: true

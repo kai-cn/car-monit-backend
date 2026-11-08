@@ -119,8 +119,8 @@ public class BigScreenExportService
         {
             // 入队前先校验用途与过滤能力，避免审批通过后才失败
             ExportPolicy.validatePurpose(request.getPurpose());
-            ExportPolicy.validateFullFilters(request.getFuzzyFields(),
-                    capabilityService.fullDimensionFiltersEnabled());
+            ExportPolicy.validateFullFilters(request.getType(), request.getFuzzyFields(),
+                    capabilityService.current());
             return createApproval(request, mode, userId, username);
         }
         return submitInternal(request, mode, userId, username, false, 1);
@@ -146,14 +146,17 @@ public class BigScreenExportService
                 checkFullExportPermission(userId);
             }
             ExportPolicy.validatePurpose(request.getPurpose());
-            ExportPolicy.validateFullFilters(request.getFuzzyFields(),
-                    capabilityService.fullDimensionFiltersEnabled());
+            ExportCapabilityService.Capabilities capabilities = capabilityService.current();
+            ExportPolicy.validateFullFilters(request.getType(), request.getFuzzyFields(),
+                    capabilities);
             body.put("fields", Collections.emptyList());
             body.put("purpose", request.getPurpose());
         }
         else
         {
-            List<String> fields = ExportPolicy.resolveDisplayFields(request.getType(), request.getFields());
+            ExportCapabilityService.Capabilities capabilities = capabilityService.current();
+            List<String> fields = ExportPolicy.resolveDisplayFields(request.getType(),
+                    request.getFields(), capabilities.supportsPlateColorName(request.getType()));
             body.put("fields", fields);
             body.put("purpose", request.getPurpose());
         }
