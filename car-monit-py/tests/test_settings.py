@@ -289,6 +289,31 @@ class TestFailClosedSecrets:
         assert "SPRING__DATASOURCE__DRUID__MASTER__PASSWORD" in secret_warnings[0]
 
 
+class TestYamlPath:
+    """非 editable 安装：源码目录没有 config/，要回退到 data-files 安装位置."""
+
+    def test_installed_data_file_is_the_fallback(self, tmp_path, monkeypatch) -> None:
+        from app import settings as settings_module
+
+        monkeypatch.delenv("CM_CONFIG_FILE", raising=False)
+        monkeypatch.setattr(settings_module, "CONFIG_DIR", tmp_path / "missing")
+        monkeypatch.setattr(settings_module.sys, "prefix", str(tmp_path / "prefix"))
+        installed = tmp_path / "prefix" / "config" / "application.yml"
+        installed.parent.mkdir(parents=True)
+        installed.write_text("server:\n  port: 1234\n", encoding="utf-8")
+
+        assert settings_module._yaml_path() == installed
+
+    def test_env_override_wins(self, tmp_path, monkeypatch) -> None:
+        from app import settings as settings_module
+
+        explicit = tmp_path / "custom.yml"
+        explicit.write_text("server:\n  port: 1\n", encoding="utf-8")
+        monkeypatch.setenv("CM_CONFIG_FILE", str(explicit))
+
+        assert settings_module._yaml_path() == explicit
+
+
 @pytest.fixture(scope="module")
 def settings():
     """Fresh settings object (bypasses the process-wide lru_cache)."""

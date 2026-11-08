@@ -28,6 +28,7 @@ from __future__ import annotations
 import functools
 import os
 import re
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qs, urlparse
@@ -761,9 +762,20 @@ def _load_yaml(path: Path) -> Dict[str, Any]:
 
 
 def _yaml_path() -> Path:
-    """``config/application.yml``, overridable with ``CM_CONFIG_FILE``."""
+    """``config/application.yml``, overridable with ``CM_CONFIG_FILE``.
+
+    非 editable 安装时源码目录没有 ``config/``；构建配置通过 ``data-files`` 把它
+    装到 ``sys.prefix/config/``，这里按顺序找：显式环境变量 -> 源码目录 -> 安装目录。
+    """
     configured = os.environ.get("CM_CONFIG_FILE")
-    return Path(configured) if configured else CONFIG_DIR / "application.yml"
+    if configured:
+        return Path(configured)
+    candidates = [CONFIG_DIR / "application.yml", Path(sys.prefix) / "config" / "application.yml"]
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    # 都不存在时返回源码路径：``_load_yaml`` 会按"没有 YAML"处理，使用字段默认值。
+    return candidates[0]
 
 
 class YamlConfigSettingsSource(PydanticBaseSettingsSource):
