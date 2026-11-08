@@ -64,11 +64,18 @@ public class ZdataTrailFittingController extends BaseController {
 
 
     /**
-     * 获取车辆出入口拟合轨迹详细信息
+     * 获取车辆出入口拟合轨迹详细信息。
+     *
+     * <p>api 侧暂无按 cid 的等价详情端点，这里只能读 backend 本地表，
+     * 数据可能陈旧、无实时保证；响应中显式标注来源与实时性，避免前端误判为实时数据。</p>
      */
     @GetMapping(value = "/{cid}")
     public AjaxResult getInfo(@PathVariable("cid") String cid) {
-        return AjaxResult.success(zdataTrailFittingService.selectZdataTrailFittingById(cid));
+        AjaxResult result = AjaxResult.success(zdataTrailFittingService.selectZdataTrailFittingById(cid));
+        result.put("dataSource", "LOCAL_DB");
+        result.put("realtime", false);
+        result.put("message", "数据来自 backend 本地表，可能陈旧，无实时保证");
+        return result;
     }
 
 

@@ -1,7 +1,6 @@
 package com.ruoyi.web.controller.base;
 
 import com.ruoyi.base.domain.OdsSzdnProvinceBorderVehicleWeightNewstructure;
-import com.ruoyi.base.service.IOdsSzdnProvinceBorderVehicleWeightNewstructureService;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.PageDomain;
@@ -29,9 +28,6 @@ import java.util.List;
 public class OdsSzdnProvinceBorderVehicleWeightNewstructureController extends BaseController {
 
     @Autowired
-    private IOdsSzdnProvinceBorderVehicleWeightNewstructureService odsSzdnProvinceBorderVehicleWeightNewstructureService;
-
-    @Autowired
     private TrafficApiClient trafficApiClient;
 
     /**
@@ -55,11 +51,17 @@ public class OdsSzdnProvinceBorderVehicleWeightNewstructureController extends Ba
 
 
     /**
-     * 获取省界称重详细信息
+     * 获取省界称重详细信息（api 按主键查询；api 不可用返回明确错误）
      */
     @GetMapping(value = "/{dataSource}")
     public AjaxResult getInfo(@PathVariable("dataSource") String dataSource) {
-        return AjaxResult.success(odsSzdnProvinceBorderVehicleWeightNewstructureService.selectOdsSzdnProvinceBorderVehicleWeightNewstructureById(dataSource));
+        try {
+            return AjaxResult.success(trafficApiClient.flowDetail("/base/vehicleweight",
+                    dataSource, OdsSzdnProvinceBorderVehicleWeightNewstructure.class));
+        } catch (ApiClientException e) {
+            logger.warn("[省界称重] 详情 api 查询失败 code={} msg={}", e.getCode(), e.getMessage());
+            return AjaxResult.error(FlowApiSupport.statusFor(e), FlowApiSupport.messageFor(e));
+        }
     }
 
 

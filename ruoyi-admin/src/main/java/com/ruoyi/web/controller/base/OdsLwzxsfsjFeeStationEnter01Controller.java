@@ -1,7 +1,6 @@
 package com.ruoyi.web.controller.base;
 
 import com.ruoyi.base.domain.OdsLwzxsfsjFeeStationEnter01;
-import com.ruoyi.base.service.IOdsLwzxsfsjFeeStationEnter01Service;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.PageDomain;
@@ -29,9 +28,6 @@ import java.util.List;
 public class OdsLwzxsfsjFeeStationEnter01Controller extends BaseController {
 
     @Autowired
-    private IOdsLwzxsfsjFeeStationEnter01Service odsLwzxsfsjFeeStationEnter01Service;
-
-    @Autowired
     private TrafficApiClient trafficApiClient;
 
     /**
@@ -55,11 +51,17 @@ public class OdsLwzxsfsjFeeStationEnter01Controller extends BaseController {
 
 
     /**
-     * 获取收费站入口数据详细信息
+     * 获取收费站入口数据详细信息（api 按主键查询；api 不可用返回明确错误）
      */
     @GetMapping(value = "/{bigId}")
     public AjaxResult getInfo(@PathVariable("bigId") Long bigId) {
-        return AjaxResult.success(odsLwzxsfsjFeeStationEnter01Service.selectOdsLwzxsfsjFeeStationEnter01ById(bigId));
+        try {
+            return AjaxResult.success(trafficApiClient.flowDetail("/base/feeStationEnter",
+                    String.valueOf(bigId), OdsLwzxsfsjFeeStationEnter01.class));
+        } catch (ApiClientException e) {
+            logger.warn("[收费站入口] 详情 api 查询失败 code={} msg={}", e.getCode(), e.getMessage());
+            return AjaxResult.error(FlowApiSupport.statusFor(e), FlowApiSupport.messageFor(e));
+        }
     }
 
 

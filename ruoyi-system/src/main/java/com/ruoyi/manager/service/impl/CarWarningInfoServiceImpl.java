@@ -58,6 +58,10 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
 
 
             List<TrailInfo> trailInfoList = redisCache.getCacheObject(nextKey);
+            if (null == trailInfoList || trailInfoList.isEmpty()) {
+                // api 全量历史缺失时回退 backend 私有“当前页”缓存（不再写共享键）
+                trailInfoList = redisCache.getCacheObject(Constants.car_history_trail_page + carNo);
+            }
             List<TrailBo> trailFwqList = new ArrayList<>();
             if (null != trailInfoList && trailInfoList.size() > 0) {
                 List<List<TrailBo>> cylylist = new ArrayList<>();

@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.base.domain.OdsCxztFwqclls;
-import com.ruoyi.base.service.IOdsCxztFwqcllsService;
 import com.ruoyi.common.core.page.PageDomain;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.core.page.TableSupport;
@@ -27,9 +26,6 @@ import com.ruoyi.integration.api.TrafficApiClient;
 @RestController
 @RequestMapping("/manager/fwqclls")
 public class OdsCxztFwqcllsController extends BaseController {
-
-    @Autowired
-    private IOdsCxztFwqcllsService odsCxztFwqcllsService;
 
     @Autowired
     private TrafficApiClient trafficApiClient;
@@ -55,11 +51,17 @@ public class OdsCxztFwqcllsController extends BaseController {
     }
 
     /**
-     * 获取服务区车辆流水详细信息
+     * 获取服务区车辆流水详细信息（api 按主键查询；api 不可用返回明确错误）
      */
     @GetMapping(value = "/{bigId}")
     public AjaxResult getInfo(@PathVariable("bigId") Long bigId) {
-        return AjaxResult.success(odsCxztFwqcllsService.selectOdsCxztFwqcllsById(bigId));
+        try {
+            return AjaxResult.success(trafficApiClient.flowDetail("/manager/fwqclls",
+                    String.valueOf(bigId), OdsCxztFwqclls.class));
+        } catch (ApiClientException e) {
+            logger.warn("[服务区流水] 详情 api 查询失败 code={} msg={}", e.getCode(), e.getMessage());
+            return AjaxResult.error(FlowApiSupport.statusFor(e), FlowApiSupport.messageFor(e));
+        }
     }
 
 

@@ -174,16 +174,18 @@ public class CarTrackInfoController extends BaseController {
     }
 
     /**
-     * 轨迹缓存仍保留（预警详情 trailFwqList 依赖 car_history_trail），但不再落库。
+     * 轨迹“当前页”缓存写入 backend 私有键，禁止写 {@code car_history_trail}：
+     * 该键由 api 侧 TrackTask 作为“全量历史”只读消费，写入分页数据会被当成旧全量合并。
+     * 预警详情优先读 api 全量键，缺失时再回退本页缓存。
      */
     private void cacheHistoryTrail(String carNo, List<TrailInfo> trailList) {
         if (CommonUtil.isBlank(carNo) || null == trailList || trailList.isEmpty()) {
             return;
         }
         try {
-            redisCache.setCacheObject(Constants.car_history_trail + carNo, trailList);
+            redisCache.setCacheObject(Constants.car_history_trail_page + carNo, trailList);
         } catch (RuntimeException e) {
-            logger.warn("[轨迹在线] 写 Redis 轨迹缓存失败 carNo={} reason={}", carNo, e.getMessage());
+            logger.warn("[轨迹在线] 写 Redis 轨迹页缓存失败 carNo={} reason={}", carNo, e.getMessage());
         }
     }
 
