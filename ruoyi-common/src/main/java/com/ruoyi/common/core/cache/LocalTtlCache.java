@@ -12,6 +12,12 @@ import java.util.Map;
  */
 public class LocalTtlCache
 {
+    /**
+     * 过期后的保留窗口：保留最近一次值用于“回源失败返回 stale”，
+     * 不参与正常命中判断，最多多占 {@code maxEntries} 条记录。
+     */
+    public static final long RETAINED_GRACE_MS = 300_000L;
+
     public static class Entry
     {
         private final Object value;
@@ -64,7 +70,31 @@ public class LocalTtlCache
         {
             return null;
         }
-        if (System.currentTimeMillis() > entry.getExpireAt())
+        long now = System.currentTimeMillis();
+        if (now > entry.getExpireAt())
+        {
+            // 过期后保留在 grace 窗口内，供回源失败时返回 stale
+            if (now > entry.getExpireAt() + RETAINED_GRACE_MS)
+            {
+                store.remove(key);
+            }
+            return null;
+        }
+        return entry;
+    }
+
+    /**
+     * 取“已过期但仍在保留窗口内”的值，仅用于回源失败兜底。
+     */
+    public synchronized Entry getRetained(String key)
+    {
+        Entry entry = store.get(key);
+        if (entry == null)
+        {
+            return null;
+        }
+        long now = System.currentTimeMillis();
+        if (now > entry.getExpireAt() + RETAINED_GRACE_MS)
         {
             store.remove(key);
             return null;

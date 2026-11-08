@@ -26,7 +26,7 @@
 | 连接/读超时按场景独立配置（`traffic-api.*`） | 全局 60s 或编译期固定值 | 避免统计 2s api 超时被 backend 1s 先截断；列表/统计/导出/下载预算独立 | 见 §11.5 超时预算表 |
 | 仅幂等 GET 重试（按场景配置次数） | 所有请求重试 | 避免导出任务重复提交；统计默认不重试以快速降级 | `traffic-api.*-retry-count` |
 | 熔断只统计超时/网络/5xx | 所有失败计数 | 404 表示 api 契约未上线，不应触发熔断 | 熔断打开期间直接降级，半开探测 |
-| 404 映射 `NOT_FOUND`，不熔断 | 视为 5xx | 阶段一 api 的 `/api/v1/bigscreen/**` 尚未实现，需持续低频探测 | 404 后按 endpoint 冷却 60s（`traffic-api.contract-probe-interval-ms`），避免每个缓存周期打无效请求 |
+| 404 映射 `NOT_FOUND`，不熔断 | 视为 5xx | 阶段一 api 尚未实现时需持续低频探测；现 api 已实现，冷却仅用于真实未上线端点 | 404 后按 endpoint 冷却 60s（`traffic-api.contract-probe-interval-ms`），避免每个缓存周期打无效请求 |
 
 ### 2.2 契约端点（backend → api）
 
@@ -34,14 +34,14 @@
 |---|---|---|
 | 门架列表 / 导出 | `GET /base/snapshotflow/list`、`/listToExport` | api 已存在 |
 | 收费列表 / 导出 | `GET /base/feerecords/list`、`/listToExport` | api 已存在 |
-| 逃费类型统计 | `GET /api/v1/bigscreen/stats/escape` | **新增契约，待 api 实现** |
-| 追缴统计 | `GET /api/v1/bigscreen/stats/audit` | **新增契约，待 api 实现** |
-| 堵漏增收 | `GET /api/v1/bigscreen/stats/income` | **新增契约，待 api 实现** |
-| 路段预警 Top-N | `GET /api/v1/bigscreen/stats/warning-top` | **新增契约，待 api 实现** |
-| 实时预警列表 | `GET /api/v1/bigscreen/warning/list` | **新增契约，待 api 实现** |
+| 逃费类型统计 | `GET /api/v1/bigscreen/stats/escape` | **api 已实现** |
+| 追缴统计 | `GET /api/v1/bigscreen/stats/audit` | **api 已实现** |
+| 堵漏增收 | `GET /api/v1/bigscreen/stats/income` | **api 已实现** |
+| 路段预警 Top-N | `GET /api/v1/bigscreen/stats/warning-top` | **api 已实现** |
+| 实时预警列表 | `GET /api/v1/bigscreen/warning/list` | **api 已实现** |
 | 导出提交 | `POST /api/v1/large/export/submit?type&startTime&endTime&mode` | api 已存在基础版；`mode` 为新增参数 |
 | 导出状态 | `GET /api/v1/large/export/status/{taskId}` | api 已存在 |
-| 导出下载 | `GET /api/v1/large/export/download/{taskId}` | **新增契约，待 api 实现** |
+| 导出下载 | `GET /api/v1/large/export/download/{taskId}` | **api 已实现** |
 
 > 兼容性：api 现有导出提交只读取 `fuzzyFields.xxx` 扁平键，backend 已按该形态发送，同时附带 `fields`、`purpose`、`mode`；新增键对旧版 api 无副作用（被忽略）。
 
@@ -51,7 +51,7 @@
 
 | 决策 | 备选 | 理由 | 影响 |
 |---|---|---|---|
-| `bigscreen.stats.mode=hybrid`：API 优先、legacy 兜底 | 直接切 API（api 未实现会全挂）；保持纯 DB | 阶段一 api 预聚合端点未上线，纯 API 不可运行；纯 DB 无法验证新链路 | 504/5xx/404 时回退本地业务表并输出 `X-Degrade`；api 上线后可切 `api` 模式 |
+| `bigscreen.stats.mode=hybrid`：API 优先、legacy 兜底 | 直接切 API（api 未实现会全挂）；保持纯 DB | api 预聚合端点已实现，但 hybrid 仍保留故障回退能力 | 504/5xx/404 时回退本地业务表并输出 `X-Degrade`；确认稳定后可切 `api` 模式 |
 | legacy 兜底保留 | 删除旧 SQL | 保证灰度期可用、可回滚 | 旧 `carStatistics/carAudit/incomeStatistic/topTen` SQL 保留 |
 | `topTen` 默认最近 7 天，支持 `startTime/endTime` | 保持全历史 | 设计明确要求修复「无时间范围」 | 旧调用不传参仍可用，但语义从“全历史”变为“近 7 天” |
 | `topTen` legacy SQL 增加时间过滤 + `LIMIT 10` | 只改 service 层 | SQL 层兜底，避免漏改调用方 | 新增 `getTopTenRange`，旧 `getTopTen` 也补了 7 天条件 |
@@ -100,9 +100,9 @@
 |---|---|---|---|
 | 两条路径 `display` / `full` | 单一路径 | 设计 §5.5 双路径：ES PIT vs GaussDB 游标 | `mode` 透传 api；显示路径拒绝轨迹点/大文本，全字段路径不限字段 |
 | 异步任务：backend 只做提交/状态/下载编排 | backend 自己写文件 | 设计明确导出不得占用请求线程；文件由 api/对象存储持有 | 任务元数据（归属/模式/时间/用途）落 Redis 7 天 |
-| 下载 HMAC-SHA256 令牌 15 分钟 + 归属校验 + 6 次/分钟限流 | 仅登录态；匿名签名 URL | 设计 §5.5.2 签名 URL 绑定 taskId + 用户 | 令牌不替代登录态；如需匿名下载需在 SecurityConfig 单独放行并评审 |
-| 全字段导出要求用途说明 + 权限（`manager:bigscreen:exportFull` 或 `manager:bigscreen:export`，admin 直通） | 不校验 | 设计 §5.5.3 审批/审计要求 | 权限数据未初始化时仅 admin 可用；白天/夜间调度交给 api 队列，backend 不阻塞 |
-| 下载流式代理，独立长超时 RestTemplate（5 分钟） | 先落本地再返回 | 避免大文件内存/磁盘；与在线查询线程隔离 | 依赖 api 提供 `/export/download/{taskId}` |
+| 下载 HMAC-SHA256 令牌 15 分钟 + 归属校验 + 6 次/分钟限流 | 仅登录态；匿名签名 URL | 设计 §5.5.2 签名 URL 绑定 taskId + 用户 | 令牌经 `X-Export-Download-Token` 请求头传递（query 仅兼容），响应带 `Referrer-Policy: no-referrer` + `Cache-Control: no-store`；令牌不替代登录态 |
+| 全字段导出要求用途说明 + 权限（`manager:bigscreen:export` 且 `manager:bigscreen:exportFull`） | 不校验 | 设计 §5.5.3 审批/审计要求 | `/display` 与 `/full` 均有 `@PreAuthorize`；服务端按登录用户 `subCode` 强制注入 `orgcode`，非管理员不能越机构导出；初始权限 SQL 见 `ruoyi-system/src/main/resources/sql/v3-bigscreen-export-permissions.sql` |
+| 下载流式代理，独立长超时 RestTemplate（**30 分钟**） | 先落本地再返回 | 避免大文件内存/磁盘；与在线查询线程隔离 | `export.download.read-timeout-ms=1800000`；依赖 api 提供 `/export/download/{taskId}` |
 
 ---
 
@@ -123,9 +123,9 @@
 |---|---|
 | `mvn -pl ruoyi-common,ruoyi-system,ruoyi-framework,ruoyi-admin -am -DskipTests compile` | 通过 |
 | 全模块编译（含 quartz/generator） | **已通过（2026-11-08，见 §17）** |
-| api `/api/v1/bigscreen/**`、`/export/download/**` | **未实现**，backend 侧按本文契约编码；运行时将以 404 → legacy/降级呈现 |
-| 与运行中服务联调 | 未执行（按要求不重启/不停止现有服务） |
-| 单元/集成测试 | 未新增；当前仓库无对应测试基线 |
+| api `/api/v1/bigscreen/**`、`/export/download/**` | **api 已实现**（见 §17 / §18） |
+| 与运行中服务联调 | 已完成（见 §17：真实 api 端到端验证） |
+| 单元测试 | **已补齐（2026-11-09）**：`ExportPolicy`、`TwoLevelCache`、`ResilientApiExecutor`、审批状态机 |
 | 指标/告警接入 | 仅日志与响应头，未接 Prometheus/告警 |
 | 提交 | 未 commit（按要求） |
 
@@ -200,7 +200,7 @@
 |---|---:|---:|---:|---:|---:|---|
 | 列表（门架/收费） | 1000ms | 2500ms | 1 | 3.5s | 3.5s×2+200ms = **7.2s** | api 列表 SLO ≤2s |
 | 统计（escape/audit/income/warning-top） | 1000ms | 3000ms | 0 | 4.0s | **4.0s** | api `query-timeout-ms=2000`，读 3s 避免倒挂；超时即降级 |
-| 实时预警列表（未实现） | 1000ms | 2000ms | 0 | 3.0s | **3.0s** | 404 后 endpoint 冷却 60s，Redis 快照兜底 |
+| 实时预警列表 | 1000ms | 2000ms | 0 | 3.0s | **3.0s** | 404 后 endpoint 冷却 60s，Redis 快照兜底 |
 | 导出提交 | 1000ms | 6000ms | 0 | 7.0s | **7.0s** | POST 非幂等，禁止重试 |
 | 导出状态 | 1000ms | 2000ms | 1 | 3.0s | 3.0s×2+200ms = **6.2s** | 轮询接口 |
 | 旧同步导出（1 万条） | 1000ms | 30000ms | 0 | 31.0s | **31.0s** | 仅旧页面；新导出走异步任务 |
@@ -208,7 +208,8 @@
 
 其他预算：
 - 重试退避：`retry-backoff-ms=200`，第 n 次重试前等待 `200×n` ms。
-- 熔断：连续基础设施失败（超时/网络/5xx）**5 次** → 打开 **30s** → 半开 1 个探测许可；成功即关闭。
+- 熔断：**按调用域隔离**（export / warning / stats / flow / default），各域独立计数；连续基础设施失败（超时/网络/5xx）**5 次** → 打开 **30s** → 半开 1 个探测许可；成功即关闭。导出 5xx 不再连坐统计/预警。
+- 指标：同一次尝试的错误只计一次（响应分支与 catch 不重复累加）。
 - 404：不计入熔断，按 endpoint 冷却 **60s**（`contract-probe-interval-ms`）。
 - 限流：429 不重试，直接降级/报错。
 - 下载：独立 `trafficApiDownloadRestTemplate`，连接 3s、读 30 分钟，可按 `export.download.*` 覆盖。
@@ -274,7 +275,9 @@
 | 服务区车辆流水 | `GET /manager/fwqclls/list` | 同上 | 空表/低频，api 侧仍走 GaussDB |
 | 拟合轨迹 | `GET /base/fitting/list` | 同上 | 不再直查 `zdata_trail_fitting` |
 
-- 详情接口 `GET /{bigId}` 仍走 api/Forest 按主键查询（设计 §4.3 “按主键/明细 → GaussDB”），不属于列表直查分表。
+- 详情接口：
+  - `GET /base/provcapture/{bigId}`、`/base/stationcapture/{bigId}`、`/base/vehicleweight/{dataSource}`、`/base/feeStationEnter/{bigId}`、`/manager/fwqclls/{bigId}` 通过 `TrafficApiClient.flowDetail` 调 api 等价端点（API 来源，api 不可用返回明确错误）；
+  - `GET /base/fitting/{cid}` **api 暂无等价详情端点**，仍读 backend 本地 `zdata_trail_fitting`。响应显式带 `dataSource=LOCAL_DB`、`realtime=false` 与“数据可能陈旧、无实时保证”提示；这是**已知数据时效缺口**，待 api 提供按 cid 的详情接口后再切换。
 - `FLOW_EXTENDED` 读超时 5s、重试 0：这些表未进 ES，api 侧 GaussDB 分页可能慢；重试会放大数据库压力。
 - 失败返回 `TableDataInfo(code!=200, msg)`，不静默回退本地分表；前端可展示“数据服务暂不可用”。
 
@@ -292,17 +295,17 @@
 
 | 决策 | 备选 | 理由 | 影响 |
 |---|---|---|---|
-| 版本号主动失效：`cm:{env}:dict:version:{domain}` + INCR | Redis Pub/Sub | 无需额外连接/订阅容器；多节点最终一致；实现简单可回滚 | 各节点最多 5s 看到新版本；旧 key 由 TTL 清理 |
+| 版本号主动失效：`cm:{env}:dict:version:{domain}` + INCR | Redis Pub/Sub | 无需额外连接/订阅容器；多节点最终一致；实现简单可回滚 | 写入端立即加版本；各节点最多 5s 感知。该 ≤5s 仅对**经 backend 后台写入**（字典/路段/机构等控制器 hook）成立；api 直接改库不会触发 hook，需等 TTL 或手动失效 |
 | 缓存 key 加版本段 `v{n}:` | 逐 key 删除 | 避免 SCAN/批量删除；避免删除期间穿透 | 版本变化后短时间存在两套 key，内存可接受 |
 | 版本域：section / toll / gantry / fwq / org / sysdict / plate_color | 全局单一版本 | 维度变更只失效对应域；系统字典变更失效 sysdict | 写入 hook：SysDictData、SysDictType、Section、Toll、Gantry、Fwqjcxx、BaseOrg 控制器 |
-| 版本读取本地缓存 5s | 每请求读 Redis | 降低 Redis QPS | 失效传播 ≤5s；Redis 不可用时退化为本地版本 + TTL |
+| 版本读取本地缓存 5s | 每请求读 Redis | 降低 Redis QPS | 失效传播 ≤5s（仅 backend 写入路径）；Redis 不可用时退化为本地版本 + TTL |
 | 运行期开关 `dict-version=off` | 仅配置 | 回滚到纯 TTL | 无需重启 |
 | 车牌颜色以 `sys_dict_data(dict_type=plate_color)` 为准 | 硬编码颜色枚举 | 用户明确 3307 `carmonit` 库字典表为权威 | 列表/导出 `plateColorName` 取字典 label |
 | 未知颜色码回退原始码并标记 `plateColorMark=UNKNOWN` | 丢弃行/置空 | 不因字典缺失丢业务数据 | 前端可对 UNKNOWN 做提示；字典恢复后自动正确 |
 | 字典查询失败降级 | 报错阻断列表 | 列表可用性优先 | 返回原始码 + UNKNOWN；缓存层 `REDIS_UNAVAILABLE`/回源失败按既有降级策略 |
 | 列表富化位置 | 各控制器重复实现 | 统一在 `TrafficApiClient.deserializeRows` 反射补齐 `plateColorName`/`plateColorMark` | 覆盖门架/收费/抓拍/称重/服务区等所有 api 列表；预警列表在 `BigScreenRealtimeService` 单独富化 |
 | 主动失效验证（E2E） | — | 调用 `DELETE /system/dict/type/clearCache` 后 Redis `cm:druid:dict:version:sysdict` 由空→1；随后路段/机构列表正常（85/481 行） | 版本 hook 生效，缓存 key 已切换 |
-| V3 展示字段导出列 | 期望 api 直接输出 `plate_color_name` | api 已在 fee `displayFields`/`displayAliases` 声明该列 | fee 展示导出默认自动追加 `plate_color_name`；snapshot 仍未声明，请求该列会被拒绝 |
+| V3 展示字段导出列 | 期望 api 直接输出 `plate_color_name` | api 已在 snapshot/fee `displayFields`/`displayAliases` 声明该列（`plateColorNameByTable.snapshot=true`） | snapshot/fee 展示导出默认自动追加 `plate_color_name`；trail 未声明，请求该列会被拒绝 |
 
 ---
 
@@ -311,14 +314,14 @@
 | 指标 | 采集点 | 输出 |
 |---|---|---|
 | `api.request/success/timeout/unavailable/upstream_error/not_found/rate_limited/contract_violation` | `ResilientApiExecutor` 每次尝试 | `/monitor/bigscreen/metrics` counters |
-| `api.circuit.state`（0 关 / 1 开 / 2 半开）、`api.circuit_open` | `ResilientApiExecutor` + `CircuitBreaker` | gauge/counter |
-| `cache.hit/L1/L2/STALE/MISS`、`cache.l2.read_failed/write_failed` | `TwoLevelCache` | counters，命中率 = 1 - MISS/总 |
+| `api.circuit.state`（0 关 / 1 开 / 2 半开）、`api.circuit_open` | `ResilientApiExecutor` 按调用域（export/warning/stats/flow/default） | 整体最高级别 gauge；`/metrics` 另返回 `circuitScenarios` 各域状态 |
+| `cache.hit/L1/L2/STALE/MISS`、`cache.l2.read_failed/write_failed` | `TwoLevelCache` | counters；命中率统一为 `(L1+L2+STALE)/(L1+L2+STALE+MISS)`，即 `1 - MISS/总`，告警任务同公式 |
 | `degrade` + `degrade.{REASON}` | `CacheContext.markDegrade` | counters（熔断/超时/Redis 不可用/MULTI_VALUE 等） |
 | `export.submitted/full.submitted/completed/failed/active` | `BigScreenExportService` | 积压 = `export.active` gauge |
 | `export.approval.pending/approved/rejected` | 审批流程 | counters |
 | `export.capability.gate_closed` | 能力探测失败/未支持 | counter |
 
-- 指标端点：`GET /monitor/bigscreen/metrics`（`monitor:server:list` 权限），返回 counters、gauges、api 超时率、缓存命中率、导出积压、熔断状态。
+- 指标端点：`GET /monitor/bigscreen/metrics`（`monitor:server:list` 权限），返回 counters、gauges、api 超时率、缓存命中率、导出积压、整体熔断状态与各调用域状态。
 - 告警任务：`TrafficMetricsAlertTask` 每 60s 比较增量，超阈值写 WARN 并累加 `alert.*`；阈值 `traffic-api.metrics.*`。
 - **调度方式**：本工程没有 `@EnableScheduling`（历史 `@Scheduled` 不触发），因此新任务显式复用 RuoYi `scheduledExecutorService`，避免全局启用调度改变既有 Quartz 行为。
 - 接入 Prometheus 时可直接把 counters 映射为文本格式；当前不新增依赖。
@@ -331,7 +334,7 @@
 |---|---|---|---|
 | 默认 `auto`：探测 `GET /api/v3/export/capabilities` | 永久拒绝；永久放开 | 满足“api 支持后自动放开”，api 未实现时 404 → 保持拒绝 | 探测 5 分钟一次，失败/非 2xx 按未支持 |
 | 按表/字段能力矩阵放开 | 只看全局布尔 | api 返回 `dimensionFilters` 按表声明（trail 为空），全局 true 不能代表每张表 | `trail` 维度过滤仍拒绝，snapshot/fee 放开 |
-| `plateColorName` 能力驱动展示列 | 固定请求该列 | api 只在 fee `displayFields` 声明 `plate_color_name` | fee 默认展示字段自动追加；其他表请求该列会 400 |
+| `plateColorName` 能力驱动展示列 | 固定请求该列 | api 在 snapshot/fee `displayFields` 声明 `plate_color_name`（`plateColorNameByTable.snapshot=true`） | snapshot/fee 默认展示字段自动追加；trail 请求该列会 400 |
 | 配置 `bigscreen.export.full-dimension-filters=true/false` 强制覆盖 | 只能自动 | 灰度/回滚/应急 | true=按全表全字段放行；false=全部拒绝 |
 | 未放开时拒绝维度过滤并返回明确提示 | 静默忽略筛选导出全量 | 安全优先：不能“带筛选导出全量” | 错误码 400，提示 api 能力矩阵未声明 |
 | 放开后允许 org/section/road/gantry/toll 编码与名称 | 允许任意字段 | api `buildV3ExportRequest` 解析这些维度 | 未知字段仍 400 |
@@ -367,10 +370,10 @@
 | `mvn -q -DskipTests compile`（全模块） | **通过** |
 | 工作树 | 仅 `d:\work\IdeaProjects\car-monit-backend-java-V3`；未 commit/push |
 | 运行中服务 | 未重启/未停止 |
-| 单元测试 | 未新增（仓库无既有测试基线） |
+| 单元测试 | **已新增（2026-11-09）**：`ExportPolicyTest`、`TwoLevelCacheTest`、`ResilientApiExecutorTest`、`ExportApprovalStateMachineTest`，`mvn -o -B test -pl ruoyi-common,ruoyi-system -am` 通过（29 个用例） |
 | 联调 | **已执行**（backend V3 @9990 → api V3 @9902），详见 §18 |
 | 运维手册 | `docs/ops-runbook-v3.md`（开关/回退/stats-enabled/导出/指标） |
-| 遗留 | api 能力端点已实现并按表矩阵自动放开；fee 展示导出已支持 `plate_color_name`，snapshot 仍未声明；预警 captureType/terms 兜底已于 2026-11-09 移除 |
+| 遗留 | api 能力端点已实现并按表矩阵自动放开；snapshot/fee 展示导出均已支持 `plate_color_name`；预警 captureType/terms 兜底已于 2026-11-09 移除；`/base/fitting/{cid}` 详情仍读本地（api 无等价端点） |
 
 ---
 
@@ -500,7 +503,7 @@ backend 收敛并复测如下（9989 V3，带登录 token）：
 | 项 | 结果 |
 |---|---|
 | warning 兜底 | `captureType=StationCapture`、`tollCode=StationCapture`、`roadCode=G45,G6011` 均 200/100 行、`X-Data-Source=API`、无 `X-Degrade`；`CAPTURE_TYPE_UNSUPPORTED`/`MULTI_VALUE_UNSUPPORTED` 分支已删除 |
-| 展示导出 `plate_color_name` | fee 展示导出 816 行，CSV 表头末尾包含 `plate_color_name`；列白名单不再拦截 |
+| 展示导出 `plate_color_name` | fee 展示导出 816 行，CSV 表头末尾包含 `plate_color_name`（实测）；snapshot 按 api 能力声明自动追加，**代码推断，未单独实测** |
 | 全字段维度过滤 | `fee/snapshot + sectioncode` 提交 200；`trail + sectioncode` 返回 400“按表能力矩阵未声明” |
 | 统计鉴权复测 | 四个统计 200、`X-Data-Source=API`、`X-Cache=MISS`、无 `X-Degrade` |
 | 指标 | `circuit=CLOSED`、`api.success` 正常增长、`degrade` 无新增 |
@@ -509,6 +512,54 @@ backend 收敛并复测如下（9989 V3，带登录 token）：
 **仍保留的故障兜底**：api 超时/5xx/熔断、`warning-api=off` 时实时预警回退 Redis；统计回退 legacy；
 导出提交/查询按错误码降级或报错。上述均只由真实故障触发，不再由“能力缺失/多值/哨兵”触发。
 
-**仍存在的缺口**：snapshot 展示导出尚未声明 `plate_color_name`；api 无导出字节级 pause/resume，
-`/resume` 仍按原参数重新提交。
+**仍存在的缺口**：`/base/fitting/{cid}` 详情 api 无等价端点，仍读本地表并在响应标注 `dataSource=LOCAL_DB`；api 无导出字节级 pause/resume，`/resume` 仍按原参数重新提交。
+
+---
+
+## 22. 2026-11-09 审阅修复：P0/P1 安全与一致性
+
+### 22.1 修复清单
+
+| 编号 | 问题 | 修复 | 验证方式 |
+|---|---|---|---|
+| P0 | `/display`、`/full` 仅登录态，任意用户可批量导出 | 控制器加 `@PreAuthorize`；`/display` 需 `manager:bigscreen:export`，`/full` 还需 `manager:bigscreen:exportFull`；服务层二次校验 | 单测 `ExportPolicyTest`（权限策略/机构范围）+ 代码推断（注解在控制器） |
+| P0 | 导出无机构范围约束 | `ExportPolicy.applyOrgScope`：非管理员强制注入登录用户 `subCode` 到 `fuzzyFields.orgcode`；越机构 403；trail 表 api 无维度，非管理员拒绝 | 单测 `ExportPolicyTest`（6 个机构范围用例） |
+| P0 | 上线后非超管无法使用导出 | 新增幂等权限 SQL：`ruoyi-system/src/main/resources/sql/v3-bigscreen-export-permissions.sql` | SQL 执行后附带核对查询；未在本次环境执行（无 DB 写权限） |
+| P1-1 | retry/resume 绕过开关/限流/权限；审批后无限重试 | `retry()` 重新校验 `export-v3` 开关、`export`/`exportFull` 权限、限流与机构范围；审批开启时 full 重试重新入审批队列；`approve()` 校验开关 | 代码推断 + 单测覆盖审批状态机；无 API 联调 |
+| P1-2 | 并发审批重复提交 api | Redis `setIfAbsent` CAS + 先落 `approving` 再提交；失败回退 `pending`；状态机禁止 pending→approved 跳转 | 单测 `ExportApprovalStateMachineTest`；Redis 原子性依赖 Redis 实现（代码推断） |
+| P1-3 | 下载密钥回退公开默认值；令牌在 query string | 密钥缺失/等于历史默认值/长度<16 时启动失败；令牌改 `X-Export-Download-Token` 头（query 兼容）；响应加 `Referrer-Policy: no-referrer`、`Cache-Control: no-store` | 代码推断（启动自检在 `@PostConstruct`） |
+| P1-4 | 给 api 共享键 `car_list*` 加 600s TTL | 撤销 TTL，恢复 master 无 TTL 语义 | 代码推断；需 api 侧 TrackTask/SysUtil 联调确认 |
+| P1-5 | 轨迹当前页写入 `car_history_trail` 污染 api 全量 | 新增 backend 私有 `car_history_trail_page:{carNo}`；预警/物化读共享键优先、私有键兜底 | 代码推断 |
+| P1-6 | 未知过滤键被 api 静默忽略导致导出全量；`plateColor=1` 被拒 | `ExportPolicy.validateFuzzy` 字段白名单：未知键 400；码值类精确字段允许单字符；车牌/名称仍 ≥2 字符 | 单测 `ExportPolicyTest`（5 个过滤用例） |
+| P1-7 | 6 个详情端点仍直连本地 MyBatis | 5 个改走 api `flowDetail`；`fitting` api 无等价端点，保留本地并标注 `dataSource=LOCAL_DB`/`realtime=false` | 代码推断（api 端点已只读确认存在） |
+| P2 | 空结果 30s 叠加 stale 变 150s；回源失败不返回 stale | 空结果 L1/L2 TTL 固定 30s；L1 过期后保留 5 分钟 grace，回源失败返回 stale | 单测 `TwoLevelCacheTest`（3 用例） |
+| P2 | 全局熔断连坐；错误重复计数 | 熔断按 export/warning/stats/flow/default 隔离；同一次尝试只计一次错误 | 单测 `ResilientApiExecutorTest`（4 用例） |
+| P2 | 审批列表 `KEYS` 阻塞 Redis | `RedisCache.scan` 使用 SCAN 游标 | 代码推断（单测未覆盖 Redis 连接） |
+| P2 | 命中率两套公式 | 统一 `(L1+L2+STALE)/(L1+L2+STALE+MISS)`；告警任务改为 `cache.hit - cache.hit.MISS` | 代码推断；公式在 `BigScreenOpsController` 与 `TrafficMetricsAlertTask` 一致 |
+
+### 22.2 GaussDB 与 ES 一致性方案（硬要求）
+
+V3 的读取路径是**双源**：列表/展示导出走 ES，全字段导出走 GaussDB。两者不是强一致事务，必须按以下规则判定与处理：
+
+1. **真源（SoR）**：GaussDB 是唯一真源；ES 只是检索副本。任何校正方向只能是 GaussDB → ES，禁止反向覆盖。
+2. **写入链路与延迟**：
+   - 主链路：Kafka 消费后应用双写 GaussDB + ES，ES `_id` 用业务主键保证幂等；
+   - 补偿链路：Redis 水位增量同步（at-least-once + 幂等）、Debezium CDC 兜底；
+   - ES 可见时间**晚于** GaussDB 落库，延迟取决于 Kafka 消费与 bulk 批次，当前**未声明硬性 SLA**；因此“刚写入的数据列表暂时查不到”属于预期窗口，不等于数据丢失。
+3. **对账/回填**：
+   - 分钟桶对账：`TrafficReconciliationService`（api，默认关闭，`traffic.reconcile.enabled`），按桶比较 GaussDB `count(*)` 与 ES range count；偏差超阈值写 `search_sync_reconcile` 并触发 `EsBackfillService` 以 GaussDB 为准回灌；
+   - 月度全量对账：`GaussEsConsistencyService`（api，默认关闭，`consistency.reconcile.enabled`），按 `drift-ratio`（默认 0.01）判定 DRIFT；
+   - 两者默认关闭，**上线/排障时必须显式开启并确认 cron**；仅“最终一致”四个字不能作为验收结论。
+4. **列表与全字段导出结果不一致时的判定**：
+   - 若差异发生在写入后短时间内（消费延迟窗口内）：判定为**预期滞后**，不做修复；以全字段导出（GaussDB）为准确认业务数据。
+   - 若同一时间窗在延迟窗口后仍不一致：判定为 **ES 漂移**，执行分钟桶/全量对账 → 回灌 → 重跑展示导出；全字段导出结果不变（GaussDB 未受影响）。
+   - 若 GaussDB 本身与业务系统不一致：不属于 ES 一致性问题，按数据接入/Kafka DLQ 排查，禁止用 ES 反推。
+   - backend 不做二次合并或静默修正；对账/回填动作由 api 侧负责，backend 只消费结果。
+5. **可观测**：api 侧对账结果、回灌任务、DLQ 需纳入监控；backend 侧导出任务保留 `totalRows`（api status）便于与另一路径行数比对。
+
+**已知契约缺口**（不在 backend 侧硬造）：
+- `/base/fitting/{cid}` api 无等价详情端点；
+- api 无导出字节级 pause/resume；
+- api trail 表无任何维度过滤，非管理员轨迹导出暂不支持机构收敛。
+
 

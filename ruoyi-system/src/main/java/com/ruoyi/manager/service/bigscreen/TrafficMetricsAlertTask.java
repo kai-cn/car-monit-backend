@@ -89,7 +89,7 @@ public class TrafficMetricsAlertTask
             long requests = MetricsRegistry.counter("api.request");
             long timeouts = MetricsRegistry.counter("api.timeout");
             long degrades = MetricsRegistry.counter("degrade");
-            long cacheHits = MetricsRegistry.counter("cache.hit");
+            long cacheHits = MetricsRegistry.counter("cache.hit") - MetricsRegistry.counter("cache.hit.MISS");
             long cacheMisses = MetricsRegistry.counter("cache.hit.MISS");
 
             long requestDelta = requests - lastApiRequests;
@@ -123,10 +123,10 @@ public class TrafficMetricsAlertTask
             {
                 alert("EXPORT_BACKLOG", "导出任务积压 " + backlog);
             }
-            CircuitBreaker breaker = resilientApiExecutor.getCircuitBreaker();
-            if (breaker != null && breaker.getState() == CircuitBreaker.State.OPEN)
+            CircuitBreaker.State state = resilientApiExecutor.getOverallCircuitState();
+            if (state == CircuitBreaker.State.OPEN)
             {
-                alert("CIRCUIT_OPEN", "api 熔断已打开");
+                alert("CIRCUIT_OPEN", "api 熔断已打开: " + resilientApiExecutor.getCircuitStates());
             }
         }
         catch (RuntimeException e)
