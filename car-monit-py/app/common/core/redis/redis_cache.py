@@ -85,7 +85,13 @@ class RedisCache:
         return bool(self.client.delete(key))
 
     def _delete_many(self, keys: Collection[Any]) -> bool:
-        """Java: ``return redisTemplate.delete(collection) > 0;``"""
+        """Java: ``return redisTemplate.delete(collection) > 0;``
+
+        ``DEL`` 不带任何键是 Redis 语法错误；空集合直接返回 ``False``
+        （等价于"删除了 0 个"），避免字典/配置缓存为空时抛异常。
+        """
+        if not keys:
+            return False
         return self.client.delete(*keys) > 0
 
     # ------------------------------------------------------------------ key ops
