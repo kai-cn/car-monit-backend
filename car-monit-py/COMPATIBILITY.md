@@ -662,10 +662,12 @@ CorsFilter → LogoutFilter → JwtAuthenticationTokenFilter
 两个实现细节值得知道：
 
 1. **`SecurityMiddleware` 必须注册在最内层。** `main.py` 的注册顺序是
-   `Security → RequestContext → CORS → TraceId`，Starlette 会反转，最终执行顺序正好是
-   `TraceId → CORS → RequestContext → Security → 路由`。安全层要「内」于 `RequestContextMiddleware`，
-   `AsyncFactory.recordLogininfor` 才能从上下文里读到 `Request`；CORS 必须在「外」面，
-   否则预检会被当成未授权请求。
+   `Security → RequestContext → FallbackException → Xss → CORS → TraceId`，Starlette 会反转，
+   最终执行顺序是
+   `TraceId → CORS → Xss → FallbackException → RequestContext → Security → 路由`。
+   安全层要「内」于 `RequestContextMiddleware`，`AsyncFactory.recordLogininfor` 才能从上下文里
+   读到 `Request`；CORS 必须在「外」面，否则预检会被当成未授权请求。XSS 与兜底异常层放在
+   TraceId/CORS 内侧，才能让 413 与未注册异常带上 `X-Trace-Id` / CORS 响应头（§46.1、§25.3）。
 2. **只捕获过滤器阶段的异常。** 端点内部抛出的异常**不允许**被这一层吞掉，否则
    `ServiceException` 得不到约定中的「HTTP 200 + code 500」，会退化成 500。
    实现方式是先 `await to_thread.run_sync(过滤器链)`、再 `await call_next(request)`，只给前者套 `try`。
@@ -4872,16 +4874,19 @@ gantrycar,gantrytrade}/export`、`/base/{geometry,snapshotflow,feerecords}/expor
 ### 46.1 XSS 过滤已落地（P0-2）`[无影响]`
 
 - **实现**：`app/middleware/xss.py` 1:1 移植 `HTMLFilter` + `EscapeUtil.clean`，
-  ASGI 层清洗，挂在过滤器链最外层（对应 `FilterConfig` 的 `HIGHEST_PRECEDENCE`）。
+  ASGI 层清洗。Java 挂在 `HIGHEST_PRECEDENCE`（最外层）；Python 放在 **TraceId/CORS
+  内侧、Security 外侧**：仍先于鉴权缓冲/清洗，同时让 Python-only 的 413 响应能带上
+  `X-Trace-Id` 与 `Access-Control-Allow-Origin`。Java 没有 413 路径，故不影响语义。
 - **范围**：仅非 `GET` / `DELETE`；URL 命中 `/system/*`、`/monitor/*`、`/tool/*`；
   排除 `/system/notice`；清洗 query / form / JSON body 中的**字符串值**，并 `trim`。
 - **配置**：`xss.enabled` / `xss.excludes` / `xss.urlPatterns` 全部生效（§10 的旧声明作废）。
 - **Python-only 保护**：`xss.max_body_bytes`（默认 1MB）限制清洗前缓冲的 body 大小，
-  超过直接回 HTTP 413；Java 没有等价行为（其风险由容器线程模型承担）。``0`` = 不限制。
+  超过直接回 HTTP 413；超限后的 drain 预算为 `limit + 64KB`，不会被永不结束的
+  慢速 chunked body 挂住；Java 没有等价行为（其风险由容器线程模型承担）。``0`` = 不限制。
 - **非 UTF-8**：body / query 严格按 UTF-8 解码，失败则**不清洗、原样放行**并记 WARNING；
   不再用 `errors="replace"` 静默改写字节（否则会破坏下游 JSON/form 解析）。
 - **回归**：`tests/test_xss_filter.py`（含 `/system/notice` 豁免、GET 不改写、嵌套 JSON、
-  multipart 透传、大 body 413、非 UTF-8 透传）。
+  multipart 透传、大 body 413 及其响应头、有界 drain、非 UTF-8 透传、中间件顺序）。
 - **差异**：清洗发生在 ASGI 层，`request.get_json()` 之后读取的是清洗后的值；Java 是
   `HttpServletRequestWrapper`，同样在进入 MVC 前完成，可观察结果一致。
 
