@@ -26,7 +26,7 @@ PSutil 是"读一次当前值"，OSHI 是"读两次 tick 求差"，所以 ``set_
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import pytest
 

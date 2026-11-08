@@ -27,7 +27,6 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, List, Optional
 
-from app.base.domain.trail_bo import TrailBo
 from app.common.constant.constants import (
     CAR_WARNING_RULE,
     SERVICE_AREA_CAPTURE,

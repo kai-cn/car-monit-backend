@@ -20,16 +20,14 @@ Velocity 会把 ``$xxx`` 原样输出到生成的代码里，所以这份清单�
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence
+from typing import Any, Dict, Iterable, Iterator, List, Optional
 
 from app.common.constant.gen_constants import (
-    BASE_ENTITY,
     PARENT_MENU_ID,
     TPL_CRUD,
     TPL_SUB,
     TPL_TREE,
     TREE_CODE,
-    TREE_ENTITY,
     TREE_NAME,
     TREE_PARENT_CODE,
     TYPE_BIGDECIMAL,
@@ -38,7 +36,6 @@ from app.common.constant.gen_constants import (
 from app.common.utils.string_utils import (
     capitalize,
     format as string_format,
-    in_string_ignore_case,
     is_empty,
     is_not_empty,
     is_not_null,
@@ -48,7 +45,6 @@ from app.common.utils.string_utils import (
     uncapitalize,
 )
 from app.generator.domain.gen_table import GenTable
-from app.generator.domain.gen_table_column import GenTableColumn
 from app.generator.util.velocity_engine import VelocityContext
 
 #: Java: ``private static final String PROJECT_PATH = "main/java"``

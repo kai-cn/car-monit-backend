@@ -31,7 +31,7 @@ Java 原文是 7 个 ``@Get`` 的接口声明，方法体由 Forest 生成::
 
 from __future__ import annotations
 
-from typing import Any, List, Type, TypeVar
+from typing import List, Type, TypeVar
 
 from app.base.domain.dwd_lczt_fwqjcxx import DwdLcztFwqjcxx
 from app.base.domain.dwd_lczt_sfsjcxx import DwdLcztSfsjcxx

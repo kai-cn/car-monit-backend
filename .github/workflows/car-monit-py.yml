@@ -32,13 +32,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install ruff==0.8.4
+          pip install ruff==0.14.2
 
       - name: secret scan
         run: python scripts/check_secrets.py
 
       - name: ruff
-        run: ruff check app tests
+        # F401 已在本地清零，脚本与审计工具一并纳入，避免新增未使用导入后继续漂移。
+        run: ruff check app tests scripts evidence
 
       - name: pytest
         # tests/integration 在 MySQL/Redis 不可达时会自行 skip，公共 runner 不启动服务。

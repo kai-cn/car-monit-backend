@@ -28,7 +28,6 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict
 
-import pytest
 
 from app.system.domain.sys_oper_log import SysOperLog
 from app.system.mapper.sys_oper_log_mapper import (

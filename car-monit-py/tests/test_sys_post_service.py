@@ -19,7 +19,7 @@ SQL 已经由 ``test_sys_post_mapper.py`` 钉住了，所以这里全部用假 M
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Sequence
+from typing import List, Optional, Sequence
 
 import pytest
 

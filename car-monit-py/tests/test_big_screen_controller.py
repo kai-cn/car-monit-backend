@@ -47,7 +47,6 @@ from app.manager.domain.car_except_record import CarExceptRecord
 from app.manager.domain.vo.bigscreen.car_info_vo import CarInfoVO
 from app.manager.domain.vo.bigscreen.car_statistics_vo import CarStatisticsVO
 from app.manager.domain.vo.bigscreen.income_statistic_param import IncomeStatisticParam
-from app.manager.domain.vo.bigscreen.car_location_param import CarLocationParam
 from app.manager.domain.vo.bigscreen.top_ten_vo import TopTenVO
 
 MODULE_NAME = "app.api.manager.bigscreen.big_screen_controller"

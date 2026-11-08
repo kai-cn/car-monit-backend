@@ -95,7 +95,7 @@ from __future__ import annotations
 import logging
 import os
 from io import BytesIO
-from typing import Any, BinaryIO, Dict, List, Mapping, Optional, Sequence
+from typing import Any, BinaryIO, Dict, List, Optional, Sequence
 
 from app.common.core.domain.ajax_result import AjaxResult
 from app.common.utils import base64_utils
@@ -104,7 +104,7 @@ from app.common.utils import security_utils as SecurityUtils
 from app.common.utils.date_utils import get_timestamp
 from app.common.utils.file_upload_utils import size_of
 from app.common.utils.multipart_file_util import MockMultipartFile, convert_byte_to_multipart_file
-from app.common.utils.oss_template import OssTemplate, S3Object, get_amazon_s3
+from app.common.utils.oss_template import OssTemplate, S3Object
 from app.common.utils.snowflake_id_worker import get_id_worker
 from app.common.utils.string_utils import get_uuid, is_blank
 from app.common.utils.uuid_utils import simple_uuid

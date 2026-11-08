@@ -40,7 +40,7 @@ PY_ROOT = PROJECT_ROOT / "car-monit-py"
 
 #: 复用接口审计脚本里已经写好的 Java 注释剥离 / 注解扫描（同一套规则，避免两份实现漂移）。
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from audit_endpoints import _annotation_group, iter_annotations, strip_comments  # noqa: E402
+from audit_endpoints import iter_annotations, strip_comments  # noqa: E402
 
 #: Java 侧参与比对的目录：``domain``（含子包）、``entity``、``model``.
 JAVA_DOMAIN_GLOBS = (

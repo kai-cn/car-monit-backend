@@ -64,7 +64,6 @@ from app.common.core.domain.entity.sys_user import SysUser
 from app.common.core.domain.model.login_user import LoginUser
 from app.common.utils import security_utils as SecurityUtils
 from app.config.exception_handlers import (
-    GENERIC_ERROR_MESSAGE,
     PARAMETER_ERROR_MESSAGE,
     register_exception_handlers,
 )

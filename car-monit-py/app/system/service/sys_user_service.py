@@ -37,7 +37,6 @@ from typing import Any, Iterable, List, Optional, Sequence
 from app.common.constant.constants import PROCUREMENT_MANAGER_ROLE_KEY
 from app.common.constant.user_constants import DEFAULT_PWD, NOT_UNIQUE_OLD, UNIQUE_OLD
 from app.common.core.domain.ajax_result import AjaxResult
-from app.common.core.domain.entity.sys_dept import SysDept
 from app.common.core.domain.entity.sys_role import SysRole
 from app.common.core.domain.entity.sys_user import SysUser
 from app.common.core.redis.redis_cache import RedisCache, get_redis_cache

@@ -41,7 +41,7 @@ from copy import copy
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Iterable, List, Mapping, Optional, Sequence
 
 from openpyxl import load_workbook
 from openpyxl.cell.cell import Cell

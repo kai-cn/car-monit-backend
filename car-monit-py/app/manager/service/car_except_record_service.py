@@ -22,7 +22,7 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, Sequence
 
 from app.common.core.domain.ajax_result import AjaxResult
-from app.common.utils.common_util import is_blank, is_not_blank, is_null
+from app.common.utils.common_util import is_not_blank, is_null
 from app.manager.domain.car_except_record import CarExceptRecord
 from app.manager.domain.car_info import CarInfo
 from app.manager.domain.vo.bigscreen.car_statistics_vo import CarStatisticsVO

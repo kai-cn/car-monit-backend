@@ -30,7 +30,7 @@ WHERE 尾部的四段走 :meth:`fragment_before`（``anchor is None`` 即"所有
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from app.base.mapper.ods_sql import If
 from app.flow.domain.flow_message_info import FlowMessageInfo

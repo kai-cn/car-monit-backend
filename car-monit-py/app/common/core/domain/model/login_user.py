@@ -29,7 +29,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Set
 
-from pydantic import Field, computed_field, field_serializer
+from pydantic import computed_field, field_serializer
 
 from app.common.core.domain.domain_model import DomainModel
 from app.common.core.domain.entity.sys_user import SysUser

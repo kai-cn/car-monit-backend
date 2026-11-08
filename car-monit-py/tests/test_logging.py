@@ -97,7 +97,6 @@ class TestLogCapacity:
 
     def test_rollover_prune_never_deletes_active_log_files(self, tmp_path) -> None:
         """目录预算清理必须保护四个活动文件（P1-9 回归）。"""
-        import logging.handlers
 
         from app.logging_config import _ACTIVE_LOG_FILES, _CappedRotatingFileHandler
 

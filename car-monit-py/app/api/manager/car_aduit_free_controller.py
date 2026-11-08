@@ -38,7 +38,7 @@ Java                        Method / Path                         权限点
 from __future__ import annotations
 
 import logging
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Annotated, Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, Request
 from starlette.responses import Response

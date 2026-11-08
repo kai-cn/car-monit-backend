@@ -10,7 +10,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import ClassVar, Optional
+from typing import Optional
 
 from app.common.core.domain.base_plus_entity import BasePlusEntity
 

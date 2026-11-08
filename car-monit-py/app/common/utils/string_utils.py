@@ -31,7 +31,7 @@ from __future__ import annotations
 import re
 import unicodedata
 import uuid
-from typing import Any, Collection, Dict, Iterable, List, Optional, Sequence, Set, TypeVar
+from typing import Any, Collection, List, Optional, Sequence, Set, TypeVar
 
 #: Java: ``StringUtils.NULLSTR``
 NULLSTR = ""

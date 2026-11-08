@@ -46,8 +46,7 @@ Spring 是精确路径优先）。
 from __future__ import annotations
 
 import logging
-from decimal import Decimal
-from typing import Annotated, Any, Dict, List, Optional, Sequence, Tuple
+from typing import Annotated, Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, File, Request, UploadFile
 from starlette.responses import Response
@@ -78,7 +77,6 @@ from app.common.utils.poi.template_export import (
 )
 from app.common.utils.string_utils import split_regex
 from app.framework.aspectj.log_aspect import log
-from app.framework.web.service.permission_service import pre_authorize_permi
 from app.manager.domain.car_except_record import CarExceptRecord
 from app.manager.domain.car_info import CarInfo
 from app.manager.service.car_except_record_service import (

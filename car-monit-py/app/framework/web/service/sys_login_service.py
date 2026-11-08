@@ -45,7 +45,7 @@ stateless apart from Redis.
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Optional
 
 from app.common.constant.constants import CAPTCHA_CODE_KEY, LOGIN_FAIL, LOGIN_SUCCESS
 from app.common.core.domain.model.login_user import LoginUser

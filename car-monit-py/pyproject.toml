@@ -76,11 +76,10 @@ include = ["app*"]
 target-version = "py312"
 
 [tool.ruff.lint]
-# 迁移期只守住"能运行"的底线：语法错误 / 未定义名 / 明显逻辑错误。
-# F401（未使用导入）暂不阻断：大量 __init__ 重导出与按 Java 逐行对照保留的导入，
-# 需要单独一次清理提交后再打开。
+# 守住"能运行"的底线：语法错误 / 未定义名 / 明显逻辑错误 / 未使用导入。
+# F401 已在 2026-11 清理完毕，之后新增未使用导入会直接阻断 CI。
 select = ["E4", "E7", "E9", "F"]
-ignore = ["F401"]
+ignore = []
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

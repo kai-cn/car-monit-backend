@@ -36,7 +36,6 @@ from typing import Any, Dict, List, Optional, Sequence
 
 import pytest
 
-from app.common.core.domain.ajax_result import AjaxResult
 from app.common.utils.multipart_file_util import MockMultipartFile
 from app.framework.security.context.security_context import (
     SecurityContextHolder,
