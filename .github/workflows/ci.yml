@@ -13,9 +13,9 @@ name: ci
 
 on:
   pull_request:
-    branches: [main, master]
+    branches: [master]
   push:
-    branches: [main, master]
+    branches: [master]
   workflow_dispatch:
     inputs:
       java_base:
@@ -228,7 +228,7 @@ jobs:
           set -euo pipefail
           if [ -f tests/release_throwable.rs ]; then
             cargo test --release --test release_throwable
-          elif [ "$GITHUB_REF_NAME" = "master" ] || [ "$GITHUB_REF_NAME" = "main" ]; then
+          elif [ "$GITHUB_REF_NAME" = "master" ]; then
             echo "::warning file=car-monit-rust/tests/release_throwable.rs::主分支尚无该用例（仅存在于 car-monit-rust-V2 分支），本次跳过；合并后自动成为强制门禁"
             echo "### Rust release-only 用例：主分支缺失，已跳过" >> "$GITHUB_STEP_SUMMARY"
           else

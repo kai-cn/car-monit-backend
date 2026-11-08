@@ -67,7 +67,9 @@ JDK：扫描全仓所有 `pom.xml`，**只有 `java.version=1.8` 一个值**；�
 | Python | `car-monit-py/**` | `compileall`（语法门禁）、`pytest -m "not integration"`（不含外部依赖） | 2-3 min |
 | C++ / Kotlin / C# | — | **不建 job**：无源码、无 `CMakeLists.txt`/`gradle`/`csproj`，建了也只能空跑 | — |
 
-### 2.2 主分支流水线（同一 `ci.yml`，`push` 到 `main`/`master`）
+### 2.2 主分支流水线（同一 `ci.yml`，`push` 到 `master`）
+
+> 默认分支已确认为 `master`；`main` 不再作为主构建目标，`ci.yml` 的 PR 基线与 push 触发都只认 `master`。
 
 不分诊，四种语言全跑，并在 PR 检查之上追加：
 
@@ -98,7 +100,7 @@ JDK：扫描全仓所有 `pom.xml`，**只有 `java.version=1.8` 一个值**；�
 
 1. **镜像推送目标**：GHCR 还是私有 registry？命名空间与镜像名（如 `ghcr.io/kai-cn/car-monit-<lang>`）？
 2. **部署目标形态**：K8s / 单机 systemd / 只出产物不部署？
-3. **默认分支**：远端同时存在 `main` 与 `master`，哪个是 GitHub 默认分支？（本方案两条都触发，但默认分支决定 V2 分支能否发 PR）
+3. **默认分支**：已确认 `master`（见 §2.2）。`main` 保留在远端但不再作为主构建目标。
 4. **JDK 21 / 25 的归属**：本仓库只查到 `1.8`。如果 21/25 属于未入库的子项目或 `car-monit-api`，请指明，否则 Java 流水线固定用 Temurin 8。
 5. **V2 分支是否推到远端**：不 push 就永远不会有该分支的 CI。是否需要 push（本任务约定不 push，需你确认后另行处理）？
 6. **统一 workflow 是否同步到 `car-monit-go-V2` / `car-monit-rust-V2` 分支**（否则分支上仍是旧文件）。
