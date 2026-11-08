@@ -31,24 +31,81 @@ public class ResilientApiExecutor
     @Autowired
     private TrafficApiProperties properties;
 
-    private CircuitBreaker circuitBreaker;
+    /** 按调用域隔离熔断，避免导出 5xx 连坐统计/预警等其它链路 */
+    private final ConcurrentHashMap<String, CircuitBreaker> circuitBreakers =
+            new ConcurrentHashMap<String, CircuitBreaker>();
 
     /** 404（契约未实现）冷却，避免每个缓存周期都打一次无效请求 */
     private final ConcurrentHashMap<String, Long> contractCooldowns = new ConcurrentHashMap<String, Long>();
 
+    private static final String GROUP_DEFAULT = "default";
+
+    private static final String GROUP_FLOW = "flow";
+
+    private static final String GROUP_STATS = "stats";
+
+    private static final String GROUP_WARNING = "warning";
+
+    private static final String GROUP_EXPORT = "export";
+
     @PostConstruct
     public void init()
     {
-        this.circuitBreaker = new CircuitBreaker(properties.getCircuitFailureThreshold(),
-                properties.getCircuitOpenMs(), properties.getCircuitHalfOpenPermits());
+        for (String group : new String[] { GROUP_DEFAULT, GROUP_FLOW, GROUP_STATS, GROUP_WARNING,
+                GROUP_EXPORT })
+        {
+            breakerFor(group);
+        }
+    }
+
+    /**
+     * 按 endpoint 归组：同组共享熔断状态，不同组互不影响。
+     */
+    static String groupOf(String endpoint)
+    {
+        String name = endpoint == null ? "" : endpoint;
+        String lower = name.toLowerCase();
+        if (lower.startsWith("submitexport") || lower.startsWith("exportstatus")
+                || lower.startsWith("export"))
+        {
+            return GROUP_EXPORT;
+        }
+        if (lower.startsWith("warning"))
+        {
+            return GROUP_WARNING;
+        }
+        if (lower.startsWith("escape") || lower.startsWith("audit")
+                || lower.startsWith("income") || lower.startsWith("stats"))
+        {
+            return GROUP_STATS;
+        }
+        if (lower.startsWith("flow") || lower.startsWith("snapshot")
+                || lower.startsWith("fee") || lower.startsWith("trailonline")
+                || lower.startsWith("trailfitting"))
+        {
+            return GROUP_FLOW;
+        }
+        return GROUP_DEFAULT;
+    }
+
+    private CircuitBreaker breakerFor(String group)
+    {
+        CircuitBreaker breaker = circuitBreakers.get(group);
+        if (breaker == null)
+        {
+            CircuitBreaker created = new CircuitBreaker(properties.getCircuitFailureThreshold(),
+                    properties.getCircuitOpenMs(), properties.getCircuitHalfOpenPermits());
+            breaker = circuitBreakers.putIfAbsent(group, created);
+            if (breaker == null)
+            {
+                breaker = created;
+            }
+        }
+        return breaker;
     }
 
     public <T> T execute(String endpoint, Callable<ApiHttpResult<T>> call, int retries)
     {
-        if (circuitBreaker == null)
-        {
-            init();
-        }
         MetricsRegistry.increment("api.request");
         Long cooldownUntil = contractCooldowns.get(endpoint);
         if (cooldownUntil != null && cooldownUntil > System.currentTimeMillis())
@@ -57,7 +114,8 @@ public class ResilientApiExecutor
             throw new ApiClientException(ApiErrorCode.NOT_FOUND, endpoint,
                     "api 契约未实现（冷却中）: " + endpoint);
         }
-        if (!circuitBreaker.allowRequest())
+        CircuitBreaker breaker = breakerFor(groupOf(endpoint));
+        if (!breaker.allowRequest())
         {
             MetricsRegistry.increment("api.circuit_open");
             throw new ApiClientException(ApiErrorCode.CIRCUIT_OPEN, endpoint,
@@ -68,6 +126,7 @@ public class ResilientApiExecutor
         ApiClientException lastError = null;
         for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
+            boolean marked = false;
             try
             {
                 ApiHttpResult<T> response = call.call();
@@ -85,13 +144,14 @@ public class ResilientApiExecutor
                                 "api 响应解析失败: " + response.getException().getMessage(),
                                 response.getException());
                     }
-                    circuitBreaker.onSuccess();
+                    breaker.onSuccess();
                     MetricsRegistry.increment("api.success");
                     MetricsRegistry.setGauge("api.circuit.state", circuitStateValue());
                     return response.getResult();
                 }
                 ApiClientException error = mapResponse(endpoint, response);
                 markError(error);
+                marked = true;
                 if (error.getCode() == ApiErrorCode.NOT_FOUND)
                 {
                     contractCooldowns.put(endpoint,
@@ -107,11 +167,15 @@ public class ResilientApiExecutor
             }
             catch (ApiClientException e)
             {
+                if (!marked)
+                {
+                    // 同一次尝试只计一次错误，避免响应分支与 catch 重复计数
+                    markError(e);
+                }
                 if (e.getCode().isRetryable())
                 {
-                    circuitBreaker.onFailure();
+                    breaker.onFailure();
                     MetricsRegistry.setGauge("api.circuit.state", circuitStateValue());
-                    markError(e);
                     lastError = e;
                     if (attempt < maxAttempts)
                     {
@@ -124,7 +188,7 @@ public class ResilientApiExecutor
             catch (Throwable t)
             {
                 ApiClientException error = mapThrowable(endpoint, t);
-                circuitBreaker.onFailure();
+                breaker.onFailure();
                 MetricsRegistry.setGauge("api.circuit.state", circuitStateValue());
                 markError(error);
                 lastError = error;
@@ -140,19 +204,49 @@ public class ResilientApiExecutor
                 : new ApiClientException(ApiErrorCode.UPSTREAM_ERROR, endpoint, "api 调用失败: " + endpoint);
     }
 
+    /**
+     * 兼容旧调用：返回默认域熔断器；跨域状态请用 {@link #getCircuitStates()}。
+     */
     public CircuitBreaker getCircuitBreaker()
     {
-        return circuitBreaker;
+        return breakerFor(GROUP_DEFAULT);
+    }
+
+    /** 各调用域熔断状态快照（运维排查用）。 */
+    public java.util.Map<String, String> getCircuitStates()
+    {
+        java.util.Map<String, String> result = new java.util.LinkedHashMap<String, String>();
+        for (String group : new String[] { GROUP_DEFAULT, GROUP_FLOW, GROUP_STATS, GROUP_WARNING,
+                GROUP_EXPORT })
+        {
+            result.put(group, breakerFor(group).getState().name());
+        }
+        return result;
+    }
+
+    /** 任一域 OPEN 即视为整体 OPEN；否则任一 HALF_OPEN 为 HALF_OPEN。 */
+    public CircuitBreaker.State getOverallCircuitState()
+    {
+        boolean halfOpen = false;
+        for (String group : new String[] { GROUP_DEFAULT, GROUP_FLOW, GROUP_STATS, GROUP_WARNING,
+                GROUP_EXPORT })
+        {
+            CircuitBreaker.State state = breakerFor(group).getState();
+            if (state == CircuitBreaker.State.OPEN)
+            {
+                return CircuitBreaker.State.OPEN;
+            }
+            if (state == CircuitBreaker.State.HALF_OPEN)
+            {
+                halfOpen = true;
+            }
+        }
+        return halfOpen ? CircuitBreaker.State.HALF_OPEN : CircuitBreaker.State.CLOSED;
     }
 
     private long circuitStateValue()
     {
-        CircuitBreaker breaker = circuitBreaker;
-        if (breaker == null)
-        {
-            return 0L;
-        }
-        CircuitBreaker.State state = breaker.getState();
+        CircuitBreaker.State state = getOverallCircuitState();
         if (state == CircuitBreaker.State.OPEN)
         {
             return 1L;

@@ -3,7 +3,6 @@ package com.ruoyi.web.controller.monitor;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.metrics.MetricsRegistry;
-import com.ruoyi.integration.api.CircuitBreaker;
 import com.ruoyi.integration.api.ResilientApiExecutor;
 import com.ruoyi.manager.service.bigscreen.FeatureSwitchService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,8 +49,8 @@ public class BigScreenOpsController extends BaseController
                 MetricsRegistry.counter("api.request")));
         result.put("cacheHitRate", cacheHitRate());
         result.put("exportBacklog", MetricsRegistry.gauge("export.active"));
-        CircuitBreaker breaker = resilientApiExecutor.getCircuitBreaker();
-        result.put("circuitState", breaker == null ? "UNKNOWN" : breaker.getState().name());
+        result.put("circuitState", resilientApiExecutor.getOverallCircuitState().name());
+        result.put("circuitScenarios", resilientApiExecutor.getCircuitStates());
         return AjaxResult.success(result);
     }
 

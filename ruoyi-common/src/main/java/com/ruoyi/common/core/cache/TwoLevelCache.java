@@ -112,7 +112,7 @@ public class TwoLevelCache
         {
             long ageSeconds = Math.max(0L, (now - l2Hit.createdAt) / 1000L);
             local.put(key, l2Hit.value, l2Hit.createdAt,
-                    now + (effectiveFresh(l1Seconds, l2Hit.empty) + staleSeconds) * 1000L, l2Hit.empty);
+                    now + localTtlSeconds(l1Seconds, staleSeconds, l2Hit.empty) * 1000L, l2Hit.empty);
             if (ageSeconds <= effectiveFresh(l2Seconds, l2Hit.empty))
             {
                 markHit(key, "L2", ageSeconds, l2Hit.createdAt);
@@ -123,7 +123,11 @@ public class TwoLevelCache
             return l2Hit.value;
         }
 
-        return load(key, l1Seconds, l2Seconds, staleSeconds, type, loader, null, null);
+        // 两级都过期：把 grace 窗口内保留的旧值传给 load，回源失败时返回 stale
+        LocalTtlCache.Entry retained = local.getRetained(key);
+        return load(key, l1Seconds, l2Seconds, staleSeconds, type, loader,
+                retained == null ? null : cast(retained.getValue()),
+                retained == null ? null : retained.getCreatedAt());
     }
 
     /**
@@ -168,7 +172,7 @@ public class TwoLevelCache
                     long ageSeconds = Math.max(0L, (System.currentTimeMillis() - l2Current.createdAt) / 1000L);
                     local.put(key, l2Current.value, l2Current.createdAt,
                             System.currentTimeMillis()
-                                    + (effectiveFresh(l1Seconds, l2Current.empty) + staleSeconds) * 1000L,
+                                    + localTtlSeconds(l1Seconds, staleSeconds, l2Current.empty) * 1000L,
                             l2Current.empty);
                     if (ageSeconds <= effectiveFresh(l2Seconds, l2Current.empty))
                     {
@@ -256,8 +260,23 @@ public class TwoLevelCache
         long now = System.currentTimeMillis();
         long l1Fresh = jitteredSeconds(effectiveFresh(l1Seconds, empty));
         long l2Fresh = jitteredSeconds(effectiveFresh(l2Seconds, empty));
-        local.put(key, value, now, now + (l1Fresh + staleSeconds) * 1000L, empty);
-        writeL2(key, value, l2Fresh + staleSeconds);
+        // 空结果只缓存 30s：不再叠加 stale，否则配置的 30s 实际会变成 30s + stale 窗口
+        long l1Ttl = empty ? EMPTY_RESULT_TTL_SECONDS : l1Fresh + staleSeconds;
+        long l2Ttl = empty ? EMPTY_RESULT_TTL_SECONDS : l2Fresh + staleSeconds;
+        local.put(key, value, now, now + l1Ttl * 1000L, empty);
+        writeL2(key, value, l2Ttl);
+    }
+
+    /**
+     * L1 总 TTL：空结果固定 30s；正常结果 = 新鲜期 + stale 窗口。
+     */
+    private long localTtlSeconds(long freshSeconds, long staleSeconds, boolean empty)
+    {
+        if (empty)
+        {
+            return EMPTY_RESULT_TTL_SECONDS;
+        }
+        return effectiveFresh(freshSeconds, false) + staleSeconds;
     }
 
     private void writeL2(String key, Object value, long ttlSeconds)
