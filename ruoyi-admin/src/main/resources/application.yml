@@ -284,6 +284,9 @@ export:
     enabled: true
     interval-ms: 3600000
   download:
+    # 下载令牌签名密钥：必须独立配置，未配置（或使用历史默认值/长度不足 16 位）时应用启动失败。
+    # 生产通过环境变量 EXPORT_DOWNLOAD_SECRET 注入；不要复用 token.secret。
+    secret: ${EXPORT_DOWNLOAD_SECRET:}
     token-ttl-seconds: 900
     rate-limit-per-minute: 6
     connect-timeout-ms: 3000
