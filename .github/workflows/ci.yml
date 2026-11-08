@@ -333,6 +333,10 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    env:
+      # oss_client 用例断言 Java 实测的 +08:00 本地偏移，runner 默认 UTC 会失败。
+      # 与 api 侧同一处理：固定作业时区为应用目标时区，不放宽断言。
+      TZ: Asia/Shanghai
     container:
       image: openeuler/openeuler:24.03-lts
     defaults:
@@ -344,7 +348,10 @@ jobs:
       - name: 安装 Rust 1.90 + 构建工具（rustup 官方链路）
         run: |
           set -euo pipefail
-          dnf install -y curl git gcc gcc-c++ make tar gzip
+          # tzdata 必须显式装：chrono 的 Local 依赖 zoneinfo，缺失时会退回 UTC，
+          # 让 oss_client 的 +08:00 断言假失败。
+          dnf install -y curl git gcc gcc-c++ make tar gzip tzdata
+          echo "时区检查: $(date '+%Y-%m-%dT%H:%M:%S%z')"
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
             | sh -s -- -y --profile minimal --default-toolchain 1.90.0 --component rustfmt --component clippy
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
