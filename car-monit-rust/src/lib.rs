@@ -219,7 +219,9 @@ pub mod test_support {
 
     #[inline(never)]
     pub fn throwable_probe(error: &(dyn Error + 'static), kind: &'static str) -> String {
-        crate::logging::Throwable::from_dyn(error, kind).to_string()
+        // black_box 阻止 release 把这次调用优化成尾部调用，否则探针帧会被消掉，
+        // release-only 冒烟会误报"缺少本 crate 应用栈帧"。
+        std::hint::black_box(crate::logging::Throwable::from_dyn(error, kind).to_string())
     }
 }
 
