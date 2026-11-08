@@ -21,7 +21,7 @@
 | 3 | 未匹配路由返回真实 404 + Spring 错误体 | `[无影响]` | 与 Java 一致 |
 | 4 | `BaseException` 改名为 `RuoYiBaseException` | `[无影响]` | 避免遮蔽 Python 内建异常 |
 | 5 | `AjaxResult.put(...)` 改名为 `put_chain(...)` | `[无影响]` | 覆写 `dict.put` 会破坏 dict 协议 |
-| 6 | Tomcat 800 线程 → anyio 线程池 800 | `[无影响]` | 已对齐，不是削弱 |
+| 6 | Tomcat 800 线程 → anyio 线程池 **200**（与 Druid maxActive 对齐） | `[需注意]` | 800 个请求线程里最多 200 个能拿到 DB 连接；需要复刻 Tomcat 800 时设 `APP__REQUEST_THREAD_LIMIT=800` |
 | 7 | 日志按时间+大小滚动 → 仅按大小滚动 | `[需注意]` | 运维看日志留存策略 |
 | 8 | p6spy → SQLAlchemy 事件监听器 | `[无影响]` | SQL 日志格式不同，内容等价 |
 | 9 | Druid 监控台 `/druid/**` 不迁移 | `[需注意]` | Java 里本来就被 `denyAll()` 拒绝 |
