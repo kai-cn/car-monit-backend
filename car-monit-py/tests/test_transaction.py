@@ -229,6 +229,22 @@ def test_plain_scope_with_failed_decorated_participant_rolls_back_once(
     assert sessions[0].closes == 1
 
 
+def test_nested_session_scope_reuses_the_outer_session(
+    sessions: List[FakeSession],
+) -> None:
+    """纯 ``session_scope`` 嵌套：内层只加入外层，不提前 commit/close."""
+    with database.session_scope() as outer:
+        with database.session_scope() as inner:
+            assert inner is outer
+        with database.session_scope() as again:
+            assert again is outer
+
+    assert len(sessions) == 1
+    assert sessions[0].commits == 1
+    assert sessions[0].rollbacks == 0
+    assert sessions[0].closes == 1
+
+
 def test_decorated_method_without_sql_does_not_open_a_session(
     sessions: List[FakeSession],
 ) -> None:
