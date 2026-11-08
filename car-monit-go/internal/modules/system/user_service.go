@@ -567,7 +567,7 @@ func (s *service) insertUserDeps(tx *gorm.DB, b *userBody) (int64, error) {
 		return 0, nil
 	}
 	var rows int64
-	if b.PostIDs != nil && len(b.PostIDs) > 0 {
+	if len(b.PostIDs) > 0 {
 		cols := make([]string, 0, len(b.PostIDs))
 		args := make([]any, 0, len(b.PostIDs)*2)
 		for _, pid := range b.PostIDs {
@@ -580,7 +580,7 @@ func (s *service) insertUserDeps(tx *gorm.DB, b *userBody) (int64, error) {
 		}
 		rows += res.RowsAffected
 	}
-	if b.RoleIDs != nil && len(b.RoleIDs) > 0 {
+	if len(b.RoleIDs) > 0 {
 		cols := make([]string, 0, len(b.RoleIDs))
 		args := make([]any, 0, len(b.RoleIDs)*2)
 		for _, rid := range b.RoleIDs {

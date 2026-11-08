@@ -337,6 +337,9 @@ func (h *handler) suspiciousCheck(c *gin.Context) {
 		}
 	}
 	escapedType = deleteEnd(escapedType)
+	// JAVA 对照: CarSuspiciousServiceImpl:256-268 的 escapedType 同样只计算不使用（源码遗留）；
+	// 保留计算以维持行为一致，这里显式消费避免 ineffassign 误报。
+	_ = escapedType
 
 	// JAVA 对照: cherkCarSuspicious 带 @Transactional(rollbackFor = Exception.class)——
 	// 两次物理删除、人工核实/异常流水的批量插入、可疑车状态更新必须在同一事务里，

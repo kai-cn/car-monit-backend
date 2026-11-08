@@ -230,12 +230,6 @@ func (s *indexMenuService) deleteByIDs(ctx context.Context, ids []int64) (int64,
 	return res.RowsAffected, res.Error
 }
 
-// deleteByID 对应 deleteSysIndexMenuById（Java 侧无控制器调用，照留）。
-func (s *indexMenuService) deleteByID(ctx context.Context, id int64) (int64, error) {
-	res := s.app.DB.WithContext(ctx).Exec("update sys_index_menu set del_flag = '1' where id = ?", id)
-	return res.RowsAffected, res.Error
-}
-
 // anyToString 对应 Jackson 把数字/字符串写入 String 字段的行为。
 func anyToString(v any) *string {
 	switch t := v.(type) {

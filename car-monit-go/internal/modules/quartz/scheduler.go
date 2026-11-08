@@ -36,9 +36,6 @@ import (
 // misfireThreshold 对应 ScheduleConfig 中的 org.quartz.jobStore.misfireThreshold=12000。
 const misfireThreshold = 12 * time.Second
 
-// maxMisfiresToHandleAtATime 对应 maxMisfiresToHandleAtATime=10（用于限制补跑次数）。
-const maxMisfiresToHandleAtATime = 10
-
 // jobEntry 等价于一个 JobDetail + CronTrigger。
 type jobEntry struct {
 	sched *Scheduler

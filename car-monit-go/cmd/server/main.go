@@ -80,7 +80,7 @@ func main() {
 		logger.Error("初始化 Redis 失败", "err", err)
 		os.Exit(1)
 	}
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	a := app.New(cfg, db, c, logger)
 

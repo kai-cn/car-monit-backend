@@ -235,12 +235,6 @@ func (s *noticeService) updateNotice(ctx context.Context, b *noticeBody, userID 
 	return res.RowsAffected, res.Error
 }
 
-// deleteNoticeByID 对应 deleteNoticeById（Java 侧无控制器调用，照留）。
-func (s *noticeService) deleteNoticeByID(ctx context.Context, noticeID int64) (int64, error) {
-	res := s.app.DB.WithContext(ctx).Exec("delete from sys_notice where notice_id = ?", noticeID)
-	return res.RowsAffected, res.Error
-}
-
 // deleteNoticeByIDs 对应 deleteNoticeByIds。
 func (s *noticeService) deleteNoticeByIDs(ctx context.Context, ids []int64) (int64, error) {
 	res := s.app.DB.WithContext(ctx).Exec(
@@ -250,6 +244,8 @@ func (s *noticeService) deleteNoticeByIDs(ctx context.Context, ids []int64) (int
 
 // addDeliveryTimeAbnormal 对应 SysNoticeServiceImpl.addDeliveryTimeAbnormal。
 // Java 里没有任何调用方（死代码），按迁移原则照留。
+//
+//nolint:unused // 迁移规范要求保留 Java 死代码以保持语义等价。
 func (s *noticeService) addDeliveryTimeAbnormal(ctx context.Context, b *noticeBody, userID int64, tenantID int64) (int64, error) {
 	q := noticeQuery{
 		NoticeTitle:   b.NoticeTitle,

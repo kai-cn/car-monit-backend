@@ -55,9 +55,6 @@ func tmplCond(param, template string) cond {
 func rawCond(param, fragment string) cond {
 	return cond{param: param, kind: condRaw, template: fragment}
 }
-func inListCond(param, column string) cond {
-	return cond{param: param, column: column, kind: condInList}
-}
 
 // 常用日期条件（照抄各 XML 的模板）。
 func dateGe(param, column string) cond {
@@ -65,12 +62,6 @@ func dateGe(param, column string) cond {
 }
 func dateLtNextDay(param, column string) cond {
 	return tmplCond(param, "t."+column+" < date_add(STR_TO_DATE(?, '%Y-%m-%d'), interval 1 day)")
-}
-func dateTimeGe(param, column string) cond {
-	return tmplCond(param, "t."+column+" >= STR_TO_DATE(?, '%Y-%m-%d %H:%i:%s')")
-}
-func dateTimeLe(param, column string) cond {
-	return tmplCond(param, "t."+column+" <= STR_TO_DATE(?, '%Y-%m-%d %H:%i:%s')")
 }
 
 // whereClause 对应 mapper XML 里那一串条件。
@@ -160,9 +151,6 @@ func buildWhereWith(prefix string, conds []cond, get func(string) string) (strin
 
 // placeholders 生成 "?, ?, ?"。
 func placeholders(n int) string { return sqlx.Placeholders(n) }
-
-// argString 读取查询参数（已 trim）。
-func argString(c *gin.Context, name string) string { return strings.TrimSpace(c.Query(name)) }
 
 // ---------------------------------------------------------------------------
 // 反射工具

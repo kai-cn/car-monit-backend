@@ -1,5 +1,15 @@
 # 迁移工作进度（接口返回逐一对比阶段）
 
+> **2026-11-08 golangci-lint 实跑批次**：本机安装 v2.1.6 并真实执行（非仅留配置）。
+> 首轮 89 个问题全部收敛到 0：修复 3 处 errcheck、2 处 goimports、1 处 ineffassign、
+> 2 处可简化表达式；删除 27 个迁移遗留的死函数/常量；对 Java 语义必须保留的
+> `saveFlowApply/doFlowApply` 与公告死代码用 `//nolint:unused` 注明原因。
+> 配置层关闭 ST1000/ST1003/ST1005/ST1020-ST1022，理由均为“与迁移规范冲突”：
+> 每个文件顶部的中文对照注释、Java 方法名/字段名（如 `synchDb`、`CpuNum`）、
+> Java 原文错误消息必须逐字保留。`misspell` 对 `strat`/`curent` 两个 Java 原名加白名单。
+> 复跑命令（缓存目录需可写）：
+> `$env:GOLANGCI_LINT_CACHE="$env:TEMP\golangci-cache"; golangci-lint run` → `0 issues`。
+>
 > **2026-11-08 运行时回归批次**：本机无 Docker，改用 MySQL 8.0.30（临时 datadir，3307）+
 > 临时 miniredis（6379）实跑 `cmd/migrate`（dry-run + 落库）与 `cmd/server`；
 > `/healthz` 返回 database/redis 均 UP；admin 与无权限账号登录成功；

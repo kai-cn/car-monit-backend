@@ -269,9 +269,6 @@ func currentTenantID(c *gin.Context) int64 {
 // 请求体
 // ---------------------------------------------------------------------------
 
-// bindJSON 解析 @RequestBody。
-func bindJSON(c *gin.Context, dest any) error { return c.ShouldBindJSON(dest) }
-
 // jsonBody 读取 @RequestBody 为 map（对应 Jackson 反序列化成实体后再取非 null 字段）。
 func jsonBody(c *gin.Context) (map[string]any, error) {
 	body := map[string]any{}

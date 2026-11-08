@@ -13,6 +13,8 @@
 | Go | 1.24+（模块声明 `go 1.24`） | 迁移规范以 Go 1.26 为生产目标；当前构建机为 Go 1.24.1，故未使用 1.25+ 新语法。升级工具链后可将 `go`/`toolchain` 提升到 1.26 |
 | MySQL | `127.0.0.1:3307/carmonitdb`，root/root | 与 `application-druid.yml` 一致 |
 | Redis | `127.0.0.1:6379`，db 0 | 登录态、验证码、限流、防重键 |
+| golangci-lint | v2.1.6 | `make lint`；Windows 下若默认缓存目录不可写，设置 `GOLANGCI_LINT_CACHE` 到可写目录 |
+| Python | 3.10+ | `scripts/parity/*` 对拍脚本 |
 
 本地依赖可用 `docker-compose.yml` 启动（MySQL 映射 3307、Redis 6379）：
 

@@ -30,6 +30,26 @@ linters:
       checks:
         - all
         - -SA1019 # 兼容层仍在使用已弃用 API（如 Java 兼容序列化）
+        # 迁移规范要求每个文件顶部写 `// JAVA 对照: ...`，不是标准 package doc 注释；
+        # ST1000 会要求 “Package xxx ...”，与硬约束冲突，按规范禁用该条。
+        - -ST1000
+        # ST1003（Id→ID / Db→DB / Cpu→CPU）与迁移规范冲突：Java 方法名、Mapper 名、VO 字段名
+        # 必须保持原样以便逐行对照（如 selectDbTableList、synchDb、CpuNum、CssClass）。
+        - -ST1003
+        # ST1005（错误串首字母大写/结尾标点）会改掉 Java 原文错误消息，前端提示必须逐字一致。
+        - -ST1005
+        # ST1020/ST1021/ST1022 要求导出符号注释以符号名开头；本项目按迁移规范使用
+        # 中文“类/职责、JAVA 对照”注释块，强行改写会打散对照说明，故关闭注释格式类检查。
+        - -ST1020
+        - -ST1021
+        - -ST1022
+    misspell:
+      # 这些拼写是 Java 字段名 / Redis 键的原样复刻，改名会破坏与 Java 的列映射和缓存兼容：
+      #   StratLat / strat_lat（car_track 等实体列）
+      #   car_curent_trail:（CarTrackInfoServiceImpl 的 Redis 键）
+      ignore-rules:
+        - strat
+        - curent
   exclusions:
     rules:
       # 测试文件允许忽略部分错误（setup/teardown）。
