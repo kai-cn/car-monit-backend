@@ -320,3 +320,53 @@ def test_update_batch_by_id_rolls_back_the_whole_batch(
     assert len(sessions) == 1
     assert sessions[0].commits == 0
     assert sessions[0].rollbacks == 1
+
+
+class _RoleWriteThenExplodeOnPostMapper:
+    """``update_user`` 的真实写入顺序：角色删/写成功，岗位写入时炸掉."""
+
+    def __init__(self) -> None:
+        self.writes: List[str] = []
+
+    def delete_user_role_by_user_id(self, user_id: int) -> None:
+        assert user_id == 1
+        with database.session_scope():
+            self.writes.append("delete_role")
+
+    def batch_user_role(self, rows: List[Any]) -> None:
+        with database.session_scope():
+            self.writes.append(f"insert_roles:{len(rows)}")
+
+    def delete_user_post_by_user_id(self, user_id: int) -> None:
+        assert user_id == 1
+        with database.session_scope():
+            self.writes.append("delete_post")
+
+    def batch_user_post(self, rows: List[Any]) -> None:
+        with database.session_scope():
+            raise ValueError("post boom")
+
+
+def test_update_user_rolls_back_all_writes_when_a_later_step_fails(
+    sessions: List[FakeSession],
+) -> None:
+    """update_user 是 5 次写；中途炸掉时前面的角色/岗位写入必须整体回滚."""
+    from app.common.core.domain.entity.sys_user import SysUser
+    from app.system.service.sys_user_service import SysUserService
+
+    mapper = _RoleWriteThenExplodeOnPostMapper()
+    service = SysUserService(
+        mapper=mapper,
+        user_role_mapper=mapper,
+        user_post_mapper=mapper,
+    )
+
+    with pytest.raises(ValueError, match="post boom"):
+        service.update_user(SysUser(user_id=1, role_ids=[7], post_ids=[8]))
+
+    # 角色删除/新增、岗位删除都执行过，但没有任何一次提交。
+    assert mapper.writes == ["delete_role", "insert_roles:1", "delete_post"]
+    assert len(sessions) == 1
+    assert sessions[0].commits == 0
+    assert sessions[0].rollbacks == 1
+    assert sessions[0].closes == 1
