@@ -78,8 +78,16 @@ Phase 4 的中间件适配器（Kafka / ES / MinIO）在 `[project.optional-depe
 与 Spring Boot 的 `application.yml` + 环境变量一致。
 
 ```bash
-cp .env.example .env            # 可选：不建也能跑，默认值与 Java 一致
+cp .env.example .env
 ```
+
+`.env` 不是可选的：密钥采用 fail-closed，**缺失、仍是仓库内置演示值、或命中占位词/长度/熵
+校验（如 `dev-only-*-please-change`）时应用拒绝启动**。复制后必须完成三项：
+
+1. 生成并填写 `TOKEN__SECRET` / `HENGDA__SECRET`（至少 32 字符的随机值）：
+   `python -c "import secrets; print(secrets.token_urlsafe(48))"`
+2. 填写 `SPRING__DATASOURCE__DRUID__MASTER__PASSWORD`（`local` 可用 `root`，非 local 必须真实口令）
+3. 显式设置 `IS_LOCALHOST`（`local` / `staging` / `prod`；示例文件里是注释形式，不会默认填 local）
 
 键名规则：`application.yml` 的层级用双下划线连接，叶子键转 snake_case。
 
