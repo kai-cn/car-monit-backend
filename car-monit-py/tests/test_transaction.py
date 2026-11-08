@@ -201,7 +201,31 @@ def test_nested_failure_marks_the_outer_transaction_rollback_only(
 
     assert len(sessions) == 1
     assert sessions[0].commits == 0
-    assert sessions[0].rollbacks >= 1
+    assert sessions[0].rollbacks == 1
+    assert sessions[0].closes == 1
+
+
+def test_plain_scope_with_failed_decorated_participant_rolls_back_once(
+    sessions: List[FakeSession],
+) -> None:
+    """没有外层装饰器时，rollback-only 也只能 rollback 一次（不能 rollback 后又被 except 再滚）."""
+
+    @database.transactional
+    def inner() -> None:
+        with database.session_scope():
+            pass
+        raise ValueError("inner failed")
+
+    with pytest.raises(database.UnexpectedRollbackException, match="rollback-only"):
+        with database.session_scope():
+            try:
+                inner()
+            except ValueError:
+                pass
+
+    assert len(sessions) == 1
+    assert sessions[0].commits == 0
+    assert sessions[0].rollbacks == 1
     assert sessions[0].closes == 1
 
 

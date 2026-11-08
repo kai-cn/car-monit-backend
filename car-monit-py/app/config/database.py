@@ -224,7 +224,7 @@ def session_scope() -> Iterator[Session]:
     try:
         yield session
         if state.rollback_only:
-            session.rollback()
+            # rollback 由下面的 except 统一执行，避免同一事务 rollback 两次。
             raise UnexpectedRollbackException(_ROLLBACK_ONLY_MESSAGE)
         session.commit()
     except Exception:
