@@ -29,6 +29,9 @@ public class SysDictTypeController extends BaseController
     @Autowired
     private ISysDictTypeService dictTypeService;
 
+    @Autowired
+    private com.ruoyi.manager.service.bigscreen.DictVersionService dictVersionService;
+
     @PreAuthorize("@ss.hasPermi('system:dict:list')")
     @GetMapping("/list")
     public TableDataInfo list(SysDictType dictType)
@@ -71,7 +74,9 @@ public class SysDictTypeController extends BaseController
             return AjaxResult.error("新增字典'" + dict.getDictName() + "'失败，字典类型已存在");
         }
         dict.setCreateBy(SecurityUtils.getUsername());
-        return toAjax(dictTypeService.insertDictType(dict));
+        AjaxResult result = toAjax(dictTypeService.insertDictType(dict));
+        bumpDictVersion();
+        return result;
     }
 
     /**
@@ -87,7 +92,9 @@ public class SysDictTypeController extends BaseController
             return AjaxResult.error("修改字典'" + dict.getDictName() + "'失败，字典类型已存在");
         }
         dict.setUpdateBy(SecurityUtils.getUsername());
-        return toAjax(dictTypeService.updateDictType(dict));
+        AjaxResult result = toAjax(dictTypeService.updateDictType(dict));
+        bumpDictVersion();
+        return result;
     }
 
     /**
@@ -98,7 +105,9 @@ public class SysDictTypeController extends BaseController
     @DeleteMapping("/{dictIds}")
     public AjaxResult remove(@PathVariable Long[] dictIds)
     {
-        return toAjax(dictTypeService.deleteDictTypeByIds(dictIds));
+        AjaxResult result = toAjax(dictTypeService.deleteDictTypeByIds(dictIds));
+        bumpDictVersion();
+        return result;
     }
 
     /**
@@ -110,7 +119,20 @@ public class SysDictTypeController extends BaseController
     public AjaxResult clearCache()
     {
         dictTypeService.clearCache();
+        bumpDictVersion();
         return AjaxResult.success();
+    }
+
+    private void bumpDictVersion()
+    {
+        try
+        {
+            dictVersionService.bump(com.ruoyi.manager.service.bigscreen.DictVersionService.SYS_DICT);
+        }
+        catch (RuntimeException e)
+        {
+            logger.warn("[字典版本] 主动失效失败 reason={}", e.getMessage());
+        }
     }
 
     /**

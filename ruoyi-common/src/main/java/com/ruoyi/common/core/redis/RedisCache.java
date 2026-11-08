@@ -279,4 +279,22 @@ public class RedisCache
     {
         return redisTemplate.keys(pattern);
     }
+
+    /**
+     * 原子自增，并在 key 首次创建时设置过期时间（用于限流计数器）。
+     *
+     * @param key 键
+     * @param delta 增量
+     * @param timeoutSeconds 过期秒数
+     * @return 自增后的值；Redis 不可用时返回 null
+     */
+    public Long increment(final String key, final long delta, final long timeoutSeconds)
+    {
+        Long value = redisTemplate.opsForValue().increment(key, delta);
+        if (value != null && value == delta)
+        {
+            redisTemplate.expire(key, timeoutSeconds, TimeUnit.SECONDS);
+        }
+        return value;
+    }
 }
