@@ -56,5 +56,13 @@ public interface CarWarningInfoMapper extends BaseMapper<CarWarningInfo> {
     int deleteCarWarningInfoByUUid(@Param("idList") List<String> idList);
 
 
-    List<CarWarningInfo> selectCarWarningInfoListLimit100(CarWarningInfo carWarningInfo);
+    /**
+     * 查询当天预警列表（强制 LIMIT，避免全量载入 Redis）。
+     *
+     * @param trackId 当天标识 yyyyMMdd
+     * @param limit   最大条数
+     * @return 预警列表
+     */
+    List<CarWarningInfo> selectCarWarningInfoListLimit100(@Param("trackId") String trackId,
+                                                          @Param("limit") int limit);
 }

@@ -8,6 +8,7 @@ import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.CarStatisticsVO;
 import com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam;
 import com.ruoyi.manager.domain.vo.bigscreen.incomeStatisticVO;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -36,6 +37,14 @@ public interface CarAduitFreeMapper extends BaseMapper<CarAduitFree> {
      * @return 补缴处理集合
      */
     List<CarAduitFree> selectCarAduitFreeList(CarAduitFree carAduitFree);
+
+    /**
+     * 批量统计车辆补缴次数（用于消除 exceptRecordList 的 N+1 查询）。
+     *
+     * @param carIds 车辆 ID 集合
+     * @return 按车辆聚合的补缴次数
+     */
+    List<com.ruoyi.manager.domain.vo.bigscreen.CarIdCountVO> countByCarIds(@Param("carIds") List<String> carIds);
 
     /**
      * 批量删除补缴处理

@@ -95,15 +95,28 @@ public class OdsRtSzdnSnapshotFlowAddcodeServiceImpl extends ServiceImpl<OdsRtSz
     @Override
     public List<TopTenVO> getTopTen() {
         List<TopTenVO> topTen = odsRtSzdnSnapshotFlowAddcodeMapper.getTopTen();
+        return fillRank(topTen);
+    }
+
+    @Override
+    public List<TopTenVO> getTopTen(String startTime, String endTime) {
+        List<TopTenVO> topTen = odsRtSzdnSnapshotFlowAddcodeMapper.getTopTenRange(startTime, endTime, 10);
+        return fillRank(topTen);
+    }
+
+    private List<TopTenVO> fillRank(List<TopTenVO> topTen) {
         int i = 1;
         Integer topOne = -1;
+        if (topTen == null) {
+            return topTen;
+        }
         for (TopTenVO topTenVO : topTen) {
             topTenVO.setSectionName(topTenVO.getRoadCode()+" "+topTenVO.getSectionName());
             if(i == 1) {
                 topTenVO.setRate("100");
                 topOne = topTenVO.getCarNum();
             } else {
-                if(topOne != -1) {
+                if(topOne != -1 && topOne != 0) {
                     topTenVO.setRate((int)(Double.valueOf(topTenVO.getCarNum()) / topOne * 100) + "");
                 }
             }

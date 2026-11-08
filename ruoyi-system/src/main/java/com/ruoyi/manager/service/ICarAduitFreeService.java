@@ -67,6 +67,14 @@ public interface ICarAduitFreeService extends IService<CarAduitFree> {
 
     List<incomeStatisticVO> incomeStatistic(IncomeStatisticParam param);
 
+    /**
+     * 批量统计车辆补缴次数。
+     *
+     * @param carIds 车辆 ID 集合
+     * @return 按车辆聚合的补缴次数
+     */
+    List<com.ruoyi.manager.domain.vo.bigscreen.CarIdCountVO> countByCarIds(List<String> carIds);
+
     Integer selectAuditCount(IncomeStatisticParam param);
 
     List<PCIncomeStaticsVO> getPCIncomeStatics(CarConfimFreeQueryRo queryRo);

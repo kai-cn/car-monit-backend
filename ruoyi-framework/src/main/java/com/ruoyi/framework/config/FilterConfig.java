@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import com.ruoyi.common.filter.RepeatableFilter;
 import com.ruoyi.common.filter.XssFilter;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.framework.filter.BigScreenResponseFilter;
 
 /**
  * Filter配置
@@ -52,6 +53,21 @@ public class FilterConfig
         registration.addUrlPatterns("/*");
         registration.setName("repeatableFilter");
         registration.setOrder(FilterRegistrationBean.LOWEST_PRECEDENCE);
+        return registration;
+    }
+
+    /**
+     * 大屏响应缓存：ETag/304 + X-Cache/X-Data-Age/X-Degrade。
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @Bean
+    public FilterRegistrationBean bigScreenResponseFilterRegistration()
+    {
+        FilterRegistrationBean registration = new FilterRegistrationBean();
+        registration.setFilter(new BigScreenResponseFilter());
+        registration.addUrlPatterns("/manager/bigScreen/*");
+        registration.setName("bigScreenResponseFilter");
+        registration.setOrder(10);
         return registration;
     }
 
