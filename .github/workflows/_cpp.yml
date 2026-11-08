@@ -33,12 +33,21 @@ jobs:
             Write-Host "::warning::当前分支的 car-monit-cpp 没有 CMakeLists.txt，跳过 C++ 检查"
           }
 
-      - name: 配置（MSVC + 仓库内 vcpkg_installed）
+      - name: 配置（MSVC + vcpkg）
         if: steps.detect.outputs.found == 'true'
         shell: pwsh
         run: |
-          cmake -B build -A x64 `
-            -DCMAKE_PREFIX_PATH="$PWD/vcpkg_installed/x64-windows"
+          # 优先用仓库里已提交的 vcpkg_installed；cpp 迁移分支把它 gitignore 了，
+          # 那种情况下退回 runner 自带的 vcpkg manifest 安装（首次会慢很多）。
+          if (Test-Path "vcpkg_installed\x64-windows") {
+            cmake -B build -A x64 `
+              -DCMAKE_PREFIX_PATH="$PWD/vcpkg_installed/x64-windows"
+          } else {
+            Write-Host "::notice::仓库未提交 vcpkg_installed，改用 vcpkg manifest 安装依赖"
+            cmake -B build -A x64 `
+              -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" `
+              -DVCPKG_TARGET_TRIPLET=x64-windows
+          }
 
       - name: 构建 Release
         if: steps.detect.outputs.found == 'true'
@@ -49,5 +58,6 @@ jobs:
         if: steps.detect.outputs.found == 'true'
         shell: pwsh
         run: |
-          $env:PATH = "$PWD\vcpkg_installed\x64-windows\bin;$env:PATH"
+          # 两种依赖布局都可能：仓库内 vcpkg_installed 或 manifest 安装到 build 目录
+          $env:PATH = "$PWD\vcpkg_installed\x64-windows\bin;$PWD\build\vcpkg_installed\x64-windows\bin;$env:PATH"
           ctest --test-dir build -C Release --output-on-failure
