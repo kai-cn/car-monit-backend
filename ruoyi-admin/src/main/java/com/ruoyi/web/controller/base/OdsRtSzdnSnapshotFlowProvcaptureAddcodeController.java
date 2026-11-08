@@ -1,7 +1,6 @@
 package com.ruoyi.web.controller.base;
 
 import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowProvcaptureAddcode;
-import com.ruoyi.base.service.IOdsRtSzdnSnapshotFlowProvcaptureAddcodeService;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.PageDomain;
@@ -29,9 +28,6 @@ import java.util.List;
 public class OdsRtSzdnSnapshotFlowProvcaptureAddcodeController extends BaseController {
 
     @Autowired
-    private IOdsRtSzdnSnapshotFlowProvcaptureAddcodeService odsRtSzdnSnapshotFlowProvcaptureAddcodeService;
-
-    @Autowired
     private TrafficApiClient trafficApiClient;
 
     /**
@@ -55,11 +51,17 @@ public class OdsRtSzdnSnapshotFlowProvcaptureAddcodeController extends BaseContr
 
 
     /**
-     * 获取省界抓拍详细信息
+     * 获取省界抓拍详细信息（api 按主键查询；api 不可用返回明确错误）
      */
     @GetMapping(value = "/{bigId}")
     public AjaxResult getInfo(@PathVariable("bigId") Long bigId) {
-        return AjaxResult.success(odsRtSzdnSnapshotFlowProvcaptureAddcodeService.selectOdsRtSzdnSnapshotFlowProvcaptureAddcodeById(bigId));
+        try {
+            return AjaxResult.success(trafficApiClient.flowDetail("/base/provcapture",
+                    String.valueOf(bigId), OdsRtSzdnSnapshotFlowProvcaptureAddcode.class));
+        } catch (ApiClientException e) {
+            logger.warn("[省界抓拍] 详情 api 查询失败 code={} msg={}", e.getCode(), e.getMessage());
+            return AjaxResult.error(FlowApiSupport.statusFor(e), FlowApiSupport.messageFor(e));
+        }
     }
 
 

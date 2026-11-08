@@ -8,6 +8,7 @@ import com.ruoyi.base.domain.OdsLwzxsfsjFeeRecords01;
 import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode;
 import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.base.domain.ZdataTrailFitting;
+import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.manager.domain.CarWarningInfo;
 import com.ruoyi.manager.domain.vo.bigscreen.CarAuditVO;
@@ -233,6 +234,47 @@ public class TrafficApiClient
                                                     Class<T> rowType)
     {
         return flowPage(FWQ_FLOW_LIST, query, pageNum, pageSize, rowType);
+    }
+
+    /**
+     * 扩展流水详情：按主键调用 api 的 {@code GET {endpoint}/{id}}（api 已提供等价端点）。
+     *
+     * <p>返回 {@code AjaxResult} 的 data 节点；api 业务码非 200 时映射为统一错误。</p>
+     */
+    public <T> T flowDetail(String endpoint, String id, Class<T> rowType)
+    {
+        if (id == null || !id.matches("[A-Za-z0-9_-]{1,128}"))
+        {
+            throw new ApiClientException(ApiErrorCode.INVALID_ARGUMENT, "flowDetail",
+                    "非法详情主键: " + id);
+        }
+        AjaxResult raw = executor.execute("flowDetail:" + endpoint,
+                () -> httpClient.get(TrafficApiScenario.FLOW_EXTENDED, endpoint + "/" + id,
+                        Collections.<String, String>emptyMap(), AjaxResult.class),
+                properties.retries(TrafficApiScenario.FLOW_EXTENDED));
+        if (raw == null)
+        {
+            return null;
+        }
+        Object code = raw.get("code");
+        if (code != null)
+        {
+            int value;
+            try
+            {
+                value = Integer.parseInt(String.valueOf(code));
+            }
+            catch (NumberFormatException e)
+            {
+                value = 200;
+            }
+            if (value != 200)
+            {
+                throw businessException("flowDetail", value, raw.get("msg"));
+            }
+        }
+        Object data = raw.get("data");
+        return data == null ? null : apiMapper.convertValue(data, rowType);
     }
 
     /**

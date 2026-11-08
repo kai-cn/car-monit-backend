@@ -545,6 +545,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                 Date gantryTime = addbo.getGantryTime();
 
                 List<TrailInfo> trailInfoList = redisCache.getCacheObject(nextKey);
+                if (null == trailInfoList || trailInfoList.isEmpty()) {
+                    // 共享键由 api 维护；缺失时回退 backend 私有当前页缓存
+                    trailInfoList = redisCache.getCacheObject(Constants.car_history_trail_page + carNo);
+                }
                 List<TrailBo> nextBoList = new ArrayList<>();
                 if (null != trailInfoList && trailInfoList.size() > 0) {
                     // 找到下一个位置
@@ -716,6 +720,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             String carNo = CommonUtil.isNull(vo.getCarNo());
             String key = Constants.car_history_trail + carNo;
             List<TrailInfo> trailInfoList = redisCache.getCacheObject(key);
+            if (null == trailInfoList || trailInfoList.isEmpty()) {
+                // 共享键由 api 维护；缺失时回退 backend 私有当前页缓存
+                trailInfoList = redisCache.getCacheObject(Constants.car_history_trail_page + carNo);
+            }
             if (null != trailInfoList && trailInfoList.size() > 0) {
                 for (TrailInfo trailInfo : trailInfoList) {
                     ZdataTrailTracks tracksBo = trailInfo.getTracks();

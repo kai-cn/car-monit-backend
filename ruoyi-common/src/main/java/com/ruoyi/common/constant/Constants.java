@@ -334,6 +334,14 @@ public class Constants
      */
     public static final String car_history_trail = "car_history_trail:";
 
+    /**
+     * 车辆历史轨迹“当前页”缓存（backend 私有）。
+     *
+     * <p>{@link #car_history_trail} 是 api 侧 TrackTask 只读消费的“全量历史”键，
+     * backend 在线查询只拿到当前页，不能写入该键，否则会被 api 当成旧全量合并。</p>
+     */
+    public static final String car_history_trail_page = "car_history_trail_page:";
+
 
     /**
      * 车辆当前轨迹
