@@ -223,6 +223,7 @@ mod route_parity {
 
         let baseline_text = include_str!("../docs/01-baseline/02-endpoints.md");
         let mut expected = HashSet::new();
+        let mut slashed = Vec::new();
         for line in baseline_text.lines() {
             let line = line.trim();
             if !line.starts_with('|') {
@@ -239,6 +240,9 @@ mod route_parity {
             let path = cells[2].trim_matches('`').trim();
             if !path.starts_with('/') {
                 continue;
+            }
+            if path.len() > 1 && path.ends_with('/') {
+                slashed.push((method.to_string(), path.to_string()));
             }
             expected.insert((method.to_string(), shape(path)));
         }
@@ -270,6 +274,23 @@ mod route_parity {
             extra
         );
         assert_eq!(expected.len(), 510, "基线端点数量应为 510");
+
+        // 尾斜杠归一会把 `/x/` 削成 `/x`。基线里带尾斜杠的每条 (method, path)
+        // 都必须在无斜杠形式上也有注册，否则请求会被削成 405
+        // （`GET /system/user/` 曾因此变成 200 + "Request method 'GET' not supported"）。
+        let mut trimmed_missing: Vec<_> = slashed
+            .into_iter()
+            .filter(|(method, path)| {
+                let trimmed = path.trim_end_matches('/');
+                !registered.contains(&(method.clone(), shape(trimmed)))
+            })
+            .collect();
+        trimmed_missing.sort();
+        assert!(
+            trimmed_missing.is_empty(),
+            "以下带尾斜杠的基线端点缺少无斜杠注册（尾斜杠归一会 405）: {:?}",
+            trimmed_missing
+        );
     }
 
     /// 形状归一：`{var}` 收成 `{}`，并按 Spring 的 `useTrailingSlashMatch` 削掉一个结尾斜杠
@@ -319,6 +340,9 @@ mod trailing_slash {
 
     #[test]
     fn trailing_slash_is_rewritten_before_routing() {
+        // 削尾斜杠本身是对的；真正的约束是「削完后的路径必须注册了同一方法」，
+        // 否则会变成 405（`GET /system/user/` 曾因此失效）。
+        // 这项约束由 route_parity::baseline_endpoints_are_registered 对基线逐条校验。
         assert_eq!(
             rewrite("/system/user/"),
             ("/system/user".to_string(), "/system/user/".to_string())

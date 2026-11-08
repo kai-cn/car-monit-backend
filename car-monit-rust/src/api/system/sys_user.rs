@@ -171,15 +171,6 @@ pub fn routes() -> Router<AppState> {
             ),
         )
         .route(
-            "/system/user/",
-            meta::get_route(
-                "/system/user/",
-                Some("system:user:query"),
-                None,
-                get_info_root,
-            ),
-        )
-        .route(
             "/system/user/{userIds}",
             meta::get_route(
                 "/system/user/{userIds}",
@@ -190,13 +181,30 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/system/user",
-            meta::post_route("/system/user", Some("system:user:add"), Some(&LOG_ADD), add).merge(
-                meta::put_route(
-                    "/system/user",
-                    Some("system:user:edit"),
-                    Some(&LOG_EDIT),
-                    edit,
-                ),
+            // Java: `@GetMapping(value = {"/", "/{userId}"})` + `useTrailingSlashMatch`，
+            // `/system/user` 与 `/system/user/` 都命中 getInfo；尾斜杠归一会把 `/system/user/`
+            // 削成 `/system/user`，所以 GET 必须也注册在无斜杠路径上。
+            meta::get_route(
+                "/system/user",
+                Some("system:user:query"),
+                None,
+                get_info_root,
+            )
+            .merge(meta::post_route("/system/user", Some("system:user:add"), Some(&LOG_ADD), add))
+            .merge(meta::put_route(
+                "/system/user",
+                Some("system:user:edit"),
+                Some(&LOG_EDIT),
+                edit,
+            )),
+        )
+        .route(
+            "/system/user/",
+            meta::get_route(
+                "/system/user/",
+                Some("system:user:query"),
+                None,
+                get_info_root,
             ),
         )
         .route(
