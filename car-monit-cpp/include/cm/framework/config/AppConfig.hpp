@@ -96,6 +96,16 @@ public:
     // ---- kafka / es / oss（迁移状态见 COMPATIBILITY.md） ----
     bool kafkaEnabled{false};
     std::string kafkaBootstrapServers{"127.0.0.1:9092"};
+    std::string kafkaGroupId{"snapshot-flow-consumer-group"};
+    std::string kafkaTopicSnapshotFlow{"ods-rt-szdn-snapshot-flow"};
+    std::string kafkaTopicSnapshotFlowDlq{"ods-rt-szdn-snapshot-flow-dlq"};
+    int kafkaSessionTimeoutMs{60000};
+    int kafkaFetchMaxBytes{52428800};
+    int kafkaMaxPollRecords{500};
+    int kafkaMaxPollIntervalMs{300000};
+    int kafkaConcurrency{3};
+    std::string idempotentPrefix{"snapshot:flow:idempotent_"};
+    int idempotentExpireSeconds{86400};
     bool esEnabled{false};
     std::string esHost{"127.0.0.1"};
     int esPort{9200};

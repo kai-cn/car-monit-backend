@@ -176,3 +176,11 @@ if (CAR_MONIT_BUILD_HTTP_VERIFY)
     add_executable(carmonit_http_verify tools/http_verify/main.cpp)
     target_link_libraries(carmonit_http_verify PRIVATE carmonit_core)
 endif()
+
+# Kafka 消费链路验收工具（默认不构建）：真实 broker 灌消息 + 幂等 + DLQ
+#   cmake -B build -DCAR_MONIT_BUILD_KAFKA_VERIFY=ON
+option(CAR_MONIT_BUILD_KAFKA_VERIFY "构建 Kafka 验收工具 carmonit_kafka_verify" OFF)
+if (CAR_MONIT_BUILD_KAFKA_VERIFY)
+    add_executable(carmonit_kafka_verify tools/kafka_verify/main.cpp)
+    target_link_libraries(carmonit_kafka_verify PRIVATE carmonit_core)
+endif()

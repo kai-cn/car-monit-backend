@@ -16,9 +16,12 @@
 #include <thread>
 
 #include "cm/common/utils/Logger.hpp"
+#include "cm/base/kafka/SnapshotFlowKafkaConsumer.hpp"
 #include "cm/framework/aspect/OperLogAspect.hpp"
 #include "cm/framework/config/AppConfig.hpp"
 #include "cm/framework/db/Db.hpp"
+#include "cm/framework/es/EsClient.hpp"
+#include "cm/framework/kafka/KafkaClient.hpp"
 #include "cm/framework/http/HttpResponse.hpp"
 #include "cm/framework/net/HttpClient.hpp"
 #include "cm/framework/redis/RedisClient.hpp"
@@ -105,6 +108,39 @@ int main(int argc, char** argv) {
     cm::security::TokenService::instance().configure(cfg.tokenHeader, cfg.tokenSecret,
                                                      cfg.tokenExpireTime);
 
+    // ---- Elasticsearch（对应 RestHighLevelClient；默认关闭）----
+    {
+        cm::es::EsConfig esc;
+        esc.enabled = cfg.esEnabled;
+        esc.host = cfg.esHost;
+        esc.port = cfg.esPort;
+        esc.index = cfg.esIndex;
+        cm::es::EsClient::instance().configure(esc);
+        if (esc.enabled) {
+            LOG_INFO("main", "Elasticsearch=" + esc.host + ":" + std::to_string(esc.port) +
+                                 " index=" + esc.index +
+                                 (cm::es::EsClient::instance().ping() ? " (PING OK)" : " (PING 失败)"));
+        }
+    }
+
+    // ---- Kafka 快照流消费（对应 SnapshotFlowKafkaConsumerV2）----
+    if (cfg.kafkaEnabled) {
+        cm::kafka::KafkaConfig kc;
+        kc.bootstrapServers = cfg.kafkaBootstrapServers;
+        kc.groupId = cfg.kafkaGroupId;
+        kc.topic = cfg.kafkaTopicSnapshotFlow;
+        kc.dlqTopic = cfg.kafkaTopicSnapshotFlowDlq;
+        kc.sessionTimeoutMs = cfg.kafkaSessionTimeoutMs;
+        kc.fetchMaxBytes = cfg.kafkaFetchMaxBytes;
+        kc.maxPollRecords = cfg.kafkaMaxPollRecords;
+        kc.maxPollIntervalMs = cfg.kafkaMaxPollIntervalMs;
+        kc.concurrency = cfg.kafkaConcurrency;
+        kc.idempotentPrefix = cfg.idempotentPrefix;
+        kc.idempotentTtlSeconds = cfg.idempotentExpireSeconds;
+        cm::base::kafka::SnapshotFlowKafkaConsumer::instance().configure(kc);
+        cm::base::kafka::SnapshotFlowKafkaConsumer::instance().start();
+    }
+
     // ---- 路由 ----
     cm::web::registerControllers(cm::web::router());
     // C++ 扩展：健康检查（Java 侧无 actuator，见 COMPATIBILITY.md §扩展接口）
@@ -146,6 +182,8 @@ int main(int argc, char** argv) {
     }
 
     LOG_INFO("main", "收到退出信号，正在关闭...");
+    // 先停 Kafka 消费（不再拉新消息），再停 HTTP 与落盘队列
+    cm::base::kafka::SnapshotFlowKafkaConsumer::instance().stop();
     server.stop();
     // 先停接收再排空操作日志队列（对应 Java 的 ShutterManager 顺序）
     cm::aspect::OperLogAspect::instance().stop();

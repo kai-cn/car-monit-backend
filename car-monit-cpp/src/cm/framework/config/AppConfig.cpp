@@ -216,7 +216,25 @@ void AppConfig::apply() {
     alertWindowMs = static_cast<int>(getInt("monitor.alert-window-ms", alertWindowMs));
     alertMaxCount = static_cast<int>(getInt("monitor.alert-max-count", alertMaxCount));
 
+    kafkaEnabled = getBool("kafka.enabled", kafkaEnabled);
     kafkaBootstrapServers = getString("kafka.bootstrap-servers", kafkaBootstrapServers);
+    kafkaGroupId = getString("kafka.consumer.group-id", kafkaGroupId);
+    kafkaTopicSnapshotFlow = getString("kafka.topic.snapshot-flow", kafkaTopicSnapshotFlow);
+    kafkaTopicSnapshotFlowDlq =
+        getString("kafka.topic.snapshot-flow-dlq", kafkaTopicSnapshotFlowDlq);
+    kafkaSessionTimeoutMs =
+        static_cast<int>(getInt("kafka.consumer.session-timeout-ms", kafkaSessionTimeoutMs));
+    kafkaFetchMaxBytes =
+        static_cast<int>(getInt("kafka.consumer.fetch-max-bytes", kafkaFetchMaxBytes));
+    kafkaMaxPollRecords =
+        static_cast<int>(getInt("kafka.consumer.max-poll-records", kafkaMaxPollRecords));
+    kafkaMaxPollIntervalMs =
+        static_cast<int>(getInt("kafka.consumer.max-poll-interval-ms", kafkaMaxPollIntervalMs));
+    kafkaConcurrency = static_cast<int>(getInt("kafka.listener.concurrency", kafkaConcurrency));
+    idempotentPrefix = getString("idempotent.redis.prefix", idempotentPrefix);
+    idempotentExpireSeconds =
+        static_cast<int>(getInt("idempotent.redis.expire-time", idempotentExpireSeconds));
+    esEnabled = getBool("elasticsearch.enabled", esEnabled);
     esHost = getString("elasticsearch.host", esHost);
     esPort = static_cast<int>(getInt("elasticsearch.port", esPort));
     esIndex = getString("elasticsearch.index.snapshot-flow", esIndex);

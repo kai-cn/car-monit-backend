@@ -296,6 +296,7 @@ static void testXlsxWriter() {
 }
 
 void run_crypto_tests();
+void run_kafka_tests();
 void run_crud_engine_tests();
 void run_http_client_tests();
 void run_s3_client_tests();
@@ -725,6 +726,7 @@ int main() {
     testOperLogHelpers();
     testOperLogBuild();
     run_crypto_tests();
+    run_kafka_tests();
     run_crud_engine_tests();
     run_http_client_tests();
     run_s3_client_tests();

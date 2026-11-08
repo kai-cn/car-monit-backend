@@ -62,6 +62,36 @@ token:
   expireTime: 120
 
 # ---- 以下为 C++ 侧扩展（Java 中为 @Value/@ConfigurationProperties 之外的部分） ----
+# Kafka（对应 Java application.yml 的 kafka.*；enabled 是 C++ 扩展开关：
+# Java 侧消费者无条件启动，C++ 默认关闭以免无 broker 的环境刷错误日志）
+kafka:
+  enabled: false
+  bootstrap-servers: 127.0.0.1:9092
+  topic:
+    snapshot-flow: ods-rt-szdn-snapshot-flow
+    snapshot-flow-dlq: ods-rt-szdn-snapshot-flow-dlq
+  consumer:
+    group-id: snapshot-flow-consumer-group
+    session-timeout-ms: 60000
+    fetch-max-bytes: 52428800
+    max-poll-records: 500
+    max-poll-interval-ms: 300000
+  listener:
+    concurrency: 3
+
+elasticsearch:
+  enabled: false
+  host: 127.0.0.1
+  port: 9200
+  index:
+    snapshot-flow: snapshot-flow
+
+# 幂等（对应 Java IdempotentUtil 的 idempotent.redis.*）
+idempotent:
+  redis:
+    prefix: snapshot:flow:idempotent_
+    expire-time: 86400
+
 cm:
   log:
     dir: logs
