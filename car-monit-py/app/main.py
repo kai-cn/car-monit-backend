@@ -136,7 +136,7 @@ from app.api.system.sys_user_controller import router as sys_user_router
 from app.api.tool.gen_controller import router as tool_gen_router
 from app.api.tool.test_controller import router as tool_test_router
 from app.config.database import dispose_engine
-from app.config.exception_handlers import register_exception_handlers
+from app.config.exception_handlers import FallbackExceptionMiddleware, register_exception_handlers
 from app.config.redis_config import close_redis
 from app.logging_config import configure_logging
 from app.middleware.profile_static import ProfileStaticFiles
@@ -366,8 +366,13 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     # executes in the opposite order:
     #
     #     XssFilter -> TraceIdFilter -> CorsFilter -> RequestContextFilter -> Spring Security
-    #     XssMiddleware -> TraceIdMiddleware -> CORSMiddleware -> RequestContextMiddleware
-    #         -> SecurityMiddleware
+    #     XssMiddleware -> TraceIdMiddleware -> CORSMiddleware
+    #         -> FallbackExceptionMiddleware -> RequestContextMiddleware -> SecurityMiddleware
+    #
+    # FallbackExceptionMiddleware is Python-only: Starlette 把通用 ``Exception`` 的处理器挂在
+    # 最外层 ``ServerErrorMiddleware``，响应会绕过 TraceId/CORS 而缺少响应头；把兜底处理
+    # 放在 CORS 内侧后，``KeyError`` / ``AttributeError`` 等未注册异常也能带上 X-Trace-Id 与
+    # Access-Control-Allow-Origin（Java 的 TraceIdFilter/CorsFilter 同样在进链时写头）。
     #
     # XssMiddleware is added **last** (see below) so that it wraps every other middleware.
     #
@@ -379,6 +384,7 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     # current request through ``ServletUtils.getRequest()``.
     application.add_middleware(SecurityMiddleware)
     application.add_middleware(RequestContextMiddleware)
+    application.add_middleware(FallbackExceptionMiddleware)
 
     # Java: config.addAllowedOriginPattern("*") -- NOT addAllowedOrigin("*").
     # ``allow_credentials=true`` with "*" is spec-invalid, so a permissive regex is the

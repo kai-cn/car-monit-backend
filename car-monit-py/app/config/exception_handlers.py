@@ -44,6 +44,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.common.constant.http_status import HttpStatus
 from app.common.core.context.trace_context import get_trace_id
@@ -59,6 +60,56 @@ from app.common.utils.bean_validation import BeanValidationError
 from app.framework.interceptor.repeat_submit_interceptor import RepeatSubmitException
 
 logger = logging.getLogger("app.config.exception_handlers")
+
+
+class FallbackExceptionMiddleware:
+    """通用 ``Exception`` 的兜底渲染，必须位于 TraceId/CORS **内侧**。
+
+    Starlette 把 ``Exception`` 的处理器挂在最外层的 ``ServerErrorMiddleware``；
+    在那里生成的响应已经穿过 TraceId / CORS 之后才出现，所以响应头里没有
+    ``X-Trace-Id`` 与 ``Access-Control-Allow-Origin``（``AttributeError`` 是本工程
+    复刻 Java NPE 的哨兵，``_none_guard`` 路径会大量走到这里）。Java 的
+    ``TraceIdFilter`` / ``CorsFilter`` 在进链时就写头，同类错误也是带头的。
+
+    这里在应用中间件栈内侧捕获未被注册处理器覆盖的异常，按同一个
+    ``AjaxResult`` 形状渲染（HTTP 200 + ``{"code": 500, "msg": "系统繁忙..."}``），
+    让响应照常由外侧的 TraceId / CORS 补齐响应头。异常详情仍只进日志。
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        response_started = False
+
+        async def send_wrapper(message: Message) -> None:
+            nonlocal response_started
+            if message["type"] == "http.response.start":
+                response_started = True
+            await send(message)
+
+        try:
+            await self.app(scope, receive, send_wrapper)
+        except Exception:
+            # 响应已经开始发送时无法再改写，交回外层（连接只能中断）。
+            if response_started:
+                raise
+            logger.error(
+                "[兜底异常] 请求地址'%s', traceId=%s",
+                scope.get("path"),
+                get_trace_id(),
+                exc_info=True,
+            )
+            response = JSONResponse(
+                status_code=HttpStatus.SUCCESS,
+                content=dict(AjaxResult.error_message(GENERIC_ERROR_MESSAGE)),
+            )
+            await response(scope, receive, send)
+
 
 #: 非业务异常对外的统一文案（真正的异常文本只进日志）。
 #: Java 会把 ``e.getMessage()`` 原样返回；Python 的 SQLAlchemy/驱动异常文本更长，

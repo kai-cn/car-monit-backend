@@ -1003,6 +1003,15 @@ public AjaxResult handleRuntimeException(RuntimeException e, HttpServletRequest 
 `tests/test_login_service.py` 直调 Service，`pytest.raises(UserPasswordNotMatchException)`
 正是它预期的行为。缺陷在"异常怎么变成 HTTP 响应"这一层，只有真的过一遍 ASGI 中间件才看得见。
 
+**后续修复（P2-1）：通用 `Exception` 的响应头**
+`@app.exception_handler(Exception)` 仍然挂在 `ServerErrorMiddleware`（最外层）上 —— Starlette
+只允许它在那里渲染。它当初的问题是：响应在 TraceId / CORS **之后**才生成，所以 `KeyError` /
+`AttributeError`（本工程复刻 Java NPE 的哨兵）这类没有专用 handler 的异常，响应里既没有
+`X-Trace-Id` 也没有 `Access-Control-Allow-Origin`。现在 `create_app` 在 TraceId/CORS 内侧注册了
+纯 ASGI 的 `FallbackExceptionMiddleware`：捕获后按同一个 `AjaxResult`（HTTP 200 + `code 500` +
+统一文案）渲染，响应继续穿过外侧中间件补齐头部。Java 的 `TraceIdFilter` / `CorsFilter` 在进链前
+写头，同类错误在 Java 侧同样是带头的。回归：`tests/test_error_masking.py`。
+
 **回归用例**
 `tests/test_e2e_sys_user.py::TestLogin::test_a_wrong_password_is_a_500_envelope_with_http_200`
 

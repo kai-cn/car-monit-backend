@@ -62,9 +62,12 @@ def test_non_local_empty_whitelist_rejects_every_origin(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("IS_LOCALHOST", "prod")
-    monkeypatch.setenv("TOKEN__SECRET", "prod-jwt-secret")
+    monkeypatch.setenv(
+        "TOKEN__SECRET",
+        "cHl0ZXN0LW9ubHktand0LXNpZ25pbmcta2V5LTAxMjM0NTY3ODlhYmNkZWZnaGlqa2xtbg==",
+    )
     monkeypatch.setenv("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD", "prod-db-password")
-    monkeypatch.setenv("HENGDA__SECRET", "prod-hengda-secret")
+    monkeypatch.setenv("HENGDA__SECRET", "prod-hengda-signing-key-4d8e1a6b2f9c0357")
     client = _client()
 
     assert _preflight(client, "http://localhost:5173").status_code == 400
