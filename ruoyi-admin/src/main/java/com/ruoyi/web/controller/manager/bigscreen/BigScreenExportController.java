@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,6 +44,7 @@ public class BigScreenExportController extends BaseController
     private BigScreenExportService bigScreenExportService;
 
     @ApiOperation("提交展示字段快速导出")
+    @PreAuthorize("@ss.hasPermi('manager:bigscreen:export')")
     @PostMapping("/display")
     public AjaxResult display(@RequestBody ExportRequest request)
     {
@@ -57,6 +59,7 @@ public class BigScreenExportController extends BaseController
     }
 
     @ApiOperation("提交全字段海量导出")
+    @PreAuthorize("@ss.hasPermi('manager:bigscreen:export') and @ss.hasPermi('manager:bigscreen:exportFull')")
     @PostMapping("/full")
     public AjaxResult full(@RequestBody ExportRequest request)
     {
@@ -85,6 +88,7 @@ public class BigScreenExportController extends BaseController
     }
 
     @ApiOperation("失败任务重试/按原参数重新提交")
+    @PreAuthorize("@ss.hasPermi('manager:bigscreen:export')")
     @PostMapping("/{taskId}/retry")
     public AjaxResult retry(@PathVariable String taskId)
     {
@@ -99,6 +103,7 @@ public class BigScreenExportController extends BaseController
     }
 
     @ApiOperation("断点续传（api 不支持时按原参数重新提交）")
+    @PreAuthorize("@ss.hasPermi('manager:bigscreen:export')")
     @PostMapping("/{taskId}/resume")
     public AjaxResult resume(@PathVariable String taskId)
     {
@@ -132,12 +137,17 @@ public class BigScreenExportController extends BaseController
     @ApiOperation("下载导出文件")
     @GetMapping("/download/{taskId}")
     public void download(@PathVariable String taskId,
+                         @RequestHeader(name = BigScreenExportService.DOWNLOAD_TOKEN_HEADER,
+                                 required = false) String headerToken,
                          @RequestParam(name = "token", required = false) String token,
                          HttpServletResponse response)
     {
         try
         {
-            bigScreenExportService.download(taskId, token, response);
+            // 优先短生命周期请求头；query 参数仅保留兼容
+            String effectiveToken = headerToken != null && !headerToken.trim().isEmpty()
+                    ? headerToken : token;
+            bigScreenExportService.download(taskId, effectiveToken, response);
         }
         catch (ApiClientException e)
         {

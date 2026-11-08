@@ -48,6 +48,15 @@ public class ExportTaskMeta
 
     private long submittedAt;
 
+    /** 提交时收敛后的机构范围（非管理员强制等于登录用户机构；管理员可为空） */
+    private String orgCode;
+
+    /** 提交人是否为管理员（重试时据此决定是否重新收敛机构范围） */
+    private boolean adminScope;
+
+    /** 提交人租户，用于审计与按租户收敛 */
+    private Long tenantId;
+
     public String getTaskId()
     {
         return taskId;
@@ -196,5 +205,35 @@ public class ExportTaskMeta
     public void setLastError(String lastError)
     {
         this.lastError = lastError;
+    }
+
+    public String getOrgCode()
+    {
+        return orgCode;
+    }
+
+    public void setOrgCode(String orgCode)
+    {
+        this.orgCode = orgCode;
+    }
+
+    public boolean isAdminScope()
+    {
+        return adminScope;
+    }
+
+    public void setAdminScope(boolean adminScope)
+    {
+        this.adminScope = adminScope;
+    }
+
+    public Long getTenantId()
+    {
+        return tenantId;
+    }
+
+    public void setTenantId(Long tenantId)
+    {
+        this.tenantId = tenantId;
     }
 }

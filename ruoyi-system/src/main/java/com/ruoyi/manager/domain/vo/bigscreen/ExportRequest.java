@@ -30,4 +30,10 @@ public class ExportRequest
 
     /** 全字段导出的用途说明（full 路径必填） */
     private String purpose;
+
+    /**
+     * 提交人租户。由服务端在入口处覆盖写入，客户端传入值不生效；
+     * 用于任务元数据审计与按租户收敛。
+     */
+    private Long tenantId;
 }
