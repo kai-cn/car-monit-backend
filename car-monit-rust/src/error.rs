@@ -205,6 +205,16 @@ pub fn not_found_response(method: &axum::http::Method, path: &str) -> Response {
     spring_error_page(404, "Not Found", path, charset)
 }
 
+/// Java: 异常逃逸到容器 -> sendError(500) -> /error 的 500 错误页。
+/// 与 404 同一套 BasicErrorController 输出（`{"timestamp","status","error","path"}`）。
+pub fn internal_error_page(method: &axum::http::Method, path: &str) -> Response {
+    let charset = matches!(
+        *method,
+        axum::http::Method::POST | axum::http::Method::PUT | axum::http::Method::PATCH
+    );
+    spring_error_page(500, "Internal Server Error", path, charset)
+}
+
 /// Java: Spring Security 只定制了 authenticationEntryPoint（401 走 RuoYi 的 JSON），
 /// 授权失败仍用默认的 AccessDeniedHandlerImpl -> response.sendError(403) -> /error 的 JSON 错误页。
 /// 命中 `anonymous()` / `denyAll()` 这类 URL 规则时就是这一种，而不是 AjaxResult。

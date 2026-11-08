@@ -865,8 +865,10 @@ fn write_backtrace(f: &mut fmt::Formatter<'_>, backtrace: &Backtrace) -> fmt::Re
         let Some((name, file, line)) = captured else {
             continue;
         };
-        // 去掉日志设施自身的帧，保留调用方（接近 Java 从抛出点开始的栈）。
+        // 去掉日志设施/panic 机制自身的帧，保留调用方（接近 Java 从抛出点开始的栈）。
         if name.contains("std::backtrace")
+            || name.contains("std::panicking")
+            || name.contains("core::panicking")
             || name.contains("backtrace::")
             || name.contains("tracing_subscriber")
             || name.contains("tracing_core")
@@ -878,6 +880,59 @@ fn write_backtrace(f: &mut fmt::Formatter<'_>, backtrace: &Backtrace) -> fmt::Re
         write!(f, "\n\tat {name} ({file}:{line})")?;
     }
     Ok(())
+}
+
+thread_local! {
+    /// panic hook 在 panic 线程上捕获的栈。
+    /// unwind 之后原栈已展开，只能在 hook 里取；catch 点拿到的是中间件栈。
+    static LAST_PANIC: std::cell::RefCell<Option<(String, Backtrace)>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// 安装全局 panic hook：保留默认的 stderr 输出，同时记录 panic 信息与原始栈。
+pub fn install_panic_hook() {
+    let previous = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let message = panic_payload_text(info.payload());
+        LAST_PANIC.with(|slot| {
+            *slot.borrow_mut() = Some((message, Backtrace::new_unresolved()));
+        });
+        previous(info);
+    }));
+}
+
+/// `catch_unwind` 的 payload 是 `Box<dyn Any + Send>`。
+pub fn panic_payload_text(payload: &(dyn std::any::Any + Send)) -> String {
+    if let Some(text) = payload.downcast_ref::<&str>() {
+        (*text).to_string()
+    } else if let Some(text) = payload.downcast_ref::<String>() {
+        text.clone()
+    } else {
+        "Box<dyn Any>".to_string()
+    }
+}
+
+/// 取出 panic hook 捕获的信息。同一线程上未被请求捕获的 panic 不会残留到这里。
+pub fn take_panic() -> Option<(String, Option<Backtrace>)> {
+    LAST_PANIC
+        .with(|slot| slot.borrow_mut().take())
+        .map(|(message, backtrace)| (message, Some(backtrace)))
+}
+
+/// Java Throwable 的等价物：`panic: message` + `\tat` 栈帧。
+pub struct PanicThrowable<'a> {
+    pub message: &'a str,
+    pub backtrace: Option<&'a Backtrace>,
+}
+
+impl fmt::Display for PanicThrowable<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "panic: {}", self.message)?;
+        if let Some(backtrace) = self.backtrace {
+            write_backtrace(f, backtrace)?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Default)]

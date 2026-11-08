@@ -44,7 +44,11 @@ fn cors_layer() -> CorsLayer {
 
 /// Java: Spring Boot 默认 /error（未匹配路由）
 async fn fallback(request: axum::extract::Request) -> axum::response::Response {
-    let path = request.uri().path().to_string();
+    let path = request
+        .extensions()
+        .get::<middleware::web_filter::OriginalPath>()
+        .map(|path| path.0.clone())
+        .unwrap_or_else(|| request.uri().path().to_string());
     not_found_response(request.method(), &path)
 }
 
@@ -52,7 +56,7 @@ async fn fallback(request: axum::extract::Request) -> axum::response::Response {
 /// 由 GlobalExceptionHandler 转成 HTTP 200 + `{"msg":"Request method 'POST' not supported","code":500}`；
 /// axum 默认直接回 405 空响应体（还带 `Allow` 头），这里翻译成 Java 的形状。
 /// 放在最内层：鉴权（外层）先失败的场景仍按 Java 返回 401/403。
-async fn method_not_allowed_mapper(
+pub(crate) async fn method_not_allowed_mapper(
     request: axum::extract::Request,
     next: axum::middleware::Next,
 ) -> axum::response::Response {
@@ -135,8 +139,10 @@ pub fn build_router(state: AppState) -> Router {
     );
 
     let router = router
-        .fallback(any(fallback))
         .with_state(state.clone())
+        // 先装 fallback 再统一 `.layer()`：axum 的 `.layer()` 只包住当时已存在的路由，
+        // 之后再加 fallback 就不带中间件（404 会绕过 web_filter，不写 [请求完成]）。
+        .fallback(any(fallback))
         // Java: spring.servlet.multipart.max-request-size: 200MB（单文件 40MB 在 handler 内校验）。
         .layer(axum::extract::DefaultBodyLimit::max(MAX_REQUEST_BYTES))
         // 方法不匹配先由路由层产出 405，这里立刻换成 Java 的响应体，再交给 @Log/鉴权之外层。
@@ -167,47 +173,41 @@ pub fn build_router(state: AppState) -> Router {
         .layer(cors_layer())
         // TraceId / 安全头 / CORS 头写法：Java 的 Filter 在业务之前就写好了，401/404/405 也带。
         .layer(axum::middleware::from_fn_with_state(
-            state.clone(),
+            state.settings.server.port,
             middleware::web_filter::web_filter,
         ));
 
-    // Java: Spring Boot 2.x 默认 useTrailingSlashMatch —— `/x/` 也命中注册为 `/x` 的映射。
-    // axum 的 `.layer()` 只包住各路由的 handler，改 URI 影响不到路由本身，
-    // 所以只能在「按原样路由不到」之后削掉一个尾斜杠再路由一次。
-    let retrier = router.clone();
-    router.fallback(move |request: axum::extract::Request| {
-        let retrier = retrier.clone();
-        async move { retry_with_trimmed_trailing_slash(request, retrier).await }
-    })
+    // Java: Spring Boot 2.x 默认 useTrailingSlashMatch —— `/x/` 命中注册为 `/x` 的映射。
+    // 必须在「路由之前」削尾斜杠：若放到 fallback 里二次路由，中间件会跑两遍
+    // （鉴权/@Log/重复提交检测都会重复），而 axum 的 `.layer()` 又不会包住后设置的 fallback。
+    Router::new().fallback_service(
+        tower::ServiceBuilder::new()
+            .layer(tower::util::MapRequestLayer::new(strip_trailing_slash))
+            .service(router),
+    )
 }
 
-/// 尾斜杠重路由；削不动就直接给 Java 的 404 错误页。
-async fn retry_with_trimmed_trailing_slash(
-    mut request: axum::extract::Request,
-    retrier: Router,
-) -> axum::response::Response {
-    use tower::ServiceExt;
-
+/// 削掉一个尾斜杠；原始 URI 放进 extensions，日志与 404 错误页仍按 Java 的 `getRequestURI()` 输出。
+fn strip_trailing_slash(mut request: axum::extract::Request) -> axum::extract::Request {
     let path = request.uri().path().to_string();
     let Some(trimmed) = path.strip_suffix('/') else {
-        return not_found_response(request.method(), &path);
+        return request;
     };
     if trimmed.is_empty() {
-        return not_found_response(request.method(), &path);
+        return request;
     }
     let rebuilt = match request.uri().query() {
         Some(query) => format!("{trimmed}?{query}"),
         None => trimmed.to_string(),
     };
     let Ok(uri) = rebuilt.parse::<axum::http::Uri>() else {
-        return not_found_response(request.method(), &path);
+        return request;
     };
+    request.extensions_mut().insert(
+        middleware::web_filter::OriginalPath(path),
+    );
     *request.uri_mut() = uri;
-    match retrier.oneshot(request).await {
-        Ok(response) => response,
-        // Router 的 Error 是 Infallible。
-        Err(err) => match err {},
-    }
+    request
 }
 
 #[cfg(test)]
@@ -296,5 +296,45 @@ mod route_parity {
             }
         }
         out
+    }
+}
+
+/// Java: `useTrailingSlashMatch` —— 在路由之前削掉一个尾斜杠，并保留原始 URI 供日志/错误页使用。
+#[cfg(test)]
+mod trailing_slash {
+    use super::*;
+    use axum::body::Body;
+    use axum::http::Request;
+
+    fn rewrite(uri: &str) -> (String, String) {
+        let request =
+            strip_trailing_slash(Request::builder().uri(uri).body(Body::empty()).expect("request"));
+        let original = request
+            .extensions()
+            .get::<middleware::web_filter::OriginalPath>()
+            .map(|path| path.0.clone())
+            .unwrap_or_default();
+        (request.uri().to_string(), original)
+    }
+
+    #[test]
+    fn trailing_slash_is_rewritten_before_routing() {
+        assert_eq!(
+            rewrite("/system/user/"),
+            ("/system/user".to_string(), "/system/user/".to_string())
+        );
+        // 查询串原样保留，日志仍记原始 URI。
+        assert_eq!(
+            rewrite("/system/user/?page=1"),
+            (
+                "/system/user?page=1".to_string(),
+                "/system/user/".to_string()
+            )
+        );
+        assert_eq!(rewrite("/"), ("/".to_string(), String::new()));
+        assert_eq!(
+            rewrite("/system/user"),
+            ("/system/user".to_string(), String::new())
+        );
     }
 }

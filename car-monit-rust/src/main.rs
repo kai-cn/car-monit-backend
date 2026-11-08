@@ -18,6 +18,8 @@ use tracing_subscriber::Layer;
 async fn main() -> anyhow::Result<()> {
     let settings = Settings::load()?;
     let _log_guard = init_tracing(&settings);
+    // Java 的 throwable 带抛点栈；Rust 的 panic 只能在 hook 里拿到未展开的栈。
+    car_monit_rust::logging::install_panic_hook();
 
     if settings.app.banner_enabled {
         tracing::info!(

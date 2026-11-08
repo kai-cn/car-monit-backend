@@ -58,4 +58,17 @@
 
 ## 5. 404 / 405 / panic→500 的完成日志
 
-（本节在第 5 项完成后补写）
+| 决策点 | 选项 | 选择 | 理由 | 影响面 |
+|---|---|---|---|---|
+| 404 怎么进日志链路 | ① 在 fallback 里直接写日志 ② 让 fallback 被中间件包住 | ② | 直接写会拿不到 traceId/线程名（这些在 web_filter 的 task-local 里）；让 fallback 在 `.layer()` 之前装配即可被包住 | `lib.rs::build_router` |
+| 装配顺序 | ① 先 `.layer()` 再 `.fallback()` ② 先 `.fallback()` 再 `.layer()` | ② | axum 的 `.layer()` 只包住「调用时已存在」的路由；后设的 fallback 不带中间件（原来 404 就是因此漏日志） | 同上 |
+| 未知路径是否经过鉴权 | ① 跳过鉴权直接 404 ② 走 SecurityConfig 的 anyRequest().authenticated() | ② | Java 的 Filter 在 DispatcherServlet 之外：无 token 的未知路径是 401，有 token 才是 404 | 未知路径的响应码 |
+| 尾斜杠（useTrailingSlashMatch） | ① fallback 里削掉再二次路由 ② 路由前统一削 | ② | 二次路由会让中间件跑两遍：@Log 重复写、重复提交检测互相冲突、鉴权重复；路由前削则只跑一次 | `lib.rs::strip_trailing_slash`（`MapRequestLayer` 包住整个 router） |
+| 原始 URI | ① 重写后就按新路径记 ② 保留原 URI | ② | Java 日志/错误页用的是 `getRequestURI()`；用 `OriginalPath` extension 带给 web_filter 和 404 页 | 日志里的 `Path`、404 JSON 的 `path` |
+| panic 捕获位置 | ① tower-http `CatchPanicLayer` ② web_filter 内 `catch_unwind` | ② | CatchPanicLayer 的 handler 拿不到 request，写不了带 Path/TraceId 的日志，也保证不了完成日志 | `web_filter` |
+| panic 栈来源 | ① catch 点抓栈 ② 全局 hook 在 panic 线程抓栈 | ② | unwind 之后原栈已展开，catch 点只剩中间件帧；hook 里抓才是抛出点 | `logging::install_panic_hook`（main 启动时安装） |
+| panic 响应 | ① 200 + AjaxResult（GlobalExceptionHandler 形态） ② 500 + `/error` 错误页 | ② | panic 等价于逃出异常解析链的 Error；用户明确要求「panic 转 500」；与 404/403 共用同一套 BasicErrorController 输出 | HTTP 状态与响应体 |
+| panic 的日志条数 | ① 只记 `[未捕获异常]`（Java TraceIdFilter 形态） ② 再加一条完成日志 | ② | 用户要求所有响应都有完成日志；`[服务器错误响应] Status=500` 由 web_filter 统一补 | sys-slow / sys-error 各一条 |
+| web_filter 的 State | ① `AppState` ② 只要端口 `u16` | ② | 中间件实际只用到 `server.port`；收窄后可以在单测里装配真实中间件做端到端断言 | 中间件签名与装配处 |
+
+**第 5 项残余（已知）**：Java 的 RuntimeException 走 `GlobalExceptionHandler`，HTTP 状态是 200 + `AjaxResult`；Rust panic 统一 500 + `/error` 错误页，属于有意偏离（按用户要求）。Java 只为异常记 `[未捕获异常]`（不记完成日志），Rust 多一条 `[服务器错误响应]`，同样是有意补充。
