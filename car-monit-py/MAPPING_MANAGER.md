@@ -25,8 +25,8 @@
 
 | 项 | 数 | 依据 |
 |---|---|---|
-| Java 控制器 | 20 | `ruoyi-admin/src/main/java/com/ruoyi/web/controller/manager/` 下全部 `*Controller.java` |
-| 端点 | 160 | 方法级注解展开后的条数（`value = {...}` 会展开成多条），与 `scripts/audit_endpoints.py` 的 Java 侧计数同源 |
+| Java 控制器 | 21 | `ruoyi-admin/src/main/java/com/ruoyi/web/controller/manager/` 下全部 `*Controller.java` |
+| 端点 | 170 | 方法级注解展开后的条数（`value = {...}` 会展开成多条），与 `scripts/audit_endpoints.py` 的 Java 侧计数同源 |
 | Python 控制器模块 | 20 | `app/api/manager/bigscreen/` |
 | Domain 对照行 | 34 | 按 `# Migrated from:` 反查到的 Java 文件行数（Mapper 的接口与 XML 分别计） |
 | Mapper 对照行 | 38 | 按 `# Migrated from:` 反查到的 Java 文件行数（Mapper 的接口与 XML 分别计） |
@@ -200,7 +200,7 @@
 | `ruoyi-framework/src/main/java/com/ruoyi/framework/manager/AsyncManager.java` | `app/framework/manager/async_manager.py` |
 | `ruoyi-framework/src/main/java/com/ruoyi/framework/manager/factory/AsyncFactory.java` | `app/framework/manager/factory/async_factory.py` |
 
-## 4. 控制器端点（160 个）
+## 4. 控制器端点（170 个）
 
 ### 4.1 `BigScreenController`（12 个映射）
 
@@ -219,7 +219,22 @@
 | `getTollList` | `get_toll_list` | GET `/manager/bigScreen/tollGantryFwqList` | `—` | — |
 | `topTen` | `top_ten` | GET `/manager/bigScreen/topTen` | `—` | — |
 
-### 4.2 `BussTestController`（7 个映射）
+### 4.2 `BigScreenExportController`（10 个映射）
+
+| Java | Python | Method / Path | 权限点 | `@Log` |
+|---|---|---|---|---|
+| `approvals` | `—` | GET `/manager/bigScreen/export/approvals` | `manager:bigscreen:exportApprove` | — |
+| `download` | `—` | GET `/manager/bigScreen/export/download/{taskId}` | `—` | — |
+| `status` | `—` | GET `/manager/bigScreen/export/status/{taskId}` | `—` | — |
+| `approve` | `—` | POST `/manager/bigScreen/export/approvals/{requestId}/approve` | `manager:bigscreen:exportApprove` | — |
+| `reject` | `—` | POST `/manager/bigScreen/export/approvals/{requestId}/reject` | `manager:bigscreen:exportApprove` | — |
+| `display` | `—` | POST `/manager/bigScreen/export/display` | `manager:bigscreen:export` | — |
+| `full` | `—` | POST `/manager/bigScreen/export/full` | `manager:bigscreen:export` | — |
+| `downloadUrl` | `—` | POST `/manager/bigScreen/export/{taskId}/download-url` | `—` | — |
+| `resume` | `—` | POST `/manager/bigScreen/export/{taskId}/resume` | `manager:bigscreen:export` | — |
+| `retry` | `—` | POST `/manager/bigScreen/export/{taskId}/retry` | `manager:bigscreen:export` | — |
+
+### 4.3 `BussTestController`（7 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -231,7 +246,7 @@
 | `syncCurrentTrack` | `sync_current_track` | POST `/manager/busstest/syncCurrentTrack` | `manager:busstest:syncTest` | — |
 | `edit` | `edit` | PUT `/manager/busstest` | `manager:busstest:edit` | 业务测试 / UPDATE |
 
-### 4.3 `CarAduitFreeController`（10 个映射）
+### 4.4 `CarAduitFreeController`（10 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -246,7 +261,7 @@
 | `add` | `add` | POST `/manager/aduitfree` | `—` | 补缴处理 / INSERT |
 | `edit` | `edit` | PUT `/manager/aduitfree` | `—` | 补缴处理 / UPDATE |
 
-### 4.4 `CarConfimFreeController`（13 个映射）
+### 4.5 `CarConfimFreeController`（13 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -264,7 +279,7 @@
 | `add` | `add` | POST `/manager/confimfree` | `—` | 确认补缴 / INSERT |
 | `edit` | `edit` | PUT `/manager/confimfree` | `—` | 确认补缴 / UPDATE |
 
-### 4.5 `CarExceptRecordController`（13 个映射）
+### 4.6 `CarExceptRecordController`（13 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -282,7 +297,7 @@
 | `doImport` | `do_import` | POST `/manager/exceptrecord/import` | `—` | 新增流水导入 / IMPORT |
 | `edit` | `edit` | PUT `/manager/exceptrecord` | `—` | 异常车辆流水 / UPDATE |
 
-### 4.6 `CarFeeRecordController`（6 个映射）
+### 4.7 `CarFeeRecordController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -293,7 +308,7 @@
 | `add` | `add` | POST `/manager/feerecord` | `manager:feerecord:add` | 收费流水 / INSERT |
 | `edit` | `edit` | PUT `/manager/feerecord` | `manager:feerecord:edit` | 收费流水 / UPDATE |
 
-### 4.7 `CarInfoController`（8 个映射）
+### 4.8 `CarInfoController`（8 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -306,7 +321,7 @@
 | `doImport` | `do_import` | POST `/manager/carinfo/import` | `—` | 车辆信息 / IMPORT |
 | `edit` | `edit` | PUT `/manager/carinfo` | `manager:carinfo:edit` | 车辆信息 / UPDATE |
 
-### 4.8 `CarQueryLogController`（6 个映射）
+### 4.9 `CarQueryLogController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -317,7 +332,7 @@
 | `add` | `add` | POST `/manager/querylog` | `manager:querylog:add` | 查询日志 / INSERT |
 | `edit` | `edit` | PUT `/manager/querylog` | `manager:querylog:edit` | 查询日志 / UPDATE |
 
-### 4.9 `CarRouteDetailController`（6 个映射）
+### 4.10 `CarRouteDetailController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -328,7 +343,7 @@
 | `add` | `add` | POST `/manager/routedetail` | `manager:routedetail:add` | 常用路线明细 / INSERT |
 | `edit` | `edit` | PUT `/manager/routedetail` | `manager:routedetail:edit` | 常用路线明细 / UPDATE |
 
-### 4.10 `CarRouteInfoController`（6 个映射）
+### 4.11 `CarRouteInfoController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -339,7 +354,7 @@
 | `add` | `add` | POST `/manager/routeinfo` | `manager:routeinfo:add` | 常用路线 / INSERT |
 | `edit` | `edit` | PUT `/manager/routeinfo` | `manager:routeinfo:edit` | 常用路线 / UPDATE |
 
-### 4.11 `CarSplitRecordController`（6 个映射）
+### 4.12 `CarSplitRecordController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -350,7 +365,7 @@
 | `add` | `add` | POST `/manager/splitrecord` | `manager:splitrecord:add` | 拆分流水 / INSERT |
 | `edit` | `edit` | PUT `/manager/splitrecord` | `manager:splitrecord:edit` | 拆分流水 / UPDATE |
 
-### 4.12 `CarSuspiciousBackController`（6 个映射）
+### 4.13 `CarSuspiciousBackController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -361,7 +376,7 @@
 | `add` | `add` | POST `/manager/carsuspiciousback` | `manager:carsuspiciousback:add` | 可疑车辆备份 / INSERT |
 | `edit` | `edit` | PUT `/manager/carsuspiciousback` | `manager:carsuspiciousback:edit` | 可疑车辆备份 / UPDATE |
 
-### 4.13 `CarSuspiciousCheckController`（6 个映射）
+### 4.14 `CarSuspiciousCheckController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -372,7 +387,7 @@
 | `add` | `add` | POST `/manager/suspiciouscheck` | `manager:suspiciouscheck:add` | 可疑车辆人工核实 / INSERT |
 | `edit` | `edit` | PUT `/manager/suspiciouscheck` | `manager:suspiciouscheck:edit` | 可疑车辆人工核实 / UPDATE |
 
-### 4.14 `CarSuspiciousController`（15 个映射）
+### 4.15 `CarSuspiciousController`（15 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -392,7 +407,7 @@
 | `edit` | `edit` | PUT `/manager/suspicious` | `manager:suspicious:edit` | 可疑车辆 / UPDATE |
 | `check` | `check` | PUT `/manager/suspicious/check` | `—` | 可疑车辆 / UPDATE |
 
-### 4.15 `CarTrackInfoController`（10 个映射）
+### 4.16 `CarTrackInfoController`（10 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -407,7 +422,7 @@
 | `edit` | `edit` | PUT `/manager/cartrackinfo` | `manager:cartrackinfo:edit` | 车辆行驶轨迹 / UPDATE |
 | `changeTrailInfo` | `change_trail_info` | PUT `/manager/cartrackinfo/changeTrailInfo` | `—` | 车辆行驶轨迹 / UPDATE |
 
-### 4.16 `CarWarningInfoController`（6 个映射）
+### 4.17 `CarWarningInfoController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -418,7 +433,7 @@
 | `add` | `add` | POST `/manager/carwarning` | `manager:carwarning:add` | 预警车辆 / INSERT |
 | `edit` | `edit` | PUT `/manager/carwarning` | `manager:carwarning:edit` | 预警车辆 / UPDATE |
 
-### 4.17 `CarWarningRuleController`（6 个映射）
+### 4.18 `CarWarningRuleController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -429,7 +444,7 @@
 | `add` | `add` | POST `/manager/warningrule` | `manager:warningrule:add` | 预警规则 / INSERT |
 | `edit` | `edit` | PUT `/manager/warningrule` | `manager:warningrule:edit` | 预警规则 / UPDATE |
 
-### 4.18 `CarWhiteInfoController`（6 个映射）
+### 4.19 `CarWhiteInfoController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -440,7 +455,7 @@
 | `add` | `add` | POST `/manager/whiteinfo` | `manager:whiteinfo:add` | 车俩白名单 / INSERT |
 | `edit` | `edit` | PUT `/manager/whiteinfo` | `manager:whiteinfo:edit` | 车俩白名单 / UPDATE |
 
-### 4.19 `GantryCarController`（6 个映射）
+### 4.20 `GantryCarController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
@@ -451,7 +466,7 @@
 | `add` | `add` | POST `/manager/gantrycar` | `manager:gantrycar:add` | 门架拍识查询 / INSERT |
 | `edit` | `edit` | PUT `/manager/gantrycar` | `manager:gantrycar:edit` | 门架拍识查询 / UPDATE |
 
-### 4.20 `GantryTradeInfoController`（6 个映射）
+### 4.21 `GantryTradeInfoController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
