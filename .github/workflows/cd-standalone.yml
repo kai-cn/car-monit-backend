@@ -241,10 +241,17 @@ jobs:
           - WSL2 默认入站不可达：外部访问需 `netsh interface portproxy` 转发，或用 `localhost` 从宿主访问。
           DOC
 
+          # heredoc 内容会带上 YAML 缩进；unit 文件不允许意外缩进，统一去掉行首空白
+          sed -i 's/^[[:space:]]*//' "$R/systemd/car-monit-$S.service"
+          sed -i 's/^[[:space:]]*//' "$R/README.md"
+
           tar -czf "car-monit-$S.tar.gz" -C staging "$S"
           sha256sum "car-monit-$S.tar.gz" > "car-monit-$S.tar.gz.sha256"
           cat "car-monit-$S.tar.gz.sha256"
-          tar -tzf "car-monit-$S.tar.gz" | head -30
+          # 不要管道到 head：SIGPIPE 会让 tar 以 exit 2 失败
+          tar -tzf "car-monit-$S.tar.gz" > /tmp/manifest.txt
+          wc -l < /tmp/manifest.txt
+          sed -n '1,30p' /tmp/manifest.txt
         env:
           SERVICE: ${{ matrix.service }}
 
