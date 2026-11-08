@@ -263,6 +263,23 @@ Linux 构建 job 改为 `runs-on: ubuntu-latest` + `container: openeuler/openeul
 | PR 自测（`docs/ci-selftest.md` 噪声分支） | 未执行 |
 | release（`v0.0.0-citest`） | 未执行 |
 
+## 10. GHCR 回读结果（2026-11-08，classic token）
+
+`GET /users/kai-cn/packages?package_type=container` 共 7 个包，其中本项目 4 个：
+
+| 包 | 可见性 | 最新 tag | 最近更新时间 |
+|---|---|---|---|
+| `car-monit-java` | private | `sha-11675a7`、`latest` | 2026-11-08T18:56:55Z |
+| `car-monit-go` | private | `sha-11675a7`、`latest` | 2026-11-08T18:56:56Z |
+| `car-monit-rust` | private | `sha-11675a7`、`latest` | 2026-11-08T18:56:59Z |
+| `car-monit-py` | private | `sha-11675a7`、`latest` | 2026-11-08T18:56:55Z |
+
+每个包还保留历史 `sha-f73ce5b`、`sha-3a91876`、`sha-0f010c5` 等版本 tag；无 tag 的记录是同一 manifest 的多平台/子层对象。
+另有 `car-monit-api*` 三个包（api 仓库产物），不在本次范围。
+
+**结论**：`cd.yml` 的 GHCR 推送是真实落地的，四个镜像均可用 `ghcr.io/kai-cn/car-monit-<service>:<tag>` 拉取。
+**注意**：包为 private，集群侧必须先建 imagePullSecret（见 [cd-ghcr-k8s.md](cd-ghcr-k8s.md) §3），否则 Pod 会 `ImagePullBackOff`。
+
 ## 5. 实施进度
 
 | 阶段 | 状态 | 文件 |
