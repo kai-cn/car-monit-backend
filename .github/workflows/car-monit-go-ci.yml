@@ -70,3 +70,68 @@ jobs:
           python scripts/parity/check_perms.py \
             --java-root ../ruoyi-admin/src/main/java/com/ruoyi/web/controller \
             --go-root internal
+
+  runtime-perms-audit:
+    # 真实起 MySQL/Redis + Go 服务，用无权限账号验证 403 与 sys_oper_log 落行。
+    # admin 对拍是盲区：admin 有 *:*:*，漏挂权限中间件也不会暴露。
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: carmonitdb
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    defaults:
+      run:
+        working-directory: car-monit-go
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          cache-dependency-path: car-monit-go/go.sum
+
+      - name: 导入基线 schema 并创建无权限账号
+        run: |
+          mysql --default-character-set=utf8mb4 -h127.0.0.1 -P3307 -uroot -proot carmonitdb \
+            < ../car-monit-rust/docs/01-baseline/schema.carmonitdb.local.sql
+          mysql --default-character-set=utf8mb4 -h127.0.0.1 -P3307 -uroot -proot carmonitdb <<'SQL'
+          INSERT INTO sys_dept (dept_id,parent_id,ancestors,dept_name,order_num,status,del_flag,tenant_id)
+          VALUES (100,0,'0','测试部门',0,'0','0',1);
+          -- Admin@123 的 BCrypt 哈希（bcrypt cost 10，仅用于 CI 测试库）
+          INSERT INTO sys_user (user_id,dept_id,user_name,nick_name,user_type,password,status,del_flag,create_by,create_time,tenant_id)
+          VALUES
+            (1,100,'admin','管理员','00','$2a$10$LxwsTDSGoUZiRH0HRVr.heIxPTrve8HSgRWi8pJXIVVNj6twMNIPy','0','0','admin',NOW(),1),
+            (2,100,'noperm','无权限','00','$2a$10$LxwsTDSGoUZiRH0HRVr.heIxPTrve8HSgRWi8pJXIVVNj6twMNIPy','0','0','admin',NOW(),1);
+          SQL
+
+      - name: 应用版本化迁移
+        run: go run -buildvcs=false ./cmd/migrate
+
+      - name: 启动服务并跑无权限账号矩阵
+        run: |
+          go run -buildvcs=false ./cmd/server > /tmp/carmonit-server.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:9989/healthz >/dev/null; then break; fi
+            sleep 2
+          done
+          cat /tmp/carmonit-server.log
+          python scripts/parity/check_permissions_runtime.py --base-url http://127.0.0.1:9989
+

@@ -1,5 +1,15 @@
 # 迁移工作进度（接口返回逐一对比阶段）
 
+> **2026-11-08 运行时回归批次**：本机无 Docker，改用 MySQL 8.0.30（临时 datadir，3307）+
+> 临时 miniredis（6379）实跑 `cmd/migrate`（dry-run + 落库）与 `cmd/server`；
+> `/healthz` 返回 database/redis 均 UP；admin 与无权限账号登录成功；
+> 无权限账号访问 4 个受保护只读端点全部 `code=403`，admin 同端点不被拒；
+> 非 admin 触发带 OperLog 的失败操作后，`sys_oper_log` 落到 `operName=noperm status=1`，
+> `sys_logininfor` 记录登录成功。上述矩阵固化为
+> `scripts/parity/check_permissions_runtime.py` + `make parity-perms-runtime`，
+> 并新增 CI 作业 `runtime-perms-audit`（MySQL/Redis service containers + 基线 schema）。
+> 细节与账号种子见 MIGRATION_GUIDE §1.8。
+>
 > **2026-11-08 数据面批次（分支 `car-monit-go-V2`）**：把此前"未接线"的 `internal/stream/*` 真正接到
 > 运行时。新增 `internal/modules/base/datasync{,_source,_sync,_baseinfo}.go`：
 > Kafka 消费 → Redis SETNX 幂等 → 按 `snapshottime` 路由 MySQL 月度分表 → ES `_bulk` 索引，

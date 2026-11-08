@@ -224,7 +224,7 @@ level=INFO msg="雪花 ID 实例标识" workerId=7 datacenterId=0 source=hostnam
 - 单实例：保持 -1 即可（主机名推导稳定）。
 - 多副本：**必须**为每个副本显式设置不同的 `CARMONIT_WORKER_ID`（或不同的组合），
   否则同一毫秒内可能生成重复主键，表现为插入时 `Duplicate entry`。
-- 取值范围越界会在配置校验阶段直接启动失败，而不是运行期才暴露。
+- 取值越界会在配置校验阶段直接启动失败，而不是运行期才暴露。
 
 ### 1.5 常见问题
 
@@ -235,6 +235,42 @@ level=INFO msg="雪花 ID 实例标识" workerId=7 datacenterId=0 source=hostnam
 | 启动即报 `unmarshal config` | 配置键类型不匹配；对照 `internal/config/config.go` |
 | 所有业务接口 401 | 确认 `Authorization: Bearer <token>`，且 Redis 中 `login_tokens:<uuid>` 未过期 |
 | 验证码校验失败 | 验证码 2 分钟过期且校验一次即删除；`math` 类型答案是算式结果 |
+
+### 1.8 无权限账号运行时回归（2026-11-08）
+
+admin 对拍存在盲区：admin 持有 `*:*:*`，漏挂权限中间件也不会在返回体里暴露。
+现在用真实服务 + 无权限账号验证 403 与审计落行：
+
+```bash
+# 1) 启动 MySQL/Redis（本机无 Docker 时可用等价实例，见下）
+# 2) 导入基线 schema 后创建 noperm 账号（密码 Admin@123，BCrypt cost 10）
+INSERT INTO sys_dept (dept_id,parent_id,ancestors,dept_name,order_num,status,del_flag,tenant_id)
+VALUES (100,0,'0','测试部门',0,'0','0',1);
+INSERT INTO sys_user (user_id,dept_id,user_name,nick_name,user_type,password,status,del_flag)
+VALUES (2,100,'noperm','无权限','00','<bcrypt>','0','0');
+
+# 3) 起服务后执行矩阵
+python scripts/parity/check_permissions_runtime.py \
+  --base-url http://127.0.0.1:9989 \
+  --no-perm-user noperm --no-perm-password 'Admin@123'
+```
+
+脚本做三件事（只读端点，避免误写生产）：
+1. noperm 访问 `monitor:operlog:list` / `monitor:logininfor:list` / `system:dict:list` /
+   `system:role:export` 必须 HTTP 200 + `code=403`；
+2. 同一端点用 admin 访问不得是 403（防止全站误拒）；
+3. noperm 触发 `PUT /system/user/profile/updatePwd`（带 OperLog、仅需登录）后，
+   admin 在 `/monitor/operlog/list` 应查到 `operName=noperm`、`status=1` 的审计行。
+
+**本机实跑记录（2026-11-08）**：Docker 不可用，改用本机 MySQL 8.0.30（端口 3307，
+临时 datadir）+ 临时 miniredis（127.0.0.1:6379）替代 docker-compose；`cmd/migrate` 的
+`-dry-run` 与实跑均通过；脚本四项 403 全通过，审计行命中 `operName=noperm status=1
+operUrl=/system/user/profile/updatePwd`。CI 中同一脚本由 `runtime-perms-audit` 作业执行
+（MySQL 8.0 + Redis 7 service containers + 基线 schema）。
+
+> 本机回归发现的环境问题（非代码缺陷）：默认 `ruoyi.profile=D:/ruoyi/uploadPath` 在
+> 受限账户下不可创建，`GET /system/role/export` 返回“导出Excel失败”。部署时需保证
+> `ruoyi.profile` 可写；该端点已由脚本确认“权限判断先于导出逻辑生效”。
 
 ## 2. Java 开发者速查
 

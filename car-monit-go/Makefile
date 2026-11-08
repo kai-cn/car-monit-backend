@@ -6,6 +6,7 @@ BIN_DIR := bin
 SERVER := $(BIN_DIR)/carmonit-server
 CONFIG ?= configs/config.yaml
 GOLANGCI_LINT_VERSION ?= v2.1.6
+BASE_URL ?= http://127.0.0.1:9989
 
 # -buildvcs=false：worktree / CI 环境下 .git 状态可能不完整，避免 VCS stamping 失败。
 GOFLAGS ?= -buildvcs=false
@@ -71,6 +72,10 @@ parity-perms: ## 静态比对 Java 注解与 Go 注册的权限/操作日志
 	python scripts/parity/check_perms.py \
 		--java-root ../ruoyi-admin/src/main/java/com/ruoyi/web/controller \
 		--go-root internal
+
+.PHONY: parity-perms-runtime
+parity-perms-runtime: ## 无权限账号运行时 403 + sys_oper_log 落行（需先启动服务并准备 noperm 账号）
+	python scripts/parity/check_permissions_runtime.py --base-url $(BASE_URL)
 
 .PHONY: docker
 docker: ## 构建镜像
