@@ -47,11 +47,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from app.common.utils.image_utils import content_type_of
-from app.settings import PROJECT_ROOT
+from app.settings import CONFIG_DIR
 
 #: classpath 根 ``templates/export/xxx.docx`` 在 Python 侧的对应目录
 #: （与 :mod:`app.common.utils.poi.template_export` 同一个根）。
-TEMPLATES_ROOT: Path = PROJECT_ROOT / "config"
+TEMPLATES_ROOT: Path = CONFIG_DIR
 
 #: 1 px = 9525 EMU（``docx`` 的 EMU 定义）
 EMU_PER_PIXEL = 9525

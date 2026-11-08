@@ -47,8 +47,25 @@ from pydantic_settings import (
 # ---------------------------------------------------------------------------
 # Project root = .../car-monit-py
 PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent
+
+
+def _config_dir() -> Path:
+    """``config/`` 目录：源码树优先，非 editable 安装回退到 ``sys.prefix/config``.
+
+    wheel 通过 ``data-files`` 把整个 ``config/`` 装到 ``sys.prefix/config/``
+    （vm 模板 / xlsx-docx 导出模板 / i18n），源码目录不存在时用安装位置。
+    """
+    source = PROJECT_ROOT / "config"
+    if source.is_dir():
+        return source
+    installed = Path(sys.prefix) / "config"
+    if installed.is_dir():
+        return installed
+    return source
+
+
 # Directory holding the YAML mirror of the Java resources (config/application.yml).
-CONFIG_DIR: Path = PROJECT_ROOT / "config"
+CONFIG_DIR: Path = _config_dir()
 
 _CAMEL_BOUNDARY = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
 

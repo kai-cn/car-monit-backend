@@ -275,6 +275,16 @@ class TestFailClosedSecrets:
 class TestYamlPath:
     """非 editable 安装：源码目录没有 config/，要回退到 data-files 安装位置."""
 
+    def test_config_dir_falls_back_to_prefix_install(self, tmp_path, monkeypatch) -> None:
+        from app import settings as settings_module
+
+        monkeypatch.setattr(settings_module, "PROJECT_ROOT", tmp_path / "src")
+        monkeypatch.setattr(settings_module.sys, "prefix", str(tmp_path / "prefix"))
+        installed = tmp_path / "prefix" / "config"
+        installed.mkdir(parents=True)
+
+        assert settings_module._config_dir() == installed
+
     def test_installed_data_file_is_the_fallback(self, tmp_path, monkeypatch) -> None:
         from app import settings as settings_module
 

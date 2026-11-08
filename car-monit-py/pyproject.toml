@@ -67,10 +67,24 @@ middleware = [
 include = ["app*"]
 
 # ``config/`` 不是 Python 包（是 Java classpath 的镜像），用 data-files 装到
-# ``sys.prefix/config/``；``app.settings._yaml_path`` 会在源码目录缺失时回退到这里。
-# 这样 ``pip install .``（非 editable）也能读到默认 application.yml。
+# ``sys.prefix/config/``；``app.settings._config_dir`` 会在源码目录缺失时回退到这里。
+# 运行期需要的不止 YAML：代码生成器的 vm/vmplus 模板、导出/导入的 xlsx/docx 模板、
+# i18n bundle 都从 ``CONFIG_DIR`` 读，缺一个就在非 editable 安装下 500。
 [tool.setuptools.data-files]
 "config" = ["config/application.yml", "config/generator.yml"]
+"config/i18n" = ["config/i18n/*.properties"]
+"config/templates/down" = ["config/templates/down/*"]
+"config/templates/export" = ["config/templates/export/*"]
+"config/vm/java" = ["config/vm/java/*.vm"]
+"config/vm/js" = ["config/vm/js/*.vm"]
+"config/vm/sql" = ["config/vm/sql/*.vm"]
+"config/vm/vue" = ["config/vm/vue/*.vm"]
+"config/vm/xml" = ["config/vm/xml/*.vm"]
+"config/vmplus/java" = ["config/vmplus/java/*.vm"]
+"config/vmplus/js" = ["config/vmplus/js/*.vm"]
+"config/vmplus/sql" = ["config/vmplus/sql/*.vm"]
+"config/vmplus/vue" = ["config/vmplus/vue/*.vm"]
+"config/vmplus/xml" = ["config/vmplus/xml/*.vm"]
 
 [tool.ruff]
 target-version = "py312"
