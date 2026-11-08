@@ -2,10 +2,12 @@ package com.ruoyi.framework.config;
 
 import java.util.TimeZone;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -20,6 +22,12 @@ import org.springframework.web.client.RestTemplate;
 @MapperScan("com.ruoyi.**.mapper")
 public class ApplicationConfig
 {
+    @Value("${export.download.connect-timeout-ms:3000}")
+    private int downloadConnectTimeoutMs;
+
+    @Value("${export.download.read-timeout-ms:1800000}")
+    private int downloadReadTimeoutMs;
+
     /**
      * 时区配置
      */
@@ -33,5 +41,17 @@ public class ApplicationConfig
     public RestTemplate restTemplate()
     {
         return new RestTemplate();
+    }
+
+    /**
+     * 导出文件下载专用：长读超时、流式读取，避免大文件占用在线查询时间片。
+     */
+    @Bean(name = "trafficApiDownloadRestTemplate")
+    public RestTemplate trafficApiDownloadRestTemplate()
+    {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(downloadConnectTimeoutMs);
+        factory.setReadTimeout(downloadReadTimeoutMs);
+        return new RestTemplate(factory);
     }
 }
