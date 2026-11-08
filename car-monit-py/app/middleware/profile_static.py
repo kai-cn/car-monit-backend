@@ -25,6 +25,14 @@ from starlette.staticfiles import StaticFiles
 class ProfileStaticFiles(StaticFiles):
     """``/profile`` 挂载点：跨盘按 404 处理，并统一加下载/防嗅探头."""
 
+    async def check_config(self) -> None:
+        """跳过 Starlette 的目录存在性检查。
+
+        ``check_dir=False`` 只关掉 ``__init__`` 里的检查；Starlette 在首次请求时
+        仍会调用 ``check_config``。Java 的资源处理器在目录缺失时只在请求上返回
+        404，不会抛异常，这里保持同样语义。
+        """
+
     def lookup_path(self, path: str) -> Tuple[str, Optional[os.stat_result]]:
         try:
             return super().lookup_path(path)
