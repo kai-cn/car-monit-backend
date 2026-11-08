@@ -78,6 +78,14 @@ jobs:
         shell: pwsh
         run: cmake --build build --config Release --parallel
 
+      - name: 对齐应用时区（Windows runner 默认 UTC）
+        if: steps.detect.outputs.found == 'true'
+        shell: pwsh
+        run: |
+          # 用例把 "yyyy-MM-dd HH:mm:ss" 按本地时区转 epoch 毫秒；应用目标时区是 +08:00。
+          tzutil /s "China Standard Time"
+          Get-Date
+
       - name: 单元测试
         if: steps.detect.outputs.found == 'true'
         shell: pwsh
