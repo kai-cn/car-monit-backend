@@ -115,6 +115,12 @@ jobs:
           path: dist
       - name: 列出产物
         run: ls -la dist
+      - name: 生成 SHA256SUMS
+        run: |
+          set -euo pipefail
+          cd dist
+          find . -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+          cat SHA256SUMS
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
