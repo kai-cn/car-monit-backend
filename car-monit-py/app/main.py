@@ -409,8 +409,11 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
             "[启动警告] app.cors.allowed_origins 未配置, local 环境仅允许 localhost/127.0.0.1 来源"
         )
     else:
-        logger.warning(
-            "[启动警告] app.cors.allowed_origins 未配置, 非 local 环境将拒绝所有跨域请求"
+        # fail-closed：非 local 留空等于拒绝所有跨域，管理后台会整体不可用；
+        # 与其带着一个"能启动但前端全挂"的实例，不如在启动期直接点名配置项。
+        raise ValueError(
+            "非 local 环境必须显式配置 CORS 白名单: app.cors.allowed_origins"
+            "（环境变量 APP__CORS__ALLOWED_ORIGINS，JSON 数组）；留空会拒绝所有跨域请求"
         )
     application.add_middleware(CORSMiddleware, **cors_options)
     application.add_middleware(TraceIdMiddleware, settings=settings)

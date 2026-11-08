@@ -58,9 +58,12 @@ def test_configured_whitelist_replaces_the_loopback_default(
     assert allowed.headers["access-control-allow-origin"] == "https://admin.example.com"
 
 
-def test_non_local_empty_whitelist_rejects_every_origin(
+def test_non_local_empty_whitelist_fails_startup(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """非 local 留空 = 拒绝所有跨域；与其带着半残实例，不如启动期直接失败."""
+    from app.main import create_app
+
     monkeypatch.setenv("IS_LOCALHOST", "prod")
     monkeypatch.setenv(
         "TOKEN__SECRET",
@@ -68,7 +71,6 @@ def test_non_local_empty_whitelist_rejects_every_origin(
     )
     monkeypatch.setenv("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD", "prod-db-password")
     monkeypatch.setenv("HENGDA__SECRET", "prod-hengda-signing-key-4d8e1a6b2f9c0357")
-    client = _client()
 
-    assert _preflight(client, "http://localhost:5173").status_code == 400
-    assert _preflight(client, "https://admin.example.com").status_code == 400
+    with pytest.raises(ValueError, match="APP__CORS__ALLOWED_ORIGINS"):
+        create_app()
