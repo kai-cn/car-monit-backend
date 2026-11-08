@@ -212,7 +212,9 @@ python scripts/gen_mapping_docs.py        # 重写 MAPPING_{BASE,MANAGER,FLOW,TO
 先用 `stop` 停掉，或换端口：`SERVER__PORT=9990 python run.py`。
 
 **Q：日志在哪？**
-`logs/sys-info.log` / `sys-error.log` / `sys-slow.log` / `sys-user.log`，按大小滚动
+源码运行时默认 `logs/`；非 editable 安装默认 `sys.prefix/var/log/car-monit`（前缀只读时
+回退 `~/.car-monit/logs`），可用环境变量 `LOG_PATH` 显式覆盖。文件名是
+`sys-info.log` / `sys-error.log` / `sys-slow.log` / `sys-user.log`，按大小滚动
 （Java 是时间 + 大小双策略，见 `COMPATIBILITY.md` §7）。控制台另有访问日志。
 
 **Q：现在还剩什么没做？**

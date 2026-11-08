@@ -37,6 +37,7 @@ import logging
 import logging.handlers
 import os
 import sys
+import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
@@ -98,11 +99,37 @@ class _LevelFilter(logging.Filter):
 
 
 def _log_dir() -> Path:
-    """``log.path`` from logback.xml; overridable through ``LOG_PATH``."""
+    """日志目录：``LOG_PATH`` > 源码树 ``logs/`` > 安装位置 > 用户目录.
+
+    非 editable 安装时 ``PROJECT_ROOT`` 是 site-packages：写在那里升级即丢，
+    只读前缀还会让 ``mkdir`` 抛 ``PermissionError`` 直接拖垮启动（与 ``config/``
+    的回退同理）。因此 wheel 安装默认落到 ``sys.prefix/var/log/car-monit``，
+    不可写时再退到 ``~/.car-monit/logs``，最后兜底到系统临时目录保证进程能起。
+    显式设置 ``LOG_PATH`` 时以其为准。
+    """
     configured = os.environ.get("LOG_PATH")
-    path = Path(configured) if configured else PROJECT_ROOT / "logs"
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+    if configured:
+        path = Path(configured)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    candidates: List[Path] = []
+    # 源码树（wheel 里不会带 pyproject.toml）优先，保持开发期的 logs/ 习惯。
+    if (PROJECT_ROOT / "pyproject.toml").is_file():
+        candidates.append(PROJECT_ROOT / "logs")
+    candidates.append(Path(sys.prefix) / "var" / "log" / "car-monit")
+    candidates.append(Path.home() / ".car-monit" / "logs")
+
+    for candidate in candidates:
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            return candidate
+        except OSError:
+            continue
+
+    fallback = Path(tempfile.gettempdir()) / "car-monit-logs"
+    fallback.mkdir(parents=True, exist_ok=True)
+    return fallback
 
 
 def _prune_logs(directory: Path, max_total_bytes: int, protect: Optional[Set[str]] = None) -> int:

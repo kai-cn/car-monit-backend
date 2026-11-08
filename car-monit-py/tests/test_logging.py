@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -172,6 +173,64 @@ class TestLogCapacity:
         assert not old.exists()
         assert not newer.exists()
         assert current.exists()
+
+
+class TestLogDirectory:
+    """非 editable 安装不能把日志写进 site-packages（P2-7）."""
+
+    def test_log_path_override_wins(self, tmp_path, monkeypatch) -> None:
+        from app.logging_config import _log_dir
+
+        target = tmp_path / "custom-logs"
+        monkeypatch.setenv("LOG_PATH", str(target))
+
+        assert _log_dir() == target
+        assert target.is_dir()
+
+    def test_source_tree_keeps_the_project_logs_directory(self, monkeypatch) -> None:
+        from app.logging_config import PROJECT_ROOT, _log_dir
+
+        monkeypatch.delenv("LOG_PATH", raising=False)
+        assert (PROJECT_ROOT / "pyproject.toml").is_file()
+
+        assert _log_dir() == PROJECT_ROOT / "logs"
+
+    def test_wheel_install_uses_prefix_instead_of_site_packages(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        from app import logging_config
+
+        source = tmp_path / "site-packages"
+        source.mkdir()  # 没有 pyproject.toml -> 视为安装目录
+        monkeypatch.delenv("LOG_PATH", raising=False)
+        monkeypatch.setattr(logging_config, "PROJECT_ROOT", source)
+        monkeypatch.setattr(logging_config.sys, "prefix", str(tmp_path / "prefix"))
+
+        assert logging_config._log_dir() == (
+            tmp_path / "prefix" / "var" / "log" / "car-monit"
+        )
+        # 不再往 site-packages 写入
+        assert not (source / "logs").exists()
+
+    def test_readonly_prefix_falls_back_to_the_user_directory(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        from app import logging_config
+
+        source = tmp_path / "site-packages"
+        source.mkdir()
+        # 把 prefix 候选路径做成普通文件：mkdir 抛 FileExistsError（OSError 子类）
+        blocked = tmp_path / "prefix" / "var" / "log" / "car-monit"
+        blocked.parent.mkdir(parents=True)
+        blocked.write_text("not a directory", encoding="utf-8")
+
+        monkeypatch.delenv("LOG_PATH", raising=False)
+        monkeypatch.setattr(logging_config, "PROJECT_ROOT", source)
+        monkeypatch.setattr(logging_config.sys, "prefix", str(tmp_path / "prefix"))
+        home = tmp_path / "home"
+        monkeypatch.setattr(Path, "home", classmethod(lambda cls: home))
+
+        assert logging_config._log_dir() == home / ".car-monit" / "logs"
 
 
 class TestTraceIdFilter:
