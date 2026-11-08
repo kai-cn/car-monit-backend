@@ -1,0 +1,53 @@
+name: _cpp
+
+# 可复用的 C++ 检查（由 ci.yml 的 cpp job 调用）。
+# - windows-latest + MSVC（工程是 C++20，pom 无关）
+# - 依赖走 vcpkg manifest，仓库已带 vcpkg_installed/x64-windows（30 MB），
+#   因此不重新安装 librdkafka，直接把它加进 CMAKE_PREFIX_PATH。
+# - 没有 CMakeLists.txt 的分支（master / go / rust / py）会只跑几秒就跳过。
+# 说明：这条流水线**尚未实跑验证**，首次运行可能需要按报错补 MSVC 组件或 DLL 路径。
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: car-monit-cpp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 检测工程是否存在
+        id: detect
+        shell: pwsh
+        run: |
+          if (Test-Path CMakeLists.txt) {
+            "found=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          } else {
+            "found=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            Write-Host "::warning::当前分支的 car-monit-cpp 没有 CMakeLists.txt，跳过 C++ 检查"
+          }
+
+      - name: 配置（MSVC + 仓库内 vcpkg_installed）
+        if: steps.detect.outputs.found == 'true'
+        shell: pwsh
+        run: |
+          cmake -B build -A x64 `
+            -DCMAKE_PREFIX_PATH="$PWD/vcpkg_installed/x64-windows"
+
+      - name: 构建 Release
+        if: steps.detect.outputs.found == 'true'
+        shell: pwsh
+        run: cmake --build build --config Release --parallel
+
+      - name: 单元测试
+        if: steps.detect.outputs.found == 'true'
+        shell: pwsh
+        run: |
+          $env:PATH = "$PWD\vcpkg_installed\x64-windows\bin;$env:PATH"
+          ctest --test-dir build -C Release --output-on-failure
