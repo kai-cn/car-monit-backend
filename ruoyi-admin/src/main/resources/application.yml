@@ -198,7 +198,97 @@ hengda:
   secret: b48381c4b98311ea90b100155d14fa3b
 
 vehicleMonitor:
-  baseUrl: http://127.0.0.1:9902   # car-monit-api 的 Java 端（pro-business-api，Redis db0）；Go 端在 9903（Redis db1）
+  # 可用 VEHICLE_MONITOR_BASE_URL 覆盖；api V3 默认端口将对齐为 9902（Java 端）
+  baseUrl: ${VEHICLE_MONITOR_BASE_URL:http://127.0.0.1:9902}
+
+# backend → api 查询契约客户端：连接/读超时与重试按场景隔离
+# 预算原则：backend 读超时 > api 处理超时 + 缓冲；POST（导出提交）不重试
+traffic-api:
+  connect-timeout-ms: 1000
+  # 列表：api 列表 SLO ≤2s
+  list-read-timeout-ms: 2500
+  # 扩展流水（省界/收费站抓拍、称重、出入口、服务区）：api 侧 GaussDB 分页
+  flow-extended-read-timeout-ms: 5000
+  # 轨迹在线：api 侧 ES 元数据 + GaussDB 轨迹点批量回查
+  trail-read-timeout-ms: 6000
+  # 统计：api traffic.bigscreen.query-timeout-ms=2000，backend 读 3s 避免倒挂
+  stats-read-timeout-ms: 3000
+  # 实时预警列表（api 暂未实现，404 后走 Redis 快照）
+  warning-list-read-timeout-ms: 2000
+  # 导出提交：只提交异步任务，不等待文件生成
+  export-submit-read-timeout-ms: 6000
+  # 导出状态：轮询接口，保持短超时
+  export-status-read-timeout-ms: 2000
+  # 旧同步导出：listToExport 会同步扫库，1 万条上限
+  legacy-export-read-timeout-ms: 30000
+  retry-count: 1
+  stats-retry-count: 0
+  flow-extended-retry-count: 0
+  trail-retry-count: 0
+  warning-list-retry-count: 0
+  export-submit-retry-count: 0
+  export-status-retry-count: 1
+  legacy-export-retry-count: 0
+  retry-backoff-ms: 200
+  circuit-failure-threshold: 5
+  circuit-open-ms: 30000
+  circuit-half-open-permits: 1
+  contract-probe-interval-ms: 60000
+  # 指标告警阈值（每分钟检查一次）
+  metrics:
+    enabled: true
+    timeout-rate-threshold: 0.2
+    cache-hit-rate-threshold: 0.5
+    degrade-per-minute-threshold: 10
+    export-backlog-threshold: 20
+
+# 大屏统计源：api=只走 api；legacy=只走本地业务表；hybrid=api 优先、失败回退 legacy
+bigscreen:
+  stats:
+    mode: hybrid
+  # 轨迹在线查询：api=走 api 轨迹接口（默认）；local=强制本地旧表；其余值按 api 优先
+  trail:
+    mode: api
+  # 全字段导出维度过滤能力：auto=探测 api /api/v3/export/capabilities；true/false=强制开关
+  export:
+    full-dimension-filters: true
+  # 灰度/回滚开关默认值（Redis cm:{env}:switch:{name} 可运行期覆盖）
+  switches:
+    stats-api-first: true
+    warning-api: true
+    location-index: true
+    export-v3: true
+    dict-version: true
+    trail-api: true
+    export-approval: false
+    # 轨迹本地物化默认关闭（Quartz 同步任务写 zdata_trail_tracks 的入口）
+    trail-materialize: false
+  # 灰度规则（可选）：租户白名单优先，其次按 percent 稳定哈希放量；Redis 可运行期覆盖
+  gray:
+    stats-api-first:
+      percent: 100
+      tenants: []
+    warning-api:
+      percent: 100
+      tenants: []
+    export-v3:
+      percent: 100
+      tenants: []
+
+# 导出下载签名、限流与保留期
+export:
+  # 任务元数据/审批请求保留天数（Redis TTL）
+  retention-days: 7
+  # 过期运行中任务清理（仅清理本地积压指标，Redis 元数据由 TTL 清理）
+  cleanup:
+    enabled: true
+    interval-ms: 3600000
+  download:
+    token-ttl-seconds: 900
+    rate-limit-per-minute: 6
+    connect-timeout-ms: 3000
+    read-timeout-ms: 1800000
+
 isLocalhost: local # 是否本地 prod生成
 
 tx-service-url: https://apis.map.qq.com
