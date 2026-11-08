@@ -38,7 +38,11 @@ from app.common.core.domain.entity.sys_user import SysUser
 from app.common.core.domain.model.login_user import LoginUser
 from app.common.core.page.page_helper import clear_page, take_page
 from app.common.exception.exceptions import AccessDeniedException
-from app.config.exception_handlers import GENERIC_ERROR_MESSAGE, register_exception_handlers
+from app.config.exception_handlers import (
+    GENERIC_ERROR_MESSAGE,
+    PARAMETER_ERROR_MESSAGE,
+    register_exception_handlers,
+)
 from app.framework.security.context.security_context import (
     SecurityContextHolder,
     UsernamePasswordAuthenticationToken,
@@ -452,12 +456,12 @@ class TestAdd:
         assert response.json() == {"msg": "cron表达式不正确", "code": 500}
         assert services.job.of("insert_job") == []
 
-    def test_a_missing_cron_is_a_masked_illegal_argument(self, http_lenient: Any) -> None:
-        """``isValid(null)`` 抛 ``IllegalArgumentException``（非业务异常 -> 统一脱敏文案）."""
+    def test_a_missing_cron_is_a_parameter_error(self, http_lenient: Any) -> None:
+        """``isValid(null)`` 抛 ``IllegalArgumentException`` -> 客户端参数问题，回“参数错误”."""
         response = http_lenient.post("/monitor/job", json={})
 
         assert response.status_code == 200
-        assert response.json() == {"msg": GENERIC_ERROR_MESSAGE, "code": 500}
+        assert response.json() == {"msg": PARAMETER_ERROR_MESSAGE, "code": 500}
 
     def test_a_bad_cron_wins_over_a_bad_misfire_policy(self, http_lenient: Any) -> None:
         """cron 校验在落库/注册之前，所以先报 cron。"""

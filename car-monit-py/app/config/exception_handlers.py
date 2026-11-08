@@ -65,6 +65,10 @@ logger = logging.getLogger("app.config.exception_handlers")
 #: 带表名、列名甚至 SQL 片段，直接透出等于把内部结构交给客户端。
 GENERIC_ERROR_MESSAGE = "系统繁忙，请稍后重试"
 
+#: 参数校验/类型转换类异常（``ValueError``，含 pydantic ``ValidationError``）的对外文案。
+#: 这类错误是客户端输入问题，不能答"系统繁忙"（会让用户以为服务端故障）。
+PARAMETER_ERROR_MESSAGE = "参数错误"
+
 #: 允许把自身文案返回给前端的"业务异常"。这些异常的消息是给人看的校验/提示信息，
 #: 不是底层实现细节（AccessDenied / DemoMode / RepeatSubmit 另有专属 handler）。
 _BUSINESS_EXCEPTIONS = (RuoYiBaseException, ServiceException, CustomException, BeanValidationError)
@@ -164,6 +168,21 @@ def register_exception_handlers(app: FastAPI) -> None:
             message = "参数校验失败"
         logger.error("[参数校验失败] 请求地址'%s', %s", request.url.path, message)
         return _ok(AjaxResult.error_message(message))
+
+    # ---- 参数类型转换 / 值校验类异常 -------------------------------------
+    # 例如 `_to_integer` / `_to_boolean` 的 Java 绑定异常、pydantic `ValidationError`
+    # （它是 ValueError 子类）。这些属于客户端输入问题，答"系统繁忙"会误导用户；
+    # 统一回 `参数错误`，原始文本仍完整写进日志。
+    @app.exception_handler(ValueError)
+    async def handle_parameter_error(request: Request, exc: ValueError) -> JSONResponse:
+        logger.error(
+            "[参数错误] 请求地址'%s', traceId=%s, %s",
+            request.url.path,
+            get_trace_id(),
+            exc,
+            exc_info=True,
+        )
+        return _ok(AjaxResult.error_message(PARAMETER_ERROR_MESSAGE))
 
     # ---- Java: @ExceptionHandler(HttpRequestMethodNotSupportedException) --
     @app.exception_handler(StarletteHTTPException)

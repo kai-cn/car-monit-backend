@@ -4888,6 +4888,7 @@ gantrycar,gantrytrade}/export`、`/base/{geometry,snapshotflow,feerecords}/expor
 | 异常 | 返回文案 | 说明 |
 |---|---|---|
 | `RuoYiBaseException` / `ServiceException` / `CustomException` / `BeanValidationError` | 原 `message` | 业务校验/提示，前端直接弹给用户 |
+| `ValueError`（含 pydantic `ValidationError`） | `参数错误` | 参数类型转换/值校验类问题，不能误导为服务端故障；原文只进日志 |
 | 其它 `RuntimeError` / `Exception`（含 SQLAlchemy、`AttributeError` NPE 哨兵） | `系统繁忙，请稍后重试` | 详情含 traceId 只进 `sys-error.log` |
 | 上传校验（文件名过长、超大小、后缀不允许） | 原始提示 | `FileUploadUtils` 把它们提升为业务异常；真正的 I/O 故障仍脱敏 |
 

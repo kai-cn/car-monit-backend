@@ -63,7 +63,11 @@ from app.api.system.sys_profile_controller import (
 from app.common.core.domain.entity.sys_user import SysUser
 from app.common.core.domain.model.login_user import LoginUser
 from app.common.utils import security_utils as SecurityUtils
-from app.config.exception_handlers import GENERIC_ERROR_MESSAGE, register_exception_handlers
+from app.config.exception_handlers import (
+    GENERIC_ERROR_MESSAGE,
+    PARAMETER_ERROR_MESSAGE,
+    register_exception_handlers,
+)
 from app.framework.web.service.permission_service import pre_authorize_permi
 from app.settings import get_settings, reset_settings_cache
 
@@ -540,20 +544,19 @@ class TestUpdatePwd:
         assert response.json()["code"] == 200
         assert len(service.of("reset_user_pwd")) == 1
 
-    def test_a_missing_old_password_is_a_masked_illegal_argument(
+    def test_a_missing_old_password_is_a_parameter_error(
         self, http_lenient: TestClient, service: _FakeUserService
     ) -> None:
-        """缺参不是"旧密码错误"：Spring 抛 ``IllegalArgumentException``，落成 500。
+        """缺参不是"旧密码错误"：Spring 抛 ``IllegalArgumentException``，落成 500.
 
-        P1-6 起非业务异常文案统一脱敏，客户端只看到 ``系统繁忙，请稍后重试``。
-        用 ``http_lenient``：这个异常走 ``Exception`` 兜底处理器，而
-        ``TestClient(raise_server_exceptions=True)`` 会在处理器返回后把它再抛一次。
+        ValueError 归入"参数错误"（P1-6 的文案分流），原始异常只进日志。
+        用 ``http_lenient`` 兼容两种 TestClient 行为。
         """
         response = http_lenient.put("/system/user/profile/updatePwd")
 
         payload = response.json()
         assert payload["code"] == 500
-        assert payload["msg"] == GENERIC_ERROR_MESSAGE
+        assert payload["msg"] == PARAMETER_ERROR_MESSAGE
         assert service.names() == []
 
     def test_a_wrong_old_password_still_answers_the_business_message(
