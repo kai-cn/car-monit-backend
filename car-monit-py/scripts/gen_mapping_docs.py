@@ -246,11 +246,13 @@ def _file_map(package: str) -> Dict[str, List[Tuple[str, str]]]:
 
 
 def _render(package: str, config: dict, items: List, log_by: Dict, python_names: Dict) -> str:
-    marker = config["controller_dir"].replace("/", "\\")
+    # 路径统一按 posix 比较：Windows 的 str(path) 是反斜杠，Linux 是斜杠，
+    # 不统一会让生成器在非 Windows 环境产出一张空表。
+    marker = config["controller_dir"].replace("\\", "/")
     package_items = [
         item
         for item in items
-        if marker in str(java_file_of.get(item.controller, ""))
+        if marker in str(java_file_of.get(item.controller, "")).replace("\\", "/")
     ]
     java_dir = PROJECT_ROOT / config["controller_dir"]
     java_files = sorted(java_dir.rglob("*.java")) if java_dir.exists() else []

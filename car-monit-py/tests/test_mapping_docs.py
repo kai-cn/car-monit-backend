@@ -79,12 +79,13 @@ def test_declared_counts_match_the_tables(package: str) -> None:
     """概况里写的端点数 = §4 实际行数 = Java 侧真实映射数（三处必须一致）."""
 
     text = _doc(package)
-    marker = DOCS[package].replace("/", "\\")
+    # 与生成器同一口径：路径按 posix 比较，兼容 Windows / Linux
+    marker = DOCS[package].replace("\\", "/")
     expected = len(
         [
             item
             for item in base.collect_java()
-            if marker in str(_source_of(item.controller))
+            if marker in str(_source_of(item.controller)).replace("\\", "/")
         ]
     )
 
