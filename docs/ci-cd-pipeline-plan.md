@@ -87,14 +87,18 @@ JDK：扫描全仓所有 `pom.xml`，**只有 `java.version=1.8` 一个值**；�
 
 覆盖率：Python 用 `pytest-cov`；Java 现状无测试源码，**不接 JaCoCo**（接了只会产出 0%），在 job summary 里显式写明；Rust/Go 先不做行覆盖率（引入 `cargo-llvm-cov` 会显著拉长时长，等测试量上来再加）。
 
-### 2.3 发布流水线 `release.yml`（`push` tag `v*`）
+### 2.3 发布流水线
 
-四个 build job 并行产出 jar / Go 二进制 / Rust 二进制 / Python wheel+sdists，`release` job 汇总后创建 GitHub Release 并挂载全部产物。
-镜像：仅 Go 有 `Dockerfile`（且只存在于 `car-monit-go-V2` 分支）；Java/Rust/Python 无 Dockerfile。因此镜像 job 用 `if: vars.IMAGE_REGISTRY != ''` 显式关闭，**不写任何真实 registry 地址**。
+| 文件 | 触发 | 产出 |
+|---|---|---|
+| `release.yml` | tag `v*.*.*` | jar / Go 二进制 / Rust 二进制 / wheel+sdist，创建 GitHub Release |
+| `cd.yml` | push `master`、tag `v*.*.*`、手动 | 构建并推 GHCR 镜像：`sha-<短哈希>`、版本号、`latest`（仅 master） |
+
+镜像：`ghcr.io/kai-cn/car-monit-{java,go,rust,py}`，用 `GITHUB_TOKEN` + `packages: write`，不依赖 PAT。C++ 不产镜像（原因见 [cd-ghcr-k8s.md](cd-ghcr-k8s.md) §5）。
 
 ### 2.4 部署流水线 `deploy.yml`
 
-只做 `workflow_dispatch` 占位：校验 `vars.IMAGE_REGISTRY` / `vars.DEPLOY_TARGET` 是否配置，未配置即以明确错误信息退出，真实部署步骤全部注释留缺口。
+`workflow_dispatch`：选择 service / image_tag / environment，前置校验 `vars.K8S_NAMESPACE`、`vars.K8S_DEPLOYMENT`、`vars.K8S_CONTAINER`、`vars.K8S_IMAGE_PULL_SECRET` 与 `secrets.KUBE_CONFIG`，检查 Deployment 与 imagePullSecret 存在后执行 `kubectl set image` + `kubectl rollout status`。只更新已存在的 Deployment，首次部署需人工 bootstrap（见 [cd-ghcr-k8s.md](cd-ghcr-k8s.md) §4）。
 
 ### 2.5 集成测试
 
@@ -103,8 +107,8 @@ JDK：扫描全仓所有 `pom.xml`，**只有 `java.version=1.8` 一个值**；�
 
 ## 3. 需要用户确认的未知项（阻塞部署与镜像，不阻塞 PR/主分支）
 
-1. **镜像推送目标**：GHCR 还是私有 registry？命名空间与镜像名（如 `ghcr.io/kai-cn/car-monit-<lang>`）？
-2. **部署目标形态**：K8s / 单机 systemd / 只出产物不部署？
+1. **镜像推送目标**：已确认 GHCR，`ghcr.io/kai-cn/car-monit-<service>`（见 [cd-ghcr-k8s.md](cd-ghcr-k8s.md)）。
+2. **部署目标形态**：已确认 K8s，只更新已存在的 Deployment（见 `deploy.yml`）。
 3. **默认分支**：已确认 `master`（见 §2.2）。`main` 保留在远端但不再作为主构建目标。
 4. **JDK 21 / 25 的归属**：本仓库只查到 `1.8`。如果 21/25 属于未入库的子项目或 `car-monit-api`，请指明，否则 Java 流水线固定用 Temurin 8。
 5. **V2 分支是否推到远端**：已执行，见 §6（`car-monit-go-V2`、`car-monit-rust-V2`、`car-monit-py-V2`、`car-monit-cpp-local`）。
@@ -117,7 +121,9 @@ JDK：扫描全仓所有 `pom.xml`，**只有 `java.version=1.8` 一个值**；�
 - Python：无 ruff/flake8/mypy 配置 → 静态检查只有 `compileall` 语法门禁，等确定规则集后再接。
 - Rust：`fmt`/`clippy` 现存告警未清零，沿用**非阻塞**（与仓库既有 workflow 一致），仅提示。
 - Rust `release-only`：master 分支缺 `tests/release_throwable.rs`，该步骤在主分支降级为 warning 并写入 job summary；**在迁移分支（`car-monit-rust-V2` 等）缺文件直接失败**，防止 `#[cfg(not(debug_assertions))]` 用例再次逃逸。
-- C++ / Kotlin / C#：master 无源码，无法建 CMake/MSVC / Gradle / dotnet 流水线；`car-monit-cpp-local` 分支有 CMake 工程，但该分支尚未接入统一 YAML，等接入后再建。
+- C++ / Kotlin / C#：master 无源码，无法建 CMake/MSVC / Gradle / dotnet 流水线；`car-monit-cpp-local` 分支有 CMake 工程，已接 `_cpp.yml`（windows-latest），但**未实跑**。
+- CD 覆盖 Java / Go / Rust / Python 四个镜像；**C++ 不产镜像**（仓库只有 `vcpkg_installed/x64-windows`，Linux 依赖方案未验证）。
+- 镜像构建、GHCR 推送、K8s 部署**均未实跑**（本机无 Docker/集群）。
 - 全部 YAML **已写好但未在 GitHub 上实跑**（本机不做长构建，仓库为私有且无 token），首次运行结论需在推送后回填。
 - `go mod tidy` 校验失败可能源于真实依赖漂移，不是 CI 配置问题。
 
