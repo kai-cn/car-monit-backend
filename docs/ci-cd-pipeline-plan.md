@@ -195,6 +195,43 @@ JDK：扫描全仓所有 `pom.xml`，**只有 `java.version=1.8` 一个值**；�
 
 C++ 分支的 `vcpkg_installed` 被 `car-monit-cpp/.gitignore` 忽略、并未入库，因此 `_cpp.yml` 已补回退逻辑：仓库内有 `vcpkg_installed/x64-windows` 就直接用，没有则用 runner 自带的 vcpkg manifest 安装**（该回退路径尚未实跑验证）**。
 
+## 7. openEuler x86 容器化（2026-11-08）
+
+Linux 构建 job 改为 `runs-on: ubuntu-latest` + `container: openeuler/openeuler:24.03-lts`（GitHub 托管 runner 没有欧拉镜像，只能容器方式）。
+
+**包可得性核实（openEuler 24.03-LTS 官方仓库索引实测）**
+
+| 依赖 | 欧拉仓库 | 采用方式 |
+|---|---|---|
+| JDK 8 | 有 `java-1.8.0-openjdk-devel-1.8.0.412`（OpenJDK，非 Temurin） | `dnf install`；与 Temurin 8 同为 TCK 兼容实现，字节码目标仍为 1.8，仅 JVM 发行版构建号不同 |
+| Maven | 仓库索引未找到 | Apache 官方 3.9.9 tarball |
+| Go 1.24 | 仓库/epol 未找到 1.24 | go.dev 官方 tarball |
+| Rust 1.90 | 无 | rustup 官方脚本（与 `rust-toolchain.toml` 一致） |
+| Python 3.12 | 仓库只到 3.11 | python.org 源码编译（约 3-5 分钟） |
+| librdkafka | 未找到 | Rust 默认特性不需要；C++ 不在容器链路内 |
+
+**例外（工作流内已注明）**
+
+| job | 运行环境 | 原因 |
+|---|---|---|
+| `cpp` | `windows-latest` | 工程是 MSVC 专用（`/utf-8`、`NOMINMAX`）+ `vcpkg_installed/x64-windows`，Linux 需另一套构建配置 |
+| `cd` 的 image-* | 宿主 `ubuntu-latest` | job 容器内没有 Docker daemon，buildx 需要宿主 Docker |
+| `changes` / `rust-parity` | 宿主 | 元数据/对拍 job，不产出构建物 |
+
+**待办 / 未验证**
+
+- `services` 在容器 job 里的网络语义（容器内需用服务名而非 `127.0.0.1`）尚未改写与实测；当前 `integration` / `go-perms-audit` 仍是宿主 + 端口映射。
+- ARM64 按用户决定搁置：未引入 `ARCH` 参数/多架构 manifest/QEMU；待办清单见 §8。
+- PR 自测与 release（`v0.0.0-citest`）验证仍未执行（详见 §8）。
+
+## 8. 待办清单（2026-11-08）
+
+1. 容器内 services：把 `integration` / `go-perms-audit` 改为容器 job，服务用 `mysql` / `redis` 主机名，并实跑一次确认连通。
+2. PR 自测：从 master 开噪声分支只改 `docs/ci-selftest.md`，验证 `ci` 的 paths-filter 分诊；完成后关闭 PR、删临时分支。
+3. release 验证：打 `v0.0.0-citest`，确认 4 语言制品 + `SHA256SUMS` 上传；完成后删 tag 与 Release。
+4. GHCR 回读：用 `read:packages` 凭据列出 `car-monit-{java,go,rust,py}` 与 tag。
+5. ARM64（搁置）：`ARCH` 参数化、`linux/amd64,linux/arm64` manifest、QEMU 模拟、自托管 `[self-hosted, linux, arm64, openeuler]` 接入文档；注意 `vcpkg_installed/x64-windows` 在 ARM64 不可用。
+
 ## 5. 实施进度
 
 | 阶段 | 状态 | 文件 |

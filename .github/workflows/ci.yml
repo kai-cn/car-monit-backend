@@ -168,7 +168,7 @@ jobs:
       - name: 安装 Go 1.24（欧拉仓库没有 1.24）
         run: |
           set -euo pipefail
-          dnf install -y tar gzip curl
+          dnf install -y tar gzip curl git
           curl -fsSL https://go.dev/dl/go1.24.13.linux-amd64.tar.gz -o /tmp/go.tgz
           tar -C /usr/local -xzf /tmp/go.tgz
           echo "/usr/local/go/bin" >> "$GITHUB_PATH"
