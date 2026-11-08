@@ -158,7 +158,7 @@ JDK：扫描全仓所有 `pom.xml`，**只有 `java.version=1.8` 一个值**；�
 
 未推送 / 未处理：
 
-- `master`：本地比远端多 7 个提交（含本轮 CI/CD 改动），按要求不 push。
+- `master`：本地比远端多 8 个提交（含本轮 CI/CD 改动），按要求不 push。
 - `main`：远端旧分支，不再作为主构建目标，未改动。
 - `qoder/car-monit-cpp`：远端与本地同 SHA（`9206daa`），无需推送。
 - `car-monit-backend-java-V3`：不在本次四种语言范围，未推送。
