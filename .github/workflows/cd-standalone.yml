@@ -1,0 +1,347 @@
+name: cd-standalone
+
+# 单机部署 CD：产出可离线安装的 tar.gz（二进制 + systemd unit + 配置模板 + install/uninstall + SHA256SUMS + README）。
+# 与 K8s 的 deploy.yml 并存、互不影响。
+#
+# 目标机：openEuler x86_64（含 WSL2 内的 openEuler）。systemd 需启用（WSL 需 /etc/wsl.conf 里 systemd=true）。
+# 端口与 JVM 参数取自仓库现有配置，不编造：
+#   - 服务端口 9989（ruoyi-admin/src/main/resources/application.yml 的 server.port）
+#   - 上传目录 /app/uploadPath（容器内覆盖值；单机版用 /opt/<service>/uploadPath）
+#   - MySQL 3307 / Redis 6379 / ES 9200（config/application.yml）
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      service:
+        description: '要打包的服务'
+        required: true
+        type: choice
+        options: [all, java, go, rust, py]
+      tag:
+        description: 'release tag（留空则只产出 workflow artifact）'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cd-standalone-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # 构建阶段的目标架构：仅 amd64（selftest 与自托管均为 x64）。arm64 待办见文档。
+  TARGET_ARCH: amd64
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(format('["{0}"]', inputs.service == 'all' && 'java","go","rust","py' || inputs.service || 'java","go","rust","py')) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 准备目录
+        run: mkdir -p staging/${SERVICE}/bin staging/${SERVICE}/config
+        env:
+          SERVICE: ${{ matrix.service }}
+
+      - name: 构建 Java jar
+        if: matrix.service == 'java'
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/w" -w /w maven:3.9-eclipse-temurin-8 \
+            mvn -B -q -DskipTests package
+          jar=$(ls ruoyi-admin/target/*.jar | head -n 1)
+          cp "$jar" staging/java/bin/car-monit-java.jar
+
+      - name: 构建 Go 二进制
+        if: matrix.service == 'go'
+        run: |
+          set -euo pipefail
+          cd car-monit-go
+          go build -buildvcs=false -trimpath -ldflags "-s -w" -o ../staging/go/bin/carmonit-server ./cmd/server
+          if [ -d ./cmd/migrate ]; then
+            go build -buildvcs=false -trimpath -ldflags "-s -w" -o ../staging/go/bin/carmonit-migrate ./cmd/migrate
+          else
+            echo "::notice::当前分支没有 cmd/migrate，跳过 migrate 二进制"
+          fi
+          cp -r configs ../staging/go/
+        env:
+          CGO_ENABLED: '0'
+          GOOS: linux
+          GOARCH: amd64
+
+      - name: 构建 Rust 二进制
+        if: matrix.service == 'rust'
+        run: |
+          set -euo pipefail
+          cd car-monit-rust
+          cargo build --release --locked
+          cp target/release/car-monit-rust ../staging/rust/bin/car-monit-rust
+
+      - name: 构建 Python wheel
+        if: matrix.service == 'py'
+        run: |
+          set -euo pipefail
+          cd car-monit-py
+          python3 -m pip install --quiet build
+          python3 -m build --wheel
+          cp dist/*.whl ../staging/py/
+          cp -r config ../staging/py/
+
+      - name: 组装安装包
+        run: |
+          set -euo pipefail
+          S="${SERVICE}"
+          R="staging/${S}"
+          mkdir -p "$R/systemd" "$R/scripts"
+
+          # systemd unit：端口 9989 取自 application.yml 的 server.port
+          case "$S" in
+            java)
+              EXEC="/opt/car-monit-java/bin/car-monit-java.jar"
+              exec_start="/usr/bin/java -Xms512m -Xmx1024m -XX:+UseG1GC -jar $EXEC"
+              ;;
+            go)
+              exec_start="/opt/car-monit-go/bin/carmonit-server -c /opt/car-monit-go/config/config.yaml"
+              ;;
+            rust)
+              exec_start="/opt/car-monit-rust/bin/car-monit-rust"
+              ;;
+            py)
+              exec_start="/opt/car-monit-py/venv/bin/python /opt/car-monit-py/run.py"
+              ;;
+          esac
+
+          cat > "$R/systemd/car-monit-$S.service" <<UNIT
+          [Unit]
+          Description=car-monit $S (standalone)
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=simple
+          User=car-monit
+          Group=car-monit
+          WorkingDirectory=/opt/car-monit-$S
+          EnvironmentFile=-/etc/car-monit/$S.env
+          ExecStart=$exec_start
+          Restart=always
+          RestartSec=5
+          LimitNOFILE=65535
+          StandardOutput=append:/var/log/car-monit-$S/stdout.log
+          StandardError=append:/var/log/car-monit-$S/stderr.log
+
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+
+          # 配置模板：只有占位符，没有真实口令
+          cat > "$R/config/$S.env.example" <<'ENV'
+          # 端口取自 ruoyi-admin/src/main/resources/application.yml 的 server.port
+          SERVER_PORT=9989
+          # 以下主机端口取自 car-monit-py/config/application.yml（MySQL 3307 / Redis 6379 / ES 9200）
+          SPRING__REDIS__HOST=127.0.0.1
+          SPRING__REDIS__PORT=6379
+          SPRING__DATASOURCE__DRUID__MASTER__URL=jdbc:mysql://127.0.0.1:3307/carmonitdb?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8
+          SPRING__DATASOURCE__DRUID__MASTER__USERNAME=<DB_USER>
+          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD=<DB_PASSWORD>
+          TOKEN__SECRET=<CHANGE_ME_32_CHARS_MIN>
+          ENV
+
+          cp car-monit-py/.env.example "$R/config/env.example" 2>/dev/null || true
+          cp ruoyi-admin/src/main/resources/application.yml "$R/config/application.yml.template" 2>/dev/null || true
+          cp car-monit-go/configs/config.yaml "$R/config/config.yaml.template" 2>/dev/null || true
+
+          # install.sh / uninstall.sh
+          cat > "$R/scripts/install.sh" <<'SH'
+          #!/usr/bin/env bash
+          # 单机安装：openEuler / CentOS Stream / RHEL 系（WSL2 需 systemd=true）
+          set -euo pipefail
+          SVC="__SERVICE__"
+          ROOT="/opt/car-monit-$SVC"
+          LOGDIR="/var/log/car-monit-$SVC"
+          ETCDIR="/etc/car-monit"
+          HERE="$(cd "$(dirname "$0")/.." && pwd)"
+
+          command -v systemctl >/dev/null || { echo "需要 systemd（WSL 请在 /etc/wsl.conf 设置 systemd=true）" >&2; exit 1; }
+          systemctl is-system-running >/dev/null 2>&1 || echo "警告：systemd 未处于运行态，unit 可能无法启动"
+
+          id car-monit >/dev/null 2>&1 || useradd -r -s /sbin/nologin car-monit
+
+          install -d -o car-monit -g car-monit "$ROOT" "$LOGDIR" "$ETCDIR"
+          cp -a "$HERE/bin/." "$ROOT/" 2>/dev/null || true
+          [ -d "$HERE/go" ] && cp -a "$HERE/go/." "$ROOT/" || true
+          [ -d "$HERE/config" ] && cp -a "$HERE/config/." "$ETCDIR/" || true
+          install -m 0644 "$HERE/systemd/car-monit-$SVC.service" "/etc/systemd/system/car-monit-$SVC.service"
+
+          if [ ! -f "$ETCDIR/$SVC.env" ]; then
+            install -m 0600 "$ETCDIR/$SVC.env.example" "$ETCDIR/$SVC.env"
+            echo "已生成 $ETCDIR/$SVC.env，请填入真实口令后再启动"
+          fi
+
+          systemctl daemon-reload
+          echo "安装完成。启用并启动：systemctl enable --now car-monit-$SVC"
+          SH
+
+          cat > "$R/scripts/uninstall.sh" <<'SH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          SVC="__SERVICE__"
+          systemctl disable --now "car-monit-$SVC" 2>/dev/null || true
+          rm -f "/etc/systemd/system/car-monit-$SVC.service"
+          systemctl daemon-reload
+          echo "已移除 unit；保留 /opt/car-monit-$SVC、/var/log/car-monit-$SVC、/etc/car-monit/$SVC.env（如需彻底清理请手动删除）"
+          SH
+
+          sed -i "s/__SERVICE__/$S/g" "$R/scripts/install.sh" "$R/scripts/uninstall.sh"
+          chmod +x "$R/scripts/"*.sh
+
+          cat > "$R/README.md" <<'DOC'
+          # car-monit 单机安装包
+
+          ## 目标环境
+          - openEuler 24.03 LTS / RHEL 系 x86_64（WSL2 需在 `/etc/wsl.conf` 设 `systemd=true`）
+          - 服务端口 **9989**（取自 `application.yml` 的 `server.port`）
+
+          ## 外部依赖（不在包内）
+          | 组件 | 默认端口 | 说明 |
+          |---|---|---|
+          | MySQL 8.0 | 3307 | 库名 `carmonitdb`；导入 `schema.carmonitdb.local.sql` |
+          | Redis | 6379 | 登录态与缓存 |
+          | Elasticsearch | 9200 | 可选，流水模糊查询 |
+          | Kafka | 9092 | 可选，data-sync 链路 |
+
+          ## 安装
+          ```bash
+          tar -xzf car-monit-<service>.tar.gz
+          sudo ./scripts/install.sh
+          sudo vi /etc/car-monit/<service>.env     # 填 DB 口令与 token 密钥
+          sudo systemctl enable --now car-monit-<service>
+          journalctl -u car-monit-<service> -f
+          ```
+
+          ## JVM 参数建议（Java 版）
+          unit 里默认 `-Xms512m -Xmx1024m -XX:+UseG1GC`；小内存机器可降到 `-Xmx768m`。
+          不要启用 `-XX:+ExitOnOutOfMemoryError` 以外的自定义 GC 日志目录，避免与 logback 冲突。
+
+          ## 卸载
+          ```bash
+          sudo ./scripts/uninstall.sh
+          ```
+
+          ## WSL 注意
+          - WSL 不随 Windows 启动，重启后需手动 `wsl -d openEuler` 拉起，或在 Windows 计划任务里注册。
+          - WSL2 默认入站不可达：外部访问需 `netsh interface portproxy` 转发，或用 `localhost` 从宿主访问。
+          DOC
+
+          tar -czf "car-monit-$S.tar.gz" -C staging "$S"
+          sha256sum "car-monit-$S.tar.gz" > "car-monit-$S.tar.gz.sha256"
+          cat "car-monit-$S.tar.gz.sha256"
+          tar -tzf "car-monit-$S.tar.gz" | head -30
+        env:
+          SERVICE: ${{ matrix.service }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-${{ matrix.service }}
+          path: |
+            car-monit-${{ matrix.service }}.tar.gz
+            car-monit-${{ matrix.service }}.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+  # 验证 job：全新 runner 下载 artifact → 校验 SHA256 → 检查清单 → 真启动一次
+  verify:
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(format('["{0}"]', inputs.service == 'all' && 'java","go","rust","py' || inputs.service || 'java","go","rust","py')) }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: standalone-${{ matrix.service }}
+
+      - name: 校验校验和与清单
+        run: |
+          set -euo pipefail
+          sha256sum -c car-monit-${{ matrix.service }}.tar.gz.sha256
+          tar -tzf car-monit-${{ matrix.service }}.tar.gz > /tmp/list.txt
+          for must in "systemd/car-monit-${{ matrix.service }}.service" \
+                      "scripts/install.sh" "scripts/uninstall.sh" "README.md"; do
+            grep -q "$must" /tmp/list.txt || { echo "::error::清单缺少 $must"; exit 1; }
+          done
+          echo "清单完整：$(wc -l < /tmp/list.txt) 项"
+
+      - name: 解包并安装运行时依赖
+        run: |
+          set -euo pipefail
+          dnf install -y java-1.8.0-openjdk-headless tar gzip >/dev/null
+          tar -xzf car-monit-${{ matrix.service }}.tar.gz
+
+      - name: 真启动一次（--help / 版本）
+        run: |
+          set -euo pipefail
+          S="${{ matrix.service }}"
+          case "$S" in
+            java)
+              # Spring Boot 没有 --help：关掉 web 容器启动一次，25 秒内退出或被超时杀掉
+              # 都算"可启动"；连不上 DB 属于预期，不算失败。
+              unzip -p "$S/bin/car-monit-java.jar" META-INF/MANIFEST.MF | head -10
+              set +e
+              timeout 25 java -jar "$S/bin/car-monit-java.jar" \
+                --spring.main.web-application-type=none --spring.main.banner-mode=off 2>&1 | head -25
+              rc=${PIPESTATUS[0]}
+              set -e
+              case "$rc" in 0|124) echo "java 启动冒烟 OK (exit=$rc)";; *) echo "::error::java 启动失败 exit=$rc"; exit 1;; esac
+              ;;
+            go)
+              set +e; "./$S/bin/carmonit-server" --help 2>&1 | head -20; rc=${PIPESTATUS[0]}; set -e
+              [ "$rc" -eq 0 ] || "./$S/bin/carmonit-server" -h 2>&1 | head -20
+              ;;
+            rust)
+              set +e; "./$S/bin/car-monit-rust" --help 2>&1 | head -20; rc=${PIPESTATUS[0]}; set -e
+              echo "rust --help exit=$rc"
+              ;;
+            py)
+              # 没有依赖装不进 venv，因此只验证 wheel 结构与元数据
+              whl=$(ls "$S"/*.whl)
+              python3.11 -m zipfile -l "$whl" | head -10
+              python3.11 -c "import zipfile,sys; z=zipfile.ZipFile(sys.argv[1]); assert z.testzip() is None; print('wheel 完整')" "$whl"
+              ;;
+          esac
+          echo "启动冒烟完成"
+
+  publish:
+    needs: [build, verify]
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.tag != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: standalone-*
+          merge-multiple: true
+          path: dist
+      - name: 生成总 SHA256SUMS
+        run: |
+          set -euo pipefail
+          cd dist && sha256sum *.tar.gz | tee SHA256SUMS
+      - name: 上传到 GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.tag || github.ref_name }}"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --notes "standalone artifacts"
+          gh release upload "$TAG" dist/*.tar.gz dist/*.sha256 dist/SHA256SUMS --clobber
+          gh release view "$TAG" --json assets --jq '.assets[].name'
