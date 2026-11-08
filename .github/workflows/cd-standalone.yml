@@ -13,6 +13,15 @@ on:
   push:
     branches: [master]
     tags: ['v*.*.*']
+    # 与 cd.yml 同理：只在打包输入变化时产出安装包（tag 推送不受 paths 影响）。
+    paths:
+      - 'pom.xml'
+      - 'ruoyi-*/**'
+      - 'car-monit-go/**'
+      - 'car-monit-rust/**'
+      - 'car-monit-py/**'
+      - 'car-monit-rust/docs/01-baseline/**'
+      - '.github/workflows/cd-standalone.yml'
   workflow_dispatch:
     inputs:
       service:

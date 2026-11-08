@@ -16,6 +16,16 @@ on:
   push:
     branches: [master]
     tags: ['v*.*.*']
+    # 只在构建输入变化时推镜像。私有仓库的 Actions 分钟数有限，docs/CI 注释类改动
+    # 不该每次都跑 4 个镜像构建（tag 推送不受 paths 影响）。
+    paths:
+      - 'pom.xml'
+      - 'ruoyi-*/**'
+      - 'car-monit-go/**'
+      - 'car-monit-rust/**'
+      - 'car-monit-py/**'
+      - 'docker/**'
+      - '.github/workflows/cd.yml'
   workflow_dispatch:
 
 permissions:

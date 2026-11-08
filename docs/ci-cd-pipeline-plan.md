@@ -232,6 +232,37 @@ Linux 构建 job 改为 `runs-on: ubuntu-latest` + `container: openeuler/openeul
 4. GHCR 回读：用 `read:packages` 凭据列出 `car-monit-{java,go,rust,py}` 与 tag。
 5. ARM64（搁置）：`ARCH` 参数化、`linux/amd64,linux/arm64` manifest、QEMU 模拟、自托管 `[self-hosted, linux, arm64, openeuler]` 接入文档；注意 `vcpkg_installed/x64-windows` 在 ARM64 不可用。
 
+## 9. 当前阻塞：Actions 无法分配 runner（2026-11-08 19:16 UTC）
+
+**证据**
+
+- run `42514187626`（cd，sha `5cbad2a`）的 4 个 image job 全部 `failure`，`started_at` 与 `completed_at` 相差 **2 秒**，`steps: []`，`runner_id: 0`、`runner_name: ""`。
+- run `42514187641`（cd-standalone，同一 sha）4 个 build job 同样形态。
+- 早前成功的 run（`42512484725`）同一 job 的 `runner_name` 是 `GitHub Actions 1000000524`、`steps` 11 个。
+- 迁移分支的 `ci` run（`42512454499`）长期停在 `pending`，不进 `in_progress`。
+- `GET /users/kai-cn/settings/billing/actions` 与 `GET /repos/.../actions/permissions` 均返回 **403**（PAT 无权限，无法确认剩余分钟数）。
+
+**判断**：不是 YAML/代码问题，是私有仓库托管 runner 额度或并发额度耗尽（runner 未被分配）。需要在 GitHub 侧确认：
+
+1. `Settings → Billing and plans → Actions` 看已用分钟数与 spending limit；
+2. 若额度已满，提高 spending limit 或等下月重置；
+3. `Settings → Actions → General` 确认 Actions 未被禁用。
+
+**已做的成本收敛**（不削弱门禁，只减少重复构建）：
+
+- `cd.yml` / `cd-standalone.yml` 的 `push` 加 `paths`：只有源码/打包输入变化才跑，docs 与 CI 注释类改动不再触发 4 个镜像 + 4 个安装包（tag 推送不受 paths 影响，发布不受限）。
+- `ci.yml` 的路径分诊与门禁未放宽。
+
+**因额度未完成的验证**
+
+| 项 | 状态 |
+|---|---|
+| 单机 CD `verify` 四语言 | build 全过；verify 首轮因 go/rust 常驻进程挂住被取消，已加 `timeout 15`；新 run 因 runner 未分配无法验证 |
+| 单机 CD `publish` 上传 Release | 未验证（依赖 verify 与可用 runner） |
+| V3 新 run（`610ac5f`，rust/py 工装修复后） | 排队未开始 |
+| PR 自测（`docs/ci-selftest.md` 噪声分支） | 未执行 |
+| release（`v0.0.0-citest`） | 未执行 |
+
 ## 5. 实施进度
 
 | 阶段 | 状态 | 文件 |
