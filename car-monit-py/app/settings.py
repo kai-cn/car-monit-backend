@@ -494,8 +494,8 @@ class CorsSection(_Section):
     """CORS 白名单（Python-only，Java 只有 ``allowedOriginPattern("*")``）。
 
     * 非空：只回显列表里的 Origin（生产环境的正确用法）。
-    * 为空且 ``is_localhost == "local"``：退回 Java 的 ``allowedOriginPattern("*")``，
-      开发/测试前端任意端口都能直连。
+    * 为空且 ``is_localhost == "local"``：只放行 ``localhost`` / ``127.0.0.1`` /
+      ``[::1]``（任意端口），不再退回 Java 的 ``allowedOriginPattern("*")``。
     * 为空且非 local：不放开任何跨域来源，并在启动时告警。
 
     环境变量是 JSON 数组：``APP__CORS__ALLOWED_ORIGINS='["https://a.example"]'``。

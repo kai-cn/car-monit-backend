@@ -4901,7 +4901,7 @@ gantrycar,gantrytrade}/export`、`/base/{geometry,snapshotflow,feerecords}/expor
 |---|---|---|
 | P1-1 | 请求线程池默认 200（与 Druid `maxActive` 对齐） | `APP__REQUEST_THREAD_LIMIT=800` |
 | P1-5 | 非 `local` 环境使用内置演示密钥/口令时**拒绝启动** | 配真实 `TOKEN__SECRET` / DB 口令 / `HENGDA__SECRET` |
-| P1-8 | CORS 白名单；非 `local` 留空 = 拒绝跨域，`local` 留空 = Java 全开 | `APP__CORS__ALLOWED_ORIGINS` |
+| P1-8 | CORS 白名单；非 `local` 留空 = 拒绝跨域，`local` 留空 = 仅回环地址（localhost / 127.0.0.1 / [::1]） | `APP__CORS__ALLOWED_ORIGINS` |
 | P1-4/P1-9 | 日志按 logback 精确分级；trace 只进 slow；容量可配且按目录预算清理 | `LOGGING__FILE_*` |
 | P1-3 | lifespan 先停线程池 / 关闭 HTTP 客户端，再释放 DB/Redis | —（P2-16 因此关闭） |
 

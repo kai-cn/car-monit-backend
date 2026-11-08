@@ -113,29 +113,29 @@ class TestHealthEndpoint:
 class TestCorsConfig:
     """Java: ``ResourcesConfig#corsFilter``.
 
-    ``setAllowCredentials(true)`` + ``addAllowedOriginPattern("*")`` + ``maxAge(1800)``.
-    注意：因为允许凭证，*不能*回写 ``*``，必须把请求的 Origin 原样回显。
+    ``setAllowCredentials(true)`` + ``maxAge(1800)``。Python 侧默认不再全开：
+    local 空白名单只回显回环地址，生产走 ``app.cors.allowed_origins`` 白名单。
     """
 
-    def test_preflight_echoes_origin_with_credentials(self, client: TestClient) -> None:
+    def test_preflight_echoes_loopback_origin_with_credentials(self, client: TestClient) -> None:
         response = client.options(
             "/health",
             headers={
-                "Origin": "http://example.com",
+                "Origin": "http://localhost:3000",
                 "Access-Control-Request-Method": "GET",
                 "Access-Control-Request-Headers": "authorization",
             },
         )
         assert response.status_code == 200
-        assert response.headers["access-control-allow-origin"] == "http://example.com"
+        assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
         assert response.headers["access-control-allow-credentials"] == "true"
         # Java: config.setMaxAge(1800L)
         assert response.headers["access-control-max-age"] == "1800"
 
     def test_simple_request_exposes_trace_header(self, client: TestClient) -> None:
         """TraceIdFilter 写的响应头必须能被浏览器 JS 读到。"""
-        response = client.get("/", headers={"Origin": "http://example.com"})
-        assert response.headers.get("access-control-allow-origin") == "http://example.com"
+        response = client.get("/", headers={"Origin": "http://localhost:3000"})
+        assert response.headers.get("access-control-allow-origin") == "http://localhost:3000"
         assert "x-trace-id" in response.headers.get("access-control-expose-headers", "").lower()
 
     def test_configured_whitelist_only_echoes_listed_origins(self) -> None:

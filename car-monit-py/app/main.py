@@ -156,6 +156,9 @@ import app.quartz.task  # noqa: F401  —— 导入副作用：注册 6 个任�
 
 logger = logging.getLogger("app.main")
 
+#: 空 CORS 白名单时 local 环境唯一允许的来源（回环地址 + 任意端口）。
+_LOCAL_CORS_ORIGIN_REGEX = r"https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?"
+
 #: Copied from ``kafka``/``elasticsearch``/``oss`` config so startup can warn loudly.
 _STARTUP_BANNER = "(♥◠‿◠)ﾉﾞ  {name}启动成功   ლ(´ڡ`ლ)ﾞ"
 
@@ -387,8 +390,8 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     # Java: config.addAllowedOriginPattern("*") -- NOT addAllowedOrigin("*").
     # ``allow_credentials=true`` with "*" is spec-invalid, so a permissive regex is the
     # correct equivalent of Spring's allowedOriginPatterns. Production should whitelist
-    # through ``app.cors.allowed_origins``; when the list is empty only local installs
-    # keep the permissive Java behaviour (see CorsSection).
+    # through ``app.cors.allowed_origins``. Empty list never means "allow everything":
+    # local installs are restricted to loopback origins, everything else denies all.
     allowed_origins = [origin.strip() for origin in settings.app.cors.allowed_origins if origin.strip()]
     cors_options: dict = {
         "allow_credentials": True,
@@ -401,7 +404,11 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
         cors_options["allow_origins"] = allowed_origins
         logger.info("[启动参数] CORS 白名单已启用: %s", allowed_origins)
     elif (settings.is_localhost or "").strip().lower() == "local":
-        cors_options["allow_origin_regex"] = ".*"
+        # 开发便利只放行本机回环地址，避免任意站点带凭证跨域读取。
+        cors_options["allow_origin_regex"] = _LOCAL_CORS_ORIGIN_REGEX
+        logger.warning(
+            "[启动警告] app.cors.allowed_origins 未配置, local 环境仅允许 localhost/127.0.0.1 来源"
+        )
     else:
         logger.warning(
             "[启动警告] app.cors.allowed_origins 未配置, 非 local 环境将拒绝所有跨域请求"
