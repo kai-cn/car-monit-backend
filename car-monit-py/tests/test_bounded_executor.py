@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import threading
+import time
 from contextvars import ContextVar
 
 from app.common.utils.bounded_executor import BoundedThreadPoolExecutor
+from app.framework.config.thread_pool_config import ThreadPoolTaskExecutor
 from app.framework.manager.async_manager import AsyncManager
 
 
@@ -105,3 +107,43 @@ def test_async_manager_uses_isolated_caller_runs() -> None:
         assert manager._executor._caller_runs_isolated is True
     finally:
         manager.shutdown()
+
+
+def test_task_pool_shutdown_does_not_wait_for_running_task() -> None:
+    """Java ``ThreadPoolTaskExecutor#shutdown`` 默认不等待存量任务."""
+    executor = ThreadPoolTaskExecutor(max_workers=1, queue_capacity=1)
+    started = threading.Event()
+    release = threading.Event()
+
+    def blocking() -> None:
+        started.set()
+        release.wait(1)
+
+    executor.execute(blocking)
+    assert started.wait(1)
+
+    began = time.monotonic()
+    executor.shutdown()
+    assert time.monotonic() - began < 0.5
+
+    release.set()
+
+
+def test_async_manager_shutdown_is_bounded() -> None:
+    """阻塞中的审计任务最多等 ``timeout`` 秒，不能把进程退出拖住."""
+    manager = AsyncManager(queue_capacity=1)
+    started = threading.Event()
+    release = threading.Event()
+
+    def blocking() -> None:
+        started.set()
+        release.wait(1)
+
+    manager.execute(blocking)
+    assert started.wait(1)
+
+    began = time.monotonic()
+    manager.shutdown(timeout=0.05)
+    assert time.monotonic() - began < 0.5
+
+    release.set()

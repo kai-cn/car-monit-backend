@@ -103,8 +103,13 @@ class ThreadPoolTaskExecutor:
 
     # Java: public void shutdown()
     def shutdown(self) -> None:
-        """Java: ``ThreadPoolTaskExecutor#shutdown`` —— 不再接收新任务，等存量跑完."""
-        self._executor.shutdown(wait=True)
+        """Java: ``ThreadPoolTaskExecutor#shutdown`` —— 停止接收新任务，**不等待**存量.
+
+        Spring 的 ``waitForTasksToCompleteOnShutdown`` 默认 false，与
+        ``ThreadPoolExecutor.shutdown(wait=False)`` 一致；``wait=True`` 会让
+        lifespan 收尾被长任务拖住，进程退出不再有界。
+        """
+        self._executor.shutdown(wait=False)
 
 
 _INSTANCE: Optional[ThreadPoolTaskExecutor] = None
