@@ -131,6 +131,14 @@ public class CarAduitFreeServiceImpl extends ServiceImpl<CarAduitFreeMapper, Car
     }
 
     @Override
+    public List<com.ruoyi.manager.domain.vo.bigscreen.CarIdCountVO> countByCarIds(List<String> carIds) {
+        if (carIds == null || carIds.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        return carAduitFreeMapper.countByCarIds(carIds);
+    }
+
+    @Override
     public Integer selectAuditCount(IncomeStatisticParam param) {
         return carAduitFreeMapper.selectAuditCount(param);
     }

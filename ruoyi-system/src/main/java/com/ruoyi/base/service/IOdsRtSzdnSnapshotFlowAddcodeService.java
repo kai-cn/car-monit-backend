@@ -47,4 +47,13 @@ public interface IOdsRtSzdnSnapshotFlowAddcodeService extends IService<OdsRtSzdn
     AjaxResult deleteOdsRtSzdnSnapshotFlowAddcodeByIds(String[] bigIds);
 
     List<TopTenVO> getTopTen();
+
+    /**
+     * 按时间范围统计路段预警 Top10。
+     *
+     * @param startTime 开始时间（yyyy-MM-dd）
+     * @param endTime   结束时间（yyyy-MM-dd）
+     * @return Top10
+     */
+    List<TopTenVO> getTopTen(String startTime, String endTime);
 }

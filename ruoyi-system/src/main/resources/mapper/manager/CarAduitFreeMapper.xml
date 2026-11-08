@@ -96,6 +96,16 @@
         <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
     </select>
 
+    <select id="countByCarIds" resultType="com.ruoyi.manager.domain.vo.bigscreen.CarIdCountVO">
+        select car_id carId, count(1) cnt
+        from car_aduit_free
+        where del_flag = '0' and car_id in
+        <foreach collection="carIds" item="carId" open="(" separator="," close=")">
+            #{carId}
+        </foreach>
+        group by car_id
+    </select>
+
     <select id="incomeStatistic" parameterType="com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam" resultType="com.ruoyi.manager.domain.vo.bigscreen.incomeStatisticVO">
         select sum(ifnull(amount, 0)) amount, count(distinct car_no) carNum, d.dept_name orgName, a.org_id
         from (

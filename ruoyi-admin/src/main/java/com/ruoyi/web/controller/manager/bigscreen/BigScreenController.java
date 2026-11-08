@@ -1,296 +1,193 @@
 package com.ruoyi.web.controller.manager.bigscreen;
 
-import com.ruoyi.base.domain.*;
-import com.ruoyi.base.service.*;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.utils.CommonUtil;
-import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.manager.domain.*;
-import com.ruoyi.manager.domain.vo.bigscreen.*;
-import com.ruoyi.manager.service.*;
+import com.ruoyi.integration.api.ApiClientException;
+import com.ruoyi.manager.domain.CarExceptRecord;
+import com.ruoyi.manager.domain.vo.bigscreen.CarLocationParam;
+import com.ruoyi.manager.domain.vo.bigscreen.IncomeStatisticParam;
+import com.ruoyi.manager.service.ICarExceptRecordService;
+import com.ruoyi.manager.service.bigscreen.BigScreenDictService;
+import com.ruoyi.manager.service.bigscreen.BigScreenExceptRecordService;
+import com.ruoyi.manager.service.bigscreen.BigScreenLocationService;
+import com.ruoyi.manager.service.bigscreen.BigScreenRealtimeService;
+import com.ruoyi.manager.service.bigscreen.BigScreenStatsService;
 import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
-
-
+/**
+ * 大屏接口。
+ *
+ * <p>阶段一改造：统计类指标走预聚合/API + 两级缓存；实时列表走 api；字典/小结果缓存；
+ * 异常流水消除 N+1。响应头的 ETag/304、X-Cache、X-Data-Age、X-Degrade 由
+ * BigScreenResponseFilter 统一输出。</p>
+ *
+ * @author car-monit-backend-java-v3
+ */
 @ApiOperation("大屏接口")
 @RestController
 @RequestMapping("/manager/bigScreen")
 @CrossOrigin(origins = "*")
-public class BigScreenController extends BaseController {
+public class BigScreenController extends BaseController
+{
+    private static final Logger log = LoggerFactory.getLogger(BigScreenController.class);
 
     @Autowired
-    private ICarConfimFreeService carConfimFreeService;
+    private BigScreenStatsService bigScreenStatsService;
+
     @Autowired
-    private ICarAduitFreeService carAduitFreeService;
+    private BigScreenRealtimeService bigScreenRealtimeService;
+
     @Autowired
-    private ICarInfoService carInfoService;
+    private BigScreenDictService bigScreenDictService;
+
     @Autowired
-    private IOdsSzdnSectionService odsSzdnSectionService;
+    private BigScreenLocationService bigScreenLocationService;
+
     @Autowired
-    private IOdsSzdnTollService tollService;
-    @Autowired
-    private ICarWarningInfoService carWarningInfoService;
-    @Autowired
-    private IOdsSzdnGantryService gantryService;
-    @Autowired
-    private IDwdLcztFwqjcxxService fwqjcxxService;
-    @Autowired
-    private IOdsRtSzdnSnapshotFlowAddcodeService snapshotFlowAddcodeService;
-    @Autowired
-    private ICarSuspiciousService carSuspiciousService;
-    @Autowired
-    private IOdsYhglVBaseOrgService baseOrgService;
+    private BigScreenExceptRecordService bigScreenExceptRecordService;
+
     @Autowired
     private ICarExceptRecordService carExceptRecordService;
 
-
     /**
-     *  重点关注车辆统计
+     * 重点关注车辆统计
      */
     @GetMapping(value = "/carStatistics")
-    public AjaxResult getCarStatistics(IncomeStatisticParam param) {
-        List<CarStatisticsVO> carStatisticsVO = carConfimFreeService.getCarStatistics(param);
-        return AjaxResult.success(carStatisticsVO);
+    public AjaxResult getCarStatistics(IncomeStatisticParam param)
+    {
+        try
+        {
+            return AjaxResult.success(bigScreenStatsService.carStatistics(param));
+        }
+        catch (ApiClientException e)
+        {
+            return apiError(e);
+        }
     }
 
     /**
-     * 地图 ；车俩地图描点
+     * 地图；车辆地图描点
      */
     @GetMapping(value = "/carLocation")
-    public AjaxResult getCarLocation(CarLocationParam param) {
-        String type = param.getType();
-        // 路段:包含全部
-        String sectionCode = CommonUtil.isNull(param.getSectionCode());
-        if (sectionCode.indexOf(Constants.section_all) > -1) {
-            param.setSectionCode("");
+    public AjaxResult getCarLocation(CarLocationParam param)
+    {
+        normalizeParam(param);
+        try
+        {
+            return AjaxResult.success(bigScreenLocationService.carLocation(param));
         }
-        String code = CommonUtil.isNull(param.getCode());
-        if(CommonUtil.isNotBlank(type)) {
-            // 1收费站、2门架、3服务区
-            if (type.equals("1")){
-                if (CommonUtil.isNotBlank(code)){
-                    param.setTollCode(code);
-                }else{
-                    param.setTollCode(Constants.STATION_CAPTURE);
-                }
-            }else if (type.equals("2")){
-                if (CommonUtil.isNotBlank(code)){
-                    param.setGantryCode(code);
-                }else{
-                    param.setGantryCode(Constants.GANTRY_CAPTURE);
-                }
-            }else if (type.equals("3")){
-                if (CommonUtil.isNotBlank(code)){
-                    param.setFwqbm(code);
-                }else{
-                    param.setFwqbm(Constants.SERVICE_AREA_CAPTURE);
-                }
-            }
+        catch (ApiClientException e)
+        {
+            return apiError(e);
         }
-        List<CarLocationVO> carLocationVOList = carInfoService.carLocation(param);
-        return AjaxResult.success(carLocationVOList);
     }
 
     /**
      * 路段列表
-     * @return
      */
     @GetMapping(value = "/sectionList")
-    public AjaxResult getSectionList() {
-        List<SectionVO> collect = odsSzdnSectionService.selectOdsSzdnSectionListNew(new OdsSzdnSection())
-                .stream().map(item -> {
-                    SectionVO sectionVO = new SectionVO();
-                    sectionVO.setSectionCode(item.getSectionCode());
-                    sectionVO.setSectionName(item.getSectionName());
-                    return sectionVO;
-                }).collect(Collectors.toList());
-
-        // 需要增加全部
-        List<SectionVO> collectNew = new ArrayList<>();
-        SectionVO sectionAll = new SectionVO();
-        sectionAll.setSectionCode(Constants.section_all);
-        sectionAll.setSectionName("全部");
-        collectNew.add(sectionAll);
-
-        for (SectionVO rtn:collect){
-            collectNew.add(rtn);
-        }
-
-
-        return AjaxResult.success(collectNew);
+    public AjaxResult getSectionList()
+    {
+        return AjaxResult.success(bigScreenDictService.sectionList());
     }
 
     /**
      * 收费站门架服务区列表
-     * @param sectionCode
-     * @param type
-     * @return
      */
     @GetMapping(value = "/tollGantryFwqList")
-    public AjaxResult getTollList(@RequestParam(name = "sectionCode", required = false) String sectionCode, @RequestParam String type) {
-        if(CommonUtil.isBlank(sectionCode)) {
-            return AjaxResult.success(new ArrayList<>());
-        }
-        sectionCode = CommonUtil.deleteEnd(sectionCode);
-
-        String[] split = sectionCode.split(",");
-        List<String> sectionCodeList = Arrays.stream(split).collect(Collectors.toList());
-        if (sectionCode.indexOf(Constants.section_all) > -1) {
-            sectionCodeList = new ArrayList<>();
-        }
-
-        List<TollGantryFwqVO> collect = new ArrayList<>();
-        if ("1".equals(type)) {
-            OdsSzdnToll odsSzdnToll = new OdsSzdnToll();
-            odsSzdnToll.setSectionCodeList(sectionCodeList);
-            collect = tollService.selectOdsSzdnTollListNew(odsSzdnToll)
-                    .stream().map(item -> {
-                        TollGantryFwqVO vo = new TollGantryFwqVO();
-                        vo.setType("1");
-                        vo.setCode(item.getTollCode());
-                        vo.setName(item.getTollName());
-                        return vo;
-                    }).collect(Collectors.toList());
-        } else if ("2".equals(type)) {
-            OdsSzdnGantry odsSzdnGantry = new OdsSzdnGantry();
-            odsSzdnGantry.setSectionCodeList(sectionCodeList);
-            collect = gantryService.selectOdsSzdnGantryListNew(odsSzdnGantry)
-                    .stream().map(item -> {
-                        TollGantryFwqVO vo = new TollGantryFwqVO();
-                        vo.setType("2");
-                        vo.setCode(item.getGantryCode());
-                        vo.setName(item.getGantryName());
-                        return vo;
-                    }).collect(Collectors.toList());
-        } else if ("3".equals(type)) {
-            DwdLcztFwqjcxx dwdLcztFwqjcxx = new DwdLcztFwqjcxx();
-            dwdLcztFwqjcxx.setSectionCodeList(sectionCodeList);
-            collect = fwqjcxxService.selectDwdLcztFwqjcxxListNew(dwdLcztFwqjcxx)
-                    .stream().map(item -> {
-                        TollGantryFwqVO vo = new TollGantryFwqVO();
-                        vo.setType("3");
-                        vo.setCode(item.getFwqbm());
-                        vo.setName(item.getFwqmc());
-                        return vo;
-                    }).collect(Collectors.toList());
-        }
-        return AjaxResult.success(collect);
+    public AjaxResult getTollList(@RequestParam(name = "sectionCode", required = false) String sectionCode,
+                                  @RequestParam String type)
+    {
+        return AjaxResult.success(bigScreenDictService.tollGantryFwqList(sectionCode, type));
     }
 
     /**
      * 重点车辆库统计
      */
     @GetMapping(value = "/carVoList")
-    public AjaxResult carVoList() {
-        List<CarInfoVO> carVoList = carInfoService.selectCarVoList();
-        return AjaxResult.success(carVoList);
+    public AjaxResult carVoList()
+    {
+        return AjaxResult.success(bigScreenRealtimeService.carVoList());
     }
-
 
     /**
      * 追缴统计
      */
     @GetMapping(value = "/carAudit")
-    public AjaxResult getCarAudit(IncomeStatisticParam param) {
-        CarAuditVO vo = new CarAuditVO();
-
-        CarStatisticsVO vo1 = carAduitFreeService.getCarAudit(param); // 逃费费用:异常流水
-        if (null != vo1){
-            vo.setTotalAmount(vo1.getEscapedAmount());
-            vo.setTotalCount(vo1.getNumber());
+    public AjaxResult getCarAudit(IncomeStatisticParam param)
+    {
+        try
+        {
+            return AjaxResult.success(bigScreenStatsService.carAudit(param));
         }
-
-
-        CarStatisticsVO vo2 = carConfimFreeService.getCarConfirm(param); //确认追缴
-
-        if (null != vo2){
-            vo.setFinishedAmount(vo2.getEscapedAmount());
-            vo.setFinishedCount(vo2.getNumber());
+        catch (ApiClientException e)
+        {
+            return apiError(e);
         }
-
-
-        return AjaxResult.success(vo);
     }
 
     /**
      * 车辆预警
      */
     @GetMapping(value = "/carWarning")
-    public AjaxResult getCarWarning(CarLocationParam param) {
-        String type = param.getType();
-        // 路段:包含全部
-        String sectionCode = CommonUtil.isNull(param.getSectionCode());
-        if (sectionCode.indexOf(Constants.section_all) > -1) {
-            param.setSectionCode("");
+    public AjaxResult getCarWarning(CarLocationParam param)
+    {
+        normalizeParam(param);
+        try
+        {
+            return AjaxResult.success(bigScreenRealtimeService.carWarning(param));
         }
-        String code = CommonUtil.isNull(param.getCode());
-        if(CommonUtil.isNotBlank(type)) {
-            // 1收费站、2门架、3服务区
-            if (type.equals("1")){
-                if (CommonUtil.isNotBlank(code)){
-                    param.setTollCode(code);
-                }else{
-                    param.setTollCode(Constants.STATION_CAPTURE);
-                }
-            }else if (type.equals("2")){
-                if (CommonUtil.isNotBlank(code)){
-                    param.setGantryCode(code);
-                }else{
-                    param.setGantryCode(Constants.GANTRY_CAPTURE);
-                }
-            }else if (type.equals("3")){
-                if (CommonUtil.isNotBlank(code)){
-                    param.setFwqbm(code);
-                }else{
-                    param.setFwqbm(Constants.SERVICE_AREA_CAPTURE);
-                }
-            }
+        catch (ApiClientException e)
+        {
+            return apiError(e);
         }
-        List<CarWarningInfo> warningInfoList = carWarningInfoService.selectCarWarningInfoListLimit100(param);
-        return AjaxResult.success(warningInfoList);
     }
 
     /**
      * 异常数据
      */
     @GetMapping(value = "/exceptionCar")
-    public AjaxResult getExceptionCar() {
-        List<CarSuspicious> carSuspicious = carSuspiciousService.selectCarSuspiciousListLimit10();
-        return AjaxResult.success(carSuspicious);
+    public AjaxResult getExceptionCar()
+    {
+        return AjaxResult.success(bigScreenRealtimeService.exceptionCar());
     }
 
     /**
-     * 重点车辆通行前10
+     * 重点车辆通行前10（按时间范围，默认最近 7 天）
      */
     @ApiOperation("重点车辆通行前10")
     @GetMapping(value = "/topTen")
-    public AjaxResult topTen() {
-        List<TopTenVO> topTenVO = snapshotFlowAddcodeService.getTopTen();
-        return AjaxResult.success(topTenVO);
+    public AjaxResult topTen(@RequestParam(name = "startTime", required = false) String startTime,
+                             @RequestParam(name = "endTime", required = false) String endTime)
+    {
+        try
+        {
+            return AjaxResult.success(bigScreenStatsService.topTen(startTime, endTime));
+        }
+        catch (ApiClientException e)
+        {
+            return apiError(e);
+        }
     }
 
     @ApiOperation("机构列表")
     @GetMapping(value = "/orgList")
-    public AjaxResult getOrgList() {
-        List<OrgVO> collect = baseOrgService.lambdaQuery().select(OdsYhglVBaseOrg::getOrgCode, OdsYhglVBaseOrg::getOrgName).list()
-                .stream().map(item -> {
-                    OrgVO orgVO = new OrgVO();
-                    orgVO.setOrgCode(item.getOrgCode());
-                    orgVO.setOrgName(item.getOrgName());
-                    return orgVO;
-                }).collect(Collectors.toList());
-        return AjaxResult.success(collect);
+    public AjaxResult getOrgList()
+    {
+        return AjaxResult.success(bigScreenDictService.orgList());
     }
 
     /**
@@ -298,30 +195,103 @@ public class BigScreenController extends BaseController {
      */
     @ApiOperation("堵漏增收统计")
     @GetMapping(value = "/incomeStatistic")
-    public AjaxResult incomeStatistic(IncomeStatisticParam param) {
-
-        // 默认为所
-        if (CommonUtil.isBlank(param.getQueryDateType())){
-            param.setQueryDateType("suo");
+    public AjaxResult incomeStatistic(IncomeStatisticParam param)
+    {
+        try
+        {
+            return AjaxResult.success(bigScreenStatsService.incomeStatistic(param));
         }
-        List<incomeStatisticVO> voList =  carAduitFreeService.incomeStatistic(param);
-        return AjaxResult.success(voList);
+        catch (ApiClientException e)
+        {
+            return apiError(e);
+        }
     }
 
+    /**
+     * 异常流水分页（批量补全 orgId / 补缴状态，消除 N+1）
+     */
     @GetMapping("/exceptRecordList")
-    public TableDataInfo list(CarExceptRecord carExceptRecord) {
+    public TableDataInfo list(CarExceptRecord carExceptRecord)
+    {
         startPage();
         List<CarExceptRecord> list = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);
         TableDataInfo dataTable = getDataTable(list);
         List<CarExceptRecord> rows = (List<CarExceptRecord>) dataTable.getRows();
-        for (CarExceptRecord row : rows) {
-           String orgId = carConfimFreeService.selectOrgId(row.getCarId(), row.getId());
-           row.setOrgId(orgId);
-            Long count = carAduitFreeService.lambdaQuery().eq(CarAduitFree::getCarId, row.getCarId()).count();
-            if (count != null && count > 0) {
-                row.setSupplementaryStatus("1");
+        bigScreenExceptRecordService.enrich(rows);
+        return dataTable;
+    }
+
+    /**
+     * 复用原有参数归一化逻辑：路段“全部”、type/code → 具体维度编码。
+     */
+    private void normalizeParam(CarLocationParam param)
+    {
+        String type = param.getType();
+        String sectionCode = CommonUtil.isNull(param.getSectionCode());
+        if (sectionCode.indexOf(Constants.section_all) > -1)
+        {
+            param.setSectionCode("");
+        }
+        String code = CommonUtil.isNull(param.getCode());
+        if (CommonUtil.isNotBlank(type))
+        {
+            // 1收费站、2门架、3服务区
+            if ("1".equals(type))
+            {
+                if (CommonUtil.isNotBlank(code))
+                {
+                    param.setTollCode(code);
+                }
+                else
+                {
+                    param.setTollCode(Constants.STATION_CAPTURE);
+                }
+            }
+            else if ("2".equals(type))
+            {
+                if (CommonUtil.isNotBlank(code))
+                {
+                    param.setGantryCode(code);
+                }
+                else
+                {
+                    param.setGantryCode(Constants.GANTRY_CAPTURE);
+                }
+            }
+            else if ("3".equals(type))
+            {
+                if (CommonUtil.isNotBlank(code))
+                {
+                    param.setFwqbm(code);
+                }
+                else
+                {
+                    param.setFwqbm(Constants.SERVICE_AREA_CAPTURE);
+                }
             }
         }
-        return dataTable;
+    }
+
+    private AjaxResult apiError(ApiClientException e)
+    {
+        log.warn("[大屏] api 调用失败 endpoint={} code={} msg={}", e.getEndpoint(), e.getCode(), e.getMessage());
+        int code = 500;
+        if (e.getCode() == com.ruoyi.integration.api.ApiErrorCode.INVALID_ARGUMENT)
+        {
+            code = 400;
+        }
+        else if (e.getCode() == com.ruoyi.integration.api.ApiErrorCode.CIRCUIT_OPEN
+                || e.getCode() == com.ruoyi.integration.api.ApiErrorCode.UNAVAILABLE
+                || e.getCode() == com.ruoyi.integration.api.ApiErrorCode.TIMEOUT
+                || e.getCode() == com.ruoyi.integration.api.ApiErrorCode.UPSTREAM_ERROR)
+        {
+            code = 503;
+        }
+        String message = e.getCode().name() + ": 数据服务暂不可用，请稍后重试";
+        if (code == 400)
+        {
+            message = "查询条件非法: " + e.getMessage();
+        }
+        return AjaxResult.error(code, message);
     }
 }

@@ -144,6 +144,15 @@
         from car_confim_free where car_id = #{carId} and find_in_set(except_ids, #{id}) > 0;
     </select>
 
+    <select id="selectOrgIdBatch" resultType="com.ruoyi.manager.domain.CarConfimFree">
+        select car_id carId, id, org_id orgId, except_ids exceptIds
+        from car_confim_free
+        where del_flag = '0' and car_id in
+        <foreach collection="carIds" item="carId" open="(" separator="," close=")">
+            #{carId}
+        </foreach>
+    </select>
+
     <select id="getPCCarStatistics" resultType="com.ruoyi.manager.domain.CarConfimFree" parameterType="com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo" >
         select d.dept_id eps_id,d.dept_name org_name,a.escaped_type escapedType, sum(ifnull(a.dif_amount, 0)) escapedAmount, count(distinct a.car_no) number
         from car_except_record a

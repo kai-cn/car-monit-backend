@@ -354,8 +354,9 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
             tempVO.setCarNo(rtn.getCarNo());
             carVOList.add(tempVO);
         }
-        redisCache.setCacheObject(Constants.car_list_jc, carVOList);
-        redisCache.setCacheObject(Constants.car_list, list);
+        redisCache.setCacheObject(Constants.car_list_jc, carVOList, 600, java.util.concurrent.TimeUnit.SECONDS);
+        redisCache.setCacheObject(Constants.car_list, list, 600, java.util.concurrent.TimeUnit.SECONDS);
+        redisCache.setCacheObject(Constants.car_list_version, String.valueOf(System.currentTimeMillis()));
     }
 
 
@@ -370,7 +371,8 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
         } else {
             CarInfo carInfo = new CarInfo();
             list = carInfoMapper.selectCarInfoList(carInfo);
-            redisCache.setCacheObject(Constants.car_list, list);
+            redisCache.setCacheObject(Constants.car_list, list, 600, java.util.concurrent.TimeUnit.SECONDS);
+            redisCache.setCacheObject(Constants.car_list_version, String.valueOf(System.currentTimeMillis()));
         }
         return list;
     }

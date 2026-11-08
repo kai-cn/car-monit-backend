@@ -57,6 +57,14 @@ public interface ICarConfimFreeService extends IService<CarConfimFree> {
 
     String selectOrgId(String carId, String id);
 
+    /**
+     * 批量查询车辆补缴记录（orgId 解析）。
+     *
+     * @param carIds 车辆 ID 集合
+     * @return 补缴记录
+     */
+    List<CarConfimFree> selectOrgIdBatch(List<String> carIds);
+
 
     /**
      * 查询确认补缴
