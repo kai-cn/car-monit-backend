@@ -1,0 +1,10 @@
+.git
+.idea
+.github
+car-monit-*
+!car-monit-go
+!ruoyi-*
+**/target
+**/node_modules
+docs
+*.md

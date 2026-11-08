@@ -1,0 +1,8 @@
+.venv
+__pycache__
+.pytest_cache
+.screenshots
+evidence
+logs
+docs
+*.pyc
