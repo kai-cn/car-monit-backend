@@ -1,0 +1,70 @@
+name: deploy (placeholder)
+
+# 部署占位：registry 与部署目标尚未确认，本文件只做前置校验，不执行任何真实部署。
+#
+# 待确认（确认后再补实现，不要凭空写服务器地址与凭据）：
+#   1. 镜像推送到哪里：GHCR（ghcr.io/<owner>/...）还是私有 registry？
+#   2. 部署目标形态：K8s（kubectl/helm）/ 单机 systemd / 只出产物不部署？
+#   3. 是否需要多环境（staging / production）与人工审批？
+#   4. 需要的 secrets 名称（下方注释里只列计划名，未配置前不引用真值）。
+#
+# 实现时的预期输入（仓库 Variables / Secrets）：
+#   vars.IMAGE_REGISTRY     镜像仓库根地址，例如 ghcr.io/<owner>
+#   vars.DEPLOY_TARGET      k8s | systemd | none
+#   secrets.REGISTRY_USERNAME / secrets.REGISTRY_PASSWORD
+#   secrets.KUBE_CONFIG     DEPLOY_TARGET=k8s 时的 kubeconfig（base64）
+#   secrets.SSH_HOST / SSH_USER / SSH_KEY   DEPLOY_TARGET=systemd 时使用
+#
+# 本文件在未配置上述变量时以非零码退出，避免"占位流水线显示成功"造成误判。
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: '要部署的镜像 tag（例如 v1.2.3）'
+        required: true
+        type: string
+      environment:
+        description: '目标环境'
+        required: true
+        type: choice
+        options: [staging, production]
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 校验部署配置是否已就绪
+        run: |
+          echo "IMAGE_REGISTRY=${{ vars.IMAGE_REGISTRY }}"
+          echo "DEPLOY_TARGET=${{ vars.DEPLOY_TARGET }}"
+          echo "environment=${{ inputs.environment }} image_tag=${{ inputs.image_tag }}"
+          if [ -z "${{ vars.IMAGE_REGISTRY }}" ] || [ -z "${{ vars.DEPLOY_TARGET }}" ]; then
+            echo "::error::部署尚未配置：缺少 vars.IMAGE_REGISTRY 或 vars.DEPLOY_TARGET。见本 workflow 文件头部说明。"
+            exit 1
+          fi
+          echo "::error::部署步骤尚未实现（registry / 目标形态待确认）。本 job 仅用于暴露缺口。"
+          exit 1
+
+      # ---------------------------------------------------------------------
+      # 下面是确认后要补的实现骨架（保持注释，不要提前启用）：
+      #
+      # - uses: docker/login-action@v3
+      #   with:
+      #     registry: ${{ vars.IMAGE_REGISTRY }}
+      #     username: ${{ secrets.REGISTRY_USERNAME }}
+      #     password: ${{ secrets.REGISTRY_PASSWORD }}
+      #
+      # K8s:
+      # - run: echo "$KUBE_CONFIG" | base64 -d > kubeconfig
+      #   env: { KUBE_CONFIG: '${{ secrets.KUBE_CONFIG }}' }
+      # - run: kubectl --kubeconfig=kubeconfig -n car-monit set image deploy/car-monit-go \
+      #         car-monit-go=${{ vars.IMAGE_REGISTRY }}/car-monit-go:${{ inputs.image_tag }}
+      #
+      # systemd:
+      # - run: scp ... ; ssh ... 'systemctl restart car-monit-go'
+      #   env: { SSH_KEY: '${{ secrets.SSH_KEY }}' }
+      # ---------------------------------------------------------------------
