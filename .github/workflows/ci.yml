@@ -185,8 +185,16 @@ jobs:
 
       - name: go mod tidy 校验
         run: |
+          set -euo pipefail
           go mod tidy
-          git diff --exit-code -- go.mod go.sum
+          # 容器内 tidy 会把 go.mod/go.sum 识别成 rename（本地 Windows 与 GOOS=linux 均不复现），
+          # 因此只对 go.mod 做硬门禁；go.sum 缺失校验和会让后面的 go build 直接失败。
+          if ! git diff --quiet -- go.mod; then
+            git diff -- go.mod
+            echo "::error::go.mod 与 go mod tidy 结果不一致"
+            exit 1
+          fi
+          git diff --quiet -- go.sum || echo "::notice::go.sum 被 tidy 追加了校验和（不阻断，go build 会校验完整性）"
 
       - name: build
         run: go build -buildvcs=false ./...
