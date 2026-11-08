@@ -293,7 +293,7 @@ jobs:
       - name: 解包并安装运行时依赖
         run: |
           set -euo pipefail
-          dnf install -y java-1.8.0-openjdk-headless tar gzip >/dev/null
+          dnf install -y java-1.8.0-openjdk-headless unzip tar gzip >/dev/null
           tar -xzf car-monit-${{ matrix.service }}.tar.gz
 
       - name: 真启动一次（--help / 版本）
