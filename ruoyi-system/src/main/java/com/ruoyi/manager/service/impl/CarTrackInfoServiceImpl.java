@@ -54,6 +54,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     private CarTrackInfoMapper carTrackInfoMapper;
 
     @Autowired
+    private com.ruoyi.manager.service.bigscreen.FeatureSwitchService featureSwitchService;
+
+    @Autowired
     private ICarInfoService carInfoService;
 
     @Resource
@@ -699,6 +702,13 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     }
 
     private void saveTrailTracksHistory(List<CarInfo> carList){
+        if (featureSwitchService != null
+                && !featureSwitchService.isEnabled(
+                        com.ruoyi.manager.service.bigscreen.FeatureSwitchService.TRAIL_MATERIALIZE)) {
+            // 本地物化默认关闭：在线查询已统一走 api，本地表仅作为只读兜底
+            log.info("[轨迹同步] 本地物化开关关闭，跳过写回 zdata_trail_tracks");
+            return;
+        }
         List<String> carNoList = new ArrayList<>();
         // 找到下一个位置
         List<ZdataTrailTracks> addlist = new ArrayList<>();

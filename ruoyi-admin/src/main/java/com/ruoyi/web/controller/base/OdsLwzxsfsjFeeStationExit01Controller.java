@@ -1,13 +1,15 @@
 package com.ruoyi.web.controller.base;
 
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
 import com.ruoyi.base.domain.OdsLwzxsfsjFeeStationExit01;
 import com.ruoyi.base.service.forest.HttpOdsLwzxsfsjFeeStationExit01Service;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.page.PageDomain;
 import com.ruoyi.common.core.page.TableDataInfo;
-import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.common.core.page.TableSupport;
+import com.ruoyi.integration.api.ApiClientException;
+import com.ruoyi.integration.api.ApiPageResult;
+import com.ruoyi.integration.api.TrafficApiClient;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +31,9 @@ public class OdsLwzxsfsjFeeStationExit01Controller extends BaseController {
     @Resource
     private HttpOdsLwzxsfsjFeeStationExit01Service httpOdsLwzxsfsjFeeStationExit01Service;
 
+    @Resource
+    private TrafficApiClient trafficApiClient;
+
     /**
      * 查询收费站出口流水列表
      */
@@ -44,12 +49,18 @@ public class OdsLwzxsfsjFeeStationExit01Controller extends BaseController {
             odsLwzxsfsjFeeStationExit01.setPageSize(10);
         }
 
-        JSONObject jsonObject = httpOdsLwzxsfsjFeeStationExit01Service.getOdsLwzxsfsjFeeStationExit01Page(odsLwzxsfsjFeeStationExit01);
-        if(null == jsonObject || 200 != jsonObject.getInt("code")){
-            logger.error("交易流水数据获取异常：" + jsonObject);
-            throw new ServiceException("获取数据异常,请联系管理员");
+        PageDomain page = TableSupport.buildPageRequest();
+        int pageNum = page.getPageNum() == null ? 1 : page.getPageNum();
+        int pageSize = page.getPageSize() == null ? 10 : page.getPageSize();
+        try {
+            ApiPageResult<OdsLwzxsfsjFeeStationExit01> result =
+                    trafficApiClient.feeStationExitPage(odsLwzxsfsjFeeStationExit01,
+                            pageNum, pageSize, OdsLwzxsfsjFeeStationExit01.class);
+            return FlowApiSupport.page(result);
+        } catch (ApiClientException e) {
+            logger.warn("[收费站出口] api 查询失败 code={} msg={}", e.getCode(), e.getMessage());
+            return FlowApiSupport.error(e);
         }
-        return JSONUtil.toBean(jsonObject, TableDataInfo.class);
     }
 
     /**

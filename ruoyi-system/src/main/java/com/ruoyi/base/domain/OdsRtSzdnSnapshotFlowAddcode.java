@@ -143,6 +143,15 @@ public class OdsRtSzdnSnapshotFlowAddcode implements Custom {
     @Excel(name = "车牌颜色编码")
     private Integer platecolorcode;
 
+    /** 车牌颜色名称（sys_dict_data plate_color 字典 label） */
+    @Excel(name = "车牌颜色名称")
+    @TableField(exist = false)
+    private String plateColorName;
+
+    /** 字典标记：UNKNOWN=字典未命中，已回退原始码 */
+    @TableField(exist = false)
+    private String plateColorMark;
+
     /** 车牌类型 */
     @Excel(name = "车牌类型")
     private String platetype;
