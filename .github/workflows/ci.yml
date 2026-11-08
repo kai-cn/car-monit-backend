@@ -5,6 +5,14 @@ name: ci
 # 迁移分支（car-monit-go-V2 / car-monit-rust-V2）与主分支目录结构一致，
 # 本文件可直接 cherry-pick 过去复用。
 #
+# 运行环境：Linux 构建 job 统一跑在 openEuler 24.03 LTS 容器
+# （runs-on: ubuntu-latest + container: openeuler/openeuler:24.03-lts；GitHub 托管 runner
+# 没有 openEuler 镜像，只能用容器方式）。
+#
+# 例外（已在对应 job 上注明）：
+# - C++ 走 windows-latest + MSVC：工程是 MSVC 专用（/utf-8、NOMINMAX）+ vcpkg x64-windows，
+#   Linux/ARM64 需要另一套构建配置，当前不在容器链路内。
+#
 # 未纳入：
 # - car-monit-cpp / car-monit-kotlin / car-monit-csharp：仓库内只有迁移 prompt 与 docs，
 #   没有任何源码或 CMakeLists.txt / gradle / csproj，无法建构建流水线（见 docs/ci-cd-pipeline-plan.md）。
@@ -96,15 +104,23 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.java == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          # 全仓所有 pom 只有 java.version=1.8；21/25 在本仓库无出处。
-          java-version: '8'
-          cache: maven
+      - name: 安装 OpenJDK 8 + Maven（欧拉仓库无 Temurin）
+        # 欧拉 24.03 官方仓库提供 java-1.8.0-openjdk-devel（8u412）；Temurin 不在欧拉仓库。
+        # OpenJDK 8 与 Temurin 8 同属 TCK 兼容实现，编译/运行行为一致，但不再与开发者本机
+        # 的 Temurin 发行版逐字节一致（只影响排障时的 JVM 构建号，不影响字节码目标 1.8）。
+        run: |
+          set -euo pipefail
+          dnf install -y java-1.8.0-openjdk-devel tar gzip curl
+          java -version
+          curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz -o /tmp/maven.tgz
+          tar -xzf /tmp/maven.tgz -C /opt
+          ln -sf /opt/apache-maven-3.9.9/bin/mvn /usr/local/bin/mvn
+          mvn -v
 
       - name: 编译（PR 快速门禁）
         run: mvn -B -q -DskipTests compile
@@ -138,6 +154,8 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.go == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
     defaults:
       run:
         working-directory: car-monit-go
@@ -147,10 +165,14 @@ jobs:
           # only-new-issues 要用 push 前的提交做 diff；多次提交的 push 需要完整历史
           fetch-depth: 0
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.24.x'
-          cache-dependency-path: car-monit-go/go.sum
+      - name: 安装 Go 1.24（欧拉仓库没有 1.24）
+        run: |
+          set -euo pipefail
+          dnf install -y tar gzip curl
+          curl -fsSL https://go.dev/dl/go1.24.13.linux-amd64.tar.gz -o /tmp/go.tgz
+          tar -C /usr/local -xzf /tmp/go.tgz
+          echo "/usr/local/go/bin" >> "$GITHUB_PATH"
+          /usr/local/go/bin/go version
 
       - name: gofmt
         run: |
@@ -312,21 +334,22 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
     defaults:
       run:
         working-directory: car-monit-rust
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          # 与 car-monit-rust/rust-toolchain.toml 保持一致；改版本时两处一起改。
-          toolchain: 1.90.0
-          components: rustfmt, clippy
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: car-monit-rust
+      - name: 安装 Rust 1.90 + 构建工具（rustup 官方链路）
+        run: |
+          set -euo pipefail
+          dnf install -y curl git gcc gcc-c++ make tar gzip
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | sh -s -- -y --profile minimal --default-toolchain 1.90.0 --component rustfmt --component clippy
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/rustc" --version
 
       - name: fmt
         # 迁移期先只做提示：全量 `cargo fmt --all` 会重排整个 crate，等单独提交。
@@ -378,34 +401,45 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.py == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
     defaults:
       run:
         working-directory: car-monit-py
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: pip
-          cache-dependency-path: car-monit-py/requirements.txt
+      - name: 从源码安装 Python 3.12（欧拉仓库没有 3.12）
+        # pyproject 要求 >=3.12；欧拉 24.03 仓库只到 3.11，因此源码编译（约 3-5 分钟）。
+        run: |
+          set -euo pipefail
+          dnf install -y gcc gcc-c++ make openssl-devel libffi-devel bzip2-devel \
+            zlib-devel xz-devel sqlite-devel tar gzip curl
+          curl -fsSL https://www.python.org/ftp/python/3.12.10/Python-3.12.10.tgz -o /tmp/py.tgz
+          tar -xzf /tmp/py.tgz -C /tmp
+          cd /tmp/Python-3.12.10
+          ./configure --prefix=/usr/local --with-ensurepip=install --quiet
+          make -j"$(nproc)" --quiet
+          make install --quiet
+          ln -sf /usr/local/bin/python3.12 /usr/local/bin/python3
+          /usr/local/bin/python3 -m pip --version
 
       - name: 安装依赖
-        run: pip install -r requirements.txt
+        run: python3 -m pip install -r requirements.txt
 
       - name: 语法门禁
-        run: python -m compileall -q app
+        run: python3 -m compileall -q app
 
       - name: 单元测试 + 覆盖率
         run: |
-          python -m pytest -q -m "not integration" \
+          python3 -m pytest -q -m "not integration" \
             --cov=app --cov-report=term-missing --cov-report=xml
 
       - name: 构建 wheel / sdist
         if: github.event_name != 'pull_request'
         run: |
-          pip install build
-          python -m build
+          python3 -m pip install build
+          python3 -m build
 
       - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request'
