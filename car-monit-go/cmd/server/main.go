@@ -57,14 +57,14 @@ func main() {
 		logger.Error("获取数据库连接池失败", "err", err)
 		os.Exit(1)
 	}
-	defer sqlDB.Close()
+	defer func() { _ = sqlDB.Close() }()
 
 	c, err := cache.New(cfg)
 	if err != nil {
 		logger.Error("初始化 Redis 失败", "err", err)
 		os.Exit(1)
 	}
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	a := app.New(cfg, db, c, logger)
 	engine := router.Setup(a)

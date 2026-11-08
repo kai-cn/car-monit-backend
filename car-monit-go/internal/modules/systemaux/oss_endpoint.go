@@ -133,7 +133,7 @@ func (h *ossEndpointHandler) upload(c *gin.Context, objectName string) {
 		web.JSON(c, web.ErrorNilMsg())
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	bucket := c.Param("bucketName")
 	if bucket == "" {

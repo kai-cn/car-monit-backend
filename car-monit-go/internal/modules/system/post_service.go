@@ -101,18 +101,6 @@ func (s *service) selectPostListByUserID(ctx context.Context, userID int64) ([]i
 	return ids, err
 }
 
-// selectPostsByUserName 对应 SysPostMapper.selectPostsByUserName。
-func (s *service) selectPostsByUserName(ctx context.Context, userName string) ([]model.SysPost, error) {
-	rows := make([]model.SysPost, 0)
-	err := s.db(ctx).Raw(`
-		select p.post_id, p.post_name, p.post_code
-		from sys_post p
-		left join sys_user_post up on up.post_id = p.post_id
-		left join sys_user u on u.user_id = up.user_id
-		where u.user_name = ?`, userName).Scan(&rows).Error
-	return rows, err
-}
-
 // checkPostNameUnique 对应 SysPostMapper.checkPostNameUnique（用于服务层唯一性校验）。
 func (s *service) checkPostNameUnique(ctx context.Context, postName string) (*model.SysPost, error) {
 	var p model.SysPost

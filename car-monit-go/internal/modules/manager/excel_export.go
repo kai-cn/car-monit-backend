@@ -59,15 +59,8 @@ func stampText(t time.Time) string {
 	return base + "." + strings.TrimRight(fmt.Sprintf("%09d", nanos), "0")
 }
 
-// stampOf / javaDateOf 给手工拼行的导出点用：接受实体里的日期字段形态
+// stampOf 给手工拼行的导出点用：接受实体里的日期字段形态
 // （*web.DateTime、web.DateTime、*dateOnly、dateOnly），空值给空串。
-func javaDateOf(v any) string {
-	if t, ok := timeValue(v); ok {
-		return javaDateText(t)
-	}
-	return ""
-}
-
 func stampOf(v any) string {
 	if t, ok := timeValue(v); ok {
 		return stampText(t)

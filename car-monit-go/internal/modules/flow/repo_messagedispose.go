@@ -52,11 +52,6 @@ func (s *Service) selectMessageDisposeList(ctx context.Context, db *gorm.DB, q M
 	return rows, total, nil
 }
 
-func (s *Service) selectMessageDisposeAll(ctx context.Context, db *gorm.DB, q MessageDisposeQuery) ([]FlowMessageDispose, error) {
-	rows, _, err := s.selectMessageDisposeList(ctx, db, q, web.PageDomain{})
-	return rows, err
-}
-
 func (s *Service) selectMessageDisposeByID(ctx context.Context, db *gorm.DB, id string) (*FlowMessageDispose, error) {
 	rows := make([]FlowMessageDispose, 0, 1)
 	sql := "select " + messageDisposeVo + " from flow_message_dispose t where t.ID = ?"

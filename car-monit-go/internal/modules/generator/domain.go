@@ -447,13 +447,4 @@ func strVal(p *string) string {
 	return *p
 }
 
-func i64Val(p *int64) int64 {
-	if p == nil {
-		return 0
-	}
-	return *p
-}
-
 func strPtr(v string) *string { return &v }
-
-func i64Ptr(v int64) *int64 { return &v }

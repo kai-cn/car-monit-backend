@@ -53,9 +53,6 @@ func tmplCond(param, template string) cond {
 func rawCond(param, fragment string) cond {
 	return cond{param: param, kind: condRaw, template: fragment}
 }
-func inListCond(param, column string) cond {
-	return cond{param: param, column: column, kind: condInList}
-}
 
 // 常用日期条件（照抄各 XML 的模板）。
 func dateGe(param, column string) cond {
@@ -63,12 +60,6 @@ func dateGe(param, column string) cond {
 }
 func dateLtNextDay(param, column string) cond {
 	return tmplCond(param, "t."+column+" < date_add(STR_TO_DATE(?, '%Y-%m-%d'), interval 1 day)")
-}
-func dateTimeGe(param, column string) cond {
-	return tmplCond(param, "t."+column+" >= STR_TO_DATE(?, '%Y-%m-%d %H:%i:%s')")
-}
-func dateTimeLe(param, column string) cond {
-	return tmplCond(param, "t."+column+" <= STR_TO_DATE(?, '%Y-%m-%d %H:%i:%s')")
 }
 
 // whereClause 对应 mapper XML 里那一串条件。
@@ -164,9 +155,6 @@ func placeholders(n int) string {
 	return strings.TrimSuffix(strings.Repeat("?,", n), ",")
 }
 
-// argString 读取查询参数（已 trim）。
-func argString(c *gin.Context, name string) string { return strings.TrimSpace(c.Query(name)) }
-
 // ---------------------------------------------------------------------------
 // 反射工具
 // ---------------------------------------------------------------------------
@@ -174,7 +162,7 @@ func argString(c *gin.Context, name string) string { return strings.TrimSpace(c.
 // newSliceOf 返回 *[]*T（T 为 prototype 的元素类型），供 GORM Scan 使用。
 func newSliceOf(prototype any) any {
 	t := reflect.TypeOf(prototype).Elem()
-	return reflect.New(reflect.SliceOf(reflect.PtrTo(t))).Interface()
+	return reflect.New(reflect.SliceOf(reflect.PointerTo(t))).Interface()
 }
 
 // newElemOf 返回 *T。

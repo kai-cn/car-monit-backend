@@ -116,7 +116,7 @@ func (c *Client) Search(ctx context.Context, query any) (int64, []json.RawMessag
 	if err != nil {
 		return 0, nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 300 {
 		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		return 0, nil, fmt.Errorf("es search %d: %s", resp.StatusCode, string(msg))
@@ -151,7 +151,7 @@ func (c *Client) do(req *http.Request) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 300 {
 		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		return fmt.Errorf("es %s %s: %d %s", req.Method, req.URL.Path, resp.StatusCode, string(msg))

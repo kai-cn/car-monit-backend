@@ -16,7 +16,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"car-monit-go/internal/cache"
-	"car-monit-go/internal/web"
 )
 
 const (
@@ -105,6 +104,3 @@ func (h *handler) cacheWarningRule(c *gin.Context) error {
 	}
 	return nil
 }
-
-// successMsg 对应 AjaxResult.success(String msg)。
-func successMsg(msg string) *web.AjaxResult { return web.SuccessMsg(msg) }

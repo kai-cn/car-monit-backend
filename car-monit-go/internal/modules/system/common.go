@@ -220,6 +220,3 @@ func orderByOr(pd web.PageDomain, fallback string) string {
 	}
 	return fallback
 }
-
-// listResult 统一分页响应（TableDataInfo）。
-func listResult(rows any, total int64) *web.TableDataInfo { return web.Table(rows, total) }

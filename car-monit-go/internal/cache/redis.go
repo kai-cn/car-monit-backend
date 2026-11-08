@@ -41,7 +41,7 @@ func New(cfg *config.Config) (*Cache, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := rdb.Ping(ctx).Err(); err != nil {
-		return nil, fmt.Errorf("Redis 连接失败: %w", err)
+		return nil, fmt.Errorf("连接 redis 失败: %w", err)
 	}
 	return &Cache{rdb: rdb}, nil
 }

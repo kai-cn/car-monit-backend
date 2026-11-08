@@ -13,7 +13,6 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"strings"
 	"time"
@@ -74,7 +73,7 @@ func CheckPasswordPolicy(p string) bool {
 			hasSpecial = true
 		}
 	}
-	return !(hasUpper && hasLower && hasDigit && hasSpecial)
+	return !hasUpper || !hasLower || !hasDigit || !hasSpecial
 }
 
 // Login 对应 SysLoginService.login。
@@ -288,4 +287,4 @@ func (s *Service) Captcha(ctx context.Context) (bool, string, string, error) {
 }
 
 // FormatAddr 为日志输出统一 IP。
-func FormatAddr(ip string) string { return fmt.Sprintf("%s", ip) }
+func FormatAddr(ip string) string { return ip }
