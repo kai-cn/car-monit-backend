@@ -1,5 +1,12 @@
 # 迁移工作进度（接口返回逐一对比阶段）
 
+> **2026-11-08 构建/迁移验证批次**：`cmd/migrate` 在本机 MySQL 8.0.30 上实跑 `-dry-run`
+> 与落库（`schema_migrations=0001`）。本机无 Docker，无法执行 `docker build`；已用
+> Dockerfile 内完全相同的构建命令交叉编译 linux/amd64 的 server 与 migrate（产物
+> 21.5MB / 8.2MB），并确认 Dockerfile 会 COPY 的 `configs/{vm,vmplus,templates}` 与
+> `configs/generator.yml` 均存在。**验证缺口**：distroless 运行期未实跑（无 Docker），
+> 镜像内非 root 用户写 `ruoyi.profile` 需保证挂载目录可写。
+>
 > **2026-11-08 基建收敛批次**：新增 `internal/platform/conv`，把散落在 base/manager/
 > systemaux/flow/system/generator/ops 的 `strPtr/isNull/strOf/isNotBlank/isBlank/splitCSV`
 > 收敛为唯一实现，各模块只保留同签名薄包装（调用点与 NULL/trim 语义不变）。

@@ -22,7 +22,16 @@
 docker compose up -d
 # 首次需导入表结构与数据：
 mysql -h127.0.0.1 -P3307 -uroot -proot carmonitdb < carmonitdb.sql
+# 版本化迁移（基线导入后执行；CI/发布流程必须与镜像同版本）
+go run ./cmd/migrate -c configs/config.yaml -dry-run
+go run ./cmd/migrate -c configs/config.yaml
 ```
+
+镜像为多阶段构建（`golang:1.24-alpine` → `distroless/static:nonroot`），配置以单文件挂载：
+`docker run -v $PWD/configs/config.yaml:/app/configs/config.yaml:ro ...`。
+`configs/{vm,vmplus,templates}` 与 `generator.yml` 已随镜像分发，单文件挂载不会遮蔽。
+**注意**：distroless 以非 root 运行，`ruoyi.profile`（上传/下载/导出目录）必须挂载为可写；
+否则导出类接口会返回“导出Excel失败”。
 
 ### 1.2 命令
 
