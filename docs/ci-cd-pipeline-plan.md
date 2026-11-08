@@ -280,6 +280,23 @@ Linux 构建 job 改为 `runs-on: ubuntu-latest` + `container: openeuler/openeul
 **结论**：`cd.yml` 的 GHCR 推送是真实落地的，四个镜像均可用 `ghcr.io/kai-cn/car-monit-<service>:<tag>` 拉取。
 **注意**：包为 private，集群侧必须先建 imagePullSecret（见 [cd-ghcr-k8s.md](cd-ghcr-k8s.md) §3），否则 Pod 会 `ImagePullBackOff`。
 
+## 11. V3 分支（car-monit-backend-java-V3）验证结论
+
+远端分支已创建（最新 `610ac5f`），首次完整 run **42509946030** → `failure`：
+
+| job | 结论 | 说明 |
+|---|---|---|
+| `changes` | 通过 | |
+| `java` | **通过** | V3 的 Java 实现（类型化客户端、两级缓存等）在欧拉容器内编译/测试通过 |
+| `cpp / build` | 通过 | 该分支 `car-monit-cpp` 无 `CMakeLists.txt`，presence 守卫正常跳过 |
+| `go` | **失败（V3 代码问题）** | `golangci-lint` 报分支自身引入的问题，原始行示例：`internal/modules/flow/process.go:270` `func (*Service).saveFlowApply is unused`、`process.go:286` `doFlowApply is unused`、`repo_messagedispose.go:55` `selectMessageDisposeAll is unused`、`modules/generator/service.go:42` `var errNoSuchElement = errors.New("No value present") (ST1005)`、`internal/web/upload.go:24` `errors.New("Current request is not a multipart request") (ST1005)`。按约束**未修改 V3 业务代码** |
+| `rust` | 失败（工装） | `oss_client.rs:515` 旧版 `+08:00` 硬断言，已同步 master 的 UTC 瞬间断言 |
+| `py` | 失败（工装） | `gen_mapping_docs.py` / `test_mapping_docs.py` 用反斜杠匹配 Java 路径，Linux 上产出空表；已同步 master 的 posix 比较 |
+
+工装修复提交 `610ac5f` 已推送，其 run **42512454499** 的 `changes` job 因 **runner 未分配**失败（`runner_name` 为空），后续 job 全部 skipped，**未验证**。
+
+> 结论：V3 的 Java 目标实现本身可构建；剩余红灯一半是 V3 自身的 lint 债（需 V3 负责人清理），一半是已修好的跨平台工装。后者需等 runner 恢复后复验。
+
 ## 5. 实施进度
 
 | 阶段 | 状态 | 文件 |
