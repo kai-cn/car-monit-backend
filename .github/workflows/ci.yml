@@ -61,6 +61,10 @@ jobs:
       workflows: ${{ steps.filter.outputs.workflows }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # paths-filter 在 push 事件下用 git diff 对比 push 前的提交；
+          # 默认 fetch-depth: 1 拿不到那个提交，会让 changes job 直接失败、后续 job 全部 skip。
+          fetch-depth: 0
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -133,6 +137,9 @@ jobs:
         working-directory: car-monit-go
     steps:
       - uses: actions/checkout@v4
+        with:
+          # only-new-issues 要用 push 前的提交做 diff；多次提交的 push 需要完整历史
+          fetch-depth: 0
 
       - uses: actions/setup-go@v5
         with:
@@ -163,11 +170,16 @@ jobs:
         run: go test -buildvcs=false -count=1 -coverprofile=coverage.out ./...
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        # v7 才支持 golangci-lint v2.x；v6 + v2.1.6 会因参数/安装不兼容直接失败。
+        # only-new-issues：仓库现有 49 个历史 lint 问题（errcheck 6 / ineffassign 1 /
+        # staticcheck 12 / unused 30），不在本轮改业务代码；门禁只拦本次改动新增的问题，
+        # 历史债单独排期清理（见 docs/ci-cd-pipeline-plan.md §4）。
+        uses: golangci/golangci-lint-action@v7
         with:
           version: v2.1.6
           working-directory: car-monit-go
           args: --timeout=5m
+          only-new-issues: true
 
       - name: 权限点对拍（分支带脚本时）
         # 从 car-monit-go-V2 的 car-monit-go-ci.yml 迁入；master 没有该脚本，自动跳过。
@@ -187,16 +199,20 @@ jobs:
           mkdir -p dist
           CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -trimpath -ldflags "-s -w" \
             -o dist/carmonit-server ./cmd/server
-          CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -trimpath -ldflags "-s -w" \
-            -o dist/carmonit-migrate ./cmd/migrate
+          # cmd/migrate 只存在于 car-monit-go-V2；master 只有 cmd/server，存在才构建。
+          if [ -d ./cmd/migrate ]; then
+            CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -trimpath -ldflags "-s -w" \
+              -o dist/carmonit-migrate ./cmd/migrate
+          else
+            echo "::notice::当前分支没有 cmd/migrate，跳过 migrate 二进制"
+          fi
 
       - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request'
         with:
           name: build-go
           path: |
-            car-monit-go/dist/carmonit-server
-            car-monit-go/dist/carmonit-migrate
+            car-monit-go/dist/*
             car-monit-go/coverage.out
           if-no-files-found: error
           retention-days: 14
@@ -290,6 +306,10 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    env:
+      # oss_client 用例断言 Java 实测的 +08:00 本地偏移；runner 默认 UTC 会失败。
+      # 这是应用的目标时区，不是为通过测试改业务断言。
+      TZ: Asia/Shanghai
     defaults:
       run:
         working-directory: car-monit-rust
@@ -375,8 +395,10 @@ jobs:
         run: python -m compileall -q app
 
       - name: 单元测试 + 覆盖率
+        # runner 自带 USER=runner，会被 pydantic-settings 当成 AppSettings.user 嵌套模型解析。
+        # 只对测试进程移除 USER，不改应用配置、不动业务代码。
         run: |
-          python -m pytest -q -m "not integration" \
+          env -u USER python -m pytest -q -m "not integration" \
             --cov=app --cov-report=term-missing --cov-report=xml
 
       - name: 构建 wheel / sdist
@@ -457,7 +479,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: 集成测试
-        run: python -m pytest tests/integration -v -m integration
+        run: env -u USER python -m pytest tests/integration -v -m integration
 
   # ---------------------------------------------------------------------------
   # 与 Java 端点对拍：需要可达的两端基址，仅手动触发。
