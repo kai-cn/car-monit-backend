@@ -6,6 +6,8 @@
 //   SizeAndTimeBasedFNATP -> RollingWriter(max_bytes)
 //   maxHistory -> cleanup()
 
+use backtrace::Backtrace;
+use std::error::Error;
 use std::fmt;
 use std::fs::{File, OpenOptions};
 use std::future::Future;
@@ -570,6 +572,11 @@ where
         for (key, value) in visitor.fields {
             write!(writer, " {key}={value}")?;
         }
+        if let Some(throwable) = visitor.throwable {
+            // logback: `%msg%n` 之后紧跟 ThrowableProxyConverter 的输出。
+            writeln!(writer)?;
+            write!(writer, "{throwable}")?;
+        }
         writeln!(writer)
     }
 }
@@ -793,18 +800,100 @@ fn abbreviate_logger(name: &str, target: usize) -> String {
     out
 }
 
+/// Java SLF4J 的 Throwable 追加格式：
+/// `{类型}: {message}`，错误链逐层 `Caused by:`，栈帧 `\tat ...`。
+///
+/// Rust 的 `std::error::Error` 不携带栈（除非错误类型自己保存 Backtrace），
+/// 这里在记录日志时捕获当前 Backtrace，按 logback 的形态输出；
+/// 未开启符号化/被 strip 时帧可能为空。
+pub struct Throwable<'a> {
+    error: &'a (dyn Error + 'static),
+    kind: &'static str,
+    backtrace: Backtrace,
+}
+
+impl<'a> Throwable<'a> {
+    pub fn new<E: Error + 'static>(error: &'a E) -> Self {
+        Self {
+            error,
+            kind: std::any::type_name::<E>(),
+            // Windows 上 `Backtrace::new()` 会立即对整条栈做全量符号化，
+            // 在单测/大二进制里可能挂住数十秒；这里只捕获原始帧，
+            // 由 `write_backtrace` 逐帧惰性解析。
+            backtrace: Backtrace::new_unresolved(),
+        }
+    }
+}
+
+impl fmt::Display for Throwable<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}: {}", self.kind.replace("::", "."), self.error)?;
+        write_backtrace(f, &self.backtrace)?;
+
+        let mut source = self.error.source();
+        let mut depth = 0usize;
+        while let Some(cause) = source {
+            if depth >= 16 {
+                write!(f, "\nCaused by: [CIRCULAR REFERENCE]")?;
+                break;
+            }
+            write!(f, "\nCaused by: {cause}")?;
+            source = cause.source();
+            depth += 1;
+        }
+        Ok(())
+    }
+}
+
+fn write_backtrace(f: &mut fmt::Formatter<'_>, backtrace: &Backtrace) -> fmt::Result {
+    // logback 会裁掉 cause 链公共尾部帧；Rust 异步栈远比 Java 深，
+    // 这里同样限制最多输出 32 帧，避免日志被 runtime 帧淹没。
+    for frame in backtrace.frames().iter().take(32) {
+        let mut captured: Option<(String, Option<String>, u32)> = None;
+        // `Backtrace` 是不可变借用，用地址惰性解析单帧，避免整条栈一次性符号化。
+        backtrace::resolve(frame.ip(), |symbol| {
+            if captured.is_none() {
+                if let Some(name) = symbol.name() {
+                    captured = Some((
+                        name.to_string(),
+                        symbol.filename().map(|path| path.to_string_lossy().into_owned()),
+                        symbol.lineno().unwrap_or(0),
+                    ));
+                }
+            }
+        });
+        let Some((name, file, line)) = captured else {
+            continue;
+        };
+        // 去掉日志设施自身的帧，保留调用方（接近 Java 从抛出点开始的栈）。
+        if name.contains("std::backtrace")
+            || name.contains("backtrace::")
+            || name.contains("tracing_subscriber")
+            || name.contains("tracing_core")
+            || name.contains("car_monit_rust::logging")
+        {
+            continue;
+        }
+        let file = file.unwrap_or_else(|| "<unknown>".to_string());
+        write!(f, "\n\tat {name} ({file}:{line})")?;
+    }
+    Ok(())
+}
+
 #[derive(Default)]
 struct MessageVisitor {
     message: Option<String>,
+    throwable: Option<String>,
     fields: Vec<(String, String)>,
 }
 
 impl MessageVisitor {
     fn record(&mut self, field: &Field, value: String) {
-        if field.name() == "message" {
-            self.message = Some(value);
-        } else {
-            self.fields.push((field.name().to_string(), value));
+        match field.name() {
+            "message" => self.message = Some(value),
+            // SLF4J 的 throwable 是消息之后的独立区块，不作为 `key=value` 字段。
+            "error" | "exception" => self.throwable = Some(value),
+            _ => self.fields.push((field.name().to_string(), value)),
         }
     }
 
@@ -939,6 +1028,76 @@ mod tests {
             abbreviate_logger("car_monit_rust::api::system::sys_user", 36),
             "c::api::system::sys_user"
         );
+    }
+
+    #[derive(Debug)]
+    struct TestError {
+        message: &'static str,
+        source: Option<Box<TestError>>,
+    }
+
+    impl fmt::Display for TestError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.message)
+        }
+    }
+
+    impl Error for TestError {
+        fn source(&self) -> Option<&(dyn Error + 'static)> {
+            self.source
+                .as_deref()
+                .map(|error| error as &(dyn Error + 'static))
+        }
+    }
+
+    #[tokio::test]
+    async fn throwable_is_appended_after_message_like_logback() {
+        use tracing_subscriber::layer::SubscriberExt;
+
+        let dir = tempfile::tempdir().expect("tempdir");
+        let handle = start_appender(dir.path(), "sys-info", true, 1024, 60).expect("start");
+        let layer = tracing_subscriber::fmt::layer()
+            .event_format(JavaLogFormat {
+                console: false,
+                logger_width: 36,
+                slow_sql_threshold_ms: 1000,
+            })
+            .with_writer(handle.writer())
+            .with_ansi(false);
+        let subscriber = tracing_subscriber::registry().with(layer);
+        let guard = tracing::subscriber::set_default(subscriber);
+
+        with_trace_id("trace-err".to_string(), async {
+            let cause = TestError {
+                message: "boom",
+                source: None,
+            };
+            let outer = TestError {
+                message: "outer",
+                source: Some(Box::new(cause)),
+            };
+            tracing::warn!(
+                target: "car_monit_rust::auth::audit",
+                error = %Throwable::new(&outer),
+                "记录登录日志失败"
+            );
+        })
+        .await;
+
+        drop(guard);
+        drop(handle);
+        let files: Vec<_> = std::fs::read_dir(dir.path())
+            .expect("read dir")
+            .flatten()
+            .map(|entry| entry.path())
+            .collect();
+        let text = std::fs::read_to_string(&files[0]).expect("read log");
+        assert!(text.contains("记录登录日志失败\n"), "{text}");
+        assert!(text.contains("TestError: outer"), "{text}");
+        assert!(text.contains("\nCaused by: boom"), "{text}");
+        // logback 的栈帧形态是 `\tat 类名(文件:行号)`。
+        assert!(text.contains("\n\tat "), "{text}");
+        assert!(!text.contains(" error="), "{text}");
     }
 
     #[test]

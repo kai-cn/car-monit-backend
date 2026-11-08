@@ -68,7 +68,10 @@ pub fn record_logininfor(
         .await;
 
         if let Err(err) = result {
-            tracing::warn!(error = %err, "记录登录日志失败");
+            tracing::warn!(
+                error = %crate::logging::Throwable::new(&err),
+                "记录登录日志失败"
+            );
         }
     });
 }
@@ -122,7 +125,10 @@ pub fn record_oper(pool: &MySqlPool, record: OperRecord) {
         .await;
 
         if let Err(err) = result {
-            tracing::warn!(error = %err, "记录操作日志失败");
+            tracing::warn!(
+                error = %crate::logging::Throwable::new(&err),
+                "记录操作日志失败"
+            );
         }
     });
 }

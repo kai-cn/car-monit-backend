@@ -58,6 +58,8 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 # sqlx ConnectOptions::log_statements 的参数类型（log::LevelFilter）。
 log = "0.4"
+# 日志 Throwable 栈帧：std 的 Backtrace::frames() 仍是 unstable，使用 stable 的 backtrace crate。
+backtrace = "0.3"
 
 validator = { version = "0.19", features = ["derive"] }
 dashmap = "6"
