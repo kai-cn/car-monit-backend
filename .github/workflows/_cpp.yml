@@ -44,8 +44,16 @@ jobs:
               -DCMAKE_PREFIX_PATH="$PWD/vcpkg_installed/x64-windows"
           } else {
             Write-Host "::notice::仓库未提交 vcpkg_installed，改用 vcpkg manifest 安装依赖"
+            # runner 自带的 vcpkg 是浅克隆，manifest 的 builtin-baseline 需要完整历史
+            # 才能 git show versions/baseline.json；不补历史会直接 install failed。
+            $vcpkg = $env:VCPKG_INSTALLATION_ROOT
+            if ((git -C $vcpkg rev-parse --is-shallow-repository) -eq 'true') {
+              Write-Host "unshallow vcpkg 仓库以解析 builtin-baseline"
+              git -C $vcpkg fetch --quiet --unshallow --tags
+              if ($LASTEXITCODE -ne 0) { throw "vcpkg 历史拉取失败" }
+            }
             cmake -B build -A x64 `
-              -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" `
+              -DCMAKE_TOOLCHAIN_FILE="$vcpkg\scripts\buildsystems\vcpkg.cmake" `
               -DVCPKG_TARGET_TRIPLET=x64-windows
           }
 
