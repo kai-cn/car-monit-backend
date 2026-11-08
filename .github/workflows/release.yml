@@ -1,0 +1,122 @@
+name: release
+
+# tag 触发：产出 jar / Go 二进制 / Rust 二进制 / Python wheel，并创建 GitHub Release。
+# 镜像构建与 GHCR 推送在 cd.yml 中完成，本文件只管 GitHub Release 制品。
+# 不使用 force push，不在本文件写任何真实凭据。
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-java:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+      - name: 打包
+        run: mvn -B -DskipTests package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-java
+          path: ruoyi-admin/target/*.jar
+          if-no-files-found: error
+          retention-days: 7
+
+  build-go:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: car-monit-go
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          cache-dependency-path: car-monit-go/go.sum
+      - name: 构建 Linux 二进制
+        run: |
+          mkdir -p dist
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -trimpath -ldflags "-s -w" \
+            -o dist/carmonit-server-linux-amd64 ./cmd/server
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -trimpath -ldflags "-s -w" \
+            -o dist/carmonit-migrate-linux-amd64 ./cmd/migrate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-go
+          path: car-monit-go/dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  build-rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: car-monit-rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          # 与 car-monit-rust/rust-toolchain.toml 一致
+          toolchain: 1.90.0
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: car-monit-rust
+      - name: 构建 release 二进制
+        run: cargo build --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-rust
+          path: car-monit-rust/target/release/car-monit-rust
+          if-no-files-found: error
+          retention-days: 7
+
+  build-py:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: car-monit-py
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 构建 wheel / sdist
+        run: |
+          pip install build
+          python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-py
+          path: car-monit-py/dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: [build-java, build-go, build-rust, build-py]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: build-*
+          merge-multiple: true
+          path: dist
+      - name: 列出产物
+        run: ls -la dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: dist/**/*
+          fail_on_unmatched_files: true
