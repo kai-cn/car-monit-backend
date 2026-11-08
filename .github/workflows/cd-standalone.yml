@@ -313,12 +313,21 @@ jobs:
               case "$rc" in 0|124) echo "java 启动冒烟 OK (exit=$rc)";; *) echo "::error::java 启动失败 exit=$rc"; exit 1;; esac
               ;;
             go)
-              set +e; "./$S/bin/carmonit-server" --help 2>&1 | head -20; rc=${PIPESTATUS[0]}; set -e
-              [ "$rc" -eq 0 ] || "./$S/bin/carmonit-server" -h 2>&1 | head -20
+              # 没有 --help 时二进制会真启动并常驻，必须用 timeout 兜底（124 = 超时杀掉，算启动成功）
+              set +e
+              timeout 15 "./$S/bin/carmonit-server" --help 2>&1 | head -20
+              rc=${PIPESTATUS[0]}
+              set -e
+              echo "go --help exit=$rc"
+              case "$rc" in 0|124) ;; *) echo "::error::go 启动失败 exit=$rc"; exit 1;; esac
               ;;
             rust)
-              set +e; "./$S/bin/car-monit-rust" --help 2>&1 | head -20; rc=${PIPESTATUS[0]}; set -e
+              set +e
+              timeout 15 "./$S/bin/car-monit-rust" --help 2>&1 | head -20
+              rc=${PIPESTATUS[0]}
+              set -e
               echo "rust --help exit=$rc"
+              case "$rc" in 0|124) ;; *) echo "::error::rust 启动失败 exit=$rc"; exit 1;; esac
               ;;
             py)
               # 没有依赖装不进 venv，因此只验证 wheel 结构与元数据
