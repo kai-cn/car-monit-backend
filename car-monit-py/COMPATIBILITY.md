@@ -4903,7 +4903,7 @@ gantrycar,gantrytrade}/export`、`/base/{geometry,snapshotflow,feerecords}/expor
 | `RuoYiBaseException` / `ServiceException` / `CustomException` / `BeanValidationError` | 原 `message` | 业务校验/提示，前端直接弹给用户 |
 | `ValueError`（含 pydantic `ValidationError`） | `参数错误` | 参数类型转换/值校验类问题，不能误导为服务端故障；原文只进日志 |
 | 其它 `RuntimeError` / `Exception`（含 SQLAlchemy、`AttributeError` NPE 哨兵） | `系统繁忙，请稍后重试` | 详情含 traceId 只进 `sys-error.log` |
-| 上传校验（文件名过长、超大小、后缀不允许） | 原始提示 | `FileUploadUtils` 把它们提升为业务异常；真正的 I/O 故障仍脱敏 |
+| 上传校验（文件名过长、超大小、后缀不允许） | 原始提示 | `FileUploadUtils` 把它们提升为业务异常；真正的 I/O 故障（磁盘满、路径不可写、S3 报错）返回固定文案「上传失败，请稍后重试」，详情只进日志 —— **有意偏离** Java 逐字返回 `e.getMessage()`，避免绝对路径/容量信息透出 |
 
 因此 Java 曾经"逐字返回 `e.getMessage()`"的若干 NPE 用例（如 `DELETE /monitor/job/999999`
 的 `{"msg":null}`）现在统一为上面的通用文案——这是有意偏离，回归用例已同步。

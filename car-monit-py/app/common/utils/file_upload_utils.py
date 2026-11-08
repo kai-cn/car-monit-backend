@@ -281,7 +281,8 @@ def _reraise_upload_error(exc: BaseException) -> None:
 
     与 Java 的差异（P2-6 后续）：**校验类错误**（文件名过长/超大小/后缀不允许）
     保留为业务异常，这样客户端还能看到"请上传 bmp,gif,..."这种可操作提示；
-    只有真正的 I/O 故障才包成 ``OSError``（随后由通用处理器脱敏）。
+    只有真正的 I/O 故障才包成 ``OSError``。``OSError`` 的 message 保留原始细节供
+    日志排障，但对外的响应由 ``CommonController`` 换成固定文案（COMPATIBILITY §46.3）。
     """
     if isinstance(exc, FileException):
         # FileException 继承 RuoYiBaseException，本身就在业务异常白名单里。

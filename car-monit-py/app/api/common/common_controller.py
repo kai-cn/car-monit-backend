@@ -70,7 +70,7 @@ from typing import Annotated, List, Optional
 from fastapi import APIRouter, File, Query, Request, Response, UploadFile
 
 from app.common.core.domain.ajax_result import AjaxResult
-from app.common.exception.exceptions import ServiceException
+from app.common.exception.exceptions import CustomException, RuoYiBaseException, ServiceException
 from app.common.utils import file_upload_utils as FileUploadUtils
 from app.common.utils import file_utils as FileUtils
 from app.common.utils.file_utils import set_attachment_response_header
@@ -88,6 +88,11 @@ FILE_DELIMETER = ","
 
 #: Java: ``MediaType.APPLICATION_OCTET_STREAM_VALUE``
 APPLICATION_OCTET_STREAM_VALUE = "application/octet-stream"
+
+#: 上传 I/O 故障（磁盘满、路径不可写、S3 报错）对外的统一文案。
+#: Java 返回 ``e.getMessage()``，但那会把绝对路径、容量等内部信息交给客户端；
+#: 这里改为固定文案，真正的异常只进日志（COMPATIBILITY §46.3 已登记偏离）。
+UPLOAD_ERROR_MESSAGE = "上传失败，请稍后重试"
 
 #: Spring ``StringToBooleanConverter`` 的真值集合
 _TRUE_LITERALS = frozenset({"true", "on", "yes", "1"})
@@ -129,6 +134,13 @@ def _message_of(exc: BaseException) -> Optional[str]:
     if isinstance(message, str):
         return message
     return str(exc)
+
+
+def _upload_error_message(exc: BaseException) -> str:
+    """上传失败时的对外文案：业务校验保留原文，I/O 与未预期异常固定脱敏."""
+    if isinstance(exc, (RuoYiBaseException, ServiceException, CustomException)):
+        return _message_of(exc) or ""
+    return UPLOAD_ERROR_MESSAGE
 
 
 def _to_response(sink: ResponseSink) -> Response:
@@ -231,7 +243,8 @@ def upload_file(request: Request, file: Annotated[UploadFile, File()]) -> AjaxRe
         ajax.put_chain("originalFilename", file.filename)
         return ajax
     except Exception as exc:  # noqa: BLE001 - Java: catch (Exception e)
-        return AjaxResult.error_message(_message_of(exc))
+        logger.error("上传文件失败: %s", exc, exc_info=True)
+        return AjaxResult.error_message(_upload_error_message(exc))
 
 
 @router.post("/uploads", response_model=None)
@@ -271,7 +284,8 @@ def upload_files(
         ajax.put_chain("originalFilenames", FILE_DELIMETER.join(original_filenames))
         return ajax
     except Exception as exc:  # noqa: BLE001 - Java: catch (Exception e)
-        return AjaxResult.error_message(_message_of(exc))
+        logger.error("批量上传文件失败: %s", exc, exc_info=True)
+        return AjaxResult.error_message(_upload_error_message(exc))
 
 
 def _current_time_millis() -> int:
