@@ -194,7 +194,7 @@
 | 176 | 路径里的 `bigScreen` 是**驼峰** | `[无影响]` | 同包其它控制器全小写；改小写就是 404，见 §40.3 |
 | 177 | `code` 为空时塞的是三个**魔法值** | `[需注意]` | `StationCapture` / `GantryCapture` / `ServiceAreaCapture`，按它们查库命中 0 行，见 §40.4 |
 | 178 | `"all"` 是**子串**判断，`deleteEnd` 只削**一个**逗号 | `[需注意]` | `"SD01,all"` 会退化成全量；`"SD01,,"` 切完仍是 `["SD01"]`，见 §40.5 |
-| 179 | `exceptRecordList` 的 **N+1** 查询原样保留 | `[需注意]` | 每行 2 次额外查询；`pageSize` 大时线性增长，见 §40.6 |
+| 179 | `exceptRecordList` 已改批量查询，且修正 `find_in_set` 参数方向 | `[需注意]` | 每页 SQL 从 2N+1 降到 3；Java 的 `selectOrgId` 参数反写，见 §40.6 |
 | 180 | `carAudit` 的空值是**零初值**，不是 `null` | `[无影响]` | 四个字段都有非 null 初值，见 §40.7 |
 | 181 | `type` 缺失时手抄 Spring 的**英文原文** | `[无影响]` | `MissingServletRequestParameterException` 的固定句式，见 §40.8 |
 | 182 | `bigscreen/center` 的 **7 个 VO 未迁移**（死代码） | `[无影响]` | 全仓无引用，属未实现的“城市配送大屏”，见 §40.9 |
@@ -4011,17 +4011,27 @@ Python 侧保持原样，一条 `pre_authorize_permi` 都没加 —— 别按“
 `/carLocation` 与 `/carWarning` 里的 `sectionCode.contains("all")` 同理：`"all,SD01"`
 整串被清空。
 
-### 40.6 `exceptRecordList` 的 **N+1** 查询原样保留 `[需注意]`
+### 40.6 `exceptRecordList` 已改批量，`find_in_set` 方向按正确语义修正 `[需注意]`
 
-分页结果逐行再查两次：
+Java 对分页结果逐行再查两次：
 
 | 字段 | 来源 | 次数 |
 |---|---|---|
 | `orgId` | `carConfimFreeService.selectOrgId(carId, id)` | 每行 1 次 |
 | `supplementaryStatus` | `carAduitFreeService` 按 `carId` **count > 0** → `"1"` | 每行 1 次 |
 
-`pageSize=50` 就是 1 + 100 条 SQL。**不要“优化”成 join**：`car_aduit_free` 的 count
-带 `del_flag = '0'` 逻辑删除条件，join 出来的语义不同（而且 Java 就是 N+1）。
+`pageSize=50` 就是 1 + 100 条 SQL。
+
+Python 改为批量：`select_org_ids` 一条 SQL 取回本页所有 `car_id` 的候选行，
+`count_by_car_ids` 用 `group by car_id` 一次统计；每页 SQL 从 2N+1 降到 3，
+响应体逐字节不变。`car_aduit_free` 的统计仍带 `del_flag = '0'`，没有改成 join。
+
+同时登记一处**有意修正**：Java `CarConfimFreeMapper.xml` 的 `selectOrgId` 写成
+`find_in_set(except_ids, #{id})` —— 两个参数方向反了（把列值当作"被查找字符串"、
+把单个 id 当作"逗号分隔列表"）。Python 单行路径与批量路径统一为
+`find_in_set(:id, except_ids)`（"在逗号分隔的 `except_ids` 里找 `id`"），
+与 `selectCarConfimFreeByExceptIds` 的写法一致。当 `except_ids` 含多个 id 时，
+Python 会匹配到 Java 因参数反写而返回 `null` 的行；这是纠正 Java 缺陷，不是回归。
 
 ### 40.7 `carAudit` 的空值是**零初值**，不是 `null` `[无影响]`
 
