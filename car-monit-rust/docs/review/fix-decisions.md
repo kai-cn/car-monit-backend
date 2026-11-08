@@ -92,7 +92,7 @@
 | 决策点 | 选项 | 选择 | 理由 | 影响面 |
 |---|---|---|---|---|
 | release 符号 | ① 保持 `strip = "symbols"` ② 完整调试信息且不 strip | ②（`debug = 2`） | throwable 的 `\tat` 帧依赖 `backtrace::resolve`，strip 之后生产日志只剩首行。实测 `debug=1`（仅行号表）与 `debug=2` 在 Windows 下都只能解析到非内联帧；选 2 以保留更多函数信息 | `Cargo.toml [profile.release]` |
-| release 冒烟 | ① 不做 ② 加 release-only 单测 | ② | `#[cfg(not(debug_assertions))]` 的 `throwable_has_frames_in_release` 断言 `\tat`；只在 `cargo test --release --lib` 下编译 | `logging.rs` 测试模块 |
+| release 冒烟 | ① 不做 ② 集成测试 | ② | `tests/release_throwable.rs` 断言真实文件行号帧 + 本 crate 探针帧；由 CI 的 `cargo test --release --test release_throwable` 执行（见第 8 节） | `tests/release_throwable.rs`、workflow |
 
 ### 中危 1：慢 SQL 短语句
 
@@ -150,9 +150,10 @@
 
 | 决策点 | 选项 | 选择 | 理由 | 影响面 |
 |---|---|---|---|---|
-| `impl Error` 的约束 | ① 只实现 Display ② 补 `#[derive(Debug)]` | ② | `std::error::Error` 要求 `Debug + Display`；原用例被 `cfg(not(debug_assertions))` 隐藏，三道 dev 门禁都看不到 | `logging.rs` release 用例 |
-| 调用点位置 | ① 测试函数内 ② 独立辅助函数 + black_box 间接调用 | ②→实测回退 | 先试了 `car_monit_rust::test_support` + `#[inline(never)]` + `black_box` 函数指针 + `#[no_mangle]`，debug=1/2 下应用帧仍被 LTO 折叠进 harness 闭包；最终回到测试内直接调用，断言改为「至少一条真实文件:行号帧」 | `logging.rs` release 用例 |
-| 断言口径 | ① 只断言存在 `\tat` ② 至少一条真实「文件:行号」帧 | ② | 先前的断言在有 std/harness 帧时也会通过。实测（debug=1 与 debug=2 都一样）：应用探针会被 release+LTO 内联进测试闭包，栈里只剩 std/test harness，因此不强制要求应用帧；「至少一条真实文件:行号帧」即可证明二进制未被 strip | 同上 |
+| `impl Error` 的约束 | ① 只实现 Display ② 补 `#[derive(Debug)]` | ② | `std::error::Error` 要求 `Debug + Display`；原用例被 `cfg(not(debug_assertions))` 隐藏，三道 dev 门禁都看不到 | `tests/release_throwable.rs` |
+| 用例位置 | ① 留在 `logging.rs` 的 `mod tests` ② 搬到 `tests/` 集成测试 | ② | 单元测试里调用点一定在 `car_monit_rust::logging::tests`，会被 `backtrace_text` 的 `car_monit_rust::logging` 前缀过滤掉，**断言因此恒真**（第 4 轮复审实测确认） | `tests/release_throwable.rs` |
+| 调用点 | ① 测试内直接调用 ② 经 `car_monit_rust::test_support::throwable_probe` + `black_box` 函数指针 | ② | 探针放在非 logging 模块，帧不会被过滤器吃掉；间接调用防止 LTO 内联 | `lib.rs::test_support` |
+| 断言口径 | ① 只断言存在 `\tat` ② 至少一条真实「文件:行号」帧 + 本 crate 的探针帧 | ② | 前者在有 std/harness 帧时也会通过；后者能证明本 crate 的调试信息确实保留 | 同上 |
 
 ### 中危 2：尾斜杠断言恒真
 
@@ -195,15 +196,87 @@
 | 决策记录过期 | 修 | 本节替换「本轮全部改动未经编译验证」「静态对拍能直接抓住」两处不成立表述 |
 | `[SQL异常] 耗时: ?ms` | 保留 `?` | `From<sqlx::Error>` 拿不到单次执行耗时；输出真实数字需要把计时塞进每个查询调用（改动面大、且 Rust 侧无 MyBatis Executor 拦截点）。`?` 是诚实占位，已在残余中标注 |
 
-**第 3 轮残余**：OSS DELETE 语义偏差；`build_router` 真实装配测试未落地；`[SQL异常]` 无真实耗时；release 下应用帧会被 LTO 折叠（只能保证有真实文件行号帧）。
+**第 3 轮残余**：OSS DELETE 语义偏差；`build_router` 真实装配测试未落地；`[SQL异常]` 无真实耗时。
 
 ### 验证结果（第 3 轮）
 
 - `cargo check --all-targets`：exit 0
 - `cargo clippy --all-targets`：exit 0（lib 24 / test 26 告警，与改动前基线一致）
 - `cargo test --lib`：120 passed（新增 5 条用例）
-- `cargo test --release --lib throwable_has_frames_in_release`：**1 passed**（release `debug=2`；帧里出现 `/rustc/.../function.rs:253` 等真实文件行号）
-- release 用例修正过程：`Boom` 补 `#[derive(Debug)]`；尝试 `#[inline(never)] + black_box + #[no_mangle]` 探针，debug=1/2 下应用帧仍被 LTO 折叠进 harness 闭包，最终断言收敛为「至少一条真实文件:行号帧」。
+- release 冒烟：第 4 轮改为 `tests/release_throwable.rs` 后重跑通过（见第 8 节）
+
+---
+
+## 8. 独立复审修复（第 4 轮）
+
+### P1-1：CI 从未跑 release 测试
+
+| 决策点 | 选择 | 理由 | 影响面 |
+|---|---|---|---|
+| CI 步骤 | 在 `test` 之后加 `cargo test --release --test release_throwable` | `throwable_has_frames_in_release` 被 `cfg(not(debug_assertions))` 排除，debug 三道门禁根本不编译它 | `.github/workflows/car-monit-rust.yml` |
+| 用例载体 | 搬到 `tests/` 集成测试 | 单元测试的调用点永远落在 `car_monit_rust::logging::tests`，被 `backtrace_text` 自身的前缀过滤器吃掉，断言恒真（复审实测确认） | `tests/release_throwable.rs` |
+
+### P1-2 / P2-4：日志通道不再丢弃
+
+| 决策点 | 选择 | 理由 | 影响面 |
+|---|---|---|---|
+| 写策略 | 恢复阻塞 `send`（有界队列 1024），删除 20ms 超时与丢弃计数 | Java `logback.xml` 是同步 `RollingFileAppender`，不丢审计日志；`sys-user`/`sys-error`/操作日志丢一条都不可接受 | `LogGuard::write` / `flush` |
+| 阻塞实现 | OS 条件变量阻塞，不用 `sleep` 轮询 | 原 20ms `sleep` 轮询在 async 路径上会占住 tokio worker，队列满时反而拖慢请求 | 同上 |
+| 丢弃计数 | 不需要 | 已无丢弃路径；删除 `LOG_DROPS`/`LOG_SEND_TIMEOUT`/`send_with_timeout` | 同上 |
+
+### P2-1：release 断言恒真
+
+| 决策点 | 选择 | 理由 | 影响面 |
+|---|---|---|---|
+| 根因 | 不是 LTO 折叠，而是 `backtrace_text` 过滤 `car_monit_rust::logging` 前缀，把用例自己的帧吃掉了 | 复审用独立探针实测：非 logging 模块的应用帧可以正常出现 | — |
+| 探针位置 | `lib.rs::test_support::throwable_probe`（`#[doc(hidden)]`，非 logging 模块）+ `black_box` 函数指针 | 帧名 `car_monit_rust::test_support::throwable_probe` 不被过滤器命中，且间接调用避免内联 | `lib.rs`、`tests/release_throwable.rs` |
+| 断言 | 真实文件行号帧 + 本 crate 探针帧 | 后者能真正约束本 crate 的调试信息保留 | 同上 |
+
+### P2-2：panic 审计 call site 无测试
+
+| 决策点 | 选择 | 理由 | 影响面 |
+|---|---|---|---|
+| 可测性 | 抽 `MetaEnv` trait（`address_enabled` / `audit`），`meta_middleware` 变薄壳，逻辑在 `meta_middleware_impl<E: MetaEnv>` | 测试用 `FakeEnv` 装配真实 Router，不需要 AppState/Redis | `api/meta.rs` |
+| 覆盖范围 | 装配级用例：panic handler → 审计落一条(status=1) → `resume_unwind` | 同时证明运行时确实调用了 `lookup`（拿不到 @Log 元数据就不会审计）；断言原始 payload 文本完整保留 | 同上 |
+| 全局注册表副作用 | `route_parity` 对 `extra` 过滤 `/__test*` | 测试用 `register` 注册 `/__test/panic`，避免并行测试时污染对拍 | `lib.rs::route_parity` |
+
+### P2-3：`LogHandle::drop` 的真实上限
+
+| 决策点 | 选择 | 理由 | 影响面 |
+|---|---|---|---|
+| 入队 | 最多 1 秒（1ms 轮询 `try_send(Shutdown)`） | 写盘卡死时不能无限阻塞 | `Drop for LogHandle` |
+| join | 轮询 `JoinHandle::is_finished()`，最多 3 秒，超时 detach | 修正了「只限制入队、join 无界」的问题 | 同上 |
+| 最坏耗时 | 4 个 appender 约 16 秒 | 已在代码注释与本节写明 | 同上 |
+
+### P3
+
+| 项 | 处理 |
+|---|---|
+| 过期文档（「应用帧会被 LTO 折叠」、旧 `\tat` 断言、日志通道描述） | 已按第 4 轮实现重写 |
+| dummy router 覆盖 HEAD | 增加 `HEAD /system/user` 与 `HEAD /system/user/`（只断言 200 与分派成功） |
+| `lookup` 元数据断言的边界 | 现由 `meta_middleware_audits_panic_and_preserves_payload` 覆盖运行时调用；单纯删 `lookup` 调用会导致取不到 @Log 元数据、审计为空，测试失败 |
+
+### 验证结果（第 4 轮）
+
+- `cargo check --all-targets`：exit 0
+- `cargo clippy --all-targets`：exit 0（lib 24 / test 26 告警，与基线一致）
+- `cargo test --lib`：**121 passed**（新增 `meta_middleware_audits_panic_and_preserves_payload`）
+- `cargo test --release --test release_throwable`：**未执行**（收尾时用户重启电脑；集成测试已随 `check --all-targets` 以 debug 形态编译通过，release 断言待补跑）
+
+### 本轮收尾快照（第 4 轮）
+
+| 项 | 状态 |
+|---|---|
+| P1-1 CI 从未跑 release 测试 | 已完成：workflow 增加 `cargo test --release --test release_throwable` |
+| P1-2 日志通道静默丢弃 | 已完成：恢复阻塞 `send`（有界队列），删除超时与丢弃计数 |
+| P2-1 release 断言恒真 | 代码已完成：用例搬到 `tests/release_throwable.rs`，探针在 `car_monit_rust::test_support`，断言真实行号帧 + 应用帧；**release 实跑未做** |
+| P2-2 panic 审计 call site | 已完成：`MetaEnv` 装配级测试，断言审计落库 + payload 身份 |
+| P2-3 drop 上限 | 已完成：入队 1s + join 3s，最坏约 16s / 4 appender |
+| P2-4 async 路径 sleep | 已完成：阻塞 `send` 走 OS 条件变量，无 sleep 轮询 |
+| P3 文档 / HEAD / lookup 边界 | 已完成 |
+| 下一步第一个动作 | `cargo test --release --test release_throwable`（target 目录：`D:\work\IdeaProjects\_cargo-target-carmonit-dev` 或新建） |
+
+**提交**：本轮改动随 `fix(log): 第 4 轮复审修复` 一起提交（未 push）。
 
 ---
 

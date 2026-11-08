@@ -210,6 +210,19 @@ fn strip_trailing_slash(mut request: axum::extract::Request) -> axum::extract::R
     request
 }
 
+/// 仅供 release 冒烟：把 throwable 的调用点放在非 `car_monit_rust::logging` 模块，
+/// 否则会被 `backtrace_text` 的前缀过滤吃掉，导致断言恒真。
+/// `#[doc(hidden)]`；生产构建里没有被引用，LTO 会当死代码消除。
+#[doc(hidden)]
+pub mod test_support {
+    use std::error::Error;
+
+    #[inline(never)]
+    pub fn throwable_probe(error: &(dyn Error + 'static), kind: &'static str) -> String {
+        crate::logging::Throwable::from_dyn(error, kind).to_string()
+    }
+}
+
 #[cfg(test)]
 mod route_parity {
     use std::collections::HashSet;
@@ -262,7 +275,9 @@ mod route_parity {
         missing.sort();
         let mut extra: Vec<_> = registered
             .difference(&expected)
-            .filter(|(_, path)| path != "/logout" && path != "/health")
+            .filter(|(_, path)| {
+                path != "/logout" && path != "/health" && !path.starts_with("/__test")
+            })
             .cloned()
             .collect();
         extra.sort();
@@ -426,6 +441,9 @@ mod trailing_slash {
             ("POST", "/system/user", "POST"),
             ("POST", "/system/user/", "POST"),
             ("PUT", "/system/user/", "PUT"),
+            // axum 的 get() 同时服务 HEAD；确认 rewrite 后 HEAD 也能匹配到 GET 路由。
+            ("HEAD", "/system/user", ""),
+            ("HEAD", "/system/user/", ""),
         ] {
             let response = app
                 .clone()
@@ -439,6 +457,10 @@ mod trailing_slash {
                 .await
                 .expect("response");
             assert_eq!(response.status(), 200, "{method} {uri}");
+            // HEAD 由 HTTP 层决定是否带 body，这里只校验分派成功。
+            if method == "HEAD" {
+                continue;
+            }
             let body = axum::body::to_bytes(response.into_body(), 1024)
                 .await
                 .expect("body");

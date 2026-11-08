@@ -27,9 +27,6 @@ use tracing_subscriber::fmt::{FmtContext, FormatEvent, FormatFields, MakeWriter}
 use tracing_subscriber::registry::LookupSpan;
 
 const CHANNEL_CAPACITY: usize = 1024;
-/// 日志队列拥塞时的发送超时：宁可丢日志也不能让请求线程无限阻塞。
-const LOG_SEND_TIMEOUT: Duration = Duration::from_millis(20);
-static LOG_DROPS: AtomicU64 = AtomicU64::new(0);
 const DATE_LEN: usize = 10;
 const TRACE_ID_TARGET: &str = "com.ruoyi.common.core.monitor.TraceIdFilter";
 pub const SQL_LOG_TARGET: &str = "com.ruoyi.common.core.monitor.SqlLogInterceptor";
@@ -130,10 +127,9 @@ impl LogHandle {
     }
 }
 
-/// 在 `timeout` 内投递命令；队列满时按 1ms 轮询重试，超时或断开返回 false。
-/// `std::sync::mpsc::SyncSender::send_timeout` 仍是 unstable，这里用 try_send 等价实现。
-fn send_with_timeout(sender: &SyncSender<Command>, command: Command, timeout: Duration) -> bool {
-    let mut command = command;
+/// 在 `timeout` 内投递 Shutdown；队列满时按 1ms 轮询重试，超时或断开返回 false。
+fn send_shutdown(sender: &SyncSender<Command>, timeout: Duration) -> bool {
+    let mut command = Command::Shutdown;
     let deadline = Instant::now() + timeout;
     loop {
         match sender.try_send(command) {
@@ -156,12 +152,18 @@ impl Drop for LogHandle {
             Ok(sender) => sender.clone(),
             Err(poisoned) => poisoned.into_inner().clone(),
         };
-        // 停机时给 writer 最多约 2 秒排空；投递不进去就放弃 join，
-        // 避免 drop 在写盘卡死时无限阻塞。
-        let delivered = send_with_timeout(&sender, Command::Shutdown, Duration::from_secs(2));
+        // 有界退出：入队最多 1 秒，writer 收尾最多 3 秒（超时则 detach，不再 join）。
+        // 4 个 appender 最坏约 16 秒；正常情况下远小于此。
+        let delivered = send_shutdown(&sender, Duration::from_secs(1));
         if delivered {
             if let Some(join) = self.join.take() {
-                let _ = join.join();
+                let deadline = Instant::now() + Duration::from_secs(3);
+                while !join.is_finished() && Instant::now() < deadline {
+                    std::thread::sleep(Duration::from_millis(5));
+                }
+                if join.is_finished() {
+                    let _ = join.join();
+                }
             }
         }
     }
@@ -186,22 +188,14 @@ impl Write for LogGuard {
         if buf.is_empty() {
             return Ok(0);
         }
-        // 有界队列 + 短超时：写盘抖动时不能让请求线程无限阻塞（也不静默丢）。
-        // 先克隆 sender 再放锁，超时等待期间不持有 Mutex。
+        // Java logback.xml 用的是同步 RollingFileAppender（没有 AsyncAppender）：
+        // 这里也阻塞投递（有界队列 1024），宁可让调用线程等写盘，也不丢审计日志。
+        // 阻塞走 OS 条件变量，不做 sleep 轮询。
         let sender = match self.tx.lock() {
             Ok(sender) => sender.clone(),
             Err(poisoned) => poisoned.into_inner().clone(),
         };
-        if !send_with_timeout(
-            &sender,
-            Command::Write(buf.to_vec()),
-            LOG_SEND_TIMEOUT,
-        ) {
-            let dropped = LOG_DROPS.fetch_add(1, Ordering::Relaxed) + 1;
-            if dropped.is_multiple_of(1000) {
-                eprintln!("日志队列持续拥塞，已丢弃 {dropped} 条日志（写盘过慢？）");
-            }
-        }
+        let _ = sender.send(Command::Write(buf.to_vec()));
         Ok(buf.len())
     }
 
@@ -210,7 +204,7 @@ impl Write for LogGuard {
             Ok(sender) => sender.clone(),
             Err(poisoned) => poisoned.into_inner().clone(),
         };
-        let _ = send_with_timeout(&sender, Command::Flush, LOG_SEND_TIMEOUT);
+        let _ = sender.send(Command::Flush);
         Ok(())
     }
 }
@@ -876,9 +870,14 @@ pub struct Throwable<'a> {
 
 impl<'a> Throwable<'a> {
     pub fn new<E: Error + 'static>(error: &'a E) -> Self {
+        Self::from_dyn(error, std::any::type_name::<E>())
+    }
+
+    /// 非泛型构造：release 冒烟的探针需要一条不会被泛型单态化内联掉的调用帧。
+    pub fn from_dyn(error: &'a (dyn Error + 'static), kind: &'static str) -> Self {
         Self {
             error,
-            kind: std::any::type_name::<E>(),
+            kind,
             // Windows 上 `Backtrace::new()` 会立即对整条栈做全量符号化，
             // 在单测/大二进制里可能挂住数十秒；这里只捕获原始帧，
             // 由 `backtrace_text` 逐帧惰性解析。
@@ -1503,43 +1502,9 @@ mod tests {
         assert!(parse_elapsed_ms(None).is_none());
     }
 
-    /// release 冒烟：确认 release 构建保留符号，throwable 能输出带文件行号的 `\tat` 帧。
-    /// 只在 `cargo test --release --lib` 下编译运行；dev 构建符号天然存在。
-    /// 调用点故意放在 `crate::test_support`：`backtrace_text` 会过滤
-    /// `car_monit_rust::logging` 前缀，测试函数自身也可能被内联。
-    #[test]
-    #[cfg(not(debug_assertions))]
-    fn throwable_has_frames_in_release() {
-        #[derive(Debug)]
-        struct Boom;
-        impl fmt::Display for Boom {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                write!(f, "boom")
-            }
-        }
-        impl Error for Boom {}
-
-        let boom = Boom;
-        let text = Throwable::new(&boom).to_string();
-        let frames: Vec<&str> = text
-            .lines()
-            .map(str::trim)
-            .filter(|line| line.starts_with("at "))
-            .collect();
-        assert!(!frames.is_empty(), "release 构建缺少栈帧（符号被 strip？）: {text}");
-        // 至少要有一条「文件:行号」不是占位符的帧，否则等于没有符号。
-        // 注：release + LTO 会把应用探针内联进测试闭包（debug=1/2 实测都一样），
-        // 因此不强制要求 car_monit_rust 帧；有真实文件行号帧即证明二进制未 strip。
-        let has_real_frame = frames.iter().any(|line| {
-            let Some((file, number)) = line.rsplit_once(':') else {
-                return false;
-            };
-            let number = number.trim_end_matches(')');
-            !file.contains("<unknown>")
-                && number.parse::<u32>().map(|value| value > 0).unwrap_or(false)
-        });
-        assert!(has_real_frame, "release 构建没有可用的文件行号帧: {text}");
-    }
+    /// release 冒烟搬到 `tests/release_throwable.rs`：单元测试二进制里调用点一定在
+    /// `car_monit_rust::logging::tests`，会被 `backtrace_text` 的前缀过滤吃掉，
+    /// 断言因此恒真。集成测试 crate 的探针帧不受该过滤器影响。
 
     #[tokio::test]
     async fn request_thread_names_follow_tomcat_shape() {

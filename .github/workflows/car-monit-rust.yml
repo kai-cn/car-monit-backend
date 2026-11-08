@@ -46,6 +46,10 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings
       - name: test
         run: cargo test --lib
+      - name: release test (throwable frames)
+        # release-only 用例（cfg(not(debug_assertions))），上面三道 debug 门禁都看不到它；
+        # 少了这一步，删掉整条用例或删掉 #[derive(Debug)] CI 仍会全绿。
+        run: cargo test --release --test release_throwable
 
   # 两端对比依赖同一份 MySQL + Redis 上跑起来的 Java 与 Rust，公共 runner 起不来，
   # 因此只在手动触发且填入可达基址时执行。

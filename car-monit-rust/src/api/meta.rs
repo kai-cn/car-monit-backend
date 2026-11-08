@@ -159,9 +159,33 @@ route_helper!(put_route, Method::PUT, axum::routing::put);
 route_helper!(delete_route, Method::DELETE, axum::routing::delete);
 route_helper!(patch_route, Method::PATCH, axum::routing::patch);
 
+/// 中间件依赖的最小环境：抽出来后可以在不依赖 AppState/Redis 的单测里装配。
+pub trait MetaEnv: Clone + Send + Sync + 'static {
+    fn address_enabled(&self) -> bool;
+    fn audit(&self, record: OperRecord);
+}
+
+impl MetaEnv for AppState {
+    fn address_enabled(&self) -> bool {
+        self.settings.ruoyi.address_enabled
+    }
+
+    fn audit(&self, record: OperRecord) {
+        audit::record_oper(&self.db, record);
+    }
+}
+
 /// 执行 @PreAuthorize + @Log。必须位于认证中间件内侧。
 pub async fn meta_middleware(
     State(state): State<AppState>,
+    request: Request,
+    next: Next,
+) -> Response {
+    meta_middleware_impl(State(state), request, next).await
+}
+
+pub(crate) async fn meta_middleware_impl<E: MetaEnv>(
+    State(env): State<E>,
     request: Request,
     next: Next,
 ) -> Response {
@@ -248,7 +272,7 @@ pub async fn meta_middleware(
                 .extensions()
                 .get::<axum::extract::ConnectInfo<std::net::SocketAddr>>()
                 .map(|info| info.0),
-            state.settings.ruoyi.address_enabled,
+            env.address_enabled(),
         )
         .ip,
         oper_name: login_user
@@ -266,7 +290,7 @@ pub async fn meta_middleware(
     // Java: LogAspect 对抛出的异常同样落库（status=1 + errorMsg）；
     // 这里先捕获 panic 记审计，再把 panic 原样抛回给 web_filter 转 500。
     let response = match with_panic_audit(next.run(request), |message| {
-        audit::record_oper(&state.db, panic_oper_record(&ctx, &message));
+        env.audit(panic_oper_record(&ctx, &message));
     })
     .await
     {
@@ -281,10 +305,7 @@ pub async fn meta_middleware(
     // Java: 导出类端点直接写 HttpServletResponse 流，LogAspect 拿不到 JSON 结果；
     // 这里不缓冲二进制 body，避免 64MB 上限与二次拷贝。
     if is_binary_response(&parts.headers) {
-        audit::record_oper(
-            &state.db,
-            ctx.record(None, if is_error { 1 } else { 0 }, None),
-        );
+        env.audit(ctx.record(None, if is_error { 1 } else { 0 }, None));
         return Response::from_parts(parts, body);
     }
 
@@ -312,10 +333,7 @@ pub async fn meta_middleware(
         None
     };
 
-    audit::record_oper(
-        &state.db,
-        ctx.record(json_result, if is_error { 1 } else { 0 }, error_msg),
-    );
+    env.audit(ctx.record(json_result, if is_error { 1 } else { 0 }, error_msg));
 
     Response::from_parts(parts, Body::from(body_bytes))
 }
@@ -460,7 +478,75 @@ mod tests {
             *sink.lock().unwrap() = Some(message);
         })
         .await;
-        assert!(result.is_err(), "panic 必须继续抛给 web_filter 转 500");
+        let payload = result.expect_err("panic 必须继续抛给 web_filter 转 500");
+        // 原始 payload 身份必须保留，不能被审计回调替换。
+        assert_eq!(crate::logging::panic_payload_text(&*payload), "boom");
         assert_eq!(seen.lock().unwrap().as_deref(), Some("boom"));
+    }
+
+    static PANIC_LOG: LogSpec = LogSpec::new(
+        "panic-test",
+        BusinessType::Other,
+        "test.PanicController.panic()",
+    );
+
+    #[derive(Clone, Default)]
+    struct FakeEnv {
+        records: std::sync::Arc<std::sync::Mutex<Vec<OperRecord>>>,
+    }
+
+    impl MetaEnv for FakeEnv {
+        fn address_enabled(&self) -> bool {
+            false
+        }
+
+        fn audit(&self, record: OperRecord) {
+            self.records.lock().unwrap().push(record);
+        }
+    }
+
+    async fn panic_handler() {
+        panic!("boom-payload")
+    }
+
+    /// 装配级：不依赖 AppState/Redis，覆盖 meta_middleware 的 panic → 审计 → resume_unwind。
+    /// 同时证明运行时确实走了 `lookup`（删掉调用会拿不到 @Log 元数据）。
+    #[tokio::test]
+    async fn meta_middleware_audits_panic_and_preserves_payload() {
+        use tower::ServiceExt;
+
+        register(&Method::GET, "/__test/panic", None, Some(&PANIC_LOG));
+        let env = FakeEnv::default();
+        let app = axum::Router::new()
+            .route("/__test/panic", axum::routing::get(panic_handler))
+            .with_state(env.clone())
+            .layer(axum::middleware::from_fn_with_state(
+                env.clone(),
+                meta_middleware_impl::<FakeEnv>,
+            ));
+
+        let request = axum::http::Request::builder()
+            .uri("/__test/panic")
+            .body(axum::body::Body::empty())
+            .expect("request");
+        let outcome = std::panic::AssertUnwindSafe(app.oneshot(request))
+            .catch_unwind()
+            .await;
+        let payload = outcome.expect_err("panic 必须继续抛给 web_filter 转 500");
+        assert_eq!(
+            crate::logging::panic_payload_text(&*payload),
+            "boom-payload",
+            "原始 panic payload 必须完整保留"
+        );
+
+        let records = env.records.lock().unwrap();
+        assert_eq!(records.len(), 1, "panic 必须落一条审计");
+        assert_eq!(records[0].status, 1);
+        assert_eq!(
+            records[0].error_msg.as_deref(),
+            Some("panic: boom-payload")
+        );
+        assert_eq!(records[0].oper_url, "/__test/panic");
+        assert_eq!(records[0].title, "panic-test");
     }
 }
