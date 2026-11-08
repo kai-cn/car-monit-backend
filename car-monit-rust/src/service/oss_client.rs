@@ -10,7 +10,7 @@
 //   Date 的 Jackson 写法 -> ISO8601 带毫秒与本机偏移（2021-05-06T08:36:40.000+08:00）
 //   预签名 URL 的参数顺序  -> Algorithm, Date, SignedHeaders, Expires, Credential, Signature
 
-use chrono::{DateTime, Local, SecondsFormat, Utc};
+use chrono::{DateTime, Local, SecondsFormat, TimeZone, Utc};
 use hmac::{Hmac, Mac};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -510,10 +510,18 @@ mod tests {
         assert_eq!(rows[0]["name"], json!("developer"));
         assert_eq!(rows[0]["owner"]["displayName"], json!("parity"));
         assert_eq!(rows[0]["owner"]["id"], json!("abc123"));
-        // 日期是 ISO 带毫秒与本机偏移，实测形如 2021-05-06T08:36:40.000+08:00。
+        // Java 用 JVM 默认时区输出：格式固定为「毫秒 + 偏移」，但偏移随进程时区变化。
+        // 这里断言同一个 UTC 瞬间与格式，不把 +08:00 这种运行环境细节写死。
         let text = rows[0]["creationDate"].as_str().unwrap().to_string();
-        assert!(text.starts_with("2021-05-06T08:36:40.000"), "{text}");
-        assert!(text.ends_with("+08:00"), "{text}");
+        let instant = DateTime::parse_from_rfc3339(&text)
+            .unwrap_or_else(|e| panic!("{text} 不是带偏移的 RFC3339: {e}"));
+        assert_eq!(
+            instant.with_timezone(&Utc),
+            Utc.with_ymd_and_hms(2021, 5, 6, 0, 36, 40).unwrap()
+        );
+        assert!(text.contains(".000"), "{text}");
+        // yyyy-mm-ddThh:mm:ss.mmm+hh:mm
+        assert!(text.len() >= 25, "{text}");
     }
 
     /// Java 实测：S3ObjectSummary 的键序与 ETag 去引号。
