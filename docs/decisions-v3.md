@@ -302,7 +302,7 @@
 | 字典查询失败降级 | 报错阻断列表 | 列表可用性优先 | 返回原始码 + UNKNOWN；缓存层 `REDIS_UNAVAILABLE`/回源失败按既有降级策略 |
 | 列表富化位置 | 各控制器重复实现 | 统一在 `TrafficApiClient.deserializeRows` 反射补齐 `plateColorName`/`plateColorMark` | 覆盖门架/收费/抓拍/称重/服务区等所有 api 列表；预警列表在 `BigScreenRealtimeService` 单独富化 |
 | 主动失效验证（E2E） | — | 调用 `DELETE /system/dict/type/clearCache` 后 Redis `cm:druid:dict:version:sysdict` 由空→1；随后路段/机构列表正常（85/481 行） | 版本 hook 生效，缓存 key 已切换 |
-| V3 展示字段导出列 | 期望 api 直接输出 `plate_color_name` | api 目前列白名单不含该列 | 旧同步 Excel 导出已含“车牌颜色名称”；V3 展示导出待 api 增加该列（记录为缺口） |
+| V3 展示字段导出列 | 期望 api 直接输出 `plate_color_name` | api 已在 fee `displayFields`/`displayAliases` 声明该列 | fee 展示导出默认自动追加 `plate_color_name`；snapshot 仍未声明，请求该列会被拒绝 |
 
 ---
 
@@ -330,13 +330,15 @@
 | 决策 | 备选 | 理由 | 影响 |
 |---|---|---|---|
 | 默认 `auto`：探测 `GET /api/v3/export/capabilities` | 永久拒绝；永久放开 | 满足“api 支持后自动放开”，api 未实现时 404 → 保持拒绝 | 探测 5 分钟一次，失败/非 2xx 按未支持 |
-| api 返回 `{"fullDimensionFilters":true}` 才放开 | 依据 api 版本号 | 显式能力字段最可靠，不依赖版本推断 | api 需补该运维端点（记录为契约建议） |
-| 配置 `bigscreen.export.full-dimension-filters=true/false` 强制覆盖 | 只能自动 | 灰度/回滚/应急 | 运维可立即放开或收紧 |
-| 未放开时拒绝维度过滤并返回明确提示 | 静默忽略筛选导出全量 | 安全优先：不能“带筛选导出全量” | 错误码 400，提示“待 api 补齐后再开放” |
-| 放开后允许 org/section/road/gantry/toll 编码与名称 | 允许任意字段 | api `buildV3ExportRequest` 仅解析这些维度 | 未知字段仍 400 |
+| 按表/字段能力矩阵放开 | 只看全局布尔 | api 返回 `dimensionFilters` 按表声明（trail 为空），全局 true 不能代表每张表 | `trail` 维度过滤仍拒绝，snapshot/fee 放开 |
+| `plateColorName` 能力驱动展示列 | 固定请求该列 | api 只在 fee `displayFields` 声明 `plate_color_name` | fee 默认展示字段自动追加；其他表请求该列会 400 |
+| 配置 `bigscreen.export.full-dimension-filters=true/false` 强制覆盖 | 只能自动 | 灰度/回滚/应急 | true=按全表全字段放行；false=全部拒绝 |
+| 未放开时拒绝维度过滤并返回明确提示 | 静默忽略筛选导出全量 | 安全优先：不能“带筛选导出全量” | 错误码 400，提示 api 能力矩阵未声明 |
+| 放开后允许 org/section/road/gantry/toll 编码与名称 | 允许任意字段 | api `buildV3ExportRequest` 解析这些维度 | 未知字段仍 400 |
 
-> 契约建议（未改 api）：`GET /api/v3/export/capabilities` 返回 `code/ mode 支持/ fullDimensionFilters/ fields`。
-> api 实现前 backend 行为与 §11.2 #6 一致（仅车牌/颜色过滤）。
+> api 已实现该端点（2026-11-09）：`fullDimensionFilters=true`、`multiValueDimensionFilters=true`、
+> `plateColorName=true`；`dimensionFilters={snapshot:[...], fee:[...], trail:[]}`。
+> backend 已从全局布尔改为按表/字段矩阵，trail 维度过滤仍拒绝并明确提示。
 
 ---
 
@@ -368,7 +370,7 @@
 | 单元测试 | 未新增（仓库无既有测试基线） |
 | 联调 | **已执行**（backend V3 @9990 → api V3 @9902），详见 §18 |
 | 运维手册 | `docs/ops-runbook-v3.md`（开关/回退/stats-enabled/导出/指标） |
-| 遗留 | api `/api/v3/export/capabilities` 未实现（404 → 拒绝维度过滤）；V3 展示导出 `plate_color_name` 列待 api 支持；预警 captureType/terms 兜底已于 2026-11-09 移除 |
+| 遗留 | api 能力端点已实现并按表矩阵自动放开；fee 展示导出已支持 `plate_color_name`，snapshot 仍未声明；预警 captureType/terms 兜底已于 2026-11-09 移除 |
 
 ---
 
@@ -487,4 +489,26 @@ Stop-Process -Id 47532 -Force
 & 'D:\jdk\jdk1.8.0_202\bin\java.exe' -Xms512m -Xmx1g -jar 'D:\work\IdeaProjects\car-monit-backend-new\ruoyi-admin\target\ruoyi-admin.jar'
 ```
 约束遵守：未重启 9902、未新增重复实例（9990 临时联调实例已停止）、未 commit。
+
+---
+
+## 21. 与 api 能力补齐后的最终收敛（2026-11-09）
+
+api 已提交 `plate_color_name`、`/api/v3/export/capabilities`、全字段维度过滤、warning `captureType` 与多值 terms。
+backend 收敛并复测如下（9989 V3，带登录 token）：
+
+| 项 | 结果 |
+|---|---|
+| warning 兜底 | `captureType=StationCapture`、`tollCode=StationCapture`、`roadCode=G45,G6011` 均 200/100 行、`X-Data-Source=API`、无 `X-Degrade`；`CAPTURE_TYPE_UNSUPPORTED`/`MULTI_VALUE_UNSUPPORTED` 分支已删除 |
+| 展示导出 `plate_color_name` | fee 展示导出 816 行，CSV 表头末尾包含 `plate_color_name`；列白名单不再拦截 |
+| 全字段维度过滤 | `fee/snapshot + sectioncode` 提交 200；`trail + sectioncode` 返回 400“按表能力矩阵未声明” |
+| 统计鉴权复测 | 四个统计 200、`X-Data-Source=API`、`X-Cache=MISS`、无 `X-Degrade` |
+| 指标 | `circuit=CLOSED`、`api.success` 正常增长、`degrade` 无新增 |
+| 配置 | `bigscreen.export.full-dimension-filters` 恢复 `auto`，5 分钟探测能力端点 |
+
+**仍保留的故障兜底**：api 超时/5xx/熔断、`warning-api=off` 时实时预警回退 Redis；统计回退 legacy；
+导出提交/查询按错误码降级或报错。上述均只由真实故障触发，不再由“能力缺失/多值/哨兵”触发。
+
+**仍存在的缺口**：snapshot 展示导出尚未声明 `plate_color_name`；api 无导出字节级 pause/resume，
+`/resume` 仍按原参数重新提交。
 
