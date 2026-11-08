@@ -35,13 +35,12 @@
 
 | 文件 | 所在分支 | 状态 |
 |---|---|---|
-| `.github/workflows/car-monit-rust.yml` | `master` | 已被本轮统一流水线取代并删除（本地提交，未 push） |
-| `.github/workflows/ci.yml` / `release.yml` / `deploy.yml` | `master` | 新增，**从未运行**（本地提交，未 push） |
-| `car-monit-go-V2/.github/workflows/car-monit-go-ci.yml` | `car-monit-go-V2` | 分支已推（`e2d91f6`），推送后**可能已触发，未验证** |
-| `car-monit-go-V2/.github/workflows/car-monit-rust.yml` | `car-monit-go-V2` | 陈旧副本（无 release-only 步骤），同分支推送后**可能已触发，未验证** |
-| `car-monit-rust-V2/.github/workflows/car-monit-rust.yml` | `car-monit-rust-V2` | 含 `cargo test --release --test release_throwable`，推送后**可能已触发，未验证** |
-| `car-monit-py-V2` 工作树 `.github/workflows/car-monit-py.yml` | `car-monit-py-V2` | 推送后**可能已触发，未验证**（仍含陈旧 `car-monit-rust.yml`） |
-| `car-monit-cpp-V2` 工作树 | `car-monit-cpp-local` | **没有 `.github/workflows`**，推送后不会触发任何流水线 |
+| `.github/workflows/car-monit-rust.yml` | `master` | 已被统一流水线取代并删除（`d081976`） |
+| `.github/workflows/{ci,cd,deploy,release,_cpp}.yml` | `master` | 新增，**本地未 push**；master 按要求不推送 |
+| `car-monit-go-V2/.github/workflows/car-monit-go-ci.yml` 与陈旧 `car-monit-rust.yml` | `car-monit-go-V2` | 已删除，替换为统一 5 个 YAML（`617a4c9`，已推送） |
+| `car-monit-rust-V2/.github/workflows/car-monit-rust.yml` | `car-monit-rust-V2` | 已删除，release-only 用例并入 `ci.yml`（`9bfa622`，已推送） |
+| `car-monit-py-V2` 的 `car-monit-py.yml` 与陈旧 `car-monit-rust.yml` | `car-monit-py-V2` | 已删除，替换为统一 5 个 YAML（`bc04688`，已推送） |
+| `car-monit-cpp-local` 工作树 | `car-monit-cpp-local` | 原本没有 workflow，已新增统一 5 个 YAML（含 `_cpp.yml`，`bb4f8ee`，已推送） |
 
 ### 1.4 各语言构建现状
 
@@ -112,7 +111,7 @@ JDK：扫描全仓所有 `pom.xml`，**只有 `java.version=1.8` 一个值**；�
 3. **默认分支**：已确认 `master`（见 §2.2）。`main` 保留在远端但不再作为主构建目标。
 4. **JDK 21 / 25 的归属**：本仓库只查到 `1.8`。如果 21/25 属于未入库的子项目或 `car-monit-api`，请指明，否则 Java 流水线固定用 Temurin 8。
 5. **V2 分支是否推到远端**：已执行，见 §6（`car-monit-go-V2`、`car-monit-rust-V2`、`car-monit-py-V2`、`car-monit-cpp-local`）。
-6. **统一 workflow 是否同步到迁移分支**：本次只推了各分支既有内容，**未把 `ci.yml`/`release.yml` 同步过去**；因此迁移分支推送后跑的是各自旧的 workflow，`car-monit-cpp-local` 则完全没有 workflow。需要另行确认是否 cherry-pick。
+6. **统一 workflow 是否同步到迁移分支**：已执行，见 §6；四条分支都换成了统一 YAML，旧的分支专属 workflow 已删除。
 7. 私有仓库 Actions 配额 / 是否自托管 runner（影响带 services 的集成测试可用性）。
 
 ## 4. 已知缺口与风险（如实记录，不靠改业务代码变绿）
@@ -135,8 +134,11 @@ JDK：扫描全仓所有 `pom.xml`，**只有 `java.version=1.8` 一个值**；�
 | 方案矩阵 | 完成 | 本文 §2 |
 | PR 流水线 | YAML 完成，未实跑 | `.github/workflows/ci.yml` |
 | 主分支流水线 | YAML 完成，未实跑 | `.github/workflows/ci.yml` |
+| C++ 检查 | YAML 完成，未实跑 | `.github/workflows/_cpp.yml` |
 | tag 发布 | YAML 完成，未实跑 | `.github/workflows/release.yml` |
-| 部署占位 | YAML 完成，未实跑 | `.github/workflows/deploy.yml` |
+| 镜像构建 + GHCR 推送 | YAML 与 4 个 Dockerfile 完成，未实跑 | `.github/workflows/cd.yml`、`docker/java.Dockerfile`、各语言 `Dockerfile` |
+| K8s 部署 | YAML 完成，未实跑 | `.github/workflows/deploy.yml`、[cd-ghcr-k8s.md](cd-ghcr-k8s.md) |
+| 迁移分支同步 | 完成（4 条分支已推送） | 见 §6 |
 | YAML 语法校验 | 完成（PyYAML `safe_load` 通过） | 2026-11-08 |
 
 旧的 `.github/workflows/car-monit-rust.yml` 已删除，其 `parity` job 原样迁入 `ci.yml` 的 `rust-parity`（仅手动触发）。
@@ -156,9 +158,20 @@ JDK：扫描全仓所有 `pom.xml`，**只有 `java.version=1.8` 一个值**；�
 
 未推送 / 未处理：
 
-- `master`：本地比远端多 3 个提交（`b2e714a`、`d081976`、`cb8a969`，含本轮 CI 改动），按要求不 push。
+- `master`：本地比远端多 7 个提交（含本轮 CI/CD 改动），按要求不 push。
 - `main`：远端旧分支，不再作为主构建目标，未改动。
 - `qoder/car-monit-cpp`：远端与本地同 SHA（`9206daa`），无需推送。
 - `car-monit-backend-java-V3`：不在本次四种语言范围，未推送。
 
-**触发验证**：本机没有 `gh`，仓库为私有且匿名 API 返回 404，因此**已推送，未验证 workflow 是否被触发**。推送后各分支实际跑的是该分支自己的旧 workflow：go-V2 有 `car-monit-go-ci.yml`、rust-V2 有 `car-monit-rust.yml`、py-V2 有 `car-monit-py.yml`，cpp 分支没有 workflow。统一 `ci.yml` 仍在本地 master，尚未 push。
+### 6.1 统一 workflow 同步（第二轮推送）
+
+| 分支 | 同步提交 | 处理 | 远端确认 |
+|---|---|---|---|
+| `car-monit-go-V2` | `617a4c9` | 删除 `car-monit-go-ci.yml` + 陈旧 `car-monit-rust.yml`，新增 5 个统一 YAML + 4 语言 Dockerfile | `617a4c95c6ce88c953d114ea2aa516f5eb6ea056` |
+| `car-monit-rust-V2` | `9bfa622` | 删除 `car-monit-rust.yml`（release-only 用例并入 `ci.yml`） | `9bfa622005e9e9ea55e54ab5613edc8097e909bc` |
+| `car-monit-py-V2` | `bc04688` | 删除 `car-monit-py.yml` + 陈旧 `car-monit-rust.yml` | `bc046886c4c32ee619c5401972465e4b8ce87bb7` |
+| `car-monit-cpp-local` | `bb4f8ee` | 原本无 workflow，新增统一 5 个 YAML（含 `_cpp.yml`） | `bb4f8eeb37c17ecc32352f096587af8b4d22159f` |
+
+`car-monit-cpp-local` 工作树里另有他人未提交的 `MySqlClient.hpp/.cpp` 改动与 `.qoder/`，本次没有纳入提交。
+
+**触发验证**：本机没有 `gh`，仓库私有且匿名 API 返回 404，因此四条分支的同步推送都是**已推送，未验证 workflow 是否触发、是否通过**。`master` 及其统一 YAML 仍只在本地，未推送。
