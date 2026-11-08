@@ -12,10 +12,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from types import SimpleNamespace
 from typing import Any
 
+import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 
@@ -235,8 +237,65 @@ class TestXssMiddleware:
         assert response.status_code == 200
         assert response.json() == {"note": token, "file": "<script>file</script>"}
 
-    def test_create_app_registers_xss_as_the_outermost_middleware(self) -> None:
+    def test_create_app_orders_trace_cors_xss_and_security(self) -> None:
+        """XSS 必须在 TraceId/CORS 内侧、Security 外侧（413 才有响应头）."""
+        from app.config.exception_handlers import FallbackExceptionMiddleware
         from app.main import create_app
+        from app.middleware.request_context import RequestContextMiddleware
+        from app.middleware.security import SecurityMiddleware
+        from app.middleware.trace_id import TraceIdMiddleware
+        from starlette.middleware.cors import CORSMiddleware
 
         application = create_app()
-        assert application.user_middleware[0].cls is XssMiddleware
+        classes = [middleware.cls for middleware in application.user_middleware]
+
+        assert classes.index(TraceIdMiddleware) < classes.index(CORSMiddleware)
+        assert classes.index(CORSMiddleware) < classes.index(XssMiddleware)
+        assert classes.index(XssMiddleware) < classes.index(FallbackExceptionMiddleware)
+        assert classes.index(XssMiddleware) < classes.index(RequestContextMiddleware)
+        assert classes.index(XssMiddleware) < classes.index(SecurityMiddleware)
+
+    def test_oversized_body_413_keeps_trace_and_cors_headers(self) -> None:
+        """XSS 的 Python-only 413 也必须带 X-Trace-Id 与 ACAO."""
+        from app.main import create_app
+        from app.settings import AppSettings
+
+        application = create_app(
+            AppSettings(
+                xss={"max_body_bytes": 16},
+                app={"cors": {"allowed_origins": ["http://localhost:3000"]}},
+            )
+        )
+        client = TestClient(application, raise_server_exceptions=False)
+
+        response = client.post(
+            "/system/user/list",
+            headers={
+                "Origin": "http://localhost:3000",
+                "X-Trace-Id": "CLIENT-XSS-413",
+            },
+            json={"q": "x" * 100},
+        )
+
+        assert response.status_code == 413
+        assert response.headers["x-trace-id"] == "CLIENT-XSS-413"
+        assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
+
+    def test_oversized_body_drain_is_bounded(self, monkeypatch) -> None:
+        """超限后的 drain 必须有上限，不能被永不结束的慢速 body 挂住."""
+        from app.middleware import xss as xss_module
+
+        monkeypatch.setattr(xss_module, "_DRAIN_UNIT", 1024)
+        calls = {"n": 0}
+
+        async def receive() -> dict:
+            calls["n"] += 1
+            if calls["n"] > 20:
+                raise AssertionError("drain 没有上限")
+            return {"type": "http.request", "body": b"x" * 1024, "more_body": True}
+
+        with pytest.raises(xss_module._BodyTooLarge):
+            asyncio.run(xss_module._read_body(receive, 8))
+
+        # 首个 chunk 超限（1 次）+ budget=8+1024 的 drain（2 次）
+        assert calls["n"] == 3

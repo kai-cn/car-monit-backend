@@ -35,6 +35,8 @@ Python 等价实现
   本项目命中 XSS 过滤的 multipart 端点只有 ``/system/file`` 的上传，没有文本字段。
 * ``xss.max_body_bytes``（Python-only，默认 1MB）：清洗前最多缓冲这么多字节；
   超过上限时直接返回 413，避免恶意大包把中间件内存放大。``0`` 表示不限制。
+  超限后只做**有界 drain**（最多再读 ``limit + 64KB``），不会被永不结束的慢速
+  chunked body 挂住。中间件注册在 TraceId/CORS 内侧，413 由外层补齐响应头。
 * body / query 不是合法 UTF-8 时**不清洗、按原样放行**（并记 WARNING）。
   Java 的 ``getInputStream`` 用容器已解码的字符流，Python 若用 ``errors="replace"``
   重编码会静默改写内容，反而破坏下游的 JSON 解析。
@@ -118,10 +120,31 @@ def _clean_values(query: str) -> str:
     return urlencode(cleaned, doseq=True, encoding="utf-8", errors="replace")
 
 
+_DRAIN_UNIT = 64 * 1024
+
+
+async def _drain_body(receive: Receive, limit: int) -> None:
+    """超限后最多再读 ``limit + _DRAIN_UNIT`` 字节，避免被慢速大包挂住.
+
+    旧实现会一直读到达 ``more_body=False``；攻击者用一个永不结束的慢速 chunked
+    body 就能让中间件在鉴权前一直占着连接。这里给一个固定预算：读满即停，剩下
+    的数据由服务器在响应后丢弃 / 关闭连接。
+    """
+    budget = limit + _DRAIN_UNIT
+    drained = 0
+    while drained < budget:
+        message = await receive()
+        if message["type"] != "http.request":
+            return
+        drained += len(message.get("body", b""))
+        if not message.get("more_body", False):
+            return
+
+
 async def _read_body(receive: Receive, limit: int) -> bytes:
     """读完整个请求体；``limit > 0`` 时超过上限抛 :class:`_BodyTooLarge`.
 
-    超限时继续把剩余 chunk 读掉（不保存），避免连接层残留半截请求体。
+    超限时只做有界 drain（见 :func:`_drain_body`），不保存剩余内容。
     """
     chunks: List[bytes] = []
     total = 0
@@ -133,10 +156,7 @@ async def _read_body(receive: Receive, limit: int) -> bytes:
         total += len(chunk)
         if limit > 0 and total > limit:
             if message.get("more_body", False):
-                while True:
-                    extra = await receive()
-                    if extra["type"] != "http.request" or not extra.get("more_body", False):
-                        break
+                await _drain_body(receive, limit)
             raise _BodyTooLarge
         chunks.append(chunk)
         if not message.get("more_body", False):

@@ -366,15 +366,18 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     # executes in the opposite order:
     #
     #     XssFilter -> TraceIdFilter -> CorsFilter -> RequestContextFilter -> Spring Security
-    #     XssMiddleware -> TraceIdMiddleware -> CORSMiddleware
+    #     TraceIdMiddleware -> CORSMiddleware -> XssMiddleware
     #         -> FallbackExceptionMiddleware -> RequestContextMiddleware -> SecurityMiddleware
+    #
+    # 与 Java 的差异：XssMiddleware 放在 TraceId/CORS **内侧**而不是最外层。Java 没有
+    # "请求体超过清洗上限"的 413 路径（那是 Python-only 的保护），若 XSS 在最外层，413
+    # 会缺少 X-Trace-Id 与 Access-Control-Allow-Origin；放到内侧后由外层中间件补齐。
+    # XSS 仍然先于 SecurityMiddleware 执行（缓冲发生在鉴权前，与 Java 的 wrapper 语义一致）。
     #
     # FallbackExceptionMiddleware is Python-only: Starlette 把通用 ``Exception`` 的处理器挂在
     # 最外层 ``ServerErrorMiddleware``，响应会绕过 TraceId/CORS 而缺少响应头；把兜底处理
     # 放在 CORS 内侧后，``KeyError`` / ``AttributeError`` 等未注册异常也能带上 X-Trace-Id 与
     # Access-Control-Allow-Origin（Java 的 TraceIdFilter/CorsFilter 同样在进链时写头）。
-    #
-    # XssMiddleware is added **last** (see below) so that it wraps every other middleware.
     #
     # SecurityMiddleware must be registered **before** CORSMiddleware so that CORS ends up
     # outside it: ``CorsFilter`` answers a preflight OPTIONS and returns without calling the
@@ -388,9 +391,9 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
 
     # Java: config.addAllowedOriginPattern("*") -- NOT addAllowedOrigin("*").
     # ``allow_credentials=true`` with "*" is spec-invalid, so a permissive regex is the
-    # correct equivalent of Spring's allowedOriginPatterns. Production should whitelist
+    # correct equivalent of Spring's allowedOriginPatterns. Production must whitelist
     # through ``app.cors.allowed_origins``. Empty list never means "allow everything":
-    # local installs are restricted to loopback origins, everything else denies all.
+    # local installs are restricted to loopback origins, non-local fails startup.
     allowed_origins = [origin.strip() for origin in settings.app.cors.allowed_origins if origin.strip()]
     cors_options: dict = {
         "allow_credentials": True,
@@ -415,11 +418,10 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
             "非 local 环境必须显式配置 CORS 白名单: app.cors.allowed_origins"
             "（环境变量 APP__CORS__ALLOWED_ORIGINS，JSON 数组）；留空会拒绝所有跨域请求"
         )
+    # XSS 在 CORS/TraceId 内侧（见上面的顺序说明）；它的 413 响应需要外层补头。
+    application.add_middleware(XssMiddleware, settings=settings)
     application.add_middleware(CORSMiddleware, **cors_options)
     application.add_middleware(TraceIdMiddleware, settings=settings)
-    # Java: FilterConfig.xssFilterRegistration -> order HIGHEST_PRECEDENCE。add_middleware
-    # 是 prepend，所以最后添加的 XssMiddleware 位于最外层（先于 CORS/TraceId/Security）。
-    application.add_middleware(XssMiddleware, settings=settings)
 
     register_exception_handlers(application)
 
