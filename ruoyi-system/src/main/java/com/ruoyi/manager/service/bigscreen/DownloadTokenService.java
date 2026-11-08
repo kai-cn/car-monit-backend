@@ -5,6 +5,7 @@ import com.ruoyi.integration.api.ApiErrorCode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
@@ -17,6 +18,9 @@ import java.util.Base64;
  * <p>设计文档 §5.5.2「签名 URL（15 分钟）、绑定 taskId + 用户」。令牌只做归属与时效校验，
  * 下载仍需登录态（SecurityConfig 默认 anyRequest authenticated）。</p>
  *
+ * <p><b>密钥必须独立配置</b>：{@code export.download.secret} 不允许回退到 {@code token.secret}
+ * 或任何内置默认值；未配置时应用启动失败（fail-fast），避免用公开默认密钥伪造下载令牌。</p>
+ *
  * @author car-monit-backend-java-v3
  */
 @Service
@@ -24,11 +28,38 @@ public class DownloadTokenService
 {
     private static final String HMAC_ALGORITHM = "HmacSHA256";
 
-    @Value("${export.download.secret:${token.secret:abcdefghijklmnopqrstuvwxyz}}")
+    /** 禁止使用的历史默认值（曾回退到 token.secret 的默认串）。 */
+    private static final String LEGACY_DEFAULT_SECRET = "abcdefghijklmnopqrstuvwxyz";
+
+    private static final int MIN_SECRET_LENGTH = 16;
+
+    @Value("${export.download.secret:}")
     private String secret;
 
     @Value("${export.download.token-ttl-seconds:900}")
     private long tokenTtlSeconds;
+
+    @PostConstruct
+    public void checkSecret()
+    {
+        String value = secret == null ? "" : secret.trim();
+        if (value.isEmpty())
+        {
+            throw new IllegalStateException(
+                    "缺少导出下载签名密钥：请配置 export.download.secret（或环境变量 EXPORT_DOWNLOAD_SECRET）");
+        }
+        if (LEGACY_DEFAULT_SECRET.equals(value))
+        {
+            throw new IllegalStateException(
+                    "导出下载签名密钥不能使用内置默认值，请配置独立的 export.download.secret");
+        }
+        if (value.length() < MIN_SECRET_LENGTH)
+        {
+            throw new IllegalStateException(
+                    "导出下载签名密钥长度不足 " + MIN_SECRET_LENGTH + " 位，请配置更强的 export.download.secret");
+        }
+        this.secret = value;
+    }
 
     public String sign(String taskId, Long userId)
     {
