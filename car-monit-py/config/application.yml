@@ -136,7 +136,8 @@ spring:
       master:
         url: jdbc:p6spy:mysql://127.0.0.1:3307/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowMultiQueries=true
         username: root
-        password: root
+        # 口令必须由环境变量 SPRING__DATASOURCE__DRUID__MASTER__PASSWORD 提供
+        password:
       # 从库数据源
       slave:
         # 从数据源开关/默认关闭
@@ -174,9 +175,9 @@ spring:
         # 设置白名单，不填则允许所有访问
         allow:
         url-pattern: /druid/*
-        # 控制台管理用户名和密码
-        login-username: druidUser
-        login-password: Sys#2024Test
+        # 控制台管理用户名和密码（本项目不暴露 Druid 控制台，保持空值）
+        login-username:
+        login-password:
       filter:
         stat:
           enabled: true
@@ -192,8 +193,8 @@ spring:
 token:
   # 令牌自定义标识
   header: Authorization
-  # 令牌密钥
-  secret: abcdefghijklmnopqrstuvwxyz
+  # 令牌密钥（必须由环境变量 TOKEN__SECRET 提供）
+  secret:
   # 令牌有效期（默认30分钟）
   expireTime: 120
 
@@ -244,8 +245,9 @@ xss:
 # minio配置
 oss:
   endpoint: http://172.30.100.102:9002
-  accessKey: jtwl_access_key
-  secretKey: minio.prod
+  # 必须由环境变量 OSS__ACCESS_KEY / OSS__SECRET_KEY 提供（启用 OSS 时）
+  accessKey:
+  secretKey:
   bucketName: developer
 
 sms:
@@ -275,7 +277,8 @@ forest:
 
 hengda:
   appid: YHZS
-  secret: b48381c4b98311ea90b100155d14fa3b
+  # 必须由环境变量 HENGDA__SECRET 提供
+  secret:
 
 vehicleMonitor:
   baseUrl: http://127.0.0.1:9901

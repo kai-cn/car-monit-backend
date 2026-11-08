@@ -15,6 +15,7 @@ Spring 容器的 refresh + shutdown），所以数据库/Redis 在用例结束�
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Iterator
 
@@ -23,6 +24,12 @@ from fastapi.testclient import TestClient
 
 from app.logging_config import reset_logging
 from app.settings import reset_settings_cache
+
+# 密钥严格化后不再有静默默认值；测试进程用显式的测试专用值，
+# 真实联调可通过同名环境变量覆盖（例如 DB 口令 root）。
+os.environ.setdefault("TOKEN__SECRET", "dGVzdC1vbmx5LWp3dC1zZWNyZXQtZm9yLXRlc3Rz")
+os.environ.setdefault("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD", "test-db-password")
+os.environ.setdefault("HENGDA__SECRET", "test-only-hengda-secret")
 
 
 @pytest.fixture(autouse=True)

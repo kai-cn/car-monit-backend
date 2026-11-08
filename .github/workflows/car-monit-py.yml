@@ -34,10 +34,15 @@ jobs:
           pip install -r requirements.txt
           pip install ruff==0.8.4
 
+      - name: secret scan
+        run: python scripts/check_secrets.py
+
       - name: ruff
         run: ruff check app tests
 
       - name: pytest
         # tests/integration 在 MySQL/Redis 不可达时会自行 skip，公共 runner 不启动服务。
-        # 实测全量覆盖率 72.85%（3605 tests / 1 skipped），门槛取 70 留约 3 个点余量。
+        # COVERAGE_FILE 固定为本步骤独立文件，避免与本地/其它任务的 .coverage 串数据。
+        env:
+          COVERAGE_FILE: .coverage-ci
         run: python -m pytest -q --cov=app --cov-report=term --cov-fail-under=70

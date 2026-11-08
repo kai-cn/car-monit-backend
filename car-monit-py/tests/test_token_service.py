@@ -19,6 +19,7 @@ What is actually being pinned down here
 
 from __future__ import annotations
 
+import base64
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -129,14 +130,9 @@ def make_login_user(user_name: str = "admin") -> LoginUser:
 
 
 class TestSecretKey:
-    def test_configured_secret_decodes_the_way_jjwt_does(self, service: TokenService) -> None:
-        """jjwt's ``TextCodec.BASE64`` yields **18** bytes for the 26-character secret.
-
-        The expected hex was produced by running ``TextCodec.BASE64.decode`` from the
-        ``jjwt-0.9.1.jar`` this project actually ships, not derived by hand.
-        """
-        assert len(service.secret_key) == 18
-        assert service.secret_key.hex() == "69b71d79f8218a39259a7a29aabb2dbafc31"
+    def test_configured_secret_is_base64_decoded(self, service: TokenService) -> None:
+        """jjwt 的 ``TextCodec.BASE64`` 语义：密钥是 base64 解码后的字节，不是原始字符串."""
+        assert service.secret_key == base64.b64decode(service.secret)
         assert service.secret_key != service.secret.encode()
 
     def test_empty_secret_is_rejected(self) -> None:
@@ -177,7 +173,15 @@ class TestJavaInterop:
         "hAsLeaHIrb_fN6QkzvlimK92oAVQw9E-v-vQ8oppcwkWR4ENSJ1VXSzOPfFgMm3Kz7w2qPpDfizY2cnEXY38uQ"
     )
 
-    def test_java_signed_token_verifies(self, service: TokenService) -> None:
+    def test_legacy_captured_token_is_invalidated_by_secret_rotation(
+        self, service: TokenService
+    ) -> None:
+        """旧演示密钥签发的 token 不得再被新密钥接受；换回旧值仅用于验证字节兼容."""
+        with pytest.raises(jwt.InvalidSignatureError):
+            service.parse_token(self.JAVA_TOKEN)
+
+        service.secret = "abcdefghijklmnopqrstuvwxyz"
+        service._secret_key = None
         claims = service.parse_token(self.JAVA_TOKEN)
         assert claims[LOGIN_USER_KEY] == "2bd73de5-fcad-4db9-99bc-b13baa497175"
 

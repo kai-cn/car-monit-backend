@@ -216,13 +216,6 @@ def _log_startup_state(settings: AppSettings) -> None:
         logger.warning("[启动警告] @Scheduled 已禁用, 与 Java 运行时一致 (Java 缺少 @EnableScheduling)")
     if not settings.app.scheduler_enabled:
         logger.warning("[启动警告] Quartz 调度器已禁用 (app.scheduler_enabled=false); sys_job 中的任务不会调度")
-    insecure = settings.insecure_secret_env_vars()
-    if insecure:
-        logger.warning(
-            "[启动警告] 仍在使用仓库内置密钥/口令: %s; 上线前必须通过环境变量替换"
-            "（IS_LOCALHOST=local 仅限开发/测试）",
-            ", ".join(insecure),
-        )
 
 
 @asynccontextmanager

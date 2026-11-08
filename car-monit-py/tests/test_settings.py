@@ -46,7 +46,8 @@ class TestServerSection:
 class TestTokenSection:
     def test_expire_time_is_minutes_and_reads_120(self, settings) -> None:
         assert settings.token.header == "Authorization"
-        assert settings.token.secret == "abcdefghijklmnopqrstuvwxyz"
+        # 密钥不再有内置默认值；测试进程由 conftest 注入测试专用值。
+        assert settings.token.secret == "dGVzdC1vbmx5LWp3dC1zZWNyZXQtZm9yLXRlc3Rz"
         # 注意：Java 注释写「默认30分钟」，实际配置是 120
         assert settings.token.expire_time == 120
 
@@ -84,8 +85,8 @@ class TestMonitorSection:
 class TestDataSourceSection:
     def test_jdbc_url_is_translated_not_copied(self, settings) -> None:
         url = settings.database_url
-        # p6spy wrapper 被剥离; mysql -> mysql+pymysql
-        assert url.startswith("mysql+pymysql://root:root@127.0.0.1:3307/carmonitdb")
+        # p6spy wrapper 被剥离; mysql -> mysql+pymysql；口令来自测试环境变量
+        assert url.startswith("mysql+pymysql://root:test-db-password@127.0.0.1:3307/carmonitdb")
         assert "p6spy" not in url
         assert "charset=utf8" in url
 
@@ -189,104 +190,86 @@ class TestSourcePrecedence:
 
 
 class TestFailClosedSecrets:
-    """非 local 环境：仓库内置密钥/口令必须被拒绝（fail-closed）。"""
+    """密钥缺失/内置演示值必须拒绝启动（所有环境；local 不再豁免）."""
 
-    def test_local_keeps_builtin_demo_values(self) -> None:
-        from app.settings import AppSettings
+    _REQUIRED = (
+        "TOKEN__SECRET",
+        "SPRING__DATASOURCE__DRUID__MASTER__PASSWORD",
+        "HENGDA__SECRET",
+    )
 
-        loaded = AppSettings(is_localhost="local")
-        assert loaded.token.secret == "abcdefghijklmnopqrstuvwxyz"
+    def _clear_required(self, monkeypatch) -> None:
+        for name in self._REQUIRED:
+            monkeypatch.delenv(name, raising=False)
 
-    def test_non_local_rejects_builtin_demo_values(self) -> None:
+    def test_missing_secrets_reject_startup_even_in_local(self, monkeypatch) -> None:
         from pydantic import ValidationError
 
         from app.settings import AppSettings
 
+        self._clear_required(monkeypatch)
         with pytest.raises(ValidationError) as excinfo:
-            AppSettings(is_localhost="prod")
+            AppSettings(is_localhost="local")
         message = str(excinfo.value)
         assert "TOKEN__SECRET" in message
         assert "SPRING__DATASOURCE__DRUID__MASTER__PASSWORD" in message
         assert "HENGDA__SECRET" in message
 
-    def test_non_local_accepts_real_secrets(self) -> None:
-        from app.settings import AppSettings
-
-        loaded = AppSettings(
-            is_localhost="prod",
-            token={"secret": "real-jwt-secret"},
-            spring={"datasource": {"druid": {"master": {"password": "real-db-password"}}}},
-            hengda={"secret": "real-hengda-secret"},
-        )
-        assert loaded.token.secret == "real-jwt-secret"
-
-    def test_oss_keys_are_checked_only_when_enabled(self) -> None:
+    def test_legacy_demo_values_are_rejected(self, monkeypatch) -> None:
         from pydantic import ValidationError
 
         from app.settings import AppSettings
 
-        # app.oss_enabled 默认 False -> 不校验 OSS 演示凭据
-        AppSettings(
-            is_localhost="prod",
-            token={"secret": "s"},
-            spring={"datasource": {"druid": {"master": {"password": "p"}}}},
-            hengda={"secret": "h"},
-        )
+        monkeypatch.setenv("TOKEN__SECRET", "abcdefghijklmnopqrstuvwxyz")
+        monkeypatch.setenv("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD", "root")
+        monkeypatch.setenv("HENGDA__SECRET", "b48381c4b98311ea90b100155d14fa3b")
 
-        with pytest.raises(ValidationError, match="OSS__ACCESS_KEY"):
-            AppSettings(
-                is_localhost="prod",
-                token={"secret": "s"},
-                spring={"datasource": {"druid": {"master": {"password": "p"}}}},
-                hengda={"secret": "h"},
-                app={"oss_enabled": True},
-            )
+        with pytest.raises(ValidationError, match="TOKEN__SECRET"):
+            AppSettings(is_localhost="local")
 
-    def test_local_reports_builtin_secrets_without_blocking(self) -> None:
-        """local 不拦截启动，但要把仍在使用的内置值点出来供启动日志告警."""
+    def test_local_still_allows_the_bundled_mysql_root_password(self, monkeypatch) -> None:
         from app.settings import AppSettings
 
+        monkeypatch.setenv("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD", "root")
         loaded = AppSettings(is_localhost="local")
-        assert loaded.insecure_secret_env_vars() == [
-            "TOKEN__SECRET",
-            "SPRING__DATASOURCE__DRUID__MASTER__PASSWORD",
-            "HENGDA__SECRET",
-        ]
+        assert loaded.spring.datasource.druid.master.password == "root"
 
-    def test_real_secrets_leave_nothing_to_warn_about(self) -> None:
+    def test_non_local_rejects_root_db_password(self, monkeypatch) -> None:
+        from pydantic import ValidationError
+
+        from app.settings import AppSettings
+
+        monkeypatch.setenv("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD", "root")
+        with pytest.raises(ValidationError, match="SPRING__DATASOURCE__DRUID__MASTER__PASSWORD"):
+            AppSettings(is_localhost="prod")
+
+    def test_real_secrets_are_accepted(self) -> None:
         from app.settings import AppSettings
 
         loaded = AppSettings(
-            is_localhost="local",
+            is_localhost="prod",
             token={"secret": "real-jwt-secret"},
             spring={"datasource": {"druid": {"master": {"password": "real-db-password"}}}},
             hengda={"secret": "real-hengda-secret"},
         )
         assert loaded.insecure_secret_env_vars() == []
 
-    def test_startup_log_names_the_builtin_secrets(self, monkeypatch) -> None:
-        """启动 WARN 必须点名具体环境变量，而不是只说"请换密钥".
+    def test_oss_keys_are_checked_only_when_enabled(self) -> None:
+        from pydantic import ValidationError
 
-        这里直接替换 ``app.main.logger.warning``，不依赖 caplog —— 导入
-        ``app.main`` 会执行 ``create_app()``，其 ``configure_logging`` 会清掉
-        pytest 挂在 root 上的捕获 handler。
-        """
-        from app import main as main_module
         from app.settings import AppSettings
 
-        warnings: list[str] = []
-        monkeypatch.setattr(
-            main_module.logger,
-            "warning",
-            lambda message, *args, **kwargs: warnings.append(message % args),
-        )
-        loaded = AppSettings(is_localhost="local")
-        main_module._log_startup_state(loaded)
+        base = {
+            "is_localhost": "prod",
+            "token": {"secret": "s"},
+            "spring": {"datasource": {"druid": {"master": {"password": "p"}}}},
+            "hengda": {"secret": "h"},
+        }
+        # app.oss_enabled 默认 False -> 不校验 OSS 凭据
+        AppSettings(**base)
 
-        secret_warnings = [text for text in warnings if "仍在使用仓库内置密钥/口令" in text]
-        assert secret_warnings
-        assert "TOKEN__SECRET" in secret_warnings[0]
-        assert "SPRING__DATASOURCE__DRUID__MASTER__PASSWORD" in secret_warnings[0]
+        with pytest.raises(ValidationError, match="OSS__ACCESS_KEY"):
+            AppSettings(**base, app={"oss_enabled": True})
 
 
 class TestYamlPath:

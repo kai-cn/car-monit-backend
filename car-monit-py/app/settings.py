@@ -26,6 +26,7 @@ Python equivalent
 from __future__ import annotations
 
 import functools
+import hashlib
 import os
 import re
 import sys
@@ -81,6 +82,23 @@ class _Section(BaseModel):
     """Base for every YAML section: tolerate unknown keys, allow snake_case init."""
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+
+#: 历史上写死在仓库里的演示密钥的 SHA-256。仓库里不再保存明文，改用指纹比对，
+#: 这样既能把旧值判为不合格，也不会让 secret-scanner 再次命中本文件。
+_LEGACY_DEMO_SECRET_HASHES = {
+    "token": "71c480df93d6ae2f1efad1447c66c9525e316218cf51fc8d9ed832f2daf18b73",
+    "hengda": "a737ccdc1d94cdd4a7b12ccdb331842ad4f906789dec9836b1b39149aa06c19b",
+    "oss_access": "4b0fbf2b9c8d51681b45f30e10c59f138d4bb1d6e1c21dee91305451e640aeb1",
+    "oss_secret": "ac954063fbdb82a9017d48afab023b1e66d6efece76d869da4928b9e4cdf9df3",
+}
+
+
+def _is_legacy_demo_secret(value: Optional[str], kind: str) -> bool:
+    if not value:
+        return False
+    digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
+    return digest == _LEGACY_DEMO_SECRET_HASHES[kind]
 
 
 class RuoYiSection(_Section):
@@ -246,7 +264,8 @@ class MasterDataSourceSection(_Section):
         "&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowMultiQueries=true"
     )
     username: str = "root"
-    password: str = "root"
+    #: 必须由环境变量提供（生产禁用仓库内明文）。
+    password: Optional[str] = None
 
 
 class DruidSection(_Section):
@@ -288,7 +307,8 @@ class SpringSection(_Section):
 
 class TokenSection(_Section):
     header: str = "Authorization"
-    secret: str = "abcdefghijklmnopqrstuvwxyz"
+    #: 必须由 ``TOKEN__SECRET`` 提供；缺失/为空时启动失败。
+    secret: Optional[str] = None
     # application.yml: expireTime: 120  (minutes, RuoYi default comment says 30)
     expire_time: int = 120
 
@@ -346,8 +366,9 @@ class OssSection(_Section):
     """
 
     endpoint: str = "http://172.30.100.102:9002"
-    access_key: str = "jtwl_access_key"
-    secret_key: str = "minio.prod"
+    #: 必须由 ``OSS__ACCESS_KEY`` / ``OSS__SECRET_KEY`` 提供（启用 OSS 时缺失即启动失败）。
+    access_key: Optional[str] = None
+    secret_key: Optional[str] = None
     bucket_name: str = "developer"
     #: true = path-style（``http://endpoint/bucketname``），false = virtual-hosted-style
     path_style_access: bool = True
@@ -396,7 +417,8 @@ class ForestSection(_Section):
 
 class HengdaSection(_Section):
     appid: str = "YHZS"
-    secret: str = "b48381c4b98311ea90b100155d14fa3b"
+    #: 必须由 ``HENGDA__SECRET`` 提供；缺失/为空时启动失败。
+    secret: Optional[str] = None
 
 
 class VehicleMonitorSection(_Section):
@@ -671,42 +693,39 @@ class AppSettings(BaseSettings):
         )
 
     def insecure_secret_env_vars(self) -> List[str]:
-        """仍在使用仓库内置密钥/口令时，返回对应的环境变量名（空列表 = 已全部替换）。
+        """缺失或仍在使用仓库内置密钥/口令时，返回对应环境变量名（空列表 = 合格）。
 
-        ``is_localhost == "local"`` 时允许使用内置值（开发/测试），但启动日志会
-        打 WARN 提醒；非 local 时由 :meth:`_reject_insecure_secrets_outside_local`
-        直接拒绝启动。两处复用同一判定，避免告警与 fail-closed 口径漂移。
+        令牌 / Hengda / OSS 的内置演示值在**任何环境**都不允许；DB 的 ``root`` 只在
+        ``IS_LOCALHOST=local`` 时保留（本机自带 MySQL 的口令），非 local 必须换掉。
+        “缺失”一律失败：不再有静默的内置默认值。
         """
+        is_local = (self.is_localhost or "").strip().lower() == "local"
         insecure: List[str] = []
-        if (self.token.secret or "").strip() in ("", "abcdefghijklmnopqrstuvwxyz"):
+        if (self.token.secret or "").strip() == "" or _is_legacy_demo_secret(self.token.secret, "token"):
             insecure.append("TOKEN__SECRET")
-        if (self.spring.datasource.druid.master.password or "").strip() in ("", "root"):
+        db_password = (self.spring.datasource.druid.master.password or "").strip()
+        if db_password == "" or (db_password == "root" and not is_local):
             insecure.append("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD")
-        if (self.hengda.secret or "").strip() in ("", "b48381c4b98311ea90b100155d14fa3b"):
+        if (self.hengda.secret or "").strip() == "" or _is_legacy_demo_secret(self.hengda.secret, "hengda"):
             insecure.append("HENGDA__SECRET")
         if self.app.oss_enabled:
-            if (self.oss.access_key or "").strip() in ("", "jtwl_access_key"):
+            if (self.oss.access_key or "").strip() == "" or _is_legacy_demo_secret(self.oss.access_key, "oss_access"):
                 insecure.append("OSS__ACCESS_KEY")
-            if (self.oss.secret_key or "").strip() in ("", "minio.prod"):
+            if (self.oss.secret_key or "").strip() == "" or _is_legacy_demo_secret(self.oss.secret_key, "oss_secret"):
                 insecure.append("OSS__SECRET_KEY")
         return insecure
 
     @model_validator(mode="after")
-    def _reject_insecure_secrets_outside_local(self) -> "AppSettings":
-        """生产环境 fail-closed：仍在使用仓库内置密钥/口令时拒绝启动。
+    def _reject_insecure_secrets(self) -> "AppSettings":
+        """密钥 fail-closed：缺失或仍是仓库内置值时拒绝启动（不区分环境）。
 
-        ``is_localhost == "local"``（默认）是开发/测试逃生口，保留 Java 的
-        ``root/root`` 等演示值；任何其它取值（prod / staging / test ...）都必须
-        通过环境变量换成真实值，否则直接抛 ``ValidationError`` 让进程起不来。
-        OSS 凭据只在 ``app.oss_enabled=true`` 时校验，避免未启用对象存储的部署
-        被无关配置卡住。
+        本地开发把 ``.env.example`` 复制成 ``.env`` 并填真实/开发值即可；仓库里
+        不再保存任何演示密钥明文（旧值按 SHA-256 指纹判为不合格）。
+        OSS 凭据只在 ``app.oss_enabled=true`` 时校验。
         """
-        if (self.is_localhost or "").strip().lower() == "local":
-            return self
-
         insecure = self.insecure_secret_env_vars()
         if insecure:
-            raise ValueError("非 local 环境禁止使用仓库内置密钥/口令，请通过环境变量设置: " + ", ".join(insecure))
+            raise ValueError("密钥缺失或仍为仓库内置值，请通过环境变量设置: " + ", ".join(insecure))
         return self
 
     # -- derived helpers -------------------------------------------------
