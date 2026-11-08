@@ -43,6 +43,11 @@ public class ExportApprovalRequest implements Serializable
 
     private String taskId;
 
+    /** 申请时收敛后的机构范围与租户，审批通过后原样提交 */
+    private String orgCode;
+
+    private Long tenantId;
+
     public String getRequestId()
     {
         return requestId;
@@ -191,5 +196,25 @@ public class ExportApprovalRequest implements Serializable
     public void setTaskId(String taskId)
     {
         this.taskId = taskId;
+    }
+
+    public String getOrgCode()
+    {
+        return orgCode;
+    }
+
+    public void setOrgCode(String orgCode)
+    {
+        this.orgCode = orgCode;
+    }
+
+    public Long getTenantId()
+    {
+        return tenantId;
+    }
+
+    public void setTenantId(Long tenantId)
+    {
+        this.tenantId = tenantId;
     }
 }

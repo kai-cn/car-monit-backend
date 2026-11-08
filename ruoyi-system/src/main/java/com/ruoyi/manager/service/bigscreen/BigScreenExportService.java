@@ -57,6 +57,12 @@ public class BigScreenExportService
 
     private static final int SUBMIT_LIMIT_PER_HOUR = 10;
 
+    /** 下载令牌请求头：优先于历史 query 参数，避免令牌进入 URL。 */
+    public static final String DOWNLOAD_TOKEN_HEADER = "X-Export-Download-Token";
+
+    /** 审批 CAS 占位时长：覆盖一次 api 提交的最坏耗时（6s）+ 缓冲，失败自动过期。 */
+    private static final long APPROVAL_CAS_SECONDS = 120L;
+
     /** 导出任务元数据/审批请求保留期（天），默认 7 天，到期由 Redis TTL 清理。 */
     @Value("${export.retention-days:7}")
     private int retentionDays;
@@ -97,15 +103,18 @@ public class BigScreenExportService
 
     public Map<String, Object> submit(ExportRequest request, String mode)
     {
-        if (!featureSwitchService.isEnabled(FeatureSwitchService.EXPORT_V3))
-        {
-            throw new ApiClientException(ApiErrorCode.UNAVAILABLE, "exportSubmit",
-                    "V3 导出已通过开关关闭，请使用旧导出入口");
-        }
+        requireExportSwitch();
         ExportPolicy.validateMode(request.getType(), mode);
-        ExportPolicy.validateFuzzy(request.getFuzzyFields());
         Long userId = SecurityUtils.getUserId();
         String username = SecurityUtils.getUsername();
+        // 与控制器注解双重校验：控制器挡住未授权入口，服务层挡住内部调用/未来新增入口
+        checkExportPermission(mode);
+        // 服务端收敛机构范围：非管理员只能导出本机构数据
+        request.setFuzzyFields(ExportPolicy.applyOrgScope(request.getType(),
+                request.getFuzzyFields(), SecurityUtils.isAdmin(userId),
+                SecurityUtils.getDeptSubCode()));
+        request.setTenantId(safeTenantId());
+        ExportPolicy.validateFuzzy(request.getFuzzyFields());
         if (!rateLimiter.tryAcquire("submit:" + mode, userId, SUBMIT_LIMIT_PER_HOUR, 3600))
         {
             throw new ApiClientException(ApiErrorCode.RATE_LIMITED, "exportSubmit",
@@ -123,12 +132,11 @@ public class BigScreenExportService
                     capabilityService.current());
             return createApproval(request, mode, userId, username);
         }
-        return submitInternal(request, mode, userId, username, false, 1);
+        return submitInternal(request, mode, userId, username, 1);
     }
 
     private Map<String, Object> submitInternal(ExportRequest request, String mode,
-                                               Long userId, String username,
-                                               boolean approvalBypassed, int attempts)
+                                               Long userId, String username, int attempts)
     {
         Map<String, Object> body = new LinkedHashMap<String, Object>();
         // 与 api 现有 /api/v1/large/export/submit 契约兼容：api 读取 fuzzyFields.xxx 形式的键
@@ -141,10 +149,6 @@ public class BigScreenExportService
         }
         if (ExportPolicy.MODE_FULL.equals(mode))
         {
-            if (!approvalBypassed)
-            {
-                checkFullExportPermission(userId);
-            }
             ExportPolicy.validatePurpose(request.getPurpose());
             ExportCapabilityService.Capabilities capabilities = capabilityService.current();
             ExportPolicy.validateFullFilters(request.getType(), request.getFuzzyFields(),
@@ -180,6 +184,9 @@ public class BigScreenExportService
         meta.setUpdatedAt(meta.getSubmittedAt());
         meta.setStatus("pending");
         meta.setAttempts(attempts);
+        meta.setOrgCode(orgCodeOf(request));
+        meta.setAdminScope(SecurityUtils.isAdmin(userId));
+        meta.setTenantId(request.getTenantId());
         redisCache.setCacheObject(taskKey(taskId), JSON.toJSONString(meta),
                 (int) retentionSeconds(), TimeUnit.SECONDS);
 
@@ -216,6 +223,8 @@ public class BigScreenExportService
         approval.setEndTime(request.getEndTime());
         approval.setPurpose(request.getPurpose());
         approval.setFuzzyFields(request.getFuzzyFields());
+        approval.setOrgCode(orgCodeOf(request));
+        approval.setTenantId(request.getTenantId());
         approval.setStatus("pending");
         approval.setCreatedAt(System.currentTimeMillis());
         redisCache.setCacheObject(approvalKey(approval.getRequestId()),
@@ -247,7 +256,7 @@ public class BigScreenExportService
         List<ExportApprovalRequest> result = new ArrayList<ExportApprovalRequest>();
         try
         {
-            Collection<String> keys = redisCache.keys(
+            Collection<String> keys = redisCache.scan(
                     "cm:" + env + ":export:approval:*");
             if (keys == null)
             {
@@ -276,62 +285,117 @@ public class BigScreenExportService
     }
 
     /**
-     * 审批通过：按原申请人身份提交 api，并把 taskId 回写到审批记录。
+     * 审批通过：先 CAS 抢占“审批中”，再按原申请人身份提交 api。
+     *
+     * <p>提交导出不是幂等操作（每次生成新 taskId 与文件），因此用 Redis
+     * {@code setIfAbsent} 把并发审批收敛为一次；提交失败回退 pending 允许重试。</p>
      */
     public Map<String, Object> approve(String requestId, Long approverId)
     {
-        ExportApprovalRequest request = findApproval(requestId);
-        if (request == null)
-        {
-            throw new ApiClientException(ApiErrorCode.NOT_FOUND, "exportApproval",
-                    "审批请求不存在或已过期");
-        }
-        if (!"pending".equals(request.getStatus()))
+        requireExportSwitch();
+        String casKey = approvalKey(requestId) + ":cas";
+        Boolean acquired = redisCache.setCacheObjectIfAbsent(casKey, String.valueOf(approverId),
+                APPROVAL_CAS_SECONDS, TimeUnit.SECONDS);
+        if (!Boolean.TRUE.equals(acquired))
         {
             throw new ApiClientException(ApiErrorCode.INVALID_ARGUMENT, "exportApproval",
-                    "审批请求状态非 pending: " + request.getStatus());
+                    "审批正在处理中，请勿重复提交");
         }
-        ExportRequest exportRequest = new ExportRequest();
-        exportRequest.setType(request.getType());
-        exportRequest.setStartTime(request.getStartTime());
-        exportRequest.setEndTime(request.getEndTime());
-        exportRequest.setPurpose(request.getPurpose());
-        exportRequest.setFuzzyFields(request.getFuzzyFields());
+        try
+        {
+            ExportApprovalRequest request = findApproval(requestId);
+            if (request == null)
+            {
+                throw new ApiClientException(ApiErrorCode.NOT_FOUND, "exportApproval",
+                        "审批请求不存在或已过期");
+            }
+            if (!ExportApprovalStateMachine.canTransition(request.getStatus(),
+                    ExportApprovalStateMachine.APPROVING))
+            {
+                throw new ApiClientException(ApiErrorCode.INVALID_ARGUMENT, "exportApproval",
+                        "审批请求状态不允许通过: " + request.getStatus());
+            }
+            // 先落“审批中”，即使进程中断也不会被重复提交
+            request.setStatus(ExportApprovalStateMachine.APPROVING);
+            request.setApprovedBy(approverId);
+            request.setApprovedAt(System.currentTimeMillis());
+            redisCache.setCacheObject(approvalKey(requestId), JSON.toJSONString(request),
+                    (int) retentionSeconds(), TimeUnit.SECONDS);
 
-        Map<String, Object> result = submitInternal(exportRequest, request.getMode(),
-                request.getUserId(), request.getUsername(), true, 1);
-        request.setStatus("approved");
-        request.setApprovedBy(approverId);
-        request.setApprovedAt(System.currentTimeMillis());
-        request.setTaskId(String.valueOf(result.get("taskId")));
-        redisCache.setCacheObject(approvalKey(requestId), JSON.toJSONString(request),
-                (int) retentionSeconds(), TimeUnit.SECONDS);
-        MetricsRegistry.increment("export.approval.approved");
-        result.put("requestId", requestId);
-        result.put("status", "approved");
-        return result;
+            ExportRequest exportRequest = new ExportRequest();
+            exportRequest.setType(request.getType());
+            exportRequest.setStartTime(request.getStartTime());
+            exportRequest.setEndTime(request.getEndTime());
+            exportRequest.setPurpose(request.getPurpose());
+            exportRequest.setFuzzyFields(request.getFuzzyFields());
+            exportRequest.setTenantId(request.getTenantId());
+
+            Map<String, Object> result;
+            try
+            {
+                result = submitInternal(exportRequest, request.getMode(),
+                        request.getUserId(), request.getUsername(), 1);
+            }
+            catch (RuntimeException e)
+            {
+                // 提交失败回退 pending，允许审批人重试
+                request.setStatus(ExportApprovalStateMachine.PENDING);
+                redisCache.setCacheObject(approvalKey(requestId), JSON.toJSONString(request),
+                        (int) retentionSeconds(), TimeUnit.SECONDS);
+                throw e;
+            }
+
+            request.setStatus(ExportApprovalStateMachine.APPROVED);
+            request.setTaskId(String.valueOf(result.get("taskId")));
+            redisCache.setCacheObject(approvalKey(requestId), JSON.toJSONString(request),
+                    (int) retentionSeconds(), TimeUnit.SECONDS);
+            MetricsRegistry.increment("export.approval.approved");
+            result.put("requestId", requestId);
+            result.put("status", ExportApprovalStateMachine.APPROVED);
+            return result;
+        }
+        finally
+        {
+            redisCache.deleteObject(casKey);
+        }
     }
 
     public void reject(String requestId, Long approverId, String reason)
     {
-        ExportApprovalRequest request = findApproval(requestId);
-        if (request == null)
-        {
-            throw new ApiClientException(ApiErrorCode.NOT_FOUND, "exportApproval",
-                    "审批请求不存在或已过期");
-        }
-        if (!"pending".equals(request.getStatus()))
+        String casKey = approvalKey(requestId) + ":cas";
+        Boolean acquired = redisCache.setCacheObjectIfAbsent(casKey, String.valueOf(approverId),
+                APPROVAL_CAS_SECONDS, TimeUnit.SECONDS);
+        if (!Boolean.TRUE.equals(acquired))
         {
             throw new ApiClientException(ApiErrorCode.INVALID_ARGUMENT, "exportApproval",
-                    "审批请求状态非 pending: " + request.getStatus());
+                    "审批正在处理中，请勿重复提交");
         }
-        request.setStatus("rejected");
-        request.setApprovedBy(approverId);
-        request.setApprovedAt(System.currentTimeMillis());
-        request.setRejectReason(reason);
-        redisCache.setCacheObject(approvalKey(requestId), JSON.toJSONString(request),
-                (int) retentionSeconds(), TimeUnit.SECONDS);
-        MetricsRegistry.increment("export.approval.rejected");
+        try
+        {
+            ExportApprovalRequest request = findApproval(requestId);
+            if (request == null)
+            {
+                throw new ApiClientException(ApiErrorCode.NOT_FOUND, "exportApproval",
+                        "审批请求不存在或已过期");
+            }
+            if (!ExportApprovalStateMachine.canTransition(request.getStatus(),
+                    ExportApprovalStateMachine.REJECTED))
+            {
+                throw new ApiClientException(ApiErrorCode.INVALID_ARGUMENT, "exportApproval",
+                        "审批请求状态不允许驳回: " + request.getStatus());
+            }
+            request.setStatus(ExportApprovalStateMachine.REJECTED);
+            request.setApprovedBy(approverId);
+            request.setApprovedAt(System.currentTimeMillis());
+            request.setRejectReason(reason);
+            redisCache.setCacheObject(approvalKey(requestId), JSON.toJSONString(request),
+                    (int) retentionSeconds(), TimeUnit.SECONDS);
+            MetricsRegistry.increment("export.approval.rejected");
+        }
+        finally
+        {
+            redisCache.deleteObject(casKey);
+        }
     }
 
     private String approvalKey(String requestId)
@@ -372,10 +436,21 @@ public class BigScreenExportService
     /**
      * 失败重试 / 断点续传：api 无续传接口时按原参数重新提交（新 taskId），
      * 仅允许失败/取消/暂停任务；原任务元数据保留用于审计。
+     *
+     * <p>重试不是管控盲区：重新校验 V3 开关、提交权限、限流与机构范围；
+     * 全字段导出在审批开关打开时重新进入审批队列，不能凭历史审批无限重提。</p>
      */
     public Map<String, Object> retry(String taskId, Long requesterId)
     {
+        requireExportSwitch();
         ExportTaskMeta meta = requireAccessibleTask(taskId, requesterId);
+        // 角色可能在任务提交后被回收，重试必须重新校验
+        checkExportPermission(meta.getMode());
+        if (!meta.isAdminScope() && isBlank(meta.getOrgCode()))
+        {
+            throw new ApiClientException(ApiErrorCode.FORBIDDEN, "exportRetry",
+                    "历史任务缺少机构范围，无法安全重试，请重新提交导出");
+        }
         Map<String, Object> statusResponse = trafficApiClient.exportStatus(taskId);
         String status = statusResponse == null || statusResponse.get("status") == null
                 ? "" : String.valueOf(statusResponse.get("status")).toLowerCase();
@@ -385,6 +460,11 @@ public class BigScreenExportService
             throw new ApiClientException(ApiErrorCode.INVALID_ARGUMENT, "exportRetry",
                     "仅 failed/canceled/paused 任务可重试，当前状态: " + status);
         }
+        if (!rateLimiter.tryAcquire("retry", requesterId, SUBMIT_LIMIT_PER_HOUR, 3600))
+        {
+            throw new ApiClientException(ApiErrorCode.RATE_LIMITED, "exportRetry",
+                    "重试过于频繁，请稍后再试");
+        }
         ExportRequest request = new ExportRequest();
         request.setType(meta.getType());
         request.setStartTime(meta.getStartTime());
@@ -392,8 +472,26 @@ public class BigScreenExportService
         request.setPurpose(meta.getPurpose());
         request.setFuzzyFields(meta.getFuzzyFields());
         request.setFields(meta.getFields());
+        request.setTenantId(meta.getTenantId());
+
+        // 审批开启时，非管理员的全字段重试重新走审批，避免“审批一次后无限重试”
+        if (ExportPolicy.MODE_FULL.equals(meta.getMode())
+                && featureSwitchService.isEnabled(FeatureSwitchService.EXPORT_APPROVAL)
+                && !SecurityUtils.isAdmin(meta.getUserId()))
+        {
+            ExportPolicy.validatePurpose(request.getPurpose());
+            ExportPolicy.validateFullFilters(request.getType(), request.getFuzzyFields(),
+                    capabilityService.current());
+            Map<String, Object> approval = createApproval(request, meta.getMode(),
+                    meta.getUserId(), meta.getUsername());
+            approval.put("retriedFrom", taskId);
+            approval.put("resumeMode", "reapproval");
+            MetricsRegistry.increment("export.retry");
+            return approval;
+        }
+
         Map<String, Object> result = submitInternal(request, meta.getMode(),
-                meta.getUserId(), meta.getUsername(), true, Math.max(1, meta.getAttempts()) + 1);
+                meta.getUserId(), meta.getUsername(), Math.max(1, meta.getAttempts()) + 1);
         result.put("retriedFrom", taskId);
         result.put("resumeMode", "resubmit");
         MetricsRegistry.increment("export.retry");
@@ -456,7 +554,10 @@ public class BigScreenExportService
         ExportTaskMeta meta = requireAccessibleTask(taskId, SecurityUtils.getUserId());
         String token = downloadTokenService.sign(taskId, meta.getUserId());
         Map<String, Object> result = new LinkedHashMap<String, Object>();
-        result.put("url", "/manager/bigScreen/export/download/" + taskId + "?token=" + token);
+        // 令牌不再拼进 URL：前端通过短生命周期请求头传递，避免出现在访问日志/Referer/代理缓存中
+        result.put("url", "/manager/bigScreen/export/download/" + taskId);
+        result.put("downloadToken", token);
+        result.put("tokenHeader", DOWNLOAD_TOKEN_HEADER);
         result.put("expiresIn", downloadTokenService.getTokenTtlSeconds());
         return result;
     }
@@ -464,6 +565,10 @@ public class BigScreenExportService
     public void download(String taskId, String token, HttpServletResponse response)
     {
         validateTaskId(taskId);
+        // 下载响应不应被缓存，也不应把 URL（含历史 query token）带给第三方
+        response.setHeader("Referrer-Policy", "no-referrer");
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+        response.setHeader("Pragma", "no-cache");
         Long requester = token != null && !token.trim().isEmpty()
                 ? downloadTokenService.verify(token, taskId)
                 : SecurityUtils.getUserId();
@@ -558,19 +663,66 @@ public class BigScreenExportService
         return meta;
     }
 
-    private void checkFullExportPermission(Long userId)
+    /**
+     * 提交权限：展示导出需 {@code manager:bigscreen:export}；
+     * 全字段导出还需 {@code manager:bigscreen:exportFull}。
+     */
+    private void checkExportPermission(String mode)
     {
-        if (SecurityUtils.isAdmin(userId))
-        {
-            return;
-        }
-        boolean allowed = SecurityUtils.hasPermi("manager:bigscreen:exportFull")
-                || SecurityUtils.hasPermi("manager:bigscreen:export");
-        if (!allowed)
+        if (!SecurityUtils.hasPermi("manager:bigscreen:export"))
         {
             throw new ApiClientException(ApiErrorCode.FORBIDDEN, "exportSubmit",
-                    "全字段导出需要审批权限");
+                    "无导出权限（manager:bigscreen:export）");
         }
+        if (ExportPolicy.MODE_FULL.equals(mode)
+                && !SecurityUtils.hasPermi("manager:bigscreen:exportFull"))
+        {
+            throw new ApiClientException(ApiErrorCode.FORBIDDEN, "exportSubmit",
+                    "全字段导出需要权限 manager:bigscreen:exportFull");
+        }
+    }
+
+    private void requireExportSwitch()
+    {
+        if (!featureSwitchService.isEnabled(FeatureSwitchService.EXPORT_V3))
+        {
+            throw new ApiClientException(ApiErrorCode.UNAVAILABLE, "exportSubmit",
+                    "V3 导出已通过开关关闭，请使用旧导出入口");
+        }
+    }
+
+    private String orgCodeOf(ExportRequest request)
+    {
+        if (request.getFuzzyFields() == null)
+        {
+            return null;
+        }
+        for (Map.Entry<String, String> entry : request.getFuzzyFields().entrySet())
+        {
+            if (entry.getKey() != null && "orgcode".equalsIgnoreCase(entry.getKey().trim()))
+            {
+                String value = entry.getValue();
+                return value == null || value.trim().isEmpty() ? null : value.trim();
+            }
+        }
+        return null;
+    }
+
+    private Long safeTenantId()
+    {
+        try
+        {
+            return SecurityUtils.getTenantId();
+        }
+        catch (RuntimeException e)
+        {
+            return null;
+        }
+    }
+
+    private boolean isBlank(String value)
+    {
+        return value == null || value.trim().isEmpty();
     }
 
     private void copy(InputStream inputStream, OutputStream outputStream) throws IOException
