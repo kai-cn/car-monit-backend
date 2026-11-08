@@ -163,6 +163,20 @@ JDK：扫描全仓所有 `pom.xml`，**只有 `java.version=1.8` 一个值**；�
 - Java job 先 `mvn test` 后 `mvn package`，会重复编译一次；不影响正确性。
 - Rust `fmt`/`clippy` 仍是非阻塞，属于迁移期既有约定。
 
+## 4.2 真实日志定位（2026-11-08，只读 PAT）
+
+拿到 run `42490893314`（ci/master）与 `42490893332`（cd/master）的 job 日志后确认：
+
+| job | 失败点 | 根因 | 修复 |
+|---|---|---|---|
+| ci/rust | `cargo test --lib` | `oss_client.rs:515` 断言 `creationDate` 带 `+08:00`；runner TZ=UTC | job 级 `TZ: Asia/Shanghai`（应用目标时区，不动断言） |
+| ci/go | 构建 Linux 二进制 | master 没有 `cmd/migrate`（只在 `car-monit-go-V2`） | 存在才构建；产物上传改 `dist/*` |
+| ci/py | pytest | runner 的 `USER=runner` 被 `AppSettings.user` 当嵌套模型解析 | 仅测试进程 `env -u USER` |
+| cd/image-java | `cp ruoyi-admin-*.jar` | 实际产物是 `ruoyi-admin.jar`（`finalName` 无版本号），glob 不匹配 | 取 `target/*.jar` 第一个 |
+| cd/image-go/rust/py | 读取 Dockerfile | `file: ./Dockerfile` 按 workspace 根解析，不是相对 context | 改 `car-monit-*/Dockerfile` |
+
+迁移分支的三条失败（go-V2 / rust-V2 / py-V2）来自首推时的旧 workflow：go 是 v6+v2 lint 不兼容、rust 同一个 TZ 用例、py 同一个 `USER` 冲突；旧 workflow 已在同步提交中删除，新 `ci.yml` 只在 `master`/PR 触发，因此分支不会再有新 run。
+
 ## 5. 实施进度
 
 | 阶段 | 状态 | 文件 |
