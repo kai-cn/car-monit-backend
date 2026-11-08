@@ -14,9 +14,10 @@ use std::future::Future;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
+use std::sync::mpsc::{sync_channel, Receiver, SyncSender, TrySendError};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
+use std::time::{Duration, Instant};
 
 use chrono::{Days, Local, NaiveDate, TimeZone};
 use tracing::field::{Field, Visit};
@@ -26,6 +27,9 @@ use tracing_subscriber::fmt::{FmtContext, FormatEvent, FormatFields, MakeWriter}
 use tracing_subscriber::registry::LookupSpan;
 
 const CHANNEL_CAPACITY: usize = 1024;
+/// 日志队列拥塞时的发送超时：宁可丢日志也不能让请求线程无限阻塞。
+const LOG_SEND_TIMEOUT: Duration = Duration::from_millis(20);
+static LOG_DROPS: AtomicU64 = AtomicU64::new(0);
 const DATE_LEN: usize = 10;
 const TRACE_ID_TARGET: &str = "com.ruoyi.common.core.monitor.TraceIdFilter";
 pub const SQL_LOG_TARGET: &str = "com.ruoyi.common.core.monitor.SqlLogInterceptor";
@@ -126,13 +130,39 @@ impl LogHandle {
     }
 }
 
+/// 在 `timeout` 内投递命令；队列满时按 1ms 轮询重试，超时或断开返回 false。
+/// `std::sync::mpsc::SyncSender::send_timeout` 仍是 unstable，这里用 try_send 等价实现。
+fn send_with_timeout(sender: &SyncSender<Command>, command: Command, timeout: Duration) -> bool {
+    let mut command = command;
+    let deadline = Instant::now() + timeout;
+    loop {
+        match sender.try_send(command) {
+            Ok(()) => return true,
+            Err(TrySendError::Full(returned)) => {
+                command = returned;
+                if Instant::now() >= deadline {
+                    return false;
+                }
+                std::thread::sleep(Duration::from_millis(1));
+            }
+            Err(TrySendError::Disconnected(_)) => return false,
+        }
+    }
+}
+
 impl Drop for LogHandle {
     fn drop(&mut self) {
-        if let Ok(sender) = self.tx.lock() {
-            let _ = sender.send(Command::Shutdown);
-        }
-        if let Some(join) = self.join.take() {
-            let _ = join.join();
+        let sender = match self.tx.lock() {
+            Ok(sender) => sender.clone(),
+            Err(poisoned) => poisoned.into_inner().clone(),
+        };
+        // 停机时给 writer 最多约 2 秒排空；投递不进去就放弃 join，
+        // 避免 drop 在写盘卡死时无限阻塞。
+        let delivered = send_with_timeout(&sender, Command::Shutdown, Duration::from_secs(2));
+        if delivered {
+            if let Some(join) = self.join.take() {
+                let _ = join.join();
+            }
         }
     }
 }
@@ -156,22 +186,31 @@ impl Write for LogGuard {
         if buf.is_empty() {
             return Ok(0);
         }
-        // Java logback.xml 用的是同步 RollingFileAppender（没有 AsyncAppender），
-        // 这里也阻塞发送：队列满时宁可等，也不静默丢日志。
-        let _ = self
-            .tx
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .send(Command::Write(buf.to_vec()));
+        // 有界队列 + 短超时：写盘抖动时不能让请求线程无限阻塞（也不静默丢）。
+        // 先克隆 sender 再放锁，超时等待期间不持有 Mutex。
+        let sender = match self.tx.lock() {
+            Ok(sender) => sender.clone(),
+            Err(poisoned) => poisoned.into_inner().clone(),
+        };
+        if !send_with_timeout(
+            &sender,
+            Command::Write(buf.to_vec()),
+            LOG_SEND_TIMEOUT,
+        ) {
+            let dropped = LOG_DROPS.fetch_add(1, Ordering::Relaxed) + 1;
+            if dropped.is_multiple_of(1000) {
+                eprintln!("日志队列持续拥塞，已丢弃 {dropped} 条日志（写盘过慢？）");
+            }
+        }
         Ok(buf.len())
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        let _ = self
-            .tx
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .try_send(Command::Flush);
+        let sender = match self.tx.lock() {
+            Ok(sender) => sender.clone(),
+            Err(poisoned) => poisoned.into_inner().clone(),
+        };
+        let _ = send_with_timeout(&sender, Command::Flush, LOG_SEND_TIMEOUT);
         Ok(())
     }
 }
@@ -248,6 +287,9 @@ impl RollingWriter {
         while let Ok(command) = rx.recv() {
             match command {
                 Command::Write(bytes) => {
+                    // 不合并多条事件：logback 的滚动发生在「下一条写入之前」，
+                    // 批量 write_all 会让超出 maxFileSize 的边界数据整体落进旧文件，
+                    // 与 Java 的 TimeBasedRollingPolicy 行为不一致。
                     if let Err(err) = self.write_bytes(&bytes) {
                         eprintln!("写日志文件 {} 失败: {err}", self.name);
                     }
@@ -1347,6 +1389,108 @@ mod tests {
         assert!(!text.contains("slow statement"), "{text}");
     }
 
+    /// `java_line` 必须落到 `%L` 位置且不作为字段输出；映射到 Java FQCN 的 target 输出 `?`。
+    #[tokio::test]
+    async fn java_lines_and_mapped_targets_render_like_logback() {
+        use tracing_subscriber::layer::SubscriberExt;
+
+        let dir = tempfile::tempdir().expect("tempdir");
+        let handle = start_appender(dir.path(), "sys-info", true, u64::MAX, 60).expect("start");
+        let layer = tracing_subscriber::fmt::layer()
+            .event_format(JavaLogFormat {
+                console: false,
+                logger_width: 36,
+                slow_sql_threshold_ms: 1000,
+            })
+            .with_writer(handle.writer())
+            .with_ansi(false);
+        let subscriber = tracing_subscriber::registry().with(layer);
+        let guard = tracing::subscriber::set_default(subscriber);
+
+        with_trace_id("t1".to_string(), async {
+            for line in [159u32, 175, 258, 262, 267] {
+                match line {
+                    159 | 258 => {
+                        tracing::error!(
+                            target: TRACE_ID_TARGET,
+                            java_line = line,
+                            "[line-test]"
+                        )
+                    }
+                    175 | 262 => {
+                        tracing::warn!(
+                            target: TRACE_ID_TARGET,
+                            java_line = line,
+                            "[line-test]"
+                        )
+                    }
+                    _ => {
+                        tracing::info!(
+                            target: TRACE_ID_TARGET,
+                            java_line = line,
+                            "[line-test]"
+                        )
+                    }
+                }
+            }
+            // 有 Java 类映射的 target：行号输出 `?`，不暴露 Rust 行号。
+            tracing::info!(
+                target: "car_monit_rust::api::system::sys_file",
+                "[mapped-test]"
+            );
+            // 没有 Java 对应类的 target：保留 Rust 行号。
+            tracing::info!(target: "car_monit_rust::task", "[plain-test]");
+        })
+        .await;
+
+        drop(guard);
+        drop(handle);
+        let files: Vec<_> = std::fs::read_dir(dir.path())
+            .expect("read dir")
+            .flatten()
+            .map(|entry| entry.path())
+            .collect();
+        let text = std::fs::read_to_string(&files[0]).expect("read log");
+        for line in [159, 175, 258, 262, 267] {
+            assert!(
+                text.contains(&format!(":{line} - [line-test]")),
+                "缺少 Java 行号 {line}: {text}"
+            );
+        }
+        assert!(!text.contains("java_line="), "{text}");
+        assert!(text.contains(":? - [mapped-test]"), "{text}");
+        assert!(!text.contains(":? - [plain-test]"), "{text}");
+    }
+
+    /// 同一个 Throwable 被多个 layer 格式化时只解析一次栈帧（OnceLock 缓存）。
+    #[test]
+    fn throwable_display_is_cached() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        static CALLS: AtomicUsize = AtomicUsize::new(0);
+
+        #[derive(Debug)]
+        struct Counting;
+        impl fmt::Display for Counting {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                CALLS.fetch_add(1, Ordering::Relaxed);
+                write!(f, "counting")
+            }
+        }
+        impl Error for Counting {}
+
+        let error = Counting;
+        let throwable = Throwable::new(&error);
+        let first = throwable.to_string();
+        let second = throwable.to_string();
+        assert_eq!(first, second);
+        assert_eq!(
+            CALLS.load(Ordering::Relaxed),
+            1,
+            "多次 Display 不应重复渲染（符号化只做一次）"
+        );
+    }
+
     #[test]
     fn elapsed_suffixes_parse_in_the_right_order() {
         let approx = |value: Option<f64>, expected: f64| {
@@ -1359,11 +1503,14 @@ mod tests {
         assert!(parse_elapsed_ms(None).is_none());
     }
 
-    /// release 冒烟：确认 release 构建保留符号，throwable 能输出 `\tat` 帧。
+    /// release 冒烟：确认 release 构建保留符号，throwable 能输出带文件行号的 `\tat` 帧。
     /// 只在 `cargo test --release --lib` 下编译运行；dev 构建符号天然存在。
+    /// 调用点故意放在 `crate::test_support`：`backtrace_text` 会过滤
+    /// `car_monit_rust::logging` 前缀，测试函数自身也可能被内联。
     #[test]
     #[cfg(not(debug_assertions))]
     fn throwable_has_frames_in_release() {
+        #[derive(Debug)]
         struct Boom;
         impl fmt::Display for Boom {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1374,10 +1521,24 @@ mod tests {
 
         let boom = Boom;
         let text = Throwable::new(&boom).to_string();
-        assert!(
-            text.contains("\n\tat "),
-            "release 构建缺少栈帧（符号被 strip？）: {text}"
-        );
+        let frames: Vec<&str> = text
+            .lines()
+            .map(str::trim)
+            .filter(|line| line.starts_with("at "))
+            .collect();
+        assert!(!frames.is_empty(), "release 构建缺少栈帧（符号被 strip？）: {text}");
+        // 至少要有一条「文件:行号」不是占位符的帧，否则等于没有符号。
+        // 注：release + LTO 会把应用探针内联进测试闭包（debug=1/2 实测都一样），
+        // 因此不强制要求 car_monit_rust 帧；有真实文件行号帧即证明二进制未 strip。
+        let has_real_frame = frames.iter().any(|line| {
+            let Some((file, number)) = line.rsplit_once(':') else {
+                return false;
+            };
+            let number = number.trim_end_matches(')');
+            !file.contains("<unknown>")
+                && number.parse::<u32>().map(|value| value > 0).unwrap_or(false)
+        });
+        assert!(has_real_frame, "release 构建没有可用的文件行号帧: {text}");
     }
 
     #[tokio::test]

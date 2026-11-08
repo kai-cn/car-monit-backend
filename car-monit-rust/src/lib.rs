@@ -251,6 +251,12 @@ mod route_parity {
             .into_iter()
             .map(|(method, path)| (method, shape(&path)))
             .collect();
+        // 只归一参数、不削尾斜杠的原始集合：`shape()` 会削斜杠，
+        // 用它做尾斜杠断言会恒真（归一后的集合本身已包含无斜杠形态）。
+        let registered_raw: HashSet<(String, String)> = crate::api::meta::registered()
+            .into_iter()
+            .map(|(method, path)| (method, shape_raw(&path)))
+            .collect();
 
         let mut missing: Vec<_> = expected.difference(&registered).cloned().collect();
         missing.sort();
@@ -276,13 +282,13 @@ mod route_parity {
         assert_eq!(expected.len(), 510, "基线端点数量应为 510");
 
         // 尾斜杠归一会把 `/x/` 削成 `/x`。基线里带尾斜杠的每条 (method, path)
-        // 都必须在无斜杠形式上也有注册，否则请求会被削成 405
+        // 都必须在无斜杠形式上也有**原始注册**，否则请求会被削成 405
         // （`GET /system/user/` 曾因此变成 200 + "Request method 'GET' not supported"）。
         let mut trimmed_missing: Vec<_> = slashed
             .into_iter()
             .filter(|(method, path)| {
                 let trimmed = path.trim_end_matches('/');
-                !registered.contains(&(method.clone(), shape(trimmed)))
+                !registered_raw.contains(&(method.clone(), shape_raw(trimmed)))
             })
             .collect();
         trimmed_missing.sort();
@@ -290,6 +296,22 @@ mod route_parity {
             trimmed_missing.is_empty(),
             "以下带尾斜杠的基线端点缺少无斜杠注册（尾斜杠归一会 405）: {:?}",
             trimmed_missing
+        );
+
+        // 元数据级断言：GET /system/user 必须带 @PreAuthorize 权限，
+        // 并且 HEAD（axum 的 get() 同时服务 HEAD）要按 GET 元数据做鉴权。
+        use axum::http::Method;
+        assert_eq!(
+            crate::api::meta::lookup(&Method::GET, "/system/user")
+                .and_then(|meta| meta.permission),
+            Some("system:user:query"),
+            "GET /system/user 缺少 system:user:query 元数据"
+        );
+        assert_eq!(
+            crate::api::meta::lookup(&Method::HEAD, "/system/user")
+                .and_then(|meta| meta.permission),
+            Some("system:user:query"),
+            "HEAD /system/user 必须复用 GET 的权限元数据"
         );
     }
 
@@ -300,6 +322,11 @@ mod route_parity {
             Some(trimmed) if trimmed.len() > 1 => trimmed,
             _ => path,
         };
+        shape_raw(path)
+    }
+
+    /// 只把 `{var}` 收成 `{}`，**保留结尾斜杠**（尾斜杠断言必须用这个集合）。
+    fn shape_raw(path: &str) -> String {
         let mut out = String::with_capacity(path.len());
         let mut in_param = false;
         for ch in path.chars() {
@@ -360,5 +387,66 @@ mod trailing_slash {
             rewrite("/system/user"),
             ("/system/user".to_string(), String::new())
         );
+    }
+
+    /// 真实分派（不依赖 AppState）：验证「路由前削尾斜杠 + 按方法分派」的组合，
+    /// 覆盖 GET/POST/PUT × 带斜杠/不带斜杠。
+    #[tokio::test]
+    async fn rewritten_router_dispatches_by_method() {
+        use axum::body::Body;
+        use axum::http::Request;
+        use axum::routing::get;
+        use tower::ServiceExt;
+
+        async fn get_handler() -> &'static str {
+            "GET"
+        }
+        async fn post_handler() -> &'static str {
+            "POST"
+        }
+        async fn put_handler() -> &'static str {
+            "PUT"
+        }
+
+        let router = axum::Router::new()
+            .route(
+                "/system/user",
+                get(get_handler).post(post_handler).put(put_handler),
+            )
+            .with_state(());
+        let app = axum::Router::new().fallback_service(
+            tower::ServiceBuilder::new()
+                .layer(tower::util::MapRequestLayer::new(strip_trailing_slash))
+                .service(router),
+        );
+
+        for (method, uri, expected) in [
+            ("GET", "/system/user", "GET"),
+            ("GET", "/system/user/", "GET"),
+            ("POST", "/system/user", "POST"),
+            ("POST", "/system/user/", "POST"),
+            ("PUT", "/system/user/", "PUT"),
+        ] {
+            let response = app
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .method(method)
+                        .uri(uri)
+                        .body(Body::empty())
+                        .expect("request"),
+                )
+                .await
+                .expect("response");
+            assert_eq!(response.status(), 200, "{method} {uri}");
+            let body = axum::body::to_bytes(response.into_body(), 1024)
+                .await
+                .expect("body");
+            assert_eq!(
+                String::from_utf8_lossy(&body),
+                expected,
+                "{method} {uri} 分派到了错误的方法"
+            );
+        }
     }
 }

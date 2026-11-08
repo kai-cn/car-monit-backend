@@ -147,6 +147,6 @@ tempfile = "3"
 lto = "thin"
 codegen-units = 1
 # Java 的 throwable 带栈帧，`strip = "symbols"` 会让 backtrace::resolve 全部落空。
-# 保留行号表（debug=1），不 strip 符号；release 冒烟见 logging 单测
-# `throwable_has_frames_in_release`。
-debug = 1
+# 实测 debug=1（仅行号表）在 Windows 下解析不到本 crate 的函数符号，
+# 会只剩 std/test harness 帧；因此用 debug=2 保留完整调试信息（不 strip）。
+debug = 2

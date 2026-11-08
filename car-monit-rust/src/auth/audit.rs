@@ -39,7 +39,10 @@ pub fn record_logininfor(
     let browser = meta.browser.clone();
     let os = meta.os.clone();
 
-    tokio::spawn(async move {
+    // 运行时关闭阶段 `tokio::spawn` 会 panic；审计失败不能产生二次 panic
+    // 覆盖调用方正在处理的原始 payload。
+    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        tokio::spawn(async move {
         // Java: `sys_user_logger.info("[" + ip + "][" + address + "][" + username + "][" + status + "][" + message + "]")`
         tracing::info!(
             target: "sys-user",
@@ -73,7 +76,8 @@ pub fn record_logininfor(
                 "记录登录日志失败"
             );
         }
-    });
+        });
+    }));
 }
 
 /// Java: SysOperLog 中由 LogAspect 填充的字段。
@@ -98,7 +102,10 @@ pub struct OperRecord {
 /// Java: AsyncFactory.recordOper —— AsyncManager 固定延迟 10ms 后落库。
 pub fn record_oper(pool: &MySqlPool, record: OperRecord) {
     let pool = pool.clone();
-    tokio::spawn(async move {
+    // 运行时关闭阶段 `tokio::spawn` 会 panic；审计失败不能产生二次 panic
+    // 覆盖调用方正在处理的原始 payload。
+    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        tokio::spawn(async move {
         tokio::time::sleep(Duration::from_millis(10)).await;
         let result = sqlx::query(
             r#"
@@ -130,5 +137,6 @@ pub fn record_oper(pool: &MySqlPool, record: OperRecord) {
                 "记录操作日志失败"
             );
         }
-    });
+        });
+    }));
 }

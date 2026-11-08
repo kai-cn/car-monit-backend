@@ -77,9 +77,8 @@
 
 ## 6. 独立复审修复（第 2 轮）
 
-> **验证状态**：本轮改动**未执行** `cargo check/clippy/test`。本机 D 盘只剩 1.4 MB、
-> C 盘 3.8 GB，`cargo clean` 释放的 2.9 GB 进入回收站后并未真正归还空间；按用户指示
-> 停止一切编译与写盘动作，待磁盘缓解后补跑。`--release` 冒烟同理未执行。
+> **验证状态**：本轮改动已通过 `cargo check --all-targets`、`cargo clippy --all-targets`
+> 与 `cargo test --lib`（115 passed）。release 冒烟在第二轮复审后补跑，见第 7 节。
 
 ### 阻断：`GET /system/user/` 失效
 
@@ -92,7 +91,7 @@
 
 | 决策点 | 选项 | 选择 | 理由 | 影响面 |
 |---|---|---|---|---|
-| release 符号 | ① 保持 `strip = "symbols"` ② `debug = 1` 且不 strip | ② | throwable 的 `\tat` 帧依赖 `backtrace::resolve`，strip 之后生产日志只剩首行；体积换取可排障性 | `Cargo.toml [profile.release]` |
+| release 符号 | ① 保持 `strip = "symbols"` ② 完整调试信息且不 strip | ②（`debug = 2`） | throwable 的 `\tat` 帧依赖 `backtrace::resolve`，strip 之后生产日志只剩首行。实测 `debug=1`（仅行号表）与 `debug=2` 在 Windows 下都只能解析到非内联帧；选 2 以保留更多函数信息 | `Cargo.toml [profile.release]` |
 | release 冒烟 | ① 不做 ② 加 release-only 单测 | ② | `#[cfg(not(debug_assertions))]` 的 `throwable_has_frames_in_release` 断言 `\tat`；只在 `cargo test --release --lib` 下编译 | `logging.rs` 测试模块 |
 
 ### 中危 1：慢 SQL 短语句
@@ -118,8 +117,8 @@
 
 | 决策点 | 选项 | 选择 | 理由 | 影响面 |
 |---|---|---|---|---|
-| 防回归手段 | ① 搭真实 `build_router`（需 DB/Redis） ② 对基线做「尾斜杠必须有无斜杠同方法注册」的静态对拍 + 保留 web_filter 级端到端测试 | ② | `AppState` 需要可用的 MySQL/Redis，单测环境不具备；静态对拍能直接抓住这类阻断，web_filter 级测试覆盖 404/405/panic 的日志与状态码 | `route_parity::baseline_endpoints_are_registered` 新增断言 |
-| `shape()` 掩盖问题 | ① 继续用形状归一 ② 在归一之外单独检查尾斜杠形态 | ② | 形状归一本身没错，错在只比对归一后的集合；新增 `slashed` 列表逐条要求无斜杠同方法注册 | 同上 |
+| 防回归手段 | ① 搭真实 `build_router`（需 DB/Redis） ② 静态对拍 + 一个不依赖 AppState 的 dummy Router 分派测试 | ② | 用「只归一参数、不削斜杠」的 raw 集合做尾斜杠断言（用归一集合会恒真）；dummy Router 覆盖 rewrite 后的 GET/POST/PUT 分派。真实 `build_router` 仍需 MySQL/Redis，见第 7 节 | `route_parity`、`trailing_slash` |
+| `shape()` 掩盖问题 | ① 继续用归一集合 ② 另建 raw 集合 | ② | 归一集合本身包含无斜杠形态，用它断言恒真；raw 集合保留尾斜杠，删掉 GET 注册会立即失败 | 同上 |
 
 ### 中危 5：Throwable 重复符号化
 
@@ -137,8 +136,78 @@
 | `take_panic` 残留陈旧值 | 修 | 请求进入时 `clear_panic()`，panic 后 `take_panic()` 仍负责消费 |
 | `[SQL异常]` 缺 sqlId 与耗时 | 修 | 输出 `[SQL异常] sqlx::query, 耗时: ?ms, 异常: ...`；耗时无法从 `From<sqlx::Error>` 取得，用 `?` 而不是编造数字 |
 | 401/403 错误页与 `oper_url` 丢原始 URI | 修 | `OriginalPath` 同时供给 auth 的 401/403 文案与 `record_oper.oper_url` |
-| 后台线程名一律 `scheduling-1` 且 `with_log_thread` 未接线 | 修 | `run_loop` 用 `with_log_thread("scheduling-1", kind.run(...))` 包住任务体 |
+| 后台线程名一律 `scheduling-1` 且 `with_log_thread` 未接线 | 修后回退 | 第 3 轮复审后回退：`current_log_thread` 的 fallback 已把 `tokio-*` 映射成 `scheduling-1`，再包一层无行为差异 |
 | 决策记录/注释与实际不符 | 修 | 32 帧上限改为「Rust 侧自选截断，非 logback 行为」；补本轮记录 |
 | OSS DELETE 语义偏差 | 暂不修 | 见阻断表最后一行，已知偏差，避免为此引入路径白名单 |
 
-**本轮残余**：OSS DELETE 仍接受不带尾斜杠的路径（Java 的 pattern 带斜杠）；`build_router` 级真实装配测试因缺少 MySQL/Redis 未落地；本轮全部改动未经编译验证。
+**本轮残余**：OSS DELETE 仍接受不带尾斜杠的路径（Java 的 pattern 带斜杠）；`build_router` 级真实装配测试因缺少 MySQL/Redis 未落地。本轮已在磁盘恢复后补跑三项门禁（115 passed）。
+
+---
+
+## 7. 独立复审修复（第 3 轮）
+
+### 高危：release 用例无法编译
+
+| 决策点 | 选项 | 选择 | 理由 | 影响面 |
+|---|---|---|---|---|
+| `impl Error` 的约束 | ① 只实现 Display ② 补 `#[derive(Debug)]` | ② | `std::error::Error` 要求 `Debug + Display`；原用例被 `cfg(not(debug_assertions))` 隐藏，三道 dev 门禁都看不到 | `logging.rs` release 用例 |
+| 调用点位置 | ① 测试函数内 ② 独立辅助函数 + black_box 间接调用 | ②→实测回退 | 先试了 `car_monit_rust::test_support` + `#[inline(never)]` + `black_box` 函数指针 + `#[no_mangle]`，debug=1/2 下应用帧仍被 LTO 折叠进 harness 闭包；最终回到测试内直接调用，断言改为「至少一条真实文件:行号帧」 | `logging.rs` release 用例 |
+| 断言口径 | ① 只断言存在 `\tat` ② 至少一条真实「文件:行号」帧 | ② | 先前的断言在有 std/harness 帧时也会通过。实测（debug=1 与 debug=2 都一样）：应用探针会被 release+LTO 内联进测试闭包，栈里只剩 std/test harness，因此不强制要求应用帧；「至少一条真实文件:行号帧」即可证明二进制未被 strip | 同上 |
+
+### 中危 2：尾斜杠断言恒真
+
+| 决策点 | 选项 | 选择 | 理由 | 影响面 |
+|---|---|---|---|---|
+| 比对集合 | ① 复用 `shape()` 归一集合 ② 另建只归一 `{}`、保留斜杠的 raw 集合 | ② | `shape()` 本身削斜杠，归一集合必然包含无斜杠形态，断言恒真；raw 集合删掉 GET 注册就会失败 | `route_parity` |
+| 元数据断言 | ① 只看注册表 ② 增加 `lookup` 断言 | ② | 直接校验 `system:user:query` 权限挂到了 `GET /system/user`，并顺带覆盖 HEAD 归一 | 同上 |
+
+### 中危 3：panic 审计分支无测试
+
+| 决策点 | 选项 | 选择 | 理由 | 影响面 |
+|---|---|---|---|---|
+| 可测性 | ① 直接测 `meta_middleware`（需 AppState/Redis） ② 抽出 `OperContext` + `panic_oper_record` + `with_panic_audit` | ② | `AppState` 依赖真实 Redis，无法在单测里构造；抽出后可直接断言 status=1/errorMsg/原始 URI，以及「先回调、再原样返回 payload」 | `api/meta.rs` |
+| 二次 panic | ① 不处理 ② `record_oper` 的 `tokio::spawn` 包 `catch_unwind` | ② | 运行时关闭阶段 spawn 会 panic，二次 panic 会替换调用方正在处理的 payload | `auth/audit.rs` |
+| `build_router` 级测试 | ① 加 test-only `AppState` ② 暂不做 | ② | 需要给 `RedisCache` 造无连接实例，改动面过大且会让测试依赖外部服务；已在残余中说明 | — |
+
+### 中危 4/5：`java_line` 与缓存无测试
+
+| 决策点 | 选项 | 选择 | 理由 | 影响面 |
+|---|---|---|---|---|
+| `java_line` | ① 不测 ② 表驱动发 5 条事件 + 映射 target 的 `?` | ② | 删除分支或映射臂会立即失败；同时断言 `java_line=` 不落字段 | `logging.rs` 测试 |
+| `OnceLock` | ① 不测 ② 用自增计数的 Error 连续 `to_string()` 两次 | ② | 缓存被删时计数会变成 2 | `logging.rs` 测试 |
+
+### 中危 6：日志通道阻塞策略
+
+| 决策点 | 选项 | 选择 | 理由 | 影响面 |
+|---|---|---|---|---|
+| 发送策略 | ① 无限阻塞 `send` ② 20ms 上限 + 丢弃计数 | ② | 无限阻塞会在写盘抖动时卡住所有 tokio worker，并连带定时器/IO；20ms 上限 + 计数把代价限制在单次请求。`SyncSender::send_timeout` 仍是 unstable（std_internals），用 `try_send` + 1ms 轮询等价实现，等待期间不持有 Mutex | `LogGuard::write` / `send_with_timeout` |
+| 丢弃可观测性 | ① 静默 ② 每 1000 条 stderr 告警 | ② | 不能静默丢日志；用 stderr 避免日志系统自递归 | 同上 |
+| `flush` | ① `try_send` ② 与写路径相同的 `send_timeout` | ② | 原实现满时静默丢 flush，与写路径策略不一致 | `LogGuard::flush` |
+| `LogHandle::drop` | ① 无限阻塞 `send` ② 最多约 2 秒重试，失败则放弃 join | ② | 停机时不能因写盘卡死而挂住进程 | `Drop for LogHandle` |
+| writer 侧 | ① 每条单独写 ② `try_recv` 批量合并后一次 `write_all` | ①（保留逐条） | 试过批量：现有 `writer_uses_active_file_and_indexed_archive` 立即失败——logback 的滚动发生在「下一条写入之前」，批量写会把超出 `maxFileSize` 的数据整体塞进旧文件。与 Java 对齐优先，撤销批量 | `RollingWriter::run` |
+
+### 低危
+
+| 项 | 处理 | 说明 |
+|---|---|---|
+| `with_log_thread("scheduling-1")` 冗余 | 回退 | `current_log_thread` 的 fallback 已把 `tokio-*` 映射成 `scheduling-1`，再包一层无行为差异 |
+| HEAD 绕过权限 | 修 | `lookup` 把 HEAD 归一为 GET；`route_parity` 增加 HEAD 的权限元数据断言 |
+| 决策记录过期 | 修 | 本节替换「本轮全部改动未经编译验证」「静态对拍能直接抓住」两处不成立表述 |
+| `[SQL异常] 耗时: ?ms` | 保留 `?` | `From<sqlx::Error>` 拿不到单次执行耗时；输出真实数字需要把计时塞进每个查询调用（改动面大、且 Rust 侧无 MyBatis Executor 拦截点）。`?` 是诚实占位，已在残余中标注 |
+
+**第 3 轮残余**：OSS DELETE 语义偏差；`build_router` 真实装配测试未落地；`[SQL异常]` 无真实耗时；release 下应用帧会被 LTO 折叠（只能保证有真实文件行号帧）。
+
+### 验证结果（第 3 轮）
+
+- `cargo check --all-targets`：exit 0
+- `cargo clippy --all-targets`：exit 0（lib 24 / test 26 告警，与改动前基线一致）
+- `cargo test --lib`：120 passed（新增 5 条用例）
+- `cargo test --release --lib throwable_has_frames_in_release`：**1 passed**（release `debug=2`；帧里出现 `/rustc/.../function.rs:253` 等真实文件行号）
+- release 用例修正过程：`Boom` 补 `#[derive(Debug)]`；尝试 `#[inline(never)] + black_box + #[no_mangle]` 探针，debug=1/2 下应用帧仍被 LTO 折叠进 harness 闭包，最终断言收敛为「至少一条真实文件:行号帧」。
+
+---
+
+## 删除/清理约定（本机特有）
+
+- 本机删除会被拦截进回收站且不释放空间；实测有效做法是先用 `SetLength(0)` 截断文件，再删除空壳目录，并在删除前后各取一次可用字节、`Test-Path` 确认目标消失。
+- 构建产物放在仓库外（`C:\Users\abelz\.cache\cargo-target-carmonit`），按上述方式清理。
