@@ -237,6 +237,31 @@ class TestFailClosedSecrets:
         assert "SPRING__DATASOURCE__DRUID__MASTER__PASSWORD" in message
         assert "HENGDA__SECRET" in message
 
+    def test_missing_secrets_survive_a_cwd_dotenv(self, tmp_path, monkeypatch) -> None:
+        """本机按文档建了 ``.env`` 时，"密钥缺失"用例不能被 dotenv 悄悄补齐。
+
+        没有 ``_env_file=None`` 时，下面的 ``AppSettings`` 会读到 tmp_path/.env 并
+        成功构造，``pytest.raises`` 直接失败 —— 这正是 CI 无 .env、本地必红的成因。
+        """
+        from pydantic import ValidationError
+
+        from app.settings import AppSettings
+
+        self._clear_required(monkeypatch)
+        (tmp_path / ".env").write_text(
+            f"TOKEN__SECRET={self._VALID_TOKEN}\n"
+            "SPRING__DATASOURCE__DRUID__MASTER__PASSWORD=prod-db-password\n"
+            f"HENGDA__SECRET={self._VALID_HENGDA}\n",
+            encoding="utf-8",
+        )
+        monkeypatch.chdir(tmp_path)
+
+        # 正对照：不隔离时 dotenv 确实会补齐（证明下面的负用例有意义）。
+        assert AppSettings(is_localhost="local").token.secret == self._VALID_TOKEN
+
+        with pytest.raises(ValidationError, match="TOKEN__SECRET"):
+            AppSettings(_env_file=None, is_localhost="local")
+
     def test_legacy_demo_values_are_rejected(self, monkeypatch) -> None:
         from pydantic import ValidationError
 
