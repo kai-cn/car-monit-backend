@@ -4876,8 +4876,11 @@ gantrycar,gantrytrade}/export`、`/base/{geometry,snapshotflow,feerecords}/expor
   `Content-Disposition: attachment`。上传目录里的 `.html` / `.svg` 被直接导航时会下载
   而不是同源执行；`<img src>` 渲染图片不受影响。没有收紧上传后缀，避免改变
   `FileUploadUtils` 的通用上传白名单。
+- **Windows 跨盘**（Python-only）：`StaticFiles.lookup_path` 的 `os.path.commonpath`
+  在跨盘符路径上会抛 `ValueError`（未捕获即 500）；`ProfileStaticFiles` 将其等同于
+  "越界"，返回 `("", None)` → 404，与 Linux 上的目录穿越处理一致。
 - 回归：`tests/test_profile_static.py`（挂载点存在、任意子路径可读、目录缺失不抛、
-  下载/防嗅探头）。
+  下载/防嗅探头、跨盘 404）。
 - 与 Java 的差异：Starlette 的 `StaticFiles` 不提供目录列表；Java 默认也没有，等价。
 
 ### 46.3 异常文案按业务/非业务分流（P1-6）`[需注意]`

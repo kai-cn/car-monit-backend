@@ -15,6 +15,7 @@ Java 的 ``ResourcesConfig#addResourceHandlers`` 把 ``Constants.RESOURCE_PREFIX
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -87,3 +88,19 @@ def test_profile_static_adds_download_and_nosniff_headers(
         assert response.headers["content-disposition"] == "attachment"
     finally:
         reset_settings_cache()
+
+
+def test_profile_static_cross_drive_path_is_not_found(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Windows 上 ``commonpath`` 跨盘会抛 ValueError；必须按"越界"转成 404."""
+
+    def _cross_drive(_paths) -> str:
+        raise ValueError("path is on mount 'C:', start on mount 'D:'")
+
+    monkeypatch.setattr(os.path, "commonpath", _cross_drive)
+
+    from app.middleware.profile_static import ProfileStaticFiles
+
+    files = ProfileStaticFiles(directory=str(tmp_path), check_dir=False)
+    assert files.lookup_path("../../../C:/Windows/win.ini") == ("", None)

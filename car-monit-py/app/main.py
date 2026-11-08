@@ -710,8 +710,8 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     #
     # check_dir=False：Java 的资源处理器在目录不存在时不影响启动，只在请求时 404；
     # StaticFiles 默认 check_dir=True 会在 create_app() 时抛 RuntimeError，改变启动行为。
-    # ProfileStaticFiles 在响应上加 nosniff + Content-Disposition: attachment，
-    # 阻断 /profile 下的同源 HTML 执行。
+    # ProfileStaticFiles 额外处理两件事：Windows 跨盘 commonpath 抛 ValueError -> 404；
+    # 响应加 nosniff + Content-Disposition: attachment，阻断 /profile 下的同源 HTML 执行。
     application.mount(
         "/profile",
         ProfileStaticFiles(directory=Path(settings.ruoyi.profile), check_dir=False),
