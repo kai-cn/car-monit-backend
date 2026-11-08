@@ -274,6 +274,11 @@ public class Constants
      */
     public static final String car_list_jc = "car_list_jc";
 
+    /**
+     * 重点车俩列表版本号（用于地图点位索引失效判断）
+     */
+    public static final String car_list_version = "car_list_version";
+
 
 
     public static final String BORDER_WEIGHING_CAPTURE = "BorderWeighingCapture";  // 省界称重

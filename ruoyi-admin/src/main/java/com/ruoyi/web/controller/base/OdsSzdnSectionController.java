@@ -34,6 +34,9 @@ public class OdsSzdnSectionController extends BaseController {
     @Autowired
     private IOdsSzdnSectionService odsSzdnSectionService;
 
+    @Autowired
+    private com.ruoyi.manager.service.bigscreen.DictVersionService dictVersionService;
+
     /**
      * 查询路段信息列表
      */
@@ -84,7 +87,7 @@ public class OdsSzdnSectionController extends BaseController {
     @Log(title = "路段信息", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody OdsSzdnSection odsSzdnSection) {
-        return odsSzdnSectionService.saveOdsSzdnSection(odsSzdnSection);
+        return bumpAfter(odsSzdnSectionService.saveOdsSzdnSection(odsSzdnSection));
     }
 
     /**
@@ -94,7 +97,7 @@ public class OdsSzdnSectionController extends BaseController {
     @Log(title = "路段信息", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody OdsSzdnSection odsSzdnSection) {
-        return odsSzdnSectionService.saveOdsSzdnSection(odsSzdnSection);
+        return bumpAfter(odsSzdnSectionService.saveOdsSzdnSection(odsSzdnSection));
     }
 
     /**
@@ -104,7 +107,17 @@ public class OdsSzdnSectionController extends BaseController {
     @Log(title = "路段信息", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids) {
-        return odsSzdnSectionService.deleteOdsSzdnSectionByIds(ids);
+        return bumpAfter(odsSzdnSectionService.deleteOdsSzdnSectionByIds(ids));
+    }
+
+    private AjaxResult bumpAfter(AjaxResult result) {
+        try {
+            dictVersionService.bump(
+                    com.ruoyi.manager.service.bigscreen.DictVersionService.SECTION);
+        } catch (RuntimeException e) {
+            logger.warn("[字典版本] 路段主动失效失败 reason={}", e.getMessage());
+        }
+        return result;
     }
 
 }
