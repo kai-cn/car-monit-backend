@@ -470,14 +470,20 @@ jobs:
     needs: changes
     if: github.event_name == 'workflow_dispatch' && inputs.run_integration
     runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
+    # 容器 job 与 services 在同一 Docker 网络：服务用「服务名 + 容器内端口」访问，
+    # 不能用宿主端口映射（127.0.0.1:3307）。
+    env:
+      SPRING__REDIS__HOST: redis
+      SPRING__REDIS__PORT: '6379'
+      SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://mysql:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
     services:
       mysql:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: ci-placeholder-password
           MYSQL_DATABASE: carmonitdb
-        ports:
-          - 3307:3306
         options: >-
           --health-cmd="mysqladmin ping -h127.0.0.1 -uroot -pci-placeholder-password"
           --health-interval=5s
@@ -485,8 +491,6 @@ jobs:
           --health-retries=30
       redis:
         image: redis:7-alpine
-        ports:
-          - 6379:6379
         options: >-
           --health-cmd="redis-cli ping"
           --health-interval=5s
@@ -498,22 +502,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: pip
-          cache-dependency-path: car-monit-py/requirements.txt
+      - name: 安装 Python 3.12 与 mysql 客户端
+        run: |
+          set -euo pipefail
+          dnf install -y gcc gcc-c++ make openssl-devel libffi-devel bzip2-devel \
+            zlib-devel xz-devel sqlite-devel tar gzip curl mariadb
+          curl -fsSL https://www.python.org/ftp/python/3.12.10/Python-3.12.10.tgz -o /tmp/py.tgz
+          tar -xzf /tmp/py.tgz -C /tmp
+          cd /tmp/Python-3.12.10
+          ./configure --prefix=/usr/local --with-ensurepip=install --quiet
+          make -j"$(nproc)" --quiet
+          make install --quiet
+          ln -sf /usr/local/bin/python3.12 /usr/local/bin/python3
+          python3 --version
+          mysql --version
 
       - name: 导入基线 schema
         run: |
-          mysql --default-character-set=utf8mb4 -h127.0.0.1 -P3307 -uroot -pci-placeholder-password carmonitdb \
+          mysql --default-character-set=utf8mb4 -hmysql -P3306 -uroot -pci-placeholder-password carmonitdb \
             < ../car-monit-rust/docs/01-baseline/schema.carmonitdb.local.sql
 
       - name: 安装依赖
-        run: pip install -r requirements.txt
+        run: python3 -m pip install -r requirements.txt
 
       - name: 集成测试
-        run: python -m pytest tests/integration -v -m integration
+        run: python3 -m pytest tests/integration -v -m integration
 
   # ---------------------------------------------------------------------------
   # 与 Java 端点对拍：需要可达的两端基址，仅手动触发。
