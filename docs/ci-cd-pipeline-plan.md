@@ -289,13 +289,13 @@ Linux 构建 job 改为 `runs-on: ubuntu-latest` + `container: openeuler/openeul
 | `changes` | 通过 | |
 | `java` | **通过** | V3 的 Java 实现（类型化客户端、两级缓存等）在欧拉容器内编译/测试通过 |
 | `cpp / build` | 通过 | 该分支 `car-monit-cpp` 无 `CMakeLists.txt`，presence 守卫正常跳过 |
-| `go` | **失败（V3 代码问题）** | `golangci-lint` 报分支自身引入的问题，原始行示例：`internal/modules/flow/process.go:270` `func (*Service).saveFlowApply is unused`、`process.go:286` `doFlowApply is unused`、`repo_messagedispose.go:55` `selectMessageDisposeAll is unused`、`modules/generator/service.go:42` `var errNoSuchElement = errors.New("No value present") (ST1005)`、`internal/web/upload.go:24` `errors.New("Current request is not a multipart request") (ST1005)`。按约束**未修改 V3 业务代码** |
-| `rust` | 失败（工装） | `oss_client.rs:515` 旧版 `+08:00` 硬断言，已同步 master 的 UTC 瞬间断言 |
-| `py` | 失败（工装） | `gen_mapping_docs.py` / `test_mapping_docs.py` 用反斜杠匹配 Java 路径，Linux 上产出空表；已同步 master 的 posix 比较 |
+| `go` | 失败（已由 V3 会话在 `0a84140` 修复） | `golangci-lint` 曾报 unused / ST1005。V3 会话查实 `saveFlowApply`/`doFlowApply` 对应 Java `IFlowCurrentNodeService#saveFlowApply` 的跨模块入口（非死代码），改为导出保留；其余无调用方的删除；ST1005 全部改小写。**本地 `golangci-lint run ./...` = 0 issues、`--new-from-merge-base=origin/master` = 0 issues**，未用 `nolint`、未关检查。**CI 未验证（额度）** |
+| `rust` | 失败（工装，已修） | `oss_client.rs:515` 的 `+08:00` 断言在 UTC runner 上失败。**断言保持原样**，改由 job 级 `TZ: Asia/Shanghai` + 容器内装 `tzdata` 提供时区（与 api 侧一致） |
+| `py` | 失败（工装，已修） | 两处：生成器用反斜杠匹配 Java 路径（Linux 上恒为 0，已改 posix）；V3 新增 `BigScreenExportController` 后 `MAPPING_MANAGER.md` 确实未更新（已重新生成） |
 
 工装修复提交 `610ac5f` 已推送，其 run **42512454499** 的 `changes` job 因 **runner 未分配**失败（`runner_name` 为空），后续 job 全部 skipped，**未验证**。
 
-> 结论：V3 的 Java 目标实现本身可构建；剩余红灯一半是 V3 自身的 lint 债（需 V3 负责人清理），一半是已修好的跨平台工装。后者需等 runner 恢复后复验。
+> 结论：V3 上 `java` 通过、`cpp` 按 presence 跳过；`go`/`rust`/`py` 的失败项均已修复（`go` 由 V3 会话 `0a84140` 修，`rust`/`py` 为跨平台工装），但**修复后的 run 因 runner 未分配而未验证**。
 
 ## 12. 两类红灯的区分（务必分开读）
 
@@ -321,7 +321,7 @@ Linux 构建 job 改为 `runs-on: ubuntu-latest` + `container: openeuler/openeul
 2. **文档确实过期**：V3 分支新增 `BigScreenExportController`（`ruoyi-admin/.../manager/bigscreen/`），但 `MAPPING_MANAGER.md` §4 没有它。已在 V3 工作树重跑生成器，`MAPPING_BASE.md` / `MAPPING_MANAGER.md` 更新。
 - 本地验证（V3 工作树）：`pytest tests/test_mapping_docs.py` → **16 passed**（含 `test_generator_is_idempotent`）。
 
-**V3 上仍存在的真实失败（未改业务代码）**：`go` job 的 `golangci-lint` 报 V3 自身引入的 unused / ST1005 问题，属 V3 代码质量债。
+**V3 的 go lint 已修复**：V3 会话在 `0a84140` 处理完毕（`saveFlowApply`/`doFlowApply` 改为导出保留，其余无调用方删除，ST1005 改小写），本地 `golangci-lint run ./...` = 0 issues，`--new-from-merge-base=origin/master` = 0 issues，未用 `nolint`、未关检查。**CI 未验证（额度）**。复跑时不应再期待这三处报错。
 
 ## 5. 实施进度
 
