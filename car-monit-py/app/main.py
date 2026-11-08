@@ -30,7 +30,6 @@ import anyio.to_thread
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
-from fastapi.staticfiles import StaticFiles
 
 from app.api.base.base_config_service_area_controller import router as base_config_service_area_router
 from app.api.base.car_warning_config_controller import router as base_car_warning_config_router
@@ -140,6 +139,7 @@ from app.config.database import dispose_engine
 from app.config.exception_handlers import register_exception_handlers
 from app.config.redis_config import close_redis
 from app.logging_config import configure_logging
+from app.middleware.profile_static import ProfileStaticFiles
 from app.middleware.request_context import RequestContextMiddleware
 from app.middleware.security import SecurityMiddleware
 from app.middleware.trace_id import TraceIdMiddleware
@@ -710,9 +710,11 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     #
     # check_dir=False：Java 的资源处理器在目录不存在时不影响启动，只在请求时 404；
     # StaticFiles 默认 check_dir=True 会在 create_app() 时抛 RuntimeError，改变启动行为。
+    # ProfileStaticFiles 在响应上加 nosniff + Content-Disposition: attachment，
+    # 阻断 /profile 下的同源 HTML 执行。
     application.mount(
         "/profile",
-        StaticFiles(directory=Path(settings.ruoyi.profile), check_dir=False),
+        ProfileStaticFiles(directory=Path(settings.ruoyi.profile), check_dir=False),
         name="profile",
     )
 

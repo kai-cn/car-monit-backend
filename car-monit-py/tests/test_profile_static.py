@@ -64,3 +64,26 @@ def test_profile_static_missing_file_keeps_spring_404_body(
         assert body["path"] == "/profile/upload/missing.txt"
     finally:
         reset_settings_cache()
+
+
+def test_profile_static_adds_download_and_nosniff_headers(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """上传目录里的 html 被直接导航时必须下载，不能在同源执行脚本."""
+    profile = tmp_path / "uploadPath"
+    target = profile / "upload" / "2026" / "11" / "07" / "x.html"
+    target.parent.mkdir(parents=True)
+    target.write_text("<script>alert(1)</script>", encoding="utf-8")
+
+    monkeypatch.setenv("RUOYI__PROFILE", str(profile))
+    reset_settings_cache()
+    try:
+        from app.main import create_app
+
+        client = TestClient(create_app())
+        response = client.get("/profile/upload/2026/11/07/x.html")
+        assert response.status_code == 200
+        assert response.headers["x-content-type-options"] == "nosniff"
+        assert response.headers["content-disposition"] == "attachment"
+    finally:
+        reset_settings_cache()

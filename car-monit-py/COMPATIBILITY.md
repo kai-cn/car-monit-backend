@@ -4870,9 +4870,14 @@ gantrycar,gantrytrade}/export`、`/base/{geometry,snapshotflow,feerecords}/expor
 
 ### 46.2 `/profile/**` 静态映射已落地（P0-3）`[无影响]`
 
-- `app/main.py`：`mount("/profile", StaticFiles(directory=Profile, check_dir=False))`。
+- `app/main.py`：`mount("/profile", ProfileStaticFiles(directory=..., check_dir=False))`。
   `check_dir=False` 复刻 Java "目录不存在也不影响启动、请求时才 404"。
-- 回归：`tests/test_profile_static.py`（挂载点存在、任意子路径可读、目录缺失不抛）。
+- **同源 HTML 加固**（Python-only）：响应统一加 `X-Content-Type-Options: nosniff` 与
+  `Content-Disposition: attachment`。上传目录里的 `.html` / `.svg` 被直接导航时会下载
+  而不是同源执行；`<img src>` 渲染图片不受影响。没有收紧上传后缀，避免改变
+  `FileUploadUtils` 的通用上传白名单。
+- 回归：`tests/test_profile_static.py`（挂载点存在、任意子路径可读、目录缺失不抛、
+  下载/防嗅探头）。
 - 与 Java 的差异：Starlette 的 `StaticFiles` 不提供目录列表；Java 默认也没有，等价。
 
 ### 46.3 异常文案按业务/非业务分流（P1-6）`[需注意]`
