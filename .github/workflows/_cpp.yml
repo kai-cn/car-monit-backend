@@ -44,13 +44,29 @@ jobs:
               -DCMAKE_PREFIX_PATH="$PWD/vcpkg_installed/x64-windows"
           } else {
             Write-Host "::notice::仓库未提交 vcpkg_installed，改用 vcpkg manifest 安装依赖"
-            # runner 自带的 vcpkg 是浅克隆，manifest 的 builtin-baseline 需要完整历史
-            # 才能 git show versions/baseline.json；不补历史会直接 install failed。
+            # runner 自带的 vcpkg 是部分克隆：is-shallow=false，但基线提交的 blob 缺失，
+            # `git show <baseline>:versions/baseline.json` 会 exit 128。
+            # 基线对象可用就复用；否则按 baseline SHA 独立克隆一份 vcpkg。
             $vcpkg = $env:VCPKG_INSTALLATION_ROOT
-            if ((git -C $vcpkg rev-parse --is-shallow-repository) -eq 'true') {
-              Write-Host "unshallow vcpkg 仓库以解析 builtin-baseline"
-              git -C $vcpkg fetch --quiet --unshallow --tags
-              if ($LASTEXITCODE -ne 0) { throw "vcpkg 历史拉取失败" }
+            $baseline = (Get-Content vcpkg.json -Raw | ConvertFrom-Json).'builtin-baseline'
+            $baselineOk = $false
+            if ($baseline) {
+              git -C $vcpkg cat-file -e "${baseline}:versions/baseline.json" 2>$null
+              $baselineOk = ($LASTEXITCODE -eq 0)
+            }
+            if (-not $baselineOk) {
+              Write-Host "runner 的 vcpkg 缺少基线 $baseline，改用独立克隆"
+              $pinned = Join-Path $env:RUNNER_TEMP 'vcpkg-pinned'
+              if (-not (Test-Path (Join-Path $pinned 'scripts\buildsystems\vcpkg.cmake'))) {
+                git init --quiet $pinned
+                git -C $pinned remote add origin https://github.com/microsoft/vcpkg.git
+                git -C $pinned fetch --quiet --depth 1 origin $baseline
+                if ($LASTEXITCODE -ne 0) { throw "拉取 vcpkg 基线 $baseline 失败" }
+                git -C $pinned checkout --quiet FETCH_HEAD
+                & (Join-Path $pinned 'bootstrap-vcpkg.bat') -disableMetrics
+                if ($LASTEXITCODE -ne 0) { throw 'bootstrap vcpkg 失败' }
+              }
+              $vcpkg = $pinned
             }
             cmake -B build -A x64 `
               -DCMAKE_TOOLCHAIN_FILE="$vcpkg\scripts\buildsystems\vcpkg.cmake" `
