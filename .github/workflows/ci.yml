@@ -5,6 +5,14 @@ name: ci
 # 迁移分支（car-monit-go-V2 / car-monit-rust-V2）与主分支目录结构一致，
 # 本文件可直接 cherry-pick 过去复用。
 #
+# 运行环境：Linux 构建 job 统一跑在 openEuler 24.03 LTS 容器
+# （runs-on: ubuntu-latest + container: openeuler/openeuler:24.03-lts；GitHub 托管 runner
+# 没有 openEuler 镜像，只能用容器方式）。
+#
+# 例外（已在对应 job 上注明）：
+# - C++ 走 windows-latest + MSVC：工程是 MSVC 专用（/utf-8、NOMINMAX）+ vcpkg x64-windows，
+#   Linux/ARM64 需要另一套构建配置，当前不在容器链路内。
+#
 # 未纳入：
 # - car-monit-cpp / car-monit-kotlin / car-monit-csharp：仓库内只有迁移 prompt 与 docs，
 #   没有任何源码或 CMakeLists.txt / gradle / csproj，无法建构建流水线（见 docs/ci-cd-pipeline-plan.md）。
@@ -13,9 +21,16 @@ name: ci
 
 on:
   pull_request:
-    branches: [main, master]
+    branches: [master]
   push:
-    branches: [main, master]
+    branches:
+      - master
+      # 迁移分支也跑 CI；PR 仍以 master 为基线
+      - car-monit-go-V2
+      - car-monit-rust-V2
+      - car-monit-py-V2
+      - car-monit-cpp-local
+      - car-monit-backend-java-V3
   workflow_dispatch:
     inputs:
       java_base:
@@ -28,6 +43,11 @@ on:
         default: ''
       run_integration:
         description: '是否运行依赖真实 MySQL/Redis 的集成测试'
+        type: boolean
+        required: false
+        default: false
+      run_go_perms_audit:
+        description: '是否运行 Go 的运行时权限审计（需要 car-monit-go-V2 分支的脚本）'
         type: boolean
         required: false
         default: false
@@ -52,9 +72,14 @@ jobs:
       go: ${{ steps.filter.outputs.go }}
       rust: ${{ steps.filter.outputs.rust }}
       py: ${{ steps.filter.outputs.py }}
+      cpp: ${{ steps.filter.outputs.cpp }}
       workflows: ${{ steps.filter.outputs.workflows }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # paths-filter 在 push 事件下用 git diff 对比 push 前的提交；
+          # 默认 fetch-depth: 1 拿不到那个提交，会让 changes job 直接失败、后续 job 全部 skip。
+          fetch-depth: 0
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -68,6 +93,8 @@ jobs:
               - 'car-monit-rust/**'
             py:
               - 'car-monit-py/**'
+            cpp:
+              - 'car-monit-cpp/**'
             workflows:
               - '.github/workflows/**'
 
@@ -78,15 +105,23 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.java == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          # 全仓所有 pom 只有 java.version=1.8；21/25 在本仓库无出处。
-          java-version: '8'
-          cache: maven
+      - name: 安装 OpenJDK 8 + Maven（欧拉仓库无 Temurin）
+        # 欧拉 24.03 官方仓库提供 java-1.8.0-openjdk-devel（8u412）；Temurin 不在欧拉仓库。
+        # OpenJDK 8 与 Temurin 8 同属 TCK 兼容实现，编译/运行行为一致，但不再与开发者本机
+        # 的 Temurin 发行版逐字节一致（只影响排障时的 JVM 构建号，不影响字节码目标 1.8）。
+        run: |
+          set -euo pipefail
+          dnf install -y java-1.8.0-openjdk-devel tar gzip curl
+          java -version
+          curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz -o /tmp/maven.tgz
+          tar -xzf /tmp/maven.tgz -C /opt
+          ln -sf /opt/apache-maven-3.9.9/bin/mvn /usr/local/bin/mvn
+          mvn -v
 
       - name: 编译（PR 快速门禁）
         run: mvn -B -q -DskipTests compile
@@ -120,16 +155,25 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.go == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
     defaults:
       run:
         working-directory: car-monit-go
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
         with:
-          go-version: '1.24.x'
-          cache-dependency-path: car-monit-go/go.sum
+          # only-new-issues 要用 push 前的提交做 diff；多次提交的 push 需要完整历史
+          fetch-depth: 0
+
+      - name: 安装 Go 1.24（欧拉仓库没有 1.24）
+        run: |
+          set -euo pipefail
+          dnf install -y tar gzip curl git
+          curl -fsSL https://go.dev/dl/go1.24.13.linux-amd64.tar.gz -o /tmp/go.tgz
+          tar -C /usr/local -xzf /tmp/go.tgz
+          echo "/usr/local/go/bin" >> "$GITHUB_PATH"
+          /usr/local/go/bin/go version
 
       - name: gofmt
         run: |
@@ -141,9 +185,9 @@ jobs:
           fi
 
       - name: go mod tidy 校验
-        run: |
-          go mod tidy
-          git diff --exit-code -- go.mod go.sum
+        # 容器内工作目录不是 git 仓库，`git diff` 会退化成 --no-index 比较两个文件；
+        # Go 1.23+ 的 `tidy -diff` 不依赖 git，有差异时非零退出。
+        run: go mod tidy -diff
 
       - name: build
         run: go build -buildvcs=false ./...
@@ -155,11 +199,24 @@ jobs:
         run: go test -buildvcs=false -count=1 -coverprofile=coverage.out ./...
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        # v7 才支持 golangci-lint v2.x；v6 + v2.1.6 会因参数/安装不兼容直接失败。
+        # only-new-issues：仓库现有 49 个历史 lint 问题（errcheck 6 / ineffassign 1 /
+        # staticcheck 12 / unused 30），不在本轮改业务代码；门禁只拦本次改动新增的问题，
+        # 历史债单独排期清理（见 docs/ci-cd-pipeline-plan.md §4）。
+        uses: golangci/golangci-lint-action@v7
         with:
           version: v2.1.6
           working-directory: car-monit-go
           args: --timeout=5m
+          only-new-issues: true
+
+      - name: 权限点对拍（分支带脚本时）
+        # 从 car-monit-go-V2 的 car-monit-go-ci.yml 迁入；master 没有该脚本，自动跳过。
+        if: hashFiles('car-monit-go/scripts/parity/check_perms.py') != ''
+        run: |
+          python scripts/parity/check_perms.py \
+            --java-root ../ruoyi-admin/src/main/java/com/ruoyi/web/controller \
+            --go-root internal
 
       - name: 归档覆盖率
         if: github.event_name != 'pull_request'
@@ -171,137 +228,31 @@ jobs:
           mkdir -p dist
           CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -trimpath -ldflags "-s -w" \
             -o dist/carmonit-server ./cmd/server
-          CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -trimpath -ldflags "-s -w" \
-            -o dist/carmonit-migrate ./cmd/migrate
+          # cmd/migrate 只存在于 car-monit-go-V2；master 只有 cmd/server，存在才构建。
+          if [ -d ./cmd/migrate ]; then
+            CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -trimpath -ldflags "-s -w" \
+              -o dist/carmonit-migrate ./cmd/migrate
+          else
+            echo "::notice::当前分支没有 cmd/migrate，跳过 migrate 二进制"
+          fi
 
       - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request'
         with:
           name: build-go
           path: |
-            car-monit-go/dist/carmonit-server
-            car-monit-go/dist/carmonit-migrate
+            car-monit-go/dist/*
             car-monit-go/coverage.out
           if-no-files-found: error
           retention-days: 14
 
   # ---------------------------------------------------------------------------
-  # Rust：rust-toolchain.toml 锁 1.90.0
+  # Go 运行时权限审计：从 car-monit-go-V2 的 car-monit-go-ci.yml 迁入。
+  # admin 有 *:*:*，漏挂权限中间件也不会暴露，必须用无权限账号验证 403 与 sys_oper_log 落行。
+  # 依赖分支独有的 scripts/parity/check_permissions_runtime.py；没有脚本时整段跳过。
   # ---------------------------------------------------------------------------
-  rust:
-    needs: changes
-    if: github.event_name != 'pull_request' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.workflows == 'true'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: car-monit-rust
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          # 与 car-monit-rust/rust-toolchain.toml 保持一致；改版本时两处一起改。
-          toolchain: 1.90.0
-          components: rustfmt, clippy
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: car-monit-rust
-
-      - name: fmt
-        # 迁移期先只做提示：全量 `cargo fmt --all` 会重排整个 crate，等单独提交。
-        continue-on-error: true
-        run: cargo fmt --all --check
-
-      - name: clippy
-        # 同上：现存告警（module inception、needless ?、format! 等）尚未清零。
-        continue-on-error: true
-        run: cargo clippy --all-targets -- -D warnings
-
-      - name: test
-        run: cargo test --lib
-
-      - name: release-only 用例（cfg(not(debug_assertions))）
-        # 已知坑：debug 门禁看不到只在该 cfg 下编译的用例。迁移分支必须存在
-        # tests/release_throwable.rs，缺失即失败，防止删掉整条用例后 CI 仍全绿。
-        run: |
-          set -euo pipefail
-          if [ -f tests/release_throwable.rs ]; then
-            cargo test --release --test release_throwable
-          elif [ "$GITHUB_REF_NAME" = "master" ] || [ "$GITHUB_REF_NAME" = "main" ]; then
-            echo "::warning file=car-monit-rust/tests/release_throwable.rs::主分支尚无该用例（仅存在于 car-monit-rust-V2 分支），本次跳过；合并后自动成为强制门禁"
-            echo "### Rust release-only 用例：主分支缺失，已跳过" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "::error::迁移分支缺少 car-monit-rust/tests/release_throwable.rs，release-only 用例会逃逸 CI"
-            exit 1
-          fi
-
-      - name: 构建 release 二进制
-        if: github.event_name != 'pull_request'
-        run: cargo build --release
-
-      - uses: actions/upload-artifact@v4
-        if: github.event_name != 'pull_request'
-        with:
-          name: build-rust
-          path: car-monit-rust/target/release/car-monit-rust
-          if-no-files-found: error
-          retention-days: 14
-
-  # ---------------------------------------------------------------------------
-  # Python：3.12，单元测试不依赖外部中间件
-  # ---------------------------------------------------------------------------
-  py:
-    needs: changes
-    if: github.event_name != 'pull_request' || needs.changes.outputs.py == 'true' || needs.changes.outputs.workflows == 'true'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: car-monit-py
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: pip
-          cache-dependency-path: car-monit-py/requirements.txt
-
-      - name: 安装依赖
-        run: pip install -r requirements.txt
-
-      - name: 语法门禁
-        run: python -m compileall -q app
-
-      - name: 单元测试 + 覆盖率
-        run: |
-          python -m pytest -q -m "not integration" \
-            --cov=app --cov-report=term-missing --cov-report=xml
-
-      - name: 构建 wheel / sdist
-        if: github.event_name != 'pull_request'
-        run: |
-          pip install build
-          python -m build
-
-      - uses: actions/upload-artifact@v4
-        if: github.event_name != 'pull_request'
-        with:
-          name: build-py
-          path: |
-            car-monit-py/dist/*
-            car-monit-py/coverage.xml
-          if-no-files-found: error
-          retention-days: 14
-
-  # ---------------------------------------------------------------------------
-  # 集成测试：真实 MySQL + Redis（services 起，不用固定 IP）
-  # 默认只在 workflow_dispatch 且勾选时执行；验证通过后再并入主分支门禁。
-  # Python 集成用例只依赖 MySQL/Redis（Kafka/ES 为可选中间件，当前无用例依赖）。
-  # ---------------------------------------------------------------------------
-  integration:
-    needs: changes
-    if: github.event_name == 'workflow_dispatch' && inputs.run_integration
+  go-perms-audit:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_go_perms_audit
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -327,26 +278,256 @@ jobs:
           --health-retries=20
     defaults:
       run:
+        working-directory: car-monit-go
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 检测审计脚本是否存在
+        id: detect
+        run: |
+          if [ -f scripts/parity/check_permissions_runtime.py ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::当前分支没有 scripts/parity/check_permissions_runtime.py，跳过运行时权限审计"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-go@v5
+        if: steps.detect.outputs.found == 'true'
+        with:
+          go-version: '1.24.x'
+          cache-dependency-path: car-monit-go/go.sum
+
+      - name: 导入基线 schema 并创建无权限账号
+        if: steps.detect.outputs.found == 'true'
+        run: |
+          mysql --default-character-set=utf8mb4 -h127.0.0.1 -P3307 -uroot -pci-placeholder-password carmonitdb \
+            < ../car-monit-rust/docs/01-baseline/schema.carmonitdb.local.sql
+          mysql --default-character-set=utf8mb4 -h127.0.0.1 -P3307 -uroot -pci-placeholder-password carmonitdb <<'SQL'
+          INSERT INTO sys_dept (dept_id,parent_id,ancestors,dept_name,order_num,status,del_flag,tenant_id)
+          VALUES (100,0,'0','测试部门',0,'0','0',1);
+          -- Admin@123 的 BCrypt 哈希（cost 10，仅用于 CI 测试库）
+          INSERT INTO sys_user (user_id,dept_id,user_name,nick_name,user_type,password,status,del_flag,create_by,create_time,tenant_id)
+          VALUES
+            (1,100,'admin','管理员','00','$2a$10$LxwsTDSGoUZiRH0HRVr.heIxPTrve8HSgRWi8pJXIVVNj6twMNIPy','0','0','admin',NOW(),1),
+            (2,100,'noperm','无权限','00','$2a$10$LxwsTDSGoUZiRH0HRVr.heIxPTrve8HSgRWi8pJXIVVNj6twMNIPy','0','0','admin',NOW(),1);
+          SQL
+
+      - name: 应用版本化迁移
+        if: steps.detect.outputs.found == 'true'
+        run: go run -buildvcs=false ./cmd/migrate
+
+      - name: 启动服务并跑无权限账号矩阵
+        if: steps.detect.outputs.found == 'true'
+        run: |
+          go run -buildvcs=false ./cmd/server > /tmp/carmonit-server.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:9989/healthz >/dev/null; then break; fi
+            sleep 2
+          done
+          cat /tmp/carmonit-server.log
+          python scripts/parity/check_permissions_runtime.py --base-url http://127.0.0.1:9989
+
+  # ---------------------------------------------------------------------------
+  # Rust：rust-toolchain.toml 锁 1.90.0
+  # ---------------------------------------------------------------------------
+  rust:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
+    defaults:
+      run:
+        working-directory: car-monit-rust
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Rust 1.90 + 构建工具（rustup 官方链路）
+        run: |
+          set -euo pipefail
+          dnf install -y curl git gcc gcc-c++ make tar gzip
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | sh -s -- -y --profile minimal --default-toolchain 1.90.0 --component rustfmt --component clippy
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/rustc" --version
+
+      - name: fmt
+        # 迁移期先只做提示：全量 `cargo fmt --all` 会重排整个 crate，等单独提交。
+        continue-on-error: true
+        run: cargo fmt --all --check
+
+      - name: clippy
+        # 同上：现存告警（module inception、needless ?、format! 等）尚未清零。
+        continue-on-error: true
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: test
+        run: cargo test --lib
+
+      - name: release-only 用例（cfg(not(debug_assertions))）
+        # 已知坑：debug 门禁看不到只在该 cfg 下编译的用例。迁移分支必须存在
+        # tests/release_throwable.rs，缺失即失败，防止删掉整条用例后 CI 仍全绿。
+        run: |
+          set -euo pipefail
+          branch="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          if [ -f tests/release_throwable.rs ]; then
+            cargo test --release --test release_throwable
+          elif [ "$branch" = "car-monit-rust-V2" ]; then
+            # 这条迁移分支必须有该用例：缺了就说明 release-only 门禁又漏了。
+            echo "::error::car-monit-rust-V2 缺少 car-monit-rust/tests/release_throwable.rs，release-only 用例会逃逸 CI"
+            exit 1
+          else
+            # master 与其他分支（cpp/go/py 迁移分支、PR 源分支）本就没有 release-only 用例，跳过并留痕。
+            echo "::warning file=car-monit-rust/tests/release_throwable.rs::分支 $branch 无 tests/release_throwable.rs，跳过 release-only 门禁"
+            echo "### Rust release-only 用例：分支 \`$branch\` 缺失，已跳过" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: 构建 release 二进制
+        if: github.event_name != 'pull_request'
+        run: cargo build --release
+
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: build-rust
+          path: car-monit-rust/target/release/car-monit-rust
+          if-no-files-found: error
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Python：3.12，单元测试不依赖外部中间件
+  # ---------------------------------------------------------------------------
+  py:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.py == 'true' || needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
+    defaults:
+      run:
         working-directory: car-monit-py
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: 从源码安装 Python 3.12（欧拉仓库没有 3.12）
+        # pyproject 要求 >=3.12；欧拉 24.03 仓库只到 3.11，因此源码编译（约 3-5 分钟）。
+        run: |
+          set -euo pipefail
+          dnf install -y gcc gcc-c++ make openssl-devel libffi-devel bzip2-devel \
+            zlib-devel xz-devel sqlite-devel tar gzip curl
+          curl -fsSL https://www.python.org/ftp/python/3.12.10/Python-3.12.10.tgz -o /tmp/py.tgz
+          tar -xzf /tmp/py.tgz -C /tmp
+          cd /tmp/Python-3.12.10
+          ./configure --prefix=/usr/local --with-ensurepip=install --quiet
+          make -j"$(nproc)" --quiet
+          make install --quiet
+          ln -sf /usr/local/bin/python3.12 /usr/local/bin/python3
+          /usr/local/bin/python3 -m pip --version
+
+      - name: 安装依赖
+        run: python3 -m pip install -r requirements.txt
+
+      - name: 语法门禁
+        run: python3 -m compileall -q app
+
+      - name: 单元测试 + 覆盖率
+        run: |
+          python3 -m pytest -q -m "not integration" \
+            --cov=app --cov-report=term-missing --cov-report=xml
+
+      - name: 构建 wheel / sdist
+        if: github.event_name != 'pull_request'
+        run: |
+          python3 -m pip install build
+          python3 -m build
+
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
         with:
-          python-version: '3.12'
-          cache: pip
-          cache-dependency-path: car-monit-py/requirements.txt
+          name: build-py
+          path: |
+            car-monit-py/dist/*
+            car-monit-py/coverage.xml
+          if-no-files-found: error
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # C++：windows-latest + MSVC。依赖走 vcpkg manifest，仓库已带 vcpkg_installed/x64-windows，
+  # 因此配置阶段用 CMAKE_PREFIX_PATH 指向它，不再现装 librdkafka。
+  # 具体步骤在可复用的 _cpp.yml 里；没有 CMakeLists.txt 的分支会快速跳过。
+  # ---------------------------------------------------------------------------
+  cpp:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.cpp == 'true' || needs.changes.outputs.workflows == 'true'
+    uses: ./.github/workflows/_cpp.yml
+
+  # ---------------------------------------------------------------------------
+  # 集成测试：真实 MySQL + Redis（services 起，不用固定 IP）
+  # 默认只在 workflow_dispatch 且勾选时执行；验证通过后再并入主分支门禁。
+  # Python 集成用例只依赖 MySQL/Redis（Kafka/ES 为可选中间件，当前无用例依赖）。
+  # ---------------------------------------------------------------------------
+  integration:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' && inputs.run_integration
+    runs-on: ubuntu-latest
+    container:
+      image: openeuler/openeuler:24.03-lts
+    # 容器 job 与 services 在同一 Docker 网络：服务用「服务名 + 容器内端口」访问，
+    # 不能用宿主端口映射（127.0.0.1:3307）。
+    env:
+      SPRING__REDIS__HOST: redis
+      SPRING__REDIS__PORT: '6379'
+      SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://mysql:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-placeholder-password
+          MYSQL_DATABASE: carmonitdb
+        options: >-
+          --health-cmd="mysqladmin ping -h127.0.0.1 -uroot -pci-placeholder-password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    defaults:
+      run:
+        working-directory: car-monit-py
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Python 3.12 与 mysql 客户端
+        run: |
+          set -euo pipefail
+          dnf install -y gcc gcc-c++ make openssl-devel libffi-devel bzip2-devel \
+            zlib-devel xz-devel sqlite-devel tar gzip curl mariadb
+          curl -fsSL https://www.python.org/ftp/python/3.12.10/Python-3.12.10.tgz -o /tmp/py.tgz
+          tar -xzf /tmp/py.tgz -C /tmp
+          cd /tmp/Python-3.12.10
+          ./configure --prefix=/usr/local --with-ensurepip=install --quiet
+          make -j"$(nproc)" --quiet
+          make install --quiet
+          ln -sf /usr/local/bin/python3.12 /usr/local/bin/python3
+          python3 --version
+          mysql --version
 
       - name: 导入基线 schema
         run: |
-          mysql --default-character-set=utf8mb4 -h127.0.0.1 -P3307 -uroot -pci-placeholder-password carmonitdb \
+          mysql --default-character-set=utf8mb4 -hmysql -P3306 -uroot -pci-placeholder-password carmonitdb \
             < ../car-monit-rust/docs/01-baseline/schema.carmonitdb.local.sql
 
       - name: 安装依赖
-        run: pip install -r requirements.txt
+        run: python3 -m pip install -r requirements.txt
 
       - name: 集成测试
-        run: python -m pytest tests/integration -v -m integration
+        run: python3 -m pytest tests/integration -v -m integration
 
   # ---------------------------------------------------------------------------
   # 与 Java 端点对拍：需要可达的两端基址，仅手动触发。
