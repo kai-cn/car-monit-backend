@@ -629,7 +629,7 @@ class AppSection(_Section):
     # 最多 200 个能真正干活，其余 600 个在连接池上排队，纯属内存与上下文切换开销。
     # 默认压到与连接池一致；确实需要 800 时设 APP__REQUEST_THREAD_LIMIT=800。
     request_thread_limit: int = 200
-    # CORS 白名单；为空时 local 退回 Java 的"允许所有来源"，非 local 拒绝跨域。
+    # CORS 白名单；为空时 local 只允许回环地址，非 local 启动直接失败（fail-closed）。
     cors: CorsSection = Field(default_factory=CorsSection)
     # 异步线程池（AsyncManager / ThreadPoolTaskExecutor）的待执行队列上限。
     # Java 的 ThreadPoolTaskExecutor 是 queueCapacity=1000 + CallerRunsPolicy；

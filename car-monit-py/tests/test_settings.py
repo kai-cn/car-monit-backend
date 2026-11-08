@@ -390,6 +390,70 @@ class TestFailClosedSecrets:
             AppSettings(_env_file=None, **values)
 
 
+class TestThreadParity:
+    """``_apply_tomcat_thread_parity`` 必须在 lifespan 启动时被调用."""
+
+    def test_lifespan_calls_the_thread_parity_helper(self, monkeypatch) -> None:
+        from fastapi.testclient import TestClient
+
+        from app import main as main_module
+        from app.settings import AppSettings
+
+        called = []
+
+        def spy(settings) -> None:
+            called.append(settings.app.request_thread_limit)
+
+        monkeypatch.setattr(main_module, "_apply_tomcat_thread_parity", spy)
+        test_settings = AppSettings(app={"scheduler_enabled": False})
+        with TestClient(main_module.create_app(test_settings)) as client:
+            assert client.get("/health").status_code == 200
+
+        # 删掉 lifespan 里的调用，called 为空 -> 变红
+        assert called == [200]
+
+    def test_helper_sets_anyio_total_tokens(self, settings) -> None:
+        import asyncio
+
+        from app.main import _apply_tomcat_thread_parity
+
+        async def run() -> int:
+            import anyio.to_thread
+
+            limiter = anyio.to_thread.current_default_thread_limiter()
+            before = limiter.total_tokens
+            try:
+                _apply_tomcat_thread_parity(settings)
+                return limiter.total_tokens
+            finally:
+                limiter.total_tokens = before
+
+        assert asyncio.run(run()) == 200
+
+
+class TestPackagedConfigAssets:
+    """wheel 必须带上 ``config/`` 的全部 61 个运行期资产."""
+
+    def test_pyproject_data_files_cover_all_config_assets(self) -> None:
+        import tomllib
+
+        from app.settings import PROJECT_ROOT
+
+        pyproject = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        data_files = pyproject["tool"]["setuptools"]["data-files"]
+
+        matched = set()
+        for patterns in data_files.values():
+            for pattern in patterns:
+                matched.update(PROJECT_ROOT.glob(pattern))
+
+        # 清单断言：新增/删除资产必须同步更新 pyproject 与这里，避免 wheel 漏文件。
+        assert len(matched) == 61
+        for path in matched:
+            assert path.is_file()
+            assert path.stat().st_size > 0
+
+
 class TestYamlPath:
     """非 editable 安装：源码目录没有 config/，要回退到 data-files 安装位置."""
 
