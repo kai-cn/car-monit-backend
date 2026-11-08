@@ -228,14 +228,28 @@
 | `snapshotFlowSyncTask`（6 个方法） | `base.DataSync.Sync*` | 已注册为任务 Bean；Java 侧同样未真正自动运行 |
 | `trackTask.syncHistoryTrack` | — | **仍未迁移**（依赖 `ICarTrackInfoService`/`IGeometryService`），保存时拒绝 |
 
-**未验证点（必须在联调环境复核）**：
-1. `GET /base/snapshotflow/earliest-time` 与 `/base/snapshotflow/list` 的真实响应结构：
-   当前按 Java `Date` / `TableDataInfo` 声明做兼容解析；本仓库没有 vehicleMonitor 实例。
-2. ES 文档时间字段按 fastjson2 默认写成**毫秒时间戳**；若线上索引 mapping 期望日期字符串，
-   需同步调整 `snapshotFlowESDoc`。
+**已验证（2026-11-08，真实中间件联调）**：
+- 本机 MySQL 8.0.30（3307）、Redis 8.10.2、Elasticsearch 7.15.2、Kafka 4.0.0（KRaft）。
+- 测试库 `carmonit_ingest_test`（用后 DROP），模板表 `ods_rt_szdn_snapshot_flow_addcode`。
+- 投递 4 条消息：合法 INSERT、同 bigId 重复、非 JSON、缺少 snapshottime。
+  结果：自动创建 `ods_rt_szdn_snapshot_flow_202611`；MySQL 落 1 行（重复被幂等跳过）；
+  ES `carmonit-e2e-snapshot-flow` 文档 1 条且 `snapshottime` 为毫秒时间戳；
+  失败 2 条进 DLQ，信封含 `originalTopic/partition/offset/timestamp/reason/value`；
+  consumer group offset 4/4、LAG 0。
+- 同步任务：`go test -tags=integration` 用 stub 上游验证 `SyncSingleMonth`
+  （2 行入库、缺 snapshottime 跳过、重复同步幂等）与 `PreCreateTables`（当前月+下月建表）。
+- **联调中发现并修复**：kafka-go v0.4.47 连接 Kafka 4.0 时 `JoinGroup` 返回 EOF，
+  已升级到 v0.4.51（同时带上 x/crypto/x/net/x/sys/x/text 小版本升级）。
+
+**仍未验证（必须在联调环境复核）**：
+1. 真实 vehicleMonitor 的 `/base/snapshotflow/earliest-time` 与 `/list` 响应结构
+   （HTTP 适配层按 Java `Date` / `TableDataInfo` 声明做兼容解析，本仓库无 vehicleMonitor 实例）。
+2. ES 生产索引 mapping：当前按 fastjson2 默认写毫秒时间戳；若线上是 date 类型需调整
+   `snapshotFlowESDoc`（本次已确认真实 ES 能按动态 mapping 正常索引）。
 3. `section_list` 缓存改为“先删后写”（Java 是 `rightPushAll` 无限追加），需确认无其他组件依赖旧行为。
 4. MySQL `TRUNCATE` 为 DDL 隐式提交，7 张基础表的“清空 + 重灌”在插入失败时仍会留下空表
    （与 Java 实际行为一致，日志会告警）。
+5. distroless 镜像运行期（本机无 Docker CLI）：`ruoyi.profile` 挂载目录必须可写。
 
-**Java 下线前置条件**：在联调环境跑通上述 4 项，并用真实 Kafka/ES/GaussDB 流量完成一轮对拍。
+**Java 下线前置条件**：在联调环境跑通上述 5 项，并用真实 Kafka/ES/GaussDB 流量完成一轮对拍。
 

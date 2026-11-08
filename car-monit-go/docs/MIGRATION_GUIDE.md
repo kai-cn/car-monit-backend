@@ -283,6 +283,43 @@ operUrl=/system/user/profile/updatePwd`。CI 中同一脚本由 `runtime-perms-a
 > 受限账户下不可创建，`GET /system/role/export` 返回“导出Excel失败”。部署时需保证
 > `ruoyi.profile` 可写；该端点已由脚本确认“权限判断先于导出逻辑生效”。
 
+### 1.9 数据接入真实联调（2026-11-08）
+
+本机中间件：MySQL 8.0.30（3307）、Redis 8.10.2、Elasticsearch 7.15.2、Kafka 4.0.0（KRaft）。
+按本机硬约束，**不要另起 MySQL 实例**：在 3307 实例上 `CREATE DATABASE`，用完 `DROP`。
+
+```bash
+# 1) 测试库 + 分表模板（表结构与 Java ods_rt_szdn_snapshot_flow_addcode 一致）
+mysql -h127.0.0.1 -P3307 -uroot -proot <<'SQL'
+CREATE DATABASE IF NOT EXISTS carmonit_ingest_test DEFAULT CHARACTER SET utf8mb4;
+SQL
+
+# 2) Kafka 主题（KRaft 模式，replication-factor=1）
+kafka-topics.bat --bootstrap-server 127.0.0.1:9092 --create \
+  --topic carmonit-e2e-snapshot-flow --partitions 1 --replication-factor 1
+
+# 3) 用临时 config（server.port=9999、kafka/elasticsearch enabled=true、
+#    redis.database=15、snapshot.flow.sync.source=disabled）启动服务
+go run ./cmd/server -c /path/to/e2e-config.yaml
+
+# 4) 投递合法/重复/坏消息后检查三处结果
+mysql -h127.0.0.1 -P3307 -uroot -proot -e \
+  "SELECT * FROM carmonit_ingest_test.ods_rt_szdn_snapshot_flow_202611"
+curl http://127.0.0.1:9200/carmonit-e2e-snapshot-flow/_doc/<bigId>
+kafka-console-consumer.bat --bootstrap-server 127.0.0.1:9092 \
+  --topic carmonit-e2e-snapshot-flow-dlq --from-beginning
+```
+
+同步任务（stub 上游）用集成测试跑：
+
+```bash
+export CARMONIT_TEST_DSN='root:root@tcp(127.0.0.1:3307)/carmonit_ingest_test?charset=utf8mb4&parseTime=True&loc=Local'
+go test -tags=integration -run TestDataSyncSyncSingleMonth -v ./internal/modules/base
+```
+
+**已知兼容性**：kafka-go v0.4.47 连接 Kafka 4.0（KRaft）时 `JoinGroup` 返回 EOF，
+消费端无法加入组；已升级到 v0.4.51。若回退依赖版本，必须用旧版 Kafka（如 2.8.2）验证。
+
 ## 2. Java 开发者速查
 
 ### 2.1 概念对照

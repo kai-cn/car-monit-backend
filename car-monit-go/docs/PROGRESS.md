@@ -1,5 +1,14 @@
 # 迁移工作进度（接口返回逐一对比阶段）
 
+> **2026-11-08 真实中间件联调批次**：按用户下发的本机环境（MySQL 8/3307、Redis 8、
+> ES 7.15.2、Kafka 4.0.0），在 3307 实例上 `CREATE DATABASE carmonit_ingest_test` 做端到端验证
+> （用后 DROP）。实测 Kafka→Redis 幂等→月度分表→ES→DLQ 全链路：4 条消息中 1 条入库、
+> 1 条重复被跳过、2 条进 DLQ（信封字段与 Java `sendToDLQ` 一致），consumer group offset 4/4。
+> **联调中发现真实缺陷**：kafka-go v0.4.47 对 Kafka 4.0 的 `JoinGroup` 返回 EOF，消费端
+> 无法加入组；升级到 v0.4.51 后正常。另新增 `-tags=integration` 集成测试验证
+> `SyncSingleMonth`（2 行入库、缺 snapshottime 跳过、重复同步幂等）与 `PreCreateTables`。
+> 详见 MAPPING §4.1 与 MIGRATION_GUIDE §1.9。
+>
 > **2026-11-08 构建/迁移验证批次**：`cmd/migrate` 在本机 MySQL 8.0.30 上实跑 `-dry-run`
 > 与落库（`schema_migrations=0001`）。本机无 Docker，无法执行 `docker build`；已用
 > Dockerfile 内完全相同的构建命令交叉编译 linux/amd64 的 server 与 migrate（产物
