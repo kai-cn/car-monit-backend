@@ -666,6 +666,27 @@ class AppSettings(BaseSettings):
             file_secret_settings,
         )
 
+    def insecure_secret_env_vars(self) -> List[str]:
+        """仍在使用仓库内置密钥/口令时，返回对应的环境变量名（空列表 = 已全部替换）。
+
+        ``is_localhost == "local"`` 时允许使用内置值（开发/测试），但启动日志会
+        打 WARN 提醒；非 local 时由 :meth:`_reject_insecure_secrets_outside_local`
+        直接拒绝启动。两处复用同一判定，避免告警与 fail-closed 口径漂移。
+        """
+        insecure: List[str] = []
+        if (self.token.secret or "").strip() in ("", "abcdefghijklmnopqrstuvwxyz"):
+            insecure.append("TOKEN__SECRET")
+        if (self.spring.datasource.druid.master.password or "").strip() in ("", "root"):
+            insecure.append("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD")
+        if (self.hengda.secret or "").strip() in ("", "b48381c4b98311ea90b100155d14fa3b"):
+            insecure.append("HENGDA__SECRET")
+        if self.app.oss_enabled:
+            if (self.oss.access_key or "").strip() in ("", "jtwl_access_key"):
+                insecure.append("OSS__ACCESS_KEY")
+            if (self.oss.secret_key or "").strip() in ("", "minio.prod"):
+                insecure.append("OSS__SECRET_KEY")
+        return insecure
+
     @model_validator(mode="after")
     def _reject_insecure_secrets_outside_local(self) -> "AppSettings":
         """生产环境 fail-closed：仍在使用仓库内置密钥/口令时拒绝启动。
@@ -679,18 +700,7 @@ class AppSettings(BaseSettings):
         if (self.is_localhost or "").strip().lower() == "local":
             return self
 
-        insecure: List[str] = []
-        if (self.token.secret or "").strip() in ("", "abcdefghijklmnopqrstuvwxyz"):
-            insecure.append("TOKEN__SECRET")
-        if (self.spring.datasource.druid.master.password or "").strip() in ("", "root"):
-            insecure.append("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD")
-        if (self.hengda.secret or "").strip() in ("", "b48381c4b98311ea90b100155d14fa3b"):
-            insecure.append("HENGDA__SECRET")
-        if self.app.oss_enabled:
-            if (self.oss.access_key or "").strip() in ("", "jtwl_access_key"):
-                insecure.append("OSS__ACCESS_KEY")
-            if (self.oss.secret_key or "").strip() in ("", "minio.prod"):
-                insecure.append("OSS__SECRET_KEY")
+        insecure = self.insecure_secret_env_vars()
         if insecure:
             raise ValueError("非 local 环境禁止使用仓库内置密钥/口令，请通过环境变量设置: " + ", ".join(insecure))
         return self

@@ -242,6 +242,52 @@ class TestFailClosedSecrets:
                 app={"oss_enabled": True},
             )
 
+    def test_local_reports_builtin_secrets_without_blocking(self) -> None:
+        """local 不拦截启动，但要把仍在使用的内置值点出来供启动日志告警."""
+        from app.settings import AppSettings
+
+        loaded = AppSettings(is_localhost="local")
+        assert loaded.insecure_secret_env_vars() == [
+            "TOKEN__SECRET",
+            "SPRING__DATASOURCE__DRUID__MASTER__PASSWORD",
+            "HENGDA__SECRET",
+        ]
+
+    def test_real_secrets_leave_nothing_to_warn_about(self) -> None:
+        from app.settings import AppSettings
+
+        loaded = AppSettings(
+            is_localhost="local",
+            token={"secret": "real-jwt-secret"},
+            spring={"datasource": {"druid": {"master": {"password": "real-db-password"}}}},
+            hengda={"secret": "real-hengda-secret"},
+        )
+        assert loaded.insecure_secret_env_vars() == []
+
+    def test_startup_log_names_the_builtin_secrets(self, monkeypatch) -> None:
+        """启动 WARN 必须点名具体环境变量，而不是只说"请换密钥".
+
+        这里直接替换 ``app.main.logger.warning``，不依赖 caplog —— 导入
+        ``app.main`` 会执行 ``create_app()``，其 ``configure_logging`` 会清掉
+        pytest 挂在 root 上的捕获 handler。
+        """
+        from app import main as main_module
+        from app.settings import AppSettings
+
+        warnings: list[str] = []
+        monkeypatch.setattr(
+            main_module.logger,
+            "warning",
+            lambda message, *args, **kwargs: warnings.append(message % args),
+        )
+        loaded = AppSettings(is_localhost="local")
+        main_module._log_startup_state(loaded)
+
+        secret_warnings = [text for text in warnings if "仍在使用仓库内置密钥/口令" in text]
+        assert secret_warnings
+        assert "TOKEN__SECRET" in secret_warnings[0]
+        assert "SPRING__DATASOURCE__DRUID__MASTER__PASSWORD" in secret_warnings[0]
+
 
 @pytest.fixture(scope="module")
 def settings():

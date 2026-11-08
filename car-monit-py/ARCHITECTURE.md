@@ -116,7 +116,7 @@ RequestContext）的自动传播；纯 ASGI 改写需要手工在 `scope` 生命
 | 配置 | 生产建议 |
 |---|---|
 | `IS_LOCALHOST` | 设为 `prod`（非 `local` 才会启用密钥 fail-closed） |
-| `TOKEN__SECRET` / DB 口令 / `HENGDA__SECRET` | 必须换成真实值，否则拒绝启动 |
+| `TOKEN__SECRET` / DB 口令 / `HENGDA__SECRET` | **上线必查**：必须换成真实值，否则拒绝启动 |
 | `APP__CORS__ALLOWED_ORIGINS` | 填前端域名（JSON 数组）；留空 = 拒绝跨域 |
 | `APP__REQUEST_THREAD_LIMIT` | 默认 200；需复刻 Tomcat 800 时显式设置 |
 | `APP__EXECUTOR_QUEUE_CAPACITY` | 默认 1000，按审计写入量调整 |
@@ -124,3 +124,9 @@ RequestContext）的自动传播；纯 ASGI 改写需要手工在 `scope` 生命
 | `APP__SCHEDULER_ENABLED` | 无 MySQL 或外置调度时设 `false` |
 | `/profile` 目录 | 由 `RUOYI__PROFILE` 指向；不存在也能启动，但头像会 404 |
 | Alembic | 已有库执行一次 `alembic stamp 0001_baseline`，不做自动迁移 |
+
+**上线必查（密钥）**：`IS_LOCALHOST=local` 只用于开发/测试；该模式下应用照常启动，
+但启动日志会以 `[启动警告] 仍在使用仓库内置密钥/口令: ...` 点名所有未替换的项。
+部署到任何非 local 环境时，`TOKEN__SECRET`、DB 口令、`HENGDA__SECRET`（以及启用
+OSS 时的 `OSS__ACCESS_KEY` / `OSS__SECRET_KEY`）必须全部替换，否则进程拒绝启动。
+完整清单见 `.env.example` 顶部的 "go-live checklist"。
