@@ -31,6 +31,11 @@ on:
         type: boolean
         required: false
         default: false
+      run_go_perms_audit:
+        description: '是否运行 Go 的运行时权限审计（需要 car-monit-go-V2 分支的脚本）'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -52,6 +57,7 @@ jobs:
       go: ${{ steps.filter.outputs.go }}
       rust: ${{ steps.filter.outputs.rust }}
       py: ${{ steps.filter.outputs.py }}
+      cpp: ${{ steps.filter.outputs.cpp }}
       workflows: ${{ steps.filter.outputs.workflows }}
     steps:
       - uses: actions/checkout@v4
@@ -68,6 +74,8 @@ jobs:
               - 'car-monit-rust/**'
             py:
               - 'car-monit-py/**'
+            cpp:
+              - 'car-monit-cpp/**'
             workflows:
               - '.github/workflows/**'
 
@@ -161,6 +169,14 @@ jobs:
           working-directory: car-monit-go
           args: --timeout=5m
 
+      - name: 权限点对拍（分支带脚本时）
+        # 从 car-monit-go-V2 的 car-monit-go-ci.yml 迁入；master 没有该脚本，自动跳过。
+        if: hashFiles('car-monit-go/scripts/parity/check_perms.py') != ''
+        run: |
+          python scripts/parity/check_perms.py \
+            --java-root ../ruoyi-admin/src/main/java/com/ruoyi/web/controller \
+            --go-root internal
+
       - name: 归档覆盖率
         if: github.event_name != 'pull_request'
         run: go tool cover -func=coverage.out | tail -1
@@ -184,6 +200,88 @@ jobs:
             car-monit-go/coverage.out
           if-no-files-found: error
           retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Go 运行时权限审计：从 car-monit-go-V2 的 car-monit-go-ci.yml 迁入。
+  # admin 有 *:*:*，漏挂权限中间件也不会暴露，必须用无权限账号验证 403 与 sys_oper_log 落行。
+  # 依赖分支独有的 scripts/parity/check_permissions_runtime.py；没有脚本时整段跳过。
+  # ---------------------------------------------------------------------------
+  go-perms-audit:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_go_perms_audit
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-placeholder-password
+          MYSQL_DATABASE: carmonitdb
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h127.0.0.1 -uroot -pci-placeholder-password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    defaults:
+      run:
+        working-directory: car-monit-go
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 检测审计脚本是否存在
+        id: detect
+        run: |
+          if [ -f scripts/parity/check_permissions_runtime.py ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::当前分支没有 scripts/parity/check_permissions_runtime.py，跳过运行时权限审计"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-go@v5
+        if: steps.detect.outputs.found == 'true'
+        with:
+          go-version: '1.24.x'
+          cache-dependency-path: car-monit-go/go.sum
+
+      - name: 导入基线 schema 并创建无权限账号
+        if: steps.detect.outputs.found == 'true'
+        run: |
+          mysql --default-character-set=utf8mb4 -h127.0.0.1 -P3307 -uroot -pci-placeholder-password carmonitdb \
+            < ../car-monit-rust/docs/01-baseline/schema.carmonitdb.local.sql
+          mysql --default-character-set=utf8mb4 -h127.0.0.1 -P3307 -uroot -pci-placeholder-password carmonitdb <<'SQL'
+          INSERT INTO sys_dept (dept_id,parent_id,ancestors,dept_name,order_num,status,del_flag,tenant_id)
+          VALUES (100,0,'0','测试部门',0,'0','0',1);
+          -- Admin@123 的 BCrypt 哈希（cost 10，仅用于 CI 测试库）
+          INSERT INTO sys_user (user_id,dept_id,user_name,nick_name,user_type,password,status,del_flag,create_by,create_time,tenant_id)
+          VALUES
+            (1,100,'admin','管理员','00','$2a$10$LxwsTDSGoUZiRH0HRVr.heIxPTrve8HSgRWi8pJXIVVNj6twMNIPy','0','0','admin',NOW(),1),
+            (2,100,'noperm','无权限','00','$2a$10$LxwsTDSGoUZiRH0HRVr.heIxPTrve8HSgRWi8pJXIVVNj6twMNIPy','0','0','admin',NOW(),1);
+          SQL
+
+      - name: 应用版本化迁移
+        if: steps.detect.outputs.found == 'true'
+        run: go run -buildvcs=false ./cmd/migrate
+
+      - name: 启动服务并跑无权限账号矩阵
+        if: steps.detect.outputs.found == 'true'
+        run: |
+          go run -buildvcs=false ./cmd/server > /tmp/carmonit-server.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:9989/healthz >/dev/null; then break; fi
+            sleep 2
+          done
+          cat /tmp/carmonit-server.log
+          python scripts/parity/check_permissions_runtime.py --base-url http://127.0.0.1:9989
 
   # ---------------------------------------------------------------------------
   # Rust：rust-toolchain.toml 锁 1.90.0
@@ -226,14 +324,17 @@ jobs:
         # tests/release_throwable.rs，缺失即失败，防止删掉整条用例后 CI 仍全绿。
         run: |
           set -euo pipefail
+          branch="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
           if [ -f tests/release_throwable.rs ]; then
             cargo test --release --test release_throwable
-          elif [ "$GITHUB_REF_NAME" = "master" ]; then
-            echo "::warning file=car-monit-rust/tests/release_throwable.rs::主分支尚无该用例（仅存在于 car-monit-rust-V2 分支），本次跳过；合并后自动成为强制门禁"
-            echo "### Rust release-only 用例：主分支缺失，已跳过" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "::error::迁移分支缺少 car-monit-rust/tests/release_throwable.rs，release-only 用例会逃逸 CI"
+          elif [ "$branch" = "car-monit-rust-V2" ]; then
+            # 这条迁移分支必须有该用例：缺了就说明 release-only 门禁又漏了。
+            echo "::error::car-monit-rust-V2 缺少 car-monit-rust/tests/release_throwable.rs，release-only 用例会逃逸 CI"
             exit 1
+          else
+            # master 与其他分支（cpp/go/py 迁移分支、PR 源分支）本就没有 release-only 用例，跳过并留痕。
+            echo "::warning file=car-monit-rust/tests/release_throwable.rs::分支 $branch 无 tests/release_throwable.rs，跳过 release-only 门禁"
+            echo "### Rust release-only 用例：分支 \`$branch\` 缺失，已跳过" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: 构建 release 二进制
@@ -293,6 +394,16 @@ jobs:
             car-monit-py/coverage.xml
           if-no-files-found: error
           retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # C++：windows-latest + MSVC。依赖走 vcpkg manifest，仓库已带 vcpkg_installed/x64-windows，
+  # 因此配置阶段用 CMAKE_PREFIX_PATH 指向它，不再现装 librdkafka。
+  # 具体步骤在可复用的 _cpp.yml 里；没有 CMakeLists.txt 的分支会快速跳过。
+  # ---------------------------------------------------------------------------
+  cpp:
+    needs: changes
+    if: github.event_name != 'pull_request' || needs.changes.outputs.cpp == 'true' || needs.changes.outputs.workflows == 'true'
+    uses: ./.github/workflows/_cpp.yml
 
   # ---------------------------------------------------------------------------
   # 集成测试：真实 MySQL + Redis（services 起，不用固定 IP）
