@@ -153,7 +153,8 @@ async fn run_loop(state: Arc<AppState>, kind: JobKind, cron: CronExpression) {
         tokio::time::sleep(delay).await;
 
         info!("[定时任务] 触发 {}，cron={}", kind.name(), kind.cron());
-        kind.run(state.clone()).await;
+        // Java: `@Scheduled` 默认单线程调度器，日志线程名是 `scheduling-1`。
+        crate::logging::with_log_thread("scheduling-1", kind.run(state.clone())).await;
         after = chrono::Local::now().naive_local();
     }
 }

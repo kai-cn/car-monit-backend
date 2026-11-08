@@ -146,4 +146,7 @@ tempfile = "3"
 [profile.release]
 lto = "thin"
 codegen-units = 1
-strip = "symbols"
+# Java 的 throwable 带栈帧，`strip = "symbols"` 会让 backtrace::resolve 全部落空。
+# 保留行号表（debug=1），不 strip 符号；release 冒烟见 logging 单测
+# `throwable_has_frames_in_release`。
+debug = 1

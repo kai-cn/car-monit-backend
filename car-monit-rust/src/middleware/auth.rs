@@ -17,11 +17,18 @@ use crate::auth::token_service::TokenService;
 use crate::common::constants::LOGOUT;
 use crate::common::utils::client_meta;
 use crate::error::AppError;
+use crate::middleware::web_filter::OriginalPath;
 use crate::response::AjaxResult;
 use crate::state::AppState;
 
 pub async fn auth_middleware(state: AppState, mut request: Request, next: Next) -> Response {
     let path = request.uri().path().to_string();
+    // Java 的 401 消息 / 403 错误页用的是容器原始 URI（尾斜杠归一路径后仍按原样提示）。
+    let log_path = request
+        .extensions()
+        .get::<OriginalPath>()
+        .map(|path| path.0.clone())
+        .unwrap_or_else(|| path.clone());
     // Request<Body> 不是 Sync，跨 await 只能持有克隆后的 headers。
     let headers = request.headers().clone();
     let addr = request
@@ -42,16 +49,16 @@ pub async fn auth_middleware(state: AppState, mut request: Request, next: Next) 
         Access::DenyAll => {
             if login_user.is_some() {
                 // Java: denyAll 命中已认证用户 -> AccessDeniedHandlerImpl -> 403 错误页。
-                return crate::error::forbidden_error_page(&path);
+                return crate::error::forbidden_error_page(&log_path);
             }
-            return AppError::unauthorized(&path).into_response();
+            return AppError::unauthorized(&log_path).into_response();
         }
         Access::Anonymous if login_user.is_some() => {
             // Java: `anonymous()` 的规则只放行匿名请求，带 token 反而 403 错误页。
-            return crate::error::forbidden_error_page(&path);
+            return crate::error::forbidden_error_page(&log_path);
         }
         Access::Authenticated if login_user.is_none() => {
-            return AppError::unauthorized(&path).into_response();
+            return AppError::unauthorized(&log_path).into_response();
         }
         _ => {}
     }

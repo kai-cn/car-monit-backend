@@ -76,6 +76,8 @@ pub async fn web_filter(State(port): State<u16>, request: Request, next: Next) -
         // Java: TraceIdFilter 的 `catch (RuntimeException)` 分支 —— 未捕获异常也要落日志。
         // Rust 的 panic 等价于逃出业务层的 RuntimeException；在这里 catch 住，
         // web_filter 才拿得到响应并继续写 [请求完成]/[服务器错误响应]。
+        // 先清掉线程上可能残留的 panic 记录，避免把别的任务的栈算到本次请求。
+        logging::clear_panic();
         let outcome = std::panic::AssertUnwindSafe(next.run(request))
             .catch_unwind()
             .await;
@@ -99,6 +101,8 @@ pub async fn web_filter(State(port): State<u16>, request: Request, next: Next) -
             tracing::error!(
                 target: TRACE_FILTER_TARGET,
                 exception = %throwable,
+                // Java TraceIdFilter.java:159（catch RuntimeException 分支）
+                java_line = 159,
                 "[未捕获异常] TraceId={}, Path={}, 异常信息: {}",
                 trace_for_log,
                 path,
@@ -149,10 +153,12 @@ pub async fn web_filter(State(port): State<u16>, request: Request, next: Next) -
 }
 
 /// Java: `TraceIdFilter.logResponse` + `doFilter.finally` 的慢请求告警。
+/// `java_line` 让 `%L` 输出 Java 真实调用行，而不是 Rust 行号。
 fn log_trace_filter(method: &str, path: &str, ip: &str, status: u16, cost: u128, trace_id: &str) {
     if status >= 500 {
         tracing::error!(
             target: TRACE_FILTER_TARGET,
+            java_line = 258,
             "[服务器错误响应] Path={}, Status={}, 耗时={}ms, TraceId={}, IP={}",
             path,
             status,
@@ -163,6 +169,7 @@ fn log_trace_filter(method: &str, path: &str, ip: &str, status: u16, cost: u128,
     } else if status >= 400 {
         tracing::warn!(
             target: TRACE_FILTER_TARGET,
+            java_line = 262,
             "[客户端错误响应] Path={}, Status={}, 耗时={}ms, TraceId={}, IP={}",
             path,
             status,
@@ -173,6 +180,7 @@ fn log_trace_filter(method: &str, path: &str, ip: &str, status: u16, cost: u128,
     } else {
         tracing::info!(
             target: TRACE_FILTER_TARGET,
+            java_line = 267,
             "[请求完成] Path={}, Status={}, 耗时={}ms, TraceId={}",
             path,
             status,
@@ -183,6 +191,7 @@ fn log_trace_filter(method: &str, path: &str, ip: &str, status: u16, cost: u128,
     if cost >= SLOW_REQUEST_MILLIS {
         tracing::warn!(
             target: TRACE_FILTER_TARGET,
+            java_line = 175,
             "[慢请求告警] Path={}, 耗时={}ms, Method={}, IP={}, TraceId={}",
             path,
             cost,

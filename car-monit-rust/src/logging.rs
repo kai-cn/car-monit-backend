@@ -14,7 +14,7 @@ use std::future::Future;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::mpsc::{sync_channel, Receiver, SyncSender, TrySendError};
+use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 
@@ -156,16 +156,14 @@ impl Write for LogGuard {
         if buf.is_empty() {
             return Ok(0);
         }
-        let result = self
+        // Java logback.xml 用的是同步 RollingFileAppender（没有 AsyncAppender），
+        // 这里也阻塞发送：队列满时宁可等，也不静默丢日志。
+        let _ = self
             .tx
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .try_send(Command::Write(buf.to_vec()));
-        match result {
-            Ok(()) | Err(TrySendError::Full(_)) | Err(TrySendError::Disconnected(_)) => {
-                Ok(buf.len())
-            }
-        }
+            .send(Command::Write(buf.to_vec()));
+        Ok(buf.len())
     }
 
     fn flush(&mut self) -> io::Result<()> {
@@ -480,6 +478,13 @@ impl JavaLogFormat {
                 abbreviate_logger(target, self.logger_width)
             )
         } else {
+            // logback 的 `%L` 在拿不到调用行时输出 `?`；映射到 Java 全类名的 target
+            // 没有 Java 行号，输出 Rust 行号会误导排障。
+            let line_text = if line == 0 {
+                "?".to_string()
+            } else {
+                line.to_string()
+            };
             write!(
                 writer,
                 "{} [{}] {:<5} [{}] {}:{} - ",
@@ -488,7 +493,7 @@ impl JavaLogFormat {
                 level,
                 current_trace_id(),
                 abbreviate_logger(target, self.logger_width),
-                line
+                line_text
             )
         }
     }
@@ -557,15 +562,16 @@ where
             }
         }
 
+        let mut visitor = MessageVisitor::default();
+        event.record(&mut visitor);
+        let line = log_line(metadata.target(), metadata.line(), &visitor);
         self.write_prefix(
             &mut writer,
             now,
             level,
             display_target(metadata.target()),
-            log_line(metadata.target(), metadata.line()),
+            line,
         )?;
-        let mut visitor = MessageVisitor::default();
-        event.record(&mut visitor);
         if let Some(message) = visitor.message {
             write!(writer, "{message}")?;
         }
@@ -671,10 +677,18 @@ fn display_target(target: &str) -> &str {
 }
 
 /// Java logback 的 `%L`：SQLx 事件映射到 SqlLogInterceptor.java 的调用行。
-fn log_line(target: &str, rust_line: Option<u32>) -> u32 {
+fn log_line(target: &str, rust_line: Option<u32>, visitor: &MessageVisitor) -> u32 {
+    // 日志点显式给了 Java 行号（如 TraceIdFilter 的各分支）时优先使用。
+    if let Some(line) = visitor.java_line {
+        return line;
+    }
     match target {
         SQLX_QUERY_TARGET => SQL_WARN_LINE,
         SQL_LOG_TARGET => SQL_ERROR_LINE,
+        // TraceIdFilter 的行号由各日志点传入；没传就不输出（`?`）。
+        TRACE_ID_TARGET => 0,
+        // 映射到 Java 全类名的 target：Rust 行号与类名对不上，输出 `?`。
+        _ if display_target(target) != target => 0,
         _ => rust_line.unwrap_or(0),
     }
 }
@@ -689,6 +703,8 @@ fn sql_event_details(visitor: &MessageVisitor) -> (u64, String) {
     let sql = visitor
         .field("db.statement")
         .filter(|value| !value.trim().is_empty())
+        // SQLx 在 `summary == sql` 时只发 summary，db.statement 为空。
+        .or_else(|| visitor.field("summary").filter(|value| !value.trim().is_empty()))
         .or(visitor.message.as_deref())
         .unwrap_or_default();
     (cost as u64, normalize_sql(sql))
@@ -709,14 +725,15 @@ fn normalize_sql(sql: &str) -> String {
 /// SQLx 的 `elapsed` 字段是 Debug 输出（如 `123.456ms` / `1.234s`），用于兜底。
 fn parse_elapsed_ms(text: Option<&str>) -> Option<f64> {
     let text = text?.trim();
+    // 必须先判断两级后缀：`µs` / `ns` 都以 `s` 结尾，先走 `strip_suffix('s')` 会解析失败。
     if let Some(value) = text.strip_suffix("ms") {
         value.trim().parse::<f64>().ok()
-    } else if let Some(value) = text.strip_suffix('s') {
-        value.trim().parse::<f64>().ok().map(|secs| secs * 1000.0)
     } else if let Some(value) = text.strip_suffix("µs") {
         value.trim().parse::<f64>().ok().map(|micros| micros / 1000.0)
     } else if let Some(value) = text.strip_suffix("ns") {
         value.trim().parse::<f64>().ok().map(|nanos| nanos / 1_000_000.0)
+    } else if let Some(value) = text.strip_suffix('s') {
+        value.trim().parse::<f64>().ok().map(|secs| secs * 1000.0)
     } else {
         text.parse::<f64>().ok()
     }
@@ -810,6 +827,9 @@ pub struct Throwable<'a> {
     error: &'a (dyn Error + 'static),
     kind: &'static str,
     backtrace: Backtrace,
+    /// console / sys-info / sys-error 多个 layer 会各格式化一次；
+    /// 符号化结果缓存下来，避免同一事件重复解析栈帧。
+    rendered: std::sync::OnceLock<String>,
 }
 
 impl<'a> Throwable<'a> {
@@ -819,35 +839,49 @@ impl<'a> Throwable<'a> {
             kind: std::any::type_name::<E>(),
             // Windows 上 `Backtrace::new()` 会立即对整条栈做全量符号化，
             // 在单测/大二进制里可能挂住数十秒；这里只捕获原始帧，
-            // 由 `write_backtrace` 逐帧惰性解析。
+            // 由 `backtrace_text` 逐帧惰性解析。
             backtrace: Backtrace::new_unresolved(),
+            rendered: std::sync::OnceLock::new(),
         }
     }
 }
 
 impl fmt::Display for Throwable<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}: {}", self.kind.replace("::", "."), self.error)?;
-        write_backtrace(f, &self.backtrace)?;
-
-        let mut source = self.error.source();
-        let mut depth = 0usize;
-        while let Some(cause) = source {
-            if depth >= 16 {
-                write!(f, "\nCaused by: [CIRCULAR REFERENCE]")?;
-                break;
-            }
-            write!(f, "\nCaused by: {cause}")?;
-            source = cause.source();
-            depth += 1;
-        }
-        Ok(())
+        let text = self
+            .rendered
+            .get_or_init(|| render_throwable(self.error, self.kind, &self.backtrace));
+        write!(f, "{text}")
     }
 }
 
-fn write_backtrace(f: &mut fmt::Formatter<'_>, backtrace: &Backtrace) -> fmt::Result {
-    // logback 会裁掉 cause 链公共尾部帧；Rust 异步栈远比 Java 深，
-    // 这里同样限制最多输出 32 帧，避免日志被 runtime 帧淹没。
+/// 渲染成 String 再缓存；避免依赖 `fmt::Write` 在作用域的 trait 导入。
+fn render_throwable(
+    error: &(dyn Error + 'static),
+    kind: &str,
+    backtrace: &Backtrace,
+) -> String {
+    let mut out = format!("{}: {}", kind.replace("::", "."), error);
+    out.push_str(&backtrace_text(backtrace));
+
+    let mut source = error.source();
+    let mut depth = 0usize;
+    while let Some(cause) = source {
+        if depth >= 16 {
+            out.push_str("\nCaused by: [CIRCULAR REFERENCE]");
+            break;
+        }
+        out.push_str(&format!("\nCaused by: {cause}"));
+        source = cause.source();
+        depth += 1;
+    }
+    out
+}
+
+fn backtrace_text(backtrace: &Backtrace) -> String {
+    let mut out = String::new();
+    // logback 只裁掉 cause 链的公共尾部帧，并没有 32 帧上限；
+    // 这里的 32 帧是 Rust 侧的自选截断（异步栈远比 Java 深），属于已知偏差。
     for frame in backtrace.frames().iter().take(32) {
         let mut captured: Option<(String, Option<String>, u32)> = None;
         // `Backtrace` 是不可变借用，用地址惰性解析单帧，避免整条栈一次性符号化。
@@ -877,9 +911,9 @@ fn write_backtrace(f: &mut fmt::Formatter<'_>, backtrace: &Backtrace) -> fmt::Re
             continue;
         }
         let file = file.unwrap_or_else(|| "<unknown>".to_string());
-        write!(f, "\n\tat {name} ({file}:{line})")?;
+        out.push_str(&format!("\n\tat {name} ({file}:{line})"));
     }
-    Ok(())
+    out
 }
 
 thread_local! {
@@ -919,6 +953,11 @@ pub fn take_panic() -> Option<(String, Option<Backtrace>)> {
         .map(|(message, backtrace)| (message, Some(backtrace)))
 }
 
+/// 清掉本线程上尚未被消费的 panic 记录，避免把别的任务的陈旧栈带进本次请求。
+pub fn clear_panic() {
+    let _ = LAST_PANIC.with(|slot| slot.borrow_mut().take());
+}
+
 /// Java Throwable 的等价物：`panic: message` + `\tat` 栈帧。
 pub struct PanicThrowable<'a> {
     pub message: &'a str,
@@ -927,11 +966,11 @@ pub struct PanicThrowable<'a> {
 
 impl fmt::Display for PanicThrowable<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "panic: {}", self.message)?;
+        let mut text = format!("panic: {}", self.message);
         if let Some(backtrace) = self.backtrace {
-            write_backtrace(f, backtrace)?;
+            text.push_str(&backtrace_text(backtrace));
         }
-        Ok(())
+        write!(f, "{text}")
     }
 }
 
@@ -939,6 +978,8 @@ impl fmt::Display for PanicThrowable<'_> {
 struct MessageVisitor {
     message: Option<String>,
     throwable: Option<String>,
+    /// 日志点显式声明的 Java 行号（`%L` 用），不作为 `key=value` 输出。
+    java_line: Option<u32>,
     fields: Vec<(String, String)>,
 }
 
@@ -948,6 +989,7 @@ impl MessageVisitor {
             "message" => self.message = Some(value),
             // SLF4J 的 throwable 是消息之后的独立区块，不作为 `key=value` 字段。
             "error" | "exception" => self.throwable = Some(value),
+            "java_line" => self.java_line = value.parse::<u32>().ok(),
             _ => self.fields.push((field.name().to_string(), value)),
         }
     }
@@ -1260,6 +1302,82 @@ mod tests {
         assert!(text.contains("TraceId: abc123"), "{text}");
         assert!(!text.contains("elapsed_secs="), "{text}");
         assert!(!text.contains("slow_threshold="), "{text}");
+    }
+
+    /// SQLx 在 `summary == sql` 时只发 summary，`db.statement` 为空；
+    /// 慢 SQL 框不能退化成 message（否则打出来的是告警文案而不是 SQL）。
+    #[tokio::test]
+    async fn slow_sql_uses_summary_when_statement_is_empty() {
+        use tracing_subscriber::layer::SubscriberExt;
+
+        let dir = tempfile::tempdir().expect("tempdir");
+        let handle = start_appender(dir.path(), "sys-slow", false, u64::MAX, 60).expect("start");
+        let layer = tracing_subscriber::fmt::layer()
+            .event_format(JavaLogFormat {
+                console: false,
+                logger_width: 36,
+                slow_sql_threshold_ms: 1000,
+            })
+            .with_writer(handle.writer())
+            .with_ansi(false);
+        let subscriber = tracing_subscriber::registry().with(layer);
+        let guard = tracing::subscriber::set_default(subscriber);
+
+        with_trace_id("abc123".to_string(), async {
+            tracing::event!(
+                target: SQLX_QUERY_TARGET,
+                tracing::Level::WARN,
+                summary = "select 1",
+                db.statement = "",
+                elapsed_secs = 1.0f64,
+                "slow statement: execution time exceeded alert threshold"
+            );
+        })
+        .await;
+
+        drop(guard);
+        drop(handle);
+        let files: Vec<_> = std::fs::read_dir(dir.path())
+            .expect("read dir")
+            .flatten()
+            .map(|entry| entry.path())
+            .collect();
+        let text = std::fs::read_to_string(&files[0]).expect("read log");
+        assert!(text.contains("SQL: select 1"), "{text}");
+        assert!(!text.contains("slow statement"), "{text}");
+    }
+
+    #[test]
+    fn elapsed_suffixes_parse_in_the_right_order() {
+        let approx = |value: Option<f64>, expected: f64| {
+            (value.expect("parsed") - expected).abs() < 1e-9
+        };
+        assert!(approx(parse_elapsed_ms(Some("1.5ms")), 1.5));
+        assert!(approx(parse_elapsed_ms(Some("1.5s")), 1500.0));
+        assert!(approx(parse_elapsed_ms(Some("1.5µs")), 0.0015));
+        assert!(approx(parse_elapsed_ms(Some("1500ns")), 0.0015));
+        assert!(parse_elapsed_ms(None).is_none());
+    }
+
+    /// release 冒烟：确认 release 构建保留符号，throwable 能输出 `\tat` 帧。
+    /// 只在 `cargo test --release --lib` 下编译运行；dev 构建符号天然存在。
+    #[test]
+    #[cfg(not(debug_assertions))]
+    fn throwable_has_frames_in_release() {
+        struct Boom;
+        impl fmt::Display for Boom {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(f, "boom")
+            }
+        }
+        impl Error for Boom {}
+
+        let boom = Boom;
+        let text = Throwable::new(&boom).to_string();
+        assert!(
+            text.contains("\n\tat "),
+            "release 构建缺少栈帧（符号被 strip？）: {text}"
+        );
     }
 
     #[tokio::test]

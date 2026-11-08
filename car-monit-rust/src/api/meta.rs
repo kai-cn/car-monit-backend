@@ -7,6 +7,7 @@
 // 为什么用中间件：501 条端点里 284 条有权限点、239 条有 @Log。把这两件事
 // 放进统一中间件，handler 只写业务逻辑，且 sys_oper_log 的字段/截断规则只实现一次。
 
+use std::panic::AssertUnwindSafe;
 use std::sync::LazyLock;
 
 use axum::body::Body;
@@ -16,12 +17,14 @@ use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use axum::routing::MethodRouter;
 use dashmap::DashMap;
+use futures::FutureExt;
 
 use crate::auth::audit::{self, OperRecord};
 use crate::auth::security;
 use crate::common::utils::client_meta;
 use crate::domain::LoginUser;
 use crate::error::ErrorResponseMarker;
+use crate::middleware::web_filter::OriginalPath;
 use crate::response::AjaxResult;
 use crate::state::AppState;
 
@@ -186,7 +189,12 @@ pub async fn meta_middleware(
     // ---- 拆请求：权限检查已完成，这里缓存请求体用于 oper_param ----
     let (parts, body) = request.into_parts();
     let method = parts.method.clone();
-    let uri_path = parts.uri.path().to_string();
+    // Java LogAspect 的 operUrl 取 getRequestURI()：尾斜杠归一路径后仍要记原始 URI。
+    let uri_path = parts
+        .extensions
+        .get::<OriginalPath>()
+        .map(|path| path.0.clone())
+        .unwrap_or_else(|| parts.uri.path().to_string());
     let login_user = parts.extensions.get::<LoginUser>().cloned();
     let query = parts.uri.query().unwrap_or_default().to_string();
     let content_type = parts
@@ -221,12 +229,6 @@ pub async fn meta_middleware(
     };
 
     let request = Request::from_parts(parts, body);
-    let response = next.run(request).await;
-
-    // ---- 结果体：LogAspect 的 jsonResult / status / errorMsg ----
-    let is_error = response.extensions().get::<ErrorResponseMarker>().is_some();
-    let (parts, body) = response.into_parts();
-
     let oper_name = login_user
         .as_ref()
         .map(|user| user.username())
@@ -236,14 +238,46 @@ pub async fn meta_middleware(
         .and_then(|user| user.user.dept.as_ref())
         .and_then(|dept| dept.dept_name.clone())
         .unwrap_or_default();
-    let client = client_meta(
-        &parts.headers,
-        parts
-            .extensions
+    let oper_ip = client_meta(
+        request.headers(),
+        request
+            .extensions()
             .get::<axum::extract::ConnectInfo<std::net::SocketAddr>>()
             .map(|info| info.0),
         state.settings.ruoyi.address_enabled,
-    );
+    )
+    .ip;
+
+    // Java: LogAspect 对抛出的异常同样落库（status=1 + errorMsg）；
+    // 这里先捕获 panic 记审计，再把 panic 原样抛回给 web_filter 转 500。
+    let response = match AssertUnwindSafe(next.run(request)).catch_unwind().await {
+        Ok(response) => response,
+        Err(payload) => {
+            let message = crate::logging::panic_payload_text(&*payload);
+            audit::record_oper(
+                &state.db,
+                OperRecord {
+                    title: log_spec.title,
+                    business_type: log_spec.business_type as i32,
+                    method: log_spec.method,
+                    request_method: method.as_str().to_string(),
+                    oper_name,
+                    dept_name,
+                    oper_url: truncate(&uri_path, 255),
+                    oper_ip,
+                    oper_param,
+                    json_result: None,
+                    status: 1,
+                    error_msg: Some(truncate(&format!("panic: {message}"), LOG_TEXT_LIMIT)),
+                },
+            );
+            std::panic::resume_unwind(payload);
+        }
+    };
+
+    // ---- 结果体：LogAspect 的 jsonResult / status / errorMsg ----
+    let is_error = response.extensions().get::<ErrorResponseMarker>().is_some();
+    let (parts, body) = response.into_parts();
 
     // Java: 导出类端点直接写 HttpServletResponse 流，LogAspect 拿不到 JSON 结果；
     // 这里不缓冲二进制 body，避免 64MB 上限与二次拷贝。
@@ -258,7 +292,7 @@ pub async fn meta_middleware(
                 oper_name,
                 dept_name,
                 oper_url: truncate(&uri_path, 255),
-                oper_ip: client.ip,
+                oper_ip,
                 oper_param,
                 json_result: None,
                 status: if is_error { 1 } else { 0 },
@@ -302,7 +336,7 @@ pub async fn meta_middleware(
             oper_name,
             dept_name,
             oper_url: truncate(&uri_path, 255),
-            oper_ip: client.ip,
+            oper_ip,
             oper_param,
             json_result,
             status: if is_error { 1 } else { 0 },

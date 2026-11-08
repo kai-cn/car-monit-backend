@@ -166,10 +166,11 @@ fn error_only(metadata: &tracing::Metadata<'_>) -> bool {
 }
 
 fn slow_only(metadata: &tracing::Metadata<'_>) -> bool {
-    // Java: SqlLogInterceptor logger -> file_slow（additivity=false）。
-    // SQLx 的语句事件：WARN 是慢 SQL，DEBUG 是普通 SQL；是否放行由 EnvFilter/RUST_LOG 决定。
+    // Java: SqlLogInterceptor logger -> file_slow（additivity=false，level=info）。
+    // SQLx 的语句事件：WARN 是慢 SQL，DEBUG 是普通 SQL；Java 的 logger level=info
+    // 会丢弃 DEBUG，不能因为 RUST_LOG=debug 就把普通 SQL 写进 sys-slow。
     if car_monit_rust::logging::is_sql_query_target(metadata.target()) {
-        return true;
+        return matches!(*metadata.level(), Level::WARN | Level::ERROR);
     }
     car_monit_rust::logging::is_slow_target(metadata.target()) && level_in_file(metadata.level())
 }
