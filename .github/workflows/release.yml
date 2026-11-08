@@ -1,13 +1,13 @@
 name: release
 
 # tag 触发：产出 jar / Go 二进制 / Rust 二进制 / Python wheel，并创建 GitHub Release。
-# 镜像推送默认关闭（IMAGE_REGISTRY 未配置即跳过），等确认 registry 后再打开。
+# 镜像构建与 GHCR 推送在 cd.yml 中完成，本文件只管 GitHub Release 制品。
 # 不使用 force push，不在本文件写任何真实凭据。
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'
 
 permissions:
   contents: write
@@ -115,41 +115,14 @@ jobs:
           path: dist
       - name: 列出产物
         run: ls -la dist
+      - name: 生成 SHA256SUMS
+        run: |
+          set -euo pipefail
+          cd dist
+          find . -maxdepth 1 -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+          cat SHA256SUMS
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: dist/**/*
           fail_on_unmatched_files: true
-
-  # ---------------------------------------------------------------------------
-  # 镜像：只有 Go 有 Dockerfile（且当前仅存在于 car-monit-go-V2 分支）。
-  # Java / Rust / Python 仓库内无 Dockerfile，暂不产出镜像。
-  # 待用户确认 registry 后，在仓库 Variables 里配置 IMAGE_REGISTRY + 两个 secrets：
-  #   REGISTRY_USERNAME / REGISTRY_PASSWORD
-  # 在此之前该 job 不会执行。
-  # ---------------------------------------------------------------------------
-  image-go:
-    needs: build-go
-    if: vars.IMAGE_REGISTRY != ''
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ vars.IMAGE_REGISTRY }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-
-      - uses: docker/build-push-action@v6
-        with:
-          context: car-monit-go
-          push: true
-          tags: |
-            ${{ vars.IMAGE_REGISTRY }}/car-monit-go:${{ github.ref_name }}
-            ${{ vars.IMAGE_REGISTRY }}/car-monit-go:latest

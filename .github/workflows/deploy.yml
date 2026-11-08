@@ -1,31 +1,33 @@
-name: deploy (placeholder)
+name: deploy
 
-# 部署占位：registry 与部署目标尚未确认，本文件只做前置校验，不执行任何真实部署。
+# K8s 部署（仅部署到已存在的 Deployment，不创建任何资源）。
+# 首次部署需人工 bootstrap：Deployment / Service / imagePullSecret 由运维预先创建（见 docs/cd-ghcr-k8s.md）。
 #
-# 待确认（确认后再补实现，不要凭空写服务器地址与凭据）：
-#   1. 镜像推送到哪里：GHCR（ghcr.io/<owner>/...）还是私有 registry？
-#   2. 部署目标形态：K8s（kubectl/helm）/ 单机 systemd / 只出产物不部署？
-#   3. 是否需要多环境（staging / production）与人工审批？
-#   4. 需要的 secrets 名称（下方注释里只列计划名，未配置前不引用真值）。
+# 需要的仓库 Variables（缺任何一个都在 preflight 显式失败）：
+#   vars.K8S_NAMESPACE          目标命名空间
+#   vars.K8S_DEPLOYMENT         Deployment 名
+#   vars.K8S_CONTAINER          Deployment 里的容器名
+#   vars.K8S_IMAGE_PULL_SECRET  已存在的 imagePullSecret 名
+# 需要的 Secrets：
+#   secrets.KUBE_CONFIG         kubeconfig 的 base64（不要写集群地址到本文件）
 #
-# 实现时的预期输入（仓库 Variables / Secrets）：
-#   vars.IMAGE_REGISTRY     镜像仓库根地址，例如 ghcr.io/<owner>
-#   vars.DEPLOY_TARGET      k8s | systemd | none
-#   secrets.REGISTRY_USERNAME / secrets.REGISTRY_PASSWORD
-#   secrets.KUBE_CONFIG     DEPLOY_TARGET=k8s 时的 kubeconfig（base64）
-#   secrets.SSH_HOST / SSH_USER / SSH_KEY   DEPLOY_TARGET=systemd 时使用
-#
-# 本文件在未配置上述变量时以非零码退出，避免"占位流水线显示成功"造成误判。
+# 镜像名固定 ghcr.io/kai-cn/car-monit-<service>；GHCR 私有包必须配套 imagePullSecret，
+# 否则 Pod 会 ImagePullBackOff。
 
 on:
   workflow_dispatch:
     inputs:
+      service:
+        description: '要部署的服务'
+        required: true
+        type: choice
+        options: [java, go, rust, py]
       image_tag:
-        description: '要部署的镜像 tag（例如 v1.2.3）'
+        description: '镜像 tag（sha-xxxxxxx 或 1.2.3）'
         required: true
         type: string
       environment:
-        description: '目标环境'
+        description: '目标环境（用于 GitHub Environments 审批）'
         required: true
         type: choice
         options: [staging, production]
@@ -34,37 +36,60 @@ permissions:
   contents: read
 
 jobs:
-  preflight:
+  deploy:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE }}
+      K8S_DEPLOYMENT: ${{ vars.K8S_DEPLOYMENT }}
+      K8S_CONTAINER: ${{ vars.K8S_CONTAINER }}
+      K8S_IMAGE_PULL_SECRET: ${{ vars.K8S_IMAGE_PULL_SECRET }}
+      IMAGE: ghcr.io/kai-cn/car-monit-${{ inputs.service }}:${{ inputs.image_tag }}
     steps:
-      - name: 校验部署配置是否已就绪
+      - name: 前置校验（变量 / 凭据 / 工具）
         run: |
-          echo "IMAGE_REGISTRY=${{ vars.IMAGE_REGISTRY }}"
-          echo "DEPLOY_TARGET=${{ vars.DEPLOY_TARGET }}"
-          echo "environment=${{ inputs.environment }} image_tag=${{ inputs.image_tag }}"
-          if [ -z "${{ vars.IMAGE_REGISTRY }}" ] || [ -z "${{ vars.DEPLOY_TARGET }}" ]; then
-            echo "::error::部署尚未配置：缺少 vars.IMAGE_REGISTRY 或 vars.DEPLOY_TARGET。见本 workflow 文件头部说明。"
+          set -euo pipefail
+          missing=""
+          for name in K8S_NAMESPACE K8S_DEPLOYMENT K8S_CONTAINER K8S_IMAGE_PULL_SECRET; do
+            if [ -z "${!name}" ]; then missing="$missing $name"; fi
+          done
+          if [ -z "${{ secrets.KUBE_CONFIG }}" ]; then missing="$missing KUBE_CONFIG"; fi
+          if [ -n "$missing" ]; then
+            echo "::error::部署配置缺失：$missing"
             exit 1
           fi
-          echo "::error::部署步骤尚未实现（registry / 目标形态待确认）。本 job 仅用于暴露缺口。"
-          exit 1
+          kubectl version --client
 
-      # ---------------------------------------------------------------------
-      # 下面是确认后要补的实现骨架（保持注释，不要提前启用）：
-      #
-      # - uses: docker/login-action@v3
-      #   with:
-      #     registry: ${{ vars.IMAGE_REGISTRY }}
-      #     username: ${{ secrets.REGISTRY_USERNAME }}
-      #     password: ${{ secrets.REGISTRY_PASSWORD }}
-      #
-      # K8s:
-      # - run: echo "$KUBE_CONFIG" | base64 -d > kubeconfig
-      #   env: { KUBE_CONFIG: '${{ secrets.KUBE_CONFIG }}' }
-      # - run: kubectl --kubeconfig=kubeconfig -n car-monit set image deploy/car-monit-go \
-      #         car-monit-go=${{ vars.IMAGE_REGISTRY }}/car-monit-go:${{ inputs.image_tag }}
-      #
-      # systemd:
-      # - run: scp ... ; ssh ... 'systemctl restart car-monit-go'
-      #   env: { SSH_KEY: '${{ secrets.SSH_KEY }}' }
-      # ---------------------------------------------------------------------
+      - name: 写入 kubeconfig
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s' "$KUBE_CONFIG" | base64 -d > "$RUNNER_TEMP/kubeconfig"
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+
+      - name: 校验 Deployment 与 imagePullSecret 存在
+        run: |
+          set -euo pipefail
+          kubectl -n "$K8S_NAMESPACE" get deployment "$K8S_DEPLOYMENT"
+          if ! kubectl -n "$K8S_NAMESPACE" get secret "$K8S_IMAGE_PULL_SECRET"; then
+            echo "::error::命名空间 $K8S_NAMESPACE 里没有 imagePullSecret $K8S_IMAGE_PULL_SECRET；先按 docs/cd-ghcr-k8s.md 创建，否则 Pod 会 ImagePullBackOff"
+            exit 1
+          fi
+
+      - name: 更新镜像
+        run: |
+          set -euo pipefail
+          echo "部署 $IMAGE -> $K8S_NAMESPACE/$K8S_DEPLOYMENT (container=$K8S_CONTAINER)"
+          kubectl -n "$K8S_NAMESPACE" set image \
+            "deployment/$K8S_DEPLOYMENT" \
+            "$K8S_CONTAINER=$IMAGE"
+
+      - name: 等待 rollout
+        run: |
+          set -euo pipefail
+          kubectl -n "$K8S_NAMESPACE" rollout status "deployment/$K8S_DEPLOYMENT" --timeout=300s
+          kubectl -n "$K8S_NAMESPACE" get deployment "$K8S_DEPLOYMENT" \
+            -o jsonpath='{range .spec.template.spec.containers[*]}{.name}{"\t"}{.image}{"\n"}{end}' \
+            >> "$GITHUB_STEP_SUMMARY"

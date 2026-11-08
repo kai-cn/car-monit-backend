@@ -1,0 +1,95 @@
+name: _cpp
+
+# 可复用的 C++ 检查（由 ci.yml 的 cpp job 调用）。
+# - windows-latest + MSVC（工程是 C++20，pom 无关）
+# - 依赖走 vcpkg manifest，仓库已带 vcpkg_installed/x64-windows（30 MB），
+#   因此不重新安装 librdkafka，直接把它加进 CMAKE_PREFIX_PATH。
+# - 没有 CMakeLists.txt 的分支（master / go / rust / py）会只跑几秒就跳过。
+# 说明：这条流水线**尚未实跑验证**，首次运行可能需要按报错补 MSVC 组件或 DLL 路径。
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: car-monit-cpp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 检测工程是否存在
+        id: detect
+        shell: pwsh
+        run: |
+          if (Test-Path CMakeLists.txt) {
+            "found=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          } else {
+            "found=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            Write-Host "::warning::当前分支的 car-monit-cpp 没有 CMakeLists.txt，跳过 C++ 检查"
+          }
+
+      - name: 配置（MSVC + vcpkg）
+        if: steps.detect.outputs.found == 'true'
+        shell: pwsh
+        run: |
+          # 优先用仓库里已提交的 vcpkg_installed；cpp 迁移分支把它 gitignore 了，
+          # 那种情况下退回 runner 自带的 vcpkg manifest 安装（首次会慢很多）。
+          if (Test-Path "vcpkg_installed\x64-windows") {
+            cmake -B build -A x64 `
+              -DCMAKE_PREFIX_PATH="$PWD/vcpkg_installed/x64-windows"
+          } else {
+            Write-Host "::notice::仓库未提交 vcpkg_installed，改用 vcpkg manifest 安装依赖"
+            # runner 自带的 vcpkg 是部分克隆：is-shallow=false，但基线提交的 blob 缺失，
+            # `git show <baseline>:versions/baseline.json` 会 exit 128。
+            # 基线对象可用就复用；否则按 baseline SHA 独立克隆一份 vcpkg。
+            $vcpkg = $env:VCPKG_INSTALLATION_ROOT
+            $baseline = (Get-Content vcpkg.json -Raw | ConvertFrom-Json).'builtin-baseline'
+            $baselineOk = $false
+            if ($baseline) {
+              git -C $vcpkg cat-file -e "${baseline}:versions/baseline.json" 2>$null
+              $baselineOk = ($LASTEXITCODE -eq 0)
+            }
+            if (-not $baselineOk) {
+              Write-Host "runner 的 vcpkg 缺少基线 $baseline，改用独立克隆"
+              $pinned = Join-Path $env:RUNNER_TEMP 'vcpkg-pinned'
+              if (-not (Test-Path (Join-Path $pinned 'scripts\buildsystems\vcpkg.cmake'))) {
+                git init --quiet $pinned
+                git -C $pinned remote add origin https://github.com/microsoft/vcpkg.git
+                git -C $pinned fetch --quiet --depth 1 origin $baseline
+                if ($LASTEXITCODE -ne 0) { throw "拉取 vcpkg 基线 $baseline 失败" }
+                git -C $pinned checkout --quiet FETCH_HEAD
+                & (Join-Path $pinned 'bootstrap-vcpkg.bat') -disableMetrics
+                if ($LASTEXITCODE -ne 0) { throw 'bootstrap vcpkg 失败' }
+              }
+              $vcpkg = $pinned
+            }
+            cmake -B build -A x64 `
+              -DCMAKE_TOOLCHAIN_FILE="$vcpkg\scripts\buildsystems\vcpkg.cmake" `
+              -DVCPKG_TARGET_TRIPLET=x64-windows
+          }
+
+      - name: 构建 Release
+        if: steps.detect.outputs.found == 'true'
+        shell: pwsh
+        run: cmake --build build --config Release --parallel
+
+      - name: 对齐应用时区（Windows runner 默认 UTC）
+        if: steps.detect.outputs.found == 'true'
+        shell: pwsh
+        run: |
+          # 用例把 "yyyy-MM-dd HH:mm:ss" 按本地时区转 epoch 毫秒；应用目标时区是 +08:00。
+          tzutil /s "China Standard Time"
+          Get-Date
+
+      - name: 单元测试
+        if: steps.detect.outputs.found == 'true'
+        shell: pwsh
+        run: |
+          # 两种依赖布局都可能：仓库内 vcpkg_installed 或 manifest 安装到 build 目录
+          $env:PATH = "$PWD\vcpkg_installed\x64-windows\bin;$PWD\build\vcpkg_installed\x64-windows\bin;$env:PATH"
+          ctest --test-dir build -C Release --output-on-failure
