@@ -139,15 +139,12 @@ public class BigScreenExportController extends BaseController
     public void download(@PathVariable String taskId,
                          @RequestHeader(name = BigScreenExportService.DOWNLOAD_TOKEN_HEADER,
                                  required = false) String headerToken,
-                         @RequestParam(name = "token", required = false) String token,
                          HttpServletResponse response)
     {
         try
         {
-            // 优先短生命周期请求头；query 参数仅保留兼容
-            String effectiveToken = headerToken != null && !headerToken.trim().isEmpty()
-                    ? headerToken : token;
-            bigScreenExportService.download(taskId, effectiveToken, response);
+            // 令牌只走请求头：query 参数会进入浏览器历史/代理日志/Referer，不再兼容
+            bigScreenExportService.download(taskId, headerToken, response);
         }
         catch (ApiClientException e)
         {
