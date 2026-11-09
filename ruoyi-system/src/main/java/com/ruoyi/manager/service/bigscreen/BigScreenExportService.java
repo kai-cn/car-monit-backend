@@ -340,7 +340,9 @@ public class BigScreenExportService
                     request.getFuzzyFields(), false, request.getOrgCode(), approverId,
                     false, "exportApproval");
             ExportPolicy.validateFuzzy(scoped);
-            ExportPolicy.validateFullFilters(request.getType(), scoped, capabilityService.current());
+            // 不再重复 validateFullFilters：过滤条件是入队时已校验并冻结的快照，
+            // 审批阶段重探 api 能力矩阵（5 分钟缓存过期/404）只会新增失败点，
+            // 让正常审批因探测抖动被回退成 PENDING。
             exportRequest.setFuzzyFields(scoped);
             exportRequest.setTenantId(request.getTenantId());
 
