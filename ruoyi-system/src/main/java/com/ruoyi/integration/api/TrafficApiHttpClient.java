@@ -47,6 +47,10 @@ public class TrafficApiHttpClient
     @Value("${vehicleMonitor.baseUrl}")
     private String baseUrl;
 
+    /** 与 api traffic.security.internal-token 一致，用于访问受保护的内部端点。 */
+    @Value("${traffic-api.internal-token:}")
+    private String internalToken;
+
     @Autowired
     public TrafficApiHttpClient(TrafficApiProperties properties, ObjectMapper objectMapper)
     {
@@ -66,6 +70,14 @@ public class TrafficApiHttpClient
             factory.setReadTimeout(properties.readTimeoutMs(scenario));
             RestTemplate template = new RestTemplate(factory);
             template.setErrorHandler(new NoThrowErrorHandler());
+            if (internalToken != null && !internalToken.trim().isEmpty())
+            {
+                final String token = internalToken.trim();
+                template.getInterceptors().add((request, body, execution) -> {
+                    request.getHeaders().set("X-Internal-Token", token);
+                    return execution.execute(request, body);
+                });
+            }
             templates.put(scenario, template);
         }
     }
