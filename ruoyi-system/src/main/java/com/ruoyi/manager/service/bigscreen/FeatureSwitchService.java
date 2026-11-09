@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -227,11 +228,13 @@ public class FeatureSwitchService
         {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(key.getBytes(StandardCharsets.UTF_8));
-            return Math.abs((int) (hash[0] & 0xFF)) % 100;
+            // 首字节只有 0..255，%100 会让 0..55 出现 3 次、56..99 出现 2 次，
+            // percent=50 的真实命中率约 58.6%。用 64 位哈希取模保证均匀。
+            return (int) ((ByteBuffer.wrap(hash).getLong() & Long.MAX_VALUE) % 100L);
         }
         catch (Exception e)
         {
-            return Math.abs(key.hashCode()) % 100;
+            return Math.floorMod(key.hashCode(), 100);
         }
     }
 

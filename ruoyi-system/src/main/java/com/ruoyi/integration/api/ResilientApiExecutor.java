@@ -174,22 +174,22 @@ public class ResilientApiExecutor
                 }
                 if (e.getCode().isRetryable())
                 {
-                    breaker.onFailure();
-                    MetricsRegistry.setGauge("api.circuit.state", circuitStateValue());
                     lastError = e;
                     if (attempt < maxAttempts)
                     {
                         sleepBackoff(attempt);
                         continue;
                     }
+                    // 熔断按「请求」而非「尝试」计数：重试用尽才记一次失败，
+                    // 避免一次抖动被重试放大成整域 30 秒熔断。
+                    breaker.onFailure();
+                    MetricsRegistry.setGauge("api.circuit.state", circuitStateValue());
                 }
                 throw e;
             }
             catch (Throwable t)
             {
                 ApiClientException error = mapThrowable(endpoint, t);
-                breaker.onFailure();
-                MetricsRegistry.setGauge("api.circuit.state", circuitStateValue());
                 markError(error);
                 lastError = error;
                 if (attempt < maxAttempts && error.isRetryable())
@@ -197,6 +197,8 @@ public class ResilientApiExecutor
                     sleepBackoff(attempt);
                     continue;
                 }
+                breaker.onFailure();
+                MetricsRegistry.setGauge("api.circuit.state", circuitStateValue());
                 throw error;
             }
         }

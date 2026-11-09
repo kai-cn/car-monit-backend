@@ -387,11 +387,8 @@ public class TrafficApiClient
     {
         String applyTime1 = param.getApplyTime1();
         String applyTime2 = param.getApplyTime2();
-        if (applyTime1 != null && !applyTime1.trim().isEmpty()
-                && applyTime2 != null && !applyTime2.trim().isEmpty())
-        {
-            TrafficQueryContract.normalizeDateRange(applyTime1, applyTime2);
-        }
+        // 只传单侧时间也必须校验格式/顺序/365 天上限，避免非法串直接透传 api
+        TrafficQueryContract.validateDateTimeRange(applyTime1, applyTime2);
         Map<String, String> params = new LinkedHashMap<String, String>();
         addParam(params, "queryDateType", param.getQueryDateType());
         addParam(params, "startDate", param.getStartDate());
@@ -683,6 +680,12 @@ public class TrafficApiClient
 
     private void checkBusinessCode(String endpoint, Map<String, Object> response)
     {
+        if (response == null)
+        {
+            // api 返回 2xx 空体时不能当成成功：调用方会 NPE，绕过契约错误码与 legacy 降级
+            throw new ApiClientException(ApiErrorCode.CONTRACT_VIOLATION, endpoint,
+                    "api 返回空响应体: " + endpoint);
+        }
         Object code = response.get("code");
         if (code == null)
         {
