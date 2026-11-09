@@ -77,6 +77,9 @@ public class DictVersionService
         {
             Long value = redisCache.increment(key(domain), 1L, 365L * 24L * 3600L);
             next = value == null ? 1L : value;
+            // 版本必须单调：Redis 曾经成功 INCR 后即使短暂不可用，读路径也不能回退到更小的本地值，
+            // 否则缓存 key 会切回旧版本，字典变更“复活”旧数据。
+            localBumps.merge(domain, next, Math::max);
         }
         catch (RuntimeException e)
         {
@@ -109,7 +112,9 @@ public class DictVersionService
             Object raw = redisCache.getCacheObject(key(domain));
             if (raw != null)
             {
-                return Long.parseLong(String.valueOf(raw));
+                long remote = Long.parseLong(String.valueOf(raw));
+                Long localValue = localBumps.get(domain);
+                return localValue == null ? remote : Math.max(remote, localValue);
             }
         }
         catch (NumberFormatException e)

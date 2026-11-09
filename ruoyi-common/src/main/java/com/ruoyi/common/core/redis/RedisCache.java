@@ -337,9 +337,15 @@ public class RedisCache
     public Long increment(final String key, final long delta, final long timeoutSeconds)
     {
         Long value = redisTemplate.opsForValue().increment(key, delta);
-        if (value != null && value == delta)
+        if (value != null)
         {
-            redisTemplate.expire(key, timeoutSeconds, TimeUnit.SECONDS);
+            // 「INCR 成功但 EXPIRE 未执行」会让计数器永不过期、用户被永久限流；
+            // 每次自增都检查并补齐 TTL，下一次请求即可自愈。
+            Long ttl = redisTemplate.getExpire(key, TimeUnit.SECONDS);
+            if (ttl == null || ttl < 0L)
+            {
+                redisTemplate.expire(key, timeoutSeconds, TimeUnit.SECONDS);
+            }
         }
         return value;
     }

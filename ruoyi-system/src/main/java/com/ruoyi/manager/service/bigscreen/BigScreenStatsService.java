@@ -76,7 +76,8 @@ public class BigScreenStatsService
             return carConfimFreeService.getCarStatistics(param);
         }
         String key = cache.key("bigscreen:stats", "carStatistics:" + BigScreenCacheSupport.hash(
-                param.getApplyTime1(), param.getApplyTime2(), param.getOrgId(), param.getEscapedType()));
+                param.getApplyTime1(), param.getApplyTime2(), param.getOrgId(), param.getOrgCode(),
+                param.getEscapedType()));
         return cache.get(key, L1_SECONDS, L2_SECONDS, STALE_SECONDS,
                 new TypeReference<List<CarStatisticsVO>>()
                 {
@@ -93,13 +94,24 @@ public class BigScreenStatsService
             CacheContext.markSource("LEGACY_DB");
             return loadLegacyCarAudit(param);
         }
+        // api 的 audit/income 端点不支持机构过滤：带机构条件时必须走 legacy，
+        // 否则「不同机构命中同一份缓存」或「api 返回全机构数据」都会造成跨机构串数据。
+        final boolean orgScoped = hasOrgScope(param);
         String key = cache.key("bigscreen:stats", "carAudit:" + BigScreenCacheSupport.hash(
-                param.getApplyTime1(), param.getApplyTime2()));
+                param.getApplyTime1(), param.getApplyTime2(), param.getOrgId(),
+                param.getOrgCode(), param.getEscapedType()));
         return cache.get(key, L1_SECONDS, L2_SECONDS, STALE_SECONDS,
                 CarAuditVO.class,
-                () -> withFallback("carAudit",
-                        () -> trafficApiClient.auditStatistics(param),
-                        () -> loadLegacyCarAudit(param)));
+                () -> {
+                    if (orgScoped)
+                    {
+                        CacheContext.markSource("LEGACY_DB");
+                        return loadLegacyCarAudit(param);
+                    }
+                    return withFallback("carAudit",
+                            () -> trafficApiClient.auditStatistics(param),
+                            () -> loadLegacyCarAudit(param));
+                });
     }
 
     public List<incomeStatisticVO> incomeStatistic(final IncomeStatisticParam param)
@@ -119,16 +131,25 @@ public class BigScreenStatsService
         {
             param.setStartDate(startDate.trim() + "-01");
         }
+        final boolean orgScoped = hasOrgScope(param);
         String key = cache.key("bigscreen:stats", "income:" + BigScreenCacheSupport.hash(
                 param.getQueryDateType(), param.getStartDate(),
-                param.getApplyTime1(), param.getApplyTime2()));
+                param.getApplyTime1(), param.getApplyTime2(),
+                param.getOrgId(), param.getOrgCode()));
         return cache.get(key, L1_SECONDS, L2_SECONDS, STALE_SECONDS,
                 new TypeReference<List<incomeStatisticVO>>()
                 {
                 }.getType(),
-                () -> withFallback("incomeStatistic",
-                        () -> trafficApiClient.incomeStatistics(param),
-                        () -> carAduitFreeService.incomeStatistic(param)));
+                () -> {
+                    if (orgScoped)
+                    {
+                        CacheContext.markSource("LEGACY_DB");
+                        return carAduitFreeService.incomeStatistic(param);
+                    }
+                    return withFallback("incomeStatistic",
+                            () -> trafficApiClient.incomeStatistics(param),
+                            () -> carAduitFreeService.incomeStatistic(param));
+                });
     }
 
     public List<TopTenVO> topTen(String startTime, String endTime)
@@ -158,6 +179,13 @@ public class BigScreenStatsService
     {
         return !"legacy".equalsIgnoreCase(mode)
                 && featureSwitchService.isEnabled(FeatureSwitchService.STATS_API_FIRST);
+    }
+
+    /** 机构/逃费类型维度：api 的 audit/income 端点尚不支持，必须回 legacy 过滤。 */
+    private boolean hasOrgScope(IncomeStatisticParam param)
+    {
+        return !CommonUtil.isBlank(param.getOrgId()) || !CommonUtil.isBlank(param.getOrgCode())
+                || !CommonUtil.isBlank(param.getEscapedType());
     }
 
     private <T> T withFallback(String endpoint, Supplier<T> apiCall, Supplier<T> legacyCall)

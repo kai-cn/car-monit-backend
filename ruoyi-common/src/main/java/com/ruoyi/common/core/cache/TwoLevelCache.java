@@ -55,9 +55,35 @@ public class TwoLevelCache
 
     private final LocalTtlCache local = new LocalTtlCache(2000);
 
-    private final ConcurrentHashMap<String, Object> locks = new ConcurrentHashMap<String, Object>();
+    /**
+     * 固定锁条带：同一 key 恒定映射到同一把锁。
+     * 不能用「按 key 建锁 + finally remove」——等待中的线程仍持有旧锁对象，
+     * remove 后新线程会创建新锁并同时回源，single-flight 失效。
+     */
+    private static final int LOCK_STRIPES = 256;
+
+    private final Object[] locks = new Object[LOCK_STRIPES];
 
     private final Set<String> refreshing = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+
+    private Object lockFor(String key)
+    {
+        int index = Math.floorMod(key.hashCode(), LOCK_STRIPES);
+        Object lock = locks[index];
+        if (lock == null)
+        {
+            synchronized (locks)
+            {
+                lock = locks[index];
+                if (lock == null)
+                {
+                    lock = new Object();
+                    locks[index] = lock;
+                }
+            }
+        }
+        return lock;
+    }
 
     private final ExecutorService refreshPool = Executors.newFixedThreadPool(4, new ThreadFactory()
     {
@@ -149,63 +175,61 @@ public class TwoLevelCache
     private <T> T load(String key, long l1Seconds, long l2Seconds, long staleSeconds, Type type,
                        Supplier<T> loader, T staleValue, Long staleCreatedAt)
     {
-        Object lock = locks.computeIfAbsent(key, k -> new Object());
-        try
+        Object lock = lockFor(key);
+        synchronized (lock)
         {
-            synchronized (lock)
+            // double check：并发线程已完成回源
+            LocalTtlCache.Entry current = local.get(key);
+            if (current != null)
             {
-                // double check：并发线程已完成回源
-                LocalTtlCache.Entry current = local.get(key);
-                if (current != null)
+                long ageSeconds = Math.max(0L,
+                        (System.currentTimeMillis() - current.getCreatedAt()) / 1000L);
+                if (ageSeconds <= effectiveFresh(l1Seconds, current.isEmpty()))
                 {
-                    long ageSeconds = Math.max(0L,
-                            (System.currentTimeMillis() - current.getCreatedAt()) / 1000L);
-                    if (ageSeconds <= effectiveFresh(l1Seconds, current.isEmpty()))
-                    {
-                        markHit(key, "L1", ageSeconds, current.getCreatedAt());
-                        return cast(current.getValue());
-                    }
+                    markHit(key, "L1", ageSeconds, current.getCreatedAt());
+                    return cast(current.getValue());
                 }
-                CacheHit<T> l2Current = readL2(key, type);
-                if (l2Current != null)
-                {
-                    long ageSeconds = Math.max(0L, (System.currentTimeMillis() - l2Current.createdAt) / 1000L);
-                    local.put(key, l2Current.value, l2Current.createdAt,
-                            System.currentTimeMillis()
-                                    + localTtlSeconds(l1Seconds, staleSeconds, l2Current.empty) * 1000L,
-                            l2Current.empty);
-                    if (ageSeconds <= effectiveFresh(l2Seconds, l2Current.empty))
-                    {
-                        markHit(key, "L2", ageSeconds, l2Current.createdAt);
-                        return l2Current.value;
-                    }
-                }
-
-                T value;
-                try
-                {
-                    value = loader.get();
-                }
-                catch (RuntimeException e)
-                {
-                    log.error("[缓存] 回源失败 key={} reason={}", key, e.getMessage(), e);
-                    if (staleValue != null)
-                    {
-                        CacheContext.get().setLevel("DEGRADED");
-                        CacheContext.markDegrade("LOAD_FAILED");
-                        markAsOf(staleCreatedAt);
-                        return staleValue;
-                    }
-                    throw e;
-                }
-                store(key, value, l1Seconds, l2Seconds, staleSeconds);
-                markHit(key, "MISS", 0L, System.currentTimeMillis());
-                return value;
             }
-        }
-        finally
-        {
-            locks.remove(key, lock);
+            CacheHit<T> l2Current = readL2(key, type);
+            if (l2Current != null)
+            {
+                long ageSeconds = Math.max(0L, (System.currentTimeMillis() - l2Current.createdAt) / 1000L);
+                local.put(key, l2Current.value, l2Current.createdAt,
+                        System.currentTimeMillis()
+                                + localTtlSeconds(l1Seconds, staleSeconds, l2Current.empty) * 1000L,
+                        l2Current.empty);
+                if (ageSeconds <= effectiveFresh(l2Seconds, l2Current.empty))
+                {
+                    markHit(key, "L2", ageSeconds, l2Current.createdAt);
+                    return l2Current.value;
+                }
+            }
+
+            T value;
+            try
+            {
+                value = loader.get();
+            }
+            catch (RuntimeException e)
+            {
+                log.error("[缓存] 回源失败 key={} reason={}", key, e.getMessage(), e);
+                // L1 已淘汰但 L2 仍保留旧值时同样作为 stale 兜底，避免 api 故障直接 500
+                T fallback = staleValue != null ? staleValue
+                        : (l2Current == null ? null : (T) l2Current.value);
+                Long fallbackAt = staleValue != null ? staleCreatedAt
+                        : (l2Current == null ? null : Long.valueOf(l2Current.createdAt));
+                if (fallback != null)
+                {
+                    CacheContext.get().setLevel("DEGRADED");
+                    CacheContext.markDegrade("LOAD_FAILED");
+                    markAsOf(fallbackAt);
+                    return fallback;
+                }
+                throw e;
+            }
+            store(key, value, l1Seconds, l2Seconds, staleSeconds);
+            markHit(key, "MISS", 0L, System.currentTimeMillis());
+            return value;
         }
     }
 
@@ -221,7 +245,7 @@ public class TwoLevelCache
             @Override
             public void run()
             {
-                Object lock = locks.computeIfAbsent(key, k -> new Object());
+                Object lock = lockFor(key);
                 try
                 {
                     synchronized (lock)
@@ -247,7 +271,6 @@ public class TwoLevelCache
                 finally
                 {
                     refreshing.remove(key);
-                    locks.remove(key, lock);
                     CacheContext.clear();
                 }
             }
