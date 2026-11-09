@@ -28,6 +28,9 @@ public class ApplicationConfig
     @Value("${export.download.read-timeout-ms:1800000}")
     private int downloadReadTimeoutMs;
 
+    @Value("${traffic-api.internal-token:}")
+    private String internalToken;
+
     /**
      * 时区配置
      */
@@ -52,6 +55,15 @@ public class ApplicationConfig
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(downloadConnectTimeoutMs);
         factory.setReadTimeout(downloadReadTimeoutMs);
-        return new RestTemplate(factory);
+        RestTemplate template = new RestTemplate(factory);
+        if (internalToken != null && !internalToken.trim().isEmpty())
+        {
+            final String token = internalToken.trim();
+            template.getInterceptors().add((request, body, execution) -> {
+                request.getHeaders().set("X-Internal-Token", token);
+                return execution.execute(request, body);
+            });
+        }
+        return template;
     }
 }

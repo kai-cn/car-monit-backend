@@ -204,6 +204,8 @@ vehicleMonitor:
 # backend → api 查询契约客户端：连接/读超时与重试按场景隔离
 # 预算原则：backend 读超时 > api 处理超时 + 缓冲；POST（导出提交）不重试
 traffic-api:
+  # 与 api 的 traffic.security.internal-token 保持一致；为空时 api 仅允许回环调用
+  internal-token: ${TRAFFIC_API_INTERNAL_TOKEN:}
   connect-timeout-ms: 1000
   # 列表：api 列表 SLO ≤2s
   list-read-timeout-ms: 2500
