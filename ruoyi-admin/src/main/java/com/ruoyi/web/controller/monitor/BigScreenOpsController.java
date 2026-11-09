@@ -85,6 +85,7 @@ public class BigScreenOpsController extends BaseController
     @DeleteMapping("/gray/{name}")
     public AjaxResult clearGray(@PathVariable String name)
     {
+        assertSecuritySwitchAllowed(name);
         featureSwitchService.clearGray(name);
         return AjaxResult.success(featureSwitchService.snapshot());
     }
@@ -116,6 +117,7 @@ public class BigScreenOpsController extends BaseController
     @DeleteMapping("/switches/{name}")
     public AjaxResult clear(@PathVariable String name)
     {
+        assertSecuritySwitchAllowed(name);
         featureSwitchService.clearOverride(name);
         return AjaxResult.success(featureSwitchService.snapshot());
     }

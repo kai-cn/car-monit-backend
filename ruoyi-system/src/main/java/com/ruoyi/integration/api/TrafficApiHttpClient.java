@@ -125,7 +125,10 @@ public class TrafficApiHttpClient
             }
             if (body == null || body.trim().isEmpty())
             {
-                return ApiHttpResult.ok(status, body, null);
+                // 2xx 空体必须走 CONTRACT_VIOLATION 降级，不能静默返回 null 让调用方
+                // 把「api 异常」当成空列表/空统计；裸 body 场景（type==null）不在此分支。
+                return ApiHttpResult.contractViolation(status, body,
+                        new IOException("api 返回 2xx 空响应体"));
             }
             T parsed = type != null
                     ? objectMapper.readValue(body, type)

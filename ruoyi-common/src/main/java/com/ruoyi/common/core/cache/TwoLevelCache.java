@@ -240,11 +240,13 @@ public class TwoLevelCache
         {
             return;
         }
-        refreshPool.submit(new Runnable()
+        try
         {
-            @Override
-            public void run()
+            refreshPool.submit(new Runnable()
             {
+                @Override
+                public void run()
+                {
                 Object lock = lockFor(key);
                 try
                 {
@@ -274,7 +276,14 @@ public class TwoLevelCache
                     CacheContext.clear();
                 }
             }
-        });
+            });
+        }
+        catch (RuntimeException e)
+        {
+            // 线程池拒绝/关闭时释放 refreshing 标记，否则该 key 永远不会再异步刷新
+            refreshing.remove(key);
+            log.warn("[缓存] 异步刷新任务提交失败 key={} reason={}", key, e.getMessage());
+        }
     }
 
     private <T> void store(String key, T value, long l1Seconds, long l2Seconds, long staleSeconds)

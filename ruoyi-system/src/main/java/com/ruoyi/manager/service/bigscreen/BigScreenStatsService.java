@@ -70,7 +70,9 @@ public class BigScreenStatsService
 
     public List<CarStatisticsVO> carStatistics(final IncomeStatisticParam param)
     {
-        if (!apiFirstEnabled())
+        // api 的 escape 端点只支持 orgId，不支持 orgCode；只传 orgCode 时必须回本地库，
+        // 否则会拿到全机构数据（即使缓存 key 区分了机构也只是各自缓存同一份全量结果）。
+        if (!apiFirstEnabled() || !CommonUtil.isBlank(param.getOrgCode()))
         {
             CacheContext.markSource("LEGACY_DB");
             return carConfimFreeService.getCarStatistics(param);
@@ -135,7 +137,7 @@ public class BigScreenStatsService
         String key = cache.key("bigscreen:stats", "income:" + BigScreenCacheSupport.hash(
                 param.getQueryDateType(), param.getStartDate(),
                 param.getApplyTime1(), param.getApplyTime2(),
-                param.getOrgId(), param.getOrgCode()));
+                param.getOrgId(), param.getOrgCode(), param.getEscapedType()));
         return cache.get(key, L1_SECONDS, L2_SECONDS, STALE_SECONDS,
                 new TypeReference<List<incomeStatisticVO>>()
                 {
