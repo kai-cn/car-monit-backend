@@ -75,10 +75,11 @@ public class DictVersionService
         VersionEntry previous = local.get(domain);
         long floor = previous == null ? 0L : previous.value;
         long next;
+        Long redisValue = null;
         try
         {
-            Long value = redisCache.increment(key(domain), 1L, 365L * 24L * 3600L);
-            next = value == null ? floor + 1L : value;
+            redisValue = redisCache.increment(key(domain), 1L, 365L * 24L * 3600L);
+            next = redisValue == null ? floor + 1L : redisValue;
         }
         catch (RuntimeException e)
         {
@@ -89,7 +90,23 @@ public class DictVersionService
         // 版本必须单调：Redis key 被重置/过期或 Redis 不可用时，都不能回到小于
         // 本节点已知版本的数字，否则 segment() 会切回旧 key，字典变更“复活”旧数据。
         next = Math.max(next, floor + 1L);
-        localBumps.put(domain, next);
+        // merge 而非 put：并发 bump 时不能被较小的版本覆盖。
+        next = localBumps.merge(domain, next, Math::max);
+        if (redisValue == null || next > redisValue)
+        {
+            // 只在本节点抬升了版本时写回共享存储。否则其它节点 readRemote 读到
+            // Redis 里的小版本，仍会把缓存 key 切回旧版本（跨节点回退）。
+            try
+            {
+                redisCache.setCacheObject(key(domain), next,
+                        (int) (365L * 24L * 3600L), TimeUnit.SECONDS);
+            }
+            catch (RuntimeException e)
+            {
+                log.warn("[字典版本] 版本写回 Redis 失败 domain={} version={} reason={}",
+                        domain, next, e.getMessage());
+            }
+        }
         local.put(domain, new VersionEntry(next, System.currentTimeMillis() + LOCAL_TTL_MS));
         log.info("[字典版本] 主动失效 domain={} version={}", domain, next);
         return next;

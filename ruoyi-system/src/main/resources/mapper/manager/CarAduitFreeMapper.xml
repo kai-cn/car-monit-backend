@@ -94,6 +94,7 @@
         select sum(ifnull(a.dif_amount, 0)) escapedAmount,count(distinct a.car_no) number from car_except_record a where a.del_flag = '0'
         <if test="applyTime1 != null  and applyTime1 != ''">and a.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
         <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+        <if test="orgCode != null and orgCode != ''"> and exists (select 1 from sys_dept d where d.dept_id = a.eps_id and d.del_flag = '0' and d.sub_code like concat(#{orgCode}, '%'))</if>
     </select>
 
     <select id="countByCarIds" resultType="com.ruoyi.manager.domain.vo.bigscreen.CarIdCountVO">
@@ -115,7 +116,8 @@
         left join sys_dept d on d.dept_id = a.org_id and d.del_flag = '0'
         where a.del_flag = '0'
         <if test="queryDateType != null  and queryDateType == 'suo'"> and a.status = '0' </if>
-        <!--<if test="orgCode != null  and orgCode != ''"> and d.org_code = #{orgCode}</if>-->
+        <!-- sys_dept 无 org_code 列，机构范围用 sub_code 前缀（本机构及下级）下推 -->
+        <if test="orgCode != null and orgCode != ''"> and d.sub_code like concat(#{orgCode}, '%')</if>
         <if test="startDate != null  and startDate != ''">and a.create_time >= STR_TO_DATE(#{startDate},'%Y-%m-%d') and a.create_time <![CDATA[<]]> LAST_DAY(#{startDate})</if>
         <if test="queryDateType != null  and queryDateType == 'suo'">and d.tree_leavel = 2</if>
         <if test="queryDateType != null  and queryDateType == 'zhan'">and d.tree_leavel = 3</if>
