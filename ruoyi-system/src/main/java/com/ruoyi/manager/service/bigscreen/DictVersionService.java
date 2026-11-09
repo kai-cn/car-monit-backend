@@ -72,14 +72,13 @@ public class DictVersionService
     /** 版本号写入：INCR Redis 并立即更新本地版本，保证当前节点后续读使用新 key。 */
     public long bump(String domain)
     {
+        VersionEntry previous = local.get(domain);
+        long floor = previous == null ? 0L : previous.value;
         long next;
         try
         {
             Long value = redisCache.increment(key(domain), 1L, 365L * 24L * 3600L);
-            next = value == null ? 1L : value;
-            // 版本必须单调：Redis 曾经成功 INCR 后即使短暂不可用，读路径也不能回退到更小的本地值，
-            // 否则缓存 key 会切回旧版本，字典变更“复活”旧数据。
-            localBumps.merge(domain, next, Math::max);
+            next = value == null ? floor + 1L : value;
         }
         catch (RuntimeException e)
         {
@@ -87,6 +86,10 @@ public class DictVersionService
             log.warn("[字典版本] Redis INCR 失败，退化为本地版本 domain={} version={} reason={}",
                     domain, next, e.getMessage());
         }
+        // 版本必须单调：Redis key 被重置/过期或 Redis 不可用时，都不能回到小于
+        // 本节点已知版本的数字，否则 segment() 会切回旧 key，字典变更“复活”旧数据。
+        next = Math.max(next, floor + 1L);
+        localBumps.put(domain, next);
         local.put(domain, new VersionEntry(next, System.currentTimeMillis() + LOCAL_TTL_MS));
         log.info("[字典版本] 主动失效 domain={} version={}", domain, next);
         return next;

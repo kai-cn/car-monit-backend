@@ -336,9 +336,11 @@ public class BigScreenExportService
             exportRequest.setEndTime(request.getEndTime());
             exportRequest.setPurpose(request.getPurpose());
             // 审批快照里的机构范围必须原样保留，不能被审批人的机构覆盖或悄悄丢弃
-            Map<String, String> scoped = scopedFiltersForResubmit(request.getFuzzyFields(),
-                    true, request.getOrgCode(), approverId, "exportApproval");
+            Map<String, String> scoped = scopedFiltersForResubmit(request.getType(),
+                    request.getFuzzyFields(), false, request.getOrgCode(), approverId,
+                    false, "exportApproval");
             ExportPolicy.validateFuzzy(scoped);
+            ExportPolicy.validateFullFilters(request.getType(), scoped, capabilityService.current());
             exportRequest.setFuzzyFields(scoped);
             exportRequest.setTenantId(request.getTenantId());
 
@@ -479,8 +481,8 @@ public class BigScreenExportService
         }
         // 机构范围必须按「重试时的账号」重新收敛，不能原样复用历史过滤条件：
         // 否则调岗/解除机构绑定的账号可凭旧 taskId 反复导出原机构数据。
-        Map<String, String> scoped = scopedFiltersForResubmit(meta.getFuzzyFields(),
-                meta.isAdminScope(), meta.getOrgCode(), requesterId, "exportRetry");
+        Map<String, String> scoped = scopedFiltersForResubmit(meta.getType(), meta.getFuzzyFields(),
+                meta.isAdminScope(), meta.getOrgCode(), requesterId, true, "exportRetry");
         ExportPolicy.validateFuzzy(scoped);
         ExportRequest request = new ExportRequest();
         request.setType(meta.getType());
@@ -719,52 +721,45 @@ public class BigScreenExportService
     }
 
     /**
-     * 重提（retry/approve）时按当前账号重新收敛机构范围：
-     * 剔除历史 orgcode，用任务保存的机构范围重新注入；非管理员还要求当前机构未变更。
+     * 重提（retry/resume/approve）时的机构范围收敛。
+     *
+     * <p>retry/resume 走 {@link ExportPolicy#applyOrgScope} 按「当前登录账号」重新收敛：
+     * 调岗、机构解绑、机构不一致、非管理员导出 trail 都会被拒绝，且不会沿用历史 orgcode。
+     * approve 走「申请时的授权快照」：非管理员申请必须有有效机构快照并原样保留，
+     * 不允许审批人（可能属于其它机构）扩大范围。</p>
      */
-    private Map<String, String> scopedFiltersForResubmit(Map<String, String> fuzzyFields,
+    private Map<String, String> scopedFiltersForResubmit(String type, Map<String, String> fuzzyFields,
                                                          boolean adminScope, String storedOrgCode,
-                                                         Long requesterId, String endpoint)
+                                                         Long requesterId, boolean enforceRequesterScope,
+                                                         String endpoint)
     {
         Map<String, String> scoped = new LinkedHashMap<String, String>();
-        String originalOrg = null;
         if (fuzzyFields != null)
         {
             for (Map.Entry<String, String> entry : fuzzyFields.entrySet())
             {
-                if (entry.getKey() != null && "orgcode".equalsIgnoreCase(entry.getKey().trim()))
+                if (entry.getKey() == null || entry.getKey().trim().isEmpty())
                 {
-                    originalOrg = entry.getValue();
                     continue;
                 }
-                scoped.put(entry.getKey(), entry.getValue());
+                scoped.put(entry.getKey().trim(), entry.getValue());
             }
         }
-        if (adminScope)
+        if (enforceRequesterScope)
         {
-            if (originalOrg != null && !originalOrg.trim().isEmpty())
-            {
-                scoped.put("orgcode", originalOrg.trim());
-            }
-            return scoped;
+            return ExportPolicy.applyOrgScope(type, scoped,
+                    SecurityUtils.isAdmin(requesterId), SecurityUtils.getDeptSubCode());
         }
-        if (isBlank(storedOrgCode))
+        if (!adminScope)
         {
-            throw new ApiClientException(ApiErrorCode.FORBIDDEN, endpoint,
-                    "历史任务缺少机构范围，无法安全重提，请重新提交导出");
-        }
-        if (!SecurityUtils.isAdmin(requesterId))
-        {
-            String current = SecurityUtils.getDeptSubCode();
-            if (isBlank(current) || "-1".equals(current.trim())
-                    || !storedOrgCode.equals(current.trim()))
+            if (isBlank(storedOrgCode) || "-1".equals(storedOrgCode.trim()))
             {
                 throw new ApiClientException(ApiErrorCode.FORBIDDEN, endpoint,
-                        "当前账号机构与任务机构不一致，请重新提交导出");
+                        "审批请求缺少有效机构范围，无法安全提交，请重新申请");
             }
+            scoped.put("orgcode", storedOrgCode.trim());
         }
-        scoped.put("orgcode", storedOrgCode.trim());
-        return scoped;
+        return ExportPolicy.applyOrgScope(type, scoped, true, null);
     }
 
     private String orgCodeOf(ExportRequest request)
