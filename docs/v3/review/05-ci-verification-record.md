@@ -95,9 +95,36 @@ needs to be increased. Please check the 'Billing & plans' section in your settin
 
 > 凭据一律由运行环境 / 凭据管理器提供，**不写入仓库文件、不回显到日志**。
 
-## 5. 实机联调状态
+## 5. 实机联调执行结果（2026-11-09）
 
-推送时 Windows 本机 9902 / 9989 均无监听，ES(9200) / Kafka(9092) / Redis(6379) /
-MySQL(3307) 均在运行；本轮未重启两个 java 服务，因此**未重跑端到端联调**。
-完整联调操作清单见 `04-reproduction-guide.md` 第 3 节，历史联调产物见
-`D:\work\runtime-logs\`。后续联调结果应追加到本文件，不覆盖本节结论。
+### 5.1 执行动作
+
+- 重新打包两侧可运行 jar（离线、JDK 8）：`pro-business-api-1.0.jar` 与
+  `ruoyi-admin.jar` 均成功，时间戳为本轮编译后。
+- 启动前核查：9902 / 9989 均无监听；ES(9200) / Kafka(9092) / Redis(6379) /
+  MySQL(3307) 已在运行，**未重复启动**任何依赖服务。
+- 各启动**一个** java 实例，均限制 `-Xms512m -Xmx1g`：
+  - api 9902（沿用 `D:\work\runtime-logs\start-api-v3.ps1`）
+  - backend 9989（`java -Dserver.port=9989 -jar ruoyi-admin.jar`）
+- 两侧注入**同一个临时内部令牌**、backend 注入临时下载签名密钥；值不记录、不写入仓库文件。
+- 端口就绪：backend 约 22 秒、api 约 36 秒；联调结束时两端口各 1 个 listener。
+
+### 5.2 验证结果
+
+| # | 验证项 | 结果 |
+| --- | --- | --- |
+| 1 | 不带令牌 `GET /api/v3/es/readiness` | **HTTP 403**，内部端点守卫生效 |
+| 2 | 带正确令牌请求同一端点 | **HTTP 200 / code=200** |
+| 3 | 超窗回灌 `POST /api/v3/sync/backfill`（2020-01-01 ~ 2026-01-01） | `code=500`，消息「回灌时间范围不能超过 450 天」，未创建任务 |
+| 4 | backend 启动 | 成功；说明 `EXPORT_DOWNLOAD_SECRET` 与 `TRAFFIC_API_INTERNAL_TOKEN` 被正确加载（缺失会 fail-fast） |
+| 5 | backend 登录 / 需认证的大屏链路 | **未完成**：本机测试账号口令不符合系统强密码策略，若干常见候选口令均返回「用户不存在/密码错误」；未继续猜测、未伪造登录态 |
+
+### 5.3 结论与边界
+
+- 本轮实机验证覆盖：新构建产物可启动、内部端点令牌守卫、回灌窗口上限（第二轮回补项）、
+  backend 启动期安全配置加载。
+- **未覆盖**：需认证的大屏统计、导出提交-轮询-下载、审批与重试链路。这些在前序会话已跑通
+  （`D:\work\runtime-logs\` 有历史产物），本轮代码改动后应在取得正确测试账号口令后，
+  按 `04-reproduction-guide.md` 第 3.4 节补跑并追加记录。
+- CI 侧因账号账单未执行任何 job（第 2 节），本地联调结果**不能替代 CI 门禁**。
+- 本轮未新建测试库 / 测试索引 / 测试数据；推送产生的 4 个临时日志已直接删除（未进回收站）。
