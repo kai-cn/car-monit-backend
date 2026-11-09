@@ -8,7 +8,6 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.integration.api.ApiClientException;
 import com.ruoyi.integration.api.ApiErrorCode;
 import com.ruoyi.integration.api.TrafficApiClient;
-import com.ruoyi.integration.api.TrafficQueryContract;
 import com.ruoyi.manager.domain.vo.bigscreen.ExportApprovalRequest;
 import com.ruoyi.manager.domain.vo.bigscreen.ExportRequest;
 import com.ruoyi.manager.domain.vo.bigscreen.ExportTaskMeta;
@@ -340,9 +339,9 @@ public class BigScreenExportService
                     request.getFuzzyFields(), false, request.getOrgCode(), approverId,
                     false, "exportApproval");
             ExportPolicy.validateFuzzy(scoped);
-            // 不再重复 validateFullFilters：过滤条件是入队时已校验并冻结的快照，
-            // 审批阶段重探 api 能力矩阵（5 分钟缓存过期/404）只会新增失败点，
-            // 让正常审批因探测抖动被回退成 PENDING。
+            // 不再重复 validateFullFilters：过滤条件是入队时校验并冻结的快照，
+            // 审批接口不接受新过滤字段；最终能力校验仍由 submitInternal 承担，
+            // 去掉这里的重复探测只是避免同一请求重探两次能力矩阵。
             exportRequest.setFuzzyFields(scoped);
             exportRequest.setTenantId(request.getTenantId());
 
