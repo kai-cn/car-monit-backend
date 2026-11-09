@@ -28,8 +28,8 @@ class ExportApprovalStateMachineTest
                 ExportApprovalStateMachine.APPROVING, ExportApprovalStateMachine.APPROVED));
         assertTrue(ExportApprovalStateMachine.canTransition(
                 ExportApprovalStateMachine.APPROVING, ExportApprovalStateMachine.PENDING));
-        // CAS 过期后的中断恢复：允许重新进入 approving（仍由 Redis CAS 保证单飞）
-        assertTrue(ExportApprovalStateMachine.canTransition(
+        // 中断恢复不得直接重入 approving：api 提交非幂等，重复审批会生成多份导出文件
+        assertFalse(ExportApprovalStateMachine.canTransition(
                 ExportApprovalStateMachine.APPROVING, ExportApprovalStateMachine.APPROVING));
     }
 

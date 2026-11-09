@@ -3,8 +3,10 @@ package com.ruoyi.web.controller.monitor;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.metrics.MetricsRegistry;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.integration.api.ResilientApiExecutor;
 import com.ruoyi.manager.service.bigscreen.FeatureSwitchService;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -74,6 +76,7 @@ public class BigScreenOpsController extends BaseController
                                    @RequestParam(defaultValue = "100") int percent,
                                    @RequestParam(required = false) String tenants)
     {
+        assertSecuritySwitchAllowed(name);
         featureSwitchService.overrideGray(name, percent, tenants);
         return AjaxResult.success(featureSwitchService.snapshot());
     }
@@ -91,8 +94,22 @@ public class BigScreenOpsController extends BaseController
     public AjaxResult override(@PathVariable String name,
                                @RequestParam boolean enabled)
     {
+        assertSecuritySwitchAllowed(name);
         featureSwitchService.override(name, enabled);
         return AjaxResult.success(featureSwitchService.snapshot());
+    }
+
+    /**
+     * 安全类开关（导出审批等）不允许只有「监控查看」权限的账号改动，
+     * 否则可以一行运维调用关掉审批，绕过全字段导出的强管控。
+     */
+    private void assertSecuritySwitchAllowed(String name)
+    {
+        if (FeatureSwitchService.EXPORT_APPROVAL.equalsIgnoreCase(name)
+                && !SecurityUtils.hasPermi("manager:bigscreen:exportApprove"))
+        {
+            throw new AccessDeniedException("修改 export-approval 需要 manager:bigscreen:exportApprove 权限");
+        }
     }
 
     @PreAuthorize("@ss.hasPermi('monitor:server:list')")

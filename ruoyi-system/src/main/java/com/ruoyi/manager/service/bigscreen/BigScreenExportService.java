@@ -144,7 +144,8 @@ public class BigScreenExportService
         {
             for (Map.Entry<String, String> entry : request.getFuzzyFields().entrySet())
             {
-                body.put("fuzzyFields." + entry.getKey(), entry.getValue());
+                body.put("fuzzyFields." + (entry.getKey() == null ? "" : entry.getKey().trim()),
+                        entry.getValue());
             }
         }
         if (ExportPolicy.MODE_FULL.equals(mode))
@@ -309,6 +310,13 @@ public class BigScreenExportService
                 throw new ApiClientException(ApiErrorCode.NOT_FOUND, "exportApproval",
                         "审批请求不存在或已过期");
             }
+            if (ExportApprovalStateMachine.APPROVING.equals(request.getStatus()))
+            {
+                // 上次提交可能在「api 已生成任务」与「写回 approved」之间中断，
+                // 此时不允许重入，避免同一申请生成多份全量导出文件。
+                throw new ApiClientException(ApiErrorCode.INVALID_ARGUMENT, "exportApproval",
+                        "审批正在处理中或上次提交结果未知，请核查后重新提交申请，禁止重复审批");
+            }
             if (!ExportApprovalStateMachine.canTransition(request.getStatus(),
                     ExportApprovalStateMachine.APPROVING))
             {
@@ -327,7 +335,11 @@ public class BigScreenExportService
             exportRequest.setStartTime(request.getStartTime());
             exportRequest.setEndTime(request.getEndTime());
             exportRequest.setPurpose(request.getPurpose());
-            exportRequest.setFuzzyFields(request.getFuzzyFields());
+            // 审批快照里的机构范围必须原样保留，不能被审批人的机构覆盖或悄悄丢弃
+            Map<String, String> scoped = scopedFiltersForResubmit(request.getFuzzyFields(),
+                    true, request.getOrgCode(), approverId, "exportApproval");
+            ExportPolicy.validateFuzzy(scoped);
+            exportRequest.setFuzzyFields(scoped);
             exportRequest.setTenantId(request.getTenantId());
 
             Map<String, Object> result;
@@ -465,12 +477,17 @@ public class BigScreenExportService
             throw new ApiClientException(ApiErrorCode.RATE_LIMITED, "exportRetry",
                     "重试过于频繁，请稍后再试");
         }
+        // 机构范围必须按「重试时的账号」重新收敛，不能原样复用历史过滤条件：
+        // 否则调岗/解除机构绑定的账号可凭旧 taskId 反复导出原机构数据。
+        Map<String, String> scoped = scopedFiltersForResubmit(meta.getFuzzyFields(),
+                meta.isAdminScope(), meta.getOrgCode(), requesterId, "exportRetry");
+        ExportPolicy.validateFuzzy(scoped);
         ExportRequest request = new ExportRequest();
         request.setType(meta.getType());
         request.setStartTime(meta.getStartTime());
         request.setEndTime(meta.getEndTime());
         request.setPurpose(meta.getPurpose());
-        request.setFuzzyFields(meta.getFuzzyFields());
+        request.setFuzzyFields(scoped);
         request.setFields(meta.getFields());
         request.setTenantId(meta.getTenantId());
 
@@ -569,15 +586,25 @@ public class BigScreenExportService
         response.setHeader("Referrer-Policy", "no-referrer");
         response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
         response.setHeader("Pragma", "no-cache");
-        Long requester = token != null && !token.trim().isEmpty()
-                ? downloadTokenService.verify(token, taskId)
-                : SecurityUtils.getUserId();
-        ExportTaskMeta meta = requireAccessibleTask(taskId, requester);
-        if (!meta.getUserId().equals(requester) && !SecurityUtils.isAdmin(requester))
+        Long loginUserId = SecurityUtils.getUserId();
+        // 签名令牌是每次下载的必需凭证：既限定 15 分钟时效，也把下载绑定到登录用户
+        if (token == null || token.trim().isEmpty())
+        {
+            throw new ApiClientException(ApiErrorCode.FORBIDDEN, "exportDownload",
+                    "缺少下载令牌，请先调用 download-url 获取签名令牌");
+        }
+        Long tokenUserId = downloadTokenService.verify(token, taskId);
+        if (!tokenUserId.equals(loginUserId))
+        {
+            throw new ApiClientException(ApiErrorCode.FORBIDDEN, "exportDownload",
+                    "下载令牌与当前登录用户不匹配");
+        }
+        ExportTaskMeta meta = requireAccessibleTask(taskId, loginUserId);
+        if (!meta.getUserId().equals(loginUserId) && !SecurityUtils.isAdmin(loginUserId))
         {
             throw new ApiClientException(ApiErrorCode.FORBIDDEN, "exportDownload", "无权下载该导出任务");
         }
-        if (!rateLimiter.tryAcquire("download", requester, downloadLimitPerMinute, 60))
+        if (!rateLimiter.tryAcquire("download", loginUserId, downloadLimitPerMinute, 60))
         {
             writeError(response, 429,
                     "下载过于频繁，请稍后再试");
@@ -689,6 +716,55 @@ public class BigScreenExportService
             throw new ApiClientException(ApiErrorCode.UNAVAILABLE, "exportSubmit",
                     "V3 导出已通过开关关闭，请使用旧导出入口");
         }
+    }
+
+    /**
+     * 重提（retry/approve）时按当前账号重新收敛机构范围：
+     * 剔除历史 orgcode，用任务保存的机构范围重新注入；非管理员还要求当前机构未变更。
+     */
+    private Map<String, String> scopedFiltersForResubmit(Map<String, String> fuzzyFields,
+                                                         boolean adminScope, String storedOrgCode,
+                                                         Long requesterId, String endpoint)
+    {
+        Map<String, String> scoped = new LinkedHashMap<String, String>();
+        String originalOrg = null;
+        if (fuzzyFields != null)
+        {
+            for (Map.Entry<String, String> entry : fuzzyFields.entrySet())
+            {
+                if (entry.getKey() != null && "orgcode".equalsIgnoreCase(entry.getKey().trim()))
+                {
+                    originalOrg = entry.getValue();
+                    continue;
+                }
+                scoped.put(entry.getKey(), entry.getValue());
+            }
+        }
+        if (adminScope)
+        {
+            if (originalOrg != null && !originalOrg.trim().isEmpty())
+            {
+                scoped.put("orgcode", originalOrg.trim());
+            }
+            return scoped;
+        }
+        if (isBlank(storedOrgCode))
+        {
+            throw new ApiClientException(ApiErrorCode.FORBIDDEN, endpoint,
+                    "历史任务缺少机构范围，无法安全重提，请重新提交导出");
+        }
+        if (!SecurityUtils.isAdmin(requesterId))
+        {
+            String current = SecurityUtils.getDeptSubCode();
+            if (isBlank(current) || "-1".equals(current.trim())
+                    || !storedOrgCode.equals(current.trim()))
+            {
+                throw new ApiClientException(ApiErrorCode.FORBIDDEN, endpoint,
+                        "当前账号机构与任务机构不一致，请重新提交导出");
+            }
+        }
+        scoped.put("orgcode", storedOrgCode.trim());
+        return scoped;
     }
 
     private String orgCodeOf(ExportRequest request)

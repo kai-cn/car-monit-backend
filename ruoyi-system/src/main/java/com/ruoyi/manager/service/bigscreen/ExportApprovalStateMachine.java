@@ -35,8 +35,9 @@ public final class ExportApprovalStateMachine
     {
         Map<String, Set<String>> transitions = new HashMap<String, Set<String>>();
         transitions.put(PENDING, new HashSet<String>(Arrays.asList(APPROVING, REJECTED)));
-        // approving -> approving：仅当 CAS 占位已过期（上一次进程中断）时用于恢复重试
-        transitions.put(APPROVING, new HashSet<String>(Arrays.asList(APPROVED, PENDING, APPROVING)));
+        // approving 只能结束（approved）或在明确失败时回退（pending）。
+        // 不允许 approving -> approving：api 提交非幂等，中断后重入会重复生成导出任务与文件。
+        transitions.put(APPROVING, new HashSet<String>(Arrays.asList(APPROVED, PENDING)));
         transitions.put(APPROVED, Collections.<String>emptySet());
         transitions.put(REJECTED, Collections.<String>emptySet());
         TRANSITIONS = Collections.unmodifiableMap(transitions);

@@ -133,11 +133,19 @@ public final class ExportPolicy
         }
         for (Map.Entry<String, String> entry : fuzzyFields.entrySet())
         {
-            String field = entry.getKey() == null ? "" : entry.getKey().trim();
+            String rawKey = entry.getKey();
+            String field = rawKey == null ? "" : rawKey.trim();
             String value = entry.getValue();
             if (value == null || value.trim().isEmpty())
             {
                 continue;
+            }
+            // 校验用 trim 后的 key、下发若用原 key，会出现「白名单通过但 api 静默忽略」，
+            // 用户以为带了筛选实际导出全量；这里直接拒绝带首尾空白的键。
+            if (rawKey == null || !rawKey.equals(field))
+            {
+                throw new ApiClientException(ApiErrorCode.INVALID_ARGUMENT, "export",
+                        "过滤字段名不能包含首尾空白: " + rawKey);
             }
             String trimmed = value.trim();
             if (trimmed.length() > MAX_FILTER_VALUE_LENGTH)
@@ -263,7 +271,7 @@ public final class ExportPolicy
         }
         for (Map.Entry<String, String> entry : fuzzyFields.entrySet())
         {
-            String field = entry.getKey();
+            String field = entry.getKey() == null ? "" : entry.getKey().trim();
             if (PLATE_FILTERS.contains(field))
             {
                 continue;
