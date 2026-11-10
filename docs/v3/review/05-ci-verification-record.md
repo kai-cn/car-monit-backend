@@ -147,3 +147,58 @@ needs to be increased. Please check the 'Billing & plans' section in your settin
   需先在 GitHub → Settings → Billing & plans 处理付款方式或提高 spending limit，
   再执行 `Re-run all jobs` 或重新 `workflow_dispatch`，并回填本节。
 - 本地替代验证（编译 / 单测 / SQL / 脚本语法 / 实机联调）状态见第 3、5 节，未因此发生变化。
+
+## 7. 认证链路补跑（2026-11-10，补齐第 5.3 节未覆盖项）
+
+> 本节补跑 `04-reproduction-guide.md` 第 3.4 节第 3/4/5/6 项。沿用 11-09 会话启动的
+> api(9902) / backend(9989) 实例（代码无变更，仅 docs 提交，未重启、未重复启动）。
+
+### 7.1 登录与测试账号
+
+- `admin / Admin@2025-` 登录 9989 成功（登录接口仅在请求带 code 时才校验验证码，脚本联调不带 code）；
+  `getInfo` 返回 `roles=[admin]`。
+- 经 `POST /system/user` 创建用户失败，报
+  `IndexOutOfBoundsException: No group 2`（HTTP 500）——**既有框架缺陷，记为 K-08**：
+  p6spy 包装驱动（`jdbc:p6spy:mysql://`）对含 BCrypt 口令 `$2a$10$...` 的 SQL 做正则格式化，
+  `$2` 被当组引用。与本轮 V3 改动无关，改用 MySQL CLI 直插 `sys_user` / `sys_user_role` 建号。
+- 测试账号（口令同 admin 策略，BCrypt 同 admin 行复制）：
+  - `v3audit_view`：common 角色，万安收费所（dept 25424）；
+  - `v3audit_mgr`：project_manager 角色，吉安东管理中心（dept 25367）。
+- **发现迁移遗漏，记为 K-09**：V3 新增权限 `manager:bigscreen:export` / `exportFull` /
+  `exportApprove` 未播种 `sys_menu`，任何角色均无法取得导出/审批入口。联调补插
+  menu 3020~3022（F 类型，父 3005 大屏）并授权 role 132（mgr）与 role 2（view，
+  用于越权用例）；另授 `monitor:server:list`（menu 112）给两角色用于运维端点用例。
+
+### 7.2 验证矩阵（全部符合预期）
+
+| # | 用例 | 结果 |
+| --- | --- | --- |
+| 1 | admin `getInfo` / 大屏统计 / metrics | 200；`carStatistics` 命中缓存 `X-Data-Source: CACHE`，metrics 显示 cacheHitRate=0.96、熔断全部 CLOSED |
+| 2 | view 首次 `carStatistics` | 200，`X-Data-Source: API`（两级缓存 MISS→回源→后续命中，链路正确） |
+| 3 | view（无导出权限）`POST /export/display` | **403**，权限门生效 |
+| 4 | mgr 提交 display 导出（snapshot，2h 窗口） | 200，taskId=f3e8eb88…，轮询一次即 `done`（totalExported=0，该窗口 ES 无数据，链路通） |
+| 5 | `POST /export/{taskId}/download-url` | 200，返回 15 分钟 `downloadToken` + `tokenHeader: X-Export-Download-Token` |
+| 6 | 下载缺令牌头 | **403** |
+| 7 | 下载带损坏令牌 | **403**（「下载令牌格式非法」） |
+| 8 | 下载：有效令牌 + 换登录用户（view 用 mgr 的令牌） | **403**（「下载令牌与当前登录用户不匹配」，B-01 令牌绑定用户实证） |
+| 9 | 下载：本人 + 有效令牌 | **200**，132B gz 文件（0 行空导出） |
+| 10 | 跨机构 retry：view（万安）重试 mgr（吉安东）的任务 | **403**（「无权访问该导出任务」，B-02 实证） |
+| 11 | view 开安全开关 `gray/export-approval?enabled=true`（无 exportApprove 权限） | **403**（B-04 实证） |
+| 12 | mgr 开 export-approval | 200，开关生效 |
+| 13 | view 提交 full 导出 | 200，`pending_approval`；快照 `fuzzyFields` 被服务端自动注入 `orgcode=0000001100530008-001`（本机构收敛） |
+| 14 | mgr 审批列表 / approve | 200；审批通过自动提交任务 aeac45b3…，轮询 `done` |
+| 15 | view 再提交 full（fee）→ mgr reject（带 reason） | 200；审批单状态更新为 rejected |
+| 16 | view `DELETE /switches/export-approval`（有 server:list 无 exportApprove） | **403**（B-04 删除路径实证） |
+| 17 | view 翻转非安全开关 `stats-api-first=false` → 恢复 true | 均 200（安全/非安全开关权限不对称，符合设计） |
+| 18 | admin `DELETE /switches/export-approval` | 200，恢复默认值 false |
+
+### 7.3 清理与结论
+
+- 导出产物（3 个 0 行 `.csv.gz`）已从 `%TEMP%\car-monit-export` 直接删除，未进回收站；
+  `export-approval` 等开关全部恢复默认；Redis 中审批单/任务元数据随 TTL 过期，不手工清理。
+- 测试账号 `v3audit_view` / `v3audit_mgr` 与 menu 3020~3022 授权**保留**（后续联调复用），
+  如需回收：`delete from sys_user where user_name like 'v3audit%';` + 对应 `sys_user_role` /
+  `sys_role_menu(3020~3022)` 行。
+- **第 5.3 节的「未覆盖」三项（认证后大屏统计、导出提交-轮询-下载、审批与重试链路）本轮全部补齐通过**；
+  破坏性用例（指南 3.4 第 9/11/12 项）仍按原计划待专用测试库执行，不在本机生产联调库做。
+- 新增遗留 K-08（p6spy 建用户 500）/ K-09（导出权限未播种）见 `01-code-audit-record.md` 第 6 节。
