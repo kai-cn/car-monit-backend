@@ -158,7 +158,8 @@ needs to be increased. Please check the 'Billing & plans' section in your settin
 
 ### 7.1 登录与测试账号
 
-- `admin / Admin@2025-` 登录 9989 成功（登录接口仅在请求带 code 时才校验验证码，脚本联调不带 code）；
+- `admin` 账号登录 9989 成功（口令由运行环境注入、不记录；复现命令见 `06` 第 2 节；
+  登录接口仅在请求带 code 时才校验验证码，脚本联调不带 code）；
   `getInfo` 返回 `roles=[admin]`。
 - 经 `POST /system/user` 创建用户失败，报
   `IndexOutOfBoundsException: No group 2`（HTTP 500）——**既有框架缺陷，记为 K-08**：
