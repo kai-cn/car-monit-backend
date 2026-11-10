@@ -1,0 +1,35 @@
+name: self-hosted-ci
+
+# 账号级 GitHub-hosted runner 因账单/支出限额不可用时，V3 分支的可用 CI 入口。
+# 运行在本机 WSL2 openEuler 的自托管 runner（label: wsl-k3s）。
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - car-monit-backend-java-V3
+    paths:
+      - .github/workflows/self-hosted-ci.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: runner-probe
+    runs-on: [self-hosted, linux, x64, wsl-k3s]
+    timeout-minutes: 10
+    steps:
+      - name: Runner environment
+        run: |
+          echo "runner=${RUNNER_NAME} os=${RUNNER_OS} arch=${RUNNER_ARCH}"
+          uname -a
+          echo "cpus=$(nproc)"
+          free -m | head -2
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify workspace
+        run: |
+          test -f pom.xml && echo "workspace ok"
+          git rev-parse --short HEAD
