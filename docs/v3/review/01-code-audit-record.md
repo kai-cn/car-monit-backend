@@ -149,3 +149,5 @@ PIT 首轮/后续轮次与普通分页均可用且 Guard 会被扫描。
 | K-05 | api | `EsBackfillService.tasks` 无清理，长期 DRIFT 会按每轮最多 12 个任务累加。 |
 | K-06 | api | 管理端点失败返回 HTTP 200 + 业务 `code:400/500`，调用方必须按 body.code 判断；`es-init.ps1` 已按此实现。 |
 | K-07 | api | `DictVersionService` 版本写回为无条件 `SET` 而非 CAS，极端组合（key 重置 + 多节点并发 bump + SET 乱序）存在最终一致窗口；建议后续改 Lua。 |
+| K-08 | backend | 【2026-11-10 联调新发现，既有框架缺陷】`SysUserMapper.insertUser` 经 p6spy 包装驱动写库时报 `IndexOutOfBoundsException: No group 2`（HTTP 500），API 创建用户不可用。根因：p6spy / MybatisPlus 日志格式化对 SQL 及参数做正则替换，BCrypt 口令 `$2a$10$...` 中的 `$2` 被当作正则组引用。非本轮引入，与 V3 改动无关；联调用 SQL 直插测试账号绕过。修复方向：更换/定制 `MessageFormattingStrategy` 或改用原生驱动 URL。 |
+| K-09 | backend | 【2026-11-10 联调新发现，迁移遗漏】V3 新增的大屏导出权限 `manager:bigscreen:export` / `exportFull` / `exportApprove` 未随迁移播种 `sys_menu`（仅有 `manager:bigScreen` 查询项），任何角色都无法通过界面获得导出/审批入口。联调时补插 menu 3020~3022（F 类型，父 3005）并授权后链路正常。需补正式迁移脚本。 |
