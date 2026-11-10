@@ -223,3 +223,70 @@ Maven 首次依赖下载亦耗时数分钟；`build` job timeout 设为 45 分�
 - k3s 集群为本地学习/联调用途，单点 server，未做持久化与备份。
 - 凭据处理：GitHub PAT / registration token 仅通过进程环境变量传递，未写入仓库文件、
   脚本、文档或提交信息；推送临时日志已直接删除（未进回收站）。
+
+## 10. 资源占用实测与配额调优（2026-11-10 追加）
+
+### 10.1 实测数据（配额 6GB / 4 vCPU，74 个采样点，含一次 Maven 编译压测）
+
+| 指标 | 空闲态 | CI / Maven 峰值 |
+| --- | --- | --- |
+| WSL 内 `Mem.used` | 1520MB | **1778MB** |
+| WSL 内 `Mem.available` | 4408MB | 4149MB |
+| 构建相关进程 RSS（`proc_mb`） | 982MB | 1253MB |
+| 4 个 k3d 容器合计 | 662MB | 662MB（恒定） |
+| `swap_used` | 0 | **0**（全程未换页） |
+| 宿主 `vmmemWSL` 工作集 | 5478MB（均） | **5505MB（峰）** |
+| 宿主可用内存 | **0.00GB** | **0.00GB** |
+
+组件明细（空闲）：`k3s`×3 ≈ 840MB、`containerd`×3 ≈ 483MB、
+`Runner.Listener`×2 ≈ 258MB、`dockerd` 109MB、coredns 59MB；
+容器：server 355MB、agent-0 160MB、agent-1 140MB、serverlb 7MB。
+磁盘：vhdx 7.46GB、Docker 镜像 346.6MB、卷 499.4MB。
+
+**关键发现**：WSL 内实际用量峰值仅 1.78GB，但 `vmmem` 占 5.5GB —— 差额
+约 3.8GB 是 Linux page cache，WSL2 默认不主动归还宿主，导致宿主可用内存被压到 0。
+
+### 10.2 配额对比实测
+
+| 配置 | `vmmem` 峰值 | 宿主可用内存 | 集群/runner |
+| --- | --- | --- | --- |
+| 6GB / 4CPU，无回收 | 5505MB | 0.00GB | 稳定，两仓库 CI/CD 全绿 |
+| 3GB / 2CPU + `autoMemoryReclaim=gradual` | 1620~2200MB | 4.38~5.24GB | 重启后 k3s 冷启动慢、runner 反复 offline |
+| 4GB / 2CPU + 自动回收 | 1700~2500MB | 4.2~5.1GB | apiserver 间歇 `ServiceUnavailable`、runner 失联 |
+| **4GB / 2CPU，无自动回收（最终采用）** | 1709~2500MB | 4.33GB | **稳定**：3 节点 Ready、系统 Pod 1/1、双 runner online |
+
+- `[experimental] autoMemoryReclaim=gradual` 确实能把 `vmmem` 压到接近实际用量，
+  但实测伴随 k3s apiserver 间歇不可用与 runner 反复掉线，**不建议在跑集群时常开**。
+- WSL 内 `sync; echo 3 > /proc/sys/vm/drop_caches` 能把 buff/cache 从 1745MB 降到 619MB，
+  但 `vmmem` 不会随之回落（实测反而 2.5GB），**对释放宿主内存无效**。
+- 因此**唯一可靠手段是调低 `.wslconfig memory` 上限**。
+
+### 10.3 最低稳定运行资源（结论）
+
+| 资源 | 最低 | 推荐 | 依据 |
+| --- | --- | --- | --- |
+| WSL 内存 | **3GB** | **4GB** | 峰值 1.78GB；3GB 可持续运行但冷启动/重建余量不足，4GB 稳定 |
+| vCPU | 2 | 2~4 | Maven 单线程编译，2 核无瓶颈（宿主 12 核） |
+| swap | 1GB | 2GB | 实测 `swap_used=0`，仅作兜底 |
+| 磁盘 | 12GB | 15GB | vhdx 7.46GB + 镜像/卷 ~850MB + CI 工作区与依赖缓存 |
+| 宿主可用内存 | ≥2GB | ≥3GB | 6GB 配额时宿主 0GB 可用，系统重度换页（pagefile 峰值 10.79GB） |
+
+### 10.4 Win 侧内存不够的处理建议
+
+1. **可以调低**：把 `memory` 从 6GB 降到 **4GB**（`processors=2`、`swap=2GB`），
+   宿主可用内存从 0GB 恢复到约 4GB；这是本次最终采用的稳定配置。
+2. 不必降到 3GB 以下：实际用量 1.78GB，但 k3s 冷启动需重建证书/恢复 sqlite，
+   低于 4GB 时重启后 apiserver 需要 8 分钟以上才稳定，且易与 runner session 问题叠加。
+3. **不要为了省内存反复 `wsl --shutdown`**：每次重启都会触发
+   k3s 冷启动（5~8 分钟）与 runner 服务端 session 残留（需删除记录 + 重新注册）。
+4. 若确需临时释放：优先停掉 Windows 侧非必要进程，或在不跑 CI 时
+   `k3d cluster stop v3`（容器停止后 WSL 内 `used` 可降到 ~440MB）。
+5. 后台长任务不要用 `systemd-run` + 管道截断组合执行：本项目曾因
+   `Select-Object -First N` 提前终止 `wsl` 管道，导致集群重建到一半、
+   `k3d-v3-serverlb` 缺 `/etc/confd/values.yaml` 一直重启，apiserver 报 503。
+   改用同步执行完整脚本（`28-recreate-sync.sh`）后集群 19 秒建成、节点 9 秒 Ready。
+6. **4GB 下的 CI 复跑（如实）**：两仓库 `workflow_dispatch` 均已由各自 runner 接单，
+   但 `actions/checkout` 受 `github.com` 网络抖动长时间停在 `in_progress`，与内存配额无关
+   （6GB 时首次 Checkout 也曾耗时约 6 分钟）。4GB 下已验证稳定的是：3 节点 Ready、
+   系统 Pod 1/1 Running、双 runner online、三个 systemd 服务 active；
+   CI 编译与 CD 部署在 6GB 配置下已两次全绿，低配下待外网恢复后复跑确认。
