@@ -128,6 +128,8 @@ needs to be increased. Please check the 'Billing & plans' section in your settin
   按 `04-reproduction-guide.md` 第 3.4 节补跑并追加记录。
 - CI 侧因账号账单未执行任何 job（第 2 节），本地联调结果**不能替代 CI 门禁**。
 - 本轮未新建测试库 / 测试索引 / 测试数据；推送产生的 4 个临时日志已直接删除（未进回收站）。
+- **2026-11-10 已补齐 5.3 节列出的未覆盖项**（需认证的大屏 / 导出 / 审批链路），
+  完整结果见 `06-authenticated-e2e-record.md`；本节保留首轮联调的原始状态以便追溯。
 
 ## 6. CI 重试记录（2026-11-10）
 
