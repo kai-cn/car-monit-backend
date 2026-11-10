@@ -2,13 +2,18 @@
 
 > 在 `car-monit-backend-java-V3` 与 `car-monit-api-java-V3` 两个工作树的
 > `docs/v3/review/` 下各存一份，内容一致。记录日期：2026-11-10。
-> 补齐 `05-ci-verification-record.md` 第 5.3 节列出的未覆盖项。
 > **本文件不写任何账号口令、会话令牌、下载令牌、内部端点令牌或 GitHub 凭据明文。**
 
 ## 1. 目的与前置状态
 
 - 目标：用具备权限的 `admin` 账号跑通需认证的大屏统计、导出提交 → 轮询 → 下载、
-  全字段导出、重试状态机、审批列表、运维指标，并复跑 api 侧守卫与边界限制。
+  全字段导出、重试状态机、审批列表、运维指标，并复跑 api 侧守卫与边界限制；
+  随后复用本机已有的多角色测试账号补跑越权用例。
+- **与 `05` 第 7 节的关系（如实说明并行记录）**：同一工作树在 2026-11-10 13:16 有另一会话
+  提交 `2a8957f`（backend）/ `39525be`（api），已在 `05` 第 7 节记录更完整的多角色越权与
+  审批通过/驳回链路，并新建测试账号 `v3audit_view` / `v3audit_mgr`、补插权限菜单 3020~3022。
+  本文件是**独立复跑**，重点在 admin 视角、机构维度 SQL 下推实证、api 侧边界重跑，
+  以及用同一批测试账号复核令牌绑定 / 跨机构拒绝；两份记录互补，**未覆盖或改写第 7 节内容**。
 - 账号：用户提供的 `admin` 账号；**口令仅通过命令内变量传入，不写入文档、脚本或仓库文件**。
 - 服务状态（启动前核查，未重复启动）：
 
@@ -133,15 +138,35 @@ Invoke-RestMethod -Uri 'http://127.0.0.1:9902/api/v3/export/capabilities' -Heade
 | `/monitor/bigscreen/metrics` | 200 | `circuitState=CLOSED`、`apiTimeoutRate=0.0`、`apiErrorRate=0.0`、`cacheHitRate=0.8571`、`exportBacklog=1` |
 | `/monitor/bigscreen/switches` | 200 | 8 个开关：`stats-api-first, warning-api, location-index, export-v3, dict-version, trail-api, export-approval, trail-materialize` |
 
+### 3.7 多角色越权用例（复用并行会话保留的测试账号，独立复跑）
+
+账号：`v3audit_view`（common 角色、dept 25424）、`v3audit_mgr`（project_manager、dept 25367），
+口令策略与 admin 一致（值不记录）。两者登录与 `getInfo` 均返回 `code=200`。
+
+| # | 用例 | 本轮结果 | 说明 |
+| --- | --- | --- | --- |
+| 1 | view 提交 `POST /export/display` | `HTTP 200 / code=200` | **与 `05` 第 7 节记录的 403 不同**：第 7 节在补插 menu 3020~3022 **之前**测得 403，随后为越权用例给 role 2（view）授权了导出权限且按该节说明「保留」。本轮复跑时 view 已具备 `manager:bigscreen:export`，故 200 符合当前权限种子，不是权限门失效。 |
+| 2 | view 修改安全开关 `POST /monitor/bigscreen/switches/export-approval?enabled=true` | `HTTP 200 / code=403`「没有权限，请联系管理员授权」 | B-04 安全开关权限校验生效（view 无 `exportApprove`） |
+| 3 | mgr 提交 display 导出 | `code=200`，taskId `23f06015…`，轮询 `done` | 链路通 |
+| 4 | view 使用 mgr 的下载令牌下载 | **HTTP 403** | B-01 下载令牌绑定登录用户实证 |
+| 5 | view 重试 mgr 的任务 | `HTTP 200 / code=403`「无权访问该导出任务」 | B-02 跨机构 / 跨用户重拒绝实证 |
+| 6 | mgr 本人 + 有效令牌下载 | **HTTP 200**，gzip 132 字节 | 正常路径 |
+| 7 | 临时下载文件 | 直接删除，`exists=False` | 未进回收站 |
+
+> 本轮未改动任何权限种子、运行期开关或测试账号；若需要恢复「view 无导出权限」的初始状态，
+> 参见 `05` 第 7.3 节的回收 SQL。
+
 ## 4. 未覆盖 / 边界（如实）
 
-| 项 | 原因 |
+| 项 | 状态 |
 | --- | --- |
-| 换用户下载令牌应 403 | 无第二个可用账号；令牌已绑定 `taskId|userId|expireAt` 且代码层由四轮复核确认 |
-| retry / resume 的成功路径 | 需先构造 `failed/canceled/paused` 任务；本轮导出均一次 `done`，只验证了终态拒绝守卫 |
-| 审批通过 / 驳回链路 | admin 的全字段导出不入审批队列（`approvals=0`），需非管理员账号 |
+| 换用户下载令牌 403 | **本轮已覆盖**（3.7 #4，HTTP 403）；`05` 第 7 节 #8 亦独立验证 |
+| 跨机构 / 跨用户 retry 403 | **本轮已覆盖**（3.7 #5，code=403）；`05` 第 7 节 #10 亦独立验证 |
+| 运维写接口权限负向路径 | **本轮已覆盖安全开关正向拒绝**（3.7 #2，code=403）；`05` 第 7 节 #11/#16 覆盖了 gray 写入与删除两条路径 |
+| 审批通过 / 驳回链路 | 本轮 admin 视角 `approvals=0`（admin 不入审批队列）；**已由 `05` 第 7 节 #13~#15 用 view/mgr 双角色验证通过并驳回**，本轮未重复 |
+| retry / resume 的成功路径 | 仍需先构造 `failed/canceled/paused` 任务；本轮导出均一次 `done`，只验证了终态拒绝守卫（3.4 #11/#12） |
 | CSV 公式注入实证 | 需构造含 `=SUM(...)` 的业务数据；本次结果集为空，转义逻辑由静态复核与单测覆盖 |
-| 运维写接口权限负向路径 | 需无 `manager:bigscreen:exportApprove` 权限的账号；本轮未改动任何运行期开关 |
+| 破坏性用例（指南 3.4 #9/#11/#12） | 按 `05` 第 7.3 节约定，需专用测试库 / 测试索引，不在本机联调库执行 |
 | GitHub CI | 仍因账号账单 / 支出限额未启动任何 job，见 `05` 第 2、6 节；本轮 E2E 不替代 CI 门禁 |
 
 ## 5. 清理与凭据处理
