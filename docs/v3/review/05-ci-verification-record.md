@@ -128,3 +128,22 @@ needs to be increased. Please check the 'Billing & plans' section in your settin
   按 `04-reproduction-guide.md` 第 3.4 节补跑并追加记录。
 - CI 侧因账号账单未执行任何 job（第 2 节），本地联调结果**不能替代 CI 门禁**。
 - 本轮未新建测试库 / 测试索引 / 测试数据；推送产生的 4 个临时日志已直接删除（未进回收站）。
+
+## 6. CI 重试记录（2026-11-10）
+
+按用户要求重新触发两仓库 CI，方式为 `workflow_dispatch`（`ref` 为各自 V3 分支），
+而非 `rerun`，以排除旧 run 缓存影响。
+
+| 仓库 | workflow | 新 run id | event | head | conclusion |
+| --- | --- | --- | --- | --- | --- |
+| `kai-cn/car-monit-backend` | `ci.yml` | `42735777383` | workflow_dispatch | `2b08d3f` | **failure** |
+| `kai-cn/car-monit-api` | `master.yml` | `42735782495` | workflow_dispatch | `76eddf4` | **failure** |
+
+- 首个 job（backend `changes`、api `presence`）均为 `failure`，`steps=0`、`runner_name` 为空，
+  其余 job 全部 `skipped`，与第 2 节首次运行形态完全一致。
+- check-run annotation 仍为：
+  `The job was not started because recent account payments have failed or your spending limit needs to be increased.`
+- **结论：账号账单 / 支出限额未恢复，重试不改变结果；再次重试在账单修复前没有意义。**
+  需先在 GitHub → Settings → Billing & plans 处理付款方式或提高 spending limit，
+  再执行 `Re-run all jobs` 或重新 `workflow_dispatch`，并回填本节。
+- 本地替代验证（编译 / 单测 / SQL / 脚本语法 / 实机联调）状态见第 3、5 节，未因此发生变化。
