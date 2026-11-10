@@ -12,7 +12,7 @@
 | GitHub 自托管 runner（backend 仓库） | ✅ `wsl-k3s` online |
 | GitHub 自托管 runner（api 仓库） | ✅ `wsl-k3s-api` online |
 | 绕过账号账单导致 GitHub-hosted runner 不可用 | ✅ **实证通过**：自托管 job `completed/success` |
-| 两仓库 CI/CD 流水线（编译 + 单测 + 部署到 k3s） | 已落地，首次运行因 `github.com` 网络抖动进行中，结果见第 8 节 |
+| 两仓库 CI/CD 流水线（编译 + 单测 + 部署到 k3s） | ✅ 两条 run 均 `completed/success`，结果见第 8 节 |
 
 **核心发现**：GitHub 账号 `recent account payments have failed` 只阻塞 GitHub-hosted runner 的
 分配；自托管 runner 不消耗 Actions 分钟数，job 可正常派发与执行。这是本方案成立的前提，
@@ -188,15 +188,30 @@ wsl -d openEuler-24.03-LTS-SP4 -u root --exec bash -c 'systemctl is-active actio
 | runner 在线 | backend `wsl-k3s` online；api `wsl-k3s-api` online |
 | 完整 CI/CD 流水线 | 两仓库已通过 Contents API 落地（backend `a3fb900`、api `0a19829`），首次运行见下节「运行状态」 |
 
-### 8.1 完整流水线运行状态
+### 8.1 完整流水线运行结果（最终）
 
-| 仓库 | run id | 触发 | 状态 |
-| --- | --- | --- | --- |
-| backend | `42823962291` | push（Contents API commit `a3fb900`） | 运行中，`compile-and-test` 已由 `wsl-k3s` 接单 |
-| api | `42823965689` | push（Contents API commit `0a19829`） | 运行中，`compile-and-test` 已由 `wsl-k3s-api` 接单 |
+| 仓库 | run id | 触发 | CI `compile-and-test` | CD `deploy-to-k3s` | 结论 |
+| --- | --- | --- | --- | --- | --- |
+| backend | `42823962291` | push（Contents API commit `a3fb900`） | `completed/success`：Checkout / Toolchain / Compile V3 modules / Unit tests 全 success | `completed/success`：Verify cluster / Roll out demo workload | **全链路通过** |
+| api | `42823965689` | push（Contents API commit `0a19829`） | `completed/success`：Checkout / Toolchain / Compile V3 api module / Unit tests 全 success | `completed/success` | **全链路通过** |
 
-首次运行的 `Checkout` 步骤受 `github.com` 网络抖动影响较慢（探针流水线也曾耗时约 6 分钟），
-Maven 首次依赖下载同样需要时间；`build` job timeout 设为 45 分钟。最终结果需回填本节。
+**CD 集群实证**（`kubectl get deployments,pods -o wide`）：
+
+```
+NAME              READY   UP-TO-DATE   AVAILABLE
+v3-ci-probe       3/3     3            3
+v3-api-ci-probe   3/3     3            3
+```
+
+6 个 Pod 全为 `1/1 Running`，分布为 `k3d-v3-server-0` 2 个、
+`k3d-v3-agent-0` 2 个、`k3d-v3-agent-1` 2 个 —— 一主两从**均参与调度**。
+`actions-runner.service`、`actions-runner-api.service`、`docker` 三个服务均 `active`。
+
+**对照**：同一时段 GitHub-hosted 的 `ci.yml` / `master.yml` 仍因账号账单秒级失败
+（`steps=0`、runner 为空），而自托管流水线完整跑完编译、单测与部署，进一步确认第 1 节结论。
+
+首次运行的 `Checkout` 曾受 `github.com` 网络抖动影响较慢（探针流水线约 6 分钟），
+Maven 首次依赖下载亦耗时数分钟；`build` job timeout 设为 45 分钟，实际在超时前完成。
 
 ## 9. 已知限制与待办
 
