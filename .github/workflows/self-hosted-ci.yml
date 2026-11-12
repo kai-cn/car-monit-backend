@@ -27,10 +27,38 @@ jobs:
     steps:
       - name: Runner environment
         run: |
+          set +e
           echo "runner=${RUNNER_NAME} os=${RUNNER_OS} arch=${RUNNER_ARCH}"
           uname -a
           echo "cpus=$(nproc)"
           free -m | head -2
+          echo "===== DIAG: NODE / TOOLCACHE ====="
+          echo "node=$(node -v 2>&1)"
+          echo "RUNNER_TOOL_CACHE=${RUNNER_TOOL_CACHE}"
+          echo "===== DIAG: PROXY ====="
+          env | grep -iE 'proxy|no_proxy' || echo "(no proxy vars)"
+          echo "===== DIAG: JAVA ====="
+          command -v java || echo "(java NOT on PATH)"
+          java -version 2>&1
+          echo "JAVA_HOME=${JAVA_HOME}"
+          echo "===== DIAG: /usr/lib/jvm ====="
+          ls -la /usr/lib/jvm 2>&1
+          echo "===== DIAG: toolcache tree ====="
+          find /opt/hostedtoolcache -maxdepth 4 -type d 2>&1 | head -60
+          echo "===== DIAG: other JDK homes ====="
+          ls -d /opt/jdk* /opt/java* /usr/local/jdk* /opt/actions-runner/_work/_tool/* 2>&1
+          echo "===== DIAG: MAVEN ====="
+          command -v mvn || echo "(mvn NOT on PATH)"
+          mvn -v 2>&1 | head -6
+          echo "===== DIAG: NETWORK EGRESS ====="
+          curl -sS -m 20 -o /dev/null -w "api.adoptium.net HTTP=%{http_code} time=%{time_total}\n" https://api.adoptium.net/v3/info/available_releases 2>&1
+          curl -sS -m 20 -o /dev/null -w "api.github.com   HTTP=%{http_code} time=%{time_total}\n" https://api.github.com 2>&1
+          curl -sS -m 20 -o /dev/null -w "repo.maven.org   HTTP=%{http_code} time=%{time_total}\n" https://repo.maven.apache.org/maven2/ 2>&1
+          echo "===== DIAG: DNS ====="
+          getent hosts api.adoptium.net || echo "(adoptium DNS FAIL)"
+          echo "===== DIAG: DOCKER / K3S ====="
+          docker ps --format '{{.Names}} {{.Status}}' 2>&1 | head -20
+          echo "===== DIAG: END ====="
 
       - name: Checkout
         uses: actions/checkout@v4
