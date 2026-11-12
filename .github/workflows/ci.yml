@@ -99,7 +99,7 @@ jobs:
               - '.github/workflows/**'
 
   # ---------------------------------------------------------------------------
-  # Java：Maven 多模块（ruoyi-*），JDK 8
+  # Java：Maven 多模块（ruoyi-*），JDK 21
   # ---------------------------------------------------------------------------
   java:
     needs: changes
@@ -110,13 +110,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 安装 OpenJDK 8 + Maven（欧拉仓库无 Temurin）
-        # 欧拉 24.03 官方仓库提供 java-1.8.0-openjdk-devel（8u412）；Temurin 不在欧拉仓库。
-        # OpenJDK 8 与 Temurin 8 同属 TCK 兼容实现，编译/运行行为一致，但不再与开发者本机
-        # 的 Temurin 发行版逐字节一致（只影响排障时的 JVM 构建号，不影响字节码目标 1.8）。
+      - name: 安装 OpenJDK 21 + Maven（欧拉仓库无 Temurin）
+        # 本项目 maven.compiler.release=21，必须使用 JDK 21+ 编译；
+        # openEuler 24.03 仓库提供 java-21-openjdk-devel。
+        # 与开发者本机 Temurin 21 同属 TCK 兼容实现，字节码目标由 maven.compiler.release 固定。
         run: |
           set -euo pipefail
-          dnf install -y java-1.8.0-openjdk-devel tar gzip curl
+          dnf install -y java-21-openjdk-devel tar gzip curl
           java -version
           curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz -o /tmp/maven.tgz
           tar -xzf /tmp/maven.tgz -C /opt
