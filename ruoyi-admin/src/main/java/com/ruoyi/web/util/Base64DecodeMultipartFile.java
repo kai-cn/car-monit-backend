@@ -1,9 +1,9 @@
 package com.ruoyi.web.util;
 
 import org.springframework.web.multipart.MultipartFile;
-import sun.misc.BASE64Decoder;
 
 import java.io.*;
+import java.util.Base64;
 
 /**
  * base64转为multipartFile工具类
@@ -68,17 +68,14 @@ public class Base64DecodeMultipartFile implements MultipartFile {
     public static MultipartFile base64Convert(String base64) {
         String[] baseStrs = base64.split(",");
 
-        BASE64Decoder decoder = new BASE64Decoder();
-        byte[] b = new byte[0];
+        // JDK 9 起 sun.misc.BASE64Decoder 不可访问；getMimeDecoder 与旧实现同样容忍
+        // 换行/空白等非 base64 字符，保持上传 data URI 的兼容行为。
+        // 旧代码对 byte[] 逐元素 += 256 属于复合赋值隐式窄化，实际不改变任何字节，已移除。
+        byte[] b;
         try {
-            b = decoder.decodeBuffer(baseStrs[1]);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        for (int i = 0; i < b.length; ++i) {
-            if (b[i] < 0) {
-                b[i] += 256;
-            }
+            b = Base64.getMimeDecoder().decode(baseStrs[1]);
+        } catch (IllegalArgumentException e) {
+            b = new byte[0];
         }
         return new Base64DecodeMultipartFile(b, baseStrs[0]);
     }

@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - car-monit-backend-java-V3
+      - car-monit-backend-jdk25
     paths:
       - .github/workflows/self-hosted-ci.yml
       - pom.xml
@@ -34,10 +35,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Toolchain
+      - name: Setup JDK 25 (branch-pinned toolchain)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Assert toolchain matches branch
         run: |
+          set -euo pipefail
           java -version 2>&1 | head -2
           mvn -v | head -3
+          java -version 2>&1 | grep -qE 'version "25\.' || {
+            echo "::error::branch car-monit-backend-jdk25 requires JDK 25, runner java differs"; exit 1; }
 
       - name: Compile V3 modules
         run: mvn -B -q -DskipTests -pl ruoyi-common,ruoyi-system,ruoyi-framework,ruoyi-admin -am compile

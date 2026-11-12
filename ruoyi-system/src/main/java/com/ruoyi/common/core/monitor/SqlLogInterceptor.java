@@ -20,6 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Matcher;
 
 /**
  * SQL日志拦截器（MyBatis Plugin）
@@ -262,7 +263,10 @@ public class SqlLogInterceptor implements Interceptor {
             String paramValue = formatParameter(value);
 
             // 5. 替换第一个?为参数值
-            sql = sql.replaceFirst("\\?", paramValue);
+            // 注意：paramValue 可能包含正则元字符（如 BCrypt 口令中的 '$2a$10$...'），
+            // 必须用 Matcher.quoteReplacement 转义，否则 replaceFirst 会把 '$2' 当成反向引用，
+            // 抛出 IndexOutOfBoundsException: No group 2（该异常会中断当前 SQL 执行）。
+            sql = sql.replaceFirst("\\?", Matcher.quoteReplacement(paramValue));
         }
 
         // 6. 限制SQL长度，避免日志过大（超过2000字符截断）

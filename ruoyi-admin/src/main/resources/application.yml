@@ -66,6 +66,16 @@ user:
 
 # Spring配置
 spring:
+  # Spring Boot 2.6+ 默认使用 PathPatternParser，springfox 3.0.0 仍依赖 Ant 匹配器，
+  # 不显式回退会导致启动期 Failed to start bean 'documentationPluginsBootstrapper'。
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  main:
+    # Boot 2.6+ 默认禁止循环引用/Bean 覆盖，RuoYi 3.8.7 存量代码与
+    # ShardingSphere / dynamic-datasource 自动配置存在这类装配，显式放开以保持行为不变。
+    allow-circular-references: true
+    allow-bean-definition-overriding: true
   # 资源信息
   messages:
     # 国际化资源文件路径

@@ -99,7 +99,7 @@ jobs:
               - '.github/workflows/**'
 
   # ---------------------------------------------------------------------------
-  # Java：Maven 多模块（ruoyi-*），JDK 8
+  # Java：Maven 多模块（ruoyi-*），JDK 25
   # ---------------------------------------------------------------------------
   java:
     needs: changes
@@ -110,13 +110,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 安装 OpenJDK 8 + Maven（欧拉仓库无 Temurin）
-        # 欧拉 24.03 官方仓库提供 java-1.8.0-openjdk-devel（8u412）；Temurin 不在欧拉仓库。
-        # OpenJDK 8 与 Temurin 8 同属 TCK 兼容实现，编译/运行行为一致，但不再与开发者本机
-        # 的 Temurin 发行版逐字节一致（只影响排障时的 JVM 构建号，不影响字节码目标 1.8）。
+      - name: 安装 Temurin 25 + Maven（openEuler 24.03 仓库无 JDK 25）
+        # 本分支以 JDK 25 作为构建工具链与运行时，字节码基线由 pom 固定为 21
+        # （Spring Boot 2.7.18 的 repackage / Spring 5.3 ASM 上限为 Java 21）。
+        # 欧拉仓库无 JDK 25，使用 Eclipse Temurin 官方 tarball。
         run: |
           set -euo pipefail
-          dnf install -y java-1.8.0-openjdk-devel tar gzip curl
+          dnf install -y tar gzip curl ca-certificates
+          curl -fsSL "https://api.adoptium.net/v3/binary/latest/25/ga/linux/x64/jdk/hotspot/normal/eclipse" -o /tmp/jdk25.tgz
+          mkdir -p /opt/jdk25
+          tar -xzf /tmp/jdk25.tgz -C /opt/jdk25 --strip-components=1
+          echo "/opt/jdk25/bin" >> "$GITHUB_PATH"
+          echo "JAVA_HOME=/opt/jdk25" >> "$GITHUB_ENV"
+          export JAVA_HOME=/opt/jdk25
+          export PATH="/opt/jdk25/bin:$PATH"
           java -version
           curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz -o /tmp/maven.tgz
           tar -xzf /tmp/maven.tgz -C /opt
