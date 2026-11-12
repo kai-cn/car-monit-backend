@@ -19,6 +19,9 @@ on:
 permissions:
   contents: read
 
+env:
+  MAVEN_OPTS: -Xmx768m
+
 jobs:
   build:
     name: compile-and-test
@@ -27,28 +30,128 @@ jobs:
     steps:
       - name: Runner environment
         run: |
+          set +e
           echo "runner=${RUNNER_NAME} os=${RUNNER_OS} arch=${RUNNER_ARCH}"
           uname -a
           echo "cpus=$(nproc)"
           free -m | head -2
+          echo "node=$(node -v 2>&1)  user=$(id -un)  HOME=${HOME}"
+          echo "JAVA_HOME=${JAVA_HOME:-<unset>}"
+          command -v java && java -version 2>&1 | head -3
+          command -v mvn && mvn -v 2>&1 | head -3
 
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup JDK 25 (branch-pinned toolchain)
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '25'
-          cache: maven
+      - name: Setup JDK 25 (pinned Temurin 25.0.5+8, self-hosted)
+        shell: bash
+        run: |
+          set -euo pipefail
+          JDK_MAJOR="25"
+          JDK_FULL="25.0.5+8"
+          JDK_TARBALL="OpenJDK25U-jdk_x64_linux_hotspot_25.0.5_8.tar.gz"
+          GH_TAG="jdk-25.0.5%2B8"
+          CACHE_ROOT="${HOME}/.cache/ci-toolchain"
+          JDK_HOME="${CACHE_ROOT}/jdk-${JDK_FULL}"
+
+          if [ -x "${JDK_HOME}/bin/java" ]; then
+            echo ">> reuse cached JDK ${JDK_FULL} at ${JDK_HOME}"
+          else
+            mkdir -p "${CACHE_ROOT}"
+            TGZ="${CACHE_ROOT}/${JDK_TARBALL}.part"
+            urls=(
+              "https://mirrors.tuna.tsinghua.edu.cn/Adoptium/${JDK_MAJOR}/jdk/x64/linux/${JDK_TARBALL}"
+              "https://github.com/adoptium/temurin${JDK_MAJOR}-binaries/releases/download/${GH_TAG}/${JDK_TARBALL}"
+            )
+            ok=0
+            for u in "${urls[@]}"; do
+              echo ">> fetching ${u}"
+              if curl -fsSL --retry 2 --connect-timeout 20 --max-time 900 -o "${TGZ}" "${u}"; then
+                ok=1
+                break
+              fi
+              echo ">> mirror unavailable: ${u}" >&2
+            done
+            if [ "${ok}" -ne 1 ]; then
+              echo "::error::unable to download Temurin ${JDK_FULL} from any configured mirror"
+              exit 1
+            fi
+            rm -rf "${JDK_HOME}.tmp"
+            mkdir -p "${JDK_HOME}.tmp"
+            tar -xzf "${TGZ}" -C "${JDK_HOME}.tmp" --strip-components=1
+            rm -f "${TGZ}"
+            mv "${JDK_HOME}.tmp" "${JDK_HOME}"
+            echo ">> installed JDK ${JDK_FULL} at ${JDK_HOME}"
+          fi
+
+          echo "JAVA_HOME=${JDK_HOME}" >> "${GITHUB_ENV}"
+          echo "${JDK_HOME}/bin" >> "${GITHUB_PATH}"
+          export JAVA_HOME="${JDK_HOME}"
+          export PATH="${JDK_HOME}/bin:${PATH}"
+          java -version 2>&1
+
+      - name: Setup Maven 3.9.9 (self-hosted, with system fallback)
+        shell: bash
+        run: |
+          set -euo pipefail
+          MVN_VER="3.9.9"
+          MVN_TARBALL="apache-maven-${MVN_VER}-bin.tar.gz"
+          CACHE_ROOT="${HOME}/.cache/ci-toolchain"
+          MVN_HOME="${CACHE_ROOT}/apache-maven-${MVN_VER}"
+
+          if [ -x "${MVN_HOME}/bin/mvn" ]; then
+            echo ">> reuse cached Maven ${MVN_VER} at ${MVN_HOME}"
+          else
+            mkdir -p "${CACHE_ROOT}"
+            TGZ="${CACHE_ROOT}/${MVN_TARBALL}.part"
+            urls=(
+              "https://repo.huaweicloud.com/apache/maven/maven-3/${MVN_VER}/binaries/${MVN_TARBALL}"
+              "https://archive.apache.org/dist/maven/maven-3/${MVN_VER}/binaries/${MVN_TARBALL}"
+            )
+            ok=0
+            for u in "${urls[@]}"; do
+              echo ">> fetching ${u}"
+              if curl -fsSL --retry 2 --connect-timeout 20 --max-time 600 -o "${TGZ}" "${u}"; then
+                ok=1
+                break
+              fi
+              echo ">> mirror unavailable: ${u}" >&2
+            done
+            if [ "${ok}" -eq 1 ]; then
+              rm -rf "${MVN_HOME}.tmp"
+              mkdir -p "${MVN_HOME}.tmp"
+              tar -xzf "${TGZ}" -C "${MVN_HOME}.tmp" --strip-components=1
+              rm -f "${TGZ}"
+              mv "${MVN_HOME}.tmp" "${MVN_HOME}"
+              echo ">> installed Maven ${MVN_VER} at ${MVN_HOME}"
+            elif command -v mvn >/dev/null 2>&1; then
+              echo "::warning::Maven mirror download failed; falling back to system mvn"
+              MVN_HOME=""
+            else
+              echo "::error::Maven ${MVN_VER} unavailable from mirrors and no system mvn on PATH"
+              exit 1
+            fi
+          fi
+
+          if [ -n "${MVN_HOME}" ]; then
+            echo "MAVEN_HOME=${MVN_HOME}" >> "${GITHUB_ENV}"
+            echo "M2_HOME=${MVN_HOME}" >> "${GITHUB_ENV}"
+            echo "${MVN_HOME}/bin" >> "${GITHUB_PATH}"
+            export PATH="${MVN_HOME}/bin:${PATH}"
+          fi
+          mvn -v
 
       - name: Assert toolchain matches branch
         run: |
           set -euo pipefail
-          java -version 2>&1 | head -2
-          mvn -v | head -3
-          java -version 2>&1 | grep -qE 'version "25\.' || {
-            echo "::error::branch car-monit-backend-jdk25 requires JDK 25, runner java differs"; exit 1; }
+          JAVA_OUT="$(java -version 2>&1)"
+          echo "${JAVA_OUT}"
+          mvn -v
+          # here-string avoids SIGPIPE false-negatives that ``| grep -q`` triggers under pipefail
+          grep -qE 'version "25\.' <<< "${JAVA_OUT}" || {
+            echo "::error::branch car-monit-backend-jdk25 requires JDK 25, runner java differs"
+            exit 1
+          }
 
       - name: Compile V3 modules
         run: mvn -B -q -DskipTests -pl ruoyi-common,ruoyi-system,ruoyi-framework,ruoyi-admin -am compile
@@ -62,6 +165,43 @@ jobs:
     runs-on: [self-hosted, linux, x64, wsl-k3s]
     timeout-minutes: 15
     steps:
+      - name: Ensure k3d cluster is running (WSL restart resilience)
+        run: |
+          set -euo pipefail
+          if ! docker info >/dev/null 2>&1; then
+            echo ">> docker daemon down, attempting to start it"
+            sudo -n systemctl start docker 2>/dev/null || true
+            for i in $(seq 1 12); do
+              docker info >/dev/null 2>&1 && break
+              sleep 5
+            done
+          fi
+          docker info >/dev/null 2>&1 || {
+            echo "::error::docker daemon unavailable on the self-hosted runner"
+            exit 1
+          }
+          RUNNING="$(docker ps --format '{{.Names}}' 2>/dev/null || true)"
+          PRESENT="$(docker ps -a --format '{{.Names}}' 2>/dev/null || true)"
+          for c in k3d-v3-server-0 k3d-v3-agent-0 k3d-v3-agent-1; do
+            if grep -Fxq -- "${c}" <<< "${RUNNING}"; then
+              echo "${c}: already running"
+            elif grep -Fxq -- "${c}" <<< "${PRESENT}"; then
+              echo "${c}: starting"
+              docker start "${c}" || true
+            else
+              echo "::warning::${c}: container not found (cluster may need recreation)"
+            fi
+          done
+          for i in $(seq 1 24); do
+            if docker exec k3d-v3-server-0 kubectl get nodes >/dev/null 2>&1; then
+              echo "k3d cluster API ready"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::k3d cluster API did not become ready within 120s"
+          exit 1
+
       - name: Verify cluster (1 control-plane + 2 agents)
         run: docker exec k3d-v3-server-0 kubectl get nodes
 
