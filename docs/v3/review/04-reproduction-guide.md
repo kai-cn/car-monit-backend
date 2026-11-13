@@ -130,3 +130,71 @@ python -c "import paramiko; c=paramiko.SSHClient(); c.set_missing_host_key_polic
 | WSL 发行版 | `openEuler-24.03-LTS-SP4` |
 | CI 触发器分支配置 | 两侧 workflow 均包含对应 V3 分支 |
 | 远端分支推送 / CI 触发 | **门禁通过后才执行，见 `03` 第 5.3 节** |
+
+## 7. 一键启动脚本（backend + api + 中间件）
+
+脚本 `scripts/v3/start-v3-all.ps1` 在两个 V3 工作树各存一份（内容一致），
+并同步到 `D:\work\runtime-logs\start-v3-all.ps1` 便于与历史启动脚本一起调用。
+**PowerShell 5.1 需 UTF-8 BOM**（文件已带 BOM），否则中文会被按 GBK 解析导致语法错误。
+
+### 7.1 用法
+
+```powershell
+$S = 'd:\work\IdeaProjects\car-monit-backend-java-V3\scripts\v3\start-v3-all.ps1'
+powershell -NoProfile -ExecutionPolicy Bypass -File $S -Status    # 只看状态
+powershell -NoProfile -ExecutionPolicy Bypass -File $S             # 全量一键启动
+powershell -NoProfile -ExecutionPolicy Bypass -File $S -Minimal   # 不主动启 ES/Kafka
+powershell -NoProfile -ExecutionPolicy Bypass -File $S -Build     # 先 mvn package 再启动
+powershell -NoProfile -ExecutionPolicy Bypass -File $S -Stop      # 只停本脚本启动的进程
+```
+
+其它参数：`-MemoryProfile Low|Normal`、`-TimeoutSec`、`-SkipOpenGauss`、`-SkipApi`、
+`-SkipBackend`、`-EnvFile <本地凭据脚本>`、`-LogDir`。
+
+### 7.2 启动顺序与幂等规则
+
+```
+openGauss(仅检查) → MySQL8 3307(仅检查) → Redis → Kafka → ES → api 9902 → backend 9989
+```
+
+- 每一步先查端口、再查 java 进程命令行（`ruoyi-admin.jar` / `pro-business-api-1.0.jar`），
+  已在跑一律 `SKIP`，**不会重复启动第二个实例**。
+- MySQL8 **只检查 3307**（当前由 WSL 端口转发提供），绝不另起 `mysqld` / 使用其它 data 目录；
+  openGauss 同理只检查 5432，仅当设置 `V3_VM_PASSWORD` 时才尝试 SSH `docker start opengauss`。
+- `-Stop` 只按 `D:\work\runtime-logs\v3-pids.json` 停止本脚本启动的进程，无该文件时不误杀。
+- 日志统一 `D:\work\runtime-logs\v3-<name>.{out,err}.log`；启动前**直接删除**旧日志，不进回收站。
+
+### 7.3 内存与中间件细节
+
+| 项 | 处理 |
+| --- | --- |
+| 默认 `Low` 档 | 两个 java 各 `-Xms256m -Xmx768m`、ES 512m、Kafka 512m，预算 ≈2.6GB |
+| `Normal` 档 | 两个 java 各 `-Xms512m -Xmx1g`，预算 ≈3.3GB |
+| 宿主内存不足 | 启动时打印可用内存与预算并告警，建议 `-Minimal` 或先释放内存 |
+| ES 限堆 | 首次运行幂等写入 `config\jvm.options.d\v3-heap.options`（`-Xms512m/-Xmx512m`） |
+| Kafka | 用 `config\server.properties`（KRaft 单节点，`log.dirs=D:\work\kafka-data-20261108` 已 format）、`JAVA_HOME` 指向 JDK21、`KAFKA_HEAP_OPTS=-Xms256M -Xmx512M` |
+| api / backend | JDK8；api 注入 ES/stats/sync/reconcile 开关，backend 注入 `VEHICLE_MONITOR_BASE_URL` |
+
+### 7.4 凭据（不入库）
+
+- `TRAFFIC_INTERNAL_TOKEN` / `TRAFFIC_API_INTERNAL_TOKEN`：两者不一致直接报错；
+  都缺失时生成会话级随机值并同时注入两侧，保证 backend→api 不被守卫 403。
+- `EXPORT_DOWNLOAD_SECRET`：缺失时生成会话级随机值（backend 启动 fail-fast 需要）。
+- `CARMONIT_MYSQL_USERNAME/PASSWORD`：环境变量优先；未设时从既有
+  `D:\work\runtime-logs\start-api-v3.ps1` 中按正则提取，**不在新脚本中写入明文**。
+- api 的 openGauss 口令：需 `SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD`
+  环境变量或非空的 `api-local.properties`；脚本检测到缺失会打印 WARN。
+- 可选 `-EnvFile D:\work\runtime-logs\v3-env.ps1` 集中放本地凭据（该文件不入库）。
+
+### 7.5 验证记录（2026-11-13）
+
+| 验证 | 结果 |
+| --- | --- |
+| PowerShell 语法解析（三份副本） | 均 `PARSE_ERRORS=0` |
+| `-Status` | 正确列出 7 个端口状态、端口属主（`wslrelay` / `redis-server`）、java 实例数与宿主可用内存 |
+| 主流程零副作用演练 `-Minimal -SkipApi -SkipBackend -SkipOpenGauss` | 正确输出内存告警、令牌就绪、各服务 `SKIP`、汇总；退出码 0 |
+| `-Stop`（无 PID 文件） | `WARN` 且不停止任何进程，退出码 0 |
+
+> 本次**未执行全量启动**：演练时宿主可用内存仅 1.7~1.9GB（低于 Low 档 2.6GB 预算），
+> 且 `api-local.properties` 为空文件（openGauss 口令未配置）。脚本已就绪，
+> 补齐口令并释放内存后可直接执行全量启动。
