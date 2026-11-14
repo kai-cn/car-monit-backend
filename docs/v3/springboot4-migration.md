@@ -181,4 +181,29 @@ $env:JAVA_HOME='D:\jdk\temurin-17\jdk-17.0.21+9'
 ```
 
 Spring Boot 4.1.2 的 JDK 支持范围是 17–27，因此三支同版本；若后续 Boot 5 提高基线，再按分支分别取“该 JDK 能跑的最新稳定版”。
-JDK 24+ 移除了 `SecurityManager`，本工程未使用；如后续引入需要 `--add-opens` 的库（如 Orika，见 api 侧文档），需在启动参数显式声明。
+
+### 8.1 JDK 25 分支必须加 `-proc:full`
+**JDK 23 起 `javac` 默认不再自动执行注解处理器**（只在不显式指定时才隐式关闭），后果是 Lombok 生成的
+构造器/Getter/`log` 全部缺失，报错形态是成片的
+`constructor Xxx in class Xxx cannot be applied to given types` / `cannot find symbol: variable log`。
+因此 `car-monit-backend-jdk25/pom.xml` 的 `maven-compiler-plugin` 增加了：
+
+```xml
+<configuration>
+    <proc>full</proc>
+</configuration>
+```
+
+> `-proc:full` 是 JDK 21 才有的取值，所以**只在 jdk25 分支声明**；17/21 分支加了会直接 `invalid flag`。
+
+### 8.2 其它 JDK 版本差异
+- JDK 24+ 移除了 `SecurityManager`，本工程未使用；
+- 需要 `--add-opens` 的库（如 api 侧的 Orika）要在启动参数显式声明；
+- JDK 25 分支的字节码基线是 25（Boot 4.1 的 ASM 支持 major 69），17/21 分支分别是 17/21。
+
+### 8.3 三支实机验收结论（2026-11-14）
+| 分支 | 编译/打包 | 启动 | 登录 | getInfo/getRouters | 分页列表 | /monitor/server | 业务列表 | Excel 导出 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| jdk17 (17.0.21) | ✅ | ✅ | 200 | 200 | 200 | 200 | 200 | 15676B |
+| jdk21 (21.0.12) | ✅ | ✅ | 200 | 200 | 200 | 200 | 200 | 15676B |
+| jdk25 (25.0.4.1) | ✅（含 `-proc:full`） | ✅ | 200 | 200 | 200 | 200 | 200 | 15676B |
