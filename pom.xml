@@ -304,6 +304,9 @@
                     <release>${maven.compiler.release}</release>
                     <encoding>${project.build.sourceEncoding}</encoding>
                     <parameters>true</parameters>
+                    <!-- JDK 23 起 javac 默认不再自动执行注解处理器（Lombok 生成的构造器/Getter 会全部缺失），
+                         必须显式 -proc:full。该参数 JDK 21 才引入，故只在本分支声明。 -->
+                    <proc>full</proc>
                 </configuration>
             </plugin>
             <plugin>
