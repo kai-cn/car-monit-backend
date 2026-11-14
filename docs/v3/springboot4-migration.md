@@ -1,5 +1,7 @@
 # Spring Boot 4.1.2 迁移与踩坑记录（backend / MySQL 8）
 
+> 复核遗留项闭环见第 9 节。
+
 > 分支：`car-monit-backend-jdk17`（本文件同时适用于后续 `jdk21` / `jdk25` 分支，差异只在 `java.version`）
 > 迁移日期：2026-11-14　目标：把 Spring Boot 从 2.7.18 升到 **JDK 17 可运行的最新稳定版 4.1.2**，并实机跑通。
 > 敏感信息（口令 / 令牌 / 密钥）一律由运行环境注入，本文不记录任何凭据值。
@@ -207,3 +209,18 @@ Spring Boot 4.1.2 的 JDK 支持范围是 17–27，因此三支同版本；若�
 | jdk17 (17.0.21) | ✅ | ✅ | 200 | 200 | 200 | 200 | 200 | 15676B |
 | jdk21 (21.0.12) | ✅ | ✅ | 200 | 200 | 200 | 200 | 200 | 15676B |
 | jdk25 (25.0.4.1) | ✅（含 `-proc:full`） | ✅ | 200 | 200 | 200 | 200 | 200 | 15676B |
+
+## 9. 独立复核遗留项闭环（2026-11-14 第二轮）
+
+| # | 复核发现 | 处理 |
+| --- | --- | --- |
+| 1 | `ResilientApiExecutor` 仍导入 Jackson 2 的 `JsonProcessingException`，Jackson 3 下错误码分类语义漂移 | 改为 `tools.jackson.core.JacksonException`（Jackson 3 的非受检异常），`instanceof` 同步调整 |
+| 2 | `LoginUser#getAuthorities()` 未过滤空白权限串，`SimpleGrantedAuthority` 遇空串会抛异常 | 加 `filter(p != null && !p.isBlank())` + `trim` + `distinct` |
+| 3 | 根 pom 注释写「PageHelper 6.x / jsqlparser 4.7/4.9」，实际是 4.1.1 + 4.9 | 注释订正 |
+| 4 | CI 触发覆盖需书面确认 | **口径**：`car-monit-backend-jdk17/21/25` 的 push 只触发 `self-hosted-ci`（compile + test + 工具链断言）；`ci.yml` / `release.yml` 的托管流水线在对应分支合入/发布时执行。当前托管 runner 账单受限，不把三个 jdk 分支追加进托管触发列表 |
+| 5 | `token.secret` 等历史明文凭据仍在仓库（迁移前的基线，非本轮引入） | 列为**安全债，单独整改**：应改为 `${TOKEN_SECRET}` 强制注入 + 长度/随机性校验并轮换；本轮不动，避免影响既有部署与令牌签发。运维须按注入凭据的规范执行，禁止把新凭据写回仓库 |
+| 6 | `ShardingSphereConfig` 需 `sharding.enabled=true`，而配置里只有 `snapshot.flow.sharding.enabled`，分表 Bean 静默不注册 | 与迁移前基线一致、属既有设计，不擅自改变运行期行为；如需启用分表，必须显式设置顶层 `sharding.enabled=true` 并做回归 |
+
+### 9.1 本轮验证
+- 三分支 `mvn -DskipTests=false test` 通过；改动均为编译期/注释/文档层面。
+- 启动前置 smoke（`--add-opens` 生效性、字节码 major、交付入口参数）由 api 侧 `self-hosted-ci` 覆盖；backend 无 Orika 依赖，不需要该参数。

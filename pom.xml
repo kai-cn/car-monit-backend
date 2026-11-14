@@ -101,7 +101,7 @@
                 <version>${mybatis-plus.version}</version>
             </dependency>
             <!-- 3.5.9 起依赖 jsqlparser 的 PaginationInnerInterceptor 等拆到独立模块。
-                 取 4.9 变体而非默认 5.x，是为了与 PageHelper 6.x（编译期 jsqlparser 4.7/4.9 API）共用同一份
+                 取 4.9 变体而非默认 5.x，是为了与 PageHelper 4.1.1（jsqlparser 4.9 API）共用同一份
                  jsqlparser，避免分页插件在运行期出现 API 不匹配（历史上出现过 InstantiationError）。 -->
             <dependency>
                 <groupId>com.baomidou</groupId>

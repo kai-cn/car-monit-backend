@@ -244,7 +244,11 @@ public class LoginUser implements UserDetails
         {
             return java.util.Collections.emptyList();
         }
+        // SimpleGrantedAuthority 会拒绝空串；菜单权限里可能混有 null/空白串，先清洗再映射
         return permissions.stream()
+                .filter(p -> p != null && !p.isBlank())
+                .map(String::trim)
+                .distinct()
                 .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
                 .collect(java.util.stream.Collectors.toList());
     }
