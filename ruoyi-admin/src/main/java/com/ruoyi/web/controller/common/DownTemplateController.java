@@ -5,15 +5,15 @@ package com.ruoyi.web.controller.common;
 import cn.afterturn.easypoi.excel.ExcelExportUtil;
 import cn.afterturn.easypoi.excel.entity.TemplateExportParams;
 import com.ruoyi.common.core.domain.AjaxResult;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.OutputStream;
 import java.util.HashMap;
 
@@ -26,7 +26,7 @@ import java.util.HashMap;
  */
 @RestController
 @RequestMapping("/downTemplate")
-@Api(value = "downTemplate", tags = "模板下载")
+@Tag(name = "模板下载")
 public class DownTemplateController {
 
 
@@ -36,7 +36,7 @@ public class DownTemplateController {
 	 * @param type id
 	 * @return R
 	 */
-	@ApiOperation(value = "通过type下载模板", notes = "通过type下载模板")
+	@Operation(summary = "通过type下载模板")
 	@GetMapping("/{type}")
 	public AjaxResult downExcel(@PathVariable("type") String type, HttpServletResponse response) {
 		String url = "templates/down";

@@ -17,22 +17,29 @@
 
     <dependencies>
 
-        <!-- SpringBoot Web容器 -->
-         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-        <!-- SpringBoot 拦截器 -->
+        <!-- SpringBoot Web容器（Boot 4 起以 spring-boot-starter-webmvc 为正式名称） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aop</artifactId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+
+        <!-- SpringBoot AOP（Boot 4 起 spring-boot-starter-aop 更名为 spring-boot-starter-aspectj） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aspectj</artifactId>
         </dependency>
 
         <!-- 阿里数据库连接池 -->
         <dependency>
             <groupId>com.alibaba</groupId>
-            <artifactId>druid-spring-boot-starter</artifactId>
+            <artifactId>druid-spring-boot-4-starter</artifactId>
+        </dependency>
+
+        <!-- 缓存抽象：RedisConfig 上有 @EnableCaching，Boot 4 的 CacheAutoConfiguration
+             已独立成 spring-boot-cache 模块，需 starter 才能拿到默认 CacheManager -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
 
         <!-- 验证码 -->
@@ -75,7 +82,11 @@
         <!-- ShardingSphere 分表中间件 -->
         <dependency>
             <groupId>org.apache.shardingsphere</groupId>
-            <artifactId>shardingsphere-jdbc-core-spring-boot-starter</artifactId>
+            <artifactId>shardingsphere-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.shardingsphere</groupId>
+            <artifactId>shardingsphere-sharding-core</artifactId>
         </dependency>
 
         <!-- 系统模块-->

@@ -4,7 +4,7 @@ import com.ruoyi.base.domain.TrailInfo;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarSuspicious;
 import java.util.List;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 /**
  * 可疑车辆Service接口

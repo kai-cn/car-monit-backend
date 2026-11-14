@@ -66,15 +66,9 @@ user:
 
 # Spring配置
 spring:
-  # Spring Boot 2.6+ 默认使用 PathPatternParser，springfox 3.0.0 仍依赖 Ant 匹配器，
-  # 不显式回退会导致启动期 Failed to start bean 'documentationPluginsBootstrapper'。
-  mvc:
-    pathmatch:
-      matching-strategy: ant_path_matcher
   main:
-    # Boot 2.6+ 默认禁止循环引用/Bean 覆盖，RuoYi 3.8.7 存量代码与
-    # ShardingSphere / dynamic-datasource 自动配置存在这类装配，显式放开以保持行为不变。
-    allow-circular-references: true
+    # Spring Framework 6.2 起循环引用永久禁止（allow-circular-references 已移除），
+    # 这里只保留 Bean 覆盖开关；如启动报循环依赖需按实际装配链改造，不能靠配置绕过。
     allow-bean-definition-overriding: true
   # 资源信息
   messages:
@@ -94,29 +88,27 @@ spring:
     restart:
       # 热部署开关
       enabled: true
-  # redis 配置
-  redis:
-    # 地址
-#    host: 172.30.100.102
-    host: 127.0.0.1
-    # 端口，默认为6379
-    port: 6379
-    # 数据库索引
-    database: 0
-    # 密码
-#    password: redis321
-    # 连接超时时间
-    timeout: 10s
-    lettuce:
-      pool:
-        # 连接池中的最小空闲连接
-        min-idle: 0
-        # 连接池中的最大空闲连接
-        max-idle: 8
-        # 连接池的最大数据库连接数
-        max-active: 8
-        # #连接池最大阻塞等待时间（使用负值表示没有限制）
-        max-wait: -1ms
+  # redis 配置（Boot 3 起前缀由 spring.redis 迁移为 spring.data.redis）
+  data:
+    redis:
+      # 地址
+      host: 127.0.0.1
+      # 端口，默认为6379
+      port: 6379
+      # 数据库索引
+      database: 0
+      # 连接超时时间
+      timeout: 10s
+      lettuce:
+        pool:
+          # 连接池中的最小空闲连接
+          min-idle: 0
+          # 连接池中的最大空闲连接
+          max-idle: 8
+          # 连接池的最大数据库连接数
+          max-active: 8
+          # #连接池最大阻塞等待时间（使用负值表示没有限制）
+          max-wait: -1ms
 
 # token配置
 token:
@@ -157,10 +149,17 @@ generator-code:
 
 # Swagger配置
 swagger:
-  # 是否开启swagger
+  # 是否开启swagger（true 时 SwaggerConfig 才注册 OpenAPI Bean）
   enabled: false
   # 请求前缀
   pathMapping: /dev-api
+
+# OpenAPI 3（springdoc）文档开关，与 swagger.enabled 保持一致，生产关闭
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
 
 # 防止XSS攻击
 xss:

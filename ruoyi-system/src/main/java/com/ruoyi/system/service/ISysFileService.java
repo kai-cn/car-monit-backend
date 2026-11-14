@@ -7,7 +7,7 @@ import com.ruoyi.system.domain.SysFile;
 import com.ruoyi.system.domain.ro.UploadByUrlRo;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;

@@ -3,7 +3,7 @@ package com.ruoyi.manager.service;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarExceptRecord;
 import java.util.List;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.ruoyi.manager.domain.vo.PCCarStatisticsDetailVO;
 import com.ruoyi.manager.domain.vo.PCCarStatisticsVO;
 

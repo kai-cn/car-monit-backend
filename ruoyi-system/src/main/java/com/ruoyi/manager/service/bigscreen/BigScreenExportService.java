@@ -23,7 +23,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -620,7 +620,7 @@ public class BigScreenExportService
             downloadRestTemplate.execute(url, HttpMethod.GET, null,
                     (org.springframework.http.client.ClientHttpResponse resp) ->
                     {
-                        response.setStatus(resp.getRawStatusCode());
+                        response.setStatus(resp.getStatusCode().value());
                         MediaType contentType = resp.getHeaders().getContentType();
                         response.setContentType(contentType == null
                                 ? "application/octet-stream" : contentType.toString());
@@ -635,8 +635,8 @@ public class BigScreenExportService
         }
         catch (HttpStatusCodeException e)
         {
-            log.warn("[导出下载] api 返回异常 taskId={} status={}", taskId, e.getRawStatusCode());
-            writeError(response, e.getRawStatusCode(), "导出文件暂不可下载");
+            log.warn("[导出下载] api 返回异常 taskId={} status={}", taskId, e.getStatusCode().value());
+            writeError(response, e.getStatusCode().value(), "导出文件暂不可下载");
         }
         catch (ResourceAccessException e)
         {

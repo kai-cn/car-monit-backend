@@ -1,6 +1,6 @@
 package com.ruoyi.base.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.OdsSzdnTollStationIp;
 import com.ruoyi.base.mapper.OdsSzdnTollStationIpMapper;
 import com.ruoyi.base.service.IOdsSzdnTollStationIpService;

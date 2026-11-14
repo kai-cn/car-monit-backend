@@ -128,18 +128,9 @@ public class FeeRecordsDayShardingAlgorithm implements StandardShardingAlgorithm
     }
 
     /**
-     * 获取算法类型（固定返回CLASS_BASED，表示基于类的分片算法）
+     * 算法初始化（ShardingSphere 5.5.x：TypedSPI.getType() 已由接口默认实现提供，
+     * 不再由自定义算法覆盖，故此处只保留 init 回调）
      */
-    @Override
-    public String getType() {
-        return "CLASS_BASED";
-    }
-
-    @Override
-    public Properties getProps() {
-        return null;
-    }
-
     @Override
     public void init(Properties properties) {
 

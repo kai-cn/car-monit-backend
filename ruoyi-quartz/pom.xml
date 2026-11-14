@@ -17,10 +17,11 @@
 
     <dependencies>
 
-        <!-- 定时任务 -->
+        <!-- 定时任务：Boot 4 把 QuartzAutoConfiguration 移到独立模块 spring-boot-quartz，
+             必须用 starter 引入，否则 Scheduler Bean 不存在（Boot 2 时代由 autoconfigure 包内置提供） -->
         <dependency>
-            <groupId>org.quartz-scheduler</groupId>
-            <artifactId>quartz</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-quartz</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>com.mchange</groupId>

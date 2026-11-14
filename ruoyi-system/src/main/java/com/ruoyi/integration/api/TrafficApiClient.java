@@ -1,8 +1,8 @@
 package com.ruoyi.integration.api;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
 import com.ruoyi.base.domain.CarParaVO;
 import com.ruoyi.base.domain.OdsLwzxsfsjFeeRecords01;
 import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowAddcode;
@@ -102,12 +102,13 @@ public class TrafficApiClient
 
     private ObjectMapper apiMapper;
 
-    @javax.annotation.PostConstruct
+    @jakarta.annotation.PostConstruct
     public void initMapper()
     {
         // api 字段可能多于 backend VO，转换时忽略未知字段
-        this.apiMapper = objectMapper.copy()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.apiMapper = objectMapper.rebuild()
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
     }
 
     // ------------------------------------------------------------------

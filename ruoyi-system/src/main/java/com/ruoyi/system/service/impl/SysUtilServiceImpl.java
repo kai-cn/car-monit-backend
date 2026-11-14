@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import com.ruoyi.system.domain.SysUtil;
 import com.ruoyi.system.mapper.SysUtilMapper;

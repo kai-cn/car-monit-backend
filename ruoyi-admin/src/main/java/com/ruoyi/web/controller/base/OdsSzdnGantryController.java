@@ -33,7 +33,7 @@ import com.ruoyi.base.domain.OdsSzdnGantry;
 import com.ruoyi.base.service.IOdsSzdnGantryService;
 import com.ruoyi.common.core.page.TableDataInfo;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * 门架信息Controller

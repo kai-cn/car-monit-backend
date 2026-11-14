@@ -11,12 +11,16 @@ import com.ruoyi.common.utils.uuid.IdUtils;
 import eu.bitwalker.useragentutils.UserAgent;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -169,9 +173,11 @@ public class TokenService
      */
     private String createToken(Map<String, Object> claims)
     {
+        // jjwt 0.12+ 移除了 signWith(SignatureAlgorithm, String)：改为强类型 SecretKey + HS512
         String token = Jwts.builder()
-                .setClaims(claims)
-                .signWith(SignatureAlgorithm.HS512, secret).compact();
+                .claims(claims)
+                .signWith(getSecretKey(), Jwts.SIG.HS512)
+                .compact();
         return token;
     }
 
@@ -184,9 +190,34 @@ public class TokenService
     private Claims parseToken(String token)
     {
         return Jwts.parser()
-                .setSigningKey(secret)
-                .parseClaimsJws(token)
-                .getBody();
+                .verifyWith(getSecretKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    /**
+     * 由配置的 token.secret 派生 HS512 所需的 512bit 密钥。
+     *
+     * <p>jjwt 0.12+ 对密钥长度做强校验（HS512 ≥ 512bit）。历史配置的明文密钥可能不足 64 字节，
+     * 此时用 SHA-512 派生固定长度密钥，既保持 secret 可配置，又满足算法强度要求。
+     * 升级后旧令牌不可解析，需要重新登录（令牌本身有效期 120 分钟）。</p>
+     */
+    private SecretKey getSecretKey()
+    {
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < 64)
+        {
+            try
+            {
+                keyBytes = MessageDigest.getInstance("SHA-512").digest(keyBytes);
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                throw new IllegalStateException("无法派生 JWT 签名密钥", e);
+            }
+        }
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     /**

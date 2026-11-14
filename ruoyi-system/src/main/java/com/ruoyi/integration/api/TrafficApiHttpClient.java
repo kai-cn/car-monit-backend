@@ -1,8 +1,8 @@
 package com.ruoyi.integration.api;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +18,10 @@ import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -56,8 +57,9 @@ public class TrafficApiHttpClient
     {
         this.properties = properties;
         // api 返回字段可能多于 backend VO（如 warning/list 的维度快照字段），忽略未知字段
-        this.objectMapper = objectMapper.copy()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.objectMapper = objectMapper.rebuild()
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
     }
 
     @PostConstruct
@@ -66,8 +68,8 @@ public class TrafficApiHttpClient
         for (TrafficApiScenario scenario : TrafficApiScenario.values())
         {
             SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-            factory.setConnectTimeout(properties.getConnectTimeoutMs());
-            factory.setReadTimeout(properties.readTimeoutMs(scenario));
+            factory.setConnectTimeout(Duration.ofMillis(properties.getConnectTimeoutMs()));
+            factory.setReadTimeout(Duration.ofMillis(properties.readTimeoutMs(scenario)));
             RestTemplate template = new RestTemplate(factory);
             template.setErrorHandler(new NoThrowErrorHandler());
             if (internalToken != null && !internalToken.trim().isEmpty())
@@ -113,7 +115,7 @@ public class TrafficApiHttpClient
         {
             org.springframework.http.ResponseEntity<String> response =
                     template.exchange(uri, method, entity, String.class);
-            int status = response.getStatusCodeValue();
+            int status = response.getStatusCode().value();
             String body = response.getBody();
             if (status < 200 || status >= 300)
             {
@@ -135,12 +137,9 @@ public class TrafficApiHttpClient
                     : objectMapper.readValue(body, typeRef);
             return ApiHttpResult.ok(status, body, parsed);
         }
-        catch (IOException e)
-        {
-            return ApiHttpResult.error(0, null, e);
-        }
         catch (RuntimeException e)
         {
+            // Jackson 3 的 JacksonException 与 Spring 的 RestClientException 均为非受检异常，统一在此兜底
             return ApiHttpResult.error(0, null, e);
         }
     }
@@ -148,7 +147,7 @@ public class TrafficApiHttpClient
     private URI buildUri(String path, Map<String, String> params)
     {
         String root = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(root + path);
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(root + path);
         if (params != null)
         {
             for (Map.Entry<String, String> entry : params.entrySet())
@@ -168,15 +167,9 @@ public class TrafficApiHttpClient
     private static class NoThrowErrorHandler extends DefaultResponseErrorHandler
     {
         @Override
-        public void handleError(ClientHttpResponse response) throws IOException
-        {
-            log.debug("[api] 非 2xx 响应 status={}", response.getRawStatusCode());
-        }
-
-        @Override
         public void handleError(URI url, HttpMethod method, ClientHttpResponse response) throws IOException
         {
-            log.debug("[api] 非 2xx 响应 {} {} status={}", method, url, response.getRawStatusCode());
+            log.debug("[api] 非 2xx 响应 {} {} status={}", method, url, response.getStatusCode().value());
         }
     }
 }

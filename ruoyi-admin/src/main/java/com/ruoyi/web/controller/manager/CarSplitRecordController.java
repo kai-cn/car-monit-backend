@@ -29,7 +29,7 @@ import com.ruoyi.manager.domain.CarSplitRecord;
 import com.ruoyi.manager.service.ICarSplitRecordService;
 import com.ruoyi.common.core.page.TableDataInfo;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * 拆分流水Controller
