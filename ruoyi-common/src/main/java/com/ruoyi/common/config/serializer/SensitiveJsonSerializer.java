@@ -1,13 +1,10 @@
 package com.ruoyi.common.config.serializer;
 
-import java.io.IOException;
 import java.util.Objects;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.BeanProperty;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.ser.ContextualSerializer;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.BeanProperty;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 import com.ruoyi.common.annotation.Sensitive;
 import com.ruoyi.common.core.domain.model.LoginUser;
 import com.ruoyi.common.enums.DesensitizedType;
@@ -16,14 +13,18 @@ import com.ruoyi.common.utils.SecurityUtils;
 /**
  * 数据脱敏序列化过滤
  *
+ * <p>Jackson 3 迁移要点：{@code JsonSerializer} 更名为 {@link ValueSerializer}，
+ * {@code SerializerProvider} 更名为 {@link SerializationContext}，
+ * 上下文感知能力直接通过 ValueSerializer#createContextual 覆盖（不再需要 ContextualSerializer 接口）。</p>
+ *
  * @author ruoyi
  */
-public class SensitiveJsonSerializer extends JsonSerializer<String> implements ContextualSerializer
+public class SensitiveJsonSerializer extends ValueSerializer<String>
 {
     private DesensitizedType desensitizedType;
 
     @Override
-    public void serialize(String value, JsonGenerator gen, SerializerProvider serializers) throws IOException
+    public void serialize(String value, JsonGenerator gen, SerializationContext context)
     {
         if (desensitization())
         {
@@ -36,8 +37,7 @@ public class SensitiveJsonSerializer extends JsonSerializer<String> implements C
     }
 
     @Override
-    public JsonSerializer<?> createContextual(SerializerProvider prov, BeanProperty property)
-            throws JsonMappingException
+    public ValueSerializer<?> createContextual(SerializationContext context, BeanProperty property)
     {
         Sensitive annotation = property.getAnnotation(Sensitive.class);
         if (Objects.nonNull(annotation) && Objects.equals(String.class, property.getType().getRawClass()))
@@ -45,7 +45,7 @@ public class SensitiveJsonSerializer extends JsonSerializer<String> implements C
             this.desensitizedType = annotation.desensitizedType();
             return this;
         }
-        return prov.findValueSerializer(property.getType(), property);
+        return context.findValueSerializer(property.getType());
     }
 
     /**

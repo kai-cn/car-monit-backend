@@ -15,7 +15,8 @@ import com.ruoyi.manager.service.bigscreen.BigScreenExceptRecordService;
 import com.ruoyi.manager.service.bigscreen.BigScreenLocationService;
 import com.ruoyi.manager.service.bigscreen.BigScreenRealtimeService;
 import com.ruoyi.manager.service.bigscreen.BigScreenStatsService;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +37,7 @@ import java.util.List;
  *
  * @author car-monit-backend-java-v3
  */
-@ApiOperation("大屏接口")
+@Tag(name = "大屏接口")
 @RestController
 @RequestMapping("/manager/bigScreen")
 @CrossOrigin(origins = "*")
@@ -168,7 +169,7 @@ public class BigScreenController extends BaseController
     /**
      * 重点车辆通行前10（按时间范围，默认最近 7 天）
      */
-    @ApiOperation("重点车辆通行前10")
+    @Operation(summary = "重点车辆通行前10")
     @GetMapping(value = "/topTen")
     public AjaxResult topTen(@RequestParam(name = "startTime", required = false) String startTime,
                              @RequestParam(name = "endTime", required = false) String endTime)
@@ -183,7 +184,7 @@ public class BigScreenController extends BaseController
         }
     }
 
-    @ApiOperation("机构列表")
+    @Operation(summary = "机构列表")
     @GetMapping(value = "/orgList")
     public AjaxResult getOrgList()
     {
@@ -193,7 +194,7 @@ public class BigScreenController extends BaseController
     /**
      * 堵漏增收统计
      */
-    @ApiOperation("堵漏增收统计")
+    @Operation(summary = "堵漏增收统计")
     @GetMapping(value = "/incomeStatistic")
     public AjaxResult incomeStatistic(IncomeStatisticParam param)
     {

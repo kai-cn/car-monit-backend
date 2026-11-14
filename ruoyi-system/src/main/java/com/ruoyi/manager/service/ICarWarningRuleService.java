@@ -3,7 +3,7 @@ package com.ruoyi.manager.service;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.CarWarningRule;
 import java.util.List;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 /**
  * 预警规则Service接口

@@ -42,10 +42,17 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Source: https://mvnrepository.com/artifact/org.apache.shardingsphere/shardingsphere-jdbc-core-spring-boot-starter -->
+        <!-- Spring MVC（GlobalExceptionTraceHandler 使用 HandlerExceptionResolver；
+             迁移前由 easypoi-web 传递引入，现显式声明） -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+
+        <!-- ShardingSphere 分表算法实现依赖 -->
         <dependency>
             <groupId>org.apache.shardingsphere</groupId>
-            <artifactId>shardingsphere-jdbc-core-spring-boot-starter</artifactId>
+            <artifactId>shardingsphere-sharding-core</artifactId>
         </dependency>
 
         <dependency>

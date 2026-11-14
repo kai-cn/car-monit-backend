@@ -33,10 +33,11 @@ public class ResourcesConfig implements WebMvcConfigurer
         registry.addResourceHandler(Constants.RESOURCE_PREFIX + "/**")
                 .addResourceLocations("file:" + RuoYiConfig.getProfile() + "/");
 
-        /** swagger配置 */
-        registry.addResourceHandler("/swagger-ui/**")
-                .addResourceLocations("classpath:/META-INF/resources/webjars/springfox-swagger-ui/")
-                .setCacheControl(CacheControl.maxAge(5, TimeUnit.HOURS).cachePublic());;
+        /** OpenAPI 文档静态资源：springdoc 自带 /swagger-ui/** 映射，
+            此处仅显式声明缓存策略（迁移前指向 springfox 的 webjar 目录，Boot 3/4 下已不存在）。 */
+        registry.addResourceHandler("/webjars/swagger-ui/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/swagger-ui/")
+                .setCacheControl(CacheControl.maxAge(5, TimeUnit.HOURS).cachePublic());
     }
 
     /**

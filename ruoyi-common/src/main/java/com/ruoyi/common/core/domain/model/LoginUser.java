@@ -237,6 +237,15 @@ public class LoginUser implements UserDetails
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities()
     {
-        return null;
+        // Spring Security 7 起 AbstractUserDetailsAuthenticationProvider#createSuccessAuthentication
+        // 会 new LinkedHashSet<>(user.getAuthorities())，返回 null 会直接 NPE；
+        // 这里把 RuoYi 的 permissions 字符串映射成 GrantedAuthority（空集合兜底）。
+        if (permissions == null || permissions.isEmpty())
+        {
+            return java.util.Collections.emptyList();
+        }
+        return permissions.stream()
+                .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

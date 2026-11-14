@@ -1,6 +1,6 @@
 package com.ruoyi.manager.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.ruoyi.base.domain.Geometry;
 import com.ruoyi.base.domain.TrailBo;
 import com.ruoyi.base.domain.TrailDevCountBO;

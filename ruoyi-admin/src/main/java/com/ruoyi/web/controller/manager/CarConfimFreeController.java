@@ -30,7 +30,7 @@ import com.ruoyi.manager.domain.CarConfimFree;
 import com.ruoyi.manager.service.ICarConfimFreeService;
 import com.ruoyi.common.core.page.TableDataInfo;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * 确认补缴Controller

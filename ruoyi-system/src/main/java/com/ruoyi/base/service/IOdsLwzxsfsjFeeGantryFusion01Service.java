@@ -3,7 +3,7 @@ package com.ruoyi.base.service;
 import com.ruoyi.base.domain.OdsLwzxsfsjFeeGantryFusion01;
 import com.ruoyi.common.core.domain.AjaxResult;
 import java.util.List;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 /**
  * 交易流水Service接口

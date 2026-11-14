@@ -1,6 +1,6 @@
 package com.ruoyi.manager.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.CommonUtil;
 import com.ruoyi.manager.mapper.CarRouteDetailMapper;

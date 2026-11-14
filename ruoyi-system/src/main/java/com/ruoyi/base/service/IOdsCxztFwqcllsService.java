@@ -2,7 +2,7 @@ package com.ruoyi.base.service;
 
 import com.ruoyi.base.domain.OdsCxztFwqclls;
 import java.util.List;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 /**
  * 服务区车辆流水Service接口

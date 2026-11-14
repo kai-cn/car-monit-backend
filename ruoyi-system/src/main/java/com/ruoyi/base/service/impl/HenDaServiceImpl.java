@@ -1,7 +1,7 @@
 package com.ruoyi.base.service.impl;
 
 import com.alibaba.fastjson2.JSONObject;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.ruoyi.base.service.IHenDaService;
 import com.ruoyi.base.service.forest.IHenDaApi;
 import com.ruoyi.base.util.EncryptUtils;

@@ -1,6 +1,6 @@
 package com.ruoyi.base.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.ruoyi.base.domain.OdsRtSzdnSnapshotFlowStationcaptureAddcode;
 
 import java.util.List;

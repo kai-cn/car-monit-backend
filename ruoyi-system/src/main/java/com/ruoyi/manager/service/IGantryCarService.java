@@ -3,7 +3,7 @@ package com.ruoyi.manager.service;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.manager.domain.GantryCar;
 import java.util.List;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 /**
  * 门架拍识查询Service接口
