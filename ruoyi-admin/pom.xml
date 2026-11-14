@@ -99,6 +99,10 @@
                 <configuration>
                     <fork>true</fork> <!-- 如果没有该配置，devtools不会生效 -->
                     <mainClass>com.ruoyi.RuoYiApplication</mainClass>
+                    <!-- 镜像瘦身：以下传递依赖在代码中 0 引用，且分表开关默认关闭、
+                         阿里云 MNS 通道未启用，打进 fat jar 只会白白增大镜像与元空间。
+                         排除后需通过实机启动 + 分页/导出接口回归确认无类缺失。 -->
+                    <excludeGroupIds>org.apache.calcite,org.apache.groovy,com.aliyun.mns</excludeGroupIds>
                 </configuration>
                 <executions>
                     <execution>
