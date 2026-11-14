@@ -34,8 +34,11 @@ server:
 # 日志配置
 logging:
   level:
-    com.ruoyi: debug
-    org.springframework: warn
+    root: ${LOG_ROOT_LEVEL:error}
+    com.ruoyi: error
+    org.springframework: error
+    org.mybatis: error
+    com.alibaba.druid: error
 
 # ========================================
 # 监控组件配置（链路追踪、慢请求、告警）
@@ -195,7 +198,7 @@ forest:
   max-route-connections: 500 # 每个路由的最大连接数，默认值为500
   timeout: 60000 # 请求超时时间，单位为毫秒, 默认值为3000
   connect-timeout: 60000 # 连接超时时间，单位为毫秒, 默认值为2000
-  logEnabled: true # 打开或关闭日志，默认为true
+  logEnabled: false # 容器化部署统一 ERROR，关闭 Forest 自身的请求日志
   retryer: com.dtflys.forest.retryer.BackOffRetryer
   retry-count: 2
   max-retry-interval: 1000
