@@ -62,3 +62,5 @@ spring:
                 wall:
                     config:
                         multi-statement-allow: true
+                        # druid 1.2.2x 起 SQL 防火墙对「恒真条件」判定更严，存量 Mapper 使用 WHERE 1 = 1
+                        select-where-alway-true-check: false

@@ -1,6 +1,6 @@
 package com.ruoyi.common.core.cache;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import com.ruoyi.common.core.redis.RedisCache;
 import org.junit.jupiter.api.Test;
 

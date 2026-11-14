@@ -1,9 +1,10 @@
 package com.ruoyi.framework.config;
 
+import java.time.Duration;
 import java.util.TimeZone;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -32,12 +33,13 @@ public class ApplicationConfig
     private String internalToken;
 
     /**
-     * 时区配置
+     * 时区配置（Spring Boot 4 起 Jackson 2 的 Jackson2ObjectMapperBuilderCustomizer 已由
+     * Jackson 3 的 JsonMapperBuilderCustomizer 取代）
      */
     @Bean
-    public Jackson2ObjectMapperBuilderCustomizer jacksonObjectMapperCustomization()
+    public JsonMapperBuilderCustomizer jacksonObjectMapperCustomization()
     {
-        return jacksonObjectMapperBuilder -> jacksonObjectMapperBuilder.timeZone(TimeZone.getDefault());
+        return jsonMapperBuilder -> jsonMapperBuilder.defaultTimeZone(TimeZone.getDefault());
     }
 
     @Bean
@@ -53,8 +55,9 @@ public class ApplicationConfig
     public RestTemplate trafficApiDownloadRestTemplate()
     {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(downloadConnectTimeoutMs);
-        factory.setReadTimeout(downloadReadTimeoutMs);
+        // Spring Framework 6.1 起 setConnectTimeout/setReadTimeout 只接受 Duration
+        factory.setConnectTimeout(Duration.ofMillis(downloadConnectTimeoutMs));
+        factory.setReadTimeout(Duration.ofMillis(downloadReadTimeoutMs));
         RestTemplate template = new RestTemplate(factory);
         if (internalToken != null && !internalToken.trim().isEmpty())
         {

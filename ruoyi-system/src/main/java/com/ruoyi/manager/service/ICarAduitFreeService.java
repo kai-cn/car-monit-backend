@@ -5,7 +5,7 @@ import com.ruoyi.manager.domain.CarAduitFree;
 
 import java.math.BigDecimal;
 import java.util.List;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.ruoyi.manager.domain.CarConfimFree;
 import com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo;
 import com.ruoyi.manager.domain.vo.PCIncomeStaticsVO;

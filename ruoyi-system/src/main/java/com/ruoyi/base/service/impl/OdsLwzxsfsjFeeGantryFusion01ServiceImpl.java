@@ -1,6 +1,6 @@
 package com.ruoyi.base.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.OdsLwzxsfsjFeeGantryFusion01;
 import com.ruoyi.base.mapper.OdsLwzxsfsjFeeGantryFusion01Mapper;
 import com.ruoyi.base.service.IOdsLwzxsfsjFeeGantryFusion01Service;

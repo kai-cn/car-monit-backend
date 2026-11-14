@@ -1,6 +1,6 @@
 package com.ruoyi.base.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.ruoyi.base.mapper.OdsCxztFwqcllsMapper;
 import com.ruoyi.base.domain.OdsCxztFwqclls;
 import com.ruoyi.base.service.IOdsCxztFwqcllsService;

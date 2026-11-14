@@ -3,7 +3,7 @@ package com.ruoyi.admin.config;
 import com.ruoyi.base.sharding.SnapshotFlowMonthShardingAlgorithm;
 import com.ruoyi.base.sharding.FeeRecordsDayShardingAlgorithm;
 import org.apache.shardingsphere.driver.api.ShardingSphereDataSourceFactory;
-import org.apache.shardingsphere.infra.config.algorithm.AlgorithmConfiguration;
+import org.apache.shardingsphere.infra.algorithm.core.config.AlgorithmConfiguration;
 import org.apache.shardingsphere.sharding.api.config.ShardingRuleConfiguration;
 import org.apache.shardingsphere.sharding.api.config.rule.ShardingTableRuleConfiguration;
 import org.apache.shardingsphere.sharding.api.config.strategy.sharding.StandardShardingStrategyConfiguration;

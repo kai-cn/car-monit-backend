@@ -1,7 +1,7 @@
 package com.ruoyi.manager.service.impl;
 
 import com.alibaba.fastjson2.JSON;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.ruoyi.base.domain.*;
 import com.ruoyi.base.service.IGeometryService;
 import com.ruoyi.base.service.forest.HttpSysUtilApiService;
@@ -20,10 +20,11 @@ import com.ruoyi.manager.mapper.CarInfoMapper;
 import com.ruoyi.manager.service.ICarInfoService;
 import com.ruoyi.manager.service.ICarTrackInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,11 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
     private CarInfoMapper carInfoMapper;
 
 
+    /**
+     * 与 CarTrackInfoServiceImpl 相互注入，Spring Framework 6.2 起循环依赖被永久禁止，
+     * 这里用 @Lazy 生成代理延迟解析，保持原有调用语义（调用时才真正取到对端单例）。
+     */
+    @Lazy
     @Autowired
     private ICarTrackInfoService carTrackInfoService;
 

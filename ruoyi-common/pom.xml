@@ -53,18 +53,17 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
 
-        <!-- JSON工具类 -->
+        <!-- JSON工具类（Jackson 3：tools.jackson.*，注解仍在 com.fasterxml.jackson.annotation） -->
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
         <!-- 动态数据源 -->
-		<dependency>
-			<groupId>com.baomidou</groupId>
-			<artifactId>dynamic-datasource-spring-boot-starter</artifactId>
-			<version>3.5.2</version>
-		</dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>dynamic-datasource-spring-boot4-starter</artifactId>
+        </dependency>
 
         <!-- 阿里JSON解析器 -->
         <dependency>
@@ -84,26 +83,14 @@
             <artifactId>poi-ooxml</artifactId>
         </dependency>
 
-        <!--easypoi-->
-        <dependency>
-            <groupId>cn.afterturn</groupId>
-            <artifactId>easypoi-spring-boot-starter</artifactId>
-            <version>4.3.0</version>
-        </dependency>
+        <!--easypoi：仅保留与 Servlet 无关的 base 模块（easypoi-web / easypoi-spring-boot-starter 依赖 javax.servlet 与 Boot 2）-->
         <dependency>
             <groupId>cn.afterturn</groupId>
             <artifactId>easypoi-base</artifactId>
-            <version>4.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>cn.afterturn</groupId>
-            <artifactId>easypoi-web</artifactId>
-            <version>4.3.0</version>
         </dependency>
         <dependency>
             <groupId>cn.afterturn</groupId>
             <artifactId>easypoi-annotation</artifactId>
-            <version>4.3.0</version>
         </dependency>
 
         <!-- yml解析器 -->
@@ -112,16 +99,20 @@
             <artifactId>snakeyaml</artifactId>
         </dependency>
 
-        <!-- Token生成与解析-->
+        <!-- Token生成与解析：jjwt 0.13.x 拆分为 api / impl / jackson 三件套 -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt</artifactId>
+            <artifactId>jjwt-api</artifactId>
         </dependency>
-
-        <!-- Jaxb -->
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- redis 缓存操作 -->
@@ -142,41 +133,43 @@
             <artifactId>UserAgentUtils</artifactId>
         </dependency>
 
-        <!-- servlet包 -->
+        <!-- servlet包（jakarta 命名空间；运行期由内嵌 Tomcat 提供，编译期需传递给各子模块） -->
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
         </dependency>
 
         <!-- mybatis-plus 增强CRUD -->
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-extension</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser-4.9</artifactId>
         </dependency>
 
-        <!-- Lombok -->
+        <!-- Lombok（compile 作用域向各子模块传递，与迁移前保持一致） -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-        </dependency>
-
-        <!-- minio -->
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>3.12.0</version>
         </dependency>
 
         <!--hutool-->
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>5.5.1</version>
+            <version>${hutool.version}</version>
         </dependency>
+
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
-            <version>1.11.543</version>
+            <version>${aws.sdk.version}</version>
         </dependency>
 
         <!-- 阿里云短信 -->
@@ -205,16 +198,17 @@
             <version>3.1.0</version>
         </dependency>
 
+        <!-- Forest 声明式 HTTP 客户端：官方无 Boot 4 starter，使用 boot3 starter（自动配置机制在 Boot 4 仍兼容） -->
         <dependency>
             <groupId>com.dtflys.forest</groupId>
-            <artifactId>forest-spring-boot-starter</artifactId>
-            <version>1.6.0</version>
+            <artifactId>forest-spring-boot3-starter</artifactId>
+            <version>${forest.version}</version>
         </dependency>
 
         <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
-            <version>1.3.3</version>
+            <version>1.5</version>
         </dependency>
 
         <dependency>

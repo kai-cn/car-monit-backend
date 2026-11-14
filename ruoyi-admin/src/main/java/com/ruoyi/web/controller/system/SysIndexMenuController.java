@@ -9,7 +9,7 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.domain.SysIndexMenu;
 import com.ruoyi.system.service.ISysIndexMenuService;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -46,7 +46,7 @@ public class SysIndexMenuController extends BaseController
      * @param sysIndexMenu 用户常用菜单
      * @return
      */
-    @ApiOperation(value = "查询", notes = "查询")
+    @Operation(summary = "查询")
     @GetMapping("/mylist" )
     public AjaxResult getSysIndexMenulist(SysIndexMenu sysIndexMenu) {
         Long userId = SecurityUtils.getUserId();

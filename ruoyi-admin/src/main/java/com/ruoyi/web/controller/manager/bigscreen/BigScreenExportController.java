@@ -8,7 +8,8 @@ import com.ruoyi.manager.domain.vo.bigscreen.ExportApprovalRequest;
 import com.ruoyi.manager.domain.vo.bigscreen.ExportRequest;
 import com.ruoyi.manager.service.bigscreen.BigScreenExportService;
 import com.alibaba.fastjson2.JSON;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Map;
 
 /**
@@ -33,7 +34,7 @@ import java.util.Map;
  *
  * @author car-monit-backend-java-v3
  */
-@ApiOperation("大屏导出")
+@Tag(name = "大屏导出")
 @RestController
 @RequestMapping("/manager/bigScreen/export")
 public class BigScreenExportController extends BaseController
@@ -43,7 +44,7 @@ public class BigScreenExportController extends BaseController
     @Autowired
     private BigScreenExportService bigScreenExportService;
 
-    @ApiOperation("提交展示字段快速导出")
+    @Operation(summary = "提交展示字段快速导出")
     @PreAuthorize("@ss.hasPermi('manager:bigscreen:export')")
     @PostMapping("/display")
     public AjaxResult display(@RequestBody ExportRequest request)
@@ -58,7 +59,7 @@ public class BigScreenExportController extends BaseController
         }
     }
 
-    @ApiOperation("提交全字段海量导出")
+    @Operation(summary = "提交全字段海量导出")
     @PreAuthorize("@ss.hasPermi('manager:bigscreen:export') and @ss.hasPermi('manager:bigscreen:exportFull')")
     @PostMapping("/full")
     public AjaxResult full(@RequestBody ExportRequest request)
@@ -73,7 +74,7 @@ public class BigScreenExportController extends BaseController
         }
     }
 
-    @ApiOperation("查询导出任务状态")
+    @Operation(summary = "查询导出任务状态")
     @GetMapping("/status/{taskId}")
     public AjaxResult status(@PathVariable String taskId)
     {
@@ -87,7 +88,7 @@ public class BigScreenExportController extends BaseController
         }
     }
 
-    @ApiOperation("失败任务重试/按原参数重新提交")
+    @Operation(summary = "失败任务重试/按原参数重新提交")
     @PreAuthorize("@ss.hasPermi('manager:bigscreen:export')")
     @PostMapping("/{taskId}/retry")
     public AjaxResult retry(@PathVariable String taskId)
@@ -102,7 +103,7 @@ public class BigScreenExportController extends BaseController
         }
     }
 
-    @ApiOperation("断点续传（api 不支持时按原参数重新提交）")
+    @Operation(summary = "断点续传（api 不支持时按原参数重新提交）")
     @PreAuthorize("@ss.hasPermi('manager:bigscreen:export')")
     @PostMapping("/{taskId}/resume")
     public AjaxResult resume(@PathVariable String taskId)
@@ -120,7 +121,7 @@ public class BigScreenExportController extends BaseController
         }
     }
 
-    @ApiOperation("生成下载签名 URL")
+    @Operation(summary = "生成下载签名 URL")
     @PostMapping("/{taskId}/download-url")
     public AjaxResult downloadUrl(@PathVariable String taskId)
     {
@@ -134,7 +135,7 @@ public class BigScreenExportController extends BaseController
         }
     }
 
-    @ApiOperation("下载导出文件")
+    @Operation(summary = "下载导出文件")
     @GetMapping("/download/{taskId}")
     public void download(@PathVariable String taskId,
                          @RequestHeader(name = BigScreenExportService.DOWNLOAD_TOKEN_HEADER,
@@ -170,7 +171,7 @@ public class BigScreenExportController extends BaseController
     // 全字段导出审批（阶段三）
     // ------------------------------------------------------------------
 
-    @ApiOperation("查询待审批导出列表")
+    @Operation(summary = "查询待审批导出列表")
     @PreAuthorize("@ss.hasPermi('manager:bigscreen:exportApprove')")
     @GetMapping("/approvals")
     public AjaxResult approvals()
@@ -185,7 +186,7 @@ public class BigScreenExportController extends BaseController
         }
     }
 
-    @ApiOperation("审批通过全字段导出")
+    @Operation(summary = "审批通过全字段导出")
     @PreAuthorize("@ss.hasPermi('manager:bigscreen:exportApprove')")
     @PostMapping("/approvals/{requestId}/approve")
     public AjaxResult approve(@PathVariable String requestId)
@@ -205,7 +206,7 @@ public class BigScreenExportController extends BaseController
         }
     }
 
-    @ApiOperation("驳回全字段导出")
+    @Operation(summary = "驳回全字段导出")
     @PreAuthorize("@ss.hasPermi('manager:bigscreen:exportApprove')")
     @PostMapping("/approvals/{requestId}/reject")
     public AjaxResult reject(@PathVariable String requestId,
