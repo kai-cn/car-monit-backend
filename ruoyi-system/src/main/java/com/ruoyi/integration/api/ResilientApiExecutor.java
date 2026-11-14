@@ -1,6 +1,6 @@
 package com.ruoyi.integration.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import com.ruoyi.common.core.metrics.MetricsRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -344,7 +344,7 @@ public class ResilientApiExecutor
 
     private ApiClientException mapThrowable(String endpoint, Throwable throwable)
     {
-        if (throwable instanceof JsonProcessingException)
+        if (throwable instanceof JacksonException)
         {
             return new ApiClientException(ApiErrorCode.CONTRACT_VIOLATION, endpoint,
                     "api 响应解析失败: " + throwable.getMessage(), throwable);
