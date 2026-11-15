@@ -140,11 +140,22 @@ jobs:
         if: github.event_name != 'pull_request'
         run: mvn -B -DskipTests package
 
+      - name: 产物校验和（跨分支不覆盖）
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          cd ruoyi-admin/target
+          sha256sum *.jar > SHA256SUMS
+          cat SHA256SUMS
+
       - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request'
         with:
-          name: build-java
-          path: ruoyi-admin/target/*.jar
+          # 带分支+提交命名：同一仓库多分支（jdk17/21/25、迁移分支）并行时不互相覆盖
+          name: build-java-${{ github.ref_name }}-${{ github.sha }}
+          path: |
+            ruoyi-admin/target/*.jar
+            ruoyi-admin/target/SHA256SUMS
           if-no-files-found: error
           retention-days: 14
 

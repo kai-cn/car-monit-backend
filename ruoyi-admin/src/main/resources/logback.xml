@@ -106,41 +106,42 @@
     </appender>
 
     <!-- ===================== 日志级别控制 ===================== -->
+    <!-- 部署=error / 测试=debug，统一由 JVM -DLOG_ROOT_LEVEL（容器内 env LOG_ROOT_LEVEL）驱动 -->
     <!-- 系统模块日志级别 -->
-    <logger name="com.ruoyi" level="error" additivity="false">
+    <logger name="com.ruoyi" level="${LOG_ROOT_LEVEL:-error}" additivity="false">
         <appender-ref ref="console" />
         <appender-ref ref="file_info" />
         <appender-ref ref="file_error" />
     </logger>
 
     <!-- 慢请求日志单独记录 -->
-    <logger name="com.ruoyi.common.core.monitor.TraceIdFilter" level="error" additivity="false">
+    <logger name="com.ruoyi.common.core.monitor.TraceIdFilter" level="${LOG_ROOT_LEVEL:-error}" additivity="false">
         <appender-ref ref="file_slow" />
     </logger>
-    <logger name="com.ruoyi.common.core.monitor.SqlLogInterceptor" level="error" additivity="false">
+    <logger name="com.ruoyi.common.core.monitor.SqlLogInterceptor" level="${LOG_ROOT_LEVEL:-error}" additivity="false">
         <appender-ref ref="file_slow" />
     </logger>
 
     <!-- Spring日志级别 -->
-    <logger name="org.springframework" level="error" />
+    <logger name="org.springframework" level="${LOG_ROOT_LEVEL:-error}" />
     <!-- MyBatis日志级别 -->
-    <logger name="org.mybatis" level="error" />
+    <logger name="org.mybatis" level="${LOG_ROOT_LEVEL:-error}" />
     <!-- 数据库连接池日志 -->
-    <logger name="com.alibaba.druid" level="error" />
+    <logger name="com.alibaba.druid" level="${LOG_ROOT_LEVEL:-error}" />
 
     <!-- 根logger：控制台 -->
-    <root level="error">
+    <root level="${LOG_ROOT_LEVEL:-error}">
         <appender-ref ref="console" />
     </root>
 
     <!-- 系统操作日志：文件输出 -->
-    <root level="error">
+    <root level="${LOG_ROOT_LEVEL:-error}">
         <appender-ref ref="file_info" />
         <appender-ref ref="file_error" />
     </root>
 
     <!-- 系统用户操作日志 -->
-    <logger name="sys-user" level="error">
+    <logger name="sys-user" level="${LOG_ROOT_LEVEL:-error}">
         <appender-ref ref="sys-user" />
     </logger>
 </configuration> 
