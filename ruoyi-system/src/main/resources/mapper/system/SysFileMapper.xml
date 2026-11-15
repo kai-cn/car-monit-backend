@@ -4,7 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.system.mapper.SysFileMapper">
     
-    <resultMap type="SysFile" id="SysFileResult">
+    <resultMap type="com.ruoyi.system.domain.SysFile" id="SysFileResult">
         <result property="id"    column="id"    />
         <result property="fileName"    column="file_name"    />
         <result property="bucketName"    column="bucket_name"    />
@@ -26,7 +26,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          t.create_user, t.create_time, t.update_user, t.update_time, t.del_flag, t.tenant_id
     </sql>
 
-    <select id="selectSysFileList" parameterType="SysFile" resultMap="SysFileResult">
+    <select id="selectSysFileList" parameterType="com.ruoyi.system.domain.SysFile" resultMap="SysFileResult">
         select
         <include refid="selectSysFileVo"/>
         from sys_file t
@@ -64,7 +64,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by t.id
     </select>
         
-    <insert id="insertSysFile" parameterType="SysFile" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertSysFile" parameterType="com.ruoyi.system.domain.SysFile" useGeneratedKeys="true" keyProperty="id">
         insert into sys_file
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">id,</if>
@@ -100,7 +100,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateSysFile" parameterType="SysFile">
+    <update id="updateSysFile" parameterType="com.ruoyi.system.domain.SysFile">
         update sys_file
         <trim prefix="SET" suffixOverrides=",">
             <if test="fileName != null">file_name = #{fileName},</if>

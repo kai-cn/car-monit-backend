@@ -4,7 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.flow.mapper.FlowCurrentNodeMapper">
     
-    <resultMap type="FlowCurrentNode" id="FlowCurrentNodeResult">
+    <resultMap type="com.ruoyi.flow.domain.FlowCurrentNode" id="FlowCurrentNodeResult">
         <result property="id"    column="ID"    />
         <result property="flowOid"    column="FLOW_OID"    />
         <result property="currentOid"    column="CURRENT_OID"    />
@@ -34,7 +34,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           t.BACK_COL1, t.BACK_COL2, t.BACK_COL3, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time
     </sql>
 
-    <select id="selectFlowCurrentNodeList" parameterType="FlowCurrentNode" resultMap="FlowCurrentNodeResult">
+    <select id="selectFlowCurrentNodeList" parameterType="com.ruoyi.flow.domain.FlowCurrentNode" resultMap="FlowCurrentNodeResult">
         select
         <include refid="selectFlowCurrentNodeVo"/>
         from flow_current_node t
@@ -67,7 +67,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where t.ID = #{id}
     </select>
         
-    <insert id="insertFlowCurrentNode" parameterType="FlowCurrentNode">
+    <insert id="insertFlowCurrentNode" parameterType="com.ruoyi.flow.domain.FlowCurrentNode">
         insert into flow_current_node
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">ID,</if>
@@ -119,7 +119,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateFlowCurrentNode" parameterType="FlowCurrentNode">
+    <update id="updateFlowCurrentNode" parameterType="com.ruoyi.flow.domain.FlowCurrentNode">
         update flow_current_node
         <trim prefix="SET" suffixOverrides=",">
             <if test="flowOid != null">FLOW_OID = #{flowOid},</if>
@@ -164,7 +164,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
 
-    <select id="selectEmpInfoList" parameterType="FlowCurrentNode" resultMap="FlowCurrentNodeResult">
+    <select id="selectEmpInfoList" parameterType="com.ruoyi.flow.domain.FlowCurrentNode" resultMap="FlowCurrentNodeResult">
         select
           t.user_id AUIT_EMP_OID,t.nick_name AUIT_EMP_NAME
         from sys_user t
@@ -218,7 +218,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     </select>
 
-    <update id="updateFlowTable" parameterType="FlowCurrentNode">
+    <update id="updateFlowTable" parameterType="com.ruoyi.flow.domain.FlowCurrentNode">
         update ${tableName} set
         <if test="flowKey != null">flow_key = #{flowKey},</if>
         <if test="flowRuid != null">flow_ruid = #{flowRuid},</if>
@@ -231,7 +231,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <!-- 根据角色和部门查询人员 -->
-    <select id="selectUserListByRole" parameterType="FlowCurrentNode" resultMap="FlowCurrentNodeResult">
+    <select id="selectUserListByRole" parameterType="com.ruoyi.flow.domain.FlowCurrentNode" resultMap="FlowCurrentNodeResult">
         select
         t.user_id AUIT_EMP_OID,t.nick_name AUIT_EMP_NAME
         from sys_user t
@@ -247,7 +247,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <!-- 根据部门设置的分管领导 -->
-    <select id="selectUserListByDept" parameterType="FlowCurrentNode" resultMap="FlowCurrentNodeResult">
+    <select id="selectUserListByDept" parameterType="com.ruoyi.flow.domain.FlowCurrentNode" resultMap="FlowCurrentNodeResult">
         select
         t.user_id AUIT_EMP_OID,t.nick_name AUIT_EMP_NAME
         from sys_user t
