@@ -1,0 +1,239 @@
+# Spring Boot 4.1.2 native-image CI on GITHUB-HOSTED (cloud) runners.
+#
+# Sync into each jdk{17,21,25} worktree as .github/workflows/native-image-cloud.yml.
+# The self-hosted equivalent remains .github/workflows/native-image.yml and is used
+# only when cloud Actions minutes / billing are exhausted (see docs/v3 native docs).
+#
+# Verified facts (2026-11-15, see docs/v3/native-image-mandrel-verification.md):
+#   * buildArgs (13 --initialize-at-* rules) live in each module pom.xml.
+#     NEVER pass -DbuildArgs: it replaces the pom list and breaks the build.
+#   * -Pnative,native-flink-exclude is mandatory: VehicleTrackFlinkJob.class from a
+#     default JVM build references provided Flink classes absent from native classpath.
+#   * Reachability metadata collected with the GraalVM tracing agent lives under
+#     src/main/resources/META-INF/native-image/com.ruoyi/<module>-agent/.
+#   * NativeMapperSqlSessionFactoryRegistrar fixes Spring Framework 7 AOT dropping
+#     MapperFactoryBean AUTOWIRE_BY_TYPE (sqlSessionFactory). It must be in the tree.
+#   * Mandrel releases exist for java17 (23.0.x), java21 (23.1.x), java25 (25.0.x).
+#   * local native-image peak RSS ~10.11 GB; cloud runners have 16 GB.
+#
+# Cost control: workflow_dispatch only (no push trigger). A `prepare` job builds a
+# dynamic matrix from the inputs, so skipped combinations never occupy a runner.
+# max-parallel 2 limits concurrent cloud minutes.
+
+name: native-image-cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: canary = probe cloud runner/quota/toolchain only; build = compile
+        type: choice
+        options: [canary, build]
+        default: canary
+      app:
+        type: choice
+        options: [api, backend, both]
+        default: api
+      jdk:
+        type: choice
+        options: ['25', '21', '17', all]
+        default: '25'
+      platform:
+        type: choice
+        options: [linux, windows, both]
+        default: linux
+      runner_mode:
+        description: cloud = GitHub-hosted; self-hosted = local runner labels below
+        type: choice
+        options: [cloud, self-hosted]
+        default: cloud
+      linux_runner:
+        description: runs-on label for Linux jobs
+        type: string
+        default: ubuntu-latest
+      windows_runner:
+        description: runs-on label for Windows jobs
+        type: string
+        default: windows-latest
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-image-cloud-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  MAVEN_OPTS: -Xmx3g -XX:+UseSerialGC
+  MAVEN_ARGS: -B -ntp
+
+jobs:
+  # ---------------------------------------------------------------- canary / quota probe
+  # A real cloud run is the most reliable quota/billing probe: the REST billing
+  # endpoint returns 404 for the GCM OAuth token, so we measure the ability to
+  # actually allocate a GitHub-hosted runner and to provision Mandrel.
+  canary:
+    if: inputs.stage == 'canary' && inputs.runner_mode == 'cloud'
+    runs-on: ${{ inputs.linux_runner }}
+    timeout-minutes: 20
+    steps:
+      - name: Runner capacity
+        shell: bash
+        run: |
+          echo "runner_name=${{ runner.name }} runner_os=${{ runner.os }}"
+          echo "cpu=$(nproc)"; free -m | head -2; df -h / | tail -1
+      - uses: actions/checkout@v4
+      - name: Provision Mandrel (java25) + verify toolchain
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '25'
+          distribution: 'mandrel'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Native toolchain report
+        shell: bash
+        run: |
+          java -version 2>&1 | head -3
+          native-image --version 2>&1 | head -5
+          echo "JAVA_HOME=$JAVA_HOME"
+          echo "gcc=$(command -v gcc || echo MISSING) ld=$(command -v ld || echo MISSING)"
+          test -f /usr/include/zlib.h && echo "zlib_header=OK" || echo "zlib_header=MISSING"
+          echo "CANARY_OK cloud runner available and Mandrel provisioned"
+
+  # ---------------------------------------------------------------- dynamic matrix
+  prepare:
+    if: inputs.stage == 'build'
+    runs-on: ${{ inputs.linux_runner }}
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+      cells: ${{ steps.gen.outputs.cells }}
+    steps:
+      - id: gen
+        shell: bash
+        env:
+          IN_APP: ${{ inputs.app }}
+          IN_JDK: ${{ inputs.jdk }}
+          IN_PLATFORM: ${{ inputs.platform }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          apps = ['api','backend'] if os.environ['IN_APP'] == 'both' else [os.environ['IN_APP']]
+          jdks = ['25','21','17'] if os.environ['IN_JDK'] == 'all' else [os.environ['IN_JDK']]
+          plats = ['linux','windows'] if os.environ['IN_PLATFORM'] == 'both' else [os.environ['IN_PLATFORM']]
+          cells = [{'app': a, 'jdk': j, 'platform': p} for a in apps for j in jdks for p in plats]
+          print('matrix=' + json.dumps({'include': cells}, separators=(',', ':')))
+          print('cells=' + str(len(cells)))
+          PY
+          grep '^matrix=' "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------- build
+  build:
+    needs: prepare
+    runs-on: ${{ matrix.platform == 'linux' && inputs.linux_runner || inputs.windows_runner }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Provision Mandrel java${{ matrix.jdk }}
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: ${{ matrix.jdk }}
+          distribution: 'mandrel'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Windows native-image needs cl.exe / link.exe in PATH. windows-latest ships
+      # VS2022 but does not export the environment by default.
+      - name: MSVC dev environment (Windows)
+        if: matrix.platform == 'windows' && inputs.runner_mode == 'cloud'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Linux C toolchain
+        if: matrix.platform == 'linux' && inputs.runner_mode == 'cloud'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc g++ zlib1g-dev
+          gcc --version | head -1
+          test -f /usr/include/zlib.h
+
+      - name: Resolve module name
+        id: meta
+        shell: bash
+        run: |
+          if [ '${{ matrix.app }}' = 'api' ]; then mod=pro-business-api; else mod=ruoyi-admin; fi
+          echo "module=$mod" >> "$GITHUB_OUTPUT"
+          echo "module=$mod"
+
+      - name: Install reactor modules (JVM jar)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn $MAVEN_ARGS -DskipTests install -pl "${{ steps.meta.outputs.module }}" -am
+
+      - name: AOT + native-image
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Git Bash on windows-latest resolves mvn.cmd; plain mvn works on Linux.
+          MVN=mvn
+          if [ '${{ matrix.platform }}' = 'windows' ]; then MVN=mvn.cmd; fi
+          echo "start_utc=$(date -u +%FT%TZ)" | tee build-meta.txt
+          "$MVN" $MAVEN_ARGS -Pnative,native-flink-exclude -DskipTests \
+              -pl "${{ steps.meta.outputs.module }}" clean native:compile
+          echo "end_utc=$(date -u +%FT%TZ)" | tee -a build-meta.txt
+
+      - name: Collect binary, sha256 and manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          mod='${{ steps.meta.outputs.module }}'
+          mkdir -p dist
+          if [ '${{ matrix.platform }}' = 'windows' ]; then
+            bin=$(find "$mod/target" -maxdepth 1 -type f -name '*.exe' -print -quit)
+            ext=exe
+          else
+            bin=$(find "$mod/target" -maxdepth 1 -type f -perm -u+x ! -name '*.jar' ! -name '*.exe' -print -quit)
+            ext=bin
+          fi
+          test -n "$bin" && test -f "$bin" || { echo 'NATIVE BINARY NOT FOUND'; exit 1; }
+          out="dist/${{ matrix.app }}-jdk${{ matrix.jdk }}-${{ matrix.platform }}-amd64.$ext"
+          cp "$bin" "$out"
+          bytes=$(wc -c < "$out" | tr -d ' ')
+          if [ '${{ matrix.platform }}' = 'windows' ]; then
+            sha=$(powershell -NoProfile -Command "(Get-FileHash -Algorithm SHA256 '$out').Hash")
+          else
+            sha=$(sha256sum "$out" | cut -d' ' -f1)
+          fi
+          printf '%s  %s\n' "$sha" "$(basename "$out")" > "$out.sha256"
+          cat > dist/manifest.json <<EOF
+          {
+            "app": "${{ matrix.app }}",
+            "jdk": "${{ matrix.jdk }}",
+            "platform": "${{ matrix.platform }}",
+            "runner_mode": "${{ inputs.runner_mode }}",
+            "runner_os": "${{ runner.os }}",
+            "binary": "$(basename "$out")",
+            "bytes": $bytes,
+            "sha256": "$sha",
+            "git_sha": "${{ github.sha }}",
+            "git_ref": "${{ github.ref }}",
+            "run_id": "${{ github.run_id }}",
+            "workflow": "native-image-cloud"
+          }
+          EOF
+          echo "binary_bytes=$bytes sha256=$sha"
+          file "$out" || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.app }}-jdk${{ matrix.jdk }}-${{ matrix.platform }}
+          path: dist/*
+          retention-days: 14
+          if-no-files-found: error

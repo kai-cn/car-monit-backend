@@ -4,7 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.flow.mapper.FlowNameMapper">
 
-    <resultMap type="FlowName" id="FlowNameResult">
+    <resultMap type="com.ruoyi.flow.domain.FlowName" id="FlowNameResult">
         <result property="id"    column="ID"    />
         <result property="flowKey"    column="FLOW_KEY"    />
         <result property="flowTitle"    column="FLOW_TITLE"    />
@@ -26,7 +26,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          t.create_by, t.create_time, t.update_by, t.update_time,t.tenant_id, t.flow_business_type
     </sql>
 
-    <select id="selectFlowNameList" parameterType="FlowName" resultMap="FlowNameResult">
+    <select id="selectFlowNameList" parameterType="com.ruoyi.flow.domain.FlowName" resultMap="FlowNameResult">
         select
         <include refid="selectFlowNameVo"/>,IFNULL(sd.dept_name,'系统默认') tenantName
         from flow_name t
@@ -52,7 +52,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where t.ID = #{id}
     </select>
 
-    <insert id="insertFlowName" parameterType="FlowName">
+    <insert id="insertFlowName" parameterType="com.ruoyi.flow.domain.FlowName">
         insert into flow_name
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">ID,</if>
@@ -88,7 +88,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </trim>
     </insert>
 
-    <update id="updateFlowName" parameterType="FlowName">
+    <update id="updateFlowName" parameterType="com.ruoyi.flow.domain.FlowName">
         update flow_name
         <trim prefix="SET" suffixOverrides=",">
             <if test="flowKey != null">FLOW_KEY = #{flowKey},</if>
@@ -118,7 +118,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
 
     <!-- 节点key是否存在 -->
-    <select id="isExitsKey" parameterType="FlowName" resultType="java.lang.Integer">
+    <select id="isExitsKey" parameterType="com.ruoyi.flow.domain.FlowName" resultType="java.lang.Integer">
         select count(1) from flow_name t
         where t.del_flag = '0'  and t.FLOW_KEY = #{flowKey} and t.create_by = -1
         <if test="tenantId != null ">and t.tenant_id = #{tenantId}</if>

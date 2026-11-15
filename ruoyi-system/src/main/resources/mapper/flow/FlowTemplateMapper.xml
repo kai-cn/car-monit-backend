@@ -4,7 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.flow.mapper.FlowTemplateMapper">
     
-    <resultMap type="FlowTemplate" id="FlowTemplateResult">
+    <resultMap type="com.ruoyi.flow.domain.FlowTemplate" id="FlowTemplateResult">
         <result property="id"    column="ID"    />
         <result property="flowOid"    column="FLOW_OID"    />
         <result property="flowType"    column="FLOW_TYPE"    />
@@ -34,7 +34,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time
     </sql>
 
-    <select id="selectFlowTemplateList" parameterType="FlowTemplate" resultMap="FlowTemplateResult">
+    <select id="selectFlowTemplateList" parameterType="com.ruoyi.flow.domain.FlowTemplate" resultMap="FlowTemplateResult">
         select
         <include refid="selectFlowTemplateVo"/>
         from flow_template t
@@ -66,7 +66,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where t.ID = #{id}
     </select>
         
-    <insert id="insertFlowTemplate" parameterType="FlowTemplate">
+    <insert id="insertFlowTemplate" parameterType="com.ruoyi.flow.domain.FlowTemplate">
         insert into flow_template
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">ID,</if>
@@ -116,7 +116,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateFlowTemplate" parameterType="FlowTemplate">
+    <update id="updateFlowTemplate" parameterType="com.ruoyi.flow.domain.FlowTemplate">
         update flow_template
         <trim prefix="SET" suffixOverrides=",">
             <if test="flowOid != null">FLOW_OID = #{flowOid},</if>
@@ -155,7 +155,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <!-- 节点key是否存在 -->
-    <select id="isExitsKey" parameterType="FlowTemplate" resultType="java.lang.Integer">
+    <select id="isExitsKey" parameterType="com.ruoyi.flow.domain.FlowTemplate" resultType="java.lang.Integer">
          select count(1) from flow_template t
          where t.del_flag = '0' and t.FLOW_OID = #{flowOid} and t.NODE_KEY = #{nodeKey}
         <if test="id != null  and id != ''"> and t.id != #{id}</if>
@@ -163,7 +163,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
 
     <!-- 节点排序 是否存在 -->
-    <select id="isExitsSort" parameterType="FlowTemplate" resultType="java.lang.Integer">
+    <select id="isExitsSort" parameterType="com.ruoyi.flow.domain.FlowTemplate" resultType="java.lang.Integer">
         select count(1) from flow_template t
         where t.del_flag = '0' and t.FLOW_OID = #{flowOid} and t.NODE_ORDER = #{nodeOrder}
         <if test="id != null  and id != ''"> and t.id != #{id}</if>

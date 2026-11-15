@@ -121,8 +121,54 @@
                     <warName>${project.artifactId}</warName>
                 </configuration>
            </plugin>
+
+            <plugin>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+                <configuration>
+                    <buildArgs>
+                        <buildArg>--initialize-at-run-time=io.grpc.netty.shaded</buildArg>
+                        <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.internal.tcnative</buildArg>
+                        <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.handler.ssl</buildArg>
+                        <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.util.internal.SystemPropertyUtil</buildArg>
+                        <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.util.ResourceLeakDetectorFactory</buildArg>
+                        <buildArg>--initialize-at-build-time=ch.qos.logback</buildArg>
+                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2</buildArg>
+                        <buildArg>--initialize-at-build-time=ch.qos.logback.classic.Logger</buildArg>
+                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.JSONFactory$CacheItem</buildArg>
+                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.writer.ObjectWriterBaseModule</buildArg>
+                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.function.impl.ToDouble</buildArg>
+                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.reader.ObjectReaderImplString</buildArg>
+                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.JSONReader$Context</buildArg>
+                    </buildArgs>
+                </configuration>
+            </plugin>
+
         </plugins>
         <finalName>${project.artifactId}</finalName>
     </build>
+
+
+    <!-- native-image: Flink Job is submitted via flink run, not part of the Boot app classpath.
+         Excluded at compile time only for native builds (-Pnative,native-flink-exclude). -->
+    <profiles>
+        <profile>
+            <id>native-flink-exclude</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/flink/VehicleTrackFlinkJob.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+
+        </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

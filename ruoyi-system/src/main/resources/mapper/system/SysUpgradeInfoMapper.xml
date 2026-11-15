@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.system.mapper.SysUpgradeInfoMapper">
 
-    <resultMap type="SysUpgradeInfo" id="SysUpgradeInfoResult">
+    <resultMap type="com.ruoyi.system.domain.SysUpgradeInfo" id="SysUpgradeInfoResult">
         <result property="id" column="id"/>
         <result property="ver" column="ver"/>
         <result property="info" column="info"/>
@@ -21,7 +21,7 @@
     <sql id="selectSysUpgradeInfoVo">
         t.id, t.ver, t.info, t.back_col1, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time, t.tenant_id    </sql>
 
-    <select id="selectSysUpgradeInfoList" parameterType="SysUpgradeInfo" resultMap="SysUpgradeInfoResult">
+    <select id="selectSysUpgradeInfoList" parameterType="com.ruoyi.system.domain.SysUpgradeInfo" resultMap="SysUpgradeInfoResult">
         select
         <include refid="selectSysUpgradeInfoVo"/>
         from sys_upgrade_info t
@@ -53,7 +53,7 @@
         ORDER BY t.UPDATE_TIME desc LIMIT 1
     </select>
 
-    <insert id="insertSysUpgradeInfo" parameterType="SysUpgradeInfo">
+    <insert id="insertSysUpgradeInfo" parameterType="com.ruoyi.system.domain.SysUpgradeInfo">
         insert into sys_upgrade_info
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">id,</if>
@@ -83,7 +83,7 @@
         </trim>
     </insert>
 
-    <update id="updateSysUpgradeInfo" parameterType="SysUpgradeInfo">
+    <update id="updateSysUpgradeInfo" parameterType="com.ruoyi.system.domain.SysUpgradeInfo">
         update sys_upgrade_info
         <trim prefix="SET" suffixOverrides=",">
             <if test="ver != null">ver = #{ver},</if>

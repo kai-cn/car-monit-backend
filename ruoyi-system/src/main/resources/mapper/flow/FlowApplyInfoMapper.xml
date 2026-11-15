@@ -4,7 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.flow.mapper.FlowApplyInfoMapper">
     
-    <resultMap type="FlowApplyInfo" id="FlowApplyInfoResult">
+    <resultMap type="com.ruoyi.flow.domain.FlowApplyInfo" id="FlowApplyInfoResult">
         <result property="id"    column="ID"    />
         <result property="billOid"    column="BILL_OID"    />
         <result property="bussType"    column="BUSS_TYPE"    />
@@ -35,7 +35,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          t.CURRENT_OID, t.PC_OID, t.BACK_COL1, t.BACK_COL2, t.BACK_COL3, t.FLOW_STATUS, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time
     </sql>
 
-    <select id="selectFlowApplyInfoList" parameterType="FlowApplyInfo" resultMap="FlowApplyInfoResult">
+    <select id="selectFlowApplyInfoList" parameterType="com.ruoyi.flow.domain.FlowApplyInfo" resultMap="FlowApplyInfoResult">
         select
         <include refid="selectFlowApplyInfoVo"/>,t.BACK_COL1 auitEmpName
         from flow_apply_info t
@@ -68,7 +68,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where t.ID = #{id}
     </select>
         
-    <insert id="insertFlowApplyInfo" parameterType="FlowApplyInfo">
+    <insert id="insertFlowApplyInfo" parameterType="com.ruoyi.flow.domain.FlowApplyInfo">
         insert into flow_apply_info
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">ID,</if>
@@ -122,7 +122,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateFlowApplyInfo" parameterType="FlowApplyInfo">
+    <update id="updateFlowApplyInfo" parameterType="com.ruoyi.flow.domain.FlowApplyInfo">
         update flow_apply_info
         <trim prefix="SET" suffixOverrides=",">
             <if test="billOid != null">BILL_OID = #{billOid},</if>
