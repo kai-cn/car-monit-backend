@@ -133,13 +133,11 @@
                         <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.util.internal.SystemPropertyUtil</buildArg>
                         <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.util.ResourceLeakDetectorFactory</buildArg>
                         <buildArg>--initialize-at-build-time=ch.qos.logback</buildArg>
-                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2</buildArg>
+                        <buildArg>--exclude-config</buildArg>
+                        <buildArg>.*fastjson2.*[.]jar</buildArg>
+                        <buildArg>^/META-INF/native-image/</buildArg>
+                        <buildArg>--initialize-at-run-time=com.alibaba.fastjson2</buildArg>
                         <buildArg>--initialize-at-build-time=ch.qos.logback.classic.Logger</buildArg>
-                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.JSONFactory$CacheItem</buildArg>
-                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.writer.ObjectWriterBaseModule</buildArg>
-                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.function.impl.ToDouble</buildArg>
-                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.reader.ObjectReaderImplString</buildArg>
-                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.JSONReader$Context</buildArg>
                     </buildArgs>
                 </configuration>
             </plugin>
