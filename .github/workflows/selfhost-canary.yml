@@ -1,0 +1,32 @@
+# Minimal probe: can a SELF-HOSTED runner still start a job when GitHub-hosted
+# runners are blocked by account billing / spending limits?
+#
+# Verified use (2026-11-15): cloud canary run 43711910286 was rejected with
+# "recent account payments have failed or your spending limit needs to be
+# increased". Self-hosted runners do not consume Actions minutes, but GitHub
+# may still block all Actions at account level, so we measure it explicitly.
+name: selfhost-canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner_label:
+        description: self-hosted runner label (wsl-k3s-api / wsl-k3s)
+        type: string
+        default: wsl-k3s-api
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ${{ inputs.runner_label }}
+    timeout-minutes: 5
+    steps:
+      - name: Report runner
+        shell: bash
+        run: |
+          echo "SELFHOST_CANARY_OK runner=${{ runner.name }} os=${{ runner.os }}"
+          echo "cpu=$(nproc)"; free -m | head -2; df -h / | tail -1
+          command -v gcc && gcc --version | head -1
+          ls -l /home/dev/tools/mandrel-25/bin/native-image 2>/dev/null || true
