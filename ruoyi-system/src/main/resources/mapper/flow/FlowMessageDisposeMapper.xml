@@ -4,7 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.flow.mapper.FlowMessageDisposeMapper">
 
-    <resultMap type="FlowMessageDispose" id="FlowMessageDisposeResult">
+    <resultMap type="com.ruoyi.flow.domain.FlowMessageDispose" id="FlowMessageDisposeResult">
         <result property="id"    column="ID"    />
         <result property="mid"    column="MID"    />
         <result property="bussId"    column="BUSS_ID"    />
@@ -24,7 +24,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <sql id="selectFlowMessageDisposeVo">
          t.ID, t.MID, t.BUSS_ID, t.BUSS_NAME, t.MSG_STATUS, t.HANG_TIME, t.DISPOSE_OTHER, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time    </sql>
 
-    <select id="selectFlowMessageDisposeList" parameterType="FlowMessageDispose" resultMap="FlowMessageDisposeResult">
+    <select id="selectFlowMessageDisposeList" parameterType="com.ruoyi.flow.domain.FlowMessageDispose" resultMap="FlowMessageDisposeResult">
         select
         <include refid="selectFlowMessageDisposeVo"/>
         from flow_message_dispose t
@@ -49,7 +49,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where t.ID = #{id}
     </select>
 
-    <insert id="insertFlowMessageDispose" parameterType="FlowMessageDispose">
+    <insert id="insertFlowMessageDispose" parameterType="com.ruoyi.flow.domain.FlowMessageDispose">
         insert into flow_message_dispose
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">ID,</if>
@@ -85,7 +85,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateFlowMessageDispose" parameterType="FlowMessageDispose">
+    <update id="updateFlowMessageDispose" parameterType="com.ruoyi.flow.domain.FlowMessageDispose">
         update flow_message_dispose
         <trim prefix="SET" suffixOverrides=",">
             <if test="mid != null">MID = #{mid},</if>
@@ -117,27 +117,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
 
-    <delete id="removeFlowMessage" parameterType="FlowMessageDispose">
+    <delete id="removeFlowMessage" parameterType="com.ruoyi.flow.domain.FlowMessageDispose">
         delete from flow_message_dispose
         where MID = #{mid}
         <if test="bussId != null  and bussId != ''"> and BUSS_ID = #{bussId}</if>
     </delete>
 
 
-    <update id="saveSzzdFlowMessage" parameterType="FlowMessageDispose">
+    <update id="saveSzzdFlowMessage" parameterType="com.ruoyi.flow.domain.FlowMessageDispose">
         update flow_message_dispose set MSG_STATUS = '1'
         where del_flag = '0' and  MID = #{mid}
         <if test="bussId != null  and bussId != ''"> and BUSS_ID = #{bussId}</if>
     </update>
 
 
-    <update id="saveSzzdFlowMessageAll" parameterType="FlowMessageDispose">
+    <update id="saveSzzdFlowMessageAll" parameterType="com.ruoyi.flow.domain.FlowMessageDispose">
         update flow_message_dispose set MSG_STATUS = '1',BUSS_ID = #{bussId}
         where del_flag = '0' and  MID = #{mid}  and MSG_STATUS = '2'
     </update>
 
     <!-- 根据消息id更新业务流消息信息 -->
-    <update id="updateBusinessByMessageId" parameterType="FlowMessageDispose">
+    <update id="updateBusinessByMessageId" parameterType="com.ruoyi.flow.domain.FlowMessageDispose">
         UPDATE flow_message_dispose SET buss_name = #{bussName}, msg_status = #{msgStatus}, hang_time = #{hangTime}
         WHERE del_flag = '0' AND mid = #{mid}
     </update>

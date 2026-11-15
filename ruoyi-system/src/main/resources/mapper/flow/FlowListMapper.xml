@@ -4,7 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.flow.mapper.FlowListMapper">
     
-    <resultMap type="FlowList" id="FlowListResult">
+    <resultMap type="com.ruoyi.flow.domain.FlowList" id="FlowListResult">
         <result property="id"    column="ID"    />
         <result property="billOid"    column="BILL_OID"    />
         <result property="bussType"    column="BUSS_TYPE"    />
@@ -30,7 +30,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <sql id="selectFlowListVo">
          t.ID, t.BILL_OID, t.BUSS_TYPE, t.TASK_ID, t.flow_ruid, t.CURRENT_OID, t.SH_USER, t.SH_KEY, t.SH_VALUE, t.SH_CONTEXT, t.BACK_COL1, t.BACK_COL2, t.BACK_COL3, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time    </sql>
 
-    <select id="selectFlowListList" parameterType="FlowList" resultMap="FlowListResult">
+    <select id="selectFlowListList" parameterType="com.ruoyi.flow.domain.FlowList" resultMap="FlowListResult">
         select
         <include refid="selectFlowListVo"/>
         from flow_list t
@@ -55,7 +55,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
 
-    <select id="selectFlowListListNew" parameterType="FlowList" resultMap="FlowListResult">
+    <select id="selectFlowListListNew" parameterType="com.ruoyi.flow.domain.FlowList" resultMap="FlowListResult">
         select
         <include refid="selectFlowListVo"/>
         from flow_list t
@@ -86,7 +86,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where t.ID = #{id}
     </select>
         
-    <insert id="insertFlowList" parameterType="FlowList">
+    <insert id="insertFlowList" parameterType="com.ruoyi.flow.domain.FlowList">
         insert into flow_list
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">ID,</if>
@@ -134,7 +134,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateFlowList" parameterType="FlowList">
+    <update id="updateFlowList" parameterType="com.ruoyi.flow.domain.FlowList">
         update flow_list
         <trim prefix="SET" suffixOverrides=",">
             <if test="billOid != null">BILL_OID = #{billOid},</if>

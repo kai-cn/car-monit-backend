@@ -4,7 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.system.mapper.SysIndexMenuMapper">
     
-    <resultMap type="SysIndexMenu" id="SysIndexMenuResult">
+    <resultMap type="com.ruoyi.system.domain.SysIndexMenu" id="SysIndexMenuResult">
         <result property="id"    column="ID"    />
         <result property="userId"    column="USER_ID"    />
         <result property="menuId"    column="MENU_ID"    />
@@ -22,7 +22,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <sql id="selectSysIndexMenuVo">
          t.ID, t.USER_ID, t.MENU_ID, t.SORT, t.EPS_ID, t.DEL_FLAG, t.CREATE_BY, t.CREATE_TIME, t.UPDATE_BY, t.UPDATE_TIME, t.TENANT_ID    </sql>
 
-    <select id="selectSysIndexMenuList" parameterType="SysIndexMenu" resultMap="SysIndexMenuResult">
+    <select id="selectSysIndexMenuList" parameterType="com.ruoyi.system.domain.SysIndexMenu" resultMap="SysIndexMenuResult">
         select t2.menu_name as menuName2,t1.menu_id,t1.menu_name
 		from sys_menu t1, sys_menu t2
 		where t1.menu_type='C' and t1.visible = '0'
@@ -50,7 +50,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <!-- 查询我常用的菜单-->
-    <select id="getList"  parameterType="SysIndexMenu"  resultMap="SysIndexMenuResult">
+    <select id="getList"  parameterType="com.ruoyi.system.domain.SysIndexMenu"  resultMap="SysIndexMenuResult">
 		select t.id,t1.menu_name,concat(t2.path,'/',t1.path) as menuUrl
 		from SYS_INDEX_MENU t
 		left join sys_menu t1 on t.MENU_ID = t1.menu_id
@@ -68,7 +68,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where t.ID = #{id}
     </select>
         
-    <insert id="insertSysIndexMenu" parameterType="SysIndexMenu">
+    <insert id="insertSysIndexMenu" parameterType="com.ruoyi.system.domain.SysIndexMenu">
         insert into sys_index_menu
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">ID,</if>
@@ -98,7 +98,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateSysIndexMenu" parameterType="SysIndexMenu">
+    <update id="updateSysIndexMenu" parameterType="com.ruoyi.system.domain.SysIndexMenu">
         update sys_index_menu
         <trim prefix="SET" suffixOverrides=",">
             <if test="userId != null">USER_ID = #{userId},</if>

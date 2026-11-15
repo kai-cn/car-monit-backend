@@ -1,0 +1,158 @@
+# Spring Boot 4.1.2 native-image CI on SELF-HOSTED Linux runners (inside WSL).
+#
+# Selected when GitHub-hosted (cloud) runners are unavailable because of Actions
+# minutes / billing limits. Verified 2026-11-15: cloud canary run 43711910286 was
+# rejected with "recent account payments have failed or your spending limit needs
+# to be increased" -> see evidence/cloud-runner-blocked.log.
+#
+# Registered runner labels (GitHub API GET /actions/runners):
+#   kai-cn/car-monit-api      -> self-hosted, Linux, X64, wsl-k3s-api
+#   kai-cn/car-monit-backend  -> self-hosted, Linux, X64, wsl-k3s
+# There is NO Windows self-hosted runner; Windows .exe is built locally with
+# D:\work\runtime-logs\v3-ops\native-build.bat (Mandrel Windows + VS2022).
+#
+# Local toolchain layout (must exist on the runner):
+#   /home/dev/tools/mandrel-25                 Mandrel java25 (verified)
+#   /home/dev/tools/mandrel-21 / mandrel-17   provisioned on demand by
+#                                            v3-setup-mandrel-linux.sh
+#   gcc/g++/glibc-devel/zlib-devel            dnf installed
+#   /mnt/d/work/apache-maven/bin/mvn          Maven 3.9.9 (Windows build)
+#   /mnt/d/work/IdeaProjects/car-monit-api-java-V3/scripts/v3/ops  ops scripts
+#
+# Same invariants as the cloud workflow:
+#   * 13 --initialize-at-* buildArgs live in each module pom.xml; never -DbuildArgs
+#   * -Pnative,native-flink-exclude is mandatory; "clean" is mandatory
+#   * tracing-agent reachability metadata under <module>-agent/
+#   * NativeMapperSqlSessionFactoryRegistrar fixes Spring 7 AOT mapper wiring
+
+name: native-image-selfhosted
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        type: choice
+        options: [api, backend]
+        default: api
+      jdk:
+        type: choice
+        options: ['25', '21', '17']
+        default: '25'
+      runner_label:
+        description: self-hosted runner label for this repository
+        type: string
+        default: wsl-k3s
+      run_bench:
+        description: run startup/RSS bench after build
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  OPS_WSL: /mnt/d/work/IdeaProjects/car-monit-api-java-V3/scripts/v3/ops
+  EVIDENCE_DIR: /mnt/d/work/runtime-logs/v3-ops/evidence
+  WORK_ROOT: /home/dev/native-work
+  MVN: /mnt/d/work/apache-maven/bin/mvn
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runner_label }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "runner=${{ runner.name }} os=${{ runner.os }} arch=${{ runner.arch }}"
+          nproc; free -m | head -2; df -h / | tail -1
+          for c in gcc g++ ld; do printf "%s=%s\n" "$c" "$(command -v $c || echo MISSING)"; done
+          test -f /usr/include/zlib.h
+          test -f "$MVN"
+
+      - name: Resolve Mandrel for java${{ inputs.jdk }}
+        id: tool
+        shell: bash
+        run: |
+          set -euo pipefail
+          jdk='${{ inputs.jdk }}'
+          home="/home/dev/tools/mandrel-$jdk"
+          if [ ! -x "$home/bin/native-image" ]; then
+            echo "Mandrel java$jdk missing -> provision from official GitHub release"
+            bash "$OPS_WSL/v3-setup-mandrel-linux.sh" "$jdk"
+          fi
+          test -x "$home/bin/native-image"
+          "$home/bin/native-image" --version 2>&1 | head -4
+          echo "mandrel_home=$home" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve module
+        id: meta
+        shell: bash
+        run: |
+          if [ '${{ inputs.app }}' = 'api' ]; then mod=pro-business-api; else mod=ruoyi-admin; fi
+          echo "module=$mod" >> "$GITHUB_OUTPUT"
+          echo "module=$mod"
+
+      - name: AOT + native-image (Linux ELF)
+        shell: bash
+        run: |
+          set -euo pipefail
+          export MANDREL_HOME="${{ steps.tool.outputs.mandrel_home }}"
+          export MVN WORK_ROOT EVIDENCE_DIR
+          echo "start_utc=$(date -u +%FT%TZ)"
+          bash "$OPS_WSL/v3-native-build-linux.sh" \
+            '${{ inputs.app }}' '${{ inputs.jdk }}' "$GITHUB_WORKSPACE" \
+            '${{ inputs.app }}-jdk${{ inputs.jdk }}-linux'
+          echo "end_utc=$(date -u +%FT%TZ)"
+
+      - name: Collect ELF, sha256, manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          mod='${{ steps.meta.outputs.module }}'
+          mkdir -p dist
+          bin=$(find "$mod/target" -maxdepth 1 -type f -perm -u+x ! -name '*.jar' ! -name '*.exe' -print -quit)
+          test -n "$bin" && test -f "$bin" || { echo 'NATIVE ELF NOT FOUND'; exit 1; }
+          out="dist/${{ inputs.app }}-jdk${{ inputs.jdk }}-linux-amd64"
+          cp "$bin" "$out"
+          bytes=$(stat -c %s "$out")
+          sha=$(sha256sum "$out" | cut -d' ' -f1)
+          printf '%s  %s\n' "$sha" "$(basename "$out")" > "$out.sha256"
+          cat > dist/manifest.json <<EOF
+          {
+            "app": "${{ inputs.app }}",
+            "jdk": "${{ inputs.jdk }}",
+            "platform": "linux",
+            "runner_mode": "self-hosted",
+            "runner": "${{ runner.name }}",
+            "binary": "$(basename "$out")",
+            "bytes": $bytes,
+            "sha256": "$sha",
+            "git_sha": "${{ github.sha }}",
+            "git_ref": "${{ github.ref }}",
+            "run_id": "${{ github.run_id }}",
+            "workflow": "native-image-selfhosted"
+          }
+          EOF
+          file "$out"
+          echo "binary_bytes=$bytes sha256=$sha"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ inputs.app }}-jdk${{ inputs.jdk }}-linux
+          path: dist/*
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Bench (startup / RSS)
+        if: inputs.run_bench
+        shell: bash
+        run: |
+          set -euo pipefail
+          mod='${{ steps.meta.outputs.module }}'
+          bin=$(find "$mod/target" -maxdepth 1 -type f -perm -u+x ! -name '*.jar' ! -name '*.exe' -print -quit)
+          bash "$OPS_WSL/v3-native-bench-linux.sh" "$bin" 19902 \
+            '${{ inputs.app }}-jdk${{ inputs.jdk }}-ci' 20 2 || true
