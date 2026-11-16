@@ -171,10 +171,15 @@ jobs:
           echo "module=$mod" >> "$GITHUB_OUTPUT"
           echo "module=$mod"
 
-      - name: Install reactor modules (JVM jar)
+      - name: Prepare log dir (AOT process needs it) + Install reactor modules (JVM jar)
         shell: bash
         run: |
           set -euo pipefail
+          # logback 配置写到 /home/ruoyi/logs；云 runner 上目录不存在会让 process-aot 失败。
+          if [ '${{ matrix.platform }}' = 'linux' ]; then
+            sudo mkdir -p /home/ruoyi/logs
+            sudo chown "$(id -u):$(id -g)" /home/ruoyi/logs
+          fi
           mvn $MAVEN_ARGS -DskipTests install -pl "${{ steps.meta.outputs.module }}" -am
 
       - name: AOT + native-image
