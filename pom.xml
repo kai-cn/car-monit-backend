@@ -304,6 +304,8 @@
                     <release>${maven.compiler.release}</release>
                     <encoding>${project.build.sourceEncoding}</encoding>
                     <parameters>true</parameters>
+                    <!-- Mandrel25 的 javac 25 默认不再自动跑注解处理器，Lombok 必需 -->
+                    <proc>full</proc>
                 </configuration>
             </plugin>
             <plugin>
