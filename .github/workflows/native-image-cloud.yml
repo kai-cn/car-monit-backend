@@ -202,10 +202,22 @@ jobs:
           mod='${{ steps.meta.outputs.module }}'
           mkdir -p dist
           if [ '${{ matrix.platform }}' = 'windows' ]; then
-            bin=$(find "$mod/target" -maxdepth 1 -type f -name '*.exe' -print -quit)
+            bin="$mod/target/$mod.exe"
+            if [ ! -f "$bin" ]; then
+              echo "NATIVE EXE NOT FOUND at $bin"
+              find "$mod/target" -maxdepth 1 -type f -name '*.exe' -printf '%f %s bytes\n'
+              exit 1
+            fi
             ext=exe
           else
-            bin=$(find "$mod/target" -maxdepth 1 -type f -perm -u+x ! -name '*.jar' ! -name '*.exe' -print -quit)
+            # native-image 产物名 = artifactId（pro-business-api / ruoyi-admin），不要用
+            # -perm -u+x -print -quit（会先命中 target 下的 libjvm.so 等 9KB shim）。
+            bin="$mod/target/$mod"
+            if [ ! -f "$bin" ] || [ ! -x "$bin" ]; then
+              echo "NATIVE BINARY NOT FOUND at $bin"
+              find "$mod/target" -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
+              exit 1
+            fi
             ext=bin
           fi
           test -n "$bin" && test -f "$bin" || { echo 'NATIVE BINARY NOT FOUND'; exit 1; }
@@ -235,6 +247,11 @@ jobs:
           }
           EOF
           echo "binary_bytes=$bytes sha256=$sha"
+          MIN_NATIVE_BYTES=10000000  # 真 native 二进制应 >10MB；9KB 必为误选
+          if [ "$bytes" -lt "$MIN_NATIVE_BYTES" ]; then
+            echo "::error::native binary too small ($bytes bytes) - wrong file selected"
+            exit 1
+          fi
           file "$out" || true
 
       - uses: actions/upload-artifact@v4
