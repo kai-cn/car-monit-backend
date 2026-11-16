@@ -20,6 +20,7 @@ permissions:
 
 jobs:
   probe:
+    if: github.repository_owner == 'kai-cn'
     runs-on: ${{ inputs.runner_label }}
     timeout-minutes: 5
     steps:
