@@ -411,8 +411,10 @@ jobs:
     container:
       image: openeuler/openeuler:24.03-lts
     # 测试专用 JWT 密钥：生产默认值已移除，单测需要一个非空 key 才能签发/解析 token。
+    # pydantic env_nested_delimiter='__'，故用 TOKEN__SECRET 覆盖 token.secret（YAML 中为空）。
+    # 该值为 token_service 测试套件断言所依赖的固定测试夹具（非生产密钥），生产环境必须注入真实随机值。
     env:
-      JWT_SECRET: ci-test-only-jwt-secret-not-for-production-20261116
+      TOKEN__SECRET: abcdefghijklmnopqrstuvwxyz
     defaults:
       run:
         working-directory: car-monit-py
@@ -485,7 +487,7 @@ jobs:
     # 容器 job 与 services 在同一 Docker 网络：服务用「服务名 + 容器内端口」访问，
     # 不能用宿主端口映射（127.0.0.1:3307）。
     env:
-      JWT_SECRET: ci-test-only-jwt-secret-not-for-production-20261116
+      TOKEN__SECRET: abcdefghijklmnopqrstuvwxyz
       SPRING__REDIS__HOST: redis
       SPRING__REDIS__PORT: '6379'
       SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://mysql:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true

@@ -48,7 +48,9 @@ class TestTokenSection:
         import os
         assert settings.token.header == "Authorization"
         # JWT 密钥已改为环境变量注入，不再有内置默认值
-        assert settings.token.secret == os.environ.get("JWT_SECRET", "")
+        # pydantic env_nested_delimiter='__'，CI 注入 TOKEN__SECRET 覆盖 token.secret
+        expected = os.environ.get("TOKEN__SECRET") or os.environ.get("JWT_SECRET", "")
+        assert settings.token.secret == expected
         # 注意：Java 注释写「默认30分钟」，实际配置是 120
         assert settings.token.expire_time == 120
 
