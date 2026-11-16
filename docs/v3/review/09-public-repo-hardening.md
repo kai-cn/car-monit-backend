@@ -30,6 +30,9 @@
 `OSS_ACCESS_KEY`、`OSS_SECRET_KEY`、`HENDA_SECRET`、`ALIYUN_SMS_ACCESS_KEY_ID`、
 `ALIYUN_SMS_ACCESS_KEY_SECRET`、`DRUID_LOGIN_USERNAME`、`DRUID_LOGIN_PASSWORD`。
 其中轮换类密钥当前为占位值 `__ROTATE_ME__`，须由用户轮换后更新。
+轮换后更新 Secrets 的方法：在 `D:\work\runtime-logs\secret-values.env` 写 `SECRET名=新值`（每行一条，绝不入库），
+再运行 `python D:\work\runtime-logs\update_gh_secrets.py backend`（值经 sealed-box 加密传输、不回显、不落盘）。
+注意 `CI_INTERNAL_TOKEN`（api 仓）与 `TRAFFIC_API_INTERNAL_TOKEN`（backend 仓）必须设为同一新令牌。
 
 ## 2. 上线前必须轮换（用户操作，值不写入本仓库/文档）
 | 项 | 环境变量 | 状态 |
