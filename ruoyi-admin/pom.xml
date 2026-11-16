@@ -44,7 +44,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
-            <optional>true</optional> <!-- 表示依赖不会传递 -->
+            <scope>provided</scope> <!-- 表示依赖不会传递 -->
         </dependency>
 
         <!-- OpenAPI 3 文档（springdoc；替代在 Boot 3/4 下无法启动的 springfox 3.0.0） -->
@@ -110,6 +110,12 @@
                             <goal>repackage</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>process-aot</id>
+                        <goals>
+                            <goal>process-aot</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -125,8 +131,13 @@
             <plugin>
                 <groupId>org.graalvm.buildtools</groupId>
                 <artifactId>native-maven-plugin</artifactId>
+                <version>1.1.14</version>
                 <configuration>
+                    <mainClass>com.ruoyi.RuoYiApplication</mainClass>
                     <buildArgs>
+                        <buildArg>-H:IncludeResources=mybatis/mybatis-config.xml</buildArg>
+                        <buildArg>--initialize-at-run-time=org.slf4j,org.apache.commons.logging,org.apache.logging.slf4j,org.apache.logging.log4j</buildArg>
+                        <buildArg>-H:IncludeResources=META-INF/services/org.slf4j.spi.SLF4JServiceProvider</buildArg>
                         <buildArg>--initialize-at-run-time=io.grpc.netty.shaded</buildArg>
                         <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.internal.tcnative</buildArg>
                         <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.handler.ssl</buildArg>
