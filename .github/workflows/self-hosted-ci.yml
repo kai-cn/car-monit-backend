@@ -1,12 +1,26 @@
 name: self-hosted-ci
 
-# 账号级 GitHub-hosted runner 因账单/支出限额不可用时，V3 分支的可用 CI/CD 入口。
-# 运行在本机 WSL2 openEuler 自托管 runner（label: wsl-k3s），集群为 k3d 一主两从。
+# V3 后端 CI/CD 模板（按分支参数化）：
+# - 构建：托管优先；runner 输入或变量 CI_RUNNER_JSON 可整体切自托管。
+# - 产物：push 任意分支产 jar+sha256，artifact 名带 branch+sha 防覆盖，k3d 与单机共用。
+# - 部署：dispatch 选 deploy_mode=none|standalone|cluster。
+#   standalone = 本机装 systemd 服务并真启动探活；cluster = 现造镜像→k3d import→set image→rollout→探活。
+# - push 自动部署 k3d：设 vars.AUTO_DEPLOY_CLUSTER=true 开启（默认关）。
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: '构建位置（hosted=GitHub 托管，self-hosted=本机 WSL runner）'
+        type: choice
+        options: [hosted, self-hosted]
+        default: hosted
+      deploy_mode:
+        description: '部署方式（none=只产产物）'
+        type: choice
+        options: [none, standalone, cluster]
+        default: none
   push:
-    branches:
-      - car-monit-backend-java-V3
+    branches: [car-monit-backend-java-V3]
     paths:
       - .github/workflows/self-hosted-ci.yml
       - pom.xml
@@ -18,46 +32,206 @@ on:
 permissions:
   contents: read
 
+env:
+  MAVEN_OPTS: -Xmx768m
+  SERVICE: car-monit-backend
+  SERVICE_PORT: "9989"
+  JAVA_MAJOR: "8"
+  K3D_CLUSTER: v3
+  K3D_NODE: k3d-v3-server-0
+  K3D_CONTAINER: backend
+  NODEPORT: "30989"
+
 jobs:
   build:
-    name: compile-and-test
-    runs-on: [self-hosted, linux, x64, wsl-k3s]
+    name: build-jar
+    runs-on: ${{ inputs.runner == 'self-hosted' && fromJSON('["self-hosted","linux","x64","wsl-k3s"]') || fromJSON(vars.CI_RUNNER_JSON || '["ubuntu-latest"]') }}
     timeout-minutes: 45
     steps:
-      - name: Runner environment
+      - uses: actions/checkout@v4
+      - name: Setup JDK ${{ env.JAVA_MAJOR }} + Maven cache
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_MAJOR }}
+          cache: maven
+      - name: Compile + package（跳过测试）
+        run: mvn -B -ntp -DskipTests -pl ruoyi-common,ruoyi-system,ruoyi-framework,ruoyi-admin -am package
+      - name: 收集产物 + 校验和
+        shell: bash
         run: |
-          echo "runner=${RUNNER_NAME} os=${RUNNER_OS} arch=${RUNNER_ARCH}"
-          uname -a
-          echo "cpus=$(nproc)"
-          free -m | head -2
+          set -euo pipefail
+          JAR="$(ls ruoyi-admin/target/*.jar | grep -v sources | head -n1)"
+          echo "jar=${JAR}"
+          mkdir -p dist
+          cp "$JAR" dist/car-monit-backend.jar
+          ( cd dist && sha256sum car-monit-backend.jar > car-monit-backend.jar.sha256 && cat car-monit-backend.jar.sha256 )
+      - name: Upload jar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: car-monit-backend-jar-${{ github.ref_name }}-${{ github.sha }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
 
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Toolchain
-        run: |
-          java -version 2>&1 | head -2
-          mvn -v | head -3
-
-      - name: Compile V3 modules
-        run: mvn -B -q -DskipTests -pl ruoyi-common,ruoyi-system,ruoyi-framework,ruoyi-admin -am compile
-
-      - name: Unit tests
-        run: mvn -B -q -pl ruoyi-common,ruoyi-system -am test
-
-  deploy:
-    name: deploy-to-k3s
+  deploy-standalone:
+    name: deploy-standalone（单机 systemd）
     needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_mode == 'standalone'
     runs-on: [self-hosted, linux, x64, wsl-k3s]
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
-      - name: Verify cluster (1 control-plane + 2 agents)
-        run: docker exec k3d-v3-server-0 kubectl get nodes
-
-      - name: Roll out demo workload on 3 nodes
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: car-monit-backend-jar-*
+          merge-multiple: true
+          path: dist
+      - name: Setup JDK ${{ env.JAVA_MAJOR }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_MAJOR }}
+      - name: 校验产物
+        shell: bash
         run: |
-          docker exec k3d-v3-server-0 kubectl create deployment v3-ci-probe \
-            --image=rancher/mirrored-pause:3.6 --replicas=3 \
-            --dry-run=client -o yaml | docker exec -i k3d-v3-server-0 kubectl apply -f -
-          docker exec k3d-v3-server-0 kubectl rollout status deployment/v3-ci-probe --timeout=240s
-          docker exec k3d-v3-server-0 kubectl get pods -l app=v3-ci-probe -o wide
+          set -euo pipefail
+          cd dist
+          sha256sum -c car-monit-backend.jar.sha256
+          ls -lh car-monit-backend.jar
+      - name: 安装为 systemd 服务并启动
+        shell: bash
+        env:
+          DB_PASSWORD: ${{ secrets.CI_MYSQL_PASSWORD }}
+          INTERNAL_TOKEN: ${{ secrets.CI_INTERNAL_TOKEN }}
+          EXPORT_SECRET: ${{ secrets.CI_EXPORT_SECRET }}
+        run: |
+          set -euo pipefail
+          JAVA_BIN="${JAVA_HOME}/bin/java"
+          [ -x "$JAVA_BIN" ] || JAVA_BIN="$(readlink -f "$(command -v java)")"
+          RUN_USER="$(id -un)"; RUN_GROUP="$(id -gn)"
+          echo "java=${JAVA_BIN} user=${RUN_USER}"
+          sudo install -d -o "$RUN_USER" -g "$RUN_GROUP" /opt/car-monit-backend
+          sudo install -d /etc/car-monit
+          sudo install -m 0644 dist/car-monit-backend.jar /opt/car-monit-backend/app.jar
+          sudo tee /etc/car-monit/backend.env >/dev/null <<EOF
+          SPRING_DATA_REDIS_HOST=172.18.0.1
+          SPRING_DATA_REDIS_PORT=6379
+          SPRING_DATASOURCE_DRUID_MASTER_PASSWORD=${DB_PASSWORD}
+          TRAFFIC_API_INTERNAL_TOKEN=${INTERNAL_TOKEN}
+          EXPORT_DOWNLOAD_SECRET=${EXPORT_SECRET}
+          VEHICLE_MONITOR_BASE_URL=http://127.0.0.1:9902
+          LOG_ROOT_LEVEL=info
+          EOF
+          sudo chmod 600 /etc/car-monit/backend.env
+          sudo tee /etc/systemd/system/car-monit-backend.service >/dev/null <<EOF
+          [Unit]
+          Description=car-monit backend (standalone, CI-deployed)
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=simple
+          User=${RUN_USER}
+          Group=${RUN_GROUP}
+          WorkingDirectory=/opt/car-monit-backend
+          EnvironmentFile=/etc/car-monit/backend.env
+          ExecStart=${JAVA_BIN} -Xms128m -Xmx256m -XX:+UseSerialGC -jar /opt/car-monit-backend/app.jar --server.port=${SERVICE_PORT} --spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver --spring.datasource.druid.master.url=jdbc:mysql://172.18.0.1:3307/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=Asia/Shanghai&allowMultiQueries=true --logging.level.p6spy=OFF
+          Restart=always
+          RestartSec=5
+          LimitNOFILE=65535
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+          sudo systemctl daemon-reload
+          sudo systemctl enable car-monit-backend
+          sudo systemctl restart car-monit-backend
+      - name: 健康检查（真实启动 /captchaImage=200）
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${SERVICE_PORT}/captchaImage" || true)"
+            if [ "${code}" = "200" ]; then echo "standalone backend UP (try=$i)"; exit 0; fi
+            sleep 2
+          done
+          echo "::error::单机 backend 未在 120s 内就绪"
+          sudo systemctl status car-monit-backend --no-pager || true
+          sudo journalctl -u car-monit-backend --no-pager | tail -40 || true
+          exit 1
+
+  deploy-cluster:
+    name: deploy-k3d-cluster
+    needs: build
+    if: |
+      always() && needs.build.result == 'success' && (
+        (github.event_name == 'workflow_dispatch' && inputs.deploy_mode == 'cluster') ||
+        (github.event_name == 'push' && vars.AUTO_DEPLOY_CLUSTER == 'true')
+      )
+    runs-on: [self-hosted, linux, x64, wsl-k3s]
+    timeout-minutes: 25
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: car-monit-backend-jar-*
+          merge-multiple: true
+          path: dist
+      - name: 校验产物
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum -c car-monit-backend.jar.sha256
+      - name: 确保 docker 与 k3d 集群就绪
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! docker info >/dev/null 2>&1; then
+            sudo -n systemctl start docker 2>/dev/null || true
+            for i in $(seq 1 12); do docker info >/dev/null 2>&1 && break; sleep 5; done
+          fi
+          docker info >/dev/null 2>&1 || { echo "::error::docker 不可用"; exit 1; }
+          RUNNING="$(docker ps --format '{{.Names}}' || true)"
+          PRESENT="$(docker ps -a --format '{{.Names}}' || true)"
+          for c in k3d-v3-server-0 k3d-v3-agent-0 k3d-v3-agent-1; do
+            if grep -Fxq -- "$c" <<< "$RUNNING"; then :;
+            elif grep -Fxq -- "$c" <<< "$PRESENT"; then docker start "$c" || true; fi
+          done
+          for i in $(seq 1 24); do
+            docker exec "${K3D_NODE}" kubectl get nodes >/dev/null 2>&1 && { echo "k3d ready"; exit 0; }
+            sleep 5
+          done
+          echo "::error::k3d API 未在 120s 内就绪"; exit 1
+      - name: 现造镜像并导入 k3d
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMG="car-monit-backend:ci-${GITHUB_SHA::7}"
+          cat > /tmp/Dockerfile.backend <<'EOF'
+          FROM car-monit-backend:slim
+          COPY car-monit-backend.jar /app/app.jar
+          EOF
+          docker build -f /tmp/Dockerfile.backend -t "$IMG" dist
+          k3d image import "$IMG" -c "${K3D_CLUSTER}"
+          echo "IMG=$IMG" >> "$GITHUB_ENV"
+      - name: 更新镜像并等待 rollout
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec "${K3D_NODE}" kubectl set image "deployment/car-monit-backend" "${K3D_CONTAINER}=${IMG}"
+          docker exec "${K3D_NODE}" kubectl rollout status "deployment/car-monit-backend" --timeout=300s
+          docker exec "${K3D_NODE}" kubectl get pods -l app=car-monit-backend -o wide
+      - name: 健康检查（NodePort /captchaImage=200，动态解析节点 IP）
+        shell: bash
+        run: |
+          set -euo pipefail
+          NODE_IP="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "${K3D_NODE}")"
+          echo "server node ip=${NODE_IP}"
+          for i in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' "http://${NODE_IP}:${NODEPORT}/captchaImage" || true)"
+            if [ "${code}" = "200" ]; then echo "k3d backend UP (try=$i)"; exit 0; fi
+            sleep 3
+          done
+          echo "::error::k3d backend 未在 90s 内就绪"
+          docker exec "${K3D_NODE}" kubectl logs deployment/car-monit-backend --tail=40 || true
+          exit 1
