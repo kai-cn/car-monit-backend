@@ -44,7 +44,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
-            <optional>true</optional> <!-- 表示依赖不会传递 -->
+            <scope>provided</scope> <!-- 表示依赖不会传递 -->
         </dependency>
 
         <!-- OpenAPI 3 文档（springdoc；替代在 Boot 3/4 下无法启动的 springfox 3.0.0） -->
@@ -110,6 +110,12 @@
                             <goal>repackage</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>process-aot</id>
+                        <goals>
+                            <goal>process-aot</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -125,8 +131,28 @@
             <plugin>
                 <groupId>org.graalvm.buildtools</groupId>
                 <artifactId>native-maven-plugin</artifactId>
+                <version>1.1.14</version>
                 <configuration>
+                    <mainClass>com.ruoyi.RuoYiApplication</mainClass>
+                    <!-- grpc-netty-shaded 由 pulsar-client 传递引入（应用在用，不可排除）。
+                         其 tcnative JNI 静态引用在 image build 期初始化会 UnsatisfiedLinkError。
+                         具体类优先于包级规则，逐个显式延迟到运行时。 -->
                     <buildArgs>
+                        <buildArg>-H:IncludeResources=mybatis/mybatis-config.xml</buildArg>
+                        <!-- 生产镜像必须纯 native：不开 fallback，避免把整套 JVM
+                             （libjvm/libawt 等）打进产物（实测未加时 342MB，
+                             加后回落到 ~90MB 量级）。 -->
+                        <buildArg>--no-fallback</buildArg>
+                        <!-- native 下 ServiceLoader 找不到 SLF4J provider 会让 MarkerFactory 静态初始化失败 -->
+                        <buildArg>-H:IncludeResources=META-INF/services/org.slf4j.spi.SLF4JServiceProvider</buildArg>
+                        <!-- 迭代期用 -Ob（只做基本优化）把单次构建从 ~30min 压到 ~10min；
+                             业务启动验证通过后，交付构建应去掉这一行做 -O2。 -->
+                        <buildArg>-Ob</buildArg>
+                        <!-- Lettuce 7（Spring Data Redis）用 FFM 的 Arena.ofShared，
+                             不开启会抛 UnsupportedFeatureError 导致 Redis 连接全废。 -->
+                        <buildArg>-H:+SharedArenaSupport</buildArg>
+                        <!-- SLF4J/Apache Commons Logging 桥接类在 image build 期初始化会失败，延迟到运行期 -->
+                        <buildArg>--initialize-at-run-time=org.slf4j,org.apache.commons.logging,org.apache.logging.slf4j,org.apache.logging.log4j</buildArg>
                         <buildArg>--initialize-at-run-time=io.grpc.netty.shaded</buildArg>
                         <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.internal.tcnative</buildArg>
                         <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.handler.ssl</buildArg>
