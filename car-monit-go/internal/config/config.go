@@ -267,7 +267,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("user.password.maxRetryCount", 5)
 	v.SetDefault("user.password.lockTime", 10)
 	v.SetDefault("token.header", "Authorization")
-	v.SetDefault("token.secret", "abcdefghijklmnopqrstuvwxyz")
+	// 生产通过 CARMONIT_TOKEN_SECRET 注入；不再内置默认密钥
+	v.SetDefault("token.secret", "")
 	v.SetDefault("token.expireTime", 120)
 	v.SetDefault("user.password.maxRetryCount", 5)
 	v.SetDefault("monitor.trace-id-header", "X-Trace-Id")

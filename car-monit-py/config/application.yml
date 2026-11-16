@@ -134,9 +134,10 @@ spring:
     druid:
       # 主库数据源
       master:
+        # 生产通过 SPRING__DATASOURCE__DRUID__MASTER__USERNAME / ...__PASSWORD 注入
         url: jdbc:p6spy:mysql://127.0.0.1:3307/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowMultiQueries=true
         username: root
-        password: root
+        password: ""
       # 从库数据源
       slave:
         # 从数据源开关/默认关闭
@@ -174,9 +175,9 @@ spring:
         # 设置白名单，不填则允许所有访问
         allow:
         url-pattern: /druid/*
-        # 控制台管理用户名和密码
-        login-username: druidUser
-        login-password: Sys#2024Test
+        # 控制台管理用户名和密码（生产通过 SPRING__DATASOURCE__DRUID__STAT_VIEW_SERVLET__LOGIN_* 注入）
+        login-username: ""
+        login-password: ""
       filter:
         stat:
           enabled: true
@@ -192,8 +193,8 @@ spring:
 token:
   # 令牌自定义标识
   header: Authorization
-  # 令牌密钥
-  secret: abcdefghijklmnopqrstuvwxyz
+  # 令牌密钥（生产通过 TOKEN__SECRET 注入）
+  secret: ""
   # 令牌有效期（默认30分钟）
   expireTime: 120
 
@@ -241,11 +242,11 @@ xss:
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
 
-# minio配置
+# minio配置（生产通过 OSS__ENDPOINT / OSS__ACCESS_KEY / OSS__SECRET_KEY 注入）
 oss:
-  endpoint: http://172.30.100.102:9002
-  accessKey: jtwl_access_key
-  secretKey: minio.prod
+  endpoint: http://127.0.0.1:9002
+  accessKey: ""
+  secretKey: ""
   bucketName: developer
 
 sms:
@@ -271,11 +272,12 @@ forest:
   retry-count: 2
   max-retry-interval: 1000
   variables:
-    hendaUrl: http://36.200.20.14:7890/8809/geoserver-pg/rest
+    hendaUrl: http://127.0.0.1:7890/8809/geoserver-pg/rest
 
 hengda:
   appid: YHZS
-  secret: b48381c4b98311ea90b100155d14fa3b
+  # 生产通过 HENGDA__SECRET 注入
+  secret: ""
 
 vehicleMonitor:
   baseUrl: http://127.0.0.1:9901
@@ -283,8 +285,8 @@ isLocalhost: local # 是否本地 prod生成
 
 tx-service-url: https://apis.map.qq.com
 
-#路网路径
-roadPathUrl: http://36.200.30.117:8080
+#路网路径（生产通过 ROAD_PATH_URL 注入）
+roadPathUrl: http://127.0.0.1:8080
 
 # Kafka配置（生产级优化版）
 kafka:

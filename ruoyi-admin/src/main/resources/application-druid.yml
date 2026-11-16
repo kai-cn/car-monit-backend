@@ -6,12 +6,10 @@ spring:
         druid:
             # 主库数据源
             master:
-#                url: jdbc:p6spy:mysql://172.30.100.201:13306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowMultiQueries=true
-#                username: carmonitUser
-#                password: carmonitUser@202507
-                url: jdbc:p6spy:mysql://127.0.0.1:3307/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowMultiQueries=true
-                username: root
-                password: root
+                # 生产通过 SPRING_DATASOURCE_DRUID_MASTER_URL / ..._USERNAME / ..._PASSWORD 注入
+                url: ${SPRING_DATASOURCE_DRUID_MASTER_URL:jdbc:p6spy:mysql://127.0.0.1:3307/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowMultiQueries=true}
+                username: ${SPRING_DATASOURCE_DRUID_MASTER_USERNAME:root}
+                password: ${SPRING_DATASOURCE_DRUID_MASTER_PASSWORD:}
             # 从库数据源
             slave:
                 # 从数据源开关/默认关闭
@@ -49,9 +47,9 @@ spring:
                 # 设置白名单，不填则允许所有访问
                 allow:
                 url-pattern: /druid/*
-                # 控制台管理用户名和密码
-                login-username: druidUser
-                login-password: Sys#2024Test
+                # 控制台管理用户名和密码（生产通过 DRUID_LOGIN_USERNAME / DRUID_LOGIN_PASSWORD 注入）
+                login-username: ${DRUID_LOGIN_USERNAME:}
+                login-password: ${DRUID_LOGIN_PASSWORD:}
             filter:
                 stat:
                     enabled: true

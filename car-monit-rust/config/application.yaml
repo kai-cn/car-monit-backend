@@ -17,13 +17,15 @@ user:
 
 token:
   header: Authorization
-  secret: abcdefghijklmnopqrstuvwxyz
+  # 生产通过 APP_TOKEN__SECRET 注入；禁止内置默认密钥
+  secret: ""
   expireTime: 120
 
 database:
   url: jdbc:mysql://127.0.0.1:3307/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&allowMultiQueries=true&serverTimezone=GMT%2B8
+  # 生产通过 APP_DATABASE__USERNAME / APP_DATABASE__PASSWORD 注入
   username: root
-  password: root
+  password: ""
   pool:
     initialSize: 5
     minIdle: 10
@@ -81,9 +83,10 @@ elasticsearch:
 oss:
   enable: true
   info: false
-  endpoint: "http://172.30.100.102:9002"
-  access_key: "jtwl_access_key"
-  secret_key: "minio.prod"
+  # 生产通过 APP_OSS__ENDPOINT / APP_OSS__ACCESS_KEY / APP_OSS__SECRET_KEY 注入
+  endpoint: "http://127.0.0.1:9002"
+  access_key: ""
+  secret_key: ""
   bucket_name: "developer"
   # Java 的 OssProperties.region 未在 yml 出现（null），SDK 落到 us-east-1
   region: "us-east-1"
@@ -101,14 +104,16 @@ forest:
   read-timeout: 60000
   retry-count: 2
   variables:
-    henda_url: "http://36.200.20.14:7890/8809/geoserver-pg/rest"
+    # 生产通过 APP_FOREST__VARIABLES__HENDA_URL 注入
+    henda_url: "http://127.0.0.1:7890/8809/geoserver-pg/rest"
     # Java: roadPathUrl（RoadPathApi 的 @BaseRequest(baseURL = "#{roadPathUrl}")）
-    road_path_url: "http://36.200.30.117:8080"
+    road_path_url: "http://127.0.0.1:8080"
 
 # Java: hengda.appid / hengda.secret（IHenDaApi 签名）
 hengda:
   appid: YHZS
-  secret: b48381c4b98311ea90b100155d14fa3b
+  # 生产通过 APP_HENGDA__SECRET 注入
+  secret: ""
 
 # Java: vehicleMonitor.baseUrl（Forest @BaseRequest 的 baseURL）
 vehicleMonitor:

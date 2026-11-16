@@ -47,7 +47,8 @@ spring:
 
 token:
   header: Authorization
-  secret: abcdefghijklmnopqrstuvwxyz
+  # 生产通过 CARMONIT_TOKEN_SECRET 注入；禁止内置默认密钥
+  secret: ""
   expireTime: 120
 
 # 主数据源（application-druid.yml -> jdbc:p6spy:mysql://127.0.0.1:3307/carmonitdb）
@@ -85,27 +86,30 @@ generator-code:
     enable: true
 
 oss:
-  endpoint: http://172.30.100.102:9002
-  accessKey: jtwl_access_key
-  secretKey: minio.prod
+  # 生产通过 OSS_ENDPOINT / OSS_ACCESS_KEY / OSS_SECRET_KEY 注入
+  endpoint: http://127.0.0.1:9002
+  accessKey: ""
+  secretKey: ""
   bucketName: developer
 
 forest:
   variables:
-    hendaUrl: http://36.200.20.14:7890/8809/geoserver-pg/rest
+    hendaUrl: http://127.0.0.1:7890/8809/geoserver-pg/rest
   timeout: 60000
-  hendaUrl: http://36.200.20.14:7890/8809/geoserver-pg/rest
+  hendaUrl: http://127.0.0.1:7890/8809/geoserver-pg/rest
 
 hengda:
   appid: YHZS
-  secret: b48381c4b98311ea90b100155d14fa3b
+  # 生产通过 HENDA_SECRET 注入
+  secret: ""
 
 vehicleMonitor:
   baseUrl: http://127.0.0.1:9903   # car-monit-api 的 Go 端（configs/config.verify.yaml，Redis db1）；Java 端在 9902（Redis db0）
 
 isLocalhost: local
 tx-service-url: https://apis.map.qq.com
-roadPathUrl: http://36.200.30.117:8080
+# 生产通过 ROAD_PATH_URL 注入
+roadPathUrl: http://127.0.0.1:8080
 
 # Kafka（默认关闭，设置 enabled: true 后启动消费者）
 kafka:

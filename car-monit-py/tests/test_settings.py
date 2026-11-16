@@ -45,8 +45,10 @@ class TestServerSection:
 
 class TestTokenSection:
     def test_expire_time_is_minutes_and_reads_120(self, settings) -> None:
+        import os
         assert settings.token.header == "Authorization"
-        assert settings.token.secret == "abcdefghijklmnopqrstuvwxyz"
+        # JWT 密钥已改为环境变量注入，不再有内置默认值
+        assert settings.token.secret == os.environ.get("JWT_SECRET", "")
         # 注意：Java 注释写「默认30分钟」，实际配置是 120
         assert settings.token.expire_time == 120
 

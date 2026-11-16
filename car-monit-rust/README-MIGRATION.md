@@ -58,7 +58,7 @@ curl -s localhost:9989/captchaImage
 | `user.password.maxRetryCount` | `user.password.maxRetryCount` | 5 | |
 | `user.password.lockTime` | `user.password.lockTime` | 10（分钟） | |
 | `token.header` | `token.header` | Authorization | |
-| `token.secret` | `token.secret` | abcdefghijklmnopqrstuvwxyz | HS512；按 jjwt 0.9.1 的 base64 怪癖复刻 |
+| `token.secret` | `token.secret` | 由 `APP_TOKEN__SECRET` 注入 | HS512；按 jjwt 0.9.1 的 base64 怪癖复刻 |
 | `token.expireTime` | `token.expireTime` | 120（分钟） | ≤20 分钟自动续期 |
 | `spring.datasource.druid.url` | `database.url` | jdbc:mysql://127.0.0.1:3307/carmonitdb… | 仅用于解析 host/port/db |
 | `spring.datasource.druid.username/password` | `database.username/password` | root/root | |

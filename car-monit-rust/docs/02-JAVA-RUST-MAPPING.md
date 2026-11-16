@@ -232,7 +232,7 @@
 | 环境变量（Spring relaxed binding） | `APP_` + `__`，如 `APP_SERVER__PORT` | 大小写/分隔符规则不同 | `-`→`_`、`.`→`__` 的转换要统一 |
 | 优先级：命令行 > 环境变量 > profile > 默认 | `config-rs` 的 builder 顺序 | 需显式 `.add_source` 顺序 | 顺序写反会导致环境变量被 YAML 覆盖 |
 | `server.port=9989` | 同值 | 必须一致 | 改成 8080 会导致前端/探针失效 |
-| `token.secret` 默认 `abcdefghijklmnopqrstuvwxyz` | 同默认值，部署覆盖 | jjwt 的 Base64 处理怪癖 | 不能直接用 secret 字节签名 |
+| `token.secret` 由 `APP_TOKEN__SECRET` 注入 | 同来源，部署必填 | jjwt 的 Base64 处理怪癖 | 不能直接用 secret 字节签名 |
 | `token.expireTime=120` | 120 分钟 | 续期阈值 20 分钟 | 单位是分钟，不是秒 |
 | Druid 池 5/10/200/60s | `max_connections=200`、`acquire_timeout=60s` | 无 initial/minIdle 概念 | 启动预热连接需显式 |
 | Redis `127.0.0.1:6379/0` | 同 | 无 password 时不要传空串 | 连接串格式 |

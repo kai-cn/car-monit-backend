@@ -233,8 +233,8 @@ class MasterDataSourceSection(_Section):
         "jdbc:p6spy:mysql://127.0.0.1:3307/carmonitdb?useUnicode=true&characterEncoding=utf8"
         "&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowMultiQueries=true"
     )
-    username: str = "root"
-    password: str = "root"
+    username: str = os.environ.get("DB_USERNAME", "root")
+    password: str = os.environ.get("DB_PASSWORD", "")
 
 
 class DruidSection(_Section):
@@ -276,7 +276,7 @@ class SpringSection(_Section):
 
 class TokenSection(_Section):
     header: str = "Authorization"
-    secret: str = "abcdefghijklmnopqrstuvwxyz"
+    secret: str = os.environ.get("JWT_SECRET", "")
     # application.yml: expireTime: 120  (minutes, RuoYi default comment says 30)
     expire_time: int = 120
 
@@ -330,9 +330,9 @@ class OssSection(_Section):
       根本不会被注册（本项目也没有装）。
     """
 
-    endpoint: str = "http://172.30.100.102:9002"
-    access_key: str = "jtwl_access_key"
-    secret_key: str = "minio.prod"
+    endpoint: str = os.environ.get("OSS_ENDPOINT", "http://127.0.0.1:9002")
+    access_key: str = os.environ.get("OSS_ACCESS_KEY", "")
+    secret_key: str = os.environ.get("OSS_SECRET_KEY", "")
     bucket_name: str = "developer"
     #: true = path-style（``http://endpoint/bucketname``），false = virtual-hosted-style
     path_style_access: bool = True
@@ -376,12 +376,12 @@ class ForestSection(_Section):
     retryer: str = "com.dtflys.forest.retryer.BackOffRetryer"
     retry_count: int = 2
     max_retry_interval: int = 1000
-    variables: Dict[str, str] = Field(default_factory=lambda: {"hendaUrl": "http://36.200.20.14:7890/8809/geoserver-pg/rest"})
+    variables: Dict[str, str] = Field(default_factory=lambda: {"hendaUrl": os.environ.get("HENDA_URL", "http://127.0.0.1:7890/8809/geoserver-pg/rest")})
 
 
 class HengdaSection(_Section):
     appid: str = "YHZS"
-    secret: str = "b48381c4b98311ea90b100155d14fa3b"
+    secret: str = os.environ.get("HENDA_SECRET", "")
 
 
 class VehicleMonitorSection(_Section):
@@ -601,7 +601,7 @@ class AppSettings(BaseSettings):
     vehicle_monitor: VehicleMonitorSection = Field(default_factory=VehicleMonitorSection)
     is_localhost: str = "local"
     tx_service_url: str = "https://apis.map.qq.com"
-    road_path_url: str = "http://36.200.30.117:8080"
+    road_path_url: str = os.environ.get("ROAD_PATH_URL", "http://127.0.0.1:8080")
     kafka: KafkaSection = Field(default_factory=KafkaSection)
     elasticsearch: ElasticsearchSection = Field(default_factory=ElasticsearchSection)
     idempotent: IdempotentSection = Field(default_factory=IdempotentSection)

@@ -422,7 +422,7 @@ SQLAlchemy 自带的 `sqlalchemy.engine` echo 会打印方言探测语句
 
 **Java 原行为**
 `application-druid.yml` 配置了 `statViewServlet`，`url-pattern: /druid/*`，
-账号 `druidUser / Sys#2024Test`。但 `SecurityConfig` 里 `/druid/**` 是 `denyAll()` ——
+账号通过环境变量 `DRUID_LOGIN_USERNAME / DRUID_LOGIN_PASSWORD` 注入（此处不记录口令值）。但 `SecurityConfig` 里 `/druid/**` 是 `denyAll()` ——
 **普通用户与管理员都访问不到**，实际上是个死配置。
 
 **Python 实现**
@@ -4663,7 +4663,7 @@ Java 侧 `application.yml` 也写着 `server.port: 9989`，与 Python 撞车，�
 
 #### 44.7.1 真差异一：HMAC 密钥派生方式不同 → 跨后端 token 互不认
 
-`token.secret` 两端都是 `abcdefghijklmnopqrstuvwxyz`（26 字符），但派生出两个不同的密钥：
+`token.secret` 两端由环境变量 `JWT_SECRET` 注入（历史默认值为 26 字符），但派生出两个不同的密钥：
 
 | 实现 | 规则 | 26 字符得到 |
 |---|---|---|

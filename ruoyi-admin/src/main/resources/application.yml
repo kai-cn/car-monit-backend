@@ -86,15 +86,14 @@ spring:
       enabled: true
   # redis 配置
   redis:
-    # 地址
-#    host: 172.30.100.102
-    host: 127.0.0.1
+    # 地址（生产通过 REDIS_HOST 注入，此处仅本地回环默认值）
+    host: ${REDIS_HOST:127.0.0.1}
     # 端口，默认为6379
-    port: 6379
+    port: ${REDIS_PORT:6379}
     # 数据库索引
     database: 0
-    # 密码
-#    password: redis321
+    # 密码（生产通过 REDIS_PASSWORD 注入）
+    password: ${REDIS_PASSWORD:}
     # 连接超时时间
     timeout: 10s
     lettuce:
@@ -112,8 +111,8 @@ spring:
 token:
   # 令牌自定义标识
   header: Authorization
-  # 令牌密钥
-  secret: abcdefghijklmnopqrstuvwxyz
+  # 令牌密钥（生产通过 JWT_SECRET 注入；不得使用内置默认值）
+  secret: ${JWT_SECRET:}
   # 令牌有效期（默认30分钟）
   expireTime: 120
 
@@ -161,12 +160,12 @@ xss:
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
 
-# minio配置
+# minio配置（生产通过 OSS_ENDPOINT / OSS_ACCESS_KEY / OSS_SECRET_KEY 注入）
 oss:
-  endpoint: http://172.30.100.102:9002
-  accessKey: jtwl_access_key
-  secretKey: minio.prod
-  bucketName: developer
+  endpoint: ${OSS_ENDPOINT:http://127.0.0.1:9002}
+  accessKey: ${OSS_ACCESS_KEY:}
+  secretKey: ${OSS_SECRET_KEY:}
+  bucketName: ${OSS_BUCKET:developer}
 
 sms:
   signature:
@@ -191,11 +190,11 @@ forest:
   retry-count: 2
   max-retry-interval: 1000
   variables:
-    hendaUrl: http://36.200.20.14:7890/8809/geoserver-pg/rest
+    hendaUrl: ${HENDA_URL:http://127.0.0.1:7890/8809/geoserver-pg/rest}
 
 hengda:
-  appid: YHZS
-  secret: b48381c4b98311ea90b100155d14fa3b
+  appid: ${HENDA_APPID:YHZS}
+  secret: ${HENDA_SECRET:}
 
 vehicleMonitor:
   # 可用 VEHICLE_MONITOR_BASE_URL 覆盖；api V3 默认端口将对齐为 9902（Java 端）
@@ -298,8 +297,8 @@ isLocalhost: local # 是否本地 prod生成
 
 tx-service-url: https://apis.map.qq.com
 
-#路网路径
-roadPathUrl: http://36.200.30.117:8080
+#路网路径（生产通过 ROAD_PATH_URL 注入）
+roadPathUrl: ${ROAD_PATH_URL:http://127.0.0.1:8080}
 
 # Kafka配置（生产级优化版）
 kafka:
