@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     car-monit V3 联调环境一键启动 / 状态 / 停止（backend + api + 中间件）。
 
