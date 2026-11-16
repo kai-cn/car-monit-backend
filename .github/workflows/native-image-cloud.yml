@@ -25,6 +25,10 @@ name: native-image-cloud
 on:
   workflow_dispatch:
     inputs:
+      release_tag:
+        description: 'GitHub Release tag (留空=仅产出 artifact，不上传 Release)'
+        type: string
+        default: ''
       stage:
         description: canary = probe cloud runner/quota/toolchain only; build = compile
         type: choice
@@ -255,3 +259,52 @@ jobs:
           path: dist/*
           retention-days: 14
           if-no-files-found: error
+
+  publish:
+    name: upload native to GitHub Release
+    needs: [build]
+    if: inputs.release_tag != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-*
+          merge-multiple: false
+          path: release-dist
+
+      - name: Remove non-binary helper files and verify size
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release-dist
+          find . -type f -printf '%p %s bytes\n' | sort
+          # 每个 native-* artifact 目录应含一个 >10MB 的二进制；小的 .sha256/manifest 保留供校验。
+          bad=0
+          for d in native-*; do
+            [ -d "$d" ] || continue
+            big=$(find "$d" -maxdepth 1 -type f -size +10M | head -n1)
+            if [ -z "$big" ]; then echo "::error::$d 无 >10MB native 二进制（疑似误选 shim）"; bad=1; fi
+          done
+          [ "$bad" -eq 0 ] || exit 1
+
+      - name: Flatten and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          find release-dist -type f -exec cp -f {} dist/ \;
+          cd dist && sha256sum * > SHA256SUMS && ls -lh
+
+      - name: gh release upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || \
+            gh release create "$RELEASE_TAG" --generate-notes --title "$RELEASE_TAG"
+          gh release upload "$RELEASE_TAG" dist/* --clobber
