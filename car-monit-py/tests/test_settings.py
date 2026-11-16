@@ -88,8 +88,10 @@ class TestMonitorSection:
 class TestDataSourceSection:
     def test_jdbc_url_is_translated_not_copied(self, settings) -> None:
         url = settings.database_url
-        # p6spy wrapper 被剥离; mysql -> mysql+pymysql
-        assert url.startswith("mysql+pymysql://root:root@127.0.0.1:3307/carmonitdb")
+        # p6spy wrapper 被剥离; mysql -> mysql+pymysql。口令已改为运行时注入，
+        # 默认空，不再断言硬编码的 root:root。
+        assert url.startswith("mysql+pymysql://root:")
+        assert "@127.0.0.1:3307/carmonitdb" in url
         assert "p6spy" not in url
         assert "charset=utf8" in url
 
