@@ -45,7 +45,7 @@ on:
       runner_mode:
         description: cloud = GitHub-hosted; self-hosted = local runner labels below
         type: choice
-        options: [cloud, self-hosted]
+        options: [cloud]
         default: cloud
       linux_runner:
         description: runs-on label for Linux jobs
@@ -73,7 +73,7 @@ jobs:
   # endpoint returns 404 for the GCM OAuth token, so we measure the ability to
   # actually allocate a GitHub-hosted runner and to provision Mandrel.
   canary:
-    if: inputs.stage == 'canary' && inputs.runner_mode == 'cloud'
+    if: inputs.stage == 'canary' && inputs.runner_mode == 'cloud' && github.repository_owner == 'kai-cn'
     runs-on: ${{ inputs.linux_runner }}
     timeout-minutes: 20
     steps:
@@ -101,7 +101,7 @@ jobs:
 
   # ---------------------------------------------------------------- dynamic matrix
   prepare:
-    if: inputs.stage == 'build'
+    if: inputs.stage == 'build' && github.repository_owner == 'kai-cn'
     runs-on: ${{ inputs.linux_runner }}
     timeout-minutes: 5
     outputs:
@@ -129,6 +129,7 @@ jobs:
   # ---------------------------------------------------------------- build
   build:
     needs: prepare
+    if: github.repository_owner == 'kai-cn'
     runs-on: ${{ matrix.platform == 'linux' && inputs.linux_runner || inputs.windows_runner }}
     timeout-minutes: 120
     strategy:
