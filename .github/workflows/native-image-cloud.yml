@@ -56,7 +56,7 @@ on:
       runner_mode:
         description: cloud = GitHub-hosted; self-hosted = local runner labels below
         type: choice
-        options: [cloud]
+        options: [cloud, self-hosted]
         default: cloud
       linux_runner:
         description: runs-on label for Linux jobs

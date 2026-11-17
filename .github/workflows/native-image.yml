@@ -1,3 +1,4 @@
+# Spring Boot 4.1.2 native-image CI on SELF-HOSTED Linux runners (inside WSL).
 # ============================================================================
 # 文件：.github/workflows/native-image.yml
 # 用途：自托管 native 构建（已加 owner 守卫）
@@ -5,7 +6,6 @@
 # 主要 job：build
 # 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
 # ============================================================================
-# Spring Boot 4.1.2 native-image CI on SELF-HOSTED Linux runners (inside WSL).
 #
 # Selected when GitHub-hosted (cloud) runners are unavailable because of Actions
 # minutes / billing limits. Verified 2026-11-15: cloud canary run 43711910286 was
