@@ -84,6 +84,12 @@ jobs:
     steps:
       # 拉取仓库源码
       - uses: actions/checkout@v4
+      - name: Cache Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-
         with:
           # paths-filter 在 push 事件下用 git diff 对比 push 前的提交；
           # 默认 fetch-depth: 1 拿不到那个提交，会让 changes job 直接失败、后续 job 全部 skip。
