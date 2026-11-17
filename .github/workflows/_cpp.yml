@@ -1,3 +1,10 @@
+# ============================================================================
+# 文件：.github/workflows/_cpp.yml
+# 用途：C++ 模块可复用工作流：编译/测试 C++ 产物（linux/windows），供总入口调用
+# 触发：被其他 workflow 调用
+# 主要 job：build
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
 name: _cpp
 
 # 可复用的 C++ 检查（由 ci.yml 的 cpp job 调用）。
@@ -8,18 +15,21 @@ name: _cpp
 # 说明：这条流水线**尚未实跑验证**，首次运行可能需要按报错补 MSVC 组件或 DLL 路径。
 
 on:
+  # ── job: workflow_call ──
   workflow_call:
 
 permissions:
   contents: read
 
 jobs:
+  # ── job: build ──
   build:
     runs-on: windows-latest
     defaults:
       run:
         working-directory: car-monit-cpp
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
       - name: 检测工程是否存在

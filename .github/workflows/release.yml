@@ -1,3 +1,10 @@
+# ============================================================================
+# 文件：.github/workflows/release.yml
+# 用途：发布流程：构建各语言产物并上传 GitHub Release（含 SHA256SUMS）
+# 触发：push 事件
+# 主要 job：build-java、build-go、build-rust、build-py
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
 name: release
 
 # tag 触发：产出 jar / Go 二进制 / Rust 二进制 / Python wheel，并创建 GitHub Release。
@@ -5,6 +12,7 @@ name: release
 # 不使用 force push，不在本文件写任何真实凭据。
 
 on:
+  # ── job: push ──
   push:
     tags:
       - 'v*.*.*'
@@ -17,10 +25,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ── job: build-java ──
   build-java:
     runs-on: ubuntu-latest
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
+      # 安装 JDK
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -28,6 +39,7 @@ jobs:
           cache: maven
       - name: 打包
         run: mvn -B -DskipTests package
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         with:
           name: build-java
@@ -35,12 +47,14 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # ── job: build-go ──
   build-go:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: car-monit-go
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
@@ -53,6 +67,7 @@ jobs:
             -o dist/carmonit-server-linux-amd64 ./cmd/server
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -trimpath -ldflags "-s -w" \
             -o dist/carmonit-migrate-linux-amd64 ./cmd/migrate
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         with:
           name: build-go
@@ -60,12 +75,14 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # ── job: build-rust ──
   build-rust:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: car-monit-rust
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -76,6 +93,7 @@ jobs:
           workspaces: car-monit-rust
       - name: 构建 release 二进制
         run: cargo build --release
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         with:
           name: build-rust
@@ -83,13 +101,16 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # ── job: build-py ──
   build-py:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: car-monit-py
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
+      # 安装 Python
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -97,6 +118,7 @@ jobs:
         run: |
           pip install build
           python -m build
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         with:
           name: build-py
@@ -104,10 +126,12 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # ── job: release ──
   release:
     needs: [build-java, build-go, build-rust, build-py]
     runs-on: ubuntu-latest
     steps:
+      # 下载上游 workflow 产物
       - uses: actions/download-artifact@v4
         with:
           pattern: build-*

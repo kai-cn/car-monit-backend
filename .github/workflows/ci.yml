@@ -1,4 +1,11 @@
-﻿name: ci
+﻿# ============================================================================
+# 文件：.github/workflows/ci.yml
+# 用途：CI/CD workflow
+# 触发：手动 dispatch / push 事件 / PR 事件
+# 主要 job：changes、java、go、go-perms-audit、rust、py、cpp、integration、rust-parity
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
+name: ci
 
 # PR：按改动路径只跑受影响语言，格式 + 静态检查 + 单测，快反馈。
 # 主分支（main/master）：全量构建 + 测试 + 覆盖率 + 产物归档。
@@ -20,8 +27,10 @@
 #   当前 master 上没有该脚本，等分支合并后再接，避免写成引用不存在文件的假流水线。
 
 on:
+  # ── job: pull_request ──
   pull_request:
     branches: [master]
+  # ── job: push ──
   push:
     branches:
       - master
@@ -31,6 +40,7 @@ on:
       - car-monit-py-V2
       - car-monit-cpp-local
       - car-monit-backend-java-V3
+  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       java_base:
@@ -65,6 +75,7 @@ jobs:
   # ---------------------------------------------------------------------------
   # 路径分诊：PR 上只有受影响语言跑；push 主分支 / 手动触发放行到全部 job。
   # ---------------------------------------------------------------------------
+  # ── job: changes ──
   changes:
     runs-on: ubuntu-latest
     outputs:
@@ -75,6 +86,7 @@ jobs:
       cpp: ${{ steps.filter.outputs.cpp }}
       workflows: ${{ steps.filter.outputs.workflows }}
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
         with:
           # paths-filter 在 push 事件下用 git diff 对比 push 前的提交；
@@ -101,6 +113,7 @@ jobs:
   # ---------------------------------------------------------------------------
   # Java：Maven 多模块（ruoyi-*），JDK 17
   # ---------------------------------------------------------------------------
+  # ── job: java ──
   java:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.java == 'true' || needs.changes.outputs.workflows == 'true'
@@ -108,6 +121,7 @@ jobs:
     container:
       image: openeuler/openeuler:24.03-lts
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
       - name: 安装 OpenJDK 17 + Maven（欧拉仓库无 Temurin）
@@ -148,6 +162,7 @@ jobs:
           sha256sum *.jar > SHA256SUMS
           cat SHA256SUMS
 
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request'
         with:
@@ -162,6 +177,7 @@ jobs:
   # ---------------------------------------------------------------------------
   # Go：go 1.24
   # ---------------------------------------------------------------------------
+  # ── job: go ──
   go:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.go == 'true' || needs.changes.outputs.workflows == 'true'
@@ -172,6 +188,7 @@ jobs:
       run:
         working-directory: car-monit-go
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
         with:
           # only-new-issues 要用 push 前的提交做 diff；多次提交的 push 需要完整历史
@@ -246,6 +263,7 @@ jobs:
             echo "::notice::当前分支没有 cmd/migrate，跳过 migrate 二进制"
           fi
 
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request'
         with:
@@ -261,6 +279,7 @@ jobs:
   # admin 有 *:*:*，漏挂权限中间件也不会暴露，必须用无权限账号验证 403 与 sys_oper_log 落行。
   # 依赖分支独有的 scripts/parity/check_permissions_runtime.py；没有脚本时整段跳过。
   # ---------------------------------------------------------------------------
+  # ── job: go-perms-audit ──
   go-perms-audit:
     if: github.event_name == 'workflow_dispatch' && inputs.run_go_perms_audit
     runs-on: ubuntu-latest
@@ -290,6 +309,7 @@ jobs:
       run:
         working-directory: car-monit-go
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
       - name: 检测审计脚本是否存在
@@ -341,6 +361,7 @@ jobs:
   # ---------------------------------------------------------------------------
   # Rust：rust-toolchain.toml 锁 1.90.0
   # ---------------------------------------------------------------------------
+  # ── job: rust ──
   rust:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.workflows == 'true'
@@ -355,6 +376,7 @@ jobs:
       run:
         working-directory: car-monit-rust
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
       - name: 安装 Rust 1.90 + 构建工具（rustup 官方链路）
@@ -404,6 +426,7 @@ jobs:
         if: github.event_name != 'pull_request'
         run: cargo build --release
 
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request'
         with:
@@ -415,6 +438,7 @@ jobs:
   # ---------------------------------------------------------------------------
   # Python：3.12，单元测试不依赖外部中间件
   # ---------------------------------------------------------------------------
+  # ── job: py ──
   py:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.py == 'true' || needs.changes.outputs.workflows == 'true'
@@ -425,6 +449,7 @@ jobs:
       run:
         working-directory: car-monit-py
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
       - name: 从源码安装 Python 3.12（欧拉仓库没有 3.12）
@@ -459,6 +484,7 @@ jobs:
           python3 -m pip install build
           python3 -m build
 
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         if: github.event_name != 'pull_request'
         with:
@@ -474,6 +500,7 @@ jobs:
   # 因此配置阶段用 CMAKE_PREFIX_PATH 指向它，不再现装 librdkafka。
   # 具体步骤在可复用的 _cpp.yml 里；没有 CMakeLists.txt 的分支会快速跳过。
   # ---------------------------------------------------------------------------
+  # ── job: cpp ──
   cpp:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.cpp == 'true' || needs.changes.outputs.workflows == 'true'
@@ -484,6 +511,7 @@ jobs:
   # 默认只在 workflow_dispatch 且勾选时执行；验证通过后再并入主分支门禁。
   # Python 集成用例只依赖 MySQL/Redis（Kafka/ES 为可选中间件，当前无用例依赖）。
   # ---------------------------------------------------------------------------
+  # ── job: integration ──
   integration:
     needs: changes
     if: github.event_name == 'workflow_dispatch' && inputs.run_integration
@@ -518,8 +546,10 @@ jobs:
       run:
         working-directory: car-monit-py
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
+      # 用 mysql 客户端还原 MySQL schema/种子数据
       - name: 安装 Python 3.12 与 mysql 客户端
         run: |
           set -euo pipefail
@@ -571,12 +601,15 @@ jobs:
   # 与 Java 端点对拍：需要可达的两端基址，仅手动触发。
   # （从旧的 car-monit-rust.yml 迁移过来，逻辑未变。）
   # ---------------------------------------------------------------------------
+  # ── job: rust-parity ──
   rust-parity:
     if: github.event_name == 'workflow_dispatch' && inputs.java_base != '' && inputs.rust_base != ''
     runs-on: ubuntu-latest
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
+      # 安装 Python
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -597,6 +630,7 @@ jobs:
             --rust-base "${{ inputs.rust_base }}" \
             --report build/parity-report.json --strict --quiet
 
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         if: always()
         with:

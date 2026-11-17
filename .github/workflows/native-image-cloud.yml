@@ -1,3 +1,10 @@
+# ============================================================================
+# 文件：.github/workflows/native-image-cloud.yml
+# 用途：云 runner 构建 GraalVM/Mandrel native image；release_tag 入参可上传 Release
+# 触发：手动 dispatch
+# 主要 job：canary、prepare、build、publish
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
 # Spring Boot 4.1.2 native-image CI on GITHUB-HOSTED (cloud) runners.
 #
 # Sync into each jdk{17,21,25} worktree as .github/workflows/native-image-cloud.yml.
@@ -23,6 +30,7 @@
 name: native-image-cloud
 
 on:
+  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       release_tag:
@@ -76,6 +84,7 @@ jobs:
   # A real cloud run is the most reliable quota/billing probe: the REST billing
   # endpoint returns 404 for the GCM OAuth token, so we measure the ability to
   # actually allocate a GitHub-hosted runner and to provision Mandrel.
+  # ── job: canary ──
   canary:
     if: inputs.stage == 'canary' && inputs.runner_mode == 'cloud' && github.repository_owner == 'kai-cn'
     runs-on: ${{ inputs.linux_runner }}
@@ -86,6 +95,7 @@ jobs:
         run: |
           echo "runner_name=${{ runner.name }} runner_os=${{ runner.os }}"
           echo "cpu=$(nproc)"; free -m | head -2; df -h / | tail -1
+      # 拉取仓库源码
       - uses: actions/checkout@v4
       - name: Provision Mandrel (java25) + verify toolchain
         uses: graalvm/setup-graalvm@v1
@@ -104,6 +114,7 @@ jobs:
           echo "CANARY_OK cloud runner available and Mandrel provisioned"
 
   # ---------------------------------------------------------------- dynamic matrix
+  # ── job: prepare ──
   prepare:
     if: inputs.stage == 'build' && github.repository_owner == 'kai-cn'
     runs-on: ${{ inputs.linux_runner }}
@@ -131,6 +142,7 @@ jobs:
           grep '^matrix=' "$GITHUB_OUTPUT"
 
   # ---------------------------------------------------------------- build
+  # ── job: build ──
   build:
     needs: prepare
     if: github.repository_owner == 'kai-cn'
@@ -141,6 +153,7 @@ jobs:
       max-parallel: 2
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
       - name: Provision Mandrel java${{ matrix.jdk }}
@@ -253,6 +266,7 @@ jobs:
           fi
           file "$out" || true
 
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.app }}-jdk${{ matrix.jdk }}-${{ matrix.platform }}
@@ -260,6 +274,7 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
+  # ── job: publish ──
   publish:
     name: upload native to GitHub Release
     needs: [build]
@@ -298,6 +313,7 @@ jobs:
           find release-dist -type f -exec cp -f {} dist/ \;
           cd dist && sha256sum * > SHA256SUMS && ls -lh
 
+      # 创建/上传 GitHub Release 资产
       - name: gh release upload
         env:
           GH_TOKEN: ${{ github.token }}
