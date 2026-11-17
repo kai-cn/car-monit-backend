@@ -1008,5 +1008,10 @@
     "allDeclaredConstructors": true,
     "allDeclaredMethods": true,
     "allDeclaredFields": true
+  },
+  {
+    "name": "com.baomidou.mybatisplus.core.MybatisConfiguration",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
   }
 ]
