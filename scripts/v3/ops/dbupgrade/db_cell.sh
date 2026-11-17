@@ -9,7 +9,7 @@
 #   - 两侧都用同一个 jar 与同一份端点清单跑 parity_probe.py，记录连通性/延迟/RSS。
 #   - 凭据只从环境变量读取（CI_DB_PASSWORD），不写入脚本、文档或日志。
 # ======================================================================
-set -uo pipefail
+set -euo pipefail
 
 APP="${1:?app required}"
 DB="${2:?db required}"
@@ -68,17 +68,49 @@ start_mysql() {
 }
 
 # ---- 启动 openGauss：old=3.0.0，new=7.x 官方镜像 ----
+# 容器内的 gsql 需要 LD_LIBRARY_PATH；不同镜像管理员用户可能是 omm 或 gaussdb。
+OG_ADMIN=""
+og_sql() {
+  # 在容器内以管理员执行一条 SQL（stdin 或 -c），返回 0 才算成功。
+  local db="$1"; shift
+  docker exec -e PGPASSWORD="$PW" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
+    "$CNAME" /usr/local/opengauss/bin/gsql -h 127.0.0.1 -p 5432 \
+    -U "$OG_ADMIN" -d "$db" -w "$@"
+}
+
+detect_og_admin() {
+  local u
+  for u in omm gaussdb; do
+    if docker exec -e PGPASSWORD="$PW" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
+        "$CNAME" /usr/local/opengauss/bin/gsql -h 127.0.0.1 -p 5432 \
+        -U "$u" -d postgres -w -Atc 'select 1' >/dev/null 2>&1; then
+      OG_ADMIN="$u"
+      echo "$u" > "$OUT/${DB}_admin.txt"
+      log "openGauss admin user = $u"
+      return 0
+    fi
+  done
+  return 1
+}
+
 start_opengauss() {
   local name="$1"; shift
   local image
   image=$(pick_image "$@") || { log "no opengauss image available from: $*"; return 1; }
   docker run -d --name "$name" --privileged --shm-size=512m \
     -e "GS_PASSWORD=$PW" -p 5432:5432 "$image"
-  wait_tcp "$PG_C" 5432 150 || { log "openGauss $image TCP not ready"; return 1; }
-  export PGPASSWORD="$PW"
-  psql -h "$PG_C" -p 5432 -U omm -d postgres -Atc 'select version()' 2>/dev/null \
-    | tee "$OUT/${DB}_${SIDE}.version.txt" || true
-  psql -h "$PG_C" -p 5432 -U omm -d postgres -c 'CREATE DATABASE "RuoYi"' >/dev/null 2>&1 || true
+  wait_tcp "$PG_C" 5432 180 || { log "openGauss $image TCP not ready"; return 1; }
+  # 等待容器内部 gsql 可用（首次初始化较慢）。
+  local i
+  for i in $(seq 1 30); do
+    docker exec "$name" /usr/local/opengauss/bin/gsql --version >/dev/null 2>&1 && break
+    sleep 3
+  done
+  CNAME="$name" detect_og_admin || { log "cannot detect openGauss admin user"; return 1; }
+  og_sql postgres -Atc 'select version()' > "$OUT/${DB}_${SIDE}.version.txt" 2>/dev/null || \
+    { log "cannot read openGauss version"; return 1; }
+  og_sql postgres -c 'CREATE DATABASE "RuoYi"' >/dev/null 2>&1 || \
+    log "RuoYi DB may already exist; continuing"
 }
 
 load_mysql_fixture() {
@@ -96,12 +128,15 @@ load_mysql_fixture() {
 }
 
 load_pg_fixture() {
-  export PGPASSWORD="$PW"
+  # 把版本无关的 schema/seed 拷进容器，用容器内 gsql 加载（宿主 psql16 无法认证 openGauss sha256）。
   gunzip -c "$SQLDIR/seed_jl_data01.sql.gz" > /tmp/dbupgrade_seed.sql
-  psql -h "$PG_C" -p 5432 -U omm -d RuoYi -v ON_ERROR_STOP=1 -f "$SQLDIR/schema_jl_data01.sql" >/dev/null 2>&1 || true
-  psql -h "$PG_C" -p 5432 -U omm -d RuoYi -v ON_ERROR_STOP=1 -f /tmp/dbupgrade_seed.sql >/dev/null 2>&1 || true
-  psql -h "$PG_C" -p 5432 -U omm -d RuoYi -Atc 'select count(*) from jl_data01.ods_szdn_gantry' \
-    > "$OUT/${DB}_${SIDE}.rows.txt" 2>/dev/null || true
+  docker cp "$SQLDIR/schema_jl_data01.sql" "$CNAME:/tmp/schema.sql" >/dev/null
+  docker cp /tmp/dbupgrade_seed.sql "$CNAME:/tmp/seed.sql" >/dev/null
+  og_sql RuoYi -v ON_ERROR_STOP=1 -f /tmp/schema.sql >/dev/null || { log "schema load failed"; return 1; }
+  og_sql RuoYi -v ON_ERROR_STOP=1 -f /tmp/seed.sql >/dev/null || { log "seed load failed"; return 1; }
+  og_sql RuoYi -Atc 'select count(*) from jl_data01.ods_szdn_gantry' \
+    > "$OUT/${DB}_${SIDE}.rows.txt" 2>/dev/null || { log "row check failed"; return 1; }
+  log "gantry rows: $(cat "$OUT/${DB}_${SIDE}.rows.txt")"
 }
 
 restore_dump() {
@@ -114,8 +149,10 @@ restore_dump() {
   if [ "$DB" = "mysql" ]; then
     docker exec -i "$name" mysql -uroot -p"$PW" -D carmonitdb < "$dump" >/dev/null 2>&1
   else
-    export PGPASSWORD="$PW"
-    psql -h "$PG_C" -p 5432 -U omm -d RuoYi -v ON_ERROR_STOP=1 -f "$dump" >/dev/null 2>&1
+    docker cp "$dump" "$name:/tmp/dump.sql" >/dev/null
+    docker exec -e PGPASSWORD="$PW" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
+      "$name" /usr/local/opengauss/bin/gsql -h 127.0.0.1 -p 5432 \
+      -U "$OG_ADMIN" -d RuoYi -w -v ON_ERROR_STOP=1 -f /tmp/dump.sql >/dev/null 2>&1
   fi
 }
 
@@ -132,8 +169,10 @@ probe() {
   local url_pg="jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai"
   local url_dict="jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&connectTimeout=3000&socketTimeout=3000"
   if [ "$APP" = "api" ]; then
+    local pg_user="postgres"
+    [ "$DB" = "opengauss" ] && pg_user="${OG_ADMIN:-omm}"
     SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL="$url_pg" \
-    SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME="$( [ "$DB" = mysql ] && echo postgres || echo omm )" \
+    SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME="$pg_user" \
     SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD="$PW" \
     CARMONIT_MYSQL_HOST="$MYSQL_C" CARMONIT_MYSQL_PORT=3306 \
     CARMONIT_MYSQL_USERNAME=root CARMONIT_MYSQL_PASSWORD="$PW" \
@@ -145,7 +184,8 @@ probe() {
     python scripts/v3/ops/parity/parity_probe.py \
       --variant jar --label "$LABEL" --cmd "java -jar $JAR --server.port=$PORT_HTTP" \
       --port "$PORT_HTTP" --endpoints "$ENDPOINTS" --out "$OUT/${SIDE}.json" \
-      --mode full --check-stability --ready-timeout 300 || log "probe exit=$?"
+      --mode full --check-stability --ready-timeout 300
+    python scripts/v3/ops/dbupgrade/gate.py --old "$OUT/${SIDE}.json" --new "$OUT/${SIDE}.json"
   else
     SPRING_DATASOURCE_DRUID_MASTER_URL="$url_mysql" \
     SPRING_DATASOURCE_DRUID_MASTER_USERNAME=root \
@@ -157,7 +197,8 @@ probe() {
     python scripts/v3/ops/parity/parity_probe.py \
       --variant jar --label "$LABEL" --cmd "java -jar $JAR --server.port=$PORT_HTTP" \
       --port "$PORT_HTTP" --endpoints "$ENDPOINTS" --out "$OUT/${SIDE}.json" \
-      --mode full --check-stability --ready-timeout 300 || log "probe exit=$?"
+      --mode full --check-stability --ready-timeout 300
+    python scripts/v3/ops/dbupgrade/gate.py --old "$OUT/${SIDE}.json" --new "$OUT/${SIDE}.json"
   fi
 }
 

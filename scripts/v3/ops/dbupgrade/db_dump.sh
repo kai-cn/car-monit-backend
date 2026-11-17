@@ -22,15 +22,17 @@ if [ "$DB" = "mysql" ]; then
     echo "FAILED:mysqldump" > "out/${DB}_dump.method.txt"
   fi
 else
-  export PGPASSWORD="$PW"
-  if pg_dump -h 127.0.0.1 -p 5432 -U omm -d RuoYi -Fp --no-owner --no-acl \
-       > "out/${DB}_dump.sql" 2>/dev/null && [ -s "out/${DB}_dump.sql" ]; then
-    echo "pg_dump(host client -> plain SQL, from enmotech/opengauss:3.0.0)" > "out/${DB}_dump.method.txt"
+  # 宿主 psql/pg_dump 无法用 sha256 认证 openGauss；用容器内 gs_dump。
+  ADMIN=$(cat "out/${DB}_admin.txt" 2>/dev/null || echo omm)
+  if docker exec -e PGPASSWORD="$PW" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
+       opengauss-old /usr/local/opengauss/bin/gs_dump -U "$ADMIN" -d RuoYi \
+       -Fp --no-owner -f /tmp/og_dump.sql >/dev/null 2>&1 && \
+     docker cp opengauss-old:/tmp/og_dump.sql "out/${DB}_dump.sql" >/dev/null 2>&1 && \
+     [ -s "out/${DB}_dump.sql" ]; then
+    echo "gs_dump(in-container, admin=$ADMIN, openGauss 3.0.0 -> plain SQL)" > "out/${DB}_dump.method.txt"
   else
     : > "out/${DB}_dump.sql"
-    echo "FAILED:pg_dump; fallback to gs_dump in container" > "out/${DB}_dump.method.txt"
-    docker exec opengauss-old bash -lc 'gs_dump -U omm -d RuoYi -Fp --no-owner' \
-      > "out/${DB}_dump.sql" 2>/dev/null || : > "out/${DB}_dump.sql"
+    echo "FAILED:gs_dump(in-container)" > "out/${DB}_dump.method.txt"
   fi
 fi
 echo "dump bytes: $(wc -c < "out/${DB}_dump.sql") method: $(cat "out/${DB}_dump.method.txt")"
