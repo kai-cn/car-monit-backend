@@ -96,6 +96,12 @@ jobs:
           echo "cpu=$(nproc)"; free -m | head -2; df -h / | tail -1
       # 拉取仓库源码
       - uses: actions/checkout@v4
+      - name: Cache Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-
       - name: Provision Mandrel (java25) + verify toolchain
         uses: graalvm/setup-graalvm@v1
         with:
