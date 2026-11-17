@@ -48,6 +48,7 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_MAJOR }}
+          # Perf: let setup-java restore Maven dependencies from the action cache.
           cache: maven
       - name: Compile + package（跳过测试）
         run: mvn -B -ntp -DskipTests -pl ruoyi-common,ruoyi-system,ruoyi-framework,ruoyi-admin -am package
@@ -84,6 +85,7 @@ jobs:
           path: dist
       - name: Setup JDK ${{ env.JAVA_MAJOR }}
         uses: actions/setup-java@v4
+          # Perf: let setup-java restore Maven dependencies from the action cache.
           cache: maven
         with:
           distribution: temurin
