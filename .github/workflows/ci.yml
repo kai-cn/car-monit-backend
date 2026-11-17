@@ -75,6 +75,7 @@ jobs:
       workflows: ${{ steps.filter.outputs.workflows }}
     steps:
       - uses: actions/checkout@v4
+      # Perf: reuse ~/.m2/repository across runs; key follows pom.xml changes.
       - name: Cache Maven repository
         uses: actions/cache@v4
         with:
