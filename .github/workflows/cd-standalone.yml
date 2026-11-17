@@ -46,7 +46,7 @@ permissions:
 
 concurrency:
   group: cd-standalone-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   # 构建阶段的目标架构：仅 amd64（selftest 与自托管均为 x64）。arm64 待办见文档。
