@@ -188,11 +188,15 @@ def main():
     ap.add_argument('--out', required=True)
     ap.add_argument('--auth-lang', default='java', choices=['java', 'go', 'rust', 'python'])
     ap.add_argument('--user', default='admin')
-    ap.add_argument('--password', default='Admin@2025-')
+    ap.add_argument('--password', default='')
+    ap.add_argument('--password-env', default='AUTH_PASS',
+                    help='env var to read password from (avoids argv exposure)')
     ap.add_argument('--ready-timeout', type=int, default=300)
     ap.add_argument('--mode', choices=['full', 'lite'], default='full')
     ap.add_argument('--check-stability', action='store_true')
     a = ap.parse_args()
+    # 密码优先从环境变量读取，避免出现在 argv/进程列表；argv 值仅作本地测试兜底
+    password = os.environ.get(a.password_env) or a.password or 'Admin@2025-'
 
     endpoints = [l.strip() for l in Path(a.endpoints).read_text(encoding='utf-8').splitlines()
                  if l.strip() and not l.startswith('#')]
@@ -243,7 +247,7 @@ def main():
     out['peak_rss_mb'] = round(peak[0], 1)
 
     if ready:
-        token, login_info = login(a.port, a.auth_lang, a.user, a.password)
+        token, login_info = login(a.port, a.auth_lang, a.user, password)
         out['login'] = login_info
         if not token:
             out['error'] = 'login failed: %s' % json.dumps(login_info, ensure_ascii=False)[:300]
@@ -296,7 +300,6 @@ def main():
     except Exception: pass
 
     Path(a.out).write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding='utf-8')
-    _login_ok = bool(out['login'] and 'err' not in out['login'] and out['login'])
     print('AUTH_PROBE_DONE variant=%s ready=%s ep=%d diff_ready=%d auth_fail=%d err=%s' % (
         a.variant, ready, len(out['endpoints']), out['diff_ready'], out['auth_fail_count'], out['error']))
 

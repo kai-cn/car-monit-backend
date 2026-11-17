@@ -22,7 +22,13 @@ import argparse, json, statistics, sys
 from pathlib import Path
 
 VOLATILE = {'timestamp', 'time', 'requestId', 'traceId', 'token', 'expireTime',
-            'serverTime', 'now', 'cost', 'duration', 'date', 'createTime', 'updateTime'}
+            'serverTime', 'now', 'cost', 'duration', 'date', 'createTime', 'updateTime',
+            # 慢变/运行态字段：跨语言/跨实例必然不同，不参与业务等价判定
+            'X-Data-Source', 'xDataSources', 'datasource', 'dataSource', 'source',
+            'cacheHitRate', 'apiTimeoutRate', 'apiErrorRate', 'exportBacklog',
+            'circuitState', 'loginTime', 'sessionId', 'commandStats', 'uptime',
+            'lastExecuteTime', 'nextScheduleTime', 'lastDurationMs', 'lastUpdatedTableCount',
+            'historySize', 'successRate', 'avgDurationMs'}
 
 
 def norm(x):
@@ -97,15 +103,18 @@ def main():
         if unstable:
             rr['exact'] = same_raw
             rr['semantic'] = same_sem
-            # Non-determinism excuses BODY drift only. A status mismatch is still a real
-            # difference (e.g. native 500 vs JVM 200) and must fail unless allowlisted.
-            if st_same or (x['status'] in allow and y['status'] in allow):
+            # Non-determinism excuses RAW-BODY drift only, not semantic drift and not
+            # status mismatch. Semantic equality is still required to avoid a fake green
+            # (e.g. two different error envelopes both flagged unstable).
+            status_ok = st_same or (x['status'] in allow and y['status'] in allow)
+            if status_ok and same_sem:
                 nondet_n += 1
                 rr['verdict'] = 'NONDET'
-                rr['note'] = 'endpoint non-deterministic (data/ordering); body diff not attributable'
+                rr['note'] = 'endpoint non-deterministic (raw body); semantic content equal'
             else:
                 rr['verdict'] = 'DIFF'
-                rr['note'] = 'status mismatch on unstable endpoint (real difference)'
+                rr['note'] = ('status mismatch or semantic drift on unstable endpoint '
+                              '(real difference)')
                 fails += 1
             rows.append(rr)
             continue

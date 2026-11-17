@@ -86,14 +86,29 @@ jobs:
           python scripts/v3/ops/parity/parity_auth_probe.py --variant java8 --label java8-auth \
             --cmd "java -jar out/baseline.jar --server.port=19903" --port 19903 \
             --endpoints "$ENDPOINTS" --auth-lang java \
-            --user "$AUTH_USER" --password "$AUTH_PASS" \
+            --user "$AUTH_USER" --password-env AUTH_PASS \
             --out out/java8.json --mode full --check-stability --ready-timeout 300 || echo "baseline auth probe exit=$?"
+      - name: Gate Java8 baseline quality
+        shell: bash
+        run: |
+          set -euo pipefail
           python - <<'PY'
-          import json
+          import json, sys
           d=json.load(open('out/java8.json'))
-          print('JAVA8_AUTH_SUMMARY login=%s endpoints=%d diff_ready=%d auth_fail=%d error=%s' % (
-              bool(d.get('login')), d.get('endpoint_count'), d.get('diff_ready'),
-              d.get('auth_fail_count'), d.get('error')))
+          ep=d.get('endpoint_count',0); ready=d.get('diff_ready',0); af=d.get('auth_fail_count',0)
+          err=d.get('error'); login=d.get('login') or {}
+          print('JAVA8_AUTH_SUMMARY login_token=%s endpoints=%d diff_ready=%d auth_fail=%d error=%s' % (
+              bool(login.get('token') if isinstance(login,dict) else False), ep, ready, af, err))
+          # 基线质量门禁：必须无 error、有足够可用端点、无认证失败
+          if err:
+              print('::error::Java8 baseline probe error: %s' % err); sys.exit(1)
+          if not (isinstance(login,dict) and login.get('code')==200):
+              print('::error::Java8 login did not return code=200: %s' % login); sys.exit(1)
+          if ready < 10:
+              print('::error::Java8 diff_ready=%d < 10, baseline unusable' % ready); sys.exit(1)
+          if af > 0:
+              print('::error::Java8 auth_fail=%d on baseline' % af); sys.exit(1)
+          print('JAVA8_BASELINE_GATE_OK')
           PY
       - uses: actions/upload-artifact@v4
         if: always()
@@ -159,7 +174,7 @@ jobs:
           python scripts/v3/ops/parity/parity_auth_probe.py --variant go --label go-auth \
             --cmd "car-monit-go/bin/car-monit-go -c car-monit-go/configs/config.yaml" --port 9989 \
             --endpoints "$ENDPOINTS" --auth-lang go \
-            --user "$AUTH_USER" --password "$AUTH_PASS" \
+            --user "$AUTH_USER" --password-env AUTH_PASS \
             --out out/go.json --mode full --check-stability --ready-timeout 120 || echo "go auth probe exit=$?"
       - name: Setup Python + deps
         if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
@@ -176,7 +191,7 @@ jobs:
           python scripts/v3/ops/parity/parity_auth_probe.py --variant python --label python-auth \
             --cmd "cd car-monit-py && python3 -m uvicorn app.main:app --host 127.0.0.1 --port 9989" --port 9989 \
             --endpoints "$ENDPOINTS" --auth-lang python \
-            --user "$AUTH_USER" --password "$AUTH_PASS" \
+            --user "$AUTH_USER" --password-env AUTH_PASS \
             --out out/python.json --mode full --check-stability --ready-timeout 180 || echo "python auth probe exit=$?"
       - name: Build Rust
         if: steps.gate.outputs.run == 'yes' && matrix.lang == 'rust'
@@ -193,7 +208,7 @@ jobs:
           python scripts/v3/ops/parity/parity_auth_probe.py --variant rust --label rust-auth \
             --cmd "car-monit-rust/target/release/car-monit-rust" --port 9989 \
             --endpoints "$ENDPOINTS" --auth-lang rust \
-            --user "$AUTH_USER" --password "$AUTH_PASS" \
+            --user "$AUTH_USER" --password-env AUTH_PASS \
             --out out/rust.json --mode full --check-stability --ready-timeout 180 || echo "rust auth probe exit=$?"
       - name: Compare vs Java8 (authenticated, full endpoints)
         if: steps.gate.outputs.run == 'yes'
@@ -204,10 +219,19 @@ jobs:
           if [ ! -f "$CAND" ]; then echo "::error::${{ matrix.lang }} auth probe JSON missing"; exit 1; fi
           python - "$CAND" "${{ matrix.lang }}" <<'PY'
           import json, sys
+          lang=sys.argv[2]
           d=json.load(open(sys.argv[1]))
-          print('%s_AUTH_SUMMARY login=%s endpoints=%d diff_ready=%d auth_fail=%d error=%s' % (
-              sys.argv[2], bool(d.get('login')), d.get('endpoint_count'), d.get('diff_ready'),
-              d.get('auth_fail_count'), d.get('error')))
+          ep=d.get('endpoint_count',0); ready=d.get('diff_ready',0); af=d.get('auth_fail_count',0)
+          err=d.get('error'); login=d.get('login') or {}
+          print('%s_AUTH_SUMMARY login_code=%s endpoints=%d diff_ready=%d auth_fail=%d error=%s' % (
+              lang, login.get('code') if isinstance(login,dict) else None, ep, ready, af, err))
+          if err:
+              print('::error::%s probe error: %s' % (lang, err)); sys.exit(1)
+          if not (isinstance(login,dict) and login.get('code')==200):
+              print('::error::%s login did not return code=200: %s' % (lang, login)); sys.exit(1)
+          if ready < 10:
+              print('::error::%s diff_ready=%d < 10, candidate unusable' % (lang, ready)); sys.exit(1)
+          print('%s_CANDIDATE_GATE_OK' % lang)
           PY
           python scripts/v3/ops/parity/parity_compare.py \
             --baseline out/java8.json --candidate "$CAND" \
