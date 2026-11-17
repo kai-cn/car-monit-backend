@@ -68,6 +68,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # logback.xml 固定写 /home/ruoyi/logs；确保存在，避免文件 appender 报错
+          sudo mkdir -p /home/ruoyi/logs && sudo chmod 777 /home/ruoyi/logs
           mvn $MAVEN_ARGS -DskipTests -pl ruoyi-admin -am package
           mkdir -p out
           cp $(ls ruoyi-admin/target/*.jar | grep -v original | head -1) out/baseline.jar
@@ -88,6 +90,12 @@ jobs:
             --endpoints "$ENDPOINTS" --auth-lang java \
             --user "$AUTH_USER" --password-env AUTH_PASS \
             --out out/java8.json --mode full --check-stability --ready-timeout 300 || echo "baseline auth probe exit=$?"
+      - name: Diagnose Java8 startup (if failed)
+        if: always()
+        shell: bash
+        run: |
+          echo "===== java8.json.app.log tail ====="
+          tail -80 out/java8.json.app.log 2>/dev/null || echo "(no app.log)"
       - name: Gate Java8 baseline quality
         shell: bash
         run: |
