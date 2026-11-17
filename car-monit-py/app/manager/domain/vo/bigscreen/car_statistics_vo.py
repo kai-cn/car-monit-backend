@@ -27,7 +27,7 @@ class CarStatisticsVO(DomainModel):
     #: 车辆数量
     number: int = 0
     #: 逃费金额
-    escaped_amount: Decimal = Field(default=Decimal("0"))
+    escaped_amount: Optional[Decimal] = Field(default=Decimal("0"))
 
 
 __all__ = ["CarStatisticsVO"]
