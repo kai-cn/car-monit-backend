@@ -15,7 +15,6 @@ name: _cpp
 # 说明：这条流水线**尚未实跑验证**，首次运行可能需要按报错补 MSVC 组件或 DLL 路径。
 
 on:
-  # ── job: workflow_call ──
   workflow_call:
 
 permissions:
