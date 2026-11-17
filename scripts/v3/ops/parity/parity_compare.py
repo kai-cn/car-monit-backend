@@ -34,7 +34,14 @@ VOLATILE = {'timestamp', 'time', 'requestId', 'traceId', 'token', 'expireTime',
 
 def norm(x):
     if isinstance(x, dict):
-        return {k: norm(v) for k, v in x.items() if k not in VOLATILE}
+        out = {k: norm(v) for k, v in x.items() if k not in VOLATILE}
+        # RuoYi AjaxResult 空信封等价归一化：
+        #   Java 空列表返回 {"code":200,"data":[]}，Go/Rust 有时省略 data 字段
+        #   （{"code":200}）。客户端语义一致（都表示"无数据"），视为等价。
+        # 仅在典型 AjaxResult 信封（含 code 且无 rows/total 分页字段）时归一。
+        if 'code' in x and 'data' not in out and 'rows' not in out and 'total' not in out:
+            out['data'] = []
+        return out
     if isinstance(x, list):
         return [norm(v) for v in x]
     return x
