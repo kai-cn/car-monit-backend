@@ -85,9 +85,8 @@ jobs:
           path: dist
       - name: Setup JDK ${{ env.JAVA_MAJOR }}
         uses: actions/setup-java@v4
-          # Perf: let setup-java restore Maven dependencies from the action cache.
-          cache: maven
         with:
+          cache: maven
           distribution: temurin
           java-version: ${{ env.JAVA_MAJOR }}
       - name: 校验产物
