@@ -49,7 +49,7 @@ permissions:
 
 concurrency:
   group: parity-${{ github.ref }}-${{ inputs.jdk }}-${{ inputs.platform }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   MAVEN_OPTS: -Xmx3g -XX:+UseSerialGC
@@ -87,7 +87,7 @@ jobs:
     timeout-minutes: 180
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 2
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     env:
       CELL_JDK: ${{ matrix.jdk }}
