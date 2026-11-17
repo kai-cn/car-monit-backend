@@ -78,36 +78,27 @@ og_exec() {
 }
 og_sql() {
   local db="$1"; shift
+  # gsql -f 偶发把默认 host 解析成 Unknown:5432；显式给 socket 目录 /tmp 优先。
+  if og_exec -h /tmp -d "$db" "$@" 2>/dev/null; then
+    return 0
+  fi
   og_exec -d "$db" "$@"
 }
 
 detect_og_admin() {
-  # 先找“能用 TCP+口令认证”的用户——这才是 app JDBC 实际使用的方式；
-  # 只用 socket 免密探测会误选没有口令的用户（3.0=gaussdb, 7.x 镜像可能不同）。
-  local i u
-  for u in gaussdb omm; do
-    for i in $(seq 1 12); do
-      if docker exec -e PGPASSWORD="$PW" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
-          "$CNAME" /usr/local/opengauss/bin/gsql -h 127.0.0.1 -p 5432 \
-          -U "$u" -d postgres -w -Atc 'select 1' >/dev/null 2>&1; then
-        OG_ADMIN="$u"; OG_UID="70"
-        echo "$u" > "$OUT/${DB}_admin.txt"
-        log "openGauss JDBC-capable user=$u (tcp, attempt $i)"
-        return 0
-      fi
-      sleep 2
-    done
-  done
-  # 回退：socket 免密（仅用于加载夹具，app 仍可能连不上——如实记录）。
-  for u in gaussdb omm; do
+  # 本地/云端实测：gs_initdb 创建的管理员是 gaussdb；socket uid70 免密探测最可靠。
+  # gsql 的 TCP+-w 探测对 sha256 认证不可靠，不作为判据（app JDBC 走 TCP 另测）。
+  local i
+  for i in $(seq 1 40); do
     if docker exec -u 70 -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
-        "$CNAME" /usr/local/opengauss/bin/gsql -U "$u" -d postgres -w \
+        "$CNAME" /usr/local/opengauss/bin/gsql -d postgres \
         -Atc 'select 1' >/dev/null 2>&1; then
-      OG_ADMIN="$u"; OG_UID="70"
-      echo "$u" > "$OUT/${DB}_admin.txt"
-      log "openGauss socket-only user=$u (JDBC may still fail)"
+      OG_ADMIN="gaussdb"; OG_UID="70"
+      echo "gaussdb" > "$OUT/${DB}_admin.txt"
+      log "openGauss ready via socket uid=70 (attempt $i), JDBC user=gaussdb"
       return 0
     fi
+    sleep 3
   done
   log "gsql diagnostics (sanitized):"
   docker logs "$CNAME" 2>&1 | tail -8 | sed -E 's/(PASSWORD|password)=[^ ]*/\1=***/g' || true
