@@ -53,6 +53,8 @@ def decimal_to_java_number(value: Decimal) -> Any:
     ``v-if="amount"`` 之类的判断不受影响，但逐字节比对整张列表的每个金额都会差一格。
     ``12.00`` 的尾零仍然无法保留（``float`` 没有标度概念），这一条记录在 COMPATIBILITY.md。
     """
+    if value is None:
+        return 0
     if value.as_tuple().exponent >= 0:
         return int(value)
     return float(value)
