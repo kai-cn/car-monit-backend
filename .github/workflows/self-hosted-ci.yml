@@ -13,7 +13,6 @@ name: self-hosted-ci
 # - 部署：手动 dispatch 选 deploy_mode=none|standalone|cluster，且强制仓库 owner 守卫。
 #   standalone = 本机装 systemd 服务并真启动探活；cluster = 现造镜像→k3d import→set image→rollout→探活。
 on:
-  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       deploy_mode:
