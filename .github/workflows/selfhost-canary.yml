@@ -15,7 +15,6 @@
 name: selfhost-canary
 
 on:
-  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       runner_label:

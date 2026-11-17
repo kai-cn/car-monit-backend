@@ -35,7 +35,6 @@
 name: native-image-selfhosted
 
 on:
-  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       app:

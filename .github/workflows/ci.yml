@@ -27,10 +27,8 @@ name: ci
 #   当前 master 上没有该脚本，等分支合并后再接，避免写成引用不存在文件的假流水线。
 
 on:
-  # ── job: pull_request ──
   pull_request:
     branches: [master]
-  # ── job: push ──
   push:
     branches:
       - master
@@ -39,7 +37,6 @@ on:
       - car-monit-rust-V2
       - car-monit-py-V2
       - car-monit-cpp-local
-  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       java_base:

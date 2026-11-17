@@ -21,7 +21,6 @@
 name: crosslang-parity-cloud
 
 on:
-  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       langs:

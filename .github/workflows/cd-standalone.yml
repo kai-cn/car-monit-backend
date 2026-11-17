@@ -17,7 +17,6 @@ name: cd-standalone
 #   - MySQL 3307 / Redis 6379 / ES 9200（config/application.yml）
 
 on:
-  # ── job: push ──
   push:
     branches: [master]
     tags: ['v*.*.*']
@@ -30,7 +29,6 @@ on:
       - 'car-monit-py/**'
       - 'car-monit-rust/docs/01-baseline/**'
       - '.github/workflows/cd-standalone.yml'
-  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       service:

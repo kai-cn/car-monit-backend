@@ -20,7 +20,6 @@ name: cd
 # 镜像名固定为 ghcr.io/kai-cn/car-monit-<service>。
 
 on:
-  # ── job: push ──
   push:
     branches: [master]
     tags: ['v*.*.*']
@@ -34,7 +33,6 @@ on:
       - 'car-monit-py/**'
       - 'docker/**'
       - '.github/workflows/cd.yml'
-  # ── job: workflow_dispatch ──
   workflow_dispatch:
 
 permissions:
