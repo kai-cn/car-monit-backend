@@ -1,3 +1,10 @@
+# ============================================================================
+# 文件：.github/workflows/crosslang-parity-cloud.yml
+# 用途：跨语言（Go/Python/Rust）与 Java8 基线的全接口 + 资源对比
+# 触发：手动 dispatch
+# 主要 job：baseline-java8、candidates
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
 # Cross-language full-interface + resource/performance parity vs Java8 baseline.
 #
 # Baseline : ruoyi-admin (Java 8, Spring Boot 2.5) fat jar  -> endpoint set in
@@ -14,6 +21,7 @@
 name: crosslang-parity-cloud
 
 on:
+  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       langs:
@@ -35,11 +43,14 @@ env:
   MAVEN_ARGS: -B -ntp
 
 jobs:
+  # ── job: baseline-java8 ──
   baseline-java8:
     runs-on: ${{ inputs.linux_runner }}
     timeout-minutes: 60
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
+      # 安装 JDK
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -77,6 +88,7 @@ jobs:
             --cmd "java -jar out/baseline.jar --server.port=19903" --port 19903 \
             --endpoints scripts/v3/ops/parity/endpoints/backend.txt \
             --out out/java8.json --mode full --check-stability --ready-timeout 300 || echo "baseline probe exit=$?"
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -88,6 +100,7 @@ jobs:
         shell: bash
         run: docker rm -f my rd 2>/dev/null || true
 
+  # ── job: candidates ──
   candidates:
     needs: baseline-java8
     runs-on: ${{ inputs.linux_runner }}
@@ -98,6 +111,7 @@ jobs:
       matrix:
         lang: [go, python, rust]
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
       - id: gate
         shell: bash
@@ -183,6 +197,7 @@ jobs:
             --out "out/report-${{ matrix.lang }}.json" --md "out/report-${{ matrix.lang }}.md" \
             --label "java8-vs-${{ matrix.lang }}" || true
           cat "out/report-${{ matrix.lang }}.md" || true
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         if: always() && steps.gate.outputs.run == 'yes'
         with:

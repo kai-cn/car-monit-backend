@@ -1,3 +1,10 @@
+# ============================================================================
+# 文件：.github/workflows/selfhost-canary.yml
+# 用途：自托管 canary 冒烟（已加 owner 守卫）
+# 触发：手动 dispatch
+# 主要 job：probe
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
 # Minimal probe: can a SELF-HOSTED runner still start a job when GitHub-hosted
 # runners are blocked by account billing / spending limits?
 #
@@ -8,6 +15,7 @@
 name: selfhost-canary
 
 on:
+  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       runner_label:
@@ -19,6 +27,7 @@ permissions:
   contents: read
 
 jobs:
+  # ── job: probe ──
   probe:
     if: github.repository_owner == 'kai-cn'
     runs-on: ${{ inputs.runner_label }}

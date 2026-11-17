@@ -1,3 +1,10 @@
+# ============================================================================
+# 文件：.github/workflows/cd-standalone.yml
+# 用途：单机部署：打包 standalone 产物并上传 Release
+# 触发：手动 dispatch / push 事件
+# 主要 job：build、verify、publish
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
 name: cd-standalone
 
 # 单机部署 CD：产出可离线安装的 tar.gz（二进制 + systemd unit + 配置模板 + install/uninstall + SHA256SUMS + README）。
@@ -10,6 +17,7 @@ name: cd-standalone
 #   - MySQL 3307 / Redis 6379 / ES 9200（config/application.yml）
 
 on:
+  # ── job: push ──
   push:
     branches: [master]
     tags: ['v*.*.*']
@@ -22,6 +30,7 @@ on:
       - 'car-monit-py/**'
       - 'car-monit-rust/docs/01-baseline/**'
       - '.github/workflows/cd-standalone.yml'
+  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       service:
@@ -46,6 +55,7 @@ env:
   TARGET_ARCH: amd64
 
 jobs:
+  # ── job: build ──
   build:
     runs-on: ubuntu-latest
     strategy:
@@ -53,6 +63,7 @@ jobs:
       matrix:
         service: ${{ fromJSON(format('["{0}"]', inputs.service == 'all' && 'java","go","rust","py' || inputs.service || 'java","go","rust","py')) }}
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
       - name: 准备目录
@@ -264,6 +275,7 @@ jobs:
         env:
           SERVICE: ${{ matrix.service }}
 
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         with:
           name: standalone-${{ matrix.service }}
@@ -274,6 +286,7 @@ jobs:
           retention-days: 14
 
   # 验证 job：全新 runner 下载 artifact → 校验 SHA256 → 检查清单 → 真启动一次
+  # ── job: verify ──
   verify:
     needs: build
     runs-on: ubuntu-latest
@@ -284,6 +297,7 @@ jobs:
       matrix:
         service: ${{ fromJSON(format('["{0}"]', inputs.service == 'all' && 'java","go","rust","py' || inputs.service || 'java","go","rust","py')) }}
     steps:
+      # 下载上游 workflow 产物
       - uses: actions/download-artifact@v4
         with:
           name: standalone-${{ matrix.service }}
@@ -347,11 +361,13 @@ jobs:
           esac
           echo "启动冒烟完成"
 
+  # ── job: publish ──
   publish:
     needs: [build, verify]
     if: startsWith(github.ref, 'refs/tags/v') || inputs.tag != ''
     runs-on: ubuntu-latest
     steps:
+      # 下载上游 workflow 产物
       - uses: actions/download-artifact@v4
         with:
           pattern: standalone-*

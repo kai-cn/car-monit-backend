@@ -1,3 +1,10 @@
+# ============================================================================
+# 文件：.github/workflows/parity-verify-cloud.yml
+# 用途：云上 native vs JVM 全接口 + 资源性能对比（jdk × 平台矩阵）
+# 触发：手动 dispatch
+# 主要 job：prepare、verify
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
 # Native-image vs JVM full-interface + resource/performance parity verification (backend repo).
 #
 # Matrix: jdk x platform. Builds fat jar (baseline) + native binary (candidate), brings up
@@ -15,6 +22,7 @@
 name: parity-verify-cloud
 
 on:
+  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       jdk:
@@ -51,6 +59,7 @@ env:
   ENDPOINTS: scripts/v3/ops/parity/endpoints/backend.txt
 
 jobs:
+  # ── job: prepare ──
   prepare:
     runs-on: ${{ inputs.linux_runner }}
     timeout-minutes: 5
@@ -72,6 +81,7 @@ jobs:
           PY
           grep '^matrix=' "$GITHUB_OUTPUT"
 
+  # ── job: verify ──
   verify:
     needs: prepare
     runs-on: ${{ matrix.platform == 'linux' && inputs.linux_runner || inputs.windows_runner }}
@@ -85,6 +95,7 @@ jobs:
       CELL_PLATFORM: ${{ matrix.platform }}
       LABEL: backend-jdk${{ matrix.jdk }}-${{ matrix.platform }}
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
       - name: Provision Mandrel java${{ matrix.jdk }}
