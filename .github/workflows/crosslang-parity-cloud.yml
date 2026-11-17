@@ -53,8 +53,9 @@ jobs:
       # 安装 JDK
       - uses: actions/setup-java@v4
         # Perf: let setup-java restore Maven dependencies from the action cache.
-        cache: maven
+        # Perf: Maven dependency cache; key follows pom.xml changes.
         with:
+          cache: maven
           distribution: temurin
           java-version: '8'
       - name: Start datastores + seed
