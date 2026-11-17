@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# ======================================================================
+# 文件：scripts/v3/ops/parity/parity_probe.py
+# 用途：探针：启动 jar/native 变体，逐端点采集 status/bytes/latency/body-sha 与进程树 RSS
+# 说明：仅新增中文注释，不改执行逻辑。
+# ======================================================================
 """Probe ONE application variant: start process, wait ready, hit endpoints, sample resources.
 
 Cross-platform (Linux + Windows). Outputs a JSON result file.

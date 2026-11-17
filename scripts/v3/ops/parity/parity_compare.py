@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# ======================================================================
+# 文件：scripts/v3/ops/parity/parity_compare.py
+# 用途：对比：两份探针 JSON 按 status/exact/semantic/nondet 判定并输出报告
+# 说明：仅新增中文注释，不改执行逻辑。
+# ======================================================================
 """Compare two probe result JSONs (baseline vs candidate) and emit a verdict + markdown.
 
 Usage:
