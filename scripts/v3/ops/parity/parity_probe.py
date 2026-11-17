@@ -31,7 +31,51 @@ if IS_WIN:
                     ('PagefileUsage', ctypes.c_size_t), ('PeakPagefileUsage', ctypes.c_size_t)]
 
 
+def _tree_rss_linux(root_pid):
+    """Sum RSS over the whole process tree rooted at root_pid (shell + java child)."""
+    try:
+        pids = {}
+        for d in os.listdir('/proc'):
+            if not d.isdigit():
+                continue
+            pid = int(d)
+            try:
+                with open('/proc/%d/stat' % pid) as f:
+                    stat = f.read()
+                ppid = int(stat.rsplit(')', 1)[1].split()[1])
+                pids[pid] = ppid
+            except Exception:
+                continue
+        # collect descendants of root_pid
+        want = {root_pid}
+        changed = True
+        while changed:
+            changed = False
+            for pid, ppid in pids.items():
+                if ppid in want and pid not in want:
+                    want.add(pid); changed = True
+        total = 0.0
+        for pid in want:
+            try:
+                with open('/proc/%d/status' % pid) as f:
+                    for line in f:
+                        if line.startswith('VmRSS:'):
+                            total += int(line.split()[1]) / 1024.0
+                            break
+            except Exception:
+                pass
+        return total if total > 0 else None
+    except Exception:
+        return None
+
+
 def rss_mb(pid):
+    """Return (current_rss_mb, peak_rss_mb).
+
+    On Linux, `shell=True` makes `pid` the /bin/sh wrapper; the JVM/native process is a
+    descendant, so we sum the whole process tree. Peak is approximated by the sampler's
+    running max, so we return (tree_rss, tree_rss) and let the caller track the maximum.
+    """
     if IS_WIN:
         try:
             h = ctypes.windll.kernel32.OpenProcess(0x0400 | 0x0010, False, pid)
@@ -46,17 +90,8 @@ def rss_mb(pid):
             return pmc.WorkingSetSize / 1048576.0, pmc.PeakWorkingSetSize / 1048576.0
         except Exception:
             return None, None
-    try:
-        cur = peak = None
-        with open('/proc/%d/status' % pid) as f:
-            for line in f:
-                if line.startswith('VmRSS:'):
-                    cur = int(line.split()[1]) / 1024.0
-                elif line.startswith('VmHWM:'):
-                    peak = int(line.split()[1]) / 1024.0
-        return cur, peak
-    except Exception:
-        return None, None
+    cur = _tree_rss_linux(pid)
+    return cur, cur
 
 
 def port_open(port, timeout=1.0):
