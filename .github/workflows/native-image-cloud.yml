@@ -72,7 +72,7 @@ permissions:
 
 concurrency:
   group: native-image-cloud-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   MAVEN_OPTS: -Xmx3g -XX:+UseSerialGC
