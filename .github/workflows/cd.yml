@@ -1,3 +1,10 @@
+# ============================================================================
+# 文件：.github/workflows/cd.yml
+# 用途：持续部署：构建镜像并部署到目标环境
+# 触发：手动 dispatch / push 事件
+# 主要 job：image-java、image-go、image-rust、image-py
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
 name: cd
 
 # 镜像构建与 GHCR 推送。
@@ -13,9 +20,11 @@ name: cd
 # 镜像名固定为 ghcr.io/kai-cn/car-monit-<service>。
 
 on:
+  # ── job: push ──
   push:
     branches: [master]
     tags: ['v*.*.*']
+  # ── job: workflow_dispatch ──
   workflow_dispatch:
 
 permissions:
@@ -27,9 +36,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ── job: image-java ──
   image-java:
     runs-on: ubuntu-latest
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
       - uses: docker/setup-buildx-action@v3
@@ -49,6 +60,7 @@ jobs:
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
 
+      # 构建并推送 Docker 镜像
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -60,9 +72,11 @@ jobs:
           cache-from: type=gha,scope=java
           cache-to: type=gha,mode=max,scope=java
 
+  # ── job: image-go ──
   image-go:
     runs-on: ubuntu-latest
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
       - uses: docker/setup-buildx-action@v3
@@ -82,6 +96,7 @@ jobs:
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
 
+      # 构建并推送 Docker 镜像
       - uses: docker/build-push-action@v6
         with:
           context: car-monit-go
@@ -94,9 +109,11 @@ jobs:
           cache-from: type=gha,scope=go
           cache-to: type=gha,mode=max,scope=go
 
+  # ── job: image-rust ──
   image-rust:
     runs-on: ubuntu-latest
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
       - uses: docker/setup-buildx-action@v3
@@ -116,6 +133,7 @@ jobs:
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
 
+      # 构建并推送 Docker 镜像
       - uses: docker/build-push-action@v6
         with:
           context: car-monit-rust
@@ -127,9 +145,11 @@ jobs:
           cache-from: type=gha,scope=rust
           cache-to: type=gha,mode=max,scope=rust
 
+  # ── job: image-py ──
   image-py:
     runs-on: ubuntu-latest
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
 
       - uses: docker/setup-buildx-action@v3
@@ -149,6 +169,7 @@ jobs:
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
 
+      # 构建并推送 Docker 镜像
       - uses: docker/build-push-action@v6
         with:
           context: car-monit-py
