@@ -173,6 +173,7 @@ jobs:
           SPRING__REDIS__HOST: 127.0.0.1
           SPRING__REDIS__PORT: "6379"
           TOKEN__SECRET: parity-cloud-secret-deterministic
+          EXPORT_DOWNLOAD_SECRET: parity-cloud-export-secret-deterministic
         run: |
           set -uo pipefail
           MODE=full; [ "$CELL_PLATFORM" = 'windows' ] && MODE=reachability
@@ -193,6 +194,7 @@ jobs:
           SPRING__REDIS__HOST: 127.0.0.1
           SPRING__REDIS__PORT: "6379"
           TOKEN__SECRET: parity-cloud-secret-deterministic
+          EXPORT_DOWNLOAD_SECRET: parity-cloud-export-secret-deterministic
         run: |
           set -uo pipefail
           MODE=full; [ "$CELL_PLATFORM" = 'windows' ] && MODE=reachability
