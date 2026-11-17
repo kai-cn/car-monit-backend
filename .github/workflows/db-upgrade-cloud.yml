@@ -1,0 +1,126 @@
+# Database major-version upgrade verification on GitHub cloud runner (backend repo).
+#
+# Backend's primary store is MySQL: 8.0 -> 9.7. Flow per cell: build jar -> old side
+# (start mysql:8.0 / load schema+seed / probe / stats) -> logical dump -> new side
+# (start mysql:9.7 / restore / probe / stats) -> parity_compare -> report -> artifact.
+#
+# Credentials are injected at dispatch time via `ci_db_password`; never stored.
+# workflow_dispatch only. This file is mirrored onto master so GitHub exposes it.
+
+name: db-upgrade-cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      linux_runner:
+        type: string
+        default: ubuntu-latest
+      ci_db_password:
+        description: CI-only throwaway DB password (injected at dispatch)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dbupgrade-backend-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  MAVEN_ARGS: -B -ntp
+  MODULE: ruoyi-admin
+  CI_DB_PASSWORD: ${{ inputs.ci_db_password }}
+
+jobs:
+  prepare:
+    runs-on: ${{ inputs.linux_runner }}
+    timeout-minutes: 5
+    outputs:
+      jdk: ${{ steps.jdk.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: jdk
+        shell: bash
+        run: |
+          v=$(grep -oP '<java\.version>\K[0-9]+' pom.xml | head -1)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "detected java.version=$v"
+
+  verify:
+    needs: prepare
+    runs-on: ${{ inputs.linux_runner }}
+    timeout-minutes: 240
+    env:
+      LABEL: backend-jdk${{ needs.prepare.outputs.jdk }}-mysql
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Provision JDK ${{ needs.prepare.outputs.jdk }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ needs.prepare.outputs.jdk }}
+          cache: maven
+
+      - name: Build application jar
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /home/ruoyi/logs /home/ruoyi/uploadPath
+          sudo chown -R "$(id -u):$(id -g)" /home/ruoyi
+          mkdir -p out
+          mvn $MAVEN_ARGS -DskipTests -pl "$MODULE" -am install
+          jar=$(ls "$MODULE"/target/*.jar | grep -v original | head -1)
+          cp "$jar" out/app.jar
+          ls -lh out/app.jar
+
+      - name: OLD DB side - load fixtures and probe
+        shell: bash
+        run: |
+          set -uo pipefail
+          bash scripts/v3/ops/dbupgrade/db_cell.sh backend mysql old out/app.jar "${LABEL}-old"
+
+      - name: Logical dump from OLD DB
+        shell: bash
+        run: bash scripts/v3/ops/dbupgrade/db_dump.sh backend mysql
+
+      - name: Stop OLD DB container
+        shell: bash
+        run: docker rm -f mysql-old >/dev/null 2>&1 || true
+
+      - name: NEW DB side - migrate and probe
+        shell: bash
+        run: |
+          set -uo pipefail
+          bash scripts/v3/ops/dbupgrade/db_cell.sh backend mysql new out/app.jar "${LABEL}-new"
+
+      - name: Compare business consistency
+        shell: bash
+        run: |
+          set -uo pipefail
+          python scripts/v3/ops/parity/parity_compare.py \
+            --baseline out/old.json --candidate out/new.json \
+            --out out/compare.json --md out/compare.md --label "$LABEL"
+          cat out/compare.md 2>/dev/null || true
+
+      - name: Generate resource and performance report
+        shell: bash
+        run: |
+          python scripts/v3/ops/dbupgrade/report.py \
+            --app backend --db mysql --label "$LABEL" --out-dir out
+          cat out/report.md
+
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbupgrade-backend-jdk${{ needs.prepare.outputs.jdk }}-mysql
+          path: out/**
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Stop all test containers
+        if: always()
+        shell: bash
+        run: docker rm -f mysql-old mysql-new rd >/dev/null 2>&1 || true
