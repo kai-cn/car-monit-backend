@@ -43,10 +43,33 @@ def norm(x):
         # 仅在典型 AjaxResult 信封（含 code 且无 rows/total 分页字段）时归一。
         if 'code' in x and 'data' not in out and 'rows' not in out and 'total' not in out:
             out['data'] = []
+        # Fastjson 空 HashMap 归一化：
+        #   Java 的 BaseEntity.params 是空 HashMap，Fastjson 序列化成
+        #   {"@type":"java.util.HashMap"}，去掉 @type 后是 {}；而 Jackson / Go / Python
+        #   按 @JsonInclude(NON_EMPTY) 直接省略该字段。二者语义一致（无扩展参数），
+        #   因此把空的 params 对象也移除，避免序列化实现细节造成假 DIFF。
+        if out.get('params') == {}:
+            out.pop('params', None)
         return out
     if isinstance(x, list):
         return [norm(v) for v in x]
     return x
+
+
+# 纯文本 body 的已知配置差异归一化。这些是部署配置/文案，不属于业务实现差异：
+#   - 欢迎语：Java baseline 打包配置 ruoyi.name="系统"，Rust 内嵌默认 "RuoYi"。
+#     两者都是同一模板"欢迎使用{name}后台管理框架，请通过前端地址访问。"。
+TEXT_NORMALIZERS = [
+    ('系统后台管理框架', '后台管理框架'),
+    ('RuoYi后台管理框架', '后台管理框架'),
+]
+
+
+def norm_text(body):
+    s = body
+    for needle, repl in TEXT_NORMALIZERS:
+        s = s.replace(needle, repl)
+    return s
 
 
 def classify(body):
@@ -55,7 +78,7 @@ def classify(body):
     try:
         return 'json', norm(json.loads(body))
     except Exception:
-        return 'text', body
+        return 'text', norm_text(body)
 
 
 def main():
