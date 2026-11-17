@@ -36,7 +36,7 @@ public class DruidConfig
     @ConfigurationProperties("spring.datasource.druid.master")
     public DataSource masterDataSource(DruidProperties druidProperties)
     {
-        DruidDataSource dataSource = DruidDataSourceBuilder.create().build();
+        DruidDataSource dataSource = new DruidDataSource();  // native: avoid DruidDataSourceWrapper (basicProperties null)
         return druidProperties.dataSource(dataSource);
     }
 
@@ -45,7 +45,7 @@ public class DruidConfig
     @ConditionalOnProperty(prefix = "spring.datasource.druid.slave", name = "enabled", havingValue = "true")
     public DataSource slaveDataSource(DruidProperties druidProperties)
     {
-        DruidDataSource dataSource = DruidDataSourceBuilder.create().build();
+        DruidDataSource dataSource = new DruidDataSource();  // native: avoid DruidDataSourceWrapper (basicProperties null)
         return druidProperties.dataSource(dataSource);
     }
 
