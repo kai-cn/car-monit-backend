@@ -6,9 +6,11 @@ import java.util.Map;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import javax.sql.DataSource;
+import org.springframework.core.env.Environment;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -32,11 +34,15 @@ import com.ruoyi.framework.datasource.DynamicDataSource;
 @Configuration
 public class DruidConfig
 {
+    @Autowired
+    private Environment environment;
+
     @Bean
     @ConfigurationProperties("spring.datasource.druid.master")
     public DataSource masterDataSource(DruidProperties druidProperties)
     {
-        DruidDataSource dataSource = new DruidDataSource();  // native: avoid DruidDataSourceWrapper (basicProperties null)
+        DruidDataSource dataSource = DruidDataSourceBuilder.create().build();
+        applyConnectionProperties(dataSource, "master");
         return druidProperties.dataSource(dataSource);
     }
 
@@ -45,7 +51,8 @@ public class DruidConfig
     @ConditionalOnProperty(prefix = "spring.datasource.druid.slave", name = "enabled", havingValue = "true")
     public DataSource slaveDataSource(DruidProperties druidProperties)
     {
-        DruidDataSource dataSource = new DruidDataSource();  // native: avoid DruidDataSourceWrapper (basicProperties null)
+        DruidDataSource dataSource = DruidDataSourceBuilder.create().build();
+        applyConnectionProperties(dataSource, "master");
         return druidProperties.dataSource(dataSource);
     }
 
@@ -59,6 +66,15 @@ public class DruidConfig
         return new DynamicDataSource(masterDataSource, targetDataSources);
     }
     
+    private void applyConnectionProperties(DruidDataSource ds, String prefix)
+    {
+        String base = "spring.datasource.druid." + prefix + ".";
+        ds.setUrl(environment.getProperty(base + "url"));
+        ds.setUsername(environment.getProperty(base + "username"));
+        ds.setPassword(environment.getProperty(base + "password"));
+        ds.setDriverClassName(environment.getProperty(base + "driverClassName"));
+    }
+
     /**
      * 设置数据源
      * 
