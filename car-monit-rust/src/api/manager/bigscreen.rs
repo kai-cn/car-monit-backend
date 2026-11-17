@@ -250,19 +250,42 @@ async fn car_statistics(
     }
     builder.push(" group by a.escaped_type");
     let rows = builder.build().fetch_all(&state.db).await?;
-    let mut data = rows_to_json(&rows);
-    let labels = support::dict_map(&state.db, "escaped_type").await?;
-    for row in &mut data {
-        if let Some(object) = row.as_object_mut() {
-            let key = object
-                .get("escapedType")
-                .and_then(Value::as_str)
-                .unwrap_or_default();
-            object.insert(
-                "escapedTypeName".to_string(),
-                json!(labels.get(key).cloned().unwrap_or_default()),
-            );
+    let stats = rows_to_json(&rows);
+
+    // Java: CarConfimFreeServiceImpl.getCarStatistics() 以 sys_dict_data 的
+    // escaped_type 字典为准，先按 dict_sort 建有序结果，再用 SQL 聚合结果填空；
+    // 字典里存在但无流水的类型也要返回（number/escapedAmount 保持 VO 默认 0）。
+    // 直接 group by 只在有数据时给出行，会把这些 0 值类型漏掉（跨语言 parity 失败）。
+    let dict_rows: Vec<(Option<String>, Option<String>)> = sqlx::query_as(
+        "select dict_value, dict_label from sys_dict_data \
+         where dict_type = 'escaped_type' order by dict_sort asc",
+    )
+    .fetch_all(&state.db)
+    .await?;
+    let mut by_type: HashMap<String, Value> = HashMap::new();
+    for row in &stats {
+        if let Some(object) = row.as_object() {
+            if let Some(key) = object.get("escapedType").and_then(Value::as_str) {
+                by_type.insert(key.to_string(), row.clone());
+            }
         }
+    }
+    let mut data: Vec<Value> = Vec::new();
+    for (value, label) in dict_rows {
+        let key = value.unwrap_or_default();
+        let label = label.unwrap_or_default();
+        let mut object = by_type
+            .get(&key)
+            .and_then(Value::as_object)
+            .cloned()
+            .unwrap_or_default();
+        object.insert("escapedType".to_string(), json!(key));
+        object.insert("escapedTypeName".to_string(), json!(label));
+        object
+            .entry("escapedAmount".to_string())
+            .or_insert_with(|| json!(0));
+        object.entry("number".to_string()).or_insert_with(|| json!(0));
+        data.push(Value::Object(object));
     }
     Ok(AjaxResult::success_data(support::reorder_rows(
         data,
@@ -507,12 +530,21 @@ async fn car_audit(
         .map(|row| crate::db::rows::row_to_json(&row))
         .unwrap_or(Value::Null);
 
-    // Java 侧 VO 的声明顺序即 totalCount, finishedCount, totalAmount, finishedAmount。
+    // Java 侧 CarStatisticsVO 的 number/BigDecimal 字段有默认值 0/BigDecimal.ZERO。
+    // SQL 的 sum() 在无匹配行时返回 NULL（即使内层 ifnull 也没用，因为外层没有分组行），
+    // Jackson 映射到 int/BigDecimal 后仍是 0；Rust 若直接透传会输出 null，跨语言 parity 判 DIFF。
+    // 因此把每个数值字段的 NULL 统一回退为 0，与 Java VO 默认值保持一致。
+    fn zero_if_null(value: Option<&Value>) -> Value {
+        match value {
+            Some(Value::Null) | None => json!(0),
+            Some(v) => v.clone(),
+        }
+    }
     Ok(AjaxResult::success_data(json!({
-        "totalCount": audit_value.get("number").cloned().unwrap_or(Value::Null),
-        "finishedCount": confirm_value.get("number").cloned().unwrap_or(Value::Null),
-        "totalAmount": audit_value.get("escapedAmount").cloned().unwrap_or(Value::Null),
-        "finishedAmount": confirm_value.get("escapedAmount").cloned().unwrap_or(Value::Null),
+        "totalCount": zero_if_null(audit_value.get("number")),
+        "finishedCount": zero_if_null(confirm_value.get("number")),
+        "totalAmount": zero_if_null(audit_value.get("escapedAmount")),
+        "finishedAmount": zero_if_null(confirm_value.get("escapedAmount")),
     })))
 }
 
