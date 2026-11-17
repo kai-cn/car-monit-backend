@@ -44,6 +44,7 @@ permissions:
 
 concurrency:
   group: parity-${{ github.ref }}-${{ inputs.platform }}
+  # Perf: cancel superseded runs so the queue always serves the newest commit.
   cancel-in-progress: true
 
 env:
@@ -63,6 +64,7 @@ jobs:
     steps:
       # 拉取仓库源码
       - uses: actions/checkout@v4
+      # Perf: reuse ~/.m2/repository across runs; key follows pom.xml changes.
       - name: Cache Maven repository
         uses: actions/cache@v4
         with:
@@ -95,6 +97,7 @@ jobs:
     timeout-minutes: 180
     strategy:
       fail-fast: false
+      # Perf: matrix cells use separate cloud runners; run them concurrently.
       max-parallel: 2
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     env:
