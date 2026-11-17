@@ -29,7 +29,7 @@ import com.ruoyi.common.utils.StringUtils;
  * 
  * @author ruoyi
  */
-//@Configuration //mybatisplus 生效后不需要再配置mybatis
+@Configuration // H8: native needs explicit alias registration here
 public class MyBatisConfig
 {
     @Autowired
@@ -119,7 +119,9 @@ public class MyBatisConfig
         String typeAliasesPackage = env.getProperty("mybatis.typeAliasesPackage");
         String mapperLocations = env.getProperty("mybatis.mapperLocations");
         String configLocation = env.getProperty("mybatis.configLocation");
-        typeAliasesPackage = setTypeAliasesPackage(typeAliasesPackage);
+        // H8: package scanning uses **/*.class resources, unavailable in native images.
+        // Explicit Class[] aliases below replace it for both JVM and native.
+        // typeAliasesPackage = setTypeAliasesPackage(typeAliasesPackage);
         VFS.addImplClass(SpringBootVFS.class);
 
         final SqlSessionFactoryBean sessionFactory = new SqlSessionFactoryBean();
