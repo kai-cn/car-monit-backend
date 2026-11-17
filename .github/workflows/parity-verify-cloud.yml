@@ -17,11 +17,6 @@ name: parity-verify-cloud
 on:
   workflow_dispatch:
     inputs:
-      jdk:
-        description: JDK line
-        type: choice
-        options: ['25', '21', '17', all]
-        default: '25'
       platform:
         description: runner OS
         type: choice
@@ -41,7 +36,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: parity-${{ github.ref }}-${{ inputs.jdk }}-${{ inputs.platform }}
+  group: parity-${{ github.ref }}-${{ inputs.platform }}
   cancel-in-progress: false
 
 env:
@@ -56,18 +51,24 @@ jobs:
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.gen.outputs.matrix }}
+      jdk: ${{ steps.jdk.outputs.version }}
     steps:
+      - uses: actions/checkout@v4
+      - id: jdk
+        shell: bash
+        run: |
+          v=$(grep -oP '<java\.version>\K[0-9]+' pom.xml | head -1)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "detected java.version=$v"
       - id: gen
         shell: bash
         env:
-          IN_JDK: ${{ inputs.jdk }}
           IN_PLATFORM: ${{ inputs.platform }}
         run: |
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import json, os
-          jdks = ['25','21','17'] if os.environ['IN_JDK'] == 'all' else [os.environ['IN_JDK']]
           plats = ['linux','windows'] if os.environ['IN_PLATFORM'] == 'both' else [os.environ['IN_PLATFORM']]
-          cells = [{'jdk': j, 'platform': p} for j in jdks for p in plats]
+          cells = [{'platform': p} for p in plats]
           print('matrix=' + json.dumps({'include': cells}, separators=(',', ':')))
           PY
           grep '^matrix=' "$GITHUB_OUTPUT"
@@ -81,16 +82,16 @@ jobs:
       max-parallel: 1
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     env:
-      CELL_JDK: ${{ matrix.jdk }}
+      CELL_JDK: ${{ needs.prepare.outputs.jdk }}
       CELL_PLATFORM: ${{ matrix.platform }}
-      LABEL: backend-jdk${{ matrix.jdk }}-${{ matrix.platform }}
+      LABEL: backend-jdk${{ needs.prepare.outputs.jdk }}-${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Provision Mandrel java${{ matrix.jdk }}
+      - name: Provision Mandrel java${{ needs.prepare.outputs.jdk }}
         uses: graalvm/setup-graalvm@v1
         with:
-          java-version: ${{ matrix.jdk }}
+          java-version: ${{ needs.prepare.outputs.jdk }}
           distribution: 'mandrel'
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -231,7 +232,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: parity-backend-${{ matrix.jdk }}-${{ matrix.platform }}
+          name: parity-backend-${{ needs.prepare.outputs.jdk }}-${{ matrix.platform }}
           path: |
             out/**
             */target/*.jar
