@@ -159,6 +159,9 @@ jobs:
             echo "seed load retry $i"; sleep 3
           done
           echo "sys_user rows: $(docker exec my mysql -uroot -proot -N -e 'select count(*) from carmonitdb.sys_user')"
+          # RuoYi runtime dirs (logback / upload path) must exist and be writable.
+          sudo mkdir -p /home/ruoyi/logs /home/ruoyi/uploadPath
+          sudo chown -R "$(id -u):$(id -g)" /home/ruoyi
 
       - name: Probe JVM baseline
         shell: bash
@@ -205,6 +208,14 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
+          # Dump probe app-log tails for diagnosis (startup errors surface here).
+          for f in out/jar.json.app.log out/native.json.app.log; do
+            if [ -f "$f" ]; then
+              echo "::group::tail $f"
+              grep -E 'ERROR|Caused by|APPLICATION FAILED|Exception|Started .* in|Tomcat started' "$f" | tail -40 || true
+              echo "::endgroup::"
+            fi
+          done
           if [ ! -f out/native.json ]; then
             echo "::warning::native probe missing - build-only cell (Boot4 native runtime needs JDK25)"
             exit 0
