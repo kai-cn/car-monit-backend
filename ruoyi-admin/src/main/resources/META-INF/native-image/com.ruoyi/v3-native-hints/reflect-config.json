@@ -1013,5 +1013,17 @@
     "name": "com.baomidou.mybatisplus.core.MybatisConfiguration",
     "allDeclaredConstructors": true,
     "allDeclaredMethods": true
+  },
+  {
+    "name": "org.apache.ibatis.session.Configuration",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.apache.ibatis.builder.xml.XMLConfigBuilder",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
   }
 ]
