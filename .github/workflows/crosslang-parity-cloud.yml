@@ -132,6 +132,11 @@ jobs:
       - name: Probe Go
         if: steps.gate.outputs.run == 'yes' && matrix.lang == 'go'
         shell: bash
+        env:
+          # config.yaml defaults to 3307 (local); override to the cloud MySQL on 3306.
+          CARMONIT_DATABASE_DSN: "root:root@tcp(127.0.0.1:3306)/carmonitdb?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true"
+          CARMONIT_REDIS_ADDR: "127.0.0.1:6379"
+          CARMONIT_SERVER_PORT: "9989"
         run: |
           set -uo pipefail
           python scripts/v3/ops/parity/parity_probe.py --variant go --label go \
@@ -144,6 +149,8 @@ jobs:
         run: |
           set -uo pipefail
           python3 -m pip install -q -r car-monit-py/requirements.txt
+          # config hardcodes 3307 (local); point it at the cloud MySQL on 3306.
+          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' car-monit-py/config/application.yml
           python scripts/v3/ops/parity/parity_probe.py --variant python --label python \
             --cmd "cd car-monit-py && python3 -m uvicorn app.main:app --host 127.0.0.1 --port 9989" \
             --port 9989 --endpoints scripts/v3/ops/parity/endpoints/backend.txt \
@@ -159,6 +166,7 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
+          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' car-monit-rust/config/application.yaml
           python scripts/v3/ops/parity/parity_probe.py --variant rust --label rust \
             --cmd "car-monit-rust/target/release/car-monit-rust" --port 9989 \
             --endpoints scripts/v3/ops/parity/endpoints/backend.txt \
