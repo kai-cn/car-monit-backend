@@ -111,6 +111,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # ruoyi-admin binds spring-boot process-aot to the default lifecycle (added for
+          # native builds); it boots the app and needs the logback dir to exist.
+          if [ "$CELL_PLATFORM" = 'linux' ]; then
+            sudo mkdir -p /home/ruoyi/logs && sudo chown "$(id -u):$(id -g)" /home/ruoyi/logs
+          fi
           mvn $MAVEN_ARGS -DskipTests -pl "$MODULE" -am install
           mkdir -p out
           jar=$(ls "$MODULE"/target/*.jar | grep -v original | head -1)
