@@ -6,14 +6,13 @@ import java.util.Map;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import javax.sql.DataSource;
-import org.springframework.core.env.Environment;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -34,15 +33,24 @@ import com.ruoyi.framework.datasource.DynamicDataSource;
 @Configuration
 public class DruidConfig
 {
-    @Autowired
-    private Environment environment;
 
+    @Value("${spring.datasource.druid.master.url}")
+    private String masterUrl;
+    @Value("${spring.datasource.druid.master.username}")
+    private String masterUsername;
+    @Value("${spring.datasource.druid.master.password}")
+    private String masterPassword;
+    @Value("${spring.datasource.druid.master.driverClassName:com.mysql.cj.jdbc.Driver}")
+    private String masterDriverClassName;
     @Bean
     @ConfigurationProperties("spring.datasource.druid.master")
     public DataSource masterDataSource(DruidProperties druidProperties)
     {
-        DruidDataSource dataSource = DruidDataSourceBuilder.create().build();
-        applyConnectionProperties(dataSource, "master");
+        DruidDataSource dataSource = new DruidDataSource();
+        dataSource.setUrl(masterUrl);
+        dataSource.setUsername(masterUsername);
+        dataSource.setPassword(masterPassword);
+        dataSource.setDriverClassName(masterDriverClassName);
         return druidProperties.dataSource(dataSource);
     }
 
@@ -52,7 +60,6 @@ public class DruidConfig
     public DataSource slaveDataSource(DruidProperties druidProperties)
     {
         DruidDataSource dataSource = DruidDataSourceBuilder.create().build();
-        applyConnectionProperties(dataSource, "master");
         return druidProperties.dataSource(dataSource);
     }
 
@@ -66,15 +73,6 @@ public class DruidConfig
         return new DynamicDataSource(masterDataSource, targetDataSources);
     }
     
-    private void applyConnectionProperties(DruidDataSource ds, String prefix)
-    {
-        String base = "spring.datasource.druid." + prefix + ".";
-        ds.setUrl(environment.getProperty(base + "url"));
-        ds.setUsername(environment.getProperty(base + "username"));
-        ds.setPassword(environment.getProperty(base + "password"));
-        ds.setDriverClassName(environment.getProperty(base + "driverClassName"));
-    }
-
     /**
      * 设置数据源
      * 
