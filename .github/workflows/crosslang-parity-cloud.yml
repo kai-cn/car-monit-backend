@@ -36,7 +36,7 @@ permissions:
 
 concurrency:
   group: crosslang-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   MAVEN_ARGS: -B -ntp
@@ -51,6 +51,7 @@ jobs:
       - uses: actions/checkout@v4
       # 安装 JDK
       - uses: actions/setup-java@v4
+        cache: maven
         with:
           distribution: temurin
           java-version: '8'
@@ -106,7 +107,7 @@ jobs:
     timeout-minutes: 90
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 2
       matrix:
         lang: [go, python, rust]
     steps:
