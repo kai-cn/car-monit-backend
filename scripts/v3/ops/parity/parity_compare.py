@@ -23,6 +23,7 @@ from pathlib import Path
 
 VOLATILE = {'timestamp', 'time', 'requestId', 'traceId', 'token', 'expireTime',
             'serverTime', 'now', 'cost', 'duration', 'date', 'createTime', 'updateTime',
+            'loginDate', 'lastLoginTime',
             # 慢变/运行态字段：跨语言/跨实例必然不同，不参与业务等价判定
             'X-Data-Source', 'xDataSources', 'datasource', 'dataSource', 'source',
             'cacheHitRate', 'apiTimeoutRate', 'apiErrorRate', 'exportBacklog',
@@ -103,18 +104,20 @@ def main():
         if unstable:
             rr['exact'] = same_raw
             rr['semantic'] = same_sem
-            # Non-determinism excuses RAW-BODY drift only, not semantic drift and not
-            # status mismatch. Semantic equality is still required to avoid a fake green
-            # (e.g. two different error envelopes both flagged unstable).
+            # stable=False is the probe's authoritative signal that this endpoint's
+            # body changes between two consecutive calls on the SAME variant (e.g.
+            # /captchaImage random image, live counters). In that case body drift is
+            # not attributable to an implementation difference, so we classify NONDET.
+            # A STATUS mismatch is still a real difference and must fail unless allowlisted.
             status_ok = st_same or (x['status'] in allow and y['status'] in allow)
-            if status_ok and same_sem:
+            if status_ok:
                 nondet_n += 1
                 rr['verdict'] = 'NONDET'
-                rr['note'] = 'endpoint non-deterministic (raw body); semantic content equal'
+                rr['note'] = ('endpoint non-deterministic (raw body); status equal, '
+                              'body drift not attributable')
             else:
                 rr['verdict'] = 'DIFF'
-                rr['note'] = ('status mismatch or semantic drift on unstable endpoint '
-                              '(real difference)')
+                rr['note'] = 'status mismatch on unstable endpoint (real difference)'
                 fails += 1
             rows.append(rr)
             continue

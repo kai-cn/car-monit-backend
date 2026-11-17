@@ -184,11 +184,18 @@ jobs:
             --endpoints "$ENDPOINTS" --auth-lang go \
             --user "$AUTH_USER" --password-env AUTH_PASS \
             --out out/go.json --mode full --check-stability --ready-timeout 120 || echo "go auth probe exit=$?"
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
+        with:
+          python-version: '3.12'
       - name: Setup Python + deps
         if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
         shell: bash
         run: |
           set -euo pipefail
+          # Pillow 的 JPEG 支持需要系统头；PyO3 依赖(orjson/pydantic-core)在 3.14 无法编译
+          sudo apt-get update -qq && sudo apt-get install -y -qq libjpeg-dev zlib1g-dev >/dev/null
+          python3 -m pip install -q --upgrade pip
           python3 -m pip install -q -r car-monit-py/requirements.txt
           sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' car-monit-py/config/application.yml
       - name: Probe Python (auth)
@@ -218,6 +225,12 @@ jobs:
             --endpoints "$ENDPOINTS" --auth-lang rust \
             --user "$AUTH_USER" --password-env AUTH_PASS \
             --out out/rust.json --mode full --check-stability --ready-timeout 180 || echo "rust auth probe exit=$?"
+      - name: Diagnose candidate startup (if failed)
+        if: always() && steps.gate.outputs.run == 'yes'
+        shell: bash
+        run: |
+          echo "===== ${{ matrix.lang }} app.log tail ====="
+          tail -40 "out/${{ matrix.lang }}.json.app.log" 2>/dev/null || echo "(no app.log)"
       - name: Compare vs Java8 (authenticated, full endpoints)
         if: steps.gate.outputs.run == 'yes'
         shell: bash
@@ -243,11 +256,17 @@ jobs:
               print('::warning::%s auth_fail=%d on candidate (compare will gate details)' % (lang, af))
           print('%s_CANDIDATE_GATE_OK' % lang)
           PY
+          set +e
           python scripts/v3/ops/parity/parity_compare.py \
             --baseline out/java8.json --candidate "$CAND" \
             --out "out/report-${{ matrix.lang }}.json" --md "out/report-${{ matrix.lang }}.md" \
             --label "java8-vs-${{ matrix.lang }}-auth"
-          cat "out/report-${{ matrix.lang }}.md"
+          RC=$?
+          set -e
+          echo "===== parity report (${{ matrix.lang }}) ====="
+          cat "out/report-${{ matrix.lang }}.md" 2>/dev/null || true
+          echo "PARITY_COMPARE_RC=$RC"
+          exit $RC
       - uses: actions/upload-artifact@v4
         if: always() && steps.gate.outputs.run == 'yes'
         with:
