@@ -82,32 +82,32 @@ og_sql() {
 }
 
 detect_og_admin() {
-  # 逐个候选（uid + 用户 + socket/TCP）探测，直到 select 1 成功。
-  local i u mode uid
-  for mode in socket tcp; do
-    for uid in 70 0; do
-      for u in omm gaussdb; do
-        for i in $(seq 1 8); do
-          local rc=1
-          if [ "$mode" = socket ]; then
-            docker exec -u "$uid" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
-              "$CNAME" /usr/local/opengauss/bin/gsql -U "$u" -d postgres -w \
-              -Atc 'select 1' >/dev/null 2>&1 && rc=0
-          else
-            docker exec -u "$uid" -e PGPASSWORD="$PW" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
-              "$CNAME" /usr/local/opengauss/bin/gsql -h 127.0.0.1 -p 5432 \
-              -U "$u" -d postgres -w -Atc 'select 1' >/dev/null 2>&1 && rc=0
-          fi
-          if [ "$rc" = 0 ]; then
-            OG_ADMIN="$u"; OG_UID="$uid"
-            echo "$u" > "$OUT/${DB}_admin.txt"
-            log "openGauss admin user=$u uid=$uid mode=$mode (attempt $i)"
-            return 0
-          fi
-          sleep 2
-        done
-      done
+  # 先找“能用 TCP+口令认证”的用户——这才是 app JDBC 实际使用的方式；
+  # 只用 socket 免密探测会误选没有口令的用户（3.0=gaussdb, 7.x 镜像可能不同）。
+  local i u
+  for u in gaussdb omm; do
+    for i in $(seq 1 12); do
+      if docker exec -e PGPASSWORD="$PW" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
+          "$CNAME" /usr/local/opengauss/bin/gsql -h 127.0.0.1 -p 5432 \
+          -U "$u" -d postgres -w -Atc 'select 1' >/dev/null 2>&1; then
+        OG_ADMIN="$u"; OG_UID="70"
+        echo "$u" > "$OUT/${DB}_admin.txt"
+        log "openGauss JDBC-capable user=$u (tcp, attempt $i)"
+        return 0
+      fi
+      sleep 2
     done
+  done
+  # 回退：socket 免密（仅用于加载夹具，app 仍可能连不上——如实记录）。
+  for u in gaussdb omm; do
+    if docker exec -u 70 -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
+        "$CNAME" /usr/local/opengauss/bin/gsql -U "$u" -d postgres -w \
+        -Atc 'select 1' >/dev/null 2>&1; then
+      OG_ADMIN="$u"; OG_UID="70"
+      echo "$u" > "$OUT/${DB}_admin.txt"
+      log "openGauss socket-only user=$u (JDBC may still fail)"
+      return 0
+    fi
   done
   log "gsql diagnostics (sanitized):"
   docker logs "$CNAME" 2>&1 | tail -8 | sed -E 's/(PASSWORD|password)=[^ ]*/\1=***/g' || true
@@ -151,7 +151,11 @@ load_mysql_fixture() {
 load_pg_fixture() {
   # 把版本无关的 schema/seed 拷进容器，用容器内 gsql 加载（宿主 psql16 无法认证 openGauss sha256）。
   gunzip -c "$SQLDIR/seed_jl_data01.sql.gz" > /tmp/dbupgrade_seed.sql
-  docker cp "$SQLDIR/schema_jl_data01.sql" "$CNAME:/tmp/schema.sql" >/dev/null
+  # openGauss 3.0 不支持 CREATE SCHEMA IF NOT EXISTS（既有 D15 实测约束）；
+  # 用 DO 块幂等建 schema，其余 DROP ... IF EXISTS 保持原样。
+  sed 's/^CREATE SCHEMA IF NOT EXISTS jl_data01;/DO \$\$ BEGIN CREATE SCHEMA jl_data01; EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;/' \
+    "$SQLDIR/schema_jl_data01.sql" > /tmp/dbupgrade_schema.sql
+  docker cp /tmp/dbupgrade_schema.sql "$CNAME:/tmp/schema.sql" >/dev/null
   docker cp /tmp/dbupgrade_seed.sql "$CNAME:/tmp/seed.sql" >/dev/null
   og_sql RuoYi -v ON_ERROR_STOP=1 -f /tmp/schema.sql >/dev/null || { log "schema load failed"; return 1; }
   og_sql RuoYi -v ON_ERROR_STOP=1 -f /tmp/seed.sql >/dev/null || { log "seed load failed"; return 1; }

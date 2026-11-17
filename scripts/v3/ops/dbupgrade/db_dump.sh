@@ -23,10 +23,10 @@ if [ "$DB" = "mysql" ]; then
   fi
 else
   # 宿主 psql/pg_dump 无法用 sha256 认证 openGauss；用容器内 gs_dump。
-  ADMIN=$(cat "out/${DB}_admin.txt" 2>/dev/null || echo omm)
-  if docker exec -u 70 -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
-       opengauss-old /usr/local/opengauss/bin/gs_dump -U "$ADMIN" -d RuoYi \
-       -Fp --no-owner -f /tmp/og_dump.sql >/dev/null 2>&1 && \
+  ADMIN=$(cat "out/${DB}_admin.txt" 2>/dev/null || echo gaussdb)
+  if docker exec -e PGPASSWORD="$PW" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
+       opengauss-old /usr/local/opengauss/bin/gs_dump -h 127.0.0.1 -p 5432 \
+       -U "$ADMIN" -d RuoYi -w -Fp --no-owner -f /tmp/og_dump.sql >/dev/null 2>&1 && \
      docker cp opengauss-old:/tmp/og_dump.sql "out/${DB}_dump.sql" >/dev/null 2>&1 && \
      [ -s "out/${DB}_dump.sql" ]; then
     echo "gs_dump(in-container, admin=$ADMIN, openGauss 3.0.0 -> plain SQL)" > "out/${DB}_dump.method.txt"
