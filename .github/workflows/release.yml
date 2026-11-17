@@ -21,6 +21,7 @@ permissions:
 
 concurrency:
   group: release-${{ github.ref }}
+  # Perf: cancel superseded runs so the queue always serves the newest commit.
   cancel-in-progress: true
 
 jobs:
@@ -35,6 +36,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
+          # Perf: let setup-java restore Maven dependencies from the action cache.
           cache: maven
       - name: 打包
         run: mvn -B -DskipTests package
