@@ -152,11 +152,11 @@ jobs:
           for i in $(seq 1 90); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
           for i in $(seq 1 30); do docker exec rd redis-cli ping >/dev/null 2>&1 && break; sleep 1; done
           for i in $(seq 1 10); do
-            docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot < scripts/v3/ops/parity/sql/schema_carmonitdb.sql && break
+            docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/schema_carmonitdb.sql && break
             echo "schema load retry $i"; sleep 3
           done
           for i in $(seq 1 10); do
-            docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot < scripts/v3/ops/parity/sql/seed_carmonitdb.sql && break
+            docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/seed_carmonitdb.sql && break
             echo "seed load retry $i"; sleep 3
           done
           echo "sys_user rows: $(docker exec my mysql -uroot -proot -N -e 'select count(*) from carmonitdb.sys_user')"
