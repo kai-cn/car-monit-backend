@@ -4,7 +4,7 @@
 # 与 crosslang-parity-cloud.yml 的区别：
 #   * crosslang 用 parity_probe.py 只探 2 个免认证端点（/captchaImage、/）；
 #   * 本 workflow 用 parity_auth_probe.py 先登录拿 Bearer token，再探全部
-#     认证态业务端点（endpoints/backend-full.txt，19 个），并对 RuoYi
+#     认证态业务端点（endpoints/backend-full.txt，16 个），并对 RuoYi
 #     「HTTP 200 但 body.code=401/403/500」的假绿做绝对失败断言。
 #
 # 每个变体在独立 runner 上：起 MySQL8 + Redis -> 构建 -> 认证探针采集 ->
@@ -214,7 +214,7 @@ jobs:
         if: steps.gate.outputs.run == 'yes'
         shell: bash
         run: |
-          set -uo pipefail
+          set -euo pipefail
           CAND="out/${{ matrix.lang }}.json"
           if [ ! -f "$CAND" ]; then echo "::error::${{ matrix.lang }} auth probe JSON missing"; exit 1; fi
           python - "$CAND" "${{ matrix.lang }}" <<'PY'
@@ -231,6 +231,8 @@ jobs:
               print('::error::%s login did not return code=200: %s' % (lang, login)); sys.exit(1)
           if ready < 10:
               print('::error::%s diff_ready=%d < 10, candidate unusable' % (lang, ready)); sys.exit(1)
+          if af > 0:
+              print('::warning::%s auth_fail=%d on candidate (compare will gate details)' % (lang, af))
           print('%s_CANDIDATE_GATE_OK' % lang)
           PY
           python scripts/v3/ops/parity/parity_compare.py \
