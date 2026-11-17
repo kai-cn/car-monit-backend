@@ -1,10 +1,3 @@
-# ============================================================================
-# 文件：.github/workflows/parity-verify-cloud.yml
-# 用途：云上 native vs JVM 全接口 + 资源性能对比（jdk × 平台矩阵）
-# 触发：手动 dispatch
-# 主要 job：prepare、verify
-# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
-# ============================================================================
 # Native-image vs JVM full-interface + resource/performance parity verification (backend repo).
 #
 # Matrix: jdk x platform. Builds fat jar (baseline) + native binary (candidate), brings up
@@ -53,7 +46,6 @@ env:
   ENDPOINTS: scripts/v3/ops/parity/endpoints/backend.txt
 
 jobs:
-  # ── job: prepare ──
   prepare:
     runs-on: ${{ inputs.linux_runner }}
     timeout-minutes: 5
@@ -61,7 +53,6 @@ jobs:
       matrix: ${{ steps.gen.outputs.matrix }}
       jdk: ${{ steps.jdk.outputs.version }}
     steps:
-      # 拉取仓库源码
       - uses: actions/checkout@v4
       - id: jdk
         shell: bash
@@ -82,7 +73,6 @@ jobs:
           PY
           grep '^matrix=' "$GITHUB_OUTPUT"
 
-  # ── job: verify ──
   verify:
     needs: prepare
     runs-on: ${{ matrix.platform == 'linux' && inputs.linux_runner || inputs.windows_runner }}
@@ -96,7 +86,6 @@ jobs:
       CELL_PLATFORM: ${{ matrix.platform }}
       LABEL: backend-jdk${{ needs.prepare.outputs.jdk }}-${{ matrix.platform }}
     steps:
-      # 拉取仓库源码
       - uses: actions/checkout@v4
 
       - name: Provision Mandrel java${{ needs.prepare.outputs.jdk }}
@@ -178,9 +167,10 @@ jobs:
       - name: Probe JVM baseline
         shell: bash
         env:
-          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
           SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
+          SPRING__DATASOURCE__DRUID__MASTER__DRIVERCLASSNAME: com.mysql.cj.jdbc.Driver
           SPRING__REDIS__HOST: 127.0.0.1
           SPRING__REDIS__PORT: "6379"
           TOKEN__SECRET: parity-cloud-secret-deterministic
@@ -199,9 +189,10 @@ jobs:
         if: steps.art.outputs.native != ''
         shell: bash
         env:
-          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
           SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
+          SPRING__DATASOURCE__DRUID__MASTER__DRIVERCLASSNAME: com.mysql.cj.jdbc.Driver
           SPRING__REDIS__HOST: 127.0.0.1
           SPRING__REDIS__PORT: "6379"
           TOKEN__SECRET: parity-cloud-secret-deterministic
