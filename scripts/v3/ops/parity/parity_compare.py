@@ -23,7 +23,9 @@ from pathlib import Path
 
 VOLATILE = {'timestamp', 'time', 'requestId', 'traceId', 'token', 'expireTime',
             'serverTime', 'now', 'cost', 'duration', 'date', 'createTime', 'updateTime',
-            'loginDate', 'lastLoginTime',
+            'loginDate', 'lastLoginTime', '@type',
+            # @type 是 Java Fastjson 的类型提示（如 "java.util.HashMap"），
+            # 其它语言实现不带此字段，属序列化实现细节，跨语言对比忽略。
             # 慢变/运行态字段：跨语言/跨实例必然不同，不参与业务等价判定
             'X-Data-Source', 'xDataSources', 'datasource', 'dataSource', 'source',
             'cacheHitRate', 'apiTimeoutRate', 'apiErrorRate', 'exportBacklog',
