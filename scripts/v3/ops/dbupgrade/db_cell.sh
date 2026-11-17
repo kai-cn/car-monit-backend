@@ -68,28 +68,49 @@ start_mysql() {
 }
 
 # ---- 启动 openGauss：old=3.0.0，new=7.x 官方镜像 ----
-# 容器内的 gsql 需要 LD_LIBRARY_PATH；不同镜像管理员用户可能是 omm 或 gaussdb。
+# 容器内 gsql 需要 LD_LIBRARY_PATH；3.0 镜像管理员是 uid 70(omm)，本地 socket 免密。
 OG_ADMIN=""
+OG_UID="70"
+og_exec() {
+  # 统一容器内 gsql 入口（socket，uid 70）；$@ 为 gsql 参数。
+  docker exec -u "$OG_UID" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
+    "$CNAME" /usr/local/opengauss/bin/gsql "$@"
+}
 og_sql() {
-  # 在容器内以管理员执行一条 SQL（stdin 或 -c），返回 0 才算成功。
   local db="$1"; shift
-  docker exec -e PGPASSWORD="$PW" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
-    "$CNAME" /usr/local/opengauss/bin/gsql -h 127.0.0.1 -p 5432 \
-    -U "$OG_ADMIN" -d "$db" -w "$@"
+  og_exec -d "$db" "$@"
 }
 
 detect_og_admin() {
-  local u
-  for u in omm gaussdb; do
-    if docker exec -e PGPASSWORD="$PW" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
-        "$CNAME" /usr/local/opengauss/bin/gsql -h 127.0.0.1 -p 5432 \
-        -U "$u" -d postgres -w -Atc 'select 1' >/dev/null 2>&1; then
-      OG_ADMIN="$u"
-      echo "$u" > "$OUT/${DB}_admin.txt"
-      log "openGauss admin user = $u"
-      return 0
-    fi
+  # 逐个候选（uid + 用户 + socket/TCP）探测，直到 select 1 成功。
+  local i u mode uid
+  for mode in socket tcp; do
+    for uid in 70 0; do
+      for u in omm gaussdb; do
+        for i in $(seq 1 8); do
+          local rc=1
+          if [ "$mode" = socket ]; then
+            docker exec -u "$uid" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
+              "$CNAME" /usr/local/opengauss/bin/gsql -U "$u" -d postgres -w \
+              -Atc 'select 1' >/dev/null 2>&1 && rc=0
+          else
+            docker exec -u "$uid" -e PGPASSWORD="$PW" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
+              "$CNAME" /usr/local/opengauss/bin/gsql -h 127.0.0.1 -p 5432 \
+              -U "$u" -d postgres -w -Atc 'select 1' >/dev/null 2>&1 && rc=0
+          fi
+          if [ "$rc" = 0 ]; then
+            OG_ADMIN="$u"; OG_UID="$uid"
+            echo "$u" > "$OUT/${DB}_admin.txt"
+            log "openGauss admin user=$u uid=$uid mode=$mode (attempt $i)"
+            return 0
+          fi
+          sleep 2
+        done
+      done
+    done
   done
+  log "gsql diagnostics (sanitized):"
+  docker logs "$CNAME" 2>&1 | tail -8 | sed -E 's/(PASSWORD|password)=[^ ]*/\1=***/g' || true
   return 1
 }
 
@@ -98,9 +119,9 @@ start_opengauss() {
   local image
   image=$(pick_image "$@") || { log "no opengauss image available from: $*"; return 1; }
   docker run -d --name "$name" --privileged --shm-size=512m \
-    -e "GS_PASSWORD=$PW" -p 5432:5432 "$image"
+    -e "GS_PASSWORD=$PW" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
+    -p 5432:5432 "$image"
   wait_tcp "$PG_C" 5432 180 || { log "openGauss $image TCP not ready"; return 1; }
-  # 等待容器内部 gsql 可用（首次初始化较慢）。
   local i
   for i in $(seq 1 30); do
     docker exec "$name" /usr/local/opengauss/bin/gsql --version >/dev/null 2>&1 && break
@@ -150,9 +171,9 @@ restore_dump() {
     docker exec -i "$name" mysql -uroot -p"$PW" -D carmonitdb < "$dump" >/dev/null 2>&1
   else
     docker cp "$dump" "$name:/tmp/dump.sql" >/dev/null
-    docker exec -e PGPASSWORD="$PW" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
-      "$name" /usr/local/opengauss/bin/gsql -h 127.0.0.1 -p 5432 \
-      -U "$OG_ADMIN" -d RuoYi -w -v ON_ERROR_STOP=1 -f /tmp/dump.sql >/dev/null 2>&1
+    docker exec -u "$OG_UID" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
+      "$name" /usr/local/opengauss/bin/gsql -d RuoYi \
+      -v ON_ERROR_STOP=1 -f /tmp/dump.sql >/dev/null 2>&1
   fi
 }
 
@@ -218,7 +239,7 @@ else
     start_opengauss "$CNAME" "enmotech/opengauss:3.0.0"
     load_pg_fixture
   else
-    start_opengauss "$CNAME" "opengauss/opengauss:latest" "opengauss/opengauss:7.0.0-RC3.B025"
+    start_opengauss "$CNAME" "opengauss/opengauss-server:latest" "opengauss/opengauss:latest" "opengauss/opengauss:7.0.0-RC3.B025"
     restore_dump "$CNAME" || load_pg_fixture
   fi
   # api 主库之外还需要字典 MySQL：未做版本变量，固定 8.0 隔离变量。
