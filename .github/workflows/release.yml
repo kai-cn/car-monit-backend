@@ -12,7 +12,6 @@ name: release
 # 不使用 force push，不在本文件写任何真实凭据。
 
 on:
-  # ── job: push ──
   push:
     tags:
       - 'v*.*.*'
@@ -126,7 +125,6 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  # ── job: release ──
   release:
     needs: [build-java, build-go, build-rust, build-py]
     runs-on: ubuntu-latest

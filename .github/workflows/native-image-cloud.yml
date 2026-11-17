@@ -30,7 +30,6 @@
 name: native-image-cloud
 
 on:
-  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       release_tag:
