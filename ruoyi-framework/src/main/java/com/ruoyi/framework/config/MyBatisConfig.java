@@ -117,8 +117,13 @@ public class MyBatisConfig
     public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception
     {
         String typeAliasesPackage = env.getProperty("mybatis.typeAliasesPackage");
+        if (typeAliasesPackage == null) typeAliasesPackage = env.getProperty("mybatis.type-aliases-package");
         String mapperLocations = env.getProperty("mybatis.mapperLocations");
+        if (mapperLocations == null) mapperLocations = env.getProperty("mybatis.mapper-locations");
+        if (mapperLocations == null) mapperLocations = "classpath*:mapper/**/*Mapper.xml";
         String configLocation = env.getProperty("mybatis.configLocation");
+        if (configLocation == null) configLocation = env.getProperty("mybatis.config-location");
+        if (configLocation == null) configLocation = "classpath:mybatis/mybatis-config.xml";
         // H8: package scanning uses **/*.class resources, unavailable in native images.
         // Explicit Class[] aliases below replace it for both JVM and native.
         // typeAliasesPackage = setTypeAliasesPackage(typeAliasesPackage);
