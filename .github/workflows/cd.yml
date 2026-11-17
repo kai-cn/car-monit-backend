@@ -24,7 +24,7 @@ permissions:
 
 concurrency:
   group: cd-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   image-java:
