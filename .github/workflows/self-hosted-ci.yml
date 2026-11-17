@@ -84,6 +84,7 @@ jobs:
           path: dist
       - name: Setup JDK ${{ env.JAVA_MAJOR }}
         uses: actions/setup-java@v4
+          cache: maven
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_MAJOR }}
