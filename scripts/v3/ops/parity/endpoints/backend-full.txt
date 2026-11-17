@@ -1,0 +1,37 @@
+# backend 认证态全端点清单（跨语言统一：Java8 / Go / Python / Rust 路径一致）
+# 用于 db-upgrade-cloud 与 crosslang-parity 的「全端点」业务校验。
+# 约定：
+#   - 全部为只读 GET，不触发写操作，避免污染 dump->restore 数据集；
+#   - RuoYi 业务端点需 Bearer token（探针自动登录注入）；
+#   - 探针会对 body.code ∈ {401,403,500} 做绝对失败断言，避免 HTTP 200 假绿。
+
+# --- 免认证基线端点 ---
+/captchaImage
+/
+
+# --- 登录后立即可用的只读端点 ---
+/getInfo
+/getRouters
+
+# --- 大屏统计（认证文档 3.2 节：8 接口全部 200，只读 GET）---
+/manager/bigScreen/carStatistics?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/bigScreen/carAudit?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/bigScreen/incomeStatistic?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/bigScreen/topTen?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/bigScreen/orgList
+/manager/bigScreen/sectionList
+/manager/bigScreen/exceptionCar?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/bigScreen/carVoList?applyTime1=2025-01-01&applyTime2=2025-12-31
+
+# --- 大屏其它只读列表（三语言 bigscreen handler 均已实现）---
+/manager/bigScreen/carLocation?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/bigScreen/carWarning?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/bigScreen/exceptRecordList?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/bigScreen/tollGantryFwqList
+
+# --- 运维可观测性（认证文档 3.6 节，只读 GET）---
+/monitor/bigscreen/metrics
+/monitor/bigscreen/switches
+
+# --- 导出审批列表（认证文档 3.4 节 #13，只读 GET）---
+/manager/bigScreen/export/approvals

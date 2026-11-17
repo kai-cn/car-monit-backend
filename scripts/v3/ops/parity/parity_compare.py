@@ -75,6 +75,16 @@ def main():
         rr['status'] = [x['status'], y['status']]
         rr['bytes'] = [x['bytes'], y['bytes']]
         rr['latency_ms'] = [x['latency_ms'], y['latency_ms']]
+        # 绝对失败断言：认证态探针记录 auth_fail / biz_code。任一侧出现
+        # RuoYi 业务码 401/403/500（HTTP 200 假绿）即直接判 FAIL，不参与相对比较。
+        auth_fail = bool(x.get('auth_fail')) or bool(y.get('auth_fail'))
+        if auth_fail:
+            rr['verdict'] = 'AUTH_FAIL'
+            rr['biz_code'] = [x.get('biz_code'), y.get('biz_code')]
+            rr['note'] = 'absolute auth/business-code failure (401/403/500)'
+            fails += 1
+            rows.append(rr)
+            continue
         # non-determinism: probe recorded `stable=False` when two calls differed
         unstable = (x.get('stable') is False) or (y.get('stable') is False)
         st_same = x['status'] == y['status']
@@ -121,10 +131,10 @@ def main():
     summary = {
         'label': a.label,
         'baseline': {'variant': b.get('variant'), 'startup_ms': b.get('startup_ms'),
-                     'peak_rss_mb': b.get('startup_peak_rss_mb'),
+                     'peak_rss_mb': b.get('startup_peak_rss_mb') or b.get('peak_rss_mb'),
                      'avg_latency_ms': avg(b.get('endpoints', []), 'latency_ms')},
         'candidate': {'variant': c.get('variant'), 'startup_ms': c.get('startup_ms'),
-                      'peak_rss_mb': c.get('startup_peak_rss_mb'),
+                      'peak_rss_mb': c.get('startup_peak_rss_mb') or c.get('peak_rss_mb'),
                       'avg_latency_ms': avg(c.get('endpoints', []), 'latency_ms')},
         'totals': {'endpoints': len(keys), 'status_match': status_n, 'exact': exact_n,
                    'semantic': sem_n, 'nondet': nondet_n, 'fails': fails},
