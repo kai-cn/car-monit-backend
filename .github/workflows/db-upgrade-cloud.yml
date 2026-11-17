@@ -4,7 +4,8 @@
 # (start mysql:8.0 / load schema+seed / probe / stats) -> logical dump -> new side
 # (start mysql:9.7 / restore / probe / stats) -> parity_compare -> report -> artifact.
 #
-# Credentials are injected at dispatch time via `ci_db_password`; never stored.
+# Credentials come from the masked repo secret CI_DB_TEST_PASSWORD in step-level env.
+# Never put secrets in workflow/job env (GitHub echoes those blocks into public logs).
 # workflow_dispatch only. This file is mirrored onto master so GitHub exposes it.
 
 name: db-upgrade-cloud
@@ -15,10 +16,6 @@ on:
       linux_runner:
         type: string
         default: ubuntu-latest
-      ci_db_password:
-        description: CI-only throwaway DB password (injected at dispatch)
-        type: string
-        default: ''
 
 permissions:
   contents: read
@@ -30,7 +27,7 @@ concurrency:
 env:
   MAVEN_ARGS: -B -ntp
   MODULE: ruoyi-admin
-  CI_DB_PASSWORD: ${{ inputs.ci_db_password }}
+  # 凭据只在 step 级用 secrets.CI_DB_TEST_PASSWORD（自动脱敏），不放在会被回显的 workflow env。
 
 jobs:
   prepare:
@@ -44,6 +41,9 @@ jobs:
         shell: bash
         run: |
           v=$(grep -oP '<java\.version>\K[0-9]+' pom.xml | head -1)
+          # V3 pom uses java.version=1.8; setup-java needs the major (8).
+          [ -z "$v" ] && v=8
+          [ "$v" = "1" ] && v=8
           echo "version=$v" >> "$GITHUB_OUTPUT"
           echo "detected java.version=$v"
 
@@ -77,12 +77,16 @@ jobs:
 
       - name: OLD DB side - load fixtures and probe
         shell: bash
+        env:
+          CI_DB_PASSWORD: ${{ secrets.CI_DB_TEST_PASSWORD }}
         run: |
           set -uo pipefail
           bash scripts/v3/ops/dbupgrade/db_cell.sh backend mysql old out/app.jar "${LABEL}-old"
 
       - name: Logical dump from OLD DB
         shell: bash
+        env:
+          CI_DB_PASSWORD: ${{ secrets.CI_DB_TEST_PASSWORD }}
         run: bash scripts/v3/ops/dbupgrade/db_dump.sh backend mysql
 
       - name: Stop OLD DB container
@@ -91,14 +95,17 @@ jobs:
 
       - name: NEW DB side - migrate and probe
         shell: bash
+        env:
+          CI_DB_PASSWORD: ${{ secrets.CI_DB_TEST_PASSWORD }}
         run: |
           set -uo pipefail
           bash scripts/v3/ops/dbupgrade/db_cell.sh backend mysql new out/app.jar "${LABEL}-new"
 
-      - name: Compare business consistency
+      - name: Compare business consistency (fails on 0 endpoints or real DIFF)
         shell: bash
         run: |
-          set -uo pipefail
+          set -euo pipefail
+          python scripts/v3/ops/dbupgrade/gate.py --old out/old.json --new out/new.json
           python scripts/v3/ops/parity/parity_compare.py \
             --baseline out/old.json --candidate out/new.json \
             --out out/compare.json --md out/compare.md --label "$LABEL"
