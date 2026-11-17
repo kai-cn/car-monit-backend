@@ -44,6 +44,9 @@ jobs:
         shell: bash
         run: |
           v=$(grep -oP '<java\.version>\K[0-9]+' pom.xml | head -1)
+          # V3 pom uses java.version=1.8; setup-java needs the major (8).
+          [ -z "$v" ] && v=8
+          [ "$v" = "1" ] && v=8
           echo "version=$v" >> "$GITHUB_OUTPUT"
           echo "detected java.version=$v"
 
