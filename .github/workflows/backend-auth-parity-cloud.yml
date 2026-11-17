@@ -77,12 +77,12 @@ jobs:
       - name: Probe Java8 (authenticated, full endpoints)
         shell: bash
         env:
-          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
           SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
           SPRING__REDIS__HOST: 127.0.0.1
           SPRING__REDIS__PORT: "6379"
-          TOKEN__SECRET: crosslang-secret
+          TOKEN__SECRET: parity-cloud-secret-deterministic
         run: |
           set -uo pipefail
           python scripts/v3/ops/parity/parity_auth_probe.py --variant java8 --label java8-auth \
