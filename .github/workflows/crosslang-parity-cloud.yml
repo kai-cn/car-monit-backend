@@ -51,8 +51,8 @@ jobs:
           docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
           docker run -d --name rd -p 6379:6379 redis:7-alpine
           for i in $(seq 1 60); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
-          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot < scripts/v3/ops/parity/sql/schema_carmonitdb.sql
-          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot < scripts/v3/ops/parity/sql/seed_carmonitdb.sql
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/schema_carmonitdb.sql
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/seed_carmonitdb.sql
           echo "sys_user rows: $(docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -N -e 'select count(*) from carmonitdb.sys_user')"
       - name: Build Java8 jar
         shell: bash
@@ -114,8 +114,8 @@ jobs:
           docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
           docker run -d --name rd -p 6379:6379 redis:7-alpine
           for i in $(seq 1 60); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
-          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot < scripts/v3/ops/parity/sql/schema_carmonitdb.sql
-          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot < scripts/v3/ops/parity/sql/seed_carmonitdb.sql
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/schema_carmonitdb.sql
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/seed_carmonitdb.sql
       - name: Download baseline probe
         if: steps.gate.outputs.run == 'yes'
         uses: actions/download-artifact@v4
