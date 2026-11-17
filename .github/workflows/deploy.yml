@@ -22,7 +22,6 @@ name: deploy
 # 否则 Pod 会 ImagePullBackOff。
 
 on:
-  # ── job: workflow_dispatch ──
   workflow_dispatch:
     inputs:
       service:
