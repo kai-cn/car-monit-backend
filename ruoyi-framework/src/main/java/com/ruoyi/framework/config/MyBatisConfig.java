@@ -124,7 +124,18 @@ public class MyBatisConfig
 
         final SqlSessionFactoryBean sessionFactory = new SqlSessionFactoryBean();
         sessionFactory.setDataSource(dataSource);
-        sessionFactory.setTypeAliasesPackage(typeAliasesPackage);
+        // Native images cannot enumerate **/*.class resources, so MyBatis TypeAliasRegistry
+        // cannot build aliases from the package string. Register the exact domain/bean classes
+        // explicitly; the JVM path keeps the package string for diagnostics only.
+        java.util.List<Class<?>> aliasClasses = new java.util.ArrayList<>();
+        for (String className : NativeTypeAliases.CLASSES) {
+            try {
+                aliasClasses.add(Class.forName(className, false, MyBatisConfig.class.getClassLoader()));
+            } catch (ClassNotFoundException ignored) {
+                // Optional module not present in this branch; skip it.
+            }
+        }
+        sessionFactory.setTypeAliases(aliasClasses.toArray(new Class<?>[0]));
         sessionFactory.setMapperLocations(resolveMapperLocations(StringUtils.split(mapperLocations, ",")));
         sessionFactory.setConfigLocation(new DefaultResourceLoader().getResource(configLocation));
         return sessionFactory.getObject();
