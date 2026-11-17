@@ -222,7 +222,7 @@ jobs:
           sudo mkdir -p /home/ruoyi/logs && sudo chmod 777 /home/ruoyi/logs
           sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' car-monit-rust/config/application.yaml
           python scripts/v3/ops/parity/parity_auth_probe.py --variant rust --label rust-auth \
-            --cmd "car-monit-rust/target/release/car-monit-rust" --port 9989 \
+            --cmd "cd car-monit-rust && ./target/release/car-monit-rust" --port 9989 \
             --endpoints "$ENDPOINTS" --auth-lang rust \
             --user "$AUTH_USER" --password-env AUTH_PASS \
             --out out/rust.json --mode full --check-stability --ready-timeout 240 || echo "rust auth probe exit=$?"
