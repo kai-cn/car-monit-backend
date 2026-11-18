@@ -889,7 +889,17 @@ class TestSnapshotFlowSyncTask:
         assert result["msg"] == "GaussDB中暂无数据"
         assert result["code"] == 200
 
-    def test_sync_full_data_aggregates_the_month_counts(self) -> None:
+    def test_sync_full_data_aggregates_the_month_counts(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # 冻结生产模块的“当前时间”，避免测试随挂钟漂移（earliest=2026-08-15
+        # 在 8/9/10 月跑是 3 个月，跨到 11 月会变成 4 个月导致断言失效）。
+        import app.quartz.task.snapshot_flow_sync_task as sfs_module
+
+        class _FrozenDatetime(datetime):
+            @classmethod
+            def now(cls, tz: Any = None) -> datetime:
+                return datetime(2026, 10, 31, 12, 0, 0)
+
+        monkeypatch.setattr(sfs_module, "datetime", _FrozenDatetime)
         task, api, _mapper, executor = _snapshot_task(pages=[])
         api.earliest = datetime(2026, 8, 15)
 
