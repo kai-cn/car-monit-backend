@@ -79,7 +79,7 @@ jobs:
       - name: Probe Java8 baseline
         shell: bash
         env:
-          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
           SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
           SPRING__REDIS__HOST: 127.0.0.1
@@ -117,6 +117,11 @@ jobs:
     steps:
       # 拉取仓库源码
       - uses: actions/checkout@v4
+      - name: Setup Python 3.12
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - id: gate
         shell: bash
         env:
@@ -194,6 +199,13 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
+          for f in out/java8.json.app.log "out/${{ matrix.lang }}.json.app.log"; do
+            if [ -f "$f" ]; then
+              echo "::group::tail $f"
+              tail -n 120 "$f" || true
+              echo "::endgroup::"
+            fi
+          done
           CAND="out/${{ matrix.lang }}.json"
           if [ ! -f "$CAND" ]; then echo "::warning::${{ matrix.lang }} probe missing"; exit 0; fi
           python scripts/v3/ops/parity/parity_compare.py \
