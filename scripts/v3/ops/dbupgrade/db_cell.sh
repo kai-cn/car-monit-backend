@@ -71,6 +71,7 @@ start_mysql() {
 # 容器内 gsql 需要 LD_LIBRARY_PATH；3.0 镜像管理员是 uid 70(omm)，本地 socket 免密。
 OG_ADMIN=""
 OG_UID="70"
+PG_DB="RuoYi"
 og_exec() {
   # 统一容器内 gsql 入口（socket，uid 70）；$@ 为 gsql 参数。
   docker exec -u "$OG_UID" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
@@ -125,8 +126,17 @@ start_opengauss() {
   CNAME="$name" detect_og_admin || { log "cannot detect openGauss admin user"; return 1; }
   og_sql postgres -Atc 'select version()' > "$OUT/${DB}_${SIDE}.version.txt" 2>/dev/null || \
     { log "cannot read openGauss version"; return 1; }
-  og_sql postgres -c 'CREATE DATABASE "RuoYi"' >/dev/null 2>&1 || \
-    log "RuoYi DB may already exist; continuing"
+  # 7.x 镜像对库名大小写折叠行为与 3.0 不同；两种形式都建，并以实际能连上为准。
+  og_sql postgres -c 'CREATE DATABASE "RuoYi"' >/dev/null 2>&1 || true
+  og_sql postgres -c 'CREATE DATABASE ruoyi' >/dev/null 2>&1 || true
+  PG_DB="RuoYi"
+  local ok=0 h
+  for h in /tmp /var/run/postgresql /usr/local/opengauss/data; do
+    og_exec -h "$h" -d RuoYi -Atc 'select 1' >/dev/null 2>&1 && { ok=1; PG_DB="RuoYi"; break; }
+    og_exec -h "$h" -d ruoyi -Atc 'select 1' >/dev/null 2>&1 && { ok=1; PG_DB="ruoyi"; break; }
+  done
+  [ "$ok" = 1 ] || log "warn: cannot connect to RuoYi/ruoyi DB yet (fixture load will retry)"
+  log "using openGauss database name: $PG_DB"
 }
 
 load_mysql_fixture() {
@@ -154,11 +164,11 @@ load_pg_fixture() {
   docker cp /tmp/dbupgrade_seed.sql "$CNAME:/tmp/seed.sql" >/dev/null
   local k
   for k in 1 2 3; do
-    og_sql RuoYi -v ON_ERROR_STOP=1 -f /tmp/schema.sql >/dev/null && break
+    og_sql "$PG_DB" -v ON_ERROR_STOP=1 -f /tmp/schema.sql >/dev/null && break
     log "schema load retry $k"; sleep 3
   done
-  og_sql RuoYi -v ON_ERROR_STOP=1 -f /tmp/seed.sql >/dev/null || { log "seed load failed"; return 1; }
-  og_sql RuoYi -Atc 'select count(*) from jl_data01.ods_szdn_gantry' \
+  og_sql "$PG_DB" -v ON_ERROR_STOP=1 -f /tmp/seed.sql >/dev/null || { log "seed load failed"; return 1; }
+  og_sql "$PG_DB" -Atc 'select count(*) from jl_data01.ods_szdn_gantry' \
     > "$OUT/${DB}_${SIDE}.rows.txt" 2>/dev/null || { log "row check failed"; return 1; }
   log "gantry rows: $(cat "$OUT/${DB}_${SIDE}.rows.txt")"
 }
@@ -175,7 +185,7 @@ restore_dump() {
   else
     docker cp "$dump" "$name:/tmp/dump.sql" >/dev/null
     docker exec -u "$OG_UID" -e LD_LIBRARY_PATH=/usr/local/opengauss/lib \
-      "$name" /usr/local/opengauss/bin/gsql -d RuoYi \
+      "$name" /usr/local/opengauss/bin/gsql -d "$PG_DB" \
       -v ON_ERROR_STOP=1 -f /tmp/dump.sql >/dev/null 2>&1
   fi
 }
