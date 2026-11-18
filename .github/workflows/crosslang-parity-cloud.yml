@@ -58,6 +58,11 @@ jobs:
           cache: maven
           distribution: temurin
           java-version: '8'
+      - name: Setup Python 3.12
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Start datastores + seed
         shell: bash
         run: |
@@ -117,11 +122,6 @@ jobs:
     steps:
       # 拉取仓库源码
       - uses: actions/checkout@v4
-      - name: Setup Python 3.12
-        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - id: gate
         shell: bash
         env:
