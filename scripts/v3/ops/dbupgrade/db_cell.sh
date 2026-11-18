@@ -78,10 +78,14 @@ og_exec() {
 }
 og_sql() {
   local db="$1"; shift
-  # gsql -f 偶发把默认 host 解析成 Unknown:5432；显式给 socket 目录 /tmp 优先。
-  if og_exec -h /tmp -d "$db" "$@" 2>/dev/null; then
-    return 0
-  fi
+  # gsql -f 偶发把默认 host 解析成 Unknown:5432；逐个 socket 目录/无 host 尝试。
+  # 3.0 socket=/tmp，7.x 镜像可能不同；全部失败再退回原始调用（保留真实错误）。
+  local h
+  for h in /tmp /var/run/postgresql /usr/local/opengauss/data; do
+    if og_exec -h "$h" -d "$db" "$@" 2>/dev/null; then
+      return 0
+    fi
+  done
   og_exec -d "$db" "$@"
 }
 
@@ -148,7 +152,11 @@ load_pg_fixture() {
     "$SQLDIR/schema_jl_data01.sql" > /tmp/dbupgrade_schema.sql
   docker cp /tmp/dbupgrade_schema.sql "$CNAME:/tmp/schema.sql" >/dev/null
   docker cp /tmp/dbupgrade_seed.sql "$CNAME:/tmp/seed.sql" >/dev/null
-  og_sql RuoYi -v ON_ERROR_STOP=1 -f /tmp/schema.sql >/dev/null || { log "schema load failed"; return 1; }
+  local k
+  for k in 1 2 3; do
+    og_sql RuoYi -v ON_ERROR_STOP=1 -f /tmp/schema.sql >/dev/null && break
+    log "schema load retry $k"; sleep 3
+  done
   og_sql RuoYi -v ON_ERROR_STOP=1 -f /tmp/seed.sql >/dev/null || { log "seed load failed"; return 1; }
   og_sql RuoYi -Atc 'select count(*) from jl_data01.ods_szdn_gantry' \
     > "$OUT/${DB}_${SIDE}.rows.txt" 2>/dev/null || { log "row check failed"; return 1; }
