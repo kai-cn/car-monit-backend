@@ -169,7 +169,7 @@ func (p PageDomain) SkipQuery(total int64) bool {
 	if c.PageSize <= 0 {
 		return true
 	}
-	return !(c.PageNum > 0 && total > int64(c.startRow()))
+	return c.PageNum <= 0 || total <= int64(c.startRow())
 }
 
 // startRow 对应 Page.calculateStartAndEndRow：pageNum<=0 时起始行为 0。

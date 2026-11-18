@@ -266,8 +266,11 @@ func (s *Service) saveCurrentNodeRow(ctx context.Context, db *gorm.DB, a actor, 
 	return web.SuccessFull("操作成功！", strVal(e.ID)), nil
 }
 
-// saveFlowApply 对应 saveFlowApply：提交申请（业务控制器调用，flow 包内无 HTTP 入口）。
-func (s *Service) saveFlowApply(ctx context.Context, a actor, flowKey, billOid, projectID, bussTitle string) (*web.AjaxResult, error) {
+// SaveFlowApply 对应 Java IFlowCurrentNodeService#saveFlowApply：提交业务申请。
+//
+// 业务模块通过 flow.NewService 构造服务后调用；flow 包内没有对应的 HTTP 入口
+// （与 Java 控制器保持一致），因此这里是跨模块公开 API，不能按死代码删除。
+func (s *Service) SaveFlowApply(ctx context.Context, a actor, flowKey, billOid, projectID, bussTitle string) (*web.AjaxResult, error) {
 	var res *web.AjaxResult
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		r, err := s.doFlowApply(ctx, tx, a, flowKey, billOid, projectID, bussTitle)

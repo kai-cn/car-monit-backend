@@ -90,7 +90,7 @@ func argString(c *gin.Context, name string) string { return queryParam(c, name) 
 // newSliceOf 返回 *[]*T（T 为 prototype 的元素类型），供 GORM Scan 使用。
 func newSliceOf(prototype any) any {
 	t := reflect.TypeOf(prototype).Elem()
-	return reflect.New(reflect.SliceOf(reflect.PtrTo(t))).Interface()
+	return reflect.New(reflect.SliceOf(reflect.PointerTo(t))).Interface()
 }
 
 // newElemOf 返回 *T。

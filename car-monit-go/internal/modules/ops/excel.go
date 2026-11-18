@@ -16,7 +16,6 @@ package ops
 import (
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/xuri/excelize/v2"
@@ -117,14 +116,6 @@ func excelDate(dt *web.DateTime) string {
 		return ""
 	}
 	return dt.Format("2006-01-02 15:04:05")
-}
-
-// excelTime 同上，入参是 time.Time（服务器监控等场景）。
-func excelTime(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	return t.Format("2006-01-02 15:04:05")
 }
 
 // convertByExp 对应 ExcelUtil.convertByExp（readConverterExp="0=成功,1=失败"）：

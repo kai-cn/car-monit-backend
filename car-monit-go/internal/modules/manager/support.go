@@ -95,14 +95,6 @@ func newUUID() string { return strings.ReplaceAll(uuid.NewString(), "-", "") }
 // 而实体主键用的是 MP 的 IdType.UUID（32 位无横杠），两者形态不同。
 func newUUIDDashed() string { return uuid.NewString() }
 
-// appendQuery 在原始查询串后追加一个 k=v（用于补齐控制器里的默认值）。
-func appendQuery(raw, kv string) string {
-	if raw == "" {
-		return kv
-	}
-	return raw + "&" + kv
-}
-
 // ---------------------------------------------------------------------------
 // 登录用户上下文（对应 SecurityUtils）
 // ---------------------------------------------------------------------------
@@ -134,45 +126,6 @@ func currentTenantID(c *gin.Context) int64 {
 type whereClause struct {
 	clause string
 	args   []any
-}
-
-// newWhere 以基础条件（含 "WHERE" 关键字）开启一个条件构造器。
-func newWhere(base string) *whereClause {
-	return &whereClause{clause: base}
-}
-
-// raw 追加一段原样 SQL 片段（片段本身是本包写死的常量）。
-func (w *whereClause) raw(clause string, args ...any) {
-	w.clause += " AND " + clause
-	w.args = append(w.args, args...)
-}
-
-// eq 对应 <if test="x != null and x != ”"> and col = #{x}</if>。
-func (w *whereClause) eq(column, value string) {
-	if value != "" {
-		w.raw(column+" = ?", value)
-	}
-}
-
-// like 对应 ... and col like concat('%', #{x}, '%')。
-func (w *whereClause) like(column, value string) {
-	if value != "" {
-		w.raw(column+" LIKE CONCAT('%', ?, '%')", value)
-	}
-}
-
-// eqPtrInt 对应 Long 类型的 <if test="x != null">（Long 可为 null，故用指针）。
-func (w *whereClause) eqPtrInt(column string, value *int64) {
-	if value != nil {
-		w.raw(column+" = ?", *value)
-	}
-}
-
-// eqPtrFloat 对应 BigDecimal 类型的 <if test="x != null">。
-func (w *whereClause) eqPtrFloat(column string, value *float64) {
-	if value != nil {
-		w.raw(column+" = ?", *value)
-	}
 }
 
 // SQL 返回拼好的 WHERE 片段。

@@ -14,18 +14,18 @@ import (
 
 // FormFile 取上传的 file part。两类失败的消息是 Spring 给的，不是业务文案，
 // 对拍时不能替换成中文提示：
-//   - 请求本身不是 multipart → "Current request is not a multipart request"
-//   - multipart 里没有这个 part → "Required request part 'file' is not present"
+//   - 请求本身不是 multipart → "current request is not a multipart request"
+//   - multipart 里没有这个 part → "required request part 'file' is not present"
 //
 // 调用点还要不要再判"空文件/后缀不对"，取决于 Java 侧那个控制器自己有没有做这一步校验
 // （SysUserController.importData 没有，直接把流交给 POI；ImportSysUtil 有）。
 func FormFile(c *gin.Context, name string) (*multipart.FileHeader, error) {
 	if !strings.HasPrefix(c.GetHeader("Content-Type"), "multipart/") {
-		return nil, errors.New("Current request is not a multipart request")
+		return nil, errors.New("current request is not a multipart request")
 	}
 	fh, err := c.FormFile(name)
 	if err != nil {
-		return nil, errors.New("Required request part '" + name + "' is not present")
+		return nil, errors.New("required request part '" + name + "' is not present")
 	}
 	return fh, nil
 }

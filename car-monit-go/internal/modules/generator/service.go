@@ -39,7 +39,7 @@ import (
 var errNullMessage = errors.New("java.lang.NullPointerException")
 
 // errNoSuchElement 对应 Optional.get() 空集合时的 NoSuchElementException("No value present")。
-var errNoSuchElement = errors.New("No value present")
+var errNoSuchElement = errors.New("no value present")
 
 // genTableService 对应 GenTableServiceImpl（同时承载 IGenTableColumnService 的透传方法）。
 type genTableService struct {
@@ -516,7 +516,7 @@ func (s *genTableService) setPkColumn(table *GenTable) error {
 	if table.PkColumn == nil {
 		if len(table.Columns) == 0 {
 			// JAVA 对照: List.get(0) -> IndexOutOfBoundsException
-			return errors.New("Index 0 out of bounds for length 0")
+			return errors.New("index 0 out of bounds for length 0")
 		}
 		table.PkColumn = table.Columns[0]
 	}
@@ -533,7 +533,7 @@ func (s *genTableService) setPkColumn(table *GenTable) error {
 		}
 		if subTable.PkColumn == nil {
 			if len(subTable.Columns) == 0 {
-				return errors.New("Index 0 out of bounds for length 0")
+				return errors.New("index 0 out of bounds for length 0")
 			}
 			subTable.PkColumn = subTable.Columns[0]
 		}

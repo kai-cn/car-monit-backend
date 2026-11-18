@@ -185,7 +185,7 @@ func queryMaps(ctx context.Context, db *gorm.DB, query string, args ...any) ([]m
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	columns, err := rows.Columns()
 	if err != nil {

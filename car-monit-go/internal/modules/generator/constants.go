@@ -40,10 +40,6 @@ const (
 
 	require = "1"
 
-	// JAVA 对照: Constants.CHAR_BLANK
-	charBlank = ""
-	// JAVA 对照: Constants.CHAR_COMMA
-	charComma = ","
 	// JAVA 对照: Constants.GENERATE_CODE_DICTIONARY_LIST_KEY_SUFFIX
 	generateCodeDictionaryListKeySuffix = "DictList"
 	// JAVA 对照: Constants.COLUMN_PRIMARY_KEY / STRING_CLASS_KEY
