@@ -1,33 +1,91 @@
 # backend 认证态全端点清单（跨语言统一：Java8 基线 vs Go / Python / Rust）
 # 用于 backend-auth-parity-cloud 的「全端点」业务校验。
 #
-# 端点选择原则（已逐条核对 Java8 基线 master 分支源码）：
-#   - 全部为只读 GET，不触发写操作，避免污染 dump->restore 数据集；
-#   - 仅保留基线 master 确实注册的端点，避免基线 404 造成无意义对比；
-#   - 必需查询参数已补齐（tollGantryFwqList 的 type 为 @RequestParam required）；
-#   - RuoYi 业务端点需 Bearer token（探针自动登录注入）；
-#   - 探针会对 body.code ∈ {401,403,500} 做绝对失败断言，避免 HTTP 200 假绿。
-#   - 已剔除基线 master 不存在的 /monitor/bigscreen/* 与 /export/approvals
-#     （这些是 feature/jdk21 才有的 v3 端点）。
+# 端点来源（v2 全端点扩展，2026-11-18）：
+#   从 ruoyi-admin 的 81 个 Controller 自动提取全部 HTTP 端点（Java 共 400 个），
+#   与 Go/Python/Rust 源码提取的端点取交集（四语言共有 158 个），再按安全边界过滤：
+#     - 仅保留四语言均实现的「相同端点」（满足"相同端点业务一致性验证"要求）；
+#     - 仅保留纯 GET 只读端点（排除 POST/PUT/DELETE 写操作，避免污染 dump→restore）；
+#     - 排除副作用型 GET（sync/retry/refresh/clear 等，避免触发数据同步）；
+#     - 排除路径参数端点（{id} 需真实主键，跨实例不可比）与文件流端点（export/download）；
+#   最终 72 个可直接探测的只读业务端点。
+#
+# 安全约束（与前几轮独立审阅一致）：
+#   - 探针自动登录注入 Bearer token；密码走 env 不进 argv；
+#   - 对 body.code ∈ {401,403,500} 或 HTTP>=500 做绝对失败断言，防 HTTP200 假绿。
 
 # --- 免认证基线端点 ---
-/captchaImage
 /
 
-# --- 登录后立即可用的只读端点（SysLoginController，master 确认存在）---
+# --- 认证态只读业务端点（71 个，四语言交集）---
+/base/cdc/config
+/base/cdc/status
+/base/config/list
+/base/configServiceArea/list
+/base/configServiceArea/listQuery
+/base/feeGantry/list
+/base/feerecords/list
+/base/feestationexit/list
+/base/gantry/list
+/base/gantry/listAll
+/base/geometry/getHenDa
+/base/geometry/list
+/base/org/list
+/base/section/list
+/base/section/listAll
+/base/snapshotflow/earliest-time
+/base/snapshotflow/list
+/base/toll/list
+/base/toll/listAll
+/captchaImage
+/flow/applyinfo/list
+/flow/applyinfo/listAll
+/flow/currentnode/list
+/flow/flowlist/list
+/flow/flowlist/listnew
+/flow/flowname/list
+/flow/flowname/listQuery
+/flow/messagedispose/list
+/flow/messageinfo/list
+/flow/messageinfo/listxx
+/flow/messageinfo/listyb
+/flow/messageinfo/listyj
 /getInfo
 /getRouters
-
-# --- 大屏统计 BigScreenController（master 确认 12 个只读 GET 端点）---
-/manager/bigScreen/carStatistics?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/aduitfree/incomeDetailList
+/manager/aduitfree/incomeStatics
+/manager/aduitfree/list
 /manager/bigScreen/carAudit?applyTime1=2025-01-01&applyTime2=2025-12-31
-/manager/bigScreen/incomeStatistic?applyTime1=2025-01-01&applyTime2=2025-12-31
-/manager/bigScreen/topTen?applyTime1=2025-01-01&applyTime2=2025-12-31
-/manager/bigScreen/orgList
-/manager/bigScreen/sectionList
-/manager/bigScreen/exceptionCar?applyTime1=2025-01-01&applyTime2=2025-12-31
-/manager/bigScreen/carVoList?applyTime1=2025-01-01&applyTime2=2025-12-31
 /manager/bigScreen/carLocation?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/bigScreen/carStatistics?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/bigScreen/carVoList?applyTime1=2025-01-01&applyTime2=2025-12-31
 /manager/bigScreen/carWarning?applyTime1=2025-01-01&applyTime2=2025-12-31
 /manager/bigScreen/exceptRecordList?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/bigScreen/exceptionCar?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/bigScreen/incomeStatistic?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/bigScreen/orgList
+/manager/bigScreen/sectionList
 /manager/bigScreen/tollGantryFwqList?type=1&sectionCode=0000001100530008
+/manager/bigScreen/topTen?applyTime1=2025-01-01&applyTime2=2025-12-31
+/manager/carinfo/list
+/manager/carinfo/listAll
+/manager/cartrackinfo/carSnapShot
+/manager/cartrackinfo/list
+/manager/cartrackinfo/listByCarByTime
+/manager/cartrackinfo/listByCarId
+/manager/carwarning/list
+/manager/confimfree/carStatics
+/manager/confimfree/concernedList
+/manager/confimfree/list
+/manager/confimfree/listCarNo
+/manager/confimfree/listCount
+/manager/exceptrecord/exceptRecordCount
+/manager/exceptrecord/list
+/manager/exceptrecord/listCarNo
+/manager/exceptrecord/listCarOrgId
+/manager/exceptrecord/listExceptId
+/manager/suspicious/list
+/manager/suspicious/listAll
+/manager/suspicious/listCarNo
+/manager/suspicious/listFileCarNo
+/manager/suspicious/listHistory
