@@ -122,6 +122,13 @@ jobs:
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.java == 'true' || needs.changes.outputs.workflows == 'true'
     runs-on: ubuntu-latest
+    env:
+      # openEuler 容器默认 locale 非 UTF-8，JDK17 扫描含中文文件名的资源目录
+      # （如「分区表分页查询Mapper示例.xml」）会抛 InvalidPathException: Malformed input。
+      # 固定为 UTF-8 让 JVM 的 sun.jnu.encoding/file.encoding 正确解码文件名，不放宽编译门禁。
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+      MAVEN_OPTS: -Dfile.encoding=UTF-8
     container:
       image: openeuler/openeuler:24.03-lts
     steps:
