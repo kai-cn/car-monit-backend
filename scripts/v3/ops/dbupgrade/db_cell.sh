@@ -142,6 +142,7 @@ start_opengauss() {
     log "DB create/visible retry $attempt"; sleep 3
   done
   [ "$ok" = 1 ] || { log "ERROR: RuoYi DB never became connectable"; return 1; }
+  echo "$PG_DB" > "$OUT/${DB}_dbname.txt"
   log "using openGauss database name: $PG_DB (attempt $attempt)"
 }
 
