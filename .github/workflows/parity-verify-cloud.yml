@@ -226,7 +226,7 @@ jobs:
           for f in out/jar.json.app.log out/native.json.app.log; do
             if [ -f "$f" ]; then
               echo "::group::tail $f"
-              grep -E 'ERROR|Caused by|APPLICATION FAILED|Exception|Started .* in|Tomcat started' "$f" | tail -40 || true
+              tail -n 160 "$f" || true
               echo "::endgroup::"
             fi
           done
