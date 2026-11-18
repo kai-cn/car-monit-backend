@@ -37,7 +37,7 @@ on:
       - car-monit-rust-V2
       - car-monit-py-V2
       - car-monit-cpp-local
-      - car-monit-backend-java-V3
+      - car-monit-backend-jdk25
   workflow_dispatch:
     inputs:
       java_base:
