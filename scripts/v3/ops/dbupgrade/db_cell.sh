@@ -124,8 +124,10 @@ start_opengauss() {
     sleep 3
   done
   CNAME="$name" detect_og_admin || { log "cannot detect openGauss admin user"; return 1; }
-  og_sql postgres -Atc 'select version()' > "$OUT/${DB}_${SIDE}.version.txt" 2>/dev/null || \
-    { log "cannot read openGauss version"; return 1; }
+  # 版本串读取仅用于报告，失败不阻断；用探测已验证的 socket 调用。
+  og_exec -d postgres -Atc 'select version()' > "$OUT/${DB}_${SIDE}.version.txt" 2>/dev/null || \
+    log "warn: cannot read openGauss version (non-blocking)"
+  [ -s "$OUT/${DB}_${SIDE}.version.txt" ] || echo "openGauss ($image)" > "$OUT/${DB}_${SIDE}.version.txt"
   # 7.x 镜像对库名大小写折叠行为与 3.0 不同；两种形式都建，并以实际能连上为准。
   og_sql postgres -c 'CREATE DATABASE "RuoYi"' >/dev/null 2>&1 || true
   og_sql postgres -c 'CREATE DATABASE ruoyi' >/dev/null 2>&1 || true
