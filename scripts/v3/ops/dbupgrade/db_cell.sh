@@ -128,17 +128,21 @@ start_opengauss() {
   og_exec -d postgres -Atc 'select version()' > "$OUT/${DB}_${SIDE}.version.txt" 2>/dev/null || \
     log "warn: cannot read openGauss version (non-blocking)"
   [ -s "$OUT/${DB}_${SIDE}.version.txt" ] || echo "openGauss ($image)" > "$OUT/${DB}_${SIDE}.version.txt"
-  # 7.x 镜像对库名大小写折叠行为与 3.0 不同；两种形式都建，并以实际能连上为准。
-  og_sql postgres -c 'CREATE DATABASE "RuoYi"' >/dev/null 2>&1 || true
-  og_sql postgres -c 'CREATE DATABASE ruoyi' >/dev/null 2>&1 || true
-  PG_DB="RuoYi"
-  local ok=0 h
-  for h in /tmp /var/run/postgresql /usr/local/opengauss/data; do
-    og_exec -h "$h" -d RuoYi -Atc 'select 1' >/dev/null 2>&1 && { ok=1; PG_DB="RuoYi"; break; }
-    og_exec -h "$h" -d ruoyi -Atc 'select 1' >/dev/null 2>&1 && { ok=1; PG_DB="ruoyi"; break; }
+  # 7.x 镜像对库名大小写折叠与 3.0 不同，且 CREATE DATABASE 后可见性有延迟：
+  # 循环“尝试建库 -> 验证可连”，直到成功（最多 10 轮），避免后续 -f 加载报 DB 不存在。
+  local ok=0 h attempt
+  for attempt in $(seq 1 10); do
+    og_exec -d postgres -c 'CREATE DATABASE "RuoYi"' >/dev/null 2>&1 || true
+    og_exec -d postgres -c 'CREATE DATABASE ruoyi' >/dev/null 2>&1 || true
+    for h in /tmp /var/run/postgresql /usr/local/opengauss/data; do
+      if og_exec -h "$h" -d RuoYi -Atc 'select 1' >/dev/null 2>&1; then ok=1; PG_DB="RuoYi"; break; fi
+      if og_exec -h "$h" -d ruoyi -Atc 'select 1' >/dev/null 2>&1; then ok=1; PG_DB="ruoyi"; break; fi
+    done
+    [ "$ok" = 1 ] && break
+    log "DB create/visible retry $attempt"; sleep 3
   done
-  [ "$ok" = 1 ] || log "warn: cannot connect to RuoYi/ruoyi DB yet (fixture load will retry)"
-  log "using openGauss database name: $PG_DB"
+  [ "$ok" = 1 ] || { log "ERROR: RuoYi DB never became connectable"; return 1; }
+  log "using openGauss database name: $PG_DB (attempt $attempt)"
 }
 
 load_mysql_fixture() {
