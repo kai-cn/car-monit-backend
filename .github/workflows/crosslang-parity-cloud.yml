@@ -58,11 +58,6 @@ jobs:
           cache: maven
           distribution: temurin
           java-version: '8'
-      - name: Setup Python 3.12
-        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - name: Start datastores + seed
         shell: bash
         run: |
@@ -129,6 +124,11 @@ jobs:
           LANG: ${{ matrix.lang }}
         run: |
           if [ "$IN" = "all" ] || echo ",$IN," | grep -q ",$LANG,"; then echo "run=yes" >> "$GITHUB_OUTPUT"; else echo "run=no" >> "$GITHUB_OUTPUT"; fi
+      - name: Setup Python 3.12
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Start datastores + seed
         if: steps.gate.outputs.run == 'yes'
         shell: bash
