@@ -8,7 +8,9 @@
 #     - 仅保留纯 GET 只读端点（排除 POST/PUT/DELETE 写操作，避免污染 dump→restore）；
 #     - 排除副作用型 GET（sync/retry/refresh/clear 等，避免触发数据同步）；
 #     - 排除路径参数端点（{id} 需真实主键，跨实例不可比）与文件流端点（export/download）；
-#   最终 72 个可直接探测的只读业务端点。
+#     - 排除运行时配置展示端点（/base/cdc/config：Java 暴露完整 CDC 配置 51KB，
+#       其它语言返回精简配置，属配置结构差异而非业务数据差异）。
+#   最终 71 个可直接探测的只读端点（含 / 与 /captchaImage）。
 #
 # 安全约束（与前几轮独立审阅一致）：
 #   - 探针自动登录注入 Bearer token；密码走 env 不进 argv；
@@ -17,8 +19,7 @@
 # --- 免认证基线端点 ---
 /
 
-# --- 认证态只读业务端点（71 个，四语言交集）---
-/base/cdc/config
+# --- 认证态只读业务端点（70 个，四语言交集）---
 /base/cdc/status
 /base/config/list
 /base/configServiceArea/list
