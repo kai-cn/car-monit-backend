@@ -18,7 +18,7 @@ Semantics:
 Exit code: 0 if all endpoints have identical status AND (exact or semantic) body, else 1.
 """
 from __future__ import annotations
-import argparse, json, statistics, sys
+import argparse, json, re, statistics, sys
 from pathlib import Path
 
 VOLATILE = {'timestamp', 'time', 'requestId', 'traceId', 'token', 'expireTime',
@@ -32,6 +32,19 @@ VOLATILE = {'timestamp', 'time', 'requestId', 'traceId', 'token', 'expireTime',
             'circuitState', 'loginTime', 'sessionId', 'commandStats', 'uptime',
             'lastExecuteTime', 'nextScheduleTime', 'lastDurationMs', 'lastUpdatedTableCount',
             'historySize', 'successRate', 'avgDurationMs'}
+
+
+def redact(text):
+    """脱敏：CI 日志公开，body 摘要不得泄露 PII（手机号/身份证/邮箱/车牌/token）。"""
+    if not text:
+        return ''
+    s = str(text)
+    s = re.sub(r'\b\d{17}[\dXx]\b', '******************', s)        # 身份证（先于手机号，18位）
+    s = re.sub(r'\b1[3-9]\d{9}\b', '1**********', s)               # 手机号（加边界，避免误伤时间戳）
+    s = re.sub(r'[\w.+-]+@[\w-]+\.[\w.]+', '***@***.***', s)        # 邮箱
+    s = re.sub(r'[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼][A-Z]\w{5}', '***', s)  # 车牌
+    s = re.sub(r'("?(?:token|secret|password|apiKey|api_key)"?\s*[:=]\s*"?)([\w.-]{4,})', r'\1***', s, flags=re.I)  # token/密钥
+    return s
 
 
 def norm(x):
@@ -114,6 +127,9 @@ def main():
         rr['status'] = [x['status'], y['status']]
         rr['bytes'] = [x['bytes'], y['bytes']]
         rr['latency_ms'] = [x['latency_ms'], y['latency_ms']]
+        # 保留脱敏后的 body 摘要，便于在 CI 日志的 DIFF 段直接定位差异（无需下载 artifact）
+        rr['body_b'] = redact((x.get('body') or '')[:300])
+        rr['body_c'] = redact((y.get('body') or '')[:300])
         # 绝对失败断言：认证态探针记录 auth_fail / biz_code。
         # 基线侧自身 auth_fail（业务码 401/403/500 或 HTTP>=500）意味着该端点在
         # 当前 seed/运行时环境下对所有变体同样不可用，不是实现差异。全端点清单
@@ -121,10 +137,15 @@ def main():
         # 仍保留记录便于审计。候选侧独有 auth_fail 才是真正的实现缺陷 -> FAIL。
         b_auth_fail = bool(x.get('auth_fail'))
         c_auth_fail = bool(y.get('auth_fail'))
-        if b_auth_fail:
+        # 探针 HTTP 异常（status=0：连接重置/读取超时/响应过大超时）。
+        # 仅基线侧异常 -> BASELINE_SKIP（基线不可用，所有变体同样受影响，无法判定差异）；
+        # 候选侧 status=0 不计 skip —— 它可能是候选实现 hang/崩溃导致的真实缺陷，
+        # 静默跳过会掩盖问题，因此让它走后续正常判定：status 不等 -> DIFF。
+        b_probe_err = x['status'] == 0 or bool(x.get('error'))
+        if b_auth_fail or b_probe_err:
             rr['verdict'] = 'BASELINE_SKIP'
             rr['biz_code'] = [x.get('biz_code'), y.get('biz_code')]
-            rr['note'] = 'baseline endpoint unusable in this env (401/403/500); skipped from parity'
+            rr['note'] = 'baseline endpoint unusable (auth_fail or probe error status=0); skipped'
             skip_n += 1
             rows.append(rr)
             continue
@@ -232,6 +253,8 @@ def main():
         for r in diffs:
             L.append('- `%s`: status %s/%s, bytes %s/%s' % (
                 r['endpoint'], r['status'][0], r['status'][1], r['bytes'][0], r['bytes'][1]))
+            L.append('    - baseline body: `%s`' % r.get('body_b', '').replace('\n', ' '))
+            L.append('    - candidate body: `%s`' % r.get('body_c', '').replace('\n', ' '))
     # 基线自身不可用而跳过的端点（审计用：这些端点依赖运行时/seed，未纳入一致性判定）
     skips = [r for r in rows if r.get('verdict') == 'BASELINE_SKIP']
     if skips:
