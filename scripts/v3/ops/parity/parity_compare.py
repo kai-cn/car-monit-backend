@@ -51,10 +51,12 @@ def norm(x):
     if isinstance(x, dict):
         out = {k: norm(v) for k, v in x.items() if k not in VOLATILE}
         # RuoYi AjaxResult 空信封等价归一化：
-        #   Java 空列表返回 {"code":200,"data":[]}，Go/Rust 有时省略 data 字段
-        #   （{"code":200}）。客户端语义一致（都表示"无数据"），视为等价。
+        #   Java(Jackson) 空列表 -> {"code":200,"data":[]}；Go/Rust 有时省略 data
+        #   （{"code":200}）或序列化成 null（{"code":200,"data":null}）。
+        #   三者客户端语义一致（都表示"无数据"），统一归为 data:[]。
         # 仅在典型 AjaxResult 信封（含 code 且无 rows/total 分页字段）时归一。
-        if 'code' in x and 'data' not in out and 'rows' not in out and 'total' not in out:
+        if ('code' in x and 'rows' not in out and 'total' not in out
+                and ('data' not in out or out.get('data') is None)):
             out['data'] = []
         # Fastjson 空 HashMap 归一化：
         #   Java 的 BaseEntity.params 是空 HashMap，Fastjson 序列化成
