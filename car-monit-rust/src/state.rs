@@ -38,6 +38,12 @@ impl AppState {
         url.set_password(Some(&settings.database.password))
             .map_err(|_| anyhow::anyhow!("database.password 非法"))?;
 
+        // Cloud MySQL uses useSSL=false; sqlx defaults to ssl-mode=PREFERRED,
+        // which can hang during TLS negotiation and surface as a pool timeout.
+        if settings.database.url.contains("useSSL=false") {
+            url.query_pairs_mut().append_pair("ssl-mode", "disabled");
+        }
+
         // Java: Druid/JDBC 用 URL 上的 `serverTimezone=GMT+8` 设置会话时区；
         // SQLx 默认写死 `+00:00`，会让 `timestamp(3)` 列（car_* 全表）读写差 8 小时。
         let mut connect_options: sqlx::mysql::MySqlConnectOptions = url.as_str().parse()?;
