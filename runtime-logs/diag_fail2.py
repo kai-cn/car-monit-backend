@@ -1,0 +1,20 @@
+import re
+def load(p):
+    s=open(p,encoding="utf-8",errors="replace").read()
+    return re.sub(r"\x1b\[[0-9;]*m","",s).splitlines()
+def tail(p,n=35):
+    ls=load(p)
+    for l in ls[-n:]:
+        print(l[27:] if len(l)>27 else l)
+
+print("=== api-v3-mysql tail ===")
+tail("D:/work/runtime-logs/fail-api-v3-mysql.log",30)
+print()
+print("=== bk-v3 tail ===")
+tail("D:/work/runtime-logs/fail-bk-v3.log",25)
+print()
+print("=== jdk17 og image lines ===")
+for l in load("D:/work/runtime-logs/fail-api-jdk17-og.log"):
+    v=l[27:] if len(l)>27 else l
+    if any(k in v for k in ["pull","image","Image","opengauss/","enmotech/","status","Exited","restart"]):
+        print(v)

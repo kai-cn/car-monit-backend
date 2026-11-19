@@ -1,0 +1,15 @@
+# Fetch a single file from a remote GitHub branch via the REST contents API.
+# Usage: fetch-remote-file.ps1 -Repo <short-repo> -Branch <branch> -Path <repo-path> -Out <local-file>
+# Token is read from git credential helper by gh_api.ps1; never echoed or persisted.
+param(
+  [Parameter(Mandatory=$true)][string]$Repo,
+  [Parameter(Mandatory=$true)][string]$Branch,
+  [Parameter(Mandatory=$true)][string]$Path,
+  [Parameter(Mandatory=$true)][string]$Out
+)
+$uri = "https://api.github.com/repos/kai-cn/$Repo/contents/$($Path -replace ' ','%20')?ref=$Branch"
+$json = & 'D:\work\runtime-logs\gh_api.ps1' -Method GET -Uri $uri | Out-String
+$obj = $json | ConvertFrom-Json
+if ($null -eq $obj.content) { Write-Error "NO CONTENT $uri :: $json"; exit 1 }
+[System.IO.File]::WriteAllBytes($Out, [Convert]::FromBase64String(($obj.content -replace '\s','')))
+Write-Output "FETCHED $Repo/$Branch/$Path -> $Out $((Get-Item $Out).Length)"

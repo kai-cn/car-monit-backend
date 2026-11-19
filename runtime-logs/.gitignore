@@ -1,0 +1,23 @@
+# Local operational artifacts; never commit credentials, logs, binaries or evidence dumps.
+.gh_token_cache
+*token*.txt
+*password*.txt
+*secret*.txt
+api-local.properties
+NUL
+*.log
+*.err
+*.out
+*.gz
+*.zip
+*.jar
+*.csv
+*.png
+*.jpg
+*.xlsx
+*.docx
+*.pdf
+node_modules/
+*.env
+*.pw
+secret-values.env

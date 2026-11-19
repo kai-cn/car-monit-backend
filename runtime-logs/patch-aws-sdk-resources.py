@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+from pathlib import Path
+p = Path(r'D:\work\runtime-logs\bk25-admin-pom.xml')
+t = p.read_text(encoding='utf-8')
+marker = '                    <buildArgs>\n'
+add = marker + '''                        <buildArg>-H:IncludeResources=com/amazonaws/internal/config/.*</buildArg>
+                        <buildArg>-H:IncludeResources=com/amazonaws/util/aws-java-sdk-core-version.properties</buildArg>
+'''
+assert marker in t
+if 'com/amazonaws/internal/config' not in t:
+    t = t.replace(marker, add, 1)
+p.write_text(t, encoding='utf-8')
+print('aws resources added', 'com/amazonaws/internal/config' in t)

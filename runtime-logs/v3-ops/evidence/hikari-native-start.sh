@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Start the native binary with the dynamic datasource type forced to Hikari, to
+# bypass the Druid creator NPE seen under Spring Boot 3 native.
+set -u
+BIN=${1:?binary}
+PORT=${2:-19902}
+SECS=${3:-60}
+OUT=/mnt/d/work/runtime-logs/v3-ops/evidence/hikari-native-start-$PORT.log
+
+PASS=$(docker exec opengauss env 2>/dev/null | sed -n 's/^[^=]*GS_PASSWORD=//p' | tr -d '\r' | head -n 1)
+export SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME=gaussdb
+export SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD="$PASS"
+export SPRING_DATASOURCE_DYNAMIC_TYPE=com.zaxxer.hikari.HikariDataSource
+
+cd "$(dirname "$BIN")" || exit 3
+"$BIN" --server.port="$PORT" >"$OUT" 2>&1 &
+PID=$!
+BOUND=0
+for i in $(seq 1 "$SECS"); do
+  sleep 1
+  if ! kill -0 "$PID" 2>/dev/null; then echo "exited at ${i}s"; break; fi
+  if grep -q "Started EcBusinessApiApplication" "$OUT" 2>/dev/null; then BOUND=2; echo "started at ${i}s"; break; fi
+  if grep -qi ":$PORT " /proc/net/tcp /proc/net/tcp6 2>/dev/null; then BOUND=1; echo "bound at ${i}s"; break; fi
+done
+echo "state=$BOUND"
+echo "=== markers ==="
+grep -E "Started EcBusiness|Tomcat started|APPLICATION FAILED|Caused by|HikariPool" "$OUT" | tail -n 8
+kill -9 "$PID" 2>/dev/null || true
+echo "log: $OUT"

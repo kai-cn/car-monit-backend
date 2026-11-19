@@ -1,0 +1,20 @@
+import re
+
+def load(p):
+    s = open(p, encoding="utf-8", errors="replace").read()
+    return re.sub(r"\x1b\[[0-9;]*m", "", s).splitlines()
+
+def show(p, needle, before=12, after=6, strip=27):
+    lines = load(p)
+    idx = next((i for i, l in enumerate(lines) if needle in l), None)
+    if idx is None:
+        print("needle not found:", needle)
+        return
+    for l in lines[max(0, idx-before):idx+after]:
+        print(l[strip:] if len(l) > strip else l)
+
+print("=== jdk17 og failure context ===")
+show("D:/work/runtime-logs/fail-api-jdk17-og.log", "failed to connect Unknown")
+print()
+print("=== V3 build error context ===")
+show("D:/work/runtime-logs/fail-api-v3-mysql.log", "systemPath", 8, 12)
