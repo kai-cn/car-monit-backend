@@ -30,7 +30,7 @@ import jakarta.annotation.Resource;
 @RequestMapping("/base/feeGantry")
 public class OdsLwzxsfsjFeeGantryFusion01Controller extends BaseController {
 
-    @Autowired
+    @Autowired(required = false)
     private IOdsLwzxsfsjFeeGantryFusion01Service odsLwzxsfsjFeeGantryFusion01Service;
 
     @Resource
