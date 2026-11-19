@@ -17,7 +17,8 @@ import java.util.List;
 @Component("vehicleMonitoringTask")
 public class VehicleMonitoringTask {
 
-    @Resource
+    // @Resource replaced for native: Forest proxy unavailable
+    @Autowired(required = false)
     private HttpBaseInfoApiService httpBaseInfoApiService;
 
     @Autowired
