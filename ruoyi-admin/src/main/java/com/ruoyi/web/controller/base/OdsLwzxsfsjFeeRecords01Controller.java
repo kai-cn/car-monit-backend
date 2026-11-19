@@ -50,7 +50,8 @@ public class OdsLwzxsfsjFeeRecords01Controller extends BaseController
 {
     private static final Logger log = LoggerFactory.getLogger(OdsLwzxsfsjFeeRecords01Controller.class);
 
-    @Resource
+    // @Resource replaced for native: Forest proxy unavailable
+    @Autowired(required = false)
     private HttpOdsLwzxsfsjFeeRecords01Service odsLwzxsfsjFeeGantryFusion01;
 
     @Autowired
