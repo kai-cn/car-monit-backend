@@ -200,7 +200,7 @@ jobs:
         if: steps.gate.outputs.run == 'yes' && matrix.lang == 'rust'
         shell: bash
         env:
-          RUST_LOG: debug
+          RUST_LOG: "sqlx::pool=trace,car_monit_rust=info"
           RUST_BACKTRACE: '1'
         run: |
           set -uo pipefail
