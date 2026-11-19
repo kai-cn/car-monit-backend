@@ -24,7 +24,9 @@ import java.util.Map;
 @Service
 public class HenDaServiceImpl implements IHenDaService {
 
-    @Autowired
+    // Forest dynamic proxy is unavailable in native images; keep the JVM path unchanged
+    // but allow native startup when the proxy bean cannot be created.
+    @Autowired(required = false)
     private IHenDaApi henDaApi;
 
     @Value("${hengda.appid}")
@@ -35,6 +37,11 @@ public class HenDaServiceImpl implements IHenDaService {
 
     @Override
     public JSONObject getPileToLonLat(String roadCode, String pile, String direction) {
+        if (henDaApi == null) {
+            // Native image limitation: Forest client not injected. Return null just like
+            // the existing error path so callers already tolerate a missing coordinate.
+            return null;
+        }
         try {
             Map<String, String> map = new HashMap<>(3);
             map.put("layerName", "rdlinelong");
