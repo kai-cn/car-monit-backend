@@ -16,6 +16,7 @@ H8 backend native 与 H9 Rust 仍为技术阻塞，F1/F2 为用户名下真实�
 - 全分支 workflow 扫描 `SCANNED=242 BAD=0`；`verify_remote_hardening.py` PASS。
 - H9 run `44219301360`：Java8 基线、Go、Python 均 2 端点 `fails=0`；Rust 仍阻塞。
 - H8：JVM 基线恢复 success；native 仍失败。
+- DB 升级 GA：3 个暂停 run（jdk21/jdk17/java-V3）均 success，79/79 `fails=0`；12 号 DB 文档已补录并推送四分支。
 - api Boot3（jdk21/jdk17 + Mandrel25）79 端点 `fails=0`；api saveRedis 已修复；api jdk25/21/17 Boot4 7 端点字节级一致。
 
 ## 待办
