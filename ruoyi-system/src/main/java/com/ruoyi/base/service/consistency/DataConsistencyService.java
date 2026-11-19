@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class DataConsistencyService {
 
-    @Autowired
+    @Autowired(required = false)
     private OdsRtSzdnSnapshotFlowAddcodeMapper snapshotFlowMapper;
 
     @Resource
