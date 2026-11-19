@@ -46,7 +46,7 @@ import java.util.List;
 @RequestMapping("/manager/cartrackinfo")
 public class CarTrackInfoController extends BaseController {
 
-    @Autowired
+    @Autowired(required = false)
     private ICarTrackInfoService carTrackInfoService;
 
     @Resource
