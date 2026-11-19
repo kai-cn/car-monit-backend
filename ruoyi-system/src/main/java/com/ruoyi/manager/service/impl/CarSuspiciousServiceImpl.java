@@ -47,7 +47,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
     @Autowired
     private ICarExceptRecordService carExceptRecordService;
 
-    @Autowired
+    @Autowired(required = false)
     private RedisCache redisCache;
 
     @Resource
