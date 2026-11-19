@@ -1,4 +1,6 @@
 package com.ruoyi.base.service.impl;
+import org.springframework.beans.factory.annotation.Autowired;
+
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
@@ -30,7 +32,7 @@ import java.util.List;
 @Service
 public class RoadPathImpl implements IRoadPathService {
 
-    @Resource
+    @Autowired(required = false)
     private RoadPathApi roadPathApi;
 
     @Override
