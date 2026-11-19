@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use sqlx::mysql::MySqlPoolOptions;
+use sqlx::ConnectOptions;
 use sqlx::MySqlPool;
 
 use crate::auth::jwt::JwtService;
@@ -50,6 +51,14 @@ impl AppState {
         if let Some(timezone) = settings.mysql_session_timezone() {
             connect_options = connect_options.timezone(timezone);
         }
+
+        // Diagnostic: establish one connection outside the pool so the real
+        // driver error is reported instead of only "pool timed out".
+        let probe = connect_options
+            .connect()
+            .await
+            .map_err(|e| anyhow::anyhow!("MySQL direct connect failed: {}", e))?;
+        drop(probe);
 
         let pool = MySqlPoolOptions::new()
             .max_connections(settings.database.pool.max_active)
