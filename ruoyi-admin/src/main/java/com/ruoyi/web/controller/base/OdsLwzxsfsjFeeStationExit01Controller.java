@@ -28,7 +28,8 @@ import jakarta.annotation.Resource;
 @RequestMapping("/base/feestationexit")
 public class OdsLwzxsfsjFeeStationExit01Controller extends BaseController {
 
-    @Resource
+    // @Resource replaced for native: Forest proxy unavailable
+    @Autowired(required = false)
     private HttpOdsLwzxsfsjFeeStationExit01Service httpOdsLwzxsfsjFeeStationExit01Service;
 
     @Resource
