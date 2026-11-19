@@ -49,7 +49,8 @@ public class OdsRtSzdnSnapshotFlowAddcodeController extends BaseController
 {
     private static final Logger log = LoggerFactory.getLogger(OdsRtSzdnSnapshotFlowAddcodeController.class);
 
-    @Resource
+    // @Resource replaced for native: Forest proxy unavailable
+    @Autowired(required = false)
     private HttpOdsRtSzdnSnapshotFlowAddcodeService httpOdsRtSzdnSnapshotFlowAddcodeService;
 
     @Autowired
