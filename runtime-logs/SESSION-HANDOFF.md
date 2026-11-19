@@ -125,3 +125,11 @@
   最终 run `44524395943` 收尾时仍在 native build，需先查结论再决定是否继续。
 - 今日工作记忆：`car-monit-api-java-V3/.workbuddy/memory/2026-11-19.md`；
   脚本索引：`公开仓库安全加固-脚本与证据索引.md` J 节。
+
+
+## 9. 2026-11-19 最后交接
+- runtime-logs 已清理凭据后入库 backend 源分支：最终 `a38f49a1`，独立审核 PASS，HTTPS 推送成功。
+- H9 已收口：Java8/Go/Python/Rust 均 fails=0；Rust 通过 `APP_DATABASE__*`/`APP_REDIS__*` env 覆盖内嵌配置。
+- H8 仍在快速迭代：所有 Forest `*Api` 字段可选；OSS 只禁用 native 进程；AWS 资源方案已撤销。
+  当前 run `44544743332` native build 中，结果待确认。
+- 下一会话恢复点：先查 `44544743332`；若仍失败，以完整 app log tail 定位下一阻塞，不再盲试 AWS include。
