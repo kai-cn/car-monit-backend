@@ -44,6 +44,8 @@ env:
   MAVEN_OPTS: -Xmx3g -XX:+UseSerialGC
   MAVEN_ARGS: -B -ntp
   MODULE: ruoyi-admin
+  # OSS/S3 is not needed by the 2 parity endpoints; native AWS SDK v1 init is unsupported.
+  OSS_ENABLE: 'false'
   ENDPOINTS: scripts/v3/ops/parity/endpoints/backend.txt
 
 jobs:
