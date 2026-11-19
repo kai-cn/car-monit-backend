@@ -37,7 +37,7 @@ public class DataConsistencyService {
     @Autowired(required = false)
     private OdsRtSzdnSnapshotFlowAddcodeMapper snapshotFlowMapper;
 
-    @Resource
+    @Autowired(required = false)
     private HttpOdsRtSzdnSnapshotFlowAddcodeService httpOdsRtSzdnSnapshotFlowAddcodeService;
 
     /**
