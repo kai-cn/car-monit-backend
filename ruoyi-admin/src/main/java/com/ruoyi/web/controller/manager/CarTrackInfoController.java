@@ -49,7 +49,7 @@ public class CarTrackInfoController extends BaseController {
     @Autowired(required = false)
     private ICarTrackInfoService carTrackInfoService;
 
-    @Resource
+    @Autowired(required = false)
     private HttpSysUtilApiService httpSysUtilApiService;
 
     @Autowired
