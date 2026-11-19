@@ -52,7 +52,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
      * 这里用 @Lazy 生成代理延迟解析，保持原有调用语义（调用时才真正取到对端单例）。
      */
     @Lazy
-    @Autowired
+    @Autowired(required = false)
     private ICarTrackInfoService carTrackInfoService;
 
     @Resource
