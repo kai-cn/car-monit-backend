@@ -200,6 +200,9 @@ jobs:
         if: steps.gate.outputs.run == 'yes' && matrix.lang == 'rust'
         shell: bash
         run: |
+        env:
+          RUST_LOG: debug
+          RUST_BACKTRACE: '1'
           set -uo pipefail
           sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' car-monit-rust/config/application.yaml
           sed -i 's/minIdle: 10/minIdle: 0/; s/maxActive: 200/maxActive: 10/; s/maxWait: 60000/maxWait: 30000/' car-monit-rust/config/application.yaml
