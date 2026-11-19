@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class SnapshotFlowSyncTask {
 
-    @Autowired
+    @Autowired(required = false)
     private OdsRtSzdnSnapshotFlowAddcodeMapper snapshotFlowMapper;
 
     @Resource
