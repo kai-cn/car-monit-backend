@@ -31,3 +31,12 @@ H8 backend native 与 H9 Rust 仍为技术阻塞，F1/F2 为用户名下真实�
 - H9：`D:\work\runtime-logs\h9-baseline4.log`、`h9-go2.log`、`h9-python4.log`、`h9-rust2.log`
 - 任务清单：`D:\work\runtime-logs\公开仓库安全加固-任务清单.md`
 - 脚本索引：`docs/v3/review/12-repro-index-20261118.md`
+
+
+## 2026-11-19 增补
+- DB 升级 GA 三分支 run 均 success：79/79 `fails=0`。
+- H9 跨语言全部候选 `fails=0`：Rust 通过 `APP_DATABASE__*` / `APP_REDIS__*` env 覆盖内嵌默认配置，
+  清理诊断后 run `44521046877` 仍 `fails=0`（302 ms / 14.7 MB / 3.45 ms）。
+- H8 backend native：Forest 代理字段批量改为 native 可选注入（jdk25 commit `5d10e75f`），
+  最终 run `44524395943` 收尾时仍在 native build，结果待确认。
+- 当日工作记忆：`.workbuddy/memory/2026-11-19.md`。
