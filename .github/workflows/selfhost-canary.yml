@@ -18,9 +18,9 @@ on:
   workflow_dispatch:
     inputs:
       runner_label:
-        description: self-hosted runner label (wsl-k3s-api / wsl-k3s)
+        description: self-hosted runner label（本仓库 runner 为 wsl-k3s；wsl-k3s-api 属 car-monit-api 仓库）
         type: string
-        default: wsl-k3s-api
+        default: wsl-k3s
 
 permissions:
   contents: read
