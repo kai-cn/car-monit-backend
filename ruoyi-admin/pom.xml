@@ -135,6 +135,8 @@
                 <configuration>
                     <mainClass>com.ruoyi.RuoYiApplication</mainClass>
                     <buildArgs>
+                        <buildArg>-H:IncludeResources=com/amazonaws/internal/config/.*</buildArg>
+                        <buildArg>-H:IncludeResources=com/amazonaws/util/aws-java-sdk-core-version.properties</buildArg>
                         <buildArg>-H:IncludeResources=mybatis/mybatis-config.xml</buildArg>
                         <buildArg>--initialize-at-run-time=org.slf4j,org.apache.commons.logging,org.apache.logging.slf4j,org.apache.logging.log4j</buildArg>
                         <buildArg>-H:IncludeResources=META-INF/services/org.slf4j.spi.SLF4JServiceProvider</buildArg>
