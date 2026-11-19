@@ -56,7 +56,7 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     @Autowired
     private com.ruoyi.manager.service.bigscreen.FeatureSwitchService featureSwitchService;
 
-    @Autowired
+    @Autowired(required = false)
     private ICarInfoService carInfoService;
 
     @Resource
