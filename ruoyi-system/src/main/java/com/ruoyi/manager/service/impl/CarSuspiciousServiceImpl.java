@@ -50,7 +50,7 @@ public class CarSuspiciousServiceImpl extends ServiceImpl<CarSuspiciousMapper, C
     @Autowired(required = false)
     private RedisCache redisCache;
 
-    @Resource
+    @Autowired(required = false)
     private HttpSysUtilApiService httpSysUtilApiService;
 
     @Autowired
