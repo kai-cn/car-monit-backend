@@ -54,7 +54,7 @@ public class SysFileServiceImpl implements ISysFileService {
     @Autowired
     private SnowflakeIdWorker idWorker;
 
-    @Resource
+    @Autowired(required = false)
     private FileApi fileApi;
 
 
