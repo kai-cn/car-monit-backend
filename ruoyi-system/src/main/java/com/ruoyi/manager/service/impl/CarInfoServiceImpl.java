@@ -55,7 +55,7 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
     @Autowired(required = false)
     private ICarTrackInfoService carTrackInfoService;
 
-    @Resource
+    @Autowired(required = false)
     private HttpSysUtilApiService httpSysUtilApiService;
 
 
