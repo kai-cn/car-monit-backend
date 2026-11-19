@@ -33,7 +33,7 @@ public class OdsLwzxsfsjFeeGantryFusion01Controller extends BaseController {
     @Autowired(required = false)
     private IOdsLwzxsfsjFeeGantryFusion01Service odsLwzxsfsjFeeGantryFusion01Service;
 
-    @Resource
+    @Autowired(required = false)
     private HttpOdsLwzxsfsjFeeGantryFusion01Service httpOdsLwzxsfsjFeeGantryFusion01Service;
 
     @Resource
