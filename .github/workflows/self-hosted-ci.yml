@@ -1,3 +1,10 @@
+# ============================================================================
+# 文件：.github/workflows/self-hosted-ci.yml
+# 用途：手动 CI/CD 入口：构建固定云 runner；部署 job 仅 owner + 手动 dispatch 可用
+# 触发：手动 dispatch
+# 主要 job：build、deploy-standalone、deploy-cluster
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
 name: self-hosted-ci
 
 # V3 后端 CI/CD 模板（按分支参数化）：
@@ -28,17 +35,20 @@ env:
   NODEPORT: "30989"
 
 jobs:
+  # ── job: build ──
   build:
     name: build-jar
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
       - name: Setup JDK ${{ env.JAVA_MAJOR }} + Maven cache
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_MAJOR }}
+          # Perf: let setup-java restore Maven dependencies from the action cache.
           cache: maven
       - name: Compile + package（跳过测试）
         run: mvn -B -ntp -DskipTests -pl ruoyi-common,ruoyi-system,ruoyi-framework,ruoyi-admin -am package
@@ -59,6 +69,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  # ── job: deploy-standalone ──
   deploy-standalone:
     name: deploy-standalone（单机 systemd）
     needs: build
@@ -66,6 +77,7 @@ jobs:
     runs-on: [self-hosted, linux, x64, wsl-k3s]
     timeout-minutes: 20
     steps:
+      # 下载上游 workflow 产物
       - uses: actions/download-artifact@v4
         with:
           pattern: car-monit-backend-jar-*
@@ -74,6 +86,7 @@ jobs:
       - name: Setup JDK ${{ env.JAVA_MAJOR }}
         uses: actions/setup-java@v4
         with:
+          cache: maven
           distribution: temurin
           java-version: ${{ env.JAVA_MAJOR }}
       - name: 校验产物
@@ -145,6 +158,7 @@ jobs:
           sudo journalctl -u car-monit-backend --no-pager | tail -40 || true
           exit 1
 
+  # ── job: deploy-cluster ──
   deploy-cluster:
     name: deploy-k3d-cluster
     needs: build
@@ -154,6 +168,7 @@ jobs:
     runs-on: [self-hosted, linux, x64, wsl-k3s]
     timeout-minutes: 25
     steps:
+      # 下载上游 workflow 产物
       - uses: actions/download-artifact@v4
         with:
           pattern: car-monit-backend-jar-*

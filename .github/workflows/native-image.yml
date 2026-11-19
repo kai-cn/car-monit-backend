@@ -1,3 +1,10 @@
+# ============================================================================
+# 文件：.github/workflows/native-image.yml
+# 用途：自托管 native 构建（已加 owner 守卫）
+# 触发：手动 dispatch
+# 主要 job：build
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
 # Spring Boot 4.1.2 native-image CI on SELF-HOSTED Linux runners (inside WSL).
 #
 # Selected when GitHub-hosted (cloud) runners are unavailable because of Actions
@@ -57,12 +64,21 @@ env:
   MVN: /mnt/d/work/apache-maven/bin/mvn
 
 jobs:
+  # ── job: build ──
   build:
     if: github.repository_owner == 'kai-cn'
     runs-on: ${{ inputs.runner_label }}
     timeout-minutes: 120
     steps:
+      # 拉取仓库源码
       - uses: actions/checkout@v4
+      # Perf: reuse ~/.m2/repository across runs; key follows pom.xml changes.
+      - name: Cache Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-
 
       - name: Toolchain preflight
         shell: bash
@@ -141,6 +157,7 @@ jobs:
           file "$out"
           echo "binary_bytes=$bytes sha256=$sha"
 
+      # 上传产物供后续 job/Release 使用
       - uses: actions/upload-artifact@v4
         with:
           name: native-${{ inputs.app }}-jdk${{ inputs.jdk }}-linux

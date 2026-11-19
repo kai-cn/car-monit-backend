@@ -1,3 +1,10 @@
+# ============================================================================
+# 文件：.github/workflows/deploy.yml
+# 用途：部署 workflow：k3d 集群/单机部署入口
+# 触发：手动 dispatch
+# 主要 job：deploy
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
 name: deploy
 
 # K8s 部署（仅部署到已存在的 Deployment，不创建任何资源）。
@@ -36,6 +43,7 @@ permissions:
   contents: read
 
 jobs:
+  # ── job: deploy ──
   deploy:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
