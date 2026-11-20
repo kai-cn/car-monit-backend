@@ -127,11 +127,16 @@ jobs:
           sudo apt-get install -y -qq gcc g++ zlib1g-dev
 
       - name: Build fat jar (JVM baseline)
+        id: jvmjar
         shell: bash
         run: |
           set -euo pipefail
           mvn $MAVEN_ARGS -DskipTests -pl "$MODULE" -am package
           ls -lh "$MODULE"/target/*.jar
+          jar=$(ls "$MODULE"/target/*.jar | grep -v original | head -1)
+          # Native build uses clean; preserve the JVM baseline jar outside target.
+          cp "$jar" "$RUNNER_TEMP/jvm-baseline.jar"
+          echo "jar=$RUNNER_TEMP/jvm-baseline.jar" >> "$GITHUB_OUTPUT"
 
       - name: Build native binary (candidate)
         shell: bash
@@ -147,7 +152,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          jar=$(ls "$MODULE"/target/*.jar | grep -v original | head -1)
+          jar="${{ steps.jvmjar.outputs.jar }}"
+          if [ -z "$jar" ] || [ ! -f "$jar" ]; then
+            jar=$(ls "$MODULE"/target/*.jar | grep -v original | head -1)
+          fi
           echo "jar=$jar" >> "$GITHUB_OUTPUT"
           if [ "$CELL_PLATFORM" = 'windows' ]; then bin="$MODULE/target/$MODULE.exe"; else bin="$MODULE/target/$MODULE"; fi
           if [ -f "$bin" ]; then echo "native=$bin" >> "$GITHUB_OUTPUT"; echo "native OK ($(wc -c < "$bin") bytes)"; else echo "native=" >> "$GITHUB_OUTPUT"; echo "::warning::native binary not found at $bin"; fi
