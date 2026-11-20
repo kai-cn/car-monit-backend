@@ -46,3 +46,12 @@ H8 backend native 与 H9 Rust 仍为技术阻塞，F1/F2 为用户名下真实�
 - runtime-logs 已清理凭据后入库 backend 源分支，最终提交 `a38f49a1`（先前 `f9cbd8cb` 被安全审核否决）。
 - H9 已收口（Java8/Go/Python/Rust 全 fails=0）。
 - H8 仍在迭代：`44544743332` native build 中；OSS 仅 native 禁用，AWS SDK 资源 include 已撤销。
+
+
+
+
+## 2026-11-20 H8 收官
+- H8 backend native 已通过：run `44683333011`，2 端点 `status_match=2`、**fails=0**。
+- 性能：启动 16826→3613 ms，RSS 624.9→395.0 MB，延迟 307.77→6.24 ms。
+- 修复：Forest 可选注入、去 Lombok 全参构造、OSS 初始化降级；AWS 资源 include 撤销。
+- H8/H9 全部收口；剩余仅用户侧 F1/F2 凭据轮换。
