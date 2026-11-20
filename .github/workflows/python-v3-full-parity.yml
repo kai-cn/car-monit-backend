@@ -109,7 +109,7 @@ jobs:
         env:
           CI_ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD }}
           TOKEN__SECRET: crosslang-secret
-          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
           SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
           SPRING__REDIS__HOST: 127.0.0.1
@@ -121,6 +121,15 @@ jobs:
             --cmd "java -jar out/baseline.jar --server.port=19903" \
             --endpoints out/endpoints.txt --out out/java-v3.json \
             --mode full --check-stability --ready-timeout 300 || echo "java probe exit=$?"
+
+      - name: Diagnose Java V3 startup (cloud log only)
+        if: always()
+        shell: bash
+        run: |
+          echo "===== java-v3.json.app.log tail ====="
+          tail -100 out/java-v3.json.app.log 2>/dev/null || echo "(no app.log)"
+          echo "===== probe result head ====="
+          head -20 out/java-v3.json 2>/dev/null || echo "(no probe json)"
 
       - name: Reset DB seed (clean state for Python)
         shell: bash
@@ -135,20 +144,30 @@ jobs:
         env:
           CI_ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD }}
           TOKEN__SECRET: crosslang-secret
-          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
           SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
           SPRING__REDIS__HOST: 127.0.0.1
           SPRING__REDIS__PORT: '6379'
         run: |
           set -uo pipefail
-          python -m pip install -q -r candidate/car-monit-py/requirements.txt
+          # requirements.txt 含 `-e .[test]`，必须在项目目录内执行，否则解析到仓库根报错
+          (cd candidate/car-monit-py && python -m pip install -q -r requirements.txt)
           sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' candidate/car-monit-py/config/application.yml
           python baseline/scripts/v3/ops/parity/full_parity_probe.py \
             --variant python --port 19904 \
             --cmd "cd candidate/car-monit-py && python3 -m uvicorn app.main:app --host 127.0.0.1 --port 19904 --workers 1" \
             --endpoints out/endpoints.txt --out out/python.json \
             --mode full --check-stability --ready-timeout 300 || echo "python probe exit=$?"
+
+      - name: Diagnose Python startup (cloud log only)
+        if: always()
+        shell: bash
+        run: |
+          echo "===== python.json.app.log tail ====="
+          tail -100 out/python.json.app.log 2>/dev/null || echo "(no app.log)"
+          echo "===== probe result head ====="
+          head -20 out/python.json 2>/dev/null || echo "(no probe json)"
 
       - name: Compare Java V3 vs Python
         shell: bash
