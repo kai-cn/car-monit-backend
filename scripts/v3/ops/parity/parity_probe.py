@@ -107,12 +107,16 @@ def port_open(port, timeout=1.0):
         return False
 
 
-def http_get(port, path, timeout=15):
+def http_get(port, path, timeout=15, headers=None):
+    # 【V3 对拍扩展】headers 从 CI env 注入（JSON 字符串），不落盘、不打印。
+    # Java V3 的大屏/导出端点需要 Authorization / X-Internal-Token，
+    # 原探针只能对免认证端点，扩展后支持全量业务端点对拍。
     import urllib.request, urllib.error
     url = 'http://127.0.0.1:%d%s' % (port, path)
     t0 = time.time()
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as r:
+        req = urllib.request.Request(url, headers=headers or {})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
             body = r.read()
             code = r.status
     except urllib.error.HTTPError as e:
@@ -136,7 +140,18 @@ def main():
     ap.add_argument('--repeat', type=int, default=1)
     ap.add_argument('--check-stability', action='store_true',
                     help='call each endpoint twice; mark unstable (non-deterministic) endpoints')
+    ap.add_argument('--headers-env', default='',
+                    help='name of env var holding a JSON object of HTTP headers (tokens never on disk)')
     a = ap.parse_args()
+
+    # header 值只从环境变量读取；绝不写入 out/*.json 或日志。
+    headers = None
+    if a.headers_env:
+        raw = os.environ.get(a.headers_env, '')
+        if raw:
+            headers = json.loads(raw)
+            if not isinstance(headers, dict):
+                raise ValueError('--headers-env must point to a JSON object')
 
     endpoints = [l.strip() for l in Path(a.endpoints).read_text(encoding='utf-8').splitlines() if l.strip()]
     os.makedirs(os.path.dirname(os.path.abspath(a.out)) or '.', exist_ok=True)
@@ -188,13 +203,13 @@ def main():
     if ready:
         rows = []
         for ep in endpoints:
-            code, body, ms, err = http_get(a.port, ep)
+            code, body, ms, err = http_get(a.port, ep, headers=headers)
             sha1 = hashlib.sha256(body).hexdigest()[:16] if body else ''
             # stability probe: call once more, compare sha -> detect non-deterministic endpoints
             stable = True
             sha2 = sha1
             if a.check_stability:
-                code2, body2, _ms2, _e2 = http_get(a.port, ep)
+                code2, body2, _ms2, _e2 = http_get(a.port, ep, headers=headers)
                 sha2 = hashlib.sha256(body2).hexdigest()[:16] if body2 else ''
                 stable = (code == code2 and sha1 == sha2)
             rows.append({'endpoint': ep, 'status': code, 'bytes': len(body), 'latency_ms': ms,
