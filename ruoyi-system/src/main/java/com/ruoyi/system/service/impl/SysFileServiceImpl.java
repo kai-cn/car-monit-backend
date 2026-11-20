@@ -44,9 +44,9 @@ import java.util.Map;
 @Service
 public class SysFileServiceImpl implements ISysFileService {
     @Autowired
-    private final OssProperties ossProperties;
+    private OssProperties ossProperties;
     @Autowired
-    private final OssTemplate ossTemplate;
+    private OssTemplate ossTemplate;
     @Autowired
     private SysFileMapper sysFileMapper;
 
