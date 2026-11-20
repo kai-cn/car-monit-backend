@@ -189,17 +189,23 @@ public class OssTemplate implements InitializingBean {
 
 	@Override
 	public void afterPropertiesSet() {
-		ClientConfiguration clientConfiguration = new ClientConfiguration();
-		clientConfiguration.setMaxConnections(ossProperties.getMaxConnections());
+		try {
+			ClientConfiguration clientConfiguration = new ClientConfiguration();
+			clientConfiguration.setMaxConnections(ossProperties.getMaxConnections());
 
-		AwsClientBuilder.EndpointConfiguration endpointConfiguration = new AwsClientBuilder.EndpointConfiguration(
-				ossProperties.getEndpoint(), ossProperties.getRegion());
-		AWSCredentials awsCredentials = new BasicAWSCredentials(ossProperties.getAccessKey(),
-				ossProperties.getSecretKey());
-		AWSCredentialsProvider awsCredentialsProvider = new AWSStaticCredentialsProvider(awsCredentials);
-		this.amazonS3 = AmazonS3Client.builder().withEndpointConfiguration(endpointConfiguration)
-				.withClientConfiguration(clientConfiguration).withCredentials(awsCredentialsProvider)
-				.disableChunkedEncoding().withPathStyleAccessEnabled(ossProperties.getPathStyleAccess()).build();
+			AwsClientBuilder.EndpointConfiguration endpointConfiguration = new AwsClientBuilder.EndpointConfiguration(
+					ossProperties.getEndpoint(), ossProperties.getRegion());
+			AWSCredentials awsCredentials = new BasicAWSCredentials(ossProperties.getAccessKey(),
+					ossProperties.getSecretKey());
+			AWSCredentialsProvider awsCredentialsProvider = new AWSStaticCredentialsProvider(awsCredentials);
+			this.amazonS3 = AmazonS3Client.builder().withEndpointConfiguration(endpointConfiguration)
+					.withClientConfiguration(clientConfiguration).withCredentials(awsCredentialsProvider)
+					.disableChunkedEncoding().withPathStyleAccessEnabled(ossProperties.getPathStyleAccess()).build();
+		} catch (Throwable t) {
+			// Native images cannot initialize AWS SDK v1 InternalConfig. Keep the bean alive
+			// so unrelated endpoints can start; OSS-backed endpoints remain unavailable in native.
+			System.err.println("OSS client initialization skipped: " + t.getClass().getSimpleName());
+		}
 	}
 
 }
