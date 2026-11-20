@@ -140,3 +140,11 @@
 - 性能：启动 16826→3613 ms，RSS 624.9→395.0 MB，延迟 307.77→6.24 ms。
 - 修复要点：Forest 字段可选、SysFileServiceImpl 去 Lombok 全参构造、OssTemplate 初始化降级、AWS 资源 include 撤销。
 - H8+H9 均已收口；剩余 F1/F2 用户侧真实凭据轮换。
+
+
+## 11. 2026-11-20 Java POM 升级收口
+- Boot2 master 到 2.7.18；所有 Java 分支 BOM 化依赖治理完成。
+- Jedis → Lettuce 完成；所有相关代码与 catch 兼容性修复完成。
+- 新增 Java-only workflow，Boot2 分支单独验证；Boot3/Boot4 用 parity workflow。
+- 16/16 云 runner run success；证据 `java-upgrade-runs.json`。
+- 工作记忆：api-java-V3 `.workbuddy/memory/2026-11-20.md`。
