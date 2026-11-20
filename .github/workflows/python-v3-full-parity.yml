@@ -97,6 +97,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # logback.xml 固定写 /home/ruoyi/logs；runner 上预建并授权，避免 file appender 报错
+          sudo mkdir -p /home/ruoyi/logs && sudo chmod 777 /home/ruoyi/logs
           cd baseline
           mvn -B -ntp -DskipTests -pl ruoyi-admin -am package
           cp $(ls ruoyi-admin/target/*.jar | grep -v original | head -1) ../out/baseline.jar
