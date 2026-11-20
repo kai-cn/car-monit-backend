@@ -111,6 +111,11 @@ jobs:
         env:
           CI_ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD }}
           TOKEN__SECRET: crosslang-secret
+          # Java V3 启动门禁：DownloadTokenService 要求 export.download.secret
+          EXPORT_DOWNLOAD_SECRET: ${{ secrets.EXPORT_DOWNLOAD_SECRET }}
+          CI_EXPORT_SECRET: ${{ secrets.CI_EXPORT_SECRET }}
+          HENGDA__SECRET: ${{ secrets.HENDA_SECRET }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
           SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
@@ -146,6 +151,11 @@ jobs:
         env:
           CI_ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD }}
           TOKEN__SECRET: crosslang-secret
+          # Java V3 启动门禁：DownloadTokenService 要求 export.download.secret
+          EXPORT_DOWNLOAD_SECRET: ${{ secrets.EXPORT_DOWNLOAD_SECRET }}
+          CI_EXPORT_SECRET: ${{ secrets.CI_EXPORT_SECRET }}
+          HENGDA__SECRET: ${{ secrets.HENDA_SECRET }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
           SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
@@ -170,6 +180,20 @@ jobs:
           tail -100 out/python.json.app.log 2>/dev/null || echo "(no app.log)"
           echo "===== probe result head ====="
           head -20 out/python.json 2>/dev/null || echo "(no probe json)"
+
+      - name: Gate probe quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, sys
+          for name in ('java-v3', 'python'):
+              d = json.load(open('out/%s.json' % name, encoding='utf-8'))
+              print('%s probe: login=%s endpoints=%d error=%s' % (
+                  name, d.get('login'), d.get('endpoint_count'), d.get('error')))
+              if d.get('error') or d.get('login') != 'ok' or d.get('endpoint_count', 0) < 100:
+                  sys.exit('::error::%s probe quality gate failed' % name)
+          PY
 
       - name: Compare Java V3 vs Python
         shell: bash
