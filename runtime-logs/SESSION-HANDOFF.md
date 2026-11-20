@@ -133,3 +133,10 @@
 - H8 仍在快速迭代：所有 Forest `*Api` 字段可选；OSS 只禁用 native 进程；AWS 资源方案已撤销。
   当前 run `44544743332` native build 中，结果待确认。
 - 下一会话恢复点：先查 `44544743332`；若仍失败，以完整 app log tail 定位下一阻塞，不再盲试 AWS include。
+
+
+## 10. 2026-11-20 H8 收官
+- H8 backend native 已通过，run `44683333011`：2 端点 `status_match=2`、`nondet=2`、**fails=0**。
+- 性能：启动 16826→3613 ms，RSS 624.9→395.0 MB，延迟 307.77→6.24 ms。
+- 修复要点：Forest 字段可选、SysFileServiceImpl 去 Lombok 全参构造、OssTemplate 初始化降级、AWS 资源 include 撤销。
+- H8+H9 均已收口；剩余 F1/F2 用户侧真实凭据轮换。
