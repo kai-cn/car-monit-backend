@@ -73,7 +73,21 @@ python dispatch-redacted.py kai-cn/car-monit-backend python-v3-full-parity.yml c
 python save_full_joblog.py kai-cn/car-monit-backend <job_id> <out.log>
 ```
 
-## 5. 文档索引
+## 5. 续：全量对拍已跑通（2026-11-20）
+
+无需下载 artifact，全部通过云 runner 日志定位并修复：
+1. setup-java 8u514 tarball 损坏 → 固定 8.0.442
+2. Java 缺 `EXPORT_DOWNLOAD_SECRET` → 从 Secret 注入
+3. Python `pip install -r` 的 `-e .` 解析到仓库根 → 先 cd 到项目目录
+4. Python 密钥强度门禁 → 用高熵 Secret 注入
+5. workflow "假成功" → 新增 Gate probe quality
+
+最终 run `44755264319`（job `136353209943`）**completed success**：
+Java 与 Python 均 `ready=True login=ok ep=302`，对拍 `status_match=301`、
+`exact=164`、`semantic=177`、`NONDET=41`、**84 个 DIFF（真实差异待分析）**。
+详见 `V3-FULL-PARITY-RESULT.md`。
+
+## 6. 文档索引
 * 两侧 `docs/V3-CLOUD-VERIFICATION.md` —— 先前云实测与 2 端点对拍结果
 * 两侧 `docs/V3-ALIGNMENT-HANDOVER.md` —— Java V3 对齐交接
 * 本文件：全量对拍 workflow 的专项交接
