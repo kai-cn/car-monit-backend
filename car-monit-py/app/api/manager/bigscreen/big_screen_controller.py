@@ -405,9 +405,31 @@ def get_exception_car() -> AjaxResult:
 
 
 @router.get("/topTen", response_model=None)
-def top_ten() -> AjaxResult:
-    """重点车辆通行前 10. Java: ``@GetMapping(value = "/topTen")``."""
-    return AjaxResult.success_data(_snapshot_flow().get_top_ten())
+def top_ten(startTime: Optional[str] = None, endTime: Optional[str] = None) -> AjaxResult:
+    """重点车辆通行前 10. Java: ``@GetMapping(value = "/topTen")``.
+
+    【Java V3 对齐】V3 新增两个可选参数 ``startTime`` / ``endTime``，默认最近 7 天
+    （Java ``BigScreenStatsService.topTen`` 里补默认值，Mapper 新增 ``getTopTenRange``）。
+    Python 差异：Java 的 ``@RequestParam(required=false)`` → ``Optional[str]=None``；
+    Python 侧在 Controller 里补默认值，避免修改老 service 的签名（保持 master 兼容）。
+    """
+    from datetime import datetime, timedelta
+
+    service = _snapshot_flow()
+    if startTime is None and endTime is None:
+        return AjaxResult.success_data(service.get_top_ten())
+
+    end = endTime or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    start = startTime or (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
+    if hasattr(service, "get_top_ten_range"):
+        return AjaxResult.success_data(service.get_top_ten_range(start, end))
+    # Java V3 的服务一定有 getTopTenRange；Python 老服务未实现时退回全量并记差异。
+    import logging
+
+    logging.getLogger(__name__).warning(
+        "[V3对齐] service 缺少 get_top_ten_range，topTen 时间过滤未生效 start=%s end=%s",
+        start, end)
+    return AjaxResult.success_data(service.get_top_ten())
 
 
 @router.get("/orgList", response_model=None)

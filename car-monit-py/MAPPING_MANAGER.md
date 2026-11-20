@@ -27,7 +27,7 @@
 |---|---|---|
 | Java 控制器 | 20 | `ruoyi-admin/src/main/java/com/ruoyi/web/controller/manager/` 下全部 `*Controller.java` |
 | 端点 | 160 | 方法级注解展开后的条数（`value = {...}` 会展开成多条），与 `scripts/audit_endpoints.py` 的 Java 侧计数同源 |
-| Python 控制器模块 | 20 | `app/api/manager/bigscreen/` |
+| Python 控制器模块 | 21 | `app/api/manager/bigscreen/` |
 | Domain 对照行 | 34 | 按 `# Migrated from:` 反查到的 Java 文件行数（Mapper 的接口与 XML 分别计） |
 | Mapper 对照行 | 38 | 按 `# Migrated from:` 反查到的 Java 文件行数（Mapper 的接口与 XML 分别计） |
 | Service 对照行 | 38 | 按 `# Migrated from:` 反查到的 Java 文件行数（Mapper 的接口与 XML 分别计） |
@@ -43,11 +43,12 @@
 
 ## 3. 文件级对照
 
-### 3.1 api（20 行）
+### 3.1 api（21 行）
 
 | Java | Python |
 |---|---|
 | `ruoyi-admin/src/main/java/com/ruoyi/web/controller/manager/bigscreen/BigScreenController.java` | `app/api/manager/bigscreen/big_screen_controller.py` |
+| `ruoyi-admin/src/main/java/com/ruoyi/web/controller/manager/bigscreen/BigScreenExportController.java` | `app/api/manager/bigscreen/big_screen_export_controller.py` |
 | `ruoyi-admin/src/main/java/com/ruoyi/web/controller/manager/BussTestController.java` | `app/api/manager/buss_test_controller.py` |
 | `ruoyi-admin/src/main/java/com/ruoyi/web/controller/manager/CarAduitFreeController.java` | `app/api/manager/car_aduit_free_controller.py` |
 | `ruoyi-admin/src/main/java/com/ruoyi/web/controller/manager/CarConfimFreeController.java` | `app/api/manager/car_confim_free_controller.py` |

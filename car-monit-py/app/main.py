@@ -83,6 +83,9 @@ from app.api.flow.flow_template_controller import router as flow_template_router
 from app.api.health_controller import router as health_router
 from app.api.manager.buss_test_controller import router as manager_buss_test_router
 from app.api.manager.bigscreen.big_screen_controller import router as manager_big_screen_router
+from app.api.manager.bigscreen.big_screen_export_controller import (
+    router as manager_big_screen_export_router,
+)
 from app.api.manager.car_aduit_free_controller import (
     router as manager_car_aduit_free_router,
 )
@@ -111,6 +114,7 @@ from app.api.manager.car_warning_rule_controller import router as manager_warnin
 from app.api.manager.car_white_info_controller import router as manager_white_info_router
 from app.api.manager.gantry_car_controller import router as manager_gantry_car_router
 from app.api.manager.gantry_trade_info_controller import router as manager_gantry_trade_router
+from app.api.monitor.big_screen_ops_controller import router as monitor_big_screen_ops_router
 from app.api.monitor.cache_controller import router as monitor_cache_router
 from app.api.monitor.server_controller import router as monitor_server_router
 from app.api.monitor.sys_job_controller import router as monitor_job_router
@@ -422,6 +426,11 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     application.add_middleware(XssMiddleware, settings=settings)
     application.add_middleware(CORSMiddleware, **cors_options)
     application.add_middleware(TraceIdMiddleware, settings=settings)
+    # 【Java V3 对齐】BigScreenResponseFilter：只为 /manager/bigScreen 的 GET 生成
+    # ETag/304 与 X-Cache/X-Degrade/X-Data-*；下载流在中间件内部排除。
+    from app.middleware.bigscreen_response import bigscreen_response_filter
+
+    application.middleware("http")(bigscreen_response_filter)
 
     register_exception_handlers(application)
 
@@ -518,6 +527,8 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     application.include_router(monitor_job_log_router)
     # Java: CacheController -- ``GET /monitor/cache``. Returns the raw ``INFO`` /
     # ``INFO commandstats`` / ``DBSIZE`` of the Redis the app is actually wired to.
+    # 【Java V3 对齐】新增 6 个可观测/灰度端点（/monitor/bigscreen/**，全小写）。
+    application.include_router(monitor_big_screen_ops_router)
     application.include_router(monitor_cache_router)
     # Java: ServerController -- ``GET /monitor/server``. Uses psutil (was OSHI) and
     # **sleeps 1 second** inside ``setCpuInfo()``; see the module docstring.
@@ -689,6 +700,9 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     # 整个类**没有** ``@PreAuthorize``；``exceptRecordList`` 逐行补 ``orgId`` /
     # ``supplementaryStatus``（N+1，Java 原样）。
     application.include_router(manager_big_screen_router)
+    # 【Java V3 对齐】新增 10 个导出端点（/manager/bigScreen/export/**）。
+    # 注册在 big_screen_router 之后：两者前缀不同（多 /export 段），FastAPI 顺序匹配不受影响。
+    application.include_router(manager_big_screen_export_router)
 
     # ---- flow 包（``/flow/**``）----
     # Java: FlowApplyInfoController -- ``/flow/applyinfo/**``。7 个映射，只有 ``/listAll``
