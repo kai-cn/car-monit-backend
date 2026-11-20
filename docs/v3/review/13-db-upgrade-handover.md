@@ -1,4 +1,6 @@
-# DB 大版本升级云验证 — 任务交接文档（2026-11-18 暂停点）
+# DB 大版本升级云验证 — 任务交接文档（2026-11-20 全部完成）
+
+> 状态：任务已全部完成。2026-11-18 暂停时的 3 个 GA 分支 run 已于 2026-11-20 核验为 success（见 §3、§4）。本文档保留作为完整交接记录。
 
 ## 1. 任务目标与总体结论
 - 目标：在 GitHub 云 runner 上完成 MySQL 8.0→9.7.4、openGauss 3.0.0→7.0.0（先 RC3 后 GA 正式版）升级验证 + 业务一致性 + 资源/性能对比；基于 jdk25 建 `feature-dbupgrade`，同步到 jdk21/jdk17/java-V3 分支。
@@ -11,21 +13,22 @@
 - 6 个同步分支（api/backend × jdk21/jdk17/java-V3）均已推送最终 harness + 夹具。
 - 注意：本机 git HTTPS 推送经常 connection reset，最终用 GitHub **Contents API** 直接 PUT 文件（`push_files_api.py`），`.sh` 已做 CRLF→LF 归一化。
 
-## 3. 已完成的验证（run id 与结论）
+## 3. 已完成的验证（run id 与结论）— 全部完成
 | Cell | run id | 结论 |
 |---|---|---|
 | api × MySQL 8.0.46→9.7.4 | 44268498258（jdk25）、44268999597/44269014488/44269030678 | 79 端点 fails=0，mysqldump 真实迁移 |
 | backend × MySQL 8.0.46→9.7.4 | 44213878862/44213891663/44213904528 | 2 端点 fails=0，mysqldump 真实迁移 |
 | api × openGauss 3.0→7.0.0-RC3 | 44268498258 等 | 79 端点 fails=0，gs_dump 真实导出 2.99MB |
-| api × openGauss 3.0→**7.0.0 GA** | **44283915442**（jdk25） | 79/79 fails=0，GS dump 2,985,813B，版本串 7.0.0 build 2397a86f |
-| api jdk21/17/java-V3 GA | 44285673201 / 44285699892 / 44285716860 | **暂停时仍在 in_progress（下载 2.4GB GA 镜像中）**，待恢复后查结论 |
+| api × openGauss 3.0→**7.0.0 GA**（jdk25） | **44283915442** | 79/79 fails=0，GS dump 2,985,813B，版本串 7.0.0 build 2397a86f |
+| api jdk21 GA | 44285673201 | ✅ success，真实 dump 2,985,812B，GA 版本，79/79 fails=0 |
+| api jdk17 GA | 44285699892 | ✅ success，真实 dump 2,985,812B，GA 版本，79/79 fails=0 |
+| api java-V3 GA | 44285716860 | ✅ success，真实 dump 2,985,812B，GA 版本，79/79 fails=0 |
 
-## 4. 暂停时正在运行的任务（恢复后先做）
-1. 查 3 个 GA 分支 run 结论：
-   `python D:/work/runtime-logs/dbupgrade-joblog.py kai-cn/car-monit-api <run_id>`
-   - 若失败，多为 openGauss old 侧启动竞态/GA 下载超时，按 §6 踩坑处理。
-   - 若 success，把 run id 补入 12 号文档 §4 GA 小节并推送。
-2. 不需要重新 dispatch jdk25（已 PASS）；只在失败时针对性重跑对应分支。
+## 4. 恢复后核验记录（2026-11-20）
+- 暂停时的 3 个 GA 分支 run 已全部 `completed/success`。
+- 用 `verify_ga_runs.py` 从云端 job 日志确认：3 者均为真实 dump（2,985,812B）、版本串含 `openGauss 7.0.0 build ...`（GA 正式版）、79 端点 status_match=79/fails=0。
+- 12 号文档 §4 GA 小节已含这 3 个 run 的最终结论，无需再改。
+- **任务全部完成，无待办 run。**
 
 ## 5. 关键资产（均在 D:/work/runtime-logs/）
 - 凭据免交互：`gh_cred.py`（token 缓存 `.gh_token_cache`），所有脚本读缓存，不再弹 GCM 账号框。
