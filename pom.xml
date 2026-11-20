@@ -13,6 +13,9 @@
     <description>若依管理系统</description>
 
     <properties>
+    <!-- Spring Boot BOM is the single source of truth for managed dependency versions.
+         Explicit versions are kept only for dependencies not managed by the BOM. -->
+
         <ruoyi.version>3.8.7</ruoyi.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
