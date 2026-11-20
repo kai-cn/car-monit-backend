@@ -18,7 +18,6 @@ import com.ruoyi.system.domain.ro.UploadByUrlRo;
 import com.ruoyi.system.mapper.SysFileMapper;
 import com.ruoyi.system.service.ISysFileService;
 import com.ruoyi.system.service.forest.FileApi;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,9 +42,10 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-@AllArgsConstructor
 public class SysFileServiceImpl implements ISysFileService {
+    @Autowired
     private final OssProperties ossProperties;
+    @Autowired
     private final OssTemplate ossTemplate;
     @Autowired
     private SysFileMapper sysFileMapper;
