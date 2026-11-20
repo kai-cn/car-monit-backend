@@ -56,7 +56,9 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '8'
+          # 8u514 tarball 在本 runner 上下载后 tar 解压失败（Child returned status 1）；
+          # 固定到已验证可用的 8u442，避开损坏的缓存包。
+          java-version: '8.0.442'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
