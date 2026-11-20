@@ -1,7 +1,7 @@
 package com.ruoyi.web.util;
 
 import org.springframework.web.multipart.MultipartFile;
-import sun.misc.BASE64Decoder;
+import java.util.Base64;
 
 import java.io.*;
 
@@ -68,11 +68,10 @@ public class Base64DecodeMultipartFile implements MultipartFile {
     public static MultipartFile base64Convert(String base64) {
         String[] baseStrs = base64.split(",");
 
-        BASE64Decoder decoder = new BASE64Decoder();
         byte[] b = new byte[0];
         try {
-            b = decoder.decodeBuffer(baseStrs[1]);
-        } catch (IOException e) {
+            b = Base64.getDecoder().decode(baseStrs[1]);
+        } catch (IllegalArgumentException e) {
             e.printStackTrace();
         }
         for (int i = 0; i < b.length; ++i) {
