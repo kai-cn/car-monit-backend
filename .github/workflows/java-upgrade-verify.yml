@@ -1,0 +1,27 @@
+# Java-only verification for the Spring Boot dependency upgrade.
+# It intentionally avoids native/Python/DB jobs so the POM changes are isolated.
+name: java-upgrade-verify
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  maven-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          # Perf: reuse ~/.m2/repository across runs.
+          cache: maven
+
+      - name: Maven package
+        run: mvn -B -ntp -DskipTests package
