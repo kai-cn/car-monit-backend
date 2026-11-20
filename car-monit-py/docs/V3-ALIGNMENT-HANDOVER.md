@@ -43,11 +43,19 @@
   .venv\Scripts\python.exe -m pytest tests/test_v3_alignment.py -q
   ```
 
-## 4. 文档索引
+## 4. 云 runner 实测（2026-11-20 增补）
+
+复用 `ci.yml` 的 `py` job（run `44712980926`）：**completed success**，coverage 73%。
+云上暴露并修复时间炸弹用例（`ac960499`）。复用 `crosslang-parity-cloud.yml`（run `44713232995`）：
+整条 success，Python vs Java8 对拍 `endpoints=2 fails=0`。探针已扩展 `--headers-env`
+（Java V3 分支提交 `61462810`），供下个会话覆盖认证端点。详见 `V3-CLOUD-VERIFICATION.md`。
+
+## 5. 文档索引
 
 * `V3-ALIGNMENT-PLAN.md` —— 差距矩阵与实施顺序
 * `V3-ALIGNMENT-INDEX.md` —— 文件级索引
 * `V3-ALIGNMENT-HANDOVER.md` —— 本文件
+* `V3-CLOUD-VERIFICATION.md` —— 云 runner 实测与对拍验收记录
 * `MAPPING_MANAGER.md` / `COMPATIBILITY.md` —— master 基线对照（仍有效）
 * `../docs/v3/review/` —— Java V3 审阅记录（决策依据）
 
