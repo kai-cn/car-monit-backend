@@ -213,7 +213,7 @@ jobs:
           [ "$CELL_PLATFORM" = 'linux' ] && chmod +x "$NATIVE"
           python scripts/v3/ops/parity/parity_probe.py \
             --variant native --label "$LABEL" \
-            --cmd "env OSS_ENABLE=false \"$NATIVE\" --server.port=19902" \
+            --cmd "env OSS_ENABLE=false \"$NATIVE\" --server.port=19902 --oss.enable=false" \
             --port 19902 --endpoints "$ENDPOINTS" \
             --out out/native.json --mode "$MODE" --check-stability \
             --repeat "${{ inputs.repeat }}" --ready-timeout 300 || echo "native probe exit=$?"
