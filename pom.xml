@@ -187,7 +187,6 @@
             <dependency>
                 <groupId>org.springframework.kafka</groupId>
                 <artifactId>spring-kafka</artifactId>
-                <version>${kafka.version}</version>
             </dependency>
 
             <!-- Elasticsearch -->
