@@ -110,12 +110,13 @@ jobs:
         shell: bash
         env:
           CI_ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD }}
-          TOKEN__SECRET: crosslang-secret
+          # Python settings 有密钥强度门禁（长度>=32 且熵>=3），用仓库 Secret 的高熵值
+          TOKEN__SECRET: ${{ secrets.JWT_SECRET }}
+          HENGDA__SECRET: ${{ secrets.CI_EXPORT_SECRET }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           # Java V3 启动门禁：DownloadTokenService 要求 export.download.secret
           EXPORT_DOWNLOAD_SECRET: ${{ secrets.EXPORT_DOWNLOAD_SECRET }}
           CI_EXPORT_SECRET: ${{ secrets.CI_EXPORT_SECRET }}
-          HENGDA__SECRET: ${{ secrets.HENDA_SECRET }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
           SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
@@ -150,12 +151,13 @@ jobs:
         shell: bash
         env:
           CI_ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD }}
-          TOKEN__SECRET: crosslang-secret
+          # Python settings 有密钥强度门禁（长度>=32 且熵>=3），用仓库 Secret 的高熵值
+          TOKEN__SECRET: ${{ secrets.JWT_SECRET }}
+          HENGDA__SECRET: ${{ secrets.CI_EXPORT_SECRET }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           # Java V3 启动门禁：DownloadTokenService 要求 export.download.secret
           EXPORT_DOWNLOAD_SECRET: ${{ secrets.EXPORT_DOWNLOAD_SECRET }}
           CI_EXPORT_SECRET: ${{ secrets.CI_EXPORT_SECRET }}
-          HENGDA__SECRET: ${{ secrets.HENDA_SECRET }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
           SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
