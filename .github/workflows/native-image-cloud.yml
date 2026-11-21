@@ -220,6 +220,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [ '${{ matrix.platform }}' = 'linux' ]; then
+            sudo mkdir -p /home/ruoyi/logs /home/ruoyi/uploadPath
+            sudo chown -R "$(id -u):$(id -g)" /home/ruoyi
+          fi
           # Git Bash on windows-latest resolves mvn.cmd; plain mvn works on Linux.
           MVN=mvn
           if [ '${{ matrix.platform }}' = 'windows' ]; then MVN=mvn.cmd; fi
