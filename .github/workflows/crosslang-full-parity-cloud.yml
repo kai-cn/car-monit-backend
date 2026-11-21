@@ -166,12 +166,12 @@ jobs:
         run: |
           if [ "$IN" = all ] || echo ",$IN," | grep -q ",$LANG,"; then echo run=yes >> "$GITHUB_OUTPUT"; else echo run=no >> "$GITHUB_OUTPUT"; fi
       - name: Setup Python
-        if: steps.gate.outputs.run == yes && matrix.lang == python
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Start datastores
-        if: steps.gate.outputs.run == yes
+        if: steps.gate.outputs.run == 'yes'
         shell: bash
         run: |
           set -euo pipefail
@@ -183,17 +183,17 @@ jobs:
           docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/schema_carmonitdb.sql
           docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
       - name: Download baseline reports
-        if: steps.gate.outputs.run == yes
+        if: steps.gate.outputs.run == 'yes'
         uses: actions/download-artifact@v4
         with:
           name: crosslang-full-baseline
           path: baseline
       - name: Download JUnit jar
-        if: steps.gate.outputs.run == yes
+        if: steps.gate.outputs.run == 'yes'
         shell: bash
         run: curl -fsSL -o out-junit.jar https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
       - name: Build and start Python
-        if: steps.gate.outputs.run == yes && matrix.lang == python
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == python
         shell: bash
         run: |
           set -euo pipefail
@@ -202,7 +202,7 @@ jobs:
           (cd src/car-monit-py && TOKEN__SECRET=junit-cloud-secret-deterministic-0123456789abcdef python3 -m uvicorn app.main:app --host 127.0.0.1 --port 19903 > "$GITHUB_WORKSPACE/app.log" 2>&1) &
           echo $! > app.pid
       - name: Build and start Go
-        if: steps.gate.outputs.run == yes && matrix.lang == go
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == go
         shell: bash
         env:
           CARMONIT_DATABASE_DSN: "root:root@tcp(127.0.0.1:3306)/carmonitdb?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true"
@@ -215,7 +215,7 @@ jobs:
           ./bin/car-monit-go -c configs/config.yaml > "$GITHUB_WORKSPACE/app.log" 2>&1 &
           echo $! > "$GITHUB_WORKSPACE/app.pid"
       - name: Build and start C++
-        if: steps.gate.outputs.run == yes && matrix.lang == cpp
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == cpp
         shell: bash
         env:
           CM_SERVER_PORT: "19903"
@@ -231,7 +231,7 @@ jobs:
           ./build/car-monit-cpp --config config > "$GITHUB_WORKSPACE/app.log" 2>&1 &
           echo $! > "$GITHUB_WORKSPACE/app.pid"
       - name: Build and start Rust
-        if: steps.gate.outputs.run == yes && matrix.lang == rust
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == rust
         shell: bash
         env:
           APP_DATABASE__URL: "mysql://root:root@127.0.0.1:3306/carmonitdb"
@@ -246,7 +246,7 @@ jobs:
           echo $! > "$GITHUB_WORKSPACE/app.pid"
 
       - name: Wait candidate and run JUnit
-        if: steps.gate.outputs.run == yes
+        if: steps.gate.outputs.run == 'yes'
         shell: bash
         run: |
           set -euo pipefail
@@ -260,7 +260,7 @@ jobs:
           OUT_DIR="$PWD/out" VARIANT="${{ matrix.lang }}" LOAD_THREADS=${{ inputs.load_threads }} LOAD_SECONDS=${{ inputs.load_seconds }} \
             java -jar out-junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointLoadTest --details=summary --reports-dir=out/load-reports
       - name: Compare contract and load
-        if: steps.gate.outputs.run == yes
+        if: steps.gate.outputs.run == 'yes'
         shell: bash
         run: |
           set -uo pipefail
@@ -275,7 +275,7 @@ jobs:
           cat out/contract-report.md || true
           cat out/load-report.md || true
       - uses: actions/upload-artifact@v4
-        if: always() && steps.gate.outputs.run == yes
+        if: always() && steps.gate.outputs.run == 'yes'
         with:
           name: crosslang-full-${{ matrix.lang }}
           path: |
