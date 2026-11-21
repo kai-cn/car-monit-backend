@@ -118,6 +118,7 @@ from app.flow.service.flow_message_info_service import (
 )
 from app.flow.util.flow_constant import ZDY_FLOW
 from app.system.mapper.sys_role_mapper import SysRoleMapper
+from app.config.database import transactional
 
 #: Java: ``AjaxResult.success("操作成功！", ...)`` 的文案（**带全角感叹号**）。
 SAVE_SUCCESS_MESSAGE = "操作成功！"
@@ -377,6 +378,7 @@ class FlowCurrentNodeService:
     # ---------------------------------------------------------------- 提交
 
     # Java: AjaxResult saveFlowApply(String, String, String, Map<String, Object>)
+    @transactional
     def save_flow_apply(
         self,
         flow_key: str,
@@ -485,6 +487,7 @@ class FlowCurrentNodeService:
     # ---------------------------------------------------------------- 审核
 
     # Java: AjaxResult saveFlowAuit(FlowCurrentNode flowCurrentNode)
+    @transactional
     def save_flow_auit(self, flow_current_node: FlowCurrentNode) -> AjaxResult:
         """业务审核（同意 / 拒绝 / 退回）。"""
         sh_value = flow_current_node.sh_value
@@ -676,6 +679,7 @@ class FlowCurrentNodeService:
     # ---------------------------------------------------------------- 撤销
 
     # Java: AjaxResult submitReturn(FlowCurrentNode flowCurrentNode)
+    @transactional
     def submit_return(self, flow_current_node: FlowCurrentNode) -> AjaxResult:
         """撤销流程 —— 只有"当前节点是第一节点"时才允许。"""
         # 根据当前业务ID查询是否是第一个节点
@@ -738,6 +742,7 @@ class FlowCurrentNodeService:
     # ---------------------------------------------------------------- 委托
 
     # Java: AjaxResult submitEntrustFlow(FlowCurrentNode flowCurrentNode)
+    @transactional
     def submit_entrust_flow(self, flow_current_node: FlowCurrentNode) -> AjaxResult:
         """把当前节点委托给他人办理，并在 ``flow_apply_info.entrust_info`` 追加记录。"""
         if (

@@ -45,7 +45,7 @@ from app.api.monitor.sys_operlog_controller import (
 )
 from app.common.core.domain.entity.sys_user import SysUser
 from app.common.core.domain.model.login_user import LoginUser
-from app.common.core.page.page_helper import clear_page, take_page, start_page
+from app.common.core.page.page_helper import clear_page, take_page
 from app.config.exception_handlers import register_exception_handlers
 from app.framework.security.context.security_context import (
     SecurityContextHolder,

@@ -15,7 +15,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from app.common.core.domain.ajax_result import AjaxResult
 from app.common.utils.common_util import is_not_blank
@@ -25,6 +25,7 @@ from app.manager.domain.vo.bigscreen.income_statistic_param import IncomeStatist
 from app.manager.domain.vo.pc_income_statics_vo import PCIncomeStaticsVO
 from app.manager.mapper.car_aduit_free_mapper import CarAduitFreeMapper
 from app.manager.service.manager_service import SAVE_SUCCESS_MESSAGE, ManagerCrudService
+from app.config.database import transactional
 
 
 class CarAduitFreeService(ManagerCrudService):
@@ -45,6 +46,7 @@ class CarAduitFreeService(ManagerCrudService):
     # ---------------------------------------------------------------- 保存
 
     # Java: AjaxResult saveCarAduitFree(CarAduitFree carAduitFree)
+    @transactional
     def save(self, entity: Any) -> AjaxResult:
         if is_not_blank(entity.id):
             # 修改
@@ -57,16 +59,19 @@ class CarAduitFreeService(ManagerCrudService):
     # ---------------------------------------------------------------- 删除
 
     # Java: AjaxResult deleteCarAduitFreeByIds(String[] ids)
+    @transactional
     def delete_by_ids(self, entity_ids: Sequence[str]) -> AjaxResult:
         count = self._mapper.delete_by_ids(entity_ids)
         return AjaxResult.success_data(count)
 
     # Java: AjaxResult deleteCarAduitFreeById(String id)
+    @transactional
     def delete_by_id(self, entity_id: str) -> AjaxResult:
         count = self._mapper.delete_by_id(entity_id)
         return AjaxResult.success_data(count)
 
     # Java: AjaxResult deleteCarAduitFreeByConfirmId(String fkId)
+    @transactional
     def delete_by_confirm_id(self, fk_id: Optional[str]) -> AjaxResult:
         """按补缴单删除明细 —— **物理删除**，``fkId`` 为空白时不执行。"""
         count = 0
@@ -92,6 +97,10 @@ class CarAduitFreeService(ManagerCrudService):
     def count_by_car_id(self, car_id: Optional[str]) -> int:
         """大屏 ``/exceptRecordList`` 逐行判断是否已有补缴记录（> 0 → 补缴状态置 ``1``）。"""
         return self._mapper.count_by_car_id(car_id)
+
+    def count_by_car_ids(self, car_ids: Sequence[Optional[str]]) -> Dict[str, int]:
+        """大屏批量版：一次 ``group by`` 取回本页所有车辆的补缴条数。"""
+        return self._mapper.count_by_car_ids(car_ids)
 
     # ---------------------------------------------------------------- PC 堵漏增收
 

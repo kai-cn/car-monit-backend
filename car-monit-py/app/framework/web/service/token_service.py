@@ -21,9 +21,10 @@ must not be "optimised away":
 Secret handling -- the classic jjwt 0.9.x trap
 ----------------------------------------------
 ``signWith(SignatureAlgorithm.HS512, secret)`` takes a **String**, and jjwt 0.9.1 runs it
-through ``TextCodec.BASE64`` before using it as key material. The configured secret
-``abcdefghijklmnopqrstuvwxyz`` is therefore *not* 26 ASCII bytes: it decodes to **19 bytes**
-(6 base64 quads = 18 bytes, plus the 2 leftover characters = 1 more byte). PyJWT is handed
+through ``TextCodec.BASE64`` before using it as key material. The historical demo secret
+(the 26 lowercase Latin letters, i.e. the alphabet) is therefore *not* 26 ASCII bytes:
+it decodes to **19 bytes** (6 base64 quads = 18 bytes, plus the 2 leftover characters =
+1 more byte). PyJWT is handed
 those same 19 bytes, so a token minted by the Java build verifies here and vice versa. Using
 ``secret.encode()`` instead would produce a different key and rejected every existing token.
 (Verified: PyJWT 2.10.1 accepts a 19-byte HS512 key without complaint.)

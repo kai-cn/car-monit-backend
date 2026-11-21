@@ -22,13 +22,14 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, Sequence
 
 from app.common.core.domain.ajax_result import AjaxResult
-from app.common.utils.common_util import is_blank, is_not_blank, is_null
+from app.common.utils.common_util import is_not_blank, is_null
 from app.manager.domain.car_except_record import CarExceptRecord
 from app.manager.domain.car_info import CarInfo
 from app.manager.domain.vo.bigscreen.car_statistics_vo import CarStatisticsVO
 from app.manager.domain.vo.pc_car_statistics_vo import PCCarStatisticsDetailVO, PCCarStatisticsVO
 from app.manager.mapper.car_except_record_mapper import CarExceptRecordMapper
 from app.manager.service.manager_service import SAVE_SUCCESS_MESSAGE, ManagerCrudService
+from app.config.database import transactional
 
 logger = logging.getLogger("app.manager.service.car_except_record_service")
 
@@ -72,6 +73,7 @@ class CarExceptRecordService(ManagerCrudService):
     # ---------------------------------------------------------------- 保存
 
     # Java: AjaxResult saveCarExceptRecord(CarExceptRecord x)
+    @transactional
     def save(self, entity: Any) -> AjaxResult:
         # 判断区间是否重复
         if entity.in_time is not None and entity.out_time is not None:
@@ -98,6 +100,7 @@ class CarExceptRecordService(ManagerCrudService):
     # ---------------------------------------------------------------- 删除
 
     # Java: AjaxResult deleteCarExceptRecordByIds(String[] ids)
+    @transactional
     def delete_by_ids(self, entity_ids: Sequence[str]) -> AjaxResult:
         # 判断是否有补缴记录 ----------------
         count = 0
@@ -112,6 +115,7 @@ class CarExceptRecordService(ManagerCrudService):
         return AjaxResult.success_data(count)
 
     # Java: AjaxResult deleteCarExceptRecordById(String id)
+    @transactional
     def delete_by_id(self, entity_id: str) -> AjaxResult:
         count = self._mapper.delete_by_id(entity_id)
         return AjaxResult.success_data(count)

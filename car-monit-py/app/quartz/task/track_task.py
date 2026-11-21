@@ -41,6 +41,7 @@ from typing import Any, Optional
 from app.base.domain.trail_info import TrailInfo
 from app.common.utils.date_utils import java_date_to_string
 from app.manager.domain.car_except_record import CarExceptRecord
+from app.config.database import transactional
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +108,7 @@ class TrackTask:
     # ------------------------------------------------------------ 任务
 
     # Java: @Transactional public void syncCurrentTrack()
+    @transactional
     def sync_current_track(self) -> None:
         """车辆实时轨迹同步（每三分钟）: ``0 0/3 * * * ?``."""
         logger.info("车俩实时轨迹同步开始同步！%s", java_date_to_string())
@@ -114,6 +116,7 @@ class TrackTask:
         logger.info("车俩实时轨迹同步结束同步！%s", java_date_to_string())
 
     # Java: @Transactional public void syncSuspiciousCar()
+    @transactional
     def sync_suspicious_car(self) -> None:
         """可疑车辆同步（每天凌晨 5 点）: ``0 0 5 * * ?``.
 
@@ -126,6 +129,7 @@ class TrackTask:
         logger.info("可疑车俩数据同步结束同步！%s", java_date_to_string())
 
     # Java: @Transactional public void syncHistoryTrack()
+    @transactional
     def sync_history_track(self) -> None:
         """车辆历史轨迹同步（每天凌晨 6 点）: ``0 0 6 * * ?``.
 
@@ -139,6 +143,7 @@ class TrackTask:
         logger.info("车俩历史轨迹同步结束同步！%s", java_date_to_string())
 
     # Java: @Transactional public void saveCarExcept()
+    @transactional
     def save_car_except(self) -> None:
         """车辆逃费数据更新（每天凌晨 7 点）: ``0 0 7 * * ?``.
 
@@ -149,6 +154,7 @@ class TrackTask:
         logger.info("车辆逃费数据更新结束！%s", java_date_to_string())
 
     # Java: @Transactional public void syncHistoryTrackNoCar()
+    @transactional
     def sync_history_track_no_car(self) -> None:
         """车辆历史轨迹同步（每 10 分钟）: ``0 0/10 * * * ?`` —— **空方法体**.
 
@@ -163,6 +169,7 @@ class TrackTask:
         """
 
     # Java: @Transactional public void changeCarSuspicious()
+    @transactional
     def change_car_suspicious(self) -> None:
         """可疑车辆迁移（每天 21:00）: ``0 0 21 * * ?`` —— 与可疑车辆同步的日志同款文案.
 

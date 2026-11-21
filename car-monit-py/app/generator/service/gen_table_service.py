@@ -87,6 +87,7 @@ from app.generator.util import gen_utils as GenUtils
 from app.generator.util.enumeration.link_table_filed_type_enum import LinkTableFiledTypeEnum
 from app.generator.util.velocity_engine import get_template
 from app.generator.util.velocity_utils import get_file_name, get_template_list, prepare_context
+from app.config.database import transactional
 
 #: Java: ``private static final List<String> FILTER_COLUMN_NAME_LIST``
 #: （``static{}`` 块里逐个 ``add``，顺序即列表顺序）。
@@ -139,6 +140,7 @@ class GenTableService:
     # ------------------------------------------------------------------ 写
 
     # Java: @Transactional void updateGenTable(GenTable genTable)
+    @transactional
     def update_gen_table(self, gen_table: GenTable) -> None:
         """``params`` 整体序列化进 ``options``，再逐个更新列。
 
@@ -154,11 +156,13 @@ class GenTableService:
                 self._column_mapper.update_gen_table_column(gen_table_column)
 
     # Java: @Transactional void deleteGenTableByIds(Long[] tableIds)
+    @transactional
     def delete_gen_table_by_ids(self, table_ids: Sequence[int]) -> None:
         self._table_mapper.delete_gen_table_by_ids(table_ids)
         self._column_mapper.delete_gen_table_column_by_ids(table_ids)
 
     # Java: @Transactional void importGenTable(List<GenTable> tableList)
+    @transactional
     def import_gen_table(self, table_list: Sequence[GenTable]) -> None:
         """导入表结构：``initTable`` -> 插入主表 -> 读物理列 -> 逐列插入。
 
@@ -280,6 +284,7 @@ class GenTableService:
                     ) from error
 
     # Java: @Transactional void synchDb(String tableName)
+    @transactional
     def synch_db(self, table_name: str) -> None:
         """同步数据库：补新列、删已消失的列。
 

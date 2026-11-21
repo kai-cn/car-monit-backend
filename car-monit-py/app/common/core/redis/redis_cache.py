@@ -24,9 +24,9 @@ Two Java behaviours that are easy to get wrong:
   requires a TTL. ``TokenService.refreshToken`` uses the 4-arg form with
   ``expireTime`` minutes -- losing the TTL would make sessions immortal.
 
-``keys(pattern)`` uses ``KEYS``, not ``SCAN``, exactly as Spring Data Redis does. On a
-production keyspace that is an O(N) blocking command; the Java build has the same
-property, so it is preserved rather than "improved".
+``keys(pattern)`` deviates from Java deliberately: Spring Data Redis uses ``KEYS``, an
+O(N) command that blocks the whole server; this implementation uses ``SCAN`` incremental
+iteration instead, de-duplicates keys and sorts the result (see the method docstring).
 """
 
 from __future__ import annotations
@@ -85,7 +85,13 @@ class RedisCache:
         return bool(self.client.delete(key))
 
     def _delete_many(self, keys: Collection[Any]) -> bool:
-        """Java: ``return redisTemplate.delete(collection) > 0;``"""
+        """Java: ``return redisTemplate.delete(collection) > 0;``
+
+        ``DEL`` 不带任何键是 Redis 语法错误；空集合直接返回 ``False``
+        （等价于"删除了 0 个"），避免字典/配置缓存为空时抛异常。
+        """
+        if not keys:
+            return False
         return self.client.delete(*keys) > 0
 
     # ------------------------------------------------------------------ key ops
@@ -109,7 +115,14 @@ class RedisCache:
 
     # Java: public Collection<String> keys(String pattern)
     def keys(self, pattern: str) -> List[str]:
-        return list(self.client.keys(pattern))
+        """用 ``SCAN`` 取代 ``KEYS``：语义等价，但不会阻塞整个 Redis。
+
+        ``KEYS`` 在百万级 keyspace 上会持有单线程事件循环数百毫秒到数秒，
+        ``/monitor/online``、字典缓存刷新等调用会直接拖垮所有并发请求。
+        ``SCAN`` 是游标增量遍历，代价是极端情况下可能返回重复键，
+        这里用 ``set`` 去重（顺序本来就和 Java 的 ``Set`` 一样不保证）。
+        """
+        return sorted({str(key) for key in self.client.scan_iter(match=pattern, count=1000)})
 
     # ------------------------------------------------------------------ list ops
 

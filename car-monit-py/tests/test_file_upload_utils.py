@@ -14,7 +14,8 @@
   （1..999，+1 之后才判断重置 —— 写成"value >= max 就归零"会错一位）；
 * ``MimeTypeUtils``：只认 5 种图片 ``Content-Type``，其余回空串；
 * ``FileUploadUtils``：文件名拼装、``profile`` 前缀切片、大小/后缀/文件名长度三道校验，
-  以及 2 参 ``upload`` 把一切异常包成 ``OSError``（Java 的 ``IOException``）的事实。
+  以及 2 参 ``upload`` 只把**真正的 I/O 故障**包成 ``OSError``（Java 的 ``IOException``），
+  校验类错误（文件名/大小/后缀）保留为业务异常的事实。
 
 时间与序列号都是"现在"，所以断言用正则或用 ``monkeypatch`` 把
 ``date_path`` / ``get_id`` 固定下来 —— 不去 mock 时钟，避免测到 mock 自己。
@@ -30,7 +31,9 @@ from typing import Any, Optional
 import pytest
 from starlette.datastructures import Headers, UploadFile
 
+from app.common.exception.exceptions import ServiceException
 from app.common.exception.file import (
+    FileException,
     FileNameLengthLimitExceededException,
     FileSizeLimitExceededException,
     InvalidExtensionException,
@@ -306,11 +309,10 @@ class TestUpload:
     def test_a_name_longer_than_one_hundred_characters_is_refused(self, profile_dir: str) -> None:
         long_name = "a" * 101 + ".png"
 
-        with pytest.raises(OSError) as raised:
+        with pytest.raises(FileException) as raised:
             fu.upload(get_settings().ruoyi.avatar_path, _upload_file(filename=long_name))
 
-        # 2 参 upload 把 FileNameLengthLimitExceededException 包成 IOException，
-        # 消息原样透传（i18n 文案）。
+        # P2-6 后续：校验类错误保留为业务异常，客户端仍能看到可操作的 i18n 文案。
         assert str(raised.value) == NAME_LENGTH_MESSAGE
 
     def test_the_three_argument_form_keeps_the_original_exception_type(
@@ -327,7 +329,7 @@ class TestUpload:
     def test_a_refused_extension_leaves_nothing_on_disk(self, profile_dir: str) -> None:
         avatar_dir = get_settings().ruoyi.avatar_path
 
-        with pytest.raises(OSError):
+        with pytest.raises(ServiceException):
             fu.upload(avatar_dir, _upload_file(filename="a.exe", content_type="application/zip"))
 
         # 校验在 extract/transfer 之前，所以连日期目录都不会被创建

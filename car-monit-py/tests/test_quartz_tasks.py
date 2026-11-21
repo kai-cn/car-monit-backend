@@ -890,16 +890,19 @@ class TestSnapshotFlowSyncTask:
         assert result["code"] == 200
 
     def test_sync_full_data_aggregates_the_month_counts(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        # 冻结生产模块的“当前时间”，避免测试随挂钟漂移（earliest=2026-08-15
-        # 在 8/9/10 月跑是 3 个月，跨到 11 月会变成 4 个月导致断言失效）。
-        import app.quartz.task.snapshot_flow_sync_task as sfs_module
+        # 时间炸弹修复：原用例依赖 datetime.now() 落在 2026-10（earliest=2026-08-15 → 3 个月，
+        # 每月 5 条 = 15）。云 runner / 后续会话时间推移后月份数会变（2026-11 得 20），
+        # 改成冻结 now=2026-10-20，与 Java V3 审阅记录里的固定基线一致。
+        from app.quartz.task import snapshot_flow_sync_task as sync_module
 
-        class _FrozenDatetime(datetime):
+        frozen = datetime(2026, 10, 20, 12, 0, 0)
+
+        class _FrozenDateTime(datetime):
             @classmethod
-            def now(cls, tz: Any = None) -> datetime:
-                return datetime(2026, 10, 31, 12, 0, 0)
+            def now(cls, tz=None):  # type: ignore[override]
+                return frozen
 
-        monkeypatch.setattr(sfs_module, "datetime", _FrozenDatetime)
+        monkeypatch.setattr(sync_module, "datetime", _FrozenDateTime)
         task, api, _mapper, executor = _snapshot_task(pages=[])
         api.earliest = datetime(2026, 8, 15)
 

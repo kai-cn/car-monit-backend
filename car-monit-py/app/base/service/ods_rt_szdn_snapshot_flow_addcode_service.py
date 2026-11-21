@@ -21,6 +21,7 @@ from app.base.mapper.ods_rt_szdn_snapshot_flow_addcode_mapper import (
 from app.base.service.abstract_crud_service import AbstractCrudService
 from app.common.core.domain.ajax_result import AjaxResult
 from app.manager.domain.vo.bigscreen.top_ten_vo import TopTenVO
+from app.config.database import transactional
 
 
 def _java_string(value: Any) -> str:
@@ -36,10 +37,12 @@ class OdsRtSzdnSnapshotFlowAddcodeService(AbstractCrudService):
     id_attribute = "big_id"
 
     # Java: AjaxResult deleteOdsRtSzdnSnapshotFlowAddcodeByIds(String[] bigIds)
+    @transactional
     def delete_by_ids(self, ids: Sequence[str]) -> AjaxResult:  # type: ignore[override]
         return super().delete_by_ids(ids, "delete_ods_rt_szdn_snapshot_flow_addcode_by_ids")
 
     # Java: AjaxResult deleteOdsRtSzdnSnapshotFlowAddcodeById(String bigId)
+    @transactional
     def delete_by_id(self, entity_id: str) -> AjaxResult:
         return AjaxResult.success_data(
             self._mapper.delete_ods_rt_szdn_snapshot_flow_addcode_by_id(entity_id)

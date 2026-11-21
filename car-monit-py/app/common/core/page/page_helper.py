@@ -44,7 +44,7 @@ from __future__ import annotations
 import logging
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence
+from typing import Any, Iterator, List, Mapping, Optional, Sequence
 
 from sqlalchemy import text
 

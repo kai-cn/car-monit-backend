@@ -34,12 +34,10 @@ Python 等价实现
 
 与 Java 的差异（都不影响可观测行为，逐条说明）
 ----------------------------------------------
-* ``ThreadPoolTaskExecutor`` 是"核心 50 + 队列 1000 + 最大 200"的三段式；
-  ``ThreadPoolExecutor`` 没有队列上限，任务来了就按需起线程直到 200。
-  只有在**同时积压超过 1000 个任务**时两者才会出现线程数差异，
-  而本项目唯一的调用方（几何数据补齐）每次最多提交几十个。
-* ``CallerRunsPolicy``（池满后由调用线程执行）在 Python 侧没有对应物 ——
-  池子永不拒绝，该分支不可达。
+* ``ThreadPoolTaskExecutor`` 是"核心 50 + 队列 1000 + 最大 200"的三段式。
+  Python 侧用 :class:`~app.common.utils.bounded_executor.BoundedThreadPoolExecutor`：
+  待执行任务超过 ``app.executor_queue_capacity``（默认 1000）时，按
+  ``CallerRunsPolicy`` 由调用线程执行，不会无限积压。
 * ``keepAliveSeconds = 300`` 对应 ``ThreadPoolExecutor`` 的线程回收，属实现细节。
 * Java 的 ``ThreadPoolTaskExecutor`` 是**懒初始化**的（第一次 ``execute`` 时建池）；
   Python 侧在模块级单例里同样懒建，语义一致。
@@ -51,8 +49,9 @@ from __future__ import annotations
 
 import logging
 import threading
-from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
+
+from app.common.utils.bounded_executor import BoundedThreadPoolExecutor, default_queue_capacity
 
 logger = logging.getLogger("app.framework.config.thread_pool_config")
 
@@ -72,10 +71,17 @@ class ThreadPoolTaskExecutor:
     #: Java: ``private int keepAliveSeconds = 300;``
     KEEP_ALIVE_SECONDS = 300
 
-    def __init__(self, max_workers: Optional[int] = None, thread_name_prefix: str = "task-pool") -> None:
-        self._executor = ThreadPoolExecutor(
+    def __init__(
+        self,
+        max_workers: Optional[int] = None,
+        thread_name_prefix: str = "task-pool",
+        queue_capacity: Optional[int] = None,
+    ) -> None:
+        capacity = queue_capacity or default_queue_capacity() or self.QUEUE_CAPACITY
+        self._executor = BoundedThreadPoolExecutor(
             max_workers=self.MAX_POOL_SIZE if max_workers is None else max_workers,
             thread_name_prefix=thread_name_prefix,
+            queue_capacity=capacity,
         )
 
     # Java: public void execute(Runnable task)
@@ -97,8 +103,13 @@ class ThreadPoolTaskExecutor:
 
     # Java: public void shutdown()
     def shutdown(self) -> None:
-        """Java: ``ThreadPoolTaskExecutor#shutdown`` —— 不再接收新任务，等存量跑完."""
-        self._executor.shutdown(wait=True)
+        """Java: ``ThreadPoolTaskExecutor#shutdown`` —— 停止接收新任务，**不等待**存量.
+
+        Spring 的 ``waitForTasksToCompleteOnShutdown`` 默认 false，与
+        ``ThreadPoolExecutor.shutdown(wait=False)`` 一致；``wait=True`` 会让
+        lifespan 收尾被长任务拖住，进程退出不再有界。
+        """
+        self._executor.shutdown(wait=False)
 
 
 _INSTANCE: Optional[ThreadPoolTaskExecutor] = None

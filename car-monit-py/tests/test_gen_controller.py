@@ -14,7 +14,8 @@ Service 的 SQL 与模板渲染分别由 ``test_gen_table_mapper.py`` /
   ``getAllColumnList`` **没有**（登录即可）;
 * ``columnList`` 的路径变量是死的（Java 没有 ``@PathVariable``），真正的 ``tableId``
   从 query 取；响应用手工构造的 ``TableDataInfo`` -> ``code = 0``、``msg = null``；
-* ``importTable`` / ``batchGenCode`` 缺 ``tables`` -> ``{"msg":null,"code":500}``；
+* ``importTable`` / ``batchGenCode`` 缺 ``tables`` -> Java 的 ``{"msg":null,"code":500}``，
+  P1-6 起非业务异常改为统一脱敏文案；
 * ``PUT`` 的 8 条 ``@NotBlank`` + ``columns`` 上的 ``@Valid`` 级联；
 * 两个下载端点的 zip 响应头（文件名写死 ``ruoyi.zip``）；
 * ``getInfo`` 的 ``data`` 键序是 ``HashMap`` 桶序：``tables`` / ``rows`` / ``info``。
@@ -53,7 +54,7 @@ from app.common.core.domain.entity.sys_user import SysUser
 from app.common.core.domain.model.login_user import LoginUser
 from app.common.core.page.page_helper import clear_page, take_page
 from app.common.exception.exceptions import AccessDeniedException, CustomException
-from app.config.exception_handlers import register_exception_handlers
+from app.config.exception_handlers import GENERIC_ERROR_MESSAGE, register_exception_handlers
 from app.framework.security.context.security_context import (
     SecurityContextHolder,
     UsernamePasswordAuthenticationToken,
@@ -650,7 +651,7 @@ class TestImportTable:
         response = http_lenient.post("/tool/gen/importTable")
 
         assert response.status_code == 200
-        assert response.json() == {"code": 500, "msg": None}
+        assert response.json() == {"code": 500, "msg": GENERIC_ERROR_MESSAGE}
         assert table_service.of("select_db_table_list_by_names") == []
 
     def test_an_import_failure_keeps_the_custom_message(
@@ -842,7 +843,7 @@ class TestDownload:
         response = http_lenient.get("/tool/gen/batchGenCode")
 
         assert response.status_code == 200
-        assert response.json() == {"code": 500, "msg": None}
+        assert response.json() == {"code": 500, "msg": GENERIC_ERROR_MESSAGE}
         assert "content-disposition" not in response.headers
 
 

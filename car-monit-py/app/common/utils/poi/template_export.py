@@ -41,7 +41,7 @@ from copy import copy
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Iterable, List, Mapping, Optional, Sequence
 
 from openpyxl import load_workbook
 from openpyxl.cell.cell import Cell
@@ -49,11 +49,11 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from app.common.utils.date_utils import java_date_to_string
 from app.common.utils.poi.excel_util import MAX_CELL_TEXT_LENGTH
-from app.settings import PROJECT_ROOT
+from app.settings import CONFIG_DIR
 
 #: classpath 根 ``templates/export/xxx.xlsx`` 在 Python 侧的对应目录是
 #: ``config/templates/export/xxx.xlsx`` —— 即 classpath 根 = ``config/``。
-TEMPLATES_ROOT: Path = PROJECT_ROOT / "config"
+TEMPLATES_ROOT: Path = CONFIG_DIR
 
 #: ``{{$fe:`` 标记（大小写不敏感，和 easypoi 一样）。
 _FE_START = re.compile(r"\{\{\s*\$fe:", re.IGNORECASE)

@@ -25,7 +25,7 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 from app.base.mapper.ods_sql import If
 from app.flow.domain.flow_name import FlowName

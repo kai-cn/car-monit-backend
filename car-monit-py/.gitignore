@@ -13,7 +13,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-.coverage
+.coverage*
 htmlcov/
 
 # 运行时产物（对应 Java 的 /home/ruoyi/logs 与 ruoyi.profile 目录）

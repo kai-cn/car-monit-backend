@@ -9,9 +9,9 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 
 from app.base.mapper.plus_mapper import logic_delete_by_id, logic_delete_by_ids
 from app.base.domain.ods_rt_szdn_snapshot_flow_addcode import OdsRtSzdnSnapshotFlowAddcode
@@ -260,6 +260,21 @@ class OdsRtSzdnSnapshotFlowAddcodeMapper(OdsListMapper):
         with session_scope() as session:
             value = session.execute(text(sql), {"table_name": table_name}).scalar()
         return None if value is None else int(value)
+
+    # 分表统计批量版：一条 ``INFORMATION_SCHEMA`` 查询取回所有历史分表的近似行数，
+    # 把"每张表一次往返"降到一次（P2-2）。
+    def get_table_approximate_counts(self, table_names: Sequence[str]) -> Dict[str, int]:
+        names = sorted({name for name in table_names if name})
+        if not names:
+            return {}
+        statement = text(
+            "SELECT TABLE_NAME, TABLE_ROWS FROM INFORMATION_SCHEMA.TABLES "
+            "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN :names"
+        ).bindparams(bindparam("names", expanding=True))
+        with session_scope() as session:
+            rows = session.execute(statement, {"names": names}).all()
+        # TABLE_ROWS 对视图/尚未 analyze 的表可能是 NULL -> 交给调用方降级精确 COUNT。
+        return {str(row[0]): int(row[1]) for row in rows if row[1] is not None}
 
     # --------------------------------------------------- 分表维护（同步任务用）
 

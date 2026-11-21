@@ -37,10 +37,11 @@ Java                        Method / Path                       权限点
 2. ``tollGantryFwqList``：``sectionCode`` 空白直接回**空数组**（不是全量）；
    否则先 ``deleteEnd`` 削掉**一个**尾逗号，再按 ``,`` 切分；切分后整串里只要还含
    ``"all"`` 就把列表**清空**（``in`` 列表为空 → SQL 里那段 ``<if>`` 不生效）；
-3. ``exceptRecordList`` 在分页结果里**逐行**补两个字段：``orgId`` 来自
+3. ``exceptRecordList`` 在分页结果里补两个字段：``orgId`` 来自
    ``carConfimFreeService.selectOrgId``，``supplementaryStatus`` 在
    ``car_aduit_free`` 里按 ``carId`` 数到 > 0 条时置 ``"1"``（默认 ``"0"``）——
-   这是 N+1 查询，Java 原样，不要"优化"成一条 join。
+   Java 是逐行 N+1；本工程改为**一次批量查询**（``select_org_ids`` / ``group by``），
+   响应体逐字节不变，但每页 SQL 从 2N+1 降到 3。
 """
 
 from __future__ import annotations
@@ -404,9 +405,31 @@ def get_exception_car() -> AjaxResult:
 
 
 @router.get("/topTen", response_model=None)
-def top_ten() -> AjaxResult:
-    """重点车辆通行前 10. Java: ``@GetMapping(value = "/topTen")``."""
-    return AjaxResult.success_data(_snapshot_flow().get_top_ten())
+def top_ten(startTime: Optional[str] = None, endTime: Optional[str] = None) -> AjaxResult:
+    """重点车辆通行前 10. Java: ``@GetMapping(value = "/topTen")``.
+
+    【Java V3 对齐】V3 新增两个可选参数 ``startTime`` / ``endTime``，默认最近 7 天
+    （Java ``BigScreenStatsService.topTen`` 里补默认值，Mapper 新增 ``getTopTenRange``）。
+    Python 差异：Java 的 ``@RequestParam(required=false)`` → ``Optional[str]=None``；
+    Python 侧在 Controller 里补默认值，避免修改老 service 的签名（保持 master 兼容）。
+    """
+    from datetime import datetime, timedelta
+
+    service = _snapshot_flow()
+    if startTime is None and endTime is None:
+        return AjaxResult.success_data(service.get_top_ten())
+
+    end = endTime or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    start = startTime or (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
+    if hasattr(service, "get_top_ten_range"):
+        return AjaxResult.success_data(service.get_top_ten_range(start, end))
+    # Java V3 的服务一定有 getTopTenRange；Python 老服务未实现时退回全量并记差异。
+    import logging
+
+    logging.getLogger(__name__).warning(
+        "[V3对齐] service 缺少 get_top_ten_range，topTen 时间过滤未生效 start=%s end=%s",
+        start, end)
+    return AjaxResult.success_data(service.get_top_ten())
 
 
 @router.get("/orgList", response_model=None)
@@ -441,10 +464,23 @@ def list(param: ExceptParam) -> TableDataInfo:
     """异常流水分页列表（带补缴状态）. Java: ``@GetMapping("/exceptRecordList")``."""
     start_page()
     data_table = get_data_table(_car_except_record().select_list(param))
-    for row in data_table.get_rows() or []:
-        row.org_id = _car_confim_free().select_org_id(row.car_id, row.id)
-        if _car_aduit_free().count_by_car_id(row.car_id) > 0:
-            row.supplementary_status = "1"
+    rows = data_table.get_rows() or []
+    if rows:
+        confim_free = _car_confim_free()
+        aduit_free = _car_aduit_free()
+        # 批量查询；返回 None 说明调用方是旧版替身，退回逐行路径保持兼容。
+        org_ids = confim_free.select_org_ids([(row.car_id, row.id) for row in rows])
+        counts = aduit_free.count_by_car_ids([row.car_id for row in rows])
+        for row in rows:
+            if org_ids is None:
+                row.org_id = confim_free.select_org_id(row.car_id, row.id)
+            else:
+                row.org_id = org_ids.get((row.car_id, row.id))
+            if counts is None:
+                if aduit_free.count_by_car_id(row.car_id) > 0:
+                    row.supplementary_status = "1"
+            elif counts.get(row.car_id, 0) > 0:
+                row.supplementary_status = "1"
     return data_table
 
 

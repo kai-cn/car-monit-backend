@@ -29,6 +29,7 @@ Java 的两个字段只用于让 Spring 装配成功；Python 里不需要构造
 from __future__ import annotations
 
 from typing import Any, Optional
+from app.config.database import transactional
 
 #: Java: ``@Component("orgTask")``
 BEAN_NAME = "orgTask"
@@ -69,6 +70,7 @@ class OrgTask:
         return get_dept_service()
 
     # Java: @Transactional(rollbackFor = Exception.class) public void syncOrgInfo()
+    @transactional
     def sync_org_info(self) -> None:
         """同步组织信息 —— **空方法体**，Java 原文整段被注释.
 

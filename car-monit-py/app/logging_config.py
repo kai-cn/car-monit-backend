@@ -36,8 +36,10 @@ from __future__ import annotations
 import logging
 import logging.handlers
 import os
+import sys
+import tempfile
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional, Set
 
 from app.common.core.context.trace_context import get_trace_id
 from app.settings import AppSettings, PROJECT_ROOT
@@ -52,6 +54,11 @@ JAVA_TO_PY_LOGGER: Dict[str, List[str]] = {
 
 _CONSOLE_PATTERN = "%(asctime)s [%(threadName)s] %(levelname)-5s [%(trace_id)s] %(name)s - %(message)s"
 _FILE_PATTERN = "%(asctime)s [%(threadName)s] %(levelname)-5s [%(trace_id)s] %(name)s:%(lineno)d - %(message)s"
+
+#: 四个**活动**日志文件。目录预算清理永远跳过它们，否则滚动一次就可能把
+#: 正在写的 ``sys-info.log`` 删掉（Windows 上还会因文件被占用而删不掉，
+#: Linux 上则会让后续写入落到已删除的 inode）。
+_ACTIVE_LOG_FILES = ("sys-info.log", "sys-error.log", "sys-slow.log", "sys-user.log")
 
 _CONFIGURED = False
 
@@ -75,31 +82,163 @@ class MilliSecondFormatter(logging.Formatter):
         return f"{base}.{int(record.msecs):03d}"
 
 
-class _LevelRangeFilter(logging.Filter):
-    """Java ``LevelFilter`` equivalent: accept exactly one level, deny everything else."""
+class _LevelFilter(logging.Filter):
+    """Java ``LevelFilter`` equivalent: accept exactly one level, deny everything else.
+
+    logback 的 ``LevelFilter`` 是**精确匹配**单一级别（``onMatch=ACCEPT`` /
+    ``onMismatch=DENY``），不是"该级别及以上"的阈值过滤。``sys-info.log`` 因此只收
+    INFO：DEBUG（p6spy 风格的逐条 SQL）不会落盘，WARNING/ERROR 也不会。
+    """
 
     def __init__(self, level: int) -> None:
         super().__init__()
         self.level = level
 
     def filter(self, record: logging.LogRecord) -> bool:
-        # An empty record name marker keeps this filter usable on the root logger.
-        return record.levelno == self.level or (self.level <= logging.INFO and record.levelno < logging.WARNING and record.levelno >= self.level)
+        return record.levelno == self.level
 
 
 def _log_dir() -> Path:
-    """``log.path`` from logback.xml; overridable through ``LOG_PATH``."""
+    """日志目录：``LOG_PATH`` > 源码树 ``logs/`` > 安装位置 > 用户目录.
+
+    非 editable 安装时 ``PROJECT_ROOT`` 是 site-packages：写在那里升级即丢，
+    只读前缀还会让 ``mkdir`` 抛 ``PermissionError`` 直接拖垮启动（与 ``config/``
+    的回退同理）。因此 wheel 安装默认落到 ``sys.prefix/var/log/car-monit``，
+    不可写时再退到 ``~/.car-monit/logs``，最后兜底到系统临时目录保证进程能起。
+    显式设置 ``LOG_PATH`` 时以其为准。
+    """
     configured = os.environ.get("LOG_PATH")
-    path = Path(configured) if configured else PROJECT_ROOT / "logs"
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+    if configured:
+        path = Path(configured)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    candidates: List[Path] = []
+    # 源码树（wheel 里不会带 pyproject.toml）优先，保持开发期的 logs/ 习惯。
+    if (PROJECT_ROOT / "pyproject.toml").is_file():
+        candidates.append(PROJECT_ROOT / "logs")
+    candidates.append(Path(sys.prefix) / "var" / "log" / "car-monit")
+    candidates.append(Path.home() / ".car-monit" / "logs")
+
+    for candidate in candidates:
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            return candidate
+        except OSError:
+            continue
+
+    fallback = Path(tempfile.gettempdir()) / "car-monit-logs"
+    fallback.mkdir(parents=True, exist_ok=True)
+    return fallback
 
 
-def _rotating_handler(path: Path, level: int, formatter: logging.Formatter) -> logging.Handler:
-    handler = logging.handlers.RotatingFileHandler(
+def _prune_logs(directory: Path, max_total_bytes: int, protect: Optional[Set[str]] = None) -> int:
+    """Delete the oldest rotated files until the directory fits ``max_total_bytes``.
+
+    Java 的 logback 只按"单文件 100MB × 60 天"限制，4 个 appender 各自为政，
+    总量没有上限；磁盘满时日志写入失败并连带影响请求。这里补一层目录级预算：
+    超出预算就从最旧的文件开始删，返回释放掉的字节数。
+    """
+    protect = protect or set()
+    candidates = []
+    total = 0
+    for entry in directory.glob("*.log*"):
+        if not entry.is_file():
+            continue
+        try:
+            stat = entry.stat()
+        except OSError:
+            continue
+        total += stat.st_size
+        if str(entry) not in protect:
+            candidates.append((stat.st_mtime, stat.st_size, entry))
+
+    freed = 0
+    for _, size, path in sorted(candidates, key=lambda item: item[0]):
+        if total <= max_total_bytes:
+            break
+        try:
+            path.unlink()
+        except OSError:
+            # Windows 上文件被其它 handler 占用时删不掉，跳过即可
+            continue
+        total -= size
+        freed += size
+    return freed
+
+
+class _CappedRotatingFileHandler(logging.handlers.RotatingFileHandler):
+    """``RotatingFileHandler`` + 目录总量预算 + 磁盘写满时降级.
+
+    1. 每次滚动后按目录预算清理最旧的日志，避免 4 个 appender 叠加把磁盘写满。
+       清理时永远保护四个活动文件名（见 :data:`_ACTIVE_LOG_FILES`）。
+    2. 写入失败（``OSError``，典型是磁盘满/权限变更）时只打印一次告警；
+       连续失败 3 次后自动停用该 handler，业务请求不受影响。
+       注意：CPython 3.12 的 ``Handler.handle`` **不检查** ``Handler.disabled``，
+       必须用自有标志在 :meth:`emit` 开头直接返回。
+    """
+
+    def __init__(self, *args, max_total_bytes: int = 0, **kwargs) -> None:  # noqa: ANN002, ANN003
+        super().__init__(*args, **kwargs)
+        self.max_total_bytes = max_total_bytes
+        self._failures = 0
+        self._failed = False
+        self._stopped = False
+
+    def emit(self, record: logging.LogRecord) -> None:
+        if self._stopped:
+            return
+        self._failed = False
+        super().emit(record)
+        if self._failed:
+            self._failures += 1
+            if self._failures >= 3:
+                self._stopped = True
+        else:
+            self._failures = 0
+
+    def handleError(self, record: logging.LogRecord) -> None:  # noqa: N802
+        """Suppress the per-record stderr traceback that ``logging`` would print."""
+        self._failed = True
+        if self._failures == 0:
+            print(
+                f"[日志警告] 无法写入 {self.baseFilename}，磁盘可能已满；"
+                f"该文件日志将在连续失败后停用",
+                file=sys.stderr,
+            )
+
+    def doRollover(self) -> None:  # noqa: N802
+        super().doRollover()
+        if self.max_total_bytes > 0:
+            directory = Path(self.baseFilename).parent
+            _prune_logs(
+                directory,
+                self.max_total_bytes,
+                protect={str(directory / name) for name in _ACTIVE_LOG_FILES},
+            )
+
+
+def _clear_handlers(logger: logging.Logger) -> None:
+    """Close and remove handlers so ``configure_logging`` is re-entrant.
+
+    ``reset_logging()`` 只把 ``_CONFIGURED`` 清掉；再次调用 ``configure_logging``
+    时若不先摘掉旧 handler，``app.middleware.trace_id`` 这类专用 logger 会
+    累积多份 ``sys-slow.log``（同一个文件被两个 handler 各写一遍）。
+    """
+    for handler in logger.handlers:
+        handler.close()
+    logger.handlers.clear()
+
+
+def _rotating_handler(path: Path, level: int, formatter: logging.Formatter, settings: AppSettings) -> logging.Handler:
+    handler = _CappedRotatingFileHandler(
         filename=path,
-        maxBytes=100 * 1024 * 1024,  # logback: <maxFileSize>100MB</maxFileSize>
-        backupCount=30,  # logback: <maxHistory>60</maxHistory> (days -> rotations)
+        # logback: <maxFileSize>100MB</maxFileSize>
+        maxBytes=max(1, settings.logging.file_max_bytes),
+        # logback: <maxHistory>60</maxHistory> 是"保留 60 天"；RotatingFileHandler 只能
+        # 按份数保留，默认 30 份（换算与取舍见 COMPATIBILITY.md）
+        backupCount=max(0, settings.logging.file_backup_count),
+        max_total_bytes=max(0, settings.logging.file_max_total_bytes),
         encoding="utf-8",
     )
     handler.setLevel(level)
@@ -122,26 +261,51 @@ def configure_logging(settings: AppSettings) -> None:
     console.setFormatter(console_formatter)
     console.addFilter(TraceIdFilter())
 
-    info_file = _rotating_handler(log_path / "sys-info.log", logging.DEBUG, file_formatter)
-    info_file.addFilter(_LevelRangeFilter(logging.DEBUG))
-    error_file = _rotating_handler(log_path / "sys-error.log", logging.ERROR, file_formatter)
-    slow_file = _rotating_handler(log_path / "sys-slow.log", logging.INFO, file_formatter)
-    user_file = _rotating_handler(log_path / "sys-user.log", logging.INFO, file_formatter)
+    info_file = _rotating_handler(log_path / "sys-info.log", logging.INFO, file_formatter, settings)
+    info_file.addFilter(_LevelFilter(logging.INFO))
+    error_file = _rotating_handler(log_path / "sys-error.log", logging.ERROR, file_formatter, settings)
+    error_file.addFilter(_LevelFilter(logging.ERROR))
+    slow_file = _rotating_handler(log_path / "sys-slow.log", logging.INFO, file_formatter, settings)
+    user_file = _rotating_handler(log_path / "sys-user.log", logging.INFO, file_formatter, settings)
+
+    # 滚动只在写满单文件时触发；启动时先按目录预算清一次历史日志，
+    # 4 个文件同时逼近 100MB 时不会把磁盘写满。
+    if settings.logging.file_max_total_bytes > 0:
+        _prune_logs(
+            log_path,
+            settings.logging.file_max_total_bytes,
+            protect={str(log_path / name) for name in _ACTIVE_LOG_FILES},
+        )
 
     root = logging.getLogger()
-    root.handlers.clear()
+    _clear_handlers(root)
     # logback: <root level="info"> with console + file_info + file_error
     root.setLevel(logging.INFO)
     root.addHandler(console)
     root.addHandler(info_file)
     root.addHandler(error_file)
 
-    # logback: dedicated slow-log appenders for the trace filter and SQL interceptor.
-    for slow_logger in ("app.middleware.trace_id", "app.config.database"):
-        logging.getLogger(slow_logger).addHandler(slow_file)
+    # logback: <logger name="com.ruoyi.common.core.monitor.TraceIdFilter" level="info"
+    #          additivity="false"><appender-ref ref="file_slow"/></logger>
+    # trace 日志**只**进 sys-slow.log：否则每个请求的 [请求完成] 会同时写 info 文件，
+    # 日志量翻倍且掩盖真正的 INFO 业务日志。
+    trace_logger = logging.getLogger("app.middleware.trace_id")
+    _clear_handlers(trace_logger)
+    trace_logger.addHandler(slow_file)
+    trace_logger.propagate = False
+    trace_logger.setLevel(logging.INFO)
+
+    # logback: SqlLogInterceptor 同样 additivity="false" 只挂 file_slow。本工程的
+    # ``app.config.database`` 还兼任 p6spy 的逐条 SQL 输出（Java 写 stdout），
+    # 因此保留向 root 传播，交给 console；DEBUG 已被 info/error 的精确级别过滤挡住。
+    database_logger = logging.getLogger("app.config.database")
+    _clear_handlers(database_logger)
+    database_logger.addHandler(slow_file)
 
     # logback: <logger name="sys-user" ...> -> user access log
-    logging.getLogger("app.user_access").addHandler(user_file)
+    user_logger = logging.getLogger("app.user_access")
+    _clear_handlers(user_logger)
+    user_logger.addHandler(user_file)
 
     # logback.xml hard-codes com.ruoyi=info / org.springframework=warn; application.yml
     # overrides them via logging.level.* -- exactly the precedence implemented here.

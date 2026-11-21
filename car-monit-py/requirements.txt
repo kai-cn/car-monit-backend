@@ -1,28 +1,9 @@
-# Python 3.12 port of car-monit-backend-new
-# Install:  pip install -r requirements.txt
-# Optional middleware adapters (Kafka / ES / MinIO): pip install -r requirements-middleware.txt
-
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
-pydantic==2.10.4
-pydantic-settings==2.7.0
-SQLAlchemy==2.0.36
-PyMySQL==1.1.1
-redis==5.2.1
-PyJWT==2.10.1
-bcrypt==4.2.1
-python-multipart==0.0.20
-orjson==3.10.13
-httpx==0.28.1
-psutil==6.1.1
-openpyxl==3.1.5
-Pillow==11.1.0
-# quartz 没有第三方依赖：org.quartz 2.3.2 由 app/quartz/util/{scheduler,cron_expression}.py 自带实现
-PyYAML==6.0.2
-alembic==1.14.0
-user-agents==2.2.0
-
-# --- test ---
-pytest==8.3.4
-pytest-mock==3.14.0
-pytest-cov==6.0.0
+# 依赖的唯一来源是 pyproject.toml（[project] + [project.optional-dependencies]）。
+# 本文件只把常用 extras 组合起来，避免两份 pin 漂移。
+#
+#   pip install -r requirements.txt              # 运行时 + 测试
+#   pip install -r requirements-middleware.txt  # 再叠加 Kafka/ES/MinIO 适配器
+#
+# Single source of truth: pyproject.toml. This file only selects extras so the
+# pinned versions cannot drift between the two declarations.
+-e .[test]

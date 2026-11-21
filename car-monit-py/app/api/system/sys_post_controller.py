@@ -61,7 +61,7 @@ Spring MVC 先解析参数（触发 Hibernate Validator），**再**进入 ``@Pr
 from __future__ import annotations
 
 import logging
-from typing import Annotated, Any, Optional
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Request
 

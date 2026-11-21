@@ -25,25 +25,104 @@ which is exactly how this gap was found (``POST /login`` with a wrong password).
 Only *unmapped* requests (no controller matched) escape the handler chain and produce a
 real 404 from Spring's ``BasicErrorController``. That body shape is reproduced below so
 clients that switch on HTTP status keep working.
+
+Deliberate deviation: non-business exception messages are masked
+---------------------------------------------------------------
+Java answers with ``e.getMessage()`` verbatim, which leaks SQL/table/column text now
+that the persistence layer is SQLAlchemy. Business exceptions (``RuoYiBaseException`` /
+``ServiceException`` / ``CustomException``) keep their human-readable text; everything
+else is answered with :data:`GENERIC_ERROR_MESSAGE`, while the full trace stays in
+``sys-error.log`` (P1-6).
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.common.constant.http_status import HttpStatus
 from app.common.core.context.trace_context import get_trace_id
 from app.common.core.domain.ajax_result import AjaxResult
-from app.common.exception.exceptions import AccessDeniedException, DemoModeException, ServiceException
+from app.common.exception.exceptions import (
+    AccessDeniedException,
+    CustomException,
+    DemoModeException,
+    RuoYiBaseException,
+    ServiceException,
+)
+from app.common.utils.bean_validation import BeanValidationError
 from app.framework.interceptor.repeat_submit_interceptor import RepeatSubmitException
 
 logger = logging.getLogger("app.config.exception_handlers")
+
+
+class FallbackExceptionMiddleware:
+    """通用 ``Exception`` 的兜底渲染，必须位于 TraceId/CORS **内侧**。
+
+    Starlette 把 ``Exception`` 的处理器挂在最外层的 ``ServerErrorMiddleware``；
+    在那里生成的响应已经穿过 TraceId / CORS 之后才出现，所以响应头里没有
+    ``X-Trace-Id`` 与 ``Access-Control-Allow-Origin``（``AttributeError`` 是本工程
+    复刻 Java NPE 的哨兵，``_none_guard`` 路径会大量走到这里）。Java 的
+    ``TraceIdFilter`` / ``CorsFilter`` 在进链时就写头，同类错误也是带头的。
+
+    这里在应用中间件栈内侧捕获未被注册处理器覆盖的异常，按同一个
+    ``AjaxResult`` 形状渲染（HTTP 200 + ``{"code": 500, "msg": "系统繁忙..."}``），
+    让响应照常由外侧的 TraceId / CORS 补齐响应头。异常详情仍只进日志。
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        response_started = False
+
+        async def send_wrapper(message: Message) -> None:
+            nonlocal response_started
+            if message["type"] == "http.response.start":
+                response_started = True
+            await send(message)
+
+        try:
+            await self.app(scope, receive, send_wrapper)
+        except Exception:
+            # 响应已经开始发送时无法再改写，交回外层（连接只能中断）。
+            if response_started:
+                raise
+            logger.error(
+                "[兜底异常] 请求地址'%s', traceId=%s",
+                scope.get("path"),
+                get_trace_id(),
+                exc_info=True,
+            )
+            response = JSONResponse(
+                status_code=HttpStatus.SUCCESS,
+                content=dict(AjaxResult.error_message(GENERIC_ERROR_MESSAGE)),
+            )
+            await response(scope, receive, send)
+
+
+#: 非业务异常对外的统一文案（真正的异常文本只进日志）。
+#: Java 会把 ``e.getMessage()`` 原样返回；Python 的 SQLAlchemy/驱动异常文本更长，
+#: 带表名、列名甚至 SQL 片段，直接透出等于把内部结构交给客户端。
+GENERIC_ERROR_MESSAGE = "系统繁忙，请稍后重试"
+
+#: 参数校验/类型转换类异常（``ValueError``，含 pydantic ``ValidationError``）的对外文案。
+#: 这类错误是客户端输入问题，不能答"系统繁忙"（会让用户以为服务端故障）。
+PARAMETER_ERROR_MESSAGE = "参数错误"
+
+#: 允许把自身文案返回给前端的"业务异常"。这些异常的消息是给人看的校验/提示信息，
+#: 不是底层实现细节（AccessDenied / DemoMode / RepeatSubmit 另有专属 handler）。
+_BUSINESS_EXCEPTIONS = (RuoYiBaseException, ServiceException, CustomException, BeanValidationError)
 
 # ``AccessDeniedException`` 的类定义在 ``app.common.exception.exceptions``
 # （抛它的是控制器层，不该反向依赖处理器层）；这里只是转出，保持既有 import 路径可用。
@@ -141,6 +220,21 @@ def register_exception_handlers(app: FastAPI) -> None:
         logger.error("[参数校验失败] 请求地址'%s', %s", request.url.path, message)
         return _ok(AjaxResult.error_message(message))
 
+    # ---- 参数类型转换 / 值校验类异常 -------------------------------------
+    # 例如 `_to_integer` / `_to_boolean` 的 Java 绑定异常、pydantic `ValidationError`
+    # （它是 ValueError 子类）。这些属于客户端输入问题，答"系统繁忙"会误导用户；
+    # 统一回 `参数错误`，原始文本仍完整写进日志。
+    @app.exception_handler(ValueError)
+    async def handle_parameter_error(request: Request, exc: ValueError) -> JSONResponse:
+        logger.error(
+            "[参数错误] 请求地址'%s', traceId=%s, %s",
+            request.url.path,
+            get_trace_id(),
+            exc,
+            exc_info=True,
+        )
+        return _ok(AjaxResult.error_message(PARAMETER_ERROR_MESSAGE))
+
     # ---- Java: @ExceptionHandler(HttpRequestMethodNotSupportedException) --
     @app.exception_handler(StarletteHTTPException)
     async def handle_http_exception(request: Request, exc: StarletteHTTPException) -> JSONResponse:
@@ -169,37 +263,16 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(RuntimeError)
     async def handle_runtime_exception(request: Request, exc: RuntimeError) -> JSONResponse:
         logger.error("请求地址'%s',发生未知异常.", request.url.path, exc_info=True)
-        return _ok(AjaxResult.error_message(str(exc)))
+        if isinstance(exc, _BUSINESS_EXCEPTIONS):
+            return _ok(AjaxResult.error_message(str(exc)))
+        return _ok(AjaxResult.error_message(GENERIC_ERROR_MESSAGE))
 
     # ---- Java: @ExceptionHandler(Exception.class) -------------------------
     @app.exception_handler(Exception)
     async def handle_unexpected(request: Request, exc: Exception) -> JSONResponse:
-        # Java logs the URI and the message but returns ``e.getMessage()`` verbatim.
+        # 异常详情只进日志（含 traceId），客户端只看到统一文案。
         logger.error(
             "请求地址'%s',发生未知异常. traceId=%s", request.url.path, get_trace_id(), exc_info=True
         )
-        return _ok(AjaxResult.error_message(_java_message(exc)))
+        return _ok(AjaxResult.error_message(GENERIC_ERROR_MESSAGE))
 
-
-def _java_message(exc: Exception) -> Optional[str]:
-    """Java: ``e.getMessage()`` —— 注意**它可以是 ``null``**.
-
-    ``NullPointerException`` 在这套 JDK（未开 ``-XX:+ShowCodeDetailsInExceptionMessages``）
-    上的 ``getMessage()`` 就是 ``null``，于是 ``GlobalExceptionHandler#handleException``
-    返回 ``{"msg":null,"code":500}``。本工程用 ``AttributeError`` 承担 NPE 的角色
-    （见 ``sys_config_service._none_guard`` 等），所以这两种文案必须还原成 ``null``：
-
-    * Python 自己的 ``'NoneType' object has no attribute 'x'``；
-    * 各处显式抛的 ``java.lang.NullPointerException: xxx is null`` 哨兵。
-
-    其它 ``AttributeError``（例如 :mod:`app.system.mapper.sys_dict_data_mapper` 用它伪装
-    ``TooManyResultsException``）自带 Java 异常文案，必须原样透出 —— 所以判据是**文案**，
-    不是异常类型。
-    """
-    text = str(exc)
-    if isinstance(exc, AttributeError) and (
-        text.startswith("'NoneType' object has no attribute")
-        or text.startswith("java.lang.NullPointerException")
-    ):
-        return None
-    return text

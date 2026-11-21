@@ -9,8 +9,8 @@ Python 侧没有容器，直接调 :func:`app.common.core.redis.redis_cache.get_
 缓存键的组成
 ------------
 ``CacheConstants.SYS_DICT_KEY`` = ``"sys_dict:"``，拼上字典类型就是最终键，例如
-``sys_dict:sys_user_sex``。``clearDictCache()`` 用 ``keys("sys_dict:*")``（**不是**
-``SCAN``）拿到全部键再批量删 —— 与 ``RedisCache.keys`` 的注释同一取舍，照抄。
+``sys_dict:sys_user_sex``。``clearDictCache()`` 调 ``RedisCache.keys("sys_dict:*")``
+拿到全部键再批量删；底层用 ``SCAN`` 增量遍历，不会像 Java 的 ``KEYS`` 那样阻塞 Redis。
 
 ``getDictLabel`` / ``getDictValue`` 的两个分支
 ----------------------------------------------
@@ -151,7 +151,7 @@ def remove_dict_cache(key: Optional[str]) -> None:
 
 # Java: public static void clearDictCache()
 def clear_dict_cache() -> None:
-    """``keys("sys_dict:*")`` + 批量删。注意 ``KEYS`` 是 O(N) 阻塞命令（照抄）。"""
+    """``keys("sys_dict:*")`` + 批量删；``RedisCache.keys`` 内部用 ``SCAN`` 增量遍历。"""
     cache = get_redis_cache()
     keys = cache.keys(f"{SYS_DICT_KEY}*")
     cache.delete_object(keys)

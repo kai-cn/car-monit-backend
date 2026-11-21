@@ -14,7 +14,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from app.common.core.domain.domain_model import DomainModel
+from app.common.core.domain.domain_model import DomainModel, JavaDecimal
 
 
 class CarStatisticsVO(DomainModel):
@@ -27,7 +27,7 @@ class CarStatisticsVO(DomainModel):
     #: 车辆数量
     number: int = 0
     #: 逃费金额
-    escaped_amount: Optional[Decimal] = Field(default=Decimal("0"))
+    escaped_amount: JavaDecimal = Field(default=Decimal("0"))
 
 
 __all__ = ["CarStatisticsVO"]

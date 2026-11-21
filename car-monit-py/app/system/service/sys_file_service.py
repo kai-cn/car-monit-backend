@@ -95,7 +95,7 @@ from __future__ import annotations
 import logging
 import os
 from io import BytesIO
-from typing import Any, BinaryIO, Dict, List, Mapping, Optional, Sequence
+from typing import Any, BinaryIO, Dict, List, Optional, Sequence
 
 from app.common.core.domain.ajax_result import AjaxResult
 from app.common.utils import base64_utils
@@ -104,7 +104,7 @@ from app.common.utils import security_utils as SecurityUtils
 from app.common.utils.date_utils import get_timestamp
 from app.common.utils.file_upload_utils import size_of
 from app.common.utils.multipart_file_util import MockMultipartFile, convert_byte_to_multipart_file
-from app.common.utils.oss_template import OssTemplate, S3Object, get_amazon_s3
+from app.common.utils.oss_template import OssTemplate, S3Object
 from app.common.utils.snowflake_id_worker import get_id_worker
 from app.common.utils.string_utils import get_uuid, is_blank
 from app.common.utils.uuid_utils import simple_uuid
@@ -113,6 +113,7 @@ from app.system.domain.ro.upload_by_url_ro import UploadByUrlRo
 from app.system.domain.sys_file import SysFile
 from app.system.mapper.sys_file_mapper import SysFileMapper
 from app.system.service.forest.file_api import FileApi, get_file_api
+from app.config.database import transactional
 
 logger = logging.getLogger("app.system.service.sys_file_service")
 
@@ -321,6 +322,7 @@ class SysFileService:
     # ------------------------------------------------------------------ 上传
 
     # Java: AjaxResult uploadFile(MultipartFile file)
+    @transactional
     def upload_file(self, file: Any) -> AjaxResult:
         """单文件上传。**先 putObject 再读库**（与 ``upload_files`` 的顺序**相反**）。"""
         file_name = simple_uuid() + FileUtil.DOT + _to_java_string(FileUtil.ext_name(file.filename))
@@ -470,6 +472,7 @@ class SysFileService:
         return AjaxResult.success_data(result_maps)
 
     # Java: AjaxResult uploadFileId(Long fileId, MultipartFile files)
+    @transactional
     def upload_file_id(self, file_id: Optional[int], file: Any) -> AjaxResult:
         """按指定主键"先删后插"再上传。``file_log_id`` 失败也不影响上传判断。"""
         result_maps: List[Dict[str, str]] = []
@@ -506,8 +509,8 @@ class SysFileService:
                 FileUtil.io_copy(s3_object.get_object_content(), response.get_output_stream())
             finally:
                 s3_object.close()
-        except Exception:  # noqa: BLE001 - Java: catch (Exception e) { /* 注释掉日志 */ }
-            pass
+        except Exception:  # noqa: BLE001 - 响应已开始，客户端拿空 body；异常只进日志
+            logger.exception("[文件下载失败] bucket=%s file=%s", bucket, file_name)
 
     # Java: void getFile(String bucket, String fileName, OutputStream os)
     def get_file_to_output_stream(self, bucket: str, file_name: str, output_stream: BinaryIO) -> None:
@@ -518,8 +521,10 @@ class SysFileService:
                 FileUtil.io_copy(s3_object.get_object_content(), output_stream)
             finally:
                 s3_object.close()
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception:  # noqa: BLE001 - 输出流由调用方管理，这里只记录
+            logger.exception(
+                "[文件下载失败] bucket=%s file=%s (output stream)", bucket, file_name
+            )
 
     # Java: void getFileToUrl(String bucket, String fileName, String fileUrl)
     def get_file_to_url(self, bucket: str, file_name: str, file_url: str) -> None:
@@ -534,8 +539,8 @@ class SysFileService:
                         break
                     fos.write(chunk)
             object_content.close()
-        except Exception as exc:  # noqa: BLE001 - Java: log.error(...) 后吞掉
-            logger.error("文件读取异常: %s", exc)
+        except Exception:  # noqa: BLE001 - Java: log.error(...) 后吞掉
+            logger.exception("[文件读取失败] bucket=%s file=%s url=%s", bucket, file_name, file_url)
 
     # Java: S3Object getFileObject(Long sysFileId)
     def get_file_object(self, sys_file_id: Any) -> Optional[S3Object]:
@@ -603,6 +608,7 @@ class SysFileService:
         return None
 
     # Java: AjaxResult uploadBase64Picture(String base64Picture, SysFile sysFile)
+    @transactional
     def upload_base64_picture(self, base64_picture: Optional[str], entity: SysFile) -> AjaxResult:
         """base64 图片上传：**先写库再上传**，失败回 ``error()``（默认文案「操作失败」）。"""
         # Java: byte[] decode = Base64.decode(base64Picture);  —— 非法输入返回 null

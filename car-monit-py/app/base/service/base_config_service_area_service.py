@@ -22,6 +22,7 @@ from app.base.domain.base_config_service_area import BaseConfigServiceArea
 from app.base.mapper.base_config_service_area_mapper import BaseConfigServiceAreaMapper
 from app.common.core.domain.ajax_result import AjaxResult
 from app.common.utils.string_utils import is_not_blank
+from app.config.database import transactional
 
 #: Java: ``AjaxResult.success("操作成功！", ...)`` 的文案（**带全角感叹号**）。
 SAVE_SUCCESS_MESSAGE = "操作成功！"
@@ -43,6 +44,7 @@ class BaseConfigServiceAreaService:
         return self._mapper.select_list(query)
 
     # Java: AjaxResult saveBaseConfigServiceArea(BaseConfigServiceArea x)
+    @transactional
     def save(self, entity: BaseConfigServiceArea) -> AjaxResult:
         """新增或修改 —— 判据是 ``CommonUtil.isNotBlank(id)``，空串也算"空"。"""
         if is_not_blank(entity.id):
@@ -52,10 +54,12 @@ class BaseConfigServiceAreaService:
         return AjaxResult.success_message_data(SAVE_SUCCESS_MESSAGE, entity.id)
 
     # Java: AjaxResult deleteBaseConfigServiceAreaByIds(String[] fwqbms)
+    @transactional
     def delete_by_ids(self, fwqbms: Sequence[str]) -> AjaxResult:
         return AjaxResult.success_data(self._mapper.delete_by_fwqbms(fwqbms))
 
     # Java: AjaxResult deleteBaseConfigServiceAreaById(String fwqbm)（无控制器调用方）
+    @transactional
     def delete_by_id(self, fwqbm: str) -> AjaxResult:
         """按原则第 4 条照留：XML 有、控制器没调，但方法存在。"""
         return AjaxResult.success_data(self._mapper.delete_by_fwqbm(fwqbm))

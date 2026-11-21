@@ -19,7 +19,7 @@ from decimal import Decimal
 
 from pydantic import Field
 
-from app.common.core.domain.domain_model import DomainModel
+from app.common.core.domain.domain_model import DomainModel, JavaDecimal
 
 
 class CarAuditVO(DomainModel):
@@ -30,9 +30,9 @@ class CarAuditVO(DomainModel):
     #: 追缴已完成次数
     finished_count: int = 0
     #: 追缴费用（元）
-    total_amount: Decimal = Field(default=Decimal("0"))
+    total_amount: JavaDecimal = Field(default=Decimal("0"))
     #: 追缴已完成费用（元）
-    finished_amount: Decimal = Field(default=Decimal("0"))
+    finished_amount: JavaDecimal = Field(default=Decimal("0"))
 
 
 __all__ = ["CarAuditVO"]

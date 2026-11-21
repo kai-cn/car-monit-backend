@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from app.base.mapper.ods_rt_szdn_snapshot_flow_addcode_mapper import (
     OdsRtSzdnSnapshotFlowAddcodeMapper,
@@ -142,17 +142,35 @@ class SnapshotFlowEnhancedService:
         # 步骤2: 获取当前月份表名（用于判断是否需要精确计数）
         current_month_table = ShardingTableUtil.get_table_name_by_date(datetime.now())
 
-        # 步骤3: 遍历所有分表，统计总记录数（优化版）
+        # 步骤3: 统计总记录数。历史分表的近似行数一次批量取回（P2-2：原先每表一次往返），
+        # 当前月仍用精确 COUNT（数据还在写入）；批量失败时退回逐表近似计数。
+        #
+        # 关键约束：批量近似值只描述"整表行数"，**不包含**查询里的过滤条件。
+        # 一旦 query_param 带任何额外过滤（车牌/设备/门架/路段/方向/颜色/车型/数据源），
+        # 使用它会让 total 变成整表行数、与 rows 不一致 —— 此时必须逐表精确 COUNT。
+        has_extra_filters = self._has_extra_filters(query_param)
+        approx_counts: Dict[str, int] = {}
+        if not has_extra_filters:
+            try:
+                approx_counts = self._mapper.get_table_approximate_counts(table_names)
+            except Exception as exc:  # noqa: BLE001 —— 批量优化失败不影响主流程
+                logger.warning("【分表统计】批量近似计数失败, 退回逐表: %s", exc)
+
+        exact_counts: Dict[str, int] = {}
         for table_name in table_names:
             try:
                 if table_name == current_month_table:
                     # 当前月份表：数据可能还在写入，使用精确COUNT
                     count = self._mapper.select_sharding_count(table_name, query_param)
+                    exact_counts[table_name] = count
                     logger.info("【分表统计】表 %s (当前月) 精确记录数: %s", table_name, count)
                 else:
-                    # 历史月份表：数据稳定，使用近似计数
-                    count = self._get_approximate_count(table_name, query_param)
-                    logger.info("【分表统计】表 %s (历史月) 近似记录数: %s", table_name, count)
+                    # 历史月份表：无过滤时才允许用批量近似值，否则逐表精确 COUNT
+                    # （_get_approximate_count 内部会因过滤条件自动降级为精确计数）。
+                    count = None if has_extra_filters else approx_counts.get(table_name)
+                    if count is None:
+                        count = self._get_approximate_count(table_name, query_param)
+                    logger.info("【分表统计】表 %s (历史月) 记录数: %s", table_name, count)
                 total += count
             except Exception as exc:  # noqa: BLE001 —— 表不存在时跳过
                 logger.warning("【分表统计】表 %s 不存在或查询失败: %s", table_name, exc)
@@ -178,8 +196,10 @@ class SnapshotFlowEnhancedService:
             if remaining <= 0:
                 break
             try:
-                # 获取当前表的记录数（精确计数，因为分页需要准确判断）
-                table_count = self._mapper.select_sharding_count(table_name, query_param)
+                # 分页需要准确判断；当前月的精确计数已在步骤3 算过，直接复用。
+                table_count = exact_counts.get(table_name)
+                if table_count is None:
+                    table_count = self._mapper.select_sharding_count(table_name, query_param)
 
                 # 如果全局偏移量超过当前表的记录数，跳过当前表
                 if current_offset >= table_count:

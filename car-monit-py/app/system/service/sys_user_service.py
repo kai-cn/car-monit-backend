@@ -37,7 +37,6 @@ from typing import Any, Iterable, List, Optional, Sequence
 from app.common.constant.constants import PROCUREMENT_MANAGER_ROLE_KEY
 from app.common.constant.user_constants import DEFAULT_PWD, NOT_UNIQUE_OLD, UNIQUE_OLD
 from app.common.core.domain.ajax_result import AjaxResult
-from app.common.core.domain.entity.sys_dept import SysDept
 from app.common.core.domain.entity.sys_role import SysRole
 from app.common.core.domain.entity.sys_user import SysUser
 from app.common.core.redis.redis_cache import RedisCache, get_redis_cache
@@ -56,6 +55,7 @@ from app.system.mapper.sys_user_role_mapper import SysUserRoleMapper
 from app.system.service.sys_config_service import SysConfigService, get_config_service
 from app.system.service.sys_dept_service import SysDeptService, get_dept_service
 from app.system.service.sys_role_service import SysRoleService, get_role_service
+from app.config.database import transactional
 
 logger = logging.getLogger("app.system.service.sys_user_service")
 
@@ -235,6 +235,7 @@ class SysUserService:
             raise CustomException(CHECK_USER_ALLOWED_MESSAGE)
 
     # Java: int insertUser(SysUser user)
+    @transactional
     def insert_user(self, user: SysUser) -> int:
         if user.dept_id is not None:
             sys_dept = self._dept_mapper.select_dept_by_id(user.dept_id)
@@ -251,6 +252,7 @@ class SysUserService:
         return rows
 
     # Java: int updateUser(SysUser user)
+    @transactional
     def update_user(self, user: SysUser) -> int:
         user_id = user.user_id
         # 删除用户与角色关联
@@ -316,6 +318,7 @@ class SysUserService:
                 self._user_post_mapper.batch_user_post(rows)
 
     # Java: int deleteUserById(Long userId)
+    @transactional
     def delete_user_by_id(self, user_id: int) -> int:
         # 删除用户与角色关联
         self._user_role_mapper.delete_user_role_by_user_id(user_id)
@@ -324,6 +327,7 @@ class SysUserService:
         return self._mapper.delete_user_by_id(user_id)
 
     # Java: int deleteUserByIds(Long[] userIds)
+    @transactional
     def delete_user_by_ids(self, user_ids: Sequence[int]) -> int:
         for user_id in user_ids:
             # Java: checkUserAllowed(new SysUser(userId))
@@ -335,6 +339,7 @@ class SysUserService:
         return self._mapper.delete_user_by_ids(user_ids)
 
     # Java: AjaxResult updateUserPwd(SysUser sysUser)
+    @transactional
     def update_user_pwd(self, sys_user: SysUser) -> AjaxResult:
         """通过手机号找回密码 —— 重置为**默认密码** ``UserConstants.DEFAULT_PWD``。"""
         try:
@@ -475,6 +480,7 @@ class SysUserService:
         return IMPORT_SUCCESS_PREFIX.format(success_num) + "".join(success_msg)
 
     # Java: AjaxResult forgotPassword(SysUser sysUser)
+    @transactional
     def forgot_password(self, sys_user: SysUser) -> AjaxResult:
         """忘记密码 —— 重置为**请求里带来的新密码**（不是默认密码）。
 

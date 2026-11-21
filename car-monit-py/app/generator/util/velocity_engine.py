@@ -61,7 +61,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from app.common.exception.exceptions import UtilException
 from app.common.utils.string_utils import java_trim

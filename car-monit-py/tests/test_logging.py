@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -54,6 +55,184 @@ class TestLoggerLevels:
             assert logger.propagate is True
 
 
+class TestLevelFilter:
+    """Java ``LevelFilter`` 是精确匹配单一级别，不是"该级别及以上"。"""
+
+    def test_accepts_only_configured_level(self) -> None:
+        from app.logging_config import _LevelFilter
+
+        level_filter = _LevelFilter(logging.INFO)
+
+        def record(level: int) -> logging.LogRecord:
+            return logging.LogRecord("x", level, __file__, 1, "msg", None, None)
+
+        assert level_filter.filter(record(logging.INFO)) is True
+        for level in (logging.DEBUG, logging.WARNING, logging.ERROR):
+            assert level_filter.filter(record(level)) is False
+
+
+class TestSlowLogIsolation:
+    """Java: ``TraceIdFilter`` / ``SqlLogInterceptor`` 的 ``additivity="false"``。"""
+
+    def test_trace_logger_only_feeds_slow_file(self) -> None:
+        trace_logger = logging.getLogger("app.middleware.trace_id")
+        assert trace_logger.propagate is False
+        assert len(trace_logger.handlers) == 1
+        assert trace_logger.handlers[0].baseFilename.endswith("sys-slow.log")  # type: ignore[attr-defined]
+
+
+class TestLogCapacity:
+    """容量保护：单文件阈值 / 保留份数可配，目录总量按最旧优先清理。"""
+
+    def test_rotating_handlers_use_configured_caps(self) -> None:
+        from app.logging_config import _CappedRotatingFileHandler
+        from app.settings import get_settings
+
+        settings = get_settings()
+        handlers = [h for h in logging.getLogger().handlers if isinstance(h, _CappedRotatingFileHandler)]
+        assert len(handlers) == 2  # root: sys-info + sys-error
+        for handler in handlers:
+            assert handler.maxBytes == settings.logging.file_max_bytes
+            assert handler.backupCount == settings.logging.file_backup_count
+            assert handler.max_total_bytes == settings.logging.file_max_total_bytes
+
+    def test_rollover_prune_never_deletes_active_log_files(self, tmp_path) -> None:
+        """目录预算清理必须保护四个活动文件（P1-9 回归）。"""
+
+        from app.logging_config import _ACTIVE_LOG_FILES, _CappedRotatingFileHandler
+
+        for name in _ACTIVE_LOG_FILES:
+            (tmp_path / name).write_bytes(b"x" * 100)
+        old_rotated = tmp_path / "sys-info.log.20260101"
+        old_rotated.write_bytes(b"x" * 100)
+
+        handler = _CappedRotatingFileHandler(
+            filename=tmp_path / "sys-info.log",
+            maxBytes=1,
+            backupCount=10,
+            max_total_bytes=100,
+            encoding="utf-8",
+        )
+        try:
+            handler.doRollover()
+        finally:
+            handler.close()
+
+        for name in _ACTIVE_LOG_FILES:
+            assert (tmp_path / name).exists()
+        assert not old_rotated.exists()
+
+    def test_handler_stops_after_three_write_failures(self, tmp_path, monkeypatch) -> None:
+        """CPython 3.12 不检查 ``Handler.disabled``，必须靠自有标志停用（回归）。"""
+        import logging.handlers
+
+        from app.logging_config import _CappedRotatingFileHandler
+
+        handler = _CappedRotatingFileHandler(
+            filename=tmp_path / "failed.log",
+            maxBytes=1024,
+            backupCount=0,
+            max_total_bytes=0,
+            encoding="utf-8",
+        )
+        handler.stream.close()  # 模拟磁盘/权限故障：后续写入抛 ValueError
+        record = logging.LogRecord("x", logging.INFO, __file__, 1, "msg", None, None)
+
+        for _ in range(3):
+            handler.emit(record)
+        assert handler._stopped is True
+
+        calls: list = []
+        monkeypatch.setattr(
+            logging.handlers.RotatingFileHandler,
+            "emit",
+            lambda self, item: calls.append(item),
+        )
+        handler.emit(record)
+        assert calls == []
+        # 模拟故障时 stream 已被关闭；先摘掉引用再 close，避免 close() 里的 flush 抛错。
+        handler.stream = None
+        handler.close()
+
+    def test_prune_drops_oldest_files_until_within_budget(self, tmp_path) -> None:
+        import os
+
+        from app.logging_config import _prune_logs
+
+        old = tmp_path / "old.log"
+        newer = tmp_path / "newer.log"
+        current = tmp_path / "sys-info.log"
+        for path in (old, newer, current):
+            path.write_bytes(b"x" * 100)
+        os.utime(old, (1, 1))
+        os.utime(newer, (2, 2))
+
+        freed = _prune_logs(tmp_path, 100, protect={str(current)})
+
+        assert freed == 200
+        assert not old.exists()
+        assert not newer.exists()
+        assert current.exists()
+
+
+class TestLogDirectory:
+    """非 editable 安装不能把日志写进 site-packages（P2-7）."""
+
+    def test_log_path_override_wins(self, tmp_path, monkeypatch) -> None:
+        from app.logging_config import _log_dir
+
+        target = tmp_path / "custom-logs"
+        monkeypatch.setenv("LOG_PATH", str(target))
+
+        assert _log_dir() == target
+        assert target.is_dir()
+
+    def test_source_tree_keeps_the_project_logs_directory(self, monkeypatch) -> None:
+        from app.logging_config import PROJECT_ROOT, _log_dir
+
+        monkeypatch.delenv("LOG_PATH", raising=False)
+        assert (PROJECT_ROOT / "pyproject.toml").is_file()
+
+        assert _log_dir() == PROJECT_ROOT / "logs"
+
+    def test_wheel_install_uses_prefix_instead_of_site_packages(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        from app import logging_config
+
+        source = tmp_path / "site-packages"
+        source.mkdir()  # 没有 pyproject.toml -> 视为安装目录
+        monkeypatch.delenv("LOG_PATH", raising=False)
+        monkeypatch.setattr(logging_config, "PROJECT_ROOT", source)
+        monkeypatch.setattr(logging_config.sys, "prefix", str(tmp_path / "prefix"))
+
+        assert logging_config._log_dir() == (
+            tmp_path / "prefix" / "var" / "log" / "car-monit"
+        )
+        # 不再往 site-packages 写入
+        assert not (source / "logs").exists()
+
+    def test_readonly_prefix_falls_back_to_the_user_directory(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        from app import logging_config
+
+        source = tmp_path / "site-packages"
+        source.mkdir()
+        # 把 prefix 候选路径做成普通文件：mkdir 抛 FileExistsError（OSError 子类）
+        blocked = tmp_path / "prefix" / "var" / "log" / "car-monit"
+        blocked.parent.mkdir(parents=True)
+        blocked.write_text("not a directory", encoding="utf-8")
+
+        monkeypatch.delenv("LOG_PATH", raising=False)
+        monkeypatch.setattr(logging_config, "PROJECT_ROOT", source)
+        monkeypatch.setattr(logging_config.sys, "prefix", str(tmp_path / "prefix"))
+        home = tmp_path / "home"
+        monkeypatch.setattr(Path, "home", classmethod(lambda cls: home))
+
+        assert logging_config._log_dir() == home / ".car-monit" / "logs"
+
+
 class TestTraceIdFilter:
     """Java: ``%X{traceId}`` MDC 占位符。"""
 
@@ -71,6 +250,90 @@ class TestTraceIdFilter:
         record = logging.LogRecord("x", logging.INFO, __file__, 1, "msg", None, None)
         TraceIdFilter().filter(record)
         assert record.trace_id == "-"
+
+
+class _RecordingHandler(logging.Handler):
+    def __init__(self) -> None:
+        super().__init__()
+        self.records: list = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.records.append(record)
+
+
+def _traced_client():
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from app.middleware.trace_id import TraceIdMiddleware
+
+    app = FastAPI()
+
+    @app.get("/ok")
+    def ok() -> dict:
+        return {"ok": True}
+
+    app.add_middleware(TraceIdMiddleware, settings=get_settings())
+    return TestClient(app)
+
+
+class TestTraceIdInRequestLogs:
+    """日志的 trace 列必须拿到真实值 —— Java 是先打日志、再 clear()."""
+
+    def _handler(self) -> _RecordingHandler:
+        handler = _RecordingHandler()
+        handler.addFilter(TraceIdFilter())
+        return handler
+
+    def test_completion_log_keeps_the_trace_id(self) -> None:
+        logger = logging.getLogger("app.middleware.trace_id")
+        handler = self._handler()
+        logger.addHandler(handler)
+        try:
+            response = _traced_client().get("/ok", headers={"X-Trace-Id": "CLIENT-TRACE-123"})
+        finally:
+            logger.removeHandler(handler)
+            handler.close()
+
+        assert response.headers["x-trace-id"] == "CLIENT-TRACE-123"
+        completion = [
+            record
+            for record in handler.records
+            if record.getMessage().startswith("[请求完成]")
+        ]
+        assert completion
+        assert completion[-1].trace_id == "CLIENT-TRACE-123"
+
+    def test_slow_request_log_keeps_the_trace_id(self, monkeypatch) -> None:
+        """回归 sys-slow.log 里的 ``[-] ... TraceId=CLIENT-TRACE-123``."""
+        from app.middleware import trace_id as trace_id_module
+
+        class _Clock:
+            calls = 0
+
+            def perf_counter(self) -> float:
+                type(self).calls += 1
+                # 第一次是 dispatch 的 start，之后都返回 4s，稳定触发慢请求阈值。
+                return 0.0 if type(self).calls == 1 else 4.0
+
+        monkeypatch.setattr(trace_id_module, "time", _Clock())
+        logger = logging.getLogger("app.middleware.trace_id")
+        handler = self._handler()
+        logger.addHandler(handler)
+        try:
+            response = _traced_client().get("/ok", headers={"X-Trace-Id": "CLIENT-SLOW-123"})
+        finally:
+            logger.removeHandler(handler)
+            handler.close()
+
+        assert response.headers["x-trace-id"] == "CLIENT-SLOW-123"
+        slow = [
+            record
+            for record in handler.records
+            if record.getMessage().startswith("[慢请求告警]")
+        ]
+        assert slow
+        assert slow[-1].trace_id == "CLIENT-SLOW-123"
 
 
 class TestMilliSecondFormatter:

@@ -333,7 +333,7 @@ def _render(package: str, config: dict, items: List, log_by: Dict, python_names:
     lines.append(f"| 合计 | — | **{test_total}** | — |")
     lines.append("")
     lines.append(
-        f"用例数取自 `pytest --collect-only`（含参数化展开）。全量套件当前 **3646** 条"
+        "用例数取自 `pytest --collect-only`（含参数化展开）。全量套件当前 **3646** 条"
         "（3563 单测 + 83 条真实 MySQL/Redis 联调），见 `MIGRATION_PROGRESS.md` §6.10。"
     )
     lines.append("")

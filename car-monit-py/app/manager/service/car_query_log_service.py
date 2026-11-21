@@ -14,6 +14,7 @@ from typing import Optional
 from app.manager.domain.car_query_log import CarQueryLog
 from app.manager.mapper.car_query_log_mapper import CarQueryLogMapper
 from app.manager.service.manager_service import ManagerCrudService
+from app.config.database import transactional
 
 
 class CarQueryLogService(ManagerCrudService):
@@ -22,6 +23,7 @@ class CarQueryLogService(ManagerCrudService):
     mapper_cls = CarQueryLogMapper
 
     # Java: void queryLog(String queryCondition, String modelType, String menuPiont)
+    @transactional
     def query_log(
         self, query_condition: str, model_type: str, menu_point: str
     ) -> None:

@@ -60,6 +60,7 @@ from app.base.service.forest.http_ods_rt_szdn_snapshot_flow_addcode_service impo
 from app.base.sharding.sharding_table_util import ShardingTableUtil
 from app.common.core.domain.ajax_result import AjaxResult
 from app.common.core.page.table_data_info import TableDataInfo
+from app.config.database import transactional
 
 logger = logging.getLogger(__name__)
 
@@ -234,6 +235,7 @@ class SnapshotFlowSyncTask:
             return 0
 
     # Java: @Transactional public int syncSingleMonth(String month, AtomicInteger totalCount)
+    @transactional
     def sync_single_month(self, month: str, total_count: "_AtomicInt") -> int:
         """同步单个月份（``month`` 形如 ``202610``）."""
         logger.info("【全量同步任务】开始同步月份: %s", month)
@@ -303,6 +305,7 @@ class SnapshotFlowSyncTask:
     # ------------------------------------------------------------ 增量同步
 
     # Java: @Scheduled(cron = "0 0 * * * ?") @Transactional public void syncIncrementalData()
+    @transactional
     def sync_incremental_data(self) -> None:
         """增量同步（每小时整点）：从 MySQL 当前月表的水位线往后搬."""
         logger.info("【增量同步任务】开始执行增量同步")

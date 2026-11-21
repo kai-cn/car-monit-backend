@@ -1,8 +1,7 @@
-# Optional middleware adapters (Phase 4).
-# These are deliberately separated from requirements.txt so the service can boot
-# while Kafka (9092) / MinIO (172.30.100.102:9002) are unreachable.
-# Install: pip install -r requirements-middleware.txt
-
-confluent-kafka==2.6.1
-elasticsearch==7.17.12
-boto3==1.35.90
+# 可选中间件适配器（Kafka / Elasticsearch / MinIO）。
+# 版本同样只声明在 pyproject.toml 的 [project.optional-dependencies].middleware。
+#
+#   pip install -r requirements-middleware.txt
+#
+# Single source of truth: pyproject.toml (extras "middleware").
+-e .[middleware]

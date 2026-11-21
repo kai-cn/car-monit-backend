@@ -15,6 +15,7 @@ from typing import Sequence
 from app.base.mapper.ods_lwzxsfsj_fee_records01_mapper import OdsLwzxsfsjFeeRecords01Mapper
 from app.base.service.abstract_crud_service import AbstractCrudService
 from app.common.core.domain.ajax_result import AjaxResult
+from app.config.database import transactional
 
 
 class OdsLwzxsfsjFeeRecords01Service(AbstractCrudService):
@@ -25,6 +26,7 @@ class OdsLwzxsfsjFeeRecords01Service(AbstractCrudService):
     id_attribute = "big_id"
 
     # Java: AjaxResult deleteOdsLwzxsfsjFeeRecords01ByIds(String[] bigIds)
+    @transactional
     def delete_by_ids(self, ids: Sequence[str]) -> AjaxResult:  # type: ignore[override]
         return super().delete_by_ids(ids, "delete_ods_lwzxsfsj_fee_records01_by_ids")
 

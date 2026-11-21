@@ -8,10 +8,10 @@
 
 from __future__ import annotations
 
-from decimal import Decimal
 from typing import Optional
 
 from app.common.core.domain.base_plus_entity import BasePlusEntity
+from app.common.core.domain.domain_model import JavaDecimal
 
 
 class CarSuspiciousCheck(BasePlusEntity):
@@ -26,11 +26,11 @@ class CarSuspiciousCheck(BasePlusEntity):
     #: 逃费类型（字典：1少轴2屏蔽3货车客标4有入无出5绿通换挂）
     escaped_type: Optional[str] = None
     #: 收费金额
-    charge_amount: Optional[Decimal] = None
+    charge_amount: Optional[JavaDecimal] = None
     #: 应缴金额
-    total_amount: Optional[Decimal] = None
+    total_amount: Optional[JavaDecimal] = None
     #: 差额
-    dif_amount: Optional[Decimal] = None
+    dif_amount: Optional[JavaDecimal] = None
     #: 附件
     attachments: Optional[str] = None
     #: 备用字段1

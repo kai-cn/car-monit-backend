@@ -403,14 +403,14 @@ class TestCorsBeforeSecurity:
         response = client.options(
             PROTECTED_UNMAPPED_PATH,
             headers={
-                "Origin": "http://example.com",
+                "Origin": "http://localhost:3000",
                 "Access-Control-Request-Method": "GET",
                 "Access-Control-Request-Headers": "authorization",
             },
         )
         # CorsFilter answers preflights itself and never calls the chain (no 401 envelope).
         assert response.status_code == 200
-        assert response.headers["access-control-allow-origin"] == "http://example.com"
+        assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
 
 
 class TestLogout:

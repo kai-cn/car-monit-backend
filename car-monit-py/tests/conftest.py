@@ -15,6 +15,8 @@ Spring 容器的 refresh + shutdown），所以数据库/Redis 在用例结束�
 from __future__ import annotations
 
 import json
+import os
+from pathlib import Path
 from typing import Any, Dict, Iterator
 
 import pytest
@@ -22,6 +24,32 @@ from fastapi.testclient import TestClient
 
 from app.logging_config import reset_logging
 from app.settings import reset_settings_cache
+
+# 密钥严格化后不再有静默默认值；测试进程用显式的测试专用值，
+# 真实联调可通过同名环境变量覆盖（例如 DB 口令 root）。
+os.environ.setdefault(
+    "TOKEN__SECRET",
+    "cHl0ZXN0LW9ubHktand0LXNpZ25pbmcta2V5LTAxMjM0NTY3ODlhYmNkZWZnaGlqa2xtbg==",
+)
+os.environ.setdefault("SPRING__DATASOURCE__DRUID__MASTER__PASSWORD", "test-db-password")
+os.environ.setdefault("HENGDA__SECRET", "pytest-only-hengda-signing-key-4d8e1a6b2f9c0357")
+
+
+@pytest.fixture(autouse=True)
+def isolated_profile(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
+    """把 ``ruoyi.profile`` 指到每个用例自己的临时目录。
+
+    导出接口会真的 ``mkdir`` 并写 ``{profile}/download/<uuid>_<sheet>.xlsx``，
+    默认值 ``D:/ruoyi/uploadPath`` 在 CI（Linux/无 D 盘/磁盘满）上直接
+    ``PermissionError``。上传、头像用例同样受益：它们不再依赖宿主机目录。
+    """
+    profile = tmp_path / "uploadPath"
+    monkeypatch.setenv("RUOYI__PROFILE", profile.as_posix())
+    reset_settings_cache()
+    yield profile
+    # monkeypatch 在 teardown 时才还原环境变量，先把缓存清掉，
+    # 避免下一个用例拿到指向已删除临时目录的 settings。
+    reset_settings_cache()
 
 
 @pytest.fixture(scope="session")

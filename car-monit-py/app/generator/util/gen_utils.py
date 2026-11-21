@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import re
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 
 from app.common.constant.gen_constants import (
     COLUMNNAME_NOT_EDIT,
@@ -50,7 +50,6 @@ from app.common.constant.gen_constants import (
 from app.common.utils.string_utils import (
     convert_to_camel_case,
     ends_with_ignore_case,
-    is_empty,
     is_not_empty,
     split,
     substring,

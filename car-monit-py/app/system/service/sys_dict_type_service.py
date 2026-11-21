@@ -52,6 +52,7 @@ from app.common.utils import dict_utils as DictUtils
 from app.common.utils.string_utils import is_empty, is_not_empty
 from app.system.mapper.sys_dict_data_mapper import SysDictDataMapper
 from app.system.mapper.sys_dict_type_mapper import SysDictTypeMapper
+from app.config.database import transactional
 
 
 class SysDictTypeService:
@@ -186,6 +187,7 @@ class SysDictTypeService:
         return row
 
     # Java: @Transactional int updateDictType(SysDictType dictType)
+    @transactional
     def update_dict_type(self, dict_type: SysDictType) -> int:
         """先按 id 查出**旧**类型名，用它把子表数据一起改名，再改主表。
 

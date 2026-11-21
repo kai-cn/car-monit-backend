@@ -38,7 +38,11 @@ from app.common.core.domain.entity.sys_user import SysUser
 from app.common.core.domain.model.login_user import LoginUser
 from app.common.core.page.page_helper import clear_page, take_page
 from app.common.exception.exceptions import AccessDeniedException
-from app.config.exception_handlers import register_exception_handlers
+from app.config.exception_handlers import (
+    GENERIC_ERROR_MESSAGE,
+    PARAMETER_ERROR_MESSAGE,
+    register_exception_handlers,
+)
 from app.framework.security.context.security_context import (
     SecurityContextHolder,
     UsernamePasswordAuthenticationToken,
@@ -452,12 +456,12 @@ class TestAdd:
         assert response.json() == {"msg": "cron表达式不正确", "code": 500}
         assert services.job.of("insert_job") == []
 
-    def test_a_missing_cron_raises_the_quartz_message(self, http_lenient: Any) -> None:
-        """``isValid(null)`` 抛 ``IllegalArgumentException``，不是返回 ``false``."""
+    def test_a_missing_cron_is_a_parameter_error(self, http_lenient: Any) -> None:
+        """``isValid(null)`` 抛 ``IllegalArgumentException`` -> 客户端参数问题，回“参数错误”."""
         response = http_lenient.post("/monitor/job", json={})
 
         assert response.status_code == 200
-        assert response.json() == {"msg": "cronExpression cannot be null", "code": 500}
+        assert response.json() == {"msg": PARAMETER_ERROR_MESSAGE, "code": 500}
 
     def test_a_bad_cron_wins_over_a_bad_misfire_policy(self, http_lenient: Any) -> None:
         """cron 校验在落库/注册之前，所以先报 cron。"""
@@ -473,7 +477,7 @@ class TestAdd:
 
         assert response.json() == {"msg": "cron表达式不正确", "code": 500}
 
-    def test_an_unknown_misfire_policy_raises_task_exception(self, http_lenient: Any) -> None:
+    def test_an_unknown_misfire_policy_is_a_masked_task_exception(self, http_lenient: Any) -> None:
         response = http_lenient.post(
             "/monitor/job",
             json={
@@ -488,7 +492,7 @@ class TestAdd:
         )
 
         assert response.json() == {
-            "msg": "The task misfire policy '9' cannot be used in cron schedule tasks",
+            "msg": GENERIC_ERROR_MESSAGE,
             "code": 500,
         }
 
@@ -547,25 +551,21 @@ class TestChangeStatus:
         assert passed.job_name == "系统默认（无参）"
         assert passed.job_group == "SYSTEM"
 
-    def test_a_missing_job_is_a_null_message_npe(self, http_lenient: Any) -> None:
-        """线上 ``PUT /monitor/job/changeStatus jobId=999999`` -> ``{"msg":null,"code":500}``."""
+    def test_a_missing_job_is_a_masked_npe(self, http_lenient: Any) -> None:
+        """Java 是 ``{"msg":null,"code":500}``；P1-6 起非业务异常统一脱敏文案."""
         response = http_lenient.put(
             "/monitor/job/changeStatus", json={"jobId": 999999, "status": "0"}
         )
 
         assert response.status_code == 200
-        assert response.json() == {"msg": None, "code": 500}
+        assert response.json() == {"msg": GENERIC_ERROR_MESSAGE, "code": 500}
 
 
 class TestRun:
-    def test_a_missing_job_reports_the_quartz_key(self, http_lenient: Any) -> None:
+    def test_a_missing_job_is_a_masked_scheduler_exception(self, http_lenient: Any) -> None:
         response = http_lenient.put("/monitor/job/run", json={"jobId": 999999})
 
-        assert response.json() == {
-            "msg": "The job (DEFAULT.TASK_CLASS_NAME999999) referenced by the trigger "
-            "does not exist.",
-            "code": 500,
-        }
+        assert response.json() == {"msg": GENERIC_ERROR_MESSAGE, "code": 500}
 
     def test_an_existing_job_returns_success(self, http: Any, services: _Fakes) -> None:
         services.job.jobs[7] = SysJob(job_id=7, job_group="SYSTEM")
@@ -603,12 +603,12 @@ class TestJobRemove:
         assert services.job.of("delete_job_by_ids")[0][1] == [1, 2]
         assert body["code"] == 200
 
-    def test_a_missing_id_is_a_null_message_npe(self, http_lenient: Any) -> None:
-        """线上 ``DELETE /monitor/job/999999`` -> ``{"msg":null,"code":500}``."""
+    def test_a_missing_id_is_a_masked_npe(self, http_lenient: Any) -> None:
+        """Java 是 ``{"msg":null,"code":500}``；P1-6 起非业务异常统一脱敏文案."""
         response = http_lenient.delete("/monitor/job/999999")
 
         assert response.status_code == 200
-        assert response.json() == {"msg": None, "code": 500}
+        assert response.json() == {"msg": GENERIC_ERROR_MESSAGE, "code": 500}
 
     def test_a_non_numeric_id_uses_the_java_locale(self, http: Any) -> None:
         """线上 ``DELETE /monitor/job/abc`` 的中文文案，注意 ``[Ljava.lang.Long;``."""

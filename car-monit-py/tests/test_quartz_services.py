@@ -36,7 +36,7 @@ from app.common.exception.job.task_exception import TaskException
 from app.common.utils import spring_utils as SpringUtils
 from app.quartz.domain.sys_job import SysJob
 from app.quartz.domain.sys_job_log import SysJobLog
-from app.quartz.service import sys_job_log_service, sys_job_service
+from app.quartz.service import sys_job_service
 from app.quartz.service.sys_job_log_service import (
     BEAN_NAME as JOB_LOG_BEAN_NAME,
     SysJobLogService,

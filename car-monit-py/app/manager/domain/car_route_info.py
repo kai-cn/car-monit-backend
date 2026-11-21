@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from typing import ClassVar, Optional
+from typing import Optional
 
 from app.common.core.domain.base_plus_entity import BasePlusEntity
 

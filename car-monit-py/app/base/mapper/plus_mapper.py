@@ -34,14 +34,18 @@ Java 一样做不到，照抄。
 ``insertFill`` 依次填 ``createTime`` / ``createBy`` / ``epsId`` / ``tenantId``；
 ``updateFill`` 填 ``updateTime`` / ``updateBy``。已经赋值的字段不覆盖。
 
-``tenantId`` 的守卫条件写的是 **``epsId == null``**（第 53 行），而 ``epsId``
-是**填之前**读出来的局部变量 —— 也就是说：
+``tenantId`` 的守卫条件
+----------------------
+Java 原代码写的是 **``epsId == null``**（第 53 行），而 ``epsId`` 是**填之前**
+读出来的局部变量 —— 于是出现：
 
-* 调用方没传 ``epsId`` -> ``epsId`` 被自动填上，``tenantId`` **也**会被填；
+* 调用方没传 ``epsId`` -> ``epsId`` 被自动填上，``tenantId`` 也会被填；
 * 调用方自己传了 ``epsId`` -> ``tenantId`` **不填**（哪怕它是 null）。
 
-这是 Java 原代码的笔误（本意大概是 ``tenantId == null``），但线上行为就是它，
-这里照抄，见 :class:`MetaObjectFiller`。
+这是 Java 的笔误（本意显然是 ``tenantId == null``）。**本工程按正确语义修正**：
+``tenant_id`` 只以自己的值是否为 null 为判据。否则多租户部署下，调用方传了
+``eps_id`` 的插入会写出 ``tenant_id = NULL``，后续租户过滤直接漏数据。
+响应体不受影响（这两列本来就不在 ``resultMap`` 中）。
 """
 
 from __future__ import annotations
@@ -84,13 +88,12 @@ class MetaObjectFiller:
             user_id = SecurityUtils.get_user_id()
             if user_id is not None:
                 entity.create_by = user_id
-        # 注意：这一句必须在 eps_id 被填之前求值（见模块文档的 tenantId 陷阱）。
-        original_eps_id = _readable(entity, "eps_id")
-        if original_eps_id is None and hasattr(entity, "eps_id"):
+        # 与 Java 不同：tenant_id 只看自己是否为空（见模块文档的修正说明）。
+        if hasattr(entity, "eps_id") and _readable(entity, "eps_id") is None:
             eps_id = SecurityUtils.get_eps_id()
             if eps_id is not None:
                 entity.eps_id = eps_id
-        if original_eps_id is None and hasattr(entity, "tenant_id"):
+        if hasattr(entity, "tenant_id") and _readable(entity, "tenant_id") is None:
             tenant_id = SecurityUtils.get_tenant_id()
             if tenant_id is not None:
                 entity.tenant_id = tenant_id

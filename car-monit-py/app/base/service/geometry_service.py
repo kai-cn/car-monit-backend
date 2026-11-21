@@ -26,6 +26,7 @@ from app.common.constant.constants import lxbh_jdwd
 from app.common.core.domain.ajax_result import AjaxResult
 from app.common.core.redis.redis_cache import RedisCache, get_redis_cache
 from app.common.utils.common_util import is_not_blank, is_null
+from app.config.database import transactional
 
 
 def _read_field(item: Any, name: str) -> Any:
@@ -60,6 +61,7 @@ class GeometryService(AbstractCrudService):
         return self._redis_cache
 
     # Java: AjaxResult saveGeometry(Geometry geometry)
+    @transactional
     def save(self, entity: Any) -> AjaxResult:
         result = super().save(entity)
         # Java: this.updateRedisList();  —— 写库之后无条件刷新整份缓存
@@ -67,10 +69,12 @@ class GeometryService(AbstractCrudService):
         return result
 
     # Java: AjaxResult deleteGeometryByIds(Integer[] IDs)
+    @transactional
     def delete_by_ids(self, ids: Sequence[int]) -> AjaxResult:  # type: ignore[override]
         return super().delete_by_ids(ids, "delete_geometry_by_ids")
 
     # Java: AjaxResult deleteGeometryById(Integer ID)
+    @transactional
     def delete_by_id(self, entity_id: int) -> AjaxResult:
         return AjaxResult.success_data(self._mapper.delete_geometry_by_id(entity_id))
 

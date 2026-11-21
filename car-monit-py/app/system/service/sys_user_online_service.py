@@ -6,7 +6,7 @@
 数据源是 **Redis**，不是数据库 —— 这在本项目里是唯一一处。Java 的做法是
 ``redisCache.keys("login_tokens:*")`` 扫出全部会话键，再逐个
 ``getCacheObject(key)`` 反序列化回 :class:`LoginUser`。没有分页、没有排序，
-**每次请求都全量扫描一遍**（``KEYS`` 是 O(N) 阻塞命令）。
+**每次请求都全量扫描一遍**（``RedisCache.keys`` 用 ``SCAN`` 增量遍历，不阻塞 Redis）。
 
 三个必须照抄的细节
 ------------------

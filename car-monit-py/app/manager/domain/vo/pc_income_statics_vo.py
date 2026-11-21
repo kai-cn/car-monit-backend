@@ -9,10 +9,9 @@
 
 from __future__ import annotations
 
-from decimal import Decimal
 from typing import Optional
 
-from app.common.core.domain.domain_model import DomainModel
+from app.common.core.domain.domain_model import DomainModel, JavaDecimal
 
 
 class PCIncomeStaticsVO(DomainModel):
@@ -22,7 +21,7 @@ class PCIncomeStaticsVO(DomainModel):
     #: 机构名称
     org_name: Optional[str] = None
     #: 金额
-    amount: Optional[Decimal] = None
+    amount: Optional[JavaDecimal] = None
     #: 车辆数量
     car_num: Optional[int] = None
 

@@ -30,18 +30,64 @@ Java 侧全部是 ``@BaseRequest(baseURL = "#{vehicleMonitor.baseUrl}")`` + ``@G
 
 from __future__ import annotations
 
+import logging
+import threading
 import time
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional, Tuple
 
 import httpx
 
 from app.common.core.page.table_data_info import TableDataInfo
 from app.settings import get_settings
 
-#: Java: ``@Headers({"Connection: close"})``
-_CONNECTION_CLOSE_HEADER = {"Connection": "close"}
+logger = logging.getLogger("app.base.service.forest.forest_client")
+
+#: 进程级客户端。Java 的 Forest 也是一个长生命周期的 ``OkHttpClient``，
+#: ``forest.max-connections`` / ``max-route-connections`` 只对**复用的连接池**才有意义；
+#: 每次 ``with httpx.Client()`` 新建会把这两项配置架空，还会漏掉 TLS 会话复用。
+_CLIENT: Optional[httpx.Client] = None
+_CLIENT_KEY: Optional[Tuple[int, int]] = None
+_CLIENT_LOCK = threading.Lock()
+
+#: 空闲连接上限。httpx 没有 per-route 限制，取 Forest ``max-route-connections``
+#: 的一个保守子集即可（500 条空闲连接对单个下游没有必要）。
+_MAX_IDLE_CONNECTIONS = 100
+
+
+def get_http_client() -> httpx.Client:
+    """返回进程级 ``httpx.Client``（按连接池配置懒建、配置变化时重建）。"""
+    global _CLIENT, _CLIENT_KEY  # noqa: PLW0603 - 进程级单例
+    forest = get_settings().forest
+    key = (max(1, forest.max_connections), max(1, forest.max_route_connections))
+    with _CLIENT_LOCK:
+        if _CLIENT is None or _CLIENT.is_closed or _CLIENT_KEY != key:
+            if _CLIENT is not None and not _CLIENT.is_closed:
+                _CLIENT.close()
+            _CLIENT = httpx.Client(
+                limits=httpx.Limits(
+                    max_connections=key[0],
+                    max_keepalive_connections=min(_MAX_IDLE_CONNECTIONS, key[1], key[0]),
+                ),
+            )
+            _CLIENT_KEY = key
+            logger.debug(
+                "httpx.Client created (max_connections=%s, max_keepalive=%s)",
+                key[0],
+                min(_MAX_IDLE_CONNECTIONS, key[1], key[0]),
+            )
+    return _CLIENT
+
+
+def close_http_client() -> None:
+    """关闭进程级客户端（lifespan 收尾 / 测试替换配置时调用）。"""
+    global _CLIENT, _CLIENT_KEY  # noqa: PLW0603
+    with _CLIENT_LOCK:
+        if _CLIENT is not None and not _CLIENT.is_closed:
+            _CLIENT.close()
+        _CLIENT = None
+        _CLIENT_KEY = None
 
 #: Forest 的默认日期格式（``ForestDateConverter`` 未配置时使用）。
 _DEFAULT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -126,13 +172,12 @@ def forest_get(
     url = build_url(base_url, path)
     last_error: Optional[Exception] = None
 
+    client = get_http_client()
+    timeout = httpx.Timeout(read_timeout, connect=connect_timeout)
     for attempt in range(attempts):
         try:
-            with httpx.Client(
-                timeout=httpx.Timeout(read_timeout, connect=connect_timeout),
-                headers=_CONNECTION_CLOSE_HEADER,
-            ) as client:
-                response = client.get(url, params=params)
+            # 复用进程级连接池；超时按接口逐个覆盖（Forest 的 @Request 覆盖语义）。
+            response = client.get(url, params=params, timeout=timeout)
             return _parse_response(response, url)
         except httpx.TransportError as exc:
             # Forest 的 BackOffRetryer 只对连接 / 读超时这类异常重试。
@@ -172,13 +217,11 @@ def forest_post(
 
     last_error: Optional[Exception] = None
 
+    client = get_http_client()
+    timeout = httpx.Timeout(read_timeout, connect=connect_timeout)
     for attempt in range(attempts):
         try:
-            with httpx.Client(
-                timeout=httpx.Timeout(read_timeout, connect=connect_timeout),
-                headers=_CONNECTION_CLOSE_HEADER,
-            ) as client:
-                response = client.post(url, json=payload)
+            response = client.post(url, json=payload, timeout=timeout)
             return _parse_response(response, url)
         except httpx.TransportError as exc:
             last_error = exc

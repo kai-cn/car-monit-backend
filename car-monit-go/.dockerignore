@@ -12,4 +12,6 @@ scripts/
 coverage.out
 configs/config.yaml
 dist
+docs
+.qoder
 *.md

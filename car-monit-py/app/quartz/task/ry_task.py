@@ -43,7 +43,7 @@ class RyTask:
         self,
         s: str,
         b: Optional[bool],
-        l: Optional[int],
+        length: Optional[int],
         d: Optional[float],
         i: Optional[int],
     ) -> None:
@@ -58,7 +58,7 @@ class RyTask:
                 "执行多参方法： 字符串类型{}，布尔类型{}，长整型{}，浮点型{}，整形{}",
                 s,
                 _java_str(b),
-                _java_str(l),
+                _java_str(length),
                 _java_str(d),
                 _java_str(i),
             )

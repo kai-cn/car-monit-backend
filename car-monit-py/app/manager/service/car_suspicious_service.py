@@ -47,6 +47,7 @@ from app.manager.domain.car_suspicious_check import CarSuspiciousCheck
 from app.manager.mapper.car_except_record_mapper import CarExceptRecordMapper
 from app.manager.mapper.car_suspicious_mapper import CarSuspiciousMapper
 from app.manager.service.manager_service import SAVE_SUCCESS_MESSAGE, ManagerCrudService
+from app.config.database import transactional
 
 #: Java: ``AjaxResult.error("可疑车俩不存在！")``
 SUSPICIOUS_NOT_FOUND_MESSAGE = "可疑车俩不存在！"
@@ -229,6 +230,7 @@ class CarSuspiciousService(ManagerCrudService):
     # ---------------------------------------------------------------- 保存
 
     # Java: AjaxResult saveCarSuspicious(CarSuspicious x)
+    @transactional
     def save(self, entity: Any) -> AjaxResult:
         entity.car_no = is_null(entity.car_no)
 
@@ -251,11 +253,13 @@ class CarSuspiciousService(ManagerCrudService):
         return AjaxResult.success_message_data(SAVE_SUCCESS_MESSAGE, entity.id)
 
     # Java: AjaxResult deleteCarSuspiciousByIds(String[] ids)
+    @transactional
     def delete_by_ids(self, entity_ids: Sequence[str]) -> AjaxResult:
         count = self._mapper.delete_by_ids(entity_ids)
         return AjaxResult.success_data(count)
 
     # Java: AjaxResult deleteCarSuspiciousById(String id)
+    @transactional
     def delete_by_id(self, entity_id: str) -> AjaxResult:
         count = self._mapper.delete_by_id(entity_id)
         return AjaxResult.success_data(count)
@@ -263,6 +267,7 @@ class CarSuspiciousService(ManagerCrudService):
     # ---------------------------------------------------------------- 核实
 
     # Java: AjaxResult cherkCarSuspicious(CarSuspicious x)
+    @transactional
     def cherk_car_suspicious(self, entity: Any) -> AjaxResult:
         car_id = is_null(entity.id)
         if is_blank(car_id):
@@ -394,6 +399,7 @@ class CarSuspiciousService(ManagerCrudService):
     # ---------------------------------------------------------------- 同步
 
     # Java: AjaxResult syncSuspiciousCar(String addFlag, List<TrailInfo> paraTrailInfoList)
+    @transactional
     def sync_suspicious_car(
         self, add_flag: str, para_trail_info_list: List[TrailInfo]
     ) -> AjaxResult:
@@ -612,6 +618,7 @@ class CarSuspiciousService(ManagerCrudService):
     # ---------------------------------------------------------------- 迁移
 
     # Java: AjaxResult changeCarSuspicious()
+    @transactional
     def change_car_suspicious(self) -> AjaxResult:
         current_date = datetime.now()
         keep_date = current_date - timedelta(days=KEEP_DAYS)

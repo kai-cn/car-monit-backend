@@ -401,10 +401,10 @@ class TestSelectUserListDataScope:
 
         assert user.params[DATA_SCOPE] == " AND (d.dept_id = null )"
 
-    def test_a_stale_fragment_survives_a_second_call_that_produces_none(
+    def test_a_stale_fragment_is_cleared_when_the_second_call_produces_none(
         self, bundle: _Bundle
     ) -> None:
-        """本项目没有 ``@After clearDataScope``：第二次没生成片段时，旧的会留着。"""
+        """P2-8：第二次没生成片段时，第一次的旧片段会被清掉（Java 原行为是残留）。"""
         login_user = authenticate(
             SysUser(user_id=2, roles=[SysRole(role_id=2, data_scope="3")])
         )
@@ -415,7 +415,7 @@ class TestSelectUserListDataScope:
         login_user.user.roles = [SysRole(role_id=3, data_scope="1")]
         bundle.service.select_user_list(user)
 
-        assert user.params[DATA_SCOPE] == " AND (d.dept_id = null )"
+        assert DATA_SCOPE not in user.params
 
     def test_the_mapper_is_always_called(self, bundle: _Bundle) -> None:
         authenticate(SysUser(user_id=2, roles=[SysRole(role_id=2, data_scope="1")]))

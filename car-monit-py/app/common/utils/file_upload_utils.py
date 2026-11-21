@@ -28,8 +28,12 @@ Java 的 1 参、2 参重载都是::
     catch (Exception e) { throw new IOException(e.getMessage(), e); }
 
 也就是说**连 ``FileSizeLimitExceededException`` 这种受检异常也会被包成
-``IOException``**。Python 侧用 ``OSError`` 对应 ``java.io.IOException``，
-消息原样透传 —— 客户端看到的 ``code 500`` + 文案与 Java 完全一致。
+``IOException``**。Python 侧用 ``OSError`` 对应 ``java.io.IOException``。
+
+与本工程的安全策略对齐（P2-6 后续）：``OSError`` 属于非业务异常，会被通用处理器
+脱敏成"系统繁忙"；而文件名/大小/后缀三道校验的提示是给用户看的。因此 1/2 参
+``upload`` 只对**真正的 I/O 故障**抛出 ``OSError``，校验类异常保留为业务异常
+（``FileException`` / ``ServiceException``），消息原样透传。
 
 生成的文件名
 ------------
@@ -54,7 +58,9 @@ import os
 from typing import Final, Optional, Sequence
 
 from app.common.constant.constants import RESOURCE_PREFIX
+from app.common.exception.exceptions import ServiceException
 from app.common.exception.file import (
+    FileException,
     FileNameLengthLimitExceededException,
     FileSizeLimitExceededException,
     InvalidExtensionException,
@@ -118,7 +124,7 @@ def upload_default(file: object) -> str:
     try:
         return upload_with_extensions(get_default_base_dir(), file, DEFAULT_ALLOWED_EXTENSION)
     except Exception as exc:  # noqa: BLE001 - Java: catch (Exception e) -> IOException
-        raise OSError(_message_of(exc)) from exc
+        _reraise_upload_error(exc)
 
 
 def upload(base_dir: str, file: object) -> str:
@@ -129,7 +135,7 @@ def upload(base_dir: str, file: object) -> str:
     try:
         return upload_with_extensions(base_dir, file, DEFAULT_ALLOWED_EXTENSION)
     except Exception as exc:  # noqa: BLE001 - Java: catch (Exception e) -> IOException
-        raise OSError(_message_of(exc)) from exc
+        _reraise_upload_error(exc)
 
 
 def upload_with_extensions(
@@ -268,6 +274,22 @@ def get_extension(file: object) -> str:
 
 
 # --------------------------------------------------------------------------- 内部
+
+
+def _reraise_upload_error(exc: BaseException) -> None:
+    """把 2 参重载的异常重新抛出（Java: 一律包成 ``IOException``）.
+
+    与 Java 的差异（P2-6 后续）：**校验类错误**（文件名过长/超大小/后缀不允许）
+    保留为业务异常，这样客户端还能看到"请上传 bmp,gif,..."这种可操作提示；
+    只有真正的 I/O 故障才包成 ``OSError``。``OSError`` 的 message 保留原始细节供
+    日志排障，但对外的响应由 ``CommonController`` 换成固定文案（COMPATIBILITY §46.3）。
+    """
+    if isinstance(exc, FileException):
+        # FileException 继承 RuoYiBaseException，本身就在业务异常白名单里。
+        raise exc
+    if isinstance(exc, InvalidExtensionException):
+        raise ServiceException(_message_of(exc)) from exc
+    raise OSError(_message_of(exc)) from exc
 
 
 def _message_of(exc: BaseException) -> str:

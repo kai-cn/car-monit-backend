@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import AsyncIterator
 
 import anyio.to_thread
@@ -82,6 +83,9 @@ from app.api.flow.flow_template_controller import router as flow_template_router
 from app.api.health_controller import router as health_router
 from app.api.manager.buss_test_controller import router as manager_buss_test_router
 from app.api.manager.bigscreen.big_screen_controller import router as manager_big_screen_router
+from app.api.manager.bigscreen.big_screen_export_controller import (
+    router as manager_big_screen_export_router,
+)
 from app.api.manager.car_aduit_free_controller import (
     router as manager_car_aduit_free_router,
 )
@@ -110,6 +114,7 @@ from app.api.manager.car_warning_rule_controller import router as manager_warnin
 from app.api.manager.car_white_info_controller import router as manager_white_info_router
 from app.api.manager.gantry_car_controller import router as manager_gantry_car_router
 from app.api.manager.gantry_trade_info_controller import router as manager_gantry_trade_router
+from app.api.monitor.big_screen_ops_controller import router as monitor_big_screen_ops_router
 from app.api.monitor.cache_controller import router as monitor_cache_router
 from app.api.monitor.server_controller import router as monitor_server_router
 from app.api.monitor.sys_job_controller import router as monitor_job_router
@@ -135,12 +140,14 @@ from app.api.system.sys_user_controller import router as sys_user_router
 from app.api.tool.gen_controller import router as tool_gen_router
 from app.api.tool.test_controller import router as tool_test_router
 from app.config.database import dispose_engine
-from app.config.exception_handlers import register_exception_handlers
+from app.config.exception_handlers import FallbackExceptionMiddleware, register_exception_handlers
 from app.config.redis_config import close_redis
 from app.logging_config import configure_logging
+from app.middleware.profile_static import ProfileStaticFiles
 from app.middleware.request_context import RequestContextMiddleware
 from app.middleware.security import SecurityMiddleware
 from app.middleware.trace_id import TraceIdMiddleware
+from app.middleware.xss import XssMiddleware
 from app.settings import AppSettings, get_settings
 
 # Java: ``@ComponentScan`` 扫到 ``com.ruoyi.quartz.task`` 的六个业务 bean。
@@ -152,6 +159,9 @@ from app.settings import AppSettings, get_settings
 import app.quartz.task  # noqa: F401  —— 导入副作用：注册 6 个任务 bean
 
 logger = logging.getLogger("app.main")
+
+#: 空 CORS 白名单时 local 环境唯一允许的来源（回环地址 + 任意端口）。
+_LOCAL_CORS_ORIGIN_REGEX = r"https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?"
 
 #: Copied from ``kafka``/``elasticsearch``/``oss`` config so startup can warn loudly.
 _STARTUP_BANNER = "(♥◠‿◠)ﾉﾞ  {name}启动成功   ლ(´ڡ`ლ)ﾞ"
@@ -226,6 +236,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     finally:
         # Java: ``ShutdownManager`` + Druid ``destroy``
         _shutdown_quartz(settings)
+        # Java: Spring 销毁 ``threadPoolTaskExecutor`` / ``scheduledExecutorService`` 两个
+        # bean 时调用各自的 ``shutdown()``。Python 侧这两个池是进程级单例（模块级变量），
+        # 容器销毁不会自动触发；漏掉这一步，解释器退出时会留下 50 + 200 个 worker 线程，
+        # 进程无法干净退出（uvicorn 重载/测试反复 create_app 时还会累积线程）。
+        _shutdown_thread_pools()
+        _close_http_client()
         dispose_engine()
         close_redis()
         logger.info("[应用] 已优雅关闭")
@@ -277,8 +293,31 @@ def _shutdown_quartz(settings: AppSettings) -> None:
     reset_job_log_service()
 
 
+def _shutdown_thread_pools() -> None:
+    """Java: ``ThreadPoolConfig`` 两个 bean 的 ``destroyMethod``.
+
+    Java 里 ``ThreadPoolTaskExecutor`` 与 ``scheduledExecutorService`` 都是 Spring bean，
+    容器关闭时由 ``DisposableBean#destroy()`` 依次 ``shutdown()``。本工程把它们落成
+    进程级单例（:mod:`app.framework.config.thread_pool_config` /
+    :mod:`app.framework.manager.async_manager`），必须在 lifespan 收尾时显式回收，
+    否则遗留的非 daemon worker 线程会让进程卡在退出阶段。
+    """
+    from app.framework.config.thread_pool_config import reset_thread_pool_task_executor
+    from app.framework.manager.async_manager import reset_async_manager
+
+    reset_async_manager()
+    reset_thread_pool_task_executor()
+
+
+def _close_http_client() -> None:
+    """关闭 Forest 等外部 HTTP 调用共用的进程级 ``httpx.Client``。"""
+    from app.base.service.forest.forest_client import close_http_client
+
+    close_http_client()
+
+
 def _apply_tomcat_thread_parity(settings: AppSettings) -> None:
-    """Reconcile Tomcat's thread budget with anyio's thread pool.
+    """Reconcile the request thread budget with anyio's thread pool.
 
     Java 原语义
         ``server.tomcat.threads.max: 800`` -- Tomcat keeps up to 800 request worker
@@ -288,16 +327,21 @@ def _apply_tomcat_thread_parity(settings: AppSettings) -> None:
         All endpoints are declared as sync ``def`` (chosen for behavioural parity with
         JDBC/ThreadLocal), so Starlette dispatches every request onto anyio's default
         thread pool. That pool is capped at **40 tokens** by default, which would
-        silently throttle the service 20x versus the Java deployment. Raise the cap to
-        the configured Tomcat value.
+        silently throttle the service.
+
+    与 Java 的偏差（有意为之）
+        800 个请求线程里最多只有 ``spring.datasource.druid.max-active``（200）个
+        能拿到 DB 连接，其余 600 个只是在连接池上排队。默认改用
+        ``app.request_thread_limit``（200），与连接池对齐；需要复刻 Tomcat 原值
+        时设 ``APP__REQUEST_THREAD_LIMIT=800``。
     """
-    max_threads = settings.server.tomcat.threads.max
+    max_threads = settings.app.request_thread_limit
     try:
         anyio.to_thread.current_default_thread_limiter().total_tokens = max(1, max_threads)
     except Exception:  # pragma: no cover - defensive, anyio API is stable
         logger.warning("[启动警告] 无法调整 anyio 线程池上限, 并发请求可能被限制在 40")
         return
-    logger.debug("[启动参数] anyio 线程池上限 = %s (对应 server.tomcat.threads.max)", max_threads)
+    logger.debug("[启动参数] anyio 线程池上限 = %s (app.request_thread_limit)", max_threads)
 
 
 def create_app(settings: AppSettings | None = None) -> FastAPI:
@@ -321,11 +365,23 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
 
     # ---- Filters: order mirrors the Java filter chain ----------------------
     # Java registers CorsFilter before JwtAuthenticationTokenFilter; TraceIdFilter is a
-    # plain servlet filter, so it sits outermost. ``add_middleware`` **prepends**, therefore
-    # this list is written innermost-first and executes in the opposite order:
+    # plain servlet filter and XssFilter runs at HIGHEST_PRECEDENCE, so XSS sits outermost.
+    # ``add_middleware`` **prepends**, therefore this list is written innermost-first and
+    # executes in the opposite order:
     #
-    #     TraceIdFilter -> CorsFilter -> RequestContextFilter -> Spring Security
-    #     TraceIdMiddleware -> CORSMiddleware -> RequestContextMiddleware -> SecurityMiddleware
+    #     XssFilter -> TraceIdFilter -> CorsFilter -> RequestContextFilter -> Spring Security
+    #     TraceIdMiddleware -> CORSMiddleware -> XssMiddleware
+    #         -> FallbackExceptionMiddleware -> RequestContextMiddleware -> SecurityMiddleware
+    #
+    # 与 Java 的差异：XssMiddleware 放在 TraceId/CORS **内侧**而不是最外层。Java 没有
+    # "请求体超过清洗上限"的 413 路径（那是 Python-only 的保护），若 XSS 在最外层，413
+    # 会缺少 X-Trace-Id 与 Access-Control-Allow-Origin；放到内侧后由外层中间件补齐。
+    # XSS 仍然先于 SecurityMiddleware 执行（缓冲发生在鉴权前，与 Java 的 wrapper 语义一致）。
+    #
+    # FallbackExceptionMiddleware is Python-only: Starlette 把通用 ``Exception`` 的处理器挂在
+    # 最外层 ``ServerErrorMiddleware``，响应会绕过 TraceId/CORS 而缺少响应头；把兜底处理
+    # 放在 CORS 内侧后，``KeyError`` / ``AttributeError`` 等未注册异常也能带上 X-Trace-Id 与
+    # Access-Control-Allow-Origin（Java 的 TraceIdFilter/CorsFilter 同样在进链时写头）。
     #
     # SecurityMiddleware must be registered **before** CORSMiddleware so that CORS ends up
     # outside it: ``CorsFilter`` answers a preflight OPTIONS and returns without calling the
@@ -335,20 +391,46 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     # current request through ``ServletUtils.getRequest()``.
     application.add_middleware(SecurityMiddleware)
     application.add_middleware(RequestContextMiddleware)
+    application.add_middleware(FallbackExceptionMiddleware)
 
-    application.add_middleware(
-        CORSMiddleware,
-        # Java: config.addAllowedOriginPattern("*") -- NOT addAllowedOrigin("*").
-        # ``allow_credentials=true`` with "*" is spec-invalid, so a permissive regex is the
-        # correct equivalent of Spring's allowedOriginPatterns.
-        allow_origin_regex=".*",
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-        expose_headers=["X-Trace-Id"],
-        max_age=1800,  # Java: config.setMaxAge(1800L)
-    )
+    # Java: config.addAllowedOriginPattern("*") -- NOT addAllowedOrigin("*").
+    # ``allow_credentials=true`` with "*" is spec-invalid, so a permissive regex is the
+    # correct equivalent of Spring's allowedOriginPatterns. Production must whitelist
+    # through ``app.cors.allowed_origins``. Empty list never means "allow everything":
+    # local installs are restricted to loopback origins, non-local fails startup.
+    allowed_origins = [origin.strip() for origin in settings.app.cors.allowed_origins if origin.strip()]
+    cors_options: dict = {
+        "allow_credentials": True,
+        "allow_methods": ["*"],
+        "allow_headers": ["*"],
+        "expose_headers": ["X-Trace-Id"],
+        "max_age": 1800,  # Java: config.setMaxAge(1800L)
+    }
+    if allowed_origins:
+        cors_options["allow_origins"] = allowed_origins
+        logger.info("[启动参数] CORS 白名单已启用: %s", allowed_origins)
+    elif (settings.is_localhost or "").strip().lower() == "local":
+        # 开发便利只放行本机回环地址，避免任意站点带凭证跨域读取。
+        cors_options["allow_origin_regex"] = _LOCAL_CORS_ORIGIN_REGEX
+        logger.warning(
+            "[启动警告] app.cors.allowed_origins 未配置, local 环境仅允许 localhost/127.0.0.1 来源"
+        )
+    else:
+        # fail-closed：非 local 留空等于拒绝所有跨域，管理后台会整体不可用；
+        # 与其带着一个"能启动但前端全挂"的实例，不如在启动期直接点名配置项。
+        raise ValueError(
+            "非 local 环境必须显式配置 CORS 白名单: app.cors.allowed_origins"
+            "（环境变量 APP__CORS__ALLOWED_ORIGINS，JSON 数组）；留空会拒绝所有跨域请求"
+        )
+    # XSS 在 CORS/TraceId 内侧（见上面的顺序说明）；它的 413 响应需要外层补头。
+    application.add_middleware(XssMiddleware, settings=settings)
+    application.add_middleware(CORSMiddleware, **cors_options)
     application.add_middleware(TraceIdMiddleware, settings=settings)
+    # 【Java V3 对齐】BigScreenResponseFilter：只为 /manager/bigScreen 的 GET 生成
+    # ETag/304 与 X-Cache/X-Degrade/X-Data-*；下载流在中间件内部排除。
+    from app.middleware.bigscreen_response import bigscreen_response_filter
+
+    application.middleware("http")(bigscreen_response_filter)
 
     register_exception_handlers(application)
 
@@ -445,6 +527,8 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     application.include_router(monitor_job_log_router)
     # Java: CacheController -- ``GET /monitor/cache``. Returns the raw ``INFO`` /
     # ``INFO commandstats`` / ``DBSIZE`` of the Redis the app is actually wired to.
+    # 【Java V3 对齐】新增 6 个可观测/灰度端点（/monitor/bigscreen/**，全小写）。
+    application.include_router(monitor_big_screen_ops_router)
     application.include_router(monitor_cache_router)
     # Java: ServerController -- ``GET /monitor/server``. Uses psutil (was OSHI) and
     # **sleeps 1 second** inside ``setCpuInfo()``; see the module docstring.
@@ -616,6 +700,9 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     # 整个类**没有** ``@PreAuthorize``；``exceptRecordList`` 逐行补 ``orgId`` /
     # ``supplementaryStatus``（N+1，Java 原样）。
     application.include_router(manager_big_screen_router)
+    # 【Java V3 对齐】新增 10 个导出端点（/manager/bigScreen/export/**）。
+    # 注册在 big_screen_router 之后：两者前缀不同（多 /export 段），FastAPI 顺序匹配不受影响。
+    application.include_router(manager_big_screen_export_router)
 
     # ---- flow 包（``/flow/**``）----
     # Java: FlowApplyInfoController -- ``/flow/applyinfo/**``。7 个映射，只有 ``/listAll``
@@ -639,6 +726,22 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     # Java: FlowTemplateController -- ``/flow/flowtemplate/**``。7 个映射，无权限；
     # ``/flowlist`` 在头部插一条虚拟节点（``id=-1`` / ``nodeKey=tj``）。
     application.include_router(flow_template_router)
+
+    # Java: ResourcesConfig#addResourceHandlers --
+    #   registry.addResourceHandler(Constants.RESOURCE_PREFIX + "/**")
+    #           .addResourceLocations("file:" + RuoYiConfig.getProfile() + "/");
+    # 上传/头像在库里存的是相对 url（``/profile/upload/...``、``/profile/avatar/...``），
+    # 前端 <img :src> 直接用它，必须由后端提供静态映射，否则这些 url 全部 404。
+    #
+    # check_dir=False：Java 的资源处理器在目录不存在时不影响启动，只在请求时 404；
+    # StaticFiles 默认 check_dir=True 会在 create_app() 时抛 RuntimeError，改变启动行为。
+    # ProfileStaticFiles 额外处理两件事：Windows 跨盘 commonpath 抛 ValueError -> 404；
+    # 响应加 nosniff + Content-Disposition: attachment，阻断 /profile 下的同源 HTML 执行。
+    application.mount(
+        "/profile",
+        ProfileStaticFiles(directory=Path(settings.ruoyi.profile), check_dir=False),
+        name="profile",
+    )
 
     if settings.app.health_endpoint_enabled:
         application.include_router(health_router)

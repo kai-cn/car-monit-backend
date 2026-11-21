@@ -22,9 +22,9 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from app.settings import PROJECT_ROOT
+from app.settings import CONFIG_DIR
 
-_BUNDLE_DIR = PROJECT_ROOT / "config" / "i18n"
+_BUNDLE_DIR = CONFIG_DIR / "i18n"
 
 _PLACEHOLDER = re.compile(r"\{(\d+)\}")
 

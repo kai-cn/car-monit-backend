@@ -29,7 +29,7 @@
 from __future__ import annotations
 
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from app.common.core.domain.ajax_result import AjaxResult
 from app.common.utils.common_util import delete_end, is_blank, is_not_blank, is_null
@@ -42,6 +42,7 @@ from app.manager.domain.vo.bigscreen.car_statistics_vo import CarStatisticsVO
 from app.manager.domain.vo.pc_car_statistics_vo import PCCarStatisticsVO
 from app.manager.mapper.car_confim_free_mapper import CarConfimFreeMapper
 from app.manager.service.manager_service import SAVE_SUCCESS_MESSAGE, ManagerCrudService
+from app.config.database import transactional
 
 #: Java: ``AjaxResult.error("请选择车辆异常流水！")``
 NO_EXCEPT_IDS_MESSAGE = "请选择车辆异常流水！"
@@ -157,9 +158,14 @@ class CarConfimFreeService(ManagerCrudService):
     def select_org_id(self, car_id: str, entity_id: str) -> Optional[str]:
         return self._mapper.select_org_id(car_id, entity_id)
 
+    # 大屏批量版：一次查询补全本页的 ``orgId``（逐行调用是 N+1）。
+    def select_org_ids(self, pairs: Sequence[Tuple[str, str]]) -> Dict[Tuple[str, str], Optional[str]]:
+        return self._mapper.select_org_ids(pairs)
+
     # ---------------------------------------------------------------- 保存
 
     # Java: AjaxResult saveCarConfimFree(CarConfimFree carConfimFree)
+    @transactional
     def save(self, entity: CarConfimFree) -> AjaxResult:
         except_ids = delete_end(entity.except_ids)
         if is_blank(except_ids):
@@ -254,6 +260,7 @@ class CarConfimFreeService(ManagerCrudService):
     # ---------------------------------------------------------------- 删除
 
     # Java: AjaxResult deleteCarConfimFreeByIds(String[] ids)
+    @transactional
     def delete_by_ids(self, entity_ids: Sequence[str]) -> AjaxResult:
         count = 0
         if entity_ids is not None and len(entity_ids) > 0:
@@ -276,6 +283,7 @@ class CarConfimFreeService(ManagerCrudService):
         return AjaxResult.success_data(count)
 
     # Java: AjaxResult deleteCarConfimFreeById(String id)
+    @transactional
     def delete_by_id(self, entity_id: str) -> AjaxResult:
         count = self._mapper.delete_by_id(entity_id)
         return AjaxResult.success_data(count)

@@ -76,34 +76,40 @@ class TraceIdMiddleware(BaseHTTPMiddleware):
 
         try:
             response = await call_next(request)
-        finally:
-            # Java: finally { ... TraceContext.clear(); }
+        except Exception:
+            # 异常向外传播时也要清理，避免池化线程串上下文（Java: finally clear）。
             remove_trace_id()
+            raise
 
-        cost_ms = (time.perf_counter() - start) * 1000.0
-        status = response.status_code
+        try:
+            cost_ms = (time.perf_counter() - start) * 1000.0
+            status = response.status_code
 
-        # Java: httpResponse.setHeader(TRACE_ID_HEADER, TraceContext.getTraceId())
-        response.headers[TRACE_ID_HEADER] = trace_id
+            # Java: httpResponse.setHeader(TRACE_ID_HEADER, TraceContext.getTraceId())
+            response.headers[TRACE_ID_HEADER] = trace_id
 
-        if status >= 500:
-            logger.error("[服务器错误响应] Path=%s, Status=%s, 耗时=%.0fms, TraceId=%s, IP=%s", request.url.path, status, cost_ms, trace_id, client_ip)
-        elif status >= 400:
-            logger.warning("[客户端错误响应] Path=%s, Status=%s, 耗时=%.0fms, TraceId=%s, IP=%s", request.url.path, status, cost_ms, trace_id, client_ip)
-        else:
-            logger.info("[请求完成] Path=%s, Status=%s, 耗时=%.0fms, TraceId=%s", request.url.path, status, cost_ms, trace_id)
+            if status >= 500:
+                logger.error("[服务器错误响应] Path=%s, Status=%s, 耗时=%.0fms, TraceId=%s, IP=%s", request.url.path, status, cost_ms, trace_id, client_ip)
+            elif status >= 400:
+                logger.warning("[客户端错误响应] Path=%s, Status=%s, 耗时=%.0fms, TraceId=%s, IP=%s", request.url.path, status, cost_ms, trace_id, client_ip)
+            else:
+                logger.info("[请求完成] Path=%s, Status=%s, 耗时=%.0fms, TraceId=%s", request.url.path, status, cost_ms, trace_id)
 
-        if cost_ms >= SLOW_REQUEST_THRESHOLD_MS:
-            logger.warning(
-                "[慢请求告警] Path=%s, 耗时=%.0fms, Method=%s, IP=%s, TraceId=%s",
-                request.url.path,
-                cost_ms,
-                request.method,
-                client_ip,
-                trace_id,
-            )
+            if cost_ms >= SLOW_REQUEST_THRESHOLD_MS:
+                logger.warning(
+                    "[慢请求告警] Path=%s, 耗时=%.0fms, Method=%s, IP=%s, TraceId=%s",
+                    request.url.path,
+                    cost_ms,
+                    request.method,
+                    client_ip,
+                    trace_id,
+                )
 
-        return response
+            return response
+        finally:
+            # Java: 先打日志、再在 finally 里 TraceContext.clear()，日志的 trace 列
+            # 必须是真实值而不是 "-"。
+            remove_trace_id()
 
 
 __all__ = ["TraceIdMiddleware", "TRACE_ID_HEADER", "SLOW_REQUEST_THRESHOLD_MS", "get_trace_id"]

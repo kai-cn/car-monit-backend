@@ -14,6 +14,7 @@ from typing import Optional
 from app.common.core.domain.ajax_result import AjaxResult
 from app.manager.mapper.car_suspicious_check_mapper import CarSuspiciousCheckMapper
 from app.manager.service.manager_service import ManagerCrudService
+from app.config.database import transactional
 
 
 class CarSuspiciousCheckService(ManagerCrudService):
@@ -22,6 +23,7 @@ class CarSuspiciousCheckService(ManagerCrudService):
     mapper_cls = CarSuspiciousCheckMapper
 
     # Java: AjaxResult deleteCarSuspiciousCheckBySuspiciousId(String fkId)
+    @transactional
     def delete_by_suspicious_id(self, fk_id: str) -> AjaxResult:
         """根据外键（可疑车辆 id）删除核实明细 —— **物理删除**。"""
         count = self._mapper.delete_by_suspicious_id(fk_id)

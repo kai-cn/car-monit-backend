@@ -37,6 +37,7 @@ Redis 键
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Dict, List, Optional
@@ -61,6 +62,9 @@ from app.manager.domain.car_warning_info import CarWarningInfo
 from app.manager.mapper.car_track_info_mapper import CarTrackInfoMapper
 from app.manager.service.manager_service import SAVE_SUCCESS_MESSAGE, ManagerCrudService
 from app.settings import get_settings
+from app.config.database import transactional
+
+logger = logging.getLogger("app.manager.service.car_track_info_service")
 
 #: Java: ``new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")``
 DATE_TIME_PATTERN = "%Y-%m-%d %H:%M:%S"
@@ -223,6 +227,7 @@ class CarTrackInfoService(ManagerCrudService):
     # ---------------------------------------------------------------- 保存
 
     # Java: AjaxResult saveCarTrackInfo(CarTrackInfo carTrackInfo)
+    @transactional
     def save(self, entity: Any) -> AjaxResult:
         # 注意：这里**不**补审计字段（模板与其它模块不同）
         if is_not_blank(getattr(entity, "id", None)):
@@ -234,6 +239,7 @@ class CarTrackInfoService(ManagerCrudService):
     # ---------------------------------------------------------------- 同步
 
     # Java: AjaxResult syncCurrentTrack()
+    @transactional
     def sync_current_track(self) -> AjaxResult:
         """轨迹同步：实时（改写车辆在线状态 + 生成/清理预警）。"""
         # 查询所有的车俩
@@ -335,7 +341,11 @@ class CarTrackInfoService(ManagerCrudService):
                                 if diff < millis:
                                     is_exit_flag = False
                     except Exception:  # noqa: BLE001 - Java 原文 catch (Exception e)
-                        pass
+                        logger.warning(
+                            "[轨迹同步] 计算抓拍时间差失败, carNo=%s",
+                            getattr(car, "car_no", None),
+                            exc_info=True,
+                        )
 
                     if is_exit_flag and is_zx_flag:
                         # 跟新车俩 ---------- 车的状态修改 status 0
@@ -683,12 +693,14 @@ class CarTrackInfoService(ManagerCrudService):
         return AjaxResult.success()
 
     # Java: AjaxResult syncHistoryTrack()
+    @transactional
     def sync_history_track(self) -> AjaxResult:
         car_list = self.car_info_service.get_redis_car_list()
         self.save_trail_tracks_history(car_list)
         return AjaxResult.success()
 
     # Java: AjaxResult syncHistoryTrackNoCar()
+    @transactional
     def sync_history_track_no_car(self) -> AjaxResult:
         query = CarInfo()
         query.flag = "noTrack"

@@ -21,7 +21,7 @@
 | 3 | 未匹配路由返回真实 404 + Spring 错误体 | `[无影响]` | 与 Java 一致 |
 | 4 | `BaseException` 改名为 `RuoYiBaseException` | `[无影响]` | 避免遮蔽 Python 内建异常 |
 | 5 | `AjaxResult.put(...)` 改名为 `put_chain(...)` | `[无影响]` | 覆写 `dict.put` 会破坏 dict 协议 |
-| 6 | Tomcat 800 线程 → anyio 线程池 800 | `[无影响]` | 已对齐，不是削弱 |
+| 6 | Tomcat 800 线程 → anyio 线程池 **200**（与 Druid maxActive 对齐） | `[需注意]` | 800 个请求线程里最多 200 个能拿到 DB 连接；需要复刻 Tomcat 800 时设 `APP__REQUEST_THREAD_LIMIT=800` |
 | 7 | 日志按时间+大小滚动 → 仅按大小滚动 | `[需注意]` | 运维看日志留存策略 |
 | 8 | p6spy → SQLAlchemy 事件监听器 | `[无影响]` | SQL 日志格式不同，内容等价 |
 | 9 | Druid 监控台 `/druid/**` 不迁移 | `[需注意]` | Java 里本来就被 `denyAll()` 拒绝 |
@@ -90,7 +90,7 @@
 | 72 | 两个字典 `export` **已实现** | `[需注意]` | Phase 3.18；不再是“被 `/{id}` 兜住回 500”，见 §37.1 |
 | 73 | `@Log` 未迁移 → 字典管理不写 `sys_oper_log` | `[需注意]` | 含 `clearCache`，见 §32.3 |
 | 74 | 字典预热 `init()` **不在启动时调用** | `[需注意]` | 首个请求回源填充，结果一致，见 §32.4 |
-| 75 | `updateDictType` 无事务 → 子表先改 | `[需注意]` | 与 §28.3 同一缺口，见 §32.5 |
+| 75 | `updateDictType` 两处写入前改为同一事务提交（`@transactional`） | `[需注意]` | 抛异常回滚、`row==0` 仍提交，见 §32.5 |
 | 76 | `substring(0, len)` 是空操作：缓存键带尾逗号 | `[无影响]` | 照抄 XML 对应的 Java 原文，见 §32.6 |
 | 77 | `selectDictLabel` **没有** `limit 1` | `[无影响]` | 重复数据 → `TooManyResultsException` → 500，见 §32.7 |
 | 78 | 两个 `insertDictXxx` **不回写**主键 | `[无影响]` | 没有 `useGeneratedKeys`，见 §32.8 |
@@ -194,7 +194,7 @@
 | 176 | 路径里的 `bigScreen` 是**驼峰** | `[无影响]` | 同包其它控制器全小写；改小写就是 404，见 §40.3 |
 | 177 | `code` 为空时塞的是三个**魔法值** | `[需注意]` | `StationCapture` / `GantryCapture` / `ServiceAreaCapture`，按它们查库命中 0 行，见 §40.4 |
 | 178 | `"all"` 是**子串**判断，`deleteEnd` 只削**一个**逗号 | `[需注意]` | `"SD01,all"` 会退化成全量；`"SD01,,"` 切完仍是 `["SD01"]`，见 §40.5 |
-| 179 | `exceptRecordList` 的 **N+1** 查询原样保留 | `[需注意]` | 每行 2 次额外查询；`pageSize` 大时线性增长，见 §40.6 |
+| 179 | `exceptRecordList` 已改批量查询，且修正 `find_in_set` 参数方向 | `[需注意]` | 每页 SQL 从 2N+1 降到 3；Java 的 `selectOrgId` 参数反写，见 §40.6 |
 | 180 | `carAudit` 的空值是**零初值**，不是 `null` | `[无影响]` | 四个字段都有非 null 初值，见 §40.7 |
 | 181 | `type` 缺失时手抄 Spring 的**英文原文** | `[无影响]` | `MissingServletRequestParameterException` 的固定句式，见 §40.8 |
 | 182 | `bigscreen/center` 的 **7 个 VO 未迁移**（死代码） | `[无影响]` | 全仓无引用，属未实现的“城市配送大屏”，见 §40.9 |
@@ -444,7 +444,7 @@ SQLAlchemy 自带的 `sqlalchemy.engine` echo 会打印方言探测语句
 | `mybatis-plus.*` | Python 侧用 SQLAlchemy Core 执行手写 SQL，无 MyBatis 运行时 |
 | `pagehelper.*` | 分页改为显式 `count` 查询，见 Phase 3 的 `page_helper` |
 | `generator-code.*` | 代码生成器（`ruoyi-generator`）迁移时另行处理 |
-| `xss.*` | XSS 过滤在 Phase 3 随 `XssFilter` 一起迁移 |
+| ~~`xss.*`~~ | 已生效，见 §46.1（`XssMiddleware` 使用 `enabled` / `excludes` / `urlPatterns`） |
 
 这些字段保留在 `config/application.yml` 里，**目的是让 Java 开发者可以逐行 diff 原配置**，
 而不是「配置被悄悄丢掉」。
@@ -662,10 +662,12 @@ CorsFilter → LogoutFilter → JwtAuthenticationTokenFilter
 两个实现细节值得知道：
 
 1. **`SecurityMiddleware` 必须注册在最内层。** `main.py` 的注册顺序是
-   `Security → RequestContext → CORS → TraceId`，Starlette 会反转，最终执行顺序正好是
-   `TraceId → CORS → RequestContext → Security → 路由`。安全层要「内」于 `RequestContextMiddleware`，
-   `AsyncFactory.recordLogininfor` 才能从上下文里读到 `Request`；CORS 必须在「外」面，
-   否则预检会被当成未授权请求。
+   `Security → RequestContext → FallbackException → Xss → CORS → TraceId`，Starlette 会反转，
+   最终执行顺序是
+   `TraceId → CORS → Xss → FallbackException → RequestContext → Security → 路由`。
+   安全层要「内」于 `RequestContextMiddleware`，`AsyncFactory.recordLogininfor` 才能从上下文里
+   读到 `Request`；CORS 必须在「外」面，否则预检会被当成未授权请求。XSS 与兜底异常层放在
+   TraceId/CORS 内侧，才能让 413 与未注册异常带上 `X-Trace-Id` / CORS 响应头（§46.1、§25.3）。
 2. **只捕获过滤器阶段的异常。** 端点内部抛出的异常**不允许**被这一层吞掉，否则
    `ServiceException` 得不到约定中的「HTTP 200 + code 500」，会退化成 500。
    实现方式是先 `await to_thread.run_sync(过滤器链)`、再 `await call_next(request)`，只给前者套 `try`。
@@ -1002,6 +1004,15 @@ public AjaxResult handleRuntimeException(RuntimeException e, HttpServletRequest 
 **为什么单元用例没发现**
 `tests/test_login_service.py` 直调 Service，`pytest.raises(UserPasswordNotMatchException)`
 正是它预期的行为。缺陷在"异常怎么变成 HTTP 响应"这一层，只有真的过一遍 ASGI 中间件才看得见。
+
+**后续修复（P2-1）：通用 `Exception` 的响应头**
+`@app.exception_handler(Exception)` 仍然挂在 `ServerErrorMiddleware`（最外层）上 —— Starlette
+只允许它在那里渲染。它当初的问题是：响应在 TraceId / CORS **之后**才生成，所以 `KeyError` /
+`AttributeError`（本工程复刻 Java NPE 的哨兵）这类没有专用 handler 的异常，响应里既没有
+`X-Trace-Id` 也没有 `Access-Control-Allow-Origin`。现在 `create_app` 在 TraceId/CORS 内侧注册了
+纯 ASGI 的 `FallbackExceptionMiddleware`：捕获后按同一个 `AjaxResult`（HTTP 200 + `code 500` +
+统一文案）渲染，响应继续穿过外侧中间件补齐头部。Java 的 `TraceIdFilter` / `CorsFilter` 在进链前
+写头，同类错误在 Java 侧同样是带头的。回归：`tests/test_error_masking.py`。
 
 **回归用例**
 `tests/test_e2e_sys_user.py::TestLogin::test_a_wrong_password_is_a_500_envelope_with_http_200`
@@ -1891,7 +1902,10 @@ if (userService.resetUserPwd(userName, SecurityUtils.encryptPassword(newPassword
 由 `ResourcesConfig` 的 `/profile/**` → `file:{ruoyi.profile}` 映射提供静态访问。
 
 **Python 实现**
-同样返回相对 url，同样写入 `sys_user.avatar`。`app/main.py` 里已挂同一条静态映射。
+同样返回相对 url，同样写入 `sys_user.avatar`。`app/main.py` 已挂
+`StaticFiles(directory=settings.ruoyi.profile, check_dir=False)` 到 `/profile`，
+与 Java `ResourcesConfig#addResourceHandlers` 等价（目录不存在时不影响启动，仅请求 404）。
+回归用例见 `tests/test_profile_static.py`（§46.2）。
 
 **客户端/运维注意**
 - 数据库里**没有**域名，也没有 `http://`；换域名/换端口时**不需要**刷数据。
@@ -2377,7 +2391,7 @@ get_dict_type_service().init()
 
 **回归用例** `tests/test_sys_dict_type_service.py::TestInit`（含"构造服务不连库"一条）。
 
-### 32.5 `updateDictType` **没有**事务 → 子表先改 `[需注意]`
+### 32.5 `updateDictType` 带 `@transactional`，抛异常时整体回滚 `[需注意]`
 
 Java 的 `updateDictType` 是全切片唯一带 `@Transactional` 的方法，顺序是：
 
@@ -2386,15 +2400,19 @@ Java 的 `updateDictType` 是全切片唯一带 `@Transactional` 的方法，顺
 3. `updateDictType(dict)` —— 主表改名；
 4. `row > 0` 时清缓存。
 
-Python 侧第 2、3 步**不在同一事务里**（§28.3 的缺口）。第 3 步失败时，子表
-已经改成新名字，库里会留下"子项指向一个不存在的类型"的孤儿行。
+Python 侧已用 `@transactional` 把第 2、3 步放进同一个 Session（与 `update_user`
+相同的 REQUIRED 语义）：第 3 步**抛异常**时子表改名随事务回滚，不会留下"子项指向
+一个不存在的类型"的孤儿行。注意 `row == 0` 不是异常：Java 的 `@Transactional` 同样
+**提交**，此时子表改名会保留 —— 两侧一致。
 
 顺序本身是照抄的，不能调换：先改主表会让第 2 步拿不到旧名字（`oldDict` 是**改之前**
 查出来的，所以下标顺序只影响失败时的残留形态，不影响成功路径）。
 
 **回归用例**
-`tests/test_sys_dict_type_service.py::TestUpdateDictType::test_the_children_are_still_renamed_when_the_parent_fails`
-（该用例**主动钉住**这个缺口，补事务后应改写成期望回滚）。
+`tests/test_transaction.py::test_update_dict_type_rolls_back_the_child_rename_on_failure`
+（FakeSession 断言 `commits=0 / rollbacks=1`；删掉装饰器会拆成两次提交并立刻变红）。
+`tests/test_sys_dict_type_service.py::TestUpdateDictType::test_a_zero_row_parent_update_still_commits_the_child_rename`
+钉住 `row == 0` 仍提交的语义。
 
 ### 32.6 `selectDictDataByTypeMore` 的两处原文缺陷 `[无影响]`
 
@@ -3759,6 +3777,10 @@ OSHI 的 `getSystemCpuLoadTicks()` 在 Linux 上返回 **tick**（`HZ = 100`）�
 psutil 的 `cpu_times()` 返回**秒**。为了保持 `Cpu.total` 与 Java 侧同一量级，
 `_TICKS_PER_SECOND = 100.0` 把秒乘回 tick 口径。
 
+另外 `OSHI_WAIT_SECOND = 1000` 的**固定 1 秒采样等待**也照抄（Java
+`Util.sleep(1000)`），不是 Python 新增的耗时；要缩短只能改常量并接受
+`Cpu` 百分比精度变化。测试通过 monkeypatch 该常量把等待降到 0。
+
 百分比字段（`sys` / `used` / `wait` / `free`）是**比值**，与单位无关，所以这条差异
 except `total` 之外看不出来。Windows 上 psutil 不给 `nice` / `irq` / `softirq` /
 `steal` / `iowait`，一律按 0 处理（OSHI 在 Windows 上同样恒为 0）。
@@ -4008,17 +4030,27 @@ Python 侧保持原样，一条 `pre_authorize_permi` 都没加 —— 别按“
 `/carLocation` 与 `/carWarning` 里的 `sectionCode.contains("all")` 同理：`"all,SD01"`
 整串被清空。
 
-### 40.6 `exceptRecordList` 的 **N+1** 查询原样保留 `[需注意]`
+### 40.6 `exceptRecordList` 已改批量，`find_in_set` 方向按正确语义修正 `[需注意]`
 
-分页结果逐行再查两次：
+Java 对分页结果逐行再查两次：
 
 | 字段 | 来源 | 次数 |
 |---|---|---|
 | `orgId` | `carConfimFreeService.selectOrgId(carId, id)` | 每行 1 次 |
 | `supplementaryStatus` | `carAduitFreeService` 按 `carId` **count > 0** → `"1"` | 每行 1 次 |
 
-`pageSize=50` 就是 1 + 100 条 SQL。**不要“优化”成 join**：`car_aduit_free` 的 count
-带 `del_flag = '0'` 逻辑删除条件，join 出来的语义不同（而且 Java 就是 N+1）。
+`pageSize=50` 就是 1 + 100 条 SQL。
+
+Python 改为批量：`select_org_ids` 一条 SQL 取回本页所有 `car_id` 的候选行，
+`count_by_car_ids` 用 `group by car_id` 一次统计；每页 SQL 从 2N+1 降到 3，
+响应体逐字节不变。`car_aduit_free` 的统计仍带 `del_flag = '0'`，没有改成 join。
+
+同时登记一处**有意修正**：Java `CarConfimFreeMapper.xml` 的 `selectOrgId` 写成
+`find_in_set(except_ids, #{id})` —— 两个参数方向反了（把列值当作"被查找字符串"、
+把单个 id 当作"逗号分隔列表"）。Python 单行路径与批量路径统一为
+`find_in_set(:id, except_ids)`（"在逗号分隔的 `except_ids` 里找 `id`"），
+与 `selectCarConfimFreeByExceptIds` 的写法一致。当 `except_ids` 含多个 id 时，
+Python 会匹配到 Java 因参数反写而返回 `null` 的行；这是纠正 Java 缺陷，不是回归。
 
 ### 40.7 `carAudit` 的空值是**零初值**，不是 `null` `[无影响]`
 
@@ -4833,3 +4865,75 @@ gantrycar,gantrytrade}/export`、`/base/{geometry,snapshotflow,feerecords}/expor
 
 稳定性复验：这两条所在的两组用例连跑 5 轮，每轮 27 项 0 失败；整套 `pytest`
 （3646 项，`--junit-xml` 计数）`failures=0 errors=0 skipped=0`，约 41s。
+
+## 46. P0/P1/P2 修复后的口径更新（2026-11-07）`[无影响]`
+
+本节修正评审报告指出的两处"声明与实现不符"，并登记 P1 决策带来的行为变化。
+逐项提交记录见 `git log --grep="fix(P0|fix(P1|fix(P2"`。
+
+### 46.1 XSS 过滤已落地（P0-2）`[无影响]`
+
+- **实现**：`app/middleware/xss.py` 1:1 移植 `HTMLFilter` + `EscapeUtil.clean`，
+  ASGI 层清洗。Java 挂在 `HIGHEST_PRECEDENCE`（最外层）；Python 放在 **TraceId/CORS
+  内侧、Security 外侧**：仍先于鉴权缓冲/清洗，同时让 Python-only 的 413 响应能带上
+  `X-Trace-Id` 与 `Access-Control-Allow-Origin`。Java 没有 413 路径，故不影响语义。
+- **范围**：仅非 `GET` / `DELETE`；URL 命中 `/system/*`、`/monitor/*`、`/tool/*`；
+  排除 `/system/notice`；清洗 query / form / JSON body 中的**字符串值**，并 `trim`。
+- **配置**：`xss.enabled` / `xss.excludes` / `xss.urlPatterns` 全部生效（§10 的旧声明作废）。
+- **Python-only 保护**：`xss.max_body_bytes`（默认 1MB）限制清洗前缓冲的 body 大小，
+  超过直接回 HTTP 413；超限后的 drain 预算为 `limit + 64KB`，不会被永不结束的
+  慢速 chunked body 挂住；Java 没有等价行为（其风险由容器线程模型承担）。``0`` = 不限制。
+- **非 UTF-8**：body / query 严格按 UTF-8 解码，失败则**不清洗、原样放行**并记 WARNING；
+  不再用 `errors="replace"` 静默改写字节（否则会破坏下游 JSON/form 解析）。
+- **回归**：`tests/test_xss_filter.py`（含 `/system/notice` 豁免、GET 不改写、嵌套 JSON、
+  multipart 透传、大 body 413 及其响应头、有界 drain、非 UTF-8 透传、中间件顺序）。
+- **差异**：清洗发生在 ASGI 层，`request.get_json()` 之后读取的是清洗后的值；Java 是
+  `HttpServletRequestWrapper`，同样在进入 MVC 前完成，可观察结果一致。
+
+### 46.2 `/profile/**` 静态映射已落地（P0-3）`[无影响]`
+
+- `app/main.py`：`mount("/profile", ProfileStaticFiles(directory=..., check_dir=False))`。
+  `check_dir=False` 复刻 Java "目录不存在也不影响启动、请求时才 404"。
+- **同源 HTML 加固**（Python-only）：响应统一加 `X-Content-Type-Options: nosniff` 与
+  `Content-Disposition: attachment`。上传目录里的 `.html` / `.svg` 被直接导航时会下载
+  而不是同源执行；`<img src>` 渲染图片不受影响。没有收紧上传后缀，避免改变
+  `FileUploadUtils` 的通用上传白名单。
+- **Windows 跨盘**（Python-only）：`StaticFiles.lookup_path` 的 `os.path.commonpath`
+  在跨盘符路径上会抛 `ValueError`（未捕获即 500）；`ProfileStaticFiles` 将其等同于
+  "越界"，返回 `("", None)` → 404，与 Linux 上的目录穿越处理一致。
+- 回归：`tests/test_profile_static.py`（挂载点存在、任意子路径可读、目录缺失不抛、
+  下载/防嗅探头、跨盘 404）。
+- 与 Java 的差异：Starlette 的 `StaticFiles` 不提供目录列表；Java 默认也没有，等价。
+
+### 46.3 异常文案按业务/非业务分流（P1-6）`[需注意]`
+
+| 异常 | 返回文案 | 说明 |
+|---|---|---|
+| `RuoYiBaseException` / `ServiceException` / `CustomException` / `BeanValidationError` | 原 `message` | 业务校验/提示，前端直接弹给用户 |
+| `ValueError`（含 pydantic `ValidationError`） | `参数错误` | 参数类型转换/值校验类问题，不能误导为服务端故障；原文只进日志 |
+| 其它 `RuntimeError` / `Exception`（含 SQLAlchemy、`AttributeError` NPE 哨兵） | `系统繁忙，请稍后重试` | 详情含 traceId 只进 `sys-error.log` |
+| 上传校验（文件名过长、超大小、后缀不允许） | 原始提示 | `FileUploadUtils` 把它们提升为业务异常；真正的 I/O 故障（磁盘满、路径不可写、S3 报错）返回固定文案「上传失败，请稍后重试」，详情只进日志 —— **有意偏离** Java 逐字返回 `e.getMessage()`，避免绝对路径/容量信息透出 |
+
+因此 Java 曾经"逐字返回 `e.getMessage()`"的若干 NPE 用例（如 `DELETE /monitor/job/999999`
+的 `{"msg":null}`）现在统一为上面的通用文案——这是有意偏离，回归用例已同步。
+
+### 46.4 P1 其它决策登记 `[需注意]`
+
+| 项 | 变化 | 回退方式 |
+|---|---|---|
+| P1-1 | 请求线程池默认 200（与 Druid `maxActive` 对齐） | `APP__REQUEST_THREAD_LIMIT=800` |
+| P1-5 | 密钥 fail-closed（所有环境）：缺失、仍是仓库内置演示值、或命中占位词/长度（≥32）/熵（≥3.0 bits/char）校验时拒绝启动；`.env.example` 不再内置可直接启动的密钥，`IS_LOCALHOST` 也改为注释形式强制显式选择 | 按 `.env.example` 的说明生成随机值并配置 `TOKEN__SECRET` / DB 口令 / `HENGDA__SECRET` |
+| P1-8 | CORS 白名单；非 `local` 留空 = **启动失败**（错误信息点名配置项），`local` 留空 = 仅回环地址（localhost / 127.0.0.1 / [::1]） | `APP__CORS__ALLOWED_ORIGINS` |
+| P1-4/P1-9 | 日志按 logback 精确分级；trace 只进 slow；容量可配且按目录预算清理；日志目录源码树用 `logs/`、wheel 安装用 `sys.prefix/var/log/car-monit`（只读前缀回退 `~/.car-monit/logs`） | `LOGGING__FILE_*` / `LOG_PATH` |
+| P1-3 | lifespan 先停线程池 / 关闭 HTTP 客户端，再释放 DB/Redis | —（P2-16 因此关闭） |
+
+### 46.5 已关闭 / 转为方案说明的 P2 项
+
+- **P2-16 关闭**：关闭顺序已改为"先停池（含 httpx.Client），再关 DB/Redis"。
+- **P2-10（行映射 `model_construct` + 直接 ORJSONResponse）**：风险偏高（逐行校验同时
+  承担类型强制与日期/金额标度转换），本轮不改代码，方案与前置条件见 `ARCHITECTURE.md`
+  「未实施的高风险优化」。
+- **P2-11（合并 3 层 `BaseHTTPMiddleware`）**：涉及 `contextvars` 在纯 ASGI 中间件中的
+  手工传播与安全过滤器顺序，本轮不改代码，方案同上。
+- **P2-12**：CI 已加 `ruff + pytest`；实测覆盖率 **72.85%**（3605 tests / 1 skipped），门槛设 70%。
+- **P2-13**：Alembic 增加空基线 `0001_baseline`，已有库执行一次 `alembic stamp`。

@@ -27,7 +27,7 @@ Java 用 ``redisTemplate.execute(new RedisCallback<Properties>() {...})`` 发三
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 import pytest
 from fastapi import FastAPI

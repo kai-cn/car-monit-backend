@@ -35,6 +35,7 @@ from fastapi.testclient import TestClient
 
 from app.api.common import common_controller as controller
 from app.api.common.common_controller import file_download, resource_download
+from app.common.exception.exceptions import ServiceException
 from app.config.exception_handlers import register_exception_handlers
 from app.framework.config.security_config import AccessMode, resolve_access
 from app.settings import get_settings, reset_settings_cache
@@ -332,17 +333,31 @@ class TestUploadFile:
         # 上传目录是 {profile}/upload
         assert fake.calls == [(get_settings().ruoyi.upload_path, "a.png")]
 
-    def test_an_exception_becomes_code_500_with_its_message(
+    def test_business_error_keeps_its_message(
         self, http: Any, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        """校验类异常（文件名过长/后缀不允许）保留可操作提示."""
         fake = _FakeUpload()
-        fake.error = OSError("文件名长度超出限定长度")
+        fake.error = ServiceException("文件名长度超出限定长度")
         monkeypatch.setattr(controller.FileUploadUtils, "upload", fake)
 
         response = http.post("/common/upload", files={"file": ("a.png", b"png", "image/png")})
 
-        body = response.json()
-        assert body == {"code": 500, "msg": "文件名长度超出限定长度"}
+        assert response.json() == {"code": 500, "msg": "文件名长度超出限定长度"}
+
+    def test_io_error_is_masked(
+        self, http: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """磁盘路径/空间不足/S3 错误不能原样透给客户端（COMPATIBILITY §46.3）."""
+        fake = _FakeUpload()
+        fake.error = OSError("[Errno 28] No space left on device: D:/secret/upload")
+        monkeypatch.setattr(controller.FileUploadUtils, "upload", fake)
+
+        response = http.post("/common/upload", files={"file": ("a.png", b"png", "image/png")})
+
+        assert response.json() == {"code": 500, "msg": controller.UPLOAD_ERROR_MESSAGE}
+        assert "No space left" not in response.text
+        assert "D:/secret" not in response.text
 
     def test_a_missing_part_is_a_code_500(self, http: Any) -> None:
         """Java 是 ``file == null`` -> NPE -> ``error(null)``；信封同样是 code 500."""
@@ -417,7 +432,8 @@ class TestUploadFiles:
             ],
         )
 
-        assert response.json() == {"code": 500, "msg": "boom"}
+        assert response.json() == {"code": 500, "msg": controller.UPLOAD_ERROR_MESSAGE}
+        assert "boom" not in response.text
         # 前面的文件已经上传过了，**不会**回滚
         assert calls == ["a.png", "b.png"]
 
