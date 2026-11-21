@@ -238,7 +238,7 @@ jobs:
         # 从 car-monit-go-V2 的 car-monit-go-ci.yml 迁入；master 没有该脚本，自动跳过。
         if: hashFiles('car-monit-go/scripts/parity/check_perms.py') != ''
         run: |
-          python scripts/parity/check_perms.py \
+          python3 scripts/parity/check_perms.py \
             --java-root ../ruoyi-admin/src/main/java/com/ruoyi/web/controller \
             --go-root internal
 
@@ -353,7 +353,7 @@ jobs:
             sleep 2
           done
           cat /tmp/carmonit-server.log
-          python scripts/parity/check_permissions_runtime.py --base-url http://127.0.0.1:9989
+          python3 scripts/parity/check_permissions_runtime.py --base-url http://127.0.0.1:9989
 
   # ---------------------------------------------------------------------------
   # Rust：rust-toolchain.toml 锁 1.90.0
