@@ -36,6 +36,9 @@ public class SysDictDataController extends BaseController
     @Autowired
     private ISysDictTypeService dictTypeService;
 
+    @Autowired
+    private com.ruoyi.manager.service.bigscreen.DictVersionService dictVersionService;
+
     @PreAuthorize("@ss.hasPermi('system:dict:list')")
     @GetMapping("/list")
     public TableDataInfo list(SysDictData dictData)
@@ -105,7 +108,9 @@ public class SysDictDataController extends BaseController
     public AjaxResult add(@Validated @RequestBody SysDictData dict)
     {
         dict.setCreateBy(SecurityUtils.getUsername());
-        return toAjax(dictDataService.insertDictData(dict));
+        AjaxResult result = toAjax(dictDataService.insertDictData(dict));
+        bumpDictVersion(dict.getDictType());
+        return result;
     }
 
     /**
@@ -117,7 +122,9 @@ public class SysDictDataController extends BaseController
     public AjaxResult edit(@Validated @RequestBody SysDictData dict)
     {
         dict.setUpdateBy(SecurityUtils.getUsername());
-        return toAjax(dictDataService.updateDictData(dict));
+        AjaxResult result = toAjax(dictDataService.updateDictData(dict));
+        bumpDictVersion(dict.getDictType());
+        return result;
     }
 
     /**
@@ -128,6 +135,28 @@ public class SysDictDataController extends BaseController
     @DeleteMapping("/{dictCodes}")
     public AjaxResult remove(@PathVariable Long[] dictCodes)
     {
-        return toAjax(dictDataService.deleteDictDataByIds(dictCodes));
+        AjaxResult result = toAjax(dictDataService.deleteDictDataByIds(dictCodes));
+        bumpDictVersion(null);
+        return result;
+    }
+
+    /**
+     * 字典写入后主动失效：INCR 全局字典版本，缓存 key 5 秒内切换到新版本。
+     */
+    private void bumpDictVersion(String dictType)
+    {
+        try
+        {
+            dictVersionService.bump(com.ruoyi.manager.service.bigscreen.DictVersionService.SYS_DICT);
+            if ("plate_color".equalsIgnoreCase(dictType))
+            {
+                dictVersionService.bump(
+                        com.ruoyi.manager.service.bigscreen.DictVersionService.PLATE_COLOR);
+            }
+        }
+        catch (RuntimeException e)
+        {
+            logger.warn("[字典版本] 主动失效失败 dictType={} reason={}", dictType, e.getMessage());
+        }
     }
 }

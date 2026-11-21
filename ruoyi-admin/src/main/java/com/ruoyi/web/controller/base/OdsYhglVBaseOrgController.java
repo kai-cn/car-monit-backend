@@ -34,6 +34,9 @@ public class OdsYhglVBaseOrgController extends BaseController {
     @Autowired
     private IOdsYhglVBaseOrgService odsYhglVBaseOrgService;
 
+    @Autowired
+    private com.ruoyi.manager.service.bigscreen.DictVersionService dictVersionService;
+
     /**
      * 查询机构信息列表
      */
@@ -72,7 +75,7 @@ public class OdsYhglVBaseOrgController extends BaseController {
     @Log(title = "机构信息", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody OdsYhglVBaseOrg odsYhglVBaseOrg) {
-        return odsYhglVBaseOrgService.saveOdsYhglVBaseOrg(odsYhglVBaseOrg);
+        return bumpAfter(odsYhglVBaseOrgService.saveOdsYhglVBaseOrg(odsYhglVBaseOrg));
     }
 
     /**
@@ -82,7 +85,7 @@ public class OdsYhglVBaseOrgController extends BaseController {
     @Log(title = "机构信息", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody OdsYhglVBaseOrg odsYhglVBaseOrg) {
-        return odsYhglVBaseOrgService.saveOdsYhglVBaseOrg(odsYhglVBaseOrg);
+        return bumpAfter(odsYhglVBaseOrgService.saveOdsYhglVBaseOrg(odsYhglVBaseOrg));
     }
 
     /**
@@ -92,7 +95,17 @@ public class OdsYhglVBaseOrgController extends BaseController {
     @Log(title = "机构信息", businessType = BusinessType.DELETE)
     @DeleteMapping("/{bigIds}")
     public AjaxResult remove(@PathVariable String[] bigIds) {
-        return odsYhglVBaseOrgService.deleteOdsYhglVBaseOrgByIds(bigIds);
+        return bumpAfter(odsYhglVBaseOrgService.deleteOdsYhglVBaseOrgByIds(bigIds));
+    }
+
+    private AjaxResult bumpAfter(AjaxResult result) {
+        try {
+            dictVersionService.bump(
+                    com.ruoyi.manager.service.bigscreen.DictVersionService.ORG);
+        } catch (RuntimeException e) {
+            logger.warn("[字典版本] 机构主动失效失败 reason={}", e.getMessage());
+        }
+        return result;
     }
 
 }

@@ -20,4 +20,9 @@ public class SectionVO {
      */
     private String sectionName;
 
+    /**
+     * 所属路线名称（流水列表/导出回填用）
+     */
+    private String roadName;
+
 }

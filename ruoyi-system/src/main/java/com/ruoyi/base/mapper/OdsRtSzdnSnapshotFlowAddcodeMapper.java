@@ -54,6 +54,18 @@ public interface OdsRtSzdnSnapshotFlowAddcodeMapper extends BaseMapper<OdsRtSzdn
     List<TopTenVO> getTopTen();
 
     /**
+     * 按时间范围统计路段预警 Top-N（修复全历史扫描）。
+     *
+     * @param startTime 开始时间（yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss）
+     * @param endTime   结束时间（yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss）
+     * @param limit     返回条数
+     * @return Top-N
+     */
+    List<TopTenVO> getTopTenRange(@Param("startTime") String startTime,
+                                  @Param("endTime") String endTime,
+                                  @Param("limit") int limit);
+
+    /**
      * 根据分表名分页查询门架抓拍流水
      *
      * @param tableName                     分表名

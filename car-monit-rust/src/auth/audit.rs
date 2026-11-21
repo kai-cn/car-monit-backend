@@ -76,7 +76,7 @@ pub fn record_logininfor(
                 "记录登录日志失败"
             );
         }
-        });
+    });
     }));
 }
 
@@ -137,6 +137,6 @@ pub fn record_oper(pool: &MySqlPool, record: OperRecord) {
                 "记录操作日志失败"
             );
         }
-        });
+    });
     }));
 }

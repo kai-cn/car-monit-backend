@@ -117,6 +117,9 @@
         <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
         <if test="escapedType != null and escapedType != ''"> and a.escaped_type = #{escapedType}</if>
         <if test="orgId != null  and orgId != ''"> and a.eps_id = #{orgId}</if>
+        <!-- orgCode 是机构 sub_code 前缀；api 不支持该维度而回落 legacy 时必须真正下推，
+             否则只标 LEGACY_DB 却返回全机构统计，构成跨机构串数据 -->
+        <if test="orgCode != null and orgCode != ''"> and exists (select 1 from sys_dept d where d.dept_id = a.eps_id and d.del_flag = '0' and d.sub_code like concat(#{orgCode}, '%'))</if>
         group by a.escaped_type
     </select>
 
@@ -125,6 +128,7 @@
         from car_confim_free a where a.del_flag = '0' and a.status = '0'
         <if test="applyTime1 != null  and applyTime1 != ''">and a.create_time >= STR_TO_DATE(#{applyTime1},'%Y-%m-%d')</if>
         <if test="applyTime2 != null  and applyTime2 != ''">and a.create_time <![CDATA[<]]> date_add(STR_TO_DATE(#{applyTime2},'%Y-%m-%d'), interval 1 day) </if>
+        <if test="orgCode != null and orgCode != ''"> and exists (select 1 from sys_dept d where d.dept_id = a.org_id and d.del_flag = '0' and d.sub_code like concat(#{orgCode}, '%'))</if>
     </select>
 
 
@@ -142,6 +146,15 @@
     <select id="selectOrgId" resultType="java.lang.String">
         select org_id
         from car_confim_free where car_id = #{carId} and find_in_set(except_ids, #{id}) > 0;
+    </select>
+
+    <select id="selectOrgIdBatch" resultType="com.ruoyi.manager.domain.CarConfimFree">
+        select car_id carId, id, org_id orgId, except_ids exceptIds
+        from car_confim_free
+        where del_flag = '0' and car_id in
+        <foreach collection="carIds" item="carId" open="(" separator="," close=")">
+            #{carId}
+        </foreach>
     </select>
 
     <select id="getPCCarStatistics" resultType="com.ruoyi.manager.domain.CarConfimFree" parameterType="com.ruoyi.manager.domain.vo.CarConfimFreeQueryRo" >

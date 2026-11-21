@@ -34,6 +34,9 @@ public class DwdLcztFwqjcxxController extends BaseController {
     @Autowired
     private IDwdLcztFwqjcxxService dwdLcztFwqjcxxService;
 
+    @Autowired
+    private com.ruoyi.manager.service.bigscreen.DictVersionService dictVersionService;
+
     /**
      * 查询服务区基础信息列表
      */
@@ -72,7 +75,7 @@ public class DwdLcztFwqjcxxController extends BaseController {
     @Log(title = "服务区基础信息", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody DwdLcztFwqjcxx dwdLcztFwqjcxx) {
-        return dwdLcztFwqjcxxService.saveDwdLcztFwqjcxx(dwdLcztFwqjcxx);
+        return bumpAfter(dwdLcztFwqjcxxService.saveDwdLcztFwqjcxx(dwdLcztFwqjcxx));
     }
 
     /**
@@ -82,7 +85,7 @@ public class DwdLcztFwqjcxxController extends BaseController {
     @Log(title = "服务区基础信息", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody DwdLcztFwqjcxx dwdLcztFwqjcxx) {
-        return dwdLcztFwqjcxxService.saveDwdLcztFwqjcxx(dwdLcztFwqjcxx);
+        return bumpAfter(dwdLcztFwqjcxxService.saveDwdLcztFwqjcxx(dwdLcztFwqjcxx));
     }
 
     /**
@@ -92,7 +95,17 @@ public class DwdLcztFwqjcxxController extends BaseController {
     @Log(title = "服务区基础信息", businessType = BusinessType.DELETE)
     @DeleteMapping("/{agentPks}")
     public AjaxResult remove(@PathVariable String[] agentPks) {
-        return dwdLcztFwqjcxxService.deleteDwdLcztFwqjcxxByIds(agentPks);
+        return bumpAfter(dwdLcztFwqjcxxService.deleteDwdLcztFwqjcxxByIds(agentPks));
+    }
+
+    private AjaxResult bumpAfter(AjaxResult result) {
+        try {
+            dictVersionService.bump(
+                    com.ruoyi.manager.service.bigscreen.DictVersionService.FWQ);
+        } catch (RuntimeException e) {
+            logger.warn("[字典版本] 服务区主动失效失败 reason={}", e.getMessage());
+        }
+        return result;
     }
 
 }

@@ -78,7 +78,7 @@ Phase 4 的中间件适配器（Kafka / ES / MinIO）在 `[project.optional-depe
 与 Spring Boot 的 `application.yml` + 环境变量一致。
 
 ```bash
-cp .env.example .env
+cp .env.example .env            # 可选：不建也能跑，默认值与 Java 一致
 ```
 
 `.env` 不是可选的：密钥采用 fail-closed，**缺失、仍是仓库内置演示值、或命中占位词/长度/熵

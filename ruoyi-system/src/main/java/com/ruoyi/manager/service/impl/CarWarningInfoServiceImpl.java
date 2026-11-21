@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 预警车辆Service业务层处理
@@ -57,6 +58,10 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
 
 
             List<TrailInfo> trailInfoList = redisCache.getCacheObject(nextKey);
+            if (null == trailInfoList || trailInfoList.isEmpty()) {
+                // api 全量历史缺失时回退 backend 私有“当前页”缓存（不再写共享键）
+                trailInfoList = redisCache.getCacheObject(Constants.car_history_trail_page + carNo);
+            }
             List<TrailBo> trailFwqList = new ArrayList<>();
             if (null != trailInfoList && trailInfoList.size() > 0) {
                 List<List<TrailBo>> cylylist = new ArrayList<>();
@@ -193,14 +198,11 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
      * 跟新缓存
      */
     public void updateRedisWarningList() {
-        CarWhiteInfo carWhiteInfo = new CarWhiteInfo();
         // 查询在线的
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         String formattedDate = sdf.format(new Date());
-        CarWarningInfo carWarningInfo = new CarWarningInfo();
-        carWarningInfo.setTrackId(formattedDate);
-        List<CarWarningInfo> list = carWarningInfoMapper.selectCarWarningInfoListLimit100(carWarningInfo);
-        redisCache.setCacheObject(Constants.car_warning_list, list);
+        List<CarWarningInfo> list = carWarningInfoMapper.selectCarWarningInfoListLimit100(formattedDate, 100);
+        redisCache.setCacheObject(Constants.car_warning_list, list, 600, TimeUnit.SECONDS);
 
     }
 
@@ -217,10 +219,8 @@ public class CarWarningInfoServiceImpl extends ServiceImpl<CarWarningInfoMapper,
             // 查询在线的
             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
             String formattedDate = sdf.format(new Date());
-            CarWarningInfo carWarningInfo = new CarWarningInfo();
-            carWarningInfo.setTrackId(formattedDate);
-            list = carWarningInfoMapper.selectCarWarningInfoListLimit100(carWarningInfo);
-            redisCache.setCacheObject(Constants.car_warning_list, list);
+            list = carWarningInfoMapper.selectCarWarningInfoListLimit100(formattedDate, 100);
+            redisCache.setCacheObject(Constants.car_warning_list, list, 600, TimeUnit.SECONDS);
         }
         return list;
     }

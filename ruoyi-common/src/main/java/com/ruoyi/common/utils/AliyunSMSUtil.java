@@ -186,23 +186,17 @@ public class AliyunSMSUtil {
 	}
 
 	public static void main(String[] args){
+		// 本地手动验证入口：凭据一律从环境变量读取，禁止在源码中内置任何 AccessKey。
+		String akId = System.getenv("ALIYUN_SMS_ACCESS_KEY_ID");
+		String akSecret = System.getenv("ALIYUN_SMS_ACCESS_KEY_SECRET");
+		if (akId == null || akSecret == null || akId.isEmpty() || akSecret.isEmpty()) {
+			System.out.println("请设置环境变量 ALIYUN_SMS_ACCESS_KEY_ID / ALIYUN_SMS_ACCESS_KEY_SECRET 后再运行");
+			return;
+		}
 		try{
 			AliyunSMSUtil sms = new AliyunSMSUtil();
-			//sms.sendSMS("奥新体育", "SMS_38430052", "13476252626", "{\"code\":\"123456\",\"product\":\"采购系统\"}", "LTAIh427wpwT8Krx", "DtxByelBYx96sf9yAB0u3om34Puk8t");
-			//sms.sendSMSByHttp("\u7956\u6069\u521b\u610f","SMS_38430052","13476252626","code","13456","LTAIP8quEgrPN14K","wZcjROnV3LI0eNAVGabS4VsuA1wMac");
-
-
-//			String params = "{\"code\":\"123456\"}";
-//			sms.sendSMSByHttp("快运营APP","SMS_186618686","13476252626",params,"LTAI4FpWn8UXHyxB1jTLbvJc","a0nGVlTDbb0KX0TUjxXPlBcpAPg1Le");
-//
 			String params = "{\"code\":\"123456\",\"product\":\"采购系统\"}";
-//			sms.sendSMSByHttp("大鱼测试","SMS_38430052","13476252626",params,"LTAIh427wpwT8Krx","DtxByelBYx96sf9yAB0u3om34Puk8t");
-
-			params = "{\"name\":\"张波\",\"company\":\"公司\",\"project\":\"XX项目\",\"address\":\"光谷软件园A座103\",\"date\":\"2021-05-11 09:00\",\"code\":\"inc1o\"}";
-//			sms.sendSMSByHttp("大鱼测试","SMS_211990318","13476252626",params,"LTAIh427wpwT8Krx","DtxByelBYx96sf9yAB0u3om34Puk8t");
-
-			params = "{\"name\":\"张波\",\"company\":\"公司\",\"project\":\"XX项目\",\"address\":\"光谷软件园A座103\",\"date\":\"2021-05-11 09:00\",\"code\":\"123\"}";
-			sms.sendSMSByHttp("大鱼测试","SMS_211990318","13476252626",params,"LTAIh427wpwT8Krx","DtxByelBYx96sf9yAB0u3om34Puk8t");
+			sms.sendSMSByHttp("大鱼测试","SMS_211990318","13476252626",params,akId,akSecret);
 		}catch(Exception e){
 			e.printStackTrace();
 		}

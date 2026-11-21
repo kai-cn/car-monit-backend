@@ -344,6 +344,14 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
         return carConfimFreeMapper.selectOrgId(carId, id);
     }
 
+    @Override
+    public List<CarConfimFree> selectOrgIdBatch(List<String> carIds) {
+        if (carIds == null || carIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return carConfimFreeMapper.selectOrgIdBatch(carIds);
+    }
+
     /**
      * 查询确认补缴
      *

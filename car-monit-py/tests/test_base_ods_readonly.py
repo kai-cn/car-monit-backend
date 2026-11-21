@@ -66,6 +66,9 @@ from app.base.domain.ods_szdn_province_border_vehicle_weight_newstructure import
     OdsSzdnProvinceBorderVehicleWeightNewstructure,
 )
 from app.base.domain.zdata_trail_tracks import ZdataTrailTracks
+from app.base.mapper import (
+    ods_szdn_province_border_vehicle_weight_newstructure_mapper as weight_mapper_module,
+)
 from app.base.mapper import zdata_trail_tracks_mapper as trail_mapper_module
 from app.base.mapper.ods_cxzt_fwqclls_mapper import (
     CONDITIONS as FWQCLLS_CONDITIONS,

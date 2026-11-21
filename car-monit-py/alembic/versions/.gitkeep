@@ -1,0 +1,5 @@
+# 迁移脚本目录 / alembic revision directory.
+#
+# 说明：本项目**不用** Alembic 管理 schema（Java 侧没有 Flyway/Liquibase，
+# 表结构由 ruoyi-system/src/main/resources/sql/*.sql 人工维护）。
+# 该目录仅用于放置「结构对照用」的 revision 草稿，见 alembic.ini 顶部注释。

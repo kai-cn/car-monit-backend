@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import ClassVar, Optional
 
 from app.common.annotation.excel import Excel, ExcelFields

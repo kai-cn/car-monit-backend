@@ -34,6 +34,12 @@ Python 等价实现
 
 与 Java 的差异（都不影响可观测行为，逐条说明）
 ----------------------------------------------
+* ``ThreadPoolTaskExecutor`` 是"核心 50 + 队列 1000 + 最大 200"的三段式；
+  ``ThreadPoolExecutor`` 没有队列上限，任务来了就按需起线程直到 200。
+  只有在**同时积压超过 1000 个任务**时两者才会出现线程数差异，
+  而本项目唯一的调用方（几何数据补齐）每次最多提交几十个。
+* ``CallerRunsPolicy``（池满后由调用线程执行）在 Python 侧没有对应物 ——
+  池子永不拒绝，该分支不可达。
 * ``ThreadPoolTaskExecutor`` 是"核心 50 + 队列 1000 + 最大 200"的三段式。
   Python 侧用 :class:`~app.common.utils.bounded_executor.BoundedThreadPoolExecutor`：
   待执行任务超过 ``app.executor_queue_capacity``（默认 1000）时，按
@@ -49,6 +55,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
 from app.common.utils.bounded_executor import BoundedThreadPoolExecutor, default_queue_capacity

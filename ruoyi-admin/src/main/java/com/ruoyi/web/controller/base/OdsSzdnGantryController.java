@@ -53,6 +53,8 @@ public class OdsSzdnGantryController extends BaseController {
     private IOdsSzdnTollService tollService;
     @Autowired
     private IOdsYhglVBaseOrgService baseOrgService;
+    @Autowired
+    private com.ruoyi.manager.service.bigscreen.DictVersionService dictVersionService;
 
     /**
      * 查询门架信息列表
@@ -154,7 +156,7 @@ public class OdsSzdnGantryController extends BaseController {
     @Log(title = "门架信息", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody OdsSzdnGantry odsSzdnGantry) {
-        return odsSzdnGantryService.saveOdsSzdnGantry(odsSzdnGantry);
+        return bumpAfter(odsSzdnGantryService.saveOdsSzdnGantry(odsSzdnGantry));
     }
 
     /**
@@ -164,7 +166,7 @@ public class OdsSzdnGantryController extends BaseController {
     @Log(title = "门架信息", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody OdsSzdnGantry odsSzdnGantry) {
-        return odsSzdnGantryService.saveOdsSzdnGantry(odsSzdnGantry);
+        return bumpAfter(odsSzdnGantryService.saveOdsSzdnGantry(odsSzdnGantry));
     }
 
     /**
@@ -174,7 +176,17 @@ public class OdsSzdnGantryController extends BaseController {
     @Log(title = "门架信息", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids) {
-        return odsSzdnGantryService.deleteOdsSzdnGantryByIds(ids);
+        return bumpAfter(odsSzdnGantryService.deleteOdsSzdnGantryByIds(ids));
+    }
+
+    private AjaxResult bumpAfter(AjaxResult result) {
+        try {
+            dictVersionService.bump(
+                    com.ruoyi.manager.service.bigscreen.DictVersionService.GANTRY);
+        } catch (RuntimeException e) {
+            logger.warn("[字典版本] 门架主动失效失败 reason={}", e.getMessage());
+        }
+        return result;
     }
 
 }

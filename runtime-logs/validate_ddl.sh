@@ -1,0 +1,25 @@
+#!/bin/bash
+# Operational helper — native/CICD verification session (2026-11-16~17).
+# Purpose: Operational helper created during the native/CICD verification session.
+# Risk: may call GitHub API or modify local/remote files; inspect before running.
+# Validate generated DDL + seed load cleanly into vanilla postgres.
+set -uo pipefail
+export PGPASSWORD=test
+echo "=== wait for pgtest ==="
+for i in $(seq 1 30); do
+  if psql -h 127.0.0.1 -p 55432 -U postgres -d RuoYi -Atc "select 1" >/dev/null 2>&1; then echo "ready after ${i}s"; break; fi
+  sleep 1
+done
+echo "=== load schema ==="
+psql -h 127.0.0.1 -p 55432 -U postgres -d RuoYi -v ON_ERROR_STOP=1 \
+  -f /mnt/d/work/runtime-logs/ddl/schema_jl_data01.sql 2>&1 | tail -8
+echo "schema_exit=${PIPESTATUS[0]}"
+echo "=== load seed ==="
+psql -h 127.0.0.1 -p 55432 -U postgres -d RuoYi -v ON_ERROR_STOP=1 \
+  -f /mnt/d/work/runtime-logs/ddl/seed_jl_data01.sql 2>&1 | tail -8
+echo "=== table + row verification ==="
+psql -h 127.0.0.1 -p 55432 -U postgres -d RuoYi -Atc \
+  "select 'tables='||count(*) from information_schema.tables where table_schema='jl_data01'"
+for t in ods_lwzxsfsj_fee_records_01 ods_szdn_gantry ods_szdn_toll; do
+  psql -h 127.0.0.1 -p 55432 -U postgres -d RuoYi -Atc "select '$t='||count(*) from jl_data01.$t"
+done

@@ -40,6 +40,7 @@ from app.common.constant.constants import (
     LOGIN_SUCCESS,
 )
 from app.common.core.context import request_context
+from app.common.core.domain.entity.sys_dept import SysDept
 from app.common.core.domain.entity.sys_role import SysRole
 from app.common.core.domain.entity.sys_user import SysUser
 from app.common.core.domain.model.login_user import LoginUser

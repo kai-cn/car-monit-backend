@@ -35,6 +35,9 @@ public class OdsSzdnTollController extends BaseController {
     @Autowired
     private RedisCache redisCache;
 
+    @Autowired
+    private com.ruoyi.manager.service.bigscreen.DictVersionService dictVersionService;
+
     /**
      * 查询收费站基础信息列表：菜单列表界面
      */
@@ -93,7 +96,7 @@ public class OdsSzdnTollController extends BaseController {
     @Log(title = "收费站基础信息", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody OdsSzdnToll odsSzdnToll) {
-        return odsSzdnTollService.saveOdsSzdnToll(odsSzdnToll);
+        return bumpAfter(odsSzdnTollService.saveOdsSzdnToll(odsSzdnToll));
     }
 
     /**
@@ -103,7 +106,7 @@ public class OdsSzdnTollController extends BaseController {
     @Log(title = "收费站基础信息", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody OdsSzdnToll odsSzdnToll) {
-        return odsSzdnTollService.saveOdsSzdnToll(odsSzdnToll);
+        return bumpAfter(odsSzdnTollService.saveOdsSzdnToll(odsSzdnToll));
     }
 
     /**
@@ -113,7 +116,17 @@ public class OdsSzdnTollController extends BaseController {
     @Log(title = "收费站基础信息", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids) {
-        return odsSzdnTollService.deleteOdsSzdnTollByIds(ids);
+        return bumpAfter(odsSzdnTollService.deleteOdsSzdnTollByIds(ids));
+    }
+
+    private AjaxResult bumpAfter(AjaxResult result) {
+        try {
+            dictVersionService.bump(
+                    com.ruoyi.manager.service.bigscreen.DictVersionService.TOLL);
+        } catch (RuntimeException e) {
+            logger.warn("[字典版本] 收费站主动失效失败 reason={}", e.getMessage());
+        }
+        return result;
     }
 
 }

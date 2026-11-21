@@ -57,6 +57,14 @@ public interface CarConfimFreeMapper extends BaseMapper<CarConfimFree> {
 
     String selectOrgId(@Param("carId") String carId, @Param("id") String id);
 
+    /**
+     * 批量查询车辆对应的补缴记录（用于消除 exceptRecordList 的逐行查询）。
+     *
+     * @param carIds 车辆 ID 集合
+     * @return 补缴记录（仅填充 carId/id/orgId/exceptIds）
+     */
+    List<CarConfimFree> selectOrgIdBatch(@Param("carIds") List<String> carIds);
+
     List<CarConfimFree> selectCarConfimFreeByExceptIds(List<String> exceptIds);
 
 

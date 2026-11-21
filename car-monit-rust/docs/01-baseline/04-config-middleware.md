@@ -190,7 +190,7 @@ Rust 侧：tokio 多线程运行时；日志落库使用 `tokio::spawn` + `sleep
 |---|---|
 | 认证方式 | 无状态 JWT；`Authorization: Bearer <token>`，前缀可省略 |
 | JWT 算法 | HS512（jjwt 0.9.1） |
-| secret | `token.secret`（默认 `abcdefghijklmnopqrstuvwxyz`） |
+| secret | `token.secret`（由 `APP_TOKEN__SECRET` 注入，无内置默认值） |
 | Claims | 仅 `login_user_key = token(UUID)` |
 | 有效期 | `token.expireTime` 分钟（默认 120）；剩余 ≤ 20 分钟自动续期 |
 | 登出 | `POST /logout`，删除 `login_tokens:{token}`，异步记录登录日志 |
@@ -278,7 +278,7 @@ Rust 侧：
 | `spring.redis.lettuce.pool.max-active` | `8` | `redis.pool.max_active` | `APP_REDIS__POOL__MAX_ACTIVE` | |
 | `spring.redis.lettuce.pool.max-wait` | `-1ms` | `redis.pool.max_wait_ms` | `APP_REDIS__POOL__MAX_WAIT_MS` | |
 | `token.header` | `Authorization` | `token.header` | `APP_TOKEN__HEADER` | |
-| `token.secret` | `abcdefghijklmnopqrstuvwxyz` | `token.secret` | `APP_TOKEN__SECRET` | 部署时务必覆盖 |
+| `token.secret` | 由环境变量注入 | `token.secret` | `APP_TOKEN__SECRET` | 必填，仓库内不落密钥 |
 | `token.expireTime` | `120` | `token.expire_time` | `APP_TOKEN__EXPIRE_TIME` | 分钟 |
 | `mybatis-plus.global-config.db-config.id-type` | `ASSIGN_ID` | — | — | Rust 自实现雪花/ASSIGN_ID |
 | `mybatis-plus.typeAliasesPackage` | `com.ruoyi.**.domain,com.ruoyi.**.bean` | — | — | 无对应 |
@@ -290,9 +290,9 @@ Rust 侧：
 | `xss.enabled` | `true` | `xss.enabled` | `APP_XSS__ENABLED` | |
 | `xss.excludes` | `/system/notice` | `xss.excludes` | `APP_XSS__EXCLUDES` | 逗号分隔 |
 | `xss.urlPatterns` | `/system/*,/monitor/*,/tool/*` | `xss.url_patterns` | `APP_XSS__URL_PATTERNS` | 逗号分隔 |
-| `oss.endpoint` | `http://172.30.100.102:9002` | `oss.endpoint` | `APP_OSS__ENDPOINT` | 部署时覆盖 |
-| `oss.accessKey` | `jtwl_access_key` | `oss.access_key` | `APP_OSS__ACCESS_KEY` | 部署时覆盖 |
-| `oss.secretKey` | `minio.prod` | `oss.secret_key` | `APP_OSS__SECRET_KEY` | 部署时覆盖 |
+| `oss.endpoint` | 由环境变量注入 | `oss.endpoint` | `APP_OSS__ENDPOINT` | 必填，仓库内不落地址 |
+| `oss.accessKey` | 由环境变量注入 | `oss.access_key` | `APP_OSS__ACCESS_KEY` | 必填，仓库内不落凭据 |
+| `oss.secretKey` | 由环境变量注入 | `oss.secret_key` | `APP_OSS__SECRET_KEY` | 必填，仓库内不落凭据 |
 | `oss.bucketName` | `developer` | `oss.bucket_name` | `APP_OSS__BUCKET_NAME` | |
 | `oss.enable` | 缺省 → `true` | `oss.enable` | `APP_OSS__ENABLE` | `OssTemplate` 是否创建 |
 | `oss.info` | 缺省 → `false` | `oss.info` | `APP_OSS__INFO` | `/oss/**` 是否注册 |
@@ -317,13 +317,13 @@ Rust 侧：
 | `forest.retryer` | `BackOffRetryer` | `forest.retryer` | `APP_FOREST__RETRYER` | |
 | `forest.retry-count` | `2` | `forest.retry_count` | `APP_FOREST__RETRY_COUNT` | |
 | `forest.max-retry-interval` | `1000` | `forest.max_retry_interval_ms` | `APP_FOREST__MAX_RETRY_INTERVAL_MS` | |
-| `forest.variables.hendaUrl` | `http://36.200.20.14:7890/8809/geoserver-pg/rest` | `forest.variables.henda_url` | `APP_FOREST__VARIABLES__HENDA_URL` | |
+| `forest.variables.hendaUrl` | 由环境变量注入 | `forest.variables.henda_url` | `APP_FOREST__VARIABLES__HENDA_URL` | 必填，仓库内不落地址 |
 | `hengda.appid` | `YHZS` | `hengda.appid` | `APP_HENGDA__APPID` | |
 | `hengda.secret` | 见 yml | `hengda.secret` | `APP_HENGDA__SECRET` | 部署时覆盖 |
 | `vehicleMonitor.baseUrl` | `http://127.0.0.1:9901` | `vehicle_monitor.base_url` | `APP_VEHICLE_MONITOR__BASE_URL` | |
 | `isLocalhost` | `local` | `is_localhost` | `APP_IS_LOCALHOST` | 分支逻辑需逐处确认 |
 | `tx-service-url` | `https://apis.map.qq.com` | `tx_service_url` | `APP_TX_SERVICE_URL` | |
-| `roadPathUrl` | `http://36.200.30.117:8080` | `road_path_url` | `APP_ROAD_PATH_URL` | |
+| `roadPathUrl` | 由环境变量注入 | `road_path_url` | `APP_ROAD_PATH_URL` | 必填，仓库内不落地址 |
 | `kafka.bootstrap-servers` | `127.0.0.1:9092` | `kafka.bootstrap_servers` | `APP_KAFKA__BOOTSTRAP_SERVERS` | |
 | `kafka.topic.snapshot-flow` | `ods-rt-szdn-snapshot-flow` | `kafka.topic.snapshot_flow` | `APP_KAFKA__TOPIC__SNAPSHOT_FLOW` | |
 | `kafka.topic.snapshot-flow-dlq` | `ods-rt-szdn-snapshot-flow-dlq` | `kafka.topic.snapshot_flow_dlq` | `APP_KAFKA__TOPIC__SNAPSHOT_FLOW_DLQ` | |

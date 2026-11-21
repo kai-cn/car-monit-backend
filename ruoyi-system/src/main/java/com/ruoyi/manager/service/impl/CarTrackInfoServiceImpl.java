@@ -54,6 +54,9 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     private CarTrackInfoMapper carTrackInfoMapper;
 
     @Autowired
+    private com.ruoyi.manager.service.bigscreen.FeatureSwitchService featureSwitchService;
+
+    @Autowired
     private ICarInfoService carInfoService;
 
     @Resource
@@ -542,6 +545,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
                 Date gantryTime = addbo.getGantryTime();
 
                 List<TrailInfo> trailInfoList = redisCache.getCacheObject(nextKey);
+                if (null == trailInfoList || trailInfoList.isEmpty()) {
+                    // 共享键由 api 维护；缺失时回退 backend 私有当前页缓存
+                    trailInfoList = redisCache.getCacheObject(Constants.car_history_trail_page + carNo);
+                }
                 List<TrailBo> nextBoList = new ArrayList<>();
                 if (null != trailInfoList && trailInfoList.size() > 0) {
                     // 找到下一个位置
@@ -699,6 +706,13 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
     }
 
     private void saveTrailTracksHistory(List<CarInfo> carList){
+        if (featureSwitchService != null
+                && !featureSwitchService.isEnabled(
+                        com.ruoyi.manager.service.bigscreen.FeatureSwitchService.TRAIL_MATERIALIZE)) {
+            // 本地物化默认关闭：在线查询已统一走 api，本地表仅作为只读兜底
+            log.info("[轨迹同步] 本地物化开关关闭，跳过写回 zdata_trail_tracks");
+            return;
+        }
         List<String> carNoList = new ArrayList<>();
         // 找到下一个位置
         List<ZdataTrailTracks> addlist = new ArrayList<>();
@@ -706,6 +720,10 @@ public class CarTrackInfoServiceImpl extends ServiceImpl<CarTrackInfoMapper, Car
             String carNo = CommonUtil.isNull(vo.getCarNo());
             String key = Constants.car_history_trail + carNo;
             List<TrailInfo> trailInfoList = redisCache.getCacheObject(key);
+            if (null == trailInfoList || trailInfoList.isEmpty()) {
+                // 共享键由 api 维护；缺失时回退 backend 私有当前页缓存
+                trailInfoList = redisCache.getCacheObject(Constants.car_history_trail_page + carNo);
+            }
             if (null != trailInfoList && trailInfoList.size() > 0) {
                 for (TrailInfo trailInfo : trailInfoList) {
                     ZdataTrailTracks tracksBo = trailInfo.getTracks();

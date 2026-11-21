@@ -50,7 +50,7 @@
 
 
             <!-- SpringFramework的依赖配置-->
-            
+
 
             <!-- SpringBoot的依赖配置-->
             <dependency>
@@ -208,6 +208,35 @@
             </dependency>
 
 
+            <!-- Kafka -->
+
+            <!-- Elasticsearch -->
+            <dependency>
+                <groupId>org.elasticsearch</groupId>
+                <artifactId>elasticsearch</artifactId>
+                <version>${elasticsearch.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.elasticsearch.client</groupId>
+                <artifactId>elasticsearch-rest-high-level-client</artifactId>
+                <version>${elasticsearch.version}</version>
+            </dependency>
+
+            <!-- ShardingSphere 分表中间件 -->
+            <dependency>
+                <groupId>org.apache.shardingsphere</groupId>
+                <artifactId>shardingsphere-jdbc-core-spring-boot-starter</artifactId>
+                <version>${shardingsphere.version}</version>
+            </dependency>
+
+            <!-- 单元测试：JUnit 5（Java 8 兼容） -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>5.7.1</version>
+                <scope>test</scope>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -240,6 +269,12 @@
                     <target>${java.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
+            </plugin>
+            <!-- JUnit 5 需要 surefire >= 2.22 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.2</version>
             </plugin>
         </plugins>
     </build>

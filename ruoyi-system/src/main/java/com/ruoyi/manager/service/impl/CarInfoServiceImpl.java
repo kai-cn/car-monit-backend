@@ -354,8 +354,11 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
             tempVO.setCarNo(rtn.getCarNo());
             carVOList.add(tempVO);
         }
+        // 与 api 共享：api 侧 TrackTask/SysUtil 只读消费，必须保持无 TTL（master 语义）。
+        // 以前加 600s TTL 会在过期后让 api 静默拿到空列表，导致轨迹同步为空。
         redisCache.setCacheObject(Constants.car_list_jc, carVOList);
         redisCache.setCacheObject(Constants.car_list, list);
+        redisCache.setCacheObject(Constants.car_list_version, String.valueOf(System.currentTimeMillis()));
     }
 
 
@@ -370,7 +373,9 @@ public class CarInfoServiceImpl extends ServiceImpl<CarInfoMapper, CarInfo> impl
         } else {
             CarInfo carInfo = new CarInfo();
             list = carInfoMapper.selectCarInfoList(carInfo);
+            // 共享键保持无 TTL，避免 api 消费方在过期窗口读到空列表
             redisCache.setCacheObject(Constants.car_list, list);
+            redisCache.setCacheObject(Constants.car_list_version, String.valueOf(System.currentTimeMillis()));
         }
         return list;
     }

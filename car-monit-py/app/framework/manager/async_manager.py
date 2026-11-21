@@ -13,6 +13,10 @@ Python equivalent
 -----------------
 ``ThreadPoolExecutor(max_workers=50, thread_name_prefix="schedule-pool")``.
 
+Deviations, all of them harmless:
+* ``ThreadPoolExecutor`` has an unbounded queue, so ``CallerRunsPolicy`` has no counterpart --
+  the pool never rejects. Java only hits that branch when 50 threads plus the queue (also
+  unbounded) are saturated, which cannot happen either.
 Deviations:
 * 队列现在**有界**（``app.executor_queue_capacity``，默认 1000）。Java 的
   ``ScheduledThreadPoolExecutor`` 用无界 ``DelayedWorkQueue``，突发审计写入会把内存顶爆；

@@ -1,0 +1,7 @@
+#!/bin/bash
+# Operational helper — native/CICD verification session (2026-11-16~17).
+# Purpose: Check that required local service ports are available before starting a service.
+# Risk: may call GitHub API or modify local/remote files; inspect before running.
+for p in 5432 3307 6379; do
+  (echo > /dev/tcp/127.0.0.1/$p) >/dev/null 2>&1 && echo "port $p OPEN" || echo "port $p CLOSED"
+done

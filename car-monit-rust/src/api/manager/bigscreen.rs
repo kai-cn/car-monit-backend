@@ -540,6 +540,7 @@ async fn car_audit(
             Some(v) => v.clone(),
         }
     }
+    // Java 侧 VO 的声明顺序即 totalCount, finishedCount, totalAmount, finishedAmount。
     Ok(AjaxResult::success_data(json!({
         "totalCount": zero_if_null(audit_value.get("number")),
         "finishedCount": zero_if_null(confirm_value.get("number")),

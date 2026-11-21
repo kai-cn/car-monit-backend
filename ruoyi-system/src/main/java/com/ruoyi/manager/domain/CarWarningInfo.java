@@ -223,6 +223,18 @@ public class CarWarningInfo extends BasePlusEntityNew implements Custom {
     @TableField(exist = false)
     private String plateColor;
 
+    /**
+     * 车牌颜色名称（sys_dict_data plate_color 字典 label；未知码回退原始码）
+     */
+    @TableField(exist = false)
+    private String plateColorName;
+
+    /**
+     * 车牌颜色字典标记：UNKNOWN=字典未命中（已回退原始码）
+     */
+    @TableField(exist = false)
+    private String plateColorMark;
+
 
 
     /**

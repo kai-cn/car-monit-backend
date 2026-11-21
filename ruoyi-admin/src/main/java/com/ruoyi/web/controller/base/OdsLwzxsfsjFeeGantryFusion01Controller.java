@@ -5,7 +5,12 @@ import com.ruoyi.base.service.IOdsLwzxsfsjFeeGantryFusion01Service;
 import com.ruoyi.base.service.forest.HttpOdsLwzxsfsjFeeGantryFusion01Service;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.page.PageDomain;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.common.core.page.TableSupport;
+import com.ruoyi.integration.api.ApiClientException;
+import com.ruoyi.integration.api.ApiPageResult;
+import com.ruoyi.integration.api.TrafficApiClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +36,9 @@ public class OdsLwzxsfsjFeeGantryFusion01Controller extends BaseController {
     @Resource
     private HttpOdsLwzxsfsjFeeGantryFusion01Service httpOdsLwzxsfsjFeeGantryFusion01Service;
 
+    @Resource
+    private TrafficApiClient trafficApiClient;
+
     /**
      * 查询交易流水列表
      */
@@ -46,7 +54,18 @@ public class OdsLwzxsfsjFeeGantryFusion01Controller extends BaseController {
             odsLwzxsfsjFeeGantryFusion01.setPageSize(10);
         }
 
-        return httpOdsLwzxsfsjFeeGantryFusion01Service.getOdsLwzxsfsjFeeGantryFusion01Page(odsLwzxsfsjFeeGantryFusion01);
+        PageDomain page = TableSupport.buildPageRequest();
+        int pageNum = page.getPageNum() == null ? 1 : page.getPageNum();
+        int pageSize = page.getPageSize() == null ? 10 : page.getPageSize();
+        try {
+            ApiPageResult<OdsLwzxsfsjFeeGantryFusion01> result =
+                    trafficApiClient.feeGantryPage(odsLwzxsfsjFeeGantryFusion01,
+                            pageNum, pageSize, OdsLwzxsfsjFeeGantryFusion01.class);
+            return FlowApiSupport.page(result);
+        } catch (ApiClientException e) {
+            logger.warn("[交易流水] api 查询失败 code={} msg={}", e.getCode(), e.getMessage());
+            return FlowApiSupport.error(e);
+        }
 
     }
 

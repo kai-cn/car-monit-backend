@@ -1,6 +1,8 @@
 package com.ruoyi.common.core.redis;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -8,8 +10,11 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.BoundSetOperations;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.HashOperations;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
@@ -278,5 +283,70 @@ public class RedisCache
     public Collection<String> keys(final String pattern)
     {
         return redisTemplate.keys(pattern);
+    }
+
+    /**
+     * 游标扫描匹配的 key（SCAN，不阻塞 Redis）。
+     *
+     * <p>审批列表等可能积累大量 key 的场景禁止使用 {@link #keys(String)}（KEYS 会阻塞单线程 Redis）。</p>
+     */
+    @SuppressWarnings("unchecked")
+    public Collection<String> scan(final String pattern)
+    {
+        final ScanOptions options = ScanOptions.scanOptions().match(pattern).count(500).build();
+        Set<String> keys = new HashSet<String>();
+        Cursor<byte[]> cursor = null;
+        try
+        {
+            cursor = (Cursor<byte[]>) redisTemplate.execute(
+                    (RedisCallback<Object>) connection -> connection.scan(options));
+            if (cursor == null)
+            {
+                return keys;
+            }
+            while (cursor.hasNext())
+            {
+                keys.add(new String(cursor.next(), StandardCharsets.UTF_8));
+            }
+        }
+        finally
+        {
+            if (cursor != null)
+            {
+                try
+                {
+                    cursor.close();
+                }
+                catch (Exception ignored)
+                {
+                    // 关闭游标失败不影响已读取结果
+                }
+            }
+        }
+        return keys;
+    }
+
+    /**
+     * 原子自增，并在 key 首次创建时设置过期时间（用于限流计数器）。
+     *
+     * @param key 键
+     * @param delta 增量
+     * @param timeoutSeconds 过期秒数
+     * @return 自增后的值；Redis 不可用时返回 null
+     */
+    public Long increment(final String key, final long delta, final long timeoutSeconds)
+    {
+        Long value = redisTemplate.opsForValue().increment(key, delta);
+        if (value != null)
+        {
+            // 「INCR 成功但 EXPIRE 未执行」会让计数器永不过期、用户被永久限流；
+            // 每次自增都检查并补齐 TTL，下一次请求即可自愈。
+            Long ttl = redisTemplate.getExpire(key, TimeUnit.SECONDS);
+            if (ttl == null || ttl < 0L)
+            {
+                redisTemplate.expire(key, timeoutSeconds, TimeUnit.SECONDS);
+            }
+        }
+        return value;
     }
 }
