@@ -11,3 +11,10 @@
 - 16/16 Java 分支云 runner run success，证据 `D:/work/runtime-logs/java-upgrade-runs.json`。
 - GitHub 认证改为本地 token 缓存 helper，git credential fill/push 不再弹账号选择框。
 - 当日工作记忆：`.workbuddy/memory/2026-11-20.md`。
+
+
+## 2026-11-21 Native/跨语言重跑
+- Boot3/Boot4 10 个 Java 分支 native success；Boot2 无 native profile，N/A。
+- crosslang-parity-cloud success；11/11 云任务 success，证据 `native-crosslang-status.json`。
+- Mandrel25 + Lombok annotationProcessorPaths + LOG_PATH 修复完成。
+- 157 个历史脚本补齐注释，复扫 0 缺失。

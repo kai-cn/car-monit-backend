@@ -148,3 +148,11 @@
 - 新增 Java-only workflow，Boot2 分支单独验证；Boot3/Boot4 用 parity workflow。
 - 16/16 云 runner run success；证据 `java-upgrade-runs.json`。
 - 工作记忆：api-java-V3 `.workbuddy/memory/2026-11-20.md`。
+
+
+## 12. 2026-11-21 Native/跨语言重跑收口
+- Boot3/Boot4 10 个 Java 分支 native 构建 success；Boot2 无 native profile，N/A。
+- 跨语言 workflow success；10 native + 1 crosslang 共 11/11 success。
+- 证据 `native-crosslang-status.json`；失败迭代日志 `native-logs/` 仅作过程记录。
+- 157 个历史脚本补齐注释，复扫 0 缺失；认证不再弹账号选择框。
+- 工作记忆：api-java-V3 `.workbuddy/memory/2026-11-21.md`。
