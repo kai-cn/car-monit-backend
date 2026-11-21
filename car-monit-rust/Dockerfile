@@ -4,7 +4,7 @@
 FROM rust:1.90-bookworm AS build
 WORKDIR /src
 COPY . .
-RUN cargo build --release --locked
+RUN cargo build --release
 
 # 运行阶段用 debian-slim：二进制动态链接 glibc，需要 ca-certificates（HTTPS）与 tzdata。
 # 不用 distroless 的原因：本服务读取本地时区并写日志目录，slim 更容易排障。
