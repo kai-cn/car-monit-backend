@@ -145,7 +145,7 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        lang: [python, go, cpp]
+        lang: [python, go, cpp, rust]
     steps:
       - name: Checkout harness
         uses: actions/checkout@v4
@@ -230,6 +230,21 @@ jobs:
           sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' config/application.yaml || true
           ./build/car-monit-cpp --config config > "$GITHUB_WORKSPACE/app.log" 2>&1 &
           echo $! > "$GITHUB_WORKSPACE/app.pid"
+      - name: Build and start Rust
+        if: steps.gate.outputs.run == yes && matrix.lang == rust
+        shell: bash
+        env:
+          APP_DATABASE__URL: "mysql://root:root@127.0.0.1:3306/carmonitdb"
+          APP_REDIS__URL: "redis://127.0.0.1:6379"
+          APP_SERVER__PORT: "19903"
+        run: |
+          set -euo pipefail
+          cd src/car-monit-rust
+          cargo build --release
+          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' src/car-monit-rust/config/application.* 2>/dev/null || true
+          ./target/release/car-monit-rust > "$GITHUB_WORKSPACE/app.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/app.pid"
+
       - name: Wait candidate and run JUnit
         if: steps.gate.outputs.run == yes
         shell: bash
