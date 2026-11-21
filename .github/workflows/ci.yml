@@ -446,7 +446,7 @@ jobs:
     # pydantic env_nested_delimiter='__'，故用 TOKEN__SECRET 覆盖 token.secret（YAML 中为空）。
     # 该值为 token_service 测试套件断言所依赖的固定测试夹具（非生产密钥），生产环境必须注入真实随机值。
     env:
-      TOKEN__SECRET: abcdefghijklmnopqrstuvwxyz
+      TOKEN__SECRET: "cHl0ZXN0LW9ubHktand0LXNpZ25pbmcta2V5LTAxMjM0NTY3ODlhYmNkZWZnaGlqa2xtbg=="
     defaults:
       run:
         working-directory: car-monit-py
@@ -523,7 +523,7 @@ jobs:
     # 容器 job 与 services 在同一 Docker 网络：服务用「服务名 + 容器内端口」访问，
     # 不能用宿主端口映射（127.0.0.1:3307）。
     env:
-      TOKEN__SECRET: abcdefghijklmnopqrstuvwxyz
+      TOKEN__SECRET: "cHl0ZXN0LW9ubHktand0LXNpZ25pbmcta2V5LTAxMjM0NTY3ODlhYmNkZWZnaGlqa2xtbg=="
       SPRING__REDIS__HOST: redis
       SPRING__REDIS__PORT: '6379'
       SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://mysql:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
