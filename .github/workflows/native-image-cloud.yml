@@ -203,22 +203,13 @@ jobs:
           set -euo pipefail
           mvn $MAVEN_ARGS -DskipTests install -pl "${{ steps.meta.outputs.module }}" -am
 
-      - name: Prepare RuoYi log directories
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          # AOT starts the Spring context; Logback writes to /home/ruoyi/logs.
-          sudo mkdir -p /home/ruoyi/logs /home/ruoyi/uploadPath
-          sudo chown -R "$(id -u):$(id -g)" /home/ruoyi
-
       - name: AOT + native-image
         shell: bash
         run: |
           set -euo pipefail
-          if [ '${{ matrix.platform }}' = 'linux' ]; then
-            sudo mkdir -p /home/ruoyi/logs /home/ruoyi/uploadPath
-            sudo chown -R "$(id -u):$(id -g)" /home/ruoyi
-          fi
+          # AOT starts the Spring context and Logback writes to /home/ruoyi/logs.
+          sudo mkdir -p /home/ruoyi/logs /home/ruoyi/uploadPath || mkdir -p /home/ruoyi/logs /home/ruoyi/uploadPath
+          sudo chown -R "$(id -u):$(id -g)" /home/ruoyi || true
           # Git Bash on windows-latest resolves mvn.cmd; plain mvn works on Linux.
           MVN=mvn
           if [ '${{ matrix.platform }}' = 'windows' ]; then MVN=mvn.cmd; fi
