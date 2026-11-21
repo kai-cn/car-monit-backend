@@ -210,7 +210,10 @@ jobs:
 
       - name: AOT + native-image
         shell: bash
+        env:
+          LOG_PATH: ${{ runner.temp }}/ruoyi-logs
         run: |
+          mkdir -p "$LOG_PATH"
           set -euo pipefail
           # AOT starts the Spring context and Logback writes to /home/ruoyi/logs.
           sudo mkdir -p /home/ruoyi/logs /home/ruoyi/uploadPath || mkdir -p /home/ruoyi/logs /home/ruoyi/uploadPath
