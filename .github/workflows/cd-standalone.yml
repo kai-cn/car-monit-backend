@@ -129,7 +129,7 @@ jobs:
           cmake -B build -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" \
             -DVCPKG_TARGET_TRIPLET=x64-linux
-          cmake --build build --parallel
+          cmake --build build --parallel 2
           cp build/car-monit-cpp ../staging/cpp/bin/car-monit-cpp
           cp -r config ../staging/cpp/
 
