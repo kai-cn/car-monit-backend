@@ -1,0 +1,62 @@
+# C++ 版运行依赖：MySQL 8（3307）+ Redis 7
+# 用法：
+#   docker compose up -d mysql redis
+#   docker compose run --rm mysql-init      # 可选：导入 carmonitdb 初始化脚本
+#   ./build/car-monit-cpp --config config
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: carmonit-mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --lower_case_table_names=1
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: carmonitdb
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # 将数据库初始化脚本放到 ./sql 目录，首次启动自动导入
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: carmonit-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    container_name: carmonit-cpp
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      CM_CONFIG_DIR: /app/config
+      CM_SERVER_PORT: "9989"
+    ports:
+      - "9989:9989"
+    profiles: ["full"]
+
+volumes:
+  mysql-data:
+  redis-data:

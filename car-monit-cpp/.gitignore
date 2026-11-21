@@ -1,0 +1,8 @@
+build/
+build-*/
+vcpkg_installed/
+logs/
+*.o
+*.a
+__pycache__/
+*.pyc

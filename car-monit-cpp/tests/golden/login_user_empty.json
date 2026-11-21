@@ -1,0 +1,1 @@
+{"@type":"com.ruoyi.common.core.domain.model.LoginUser","accountNonExpired":true,"accountNonLocked":true,"credentialsNonExpired":true,"enabled":true,"permissions":Set[],"user":{"admin":false,"params":{"@type":"java.util.HashMap"},"pjFlag":0}}

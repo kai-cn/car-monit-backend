@@ -224,6 +224,9 @@ jobs:
         # 全量扫描，把 49 条历史 lint 全当新增（假失败）。master 改用官方 CI 推荐的
         # --new-from-rev=HEAD~，只拦本次提交引入的问题；迁移分支仍用 merge-base 以
         # 覆盖整个分支相对 master 的改动。两种门禁都不放宽，仅修正基线计算。
+        # 基线固定为 origin/master 的 merge-base：新分支首次推送时 push 事件没有 before
+        # 提交，only-new-issues 会把历史 49 条全部当成新增；merge-base 在 master 上等价于
+        # "只比上一个提交"，在迁移分支上则只拦分支自己引入的问题。
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.1.6

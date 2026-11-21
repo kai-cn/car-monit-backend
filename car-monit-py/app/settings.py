@@ -592,6 +592,26 @@ class _AppEnvSettingsSource(EnvSettingsSource):
 # ---------------------------------------------------------------------------
 # Root settings
 # ---------------------------------------------------------------------------
+class _AppEnvSettingsSource(EnvSettingsSource):
+    """OS 环境变量源：屏蔽与 section 同名的系统变量。
+
+    根配置没有 env_prefix，``user`` section 会和 shell / CI / 容器几乎必设的
+    ``USER`` 撞名（``USER=runner`` 会被当成嵌套模型去解析）。这里让 ``user``
+    只认显式的 ``APP_USER``（JSON），其他字段仍走默认规则。
+    """
+
+    _FIELD_ALIASES = {"user": "app_user"}
+
+    def get_field_value(self, field, field_name):
+        alias = self._FIELD_ALIASES.get(field_name)
+        if alias is not None:
+            raw = self.env_vars.get(alias)
+            if raw is None:
+                raw = self.env_vars.get(alias.upper())
+            return (raw, field_name, True)
+        return super().get_field_value(field, field_name)
+
+
 class AppSettings(BaseSettings):
     """Root configuration object; one attribute per ``application.yml`` top-level block."""
 
