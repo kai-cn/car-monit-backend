@@ -390,7 +390,6 @@ jobs:
             cpp)
               # C++ 二进制只做 ELF + 动态库完整性检查，不在容器内真启动。
               test -x "$S/bin/car-monit-cpp"
-              file "$S/bin/car-monit-cpp"
               if ldd "$S/bin/car-monit-cpp" | grep -q 'not found'; then
                 echo "::error::C++ 二进制缺少动态库"; ldd "$S/bin/car-monit-cpp"; exit 1
               fi
