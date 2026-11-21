@@ -10,7 +10,7 @@
 <configuration>
     <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
     <!-- 日志存放路径 -->
-    <property name="log.path" value="/home/ruoyi/logs" />
+    <property name="log.path" value="${LOG_PATH:-/home/ruoyi/logs}" />
 
     <!-- 日志输出格式（包含TraceId，便于链路追踪） -->
     <!-- %d{yyyy-MM-dd HH:mm:ss.SSS}  时间戳 -->
