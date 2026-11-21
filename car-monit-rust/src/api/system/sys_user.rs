@@ -171,15 +171,6 @@ pub fn routes() -> Router<AppState> {
             ),
         )
         .route(
-            "/system/user/",
-            meta::get_route(
-                "/system/user/",
-                Some("system:user:query"),
-                None,
-                get_info_root,
-            ),
-        )
-        .route(
             "/system/user/{userIds}",
             meta::get_route(
                 "/system/user/{userIds}",
@@ -190,13 +181,30 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/system/user",
-            meta::post_route("/system/user", Some("system:user:add"), Some(&LOG_ADD), add).merge(
-                meta::put_route(
-                    "/system/user",
-                    Some("system:user:edit"),
-                    Some(&LOG_EDIT),
-                    edit,
-                ),
+            // Java: `@GetMapping(value = {"/", "/{userId}"})` + `useTrailingSlashMatch`，
+            // `/system/user` 与 `/system/user/` 都命中 getInfo；尾斜杠归一会把 `/system/user/`
+            // 削成 `/system/user`，所以 GET 必须也注册在无斜杠路径上。
+            meta::get_route(
+                "/system/user",
+                Some("system:user:query"),
+                None,
+                get_info_root,
+            )
+            .merge(meta::post_route("/system/user", Some("system:user:add"), Some(&LOG_ADD), add))
+            .merge(meta::put_route(
+                "/system/user",
+                Some("system:user:edit"),
+                Some(&LOG_EDIT),
+                edit,
+            )),
+        )
+        .route(
+            "/system/user/",
+            meta::get_route(
+                "/system/user/",
+                Some("system:user:query"),
+                None,
+                get_info_root,
             ),
         )
         .route(
@@ -656,9 +664,7 @@ async fn current_user(
     let user_id = user.user.user_id;
     // Java: getEpsId() 直接取登录用户的 deptId（principal 异常时为 -1）。
     let dept_id = user.user.dept_id.unwrap_or(-1);
-    let head_office = head_office_dept_ids(&state, &user)
-        .await?
-        .contains(&dept_id);
+    let head_office = head_office_dept_ids(&state).await?.contains(&dept_id);
     let procurement_manager = procurement_manager(&state, &user).await?;
 
     let mut object = Map::new();
@@ -687,9 +693,8 @@ async fn current_user(
 /// （即 tree 层级 1/2 的部门本身就是总公司，租户命中的那些也算）。
 async fn head_office_dept_ids(
     state: &AppState,
-    user: &LoginUser,
 ) -> Result<std::collections::HashSet<i64>, AppError> {
-    let depts = super::sys_dept::select_dept_list(state, user, &HashMap::new()).await?;
+    let depts = super::sys_dept::select_dept_list(state, &HashMap::new()).await?;
     let mut level_ids: std::collections::HashSet<i64> = std::collections::HashSet::new();
     for dept in &depts {
         // Java: `dept.getTreeLeavel().equals(1)` —— treeLeavel 为 null 时是 NPE（msg 为 null 的 500）。
@@ -1216,7 +1221,7 @@ async fn add(
         );
         object.insert(
             "password".to_string(),
-            Value::String(password::encode(&raw_password)?),
+            Value::String(password::encode(&raw_password).await?),
         );
     }
     if !apply_dept(&state, &mut entity).await? {
@@ -1389,7 +1394,7 @@ async fn reset_pwd(
         .and_then(Value::as_i64)
         .ok_or_else(|| AppError::Service("userId不能为空".to_string()))?;
     let rows = sqlx::query("update sys_user set password = ?, update_by = ? where user_id = ?")
-        .bind(password::encode(&raw_password)?)
+        .bind(password::encode(&raw_password).await?)
         .bind(user.user.user_name.clone().unwrap_or_default())
         .bind(user_id)
         .execute(&state.db)
@@ -1481,11 +1486,7 @@ async fn import_data(
     {
         match field.name() {
             Some("file") | Some("files") => {
-                file_bytes = field
-                    .bytes()
-                    .await
-                    .map_err(|err| AppError::BadRequest(err.to_string()))?
-                    .to_vec();
+                file_bytes = support::read_multipart_field(field).await?.bytes;
             }
             Some("updateSupport") => {
                 update_support = field
@@ -1561,7 +1562,7 @@ async fn import_data(
             if let Some(object) = entity.as_object_mut() {
                 object.insert(
                     "password".to_string(),
-                    Value::String(password::encode(&init_password)?),
+                    Value::String(password::encode(&init_password).await?),
                 );
                 object.insert(
                     "createBy".to_string(),

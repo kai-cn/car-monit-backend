@@ -140,6 +140,16 @@ impl From<axum::extract::rejection::PathRejection> for AppError {
 
 impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
+        // Java SqlLogInterceptor.intercept 的 finally 里：
+        // log.error("[SQL异常] {}, 耗时: {}ms, 异常: {}", sqlId, cost, throwable.getMessage())
+        // 并写 SqlLogInterceptor logger（logback additivity=false -> sys-slow.log）。
+        // Rust 的 `From<sqlx::Error>` 拿不到单次执行的耗时与 Mapper id，
+        // 用 `?` 表示未知（与 logback 的行号/字段缺省写法一致），不编造数字。
+        tracing::error!(
+            target: crate::logging::SQL_LOG_TARGET,
+            "[SQL异常] sqlx::query, 耗时: ?ms, 异常: {}",
+            err
+        );
         Self::Database(err.to_string())
     }
 }
@@ -193,6 +203,16 @@ pub fn not_found_response(method: &axum::http::Method, path: &str) -> Response {
         axum::http::Method::POST | axum::http::Method::PUT | axum::http::Method::PATCH
     );
     spring_error_page(404, "Not Found", path, charset)
+}
+
+/// Java: 异常逃逸到容器 -> sendError(500) -> /error 的 500 错误页。
+/// 与 404 同一套 BasicErrorController 输出（`{"timestamp","status","error","path"}`）。
+pub fn internal_error_page(method: &axum::http::Method, path: &str) -> Response {
+    let charset = matches!(
+        *method,
+        axum::http::Method::POST | axum::http::Method::PUT | axum::http::Method::PATCH
+    );
+    spring_error_page(500, "Internal Server Error", path, charset)
 }
 
 /// Java: Spring Security 只定制了 authenticationEntryPoint（401 走 RuoYi 的 JSON），

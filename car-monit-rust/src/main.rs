@@ -7,14 +7,19 @@ use std::net::SocketAddr;
 
 use car_monit_rust::config::Settings;
 use car_monit_rust::state::AppState;
+use tracing::Level;
+use tracing_subscriber::filter::FilterFn;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
+use tracing_subscriber::Layer;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let settings = Settings::load()?;
     let _log_guard = init_tracing(&settings);
+    // Java 的 throwable 带抛点栈；Rust 的 panic 只能在 hook 里拿到未展开的栈。
+    car_monit_rust::logging::install_panic_hook();
 
     if settings.app.banner_enabled {
         tracing::info!(
@@ -42,31 +47,77 @@ async fn main() -> anyhow::Result<()> {
     )
     .with_graceful_shutdown(shutdown_signal())
     .await?;
+    // Java: ShutdownManager @PreDestroy（logger 名 sys-user）。
+    tracing::info!(target: "sys-user", "====关闭后台任务任务线程池====");
     Ok(())
 }
 
-/// 日志同时写 stdout 与按天滚动的文件；与 Java logback 的双通道一致。
-/// 返回的 guard 必须存活到进程结束，否则后台写线程会被提前关闭。
-fn init_tracing(settings: &Settings) -> Option<tracing_appender::non_blocking::WorkerGuard> {
+/// 日志同时写 stdout 与 Java logback 的四个文件 appender。
+/// 返回的 handle 必须存活到进程结束，否则后台写线程会被提前关闭。
+fn init_tracing(settings: &Settings) -> Option<Vec<car_monit_rust::logging::LogHandle>> {
     let filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("info,car_monit_rust=debug"));
 
-    let stdout_layer = tracing_subscriber::fmt::layer();
+    let stdout_layer = tracing_subscriber::fmt::layer()
+        .event_format(car_monit_rust::logging::JavaLogFormat {
+            console: true,
+            logger_width: 20,
+            slow_sql_threshold_ms: settings.monitor.slow_sql_threshold,
+        })
+        .with_ansi(false)
+        .with_filter(FilterFn::new(not_monitor_file));
+
+    let slow_sql_threshold_ms = settings.monitor.slow_sql_threshold;
 
     match std::fs::create_dir_all(&settings.log.dir) {
         Ok(()) => {
-            let file_appender =
-                tracing_appender::rolling::daily(&settings.log.dir, "car-monit.log");
-            let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
-            let file_layer = tracing_subscriber::fmt::layer()
-                .with_writer(non_blocking)
-                .with_ansi(false);
+            let handles = match start_file_logs(settings) {
+                Ok(handles) => handles,
+                Err(err) => {
+                    eprintln!("日志文件 appender 初始化失败，仅输出到 stdout: {err}");
+                    let _ = tracing_subscriber::registry()
+                        .with(filter)
+                        .with(stdout_layer)
+                        .try_init();
+                    return None;
+                }
+            };
+
+            let file_format = || car_monit_rust::logging::JavaLogFormat {
+                console: false,
+                logger_width: 36,
+                slow_sql_threshold_ms,
+            };
+            let info_layer = tracing_subscriber::fmt::layer()
+                .event_format(file_format())
+                .with_writer(handles[0].writer())
+                .with_ansi(false)
+                .with_filter(FilterFn::new(info_only));
+            let error_layer = tracing_subscriber::fmt::layer()
+                .event_format(file_format())
+                .with_writer(handles[1].writer())
+                .with_ansi(false)
+                .with_filter(FilterFn::new(error_only));
+            let slow_layer = tracing_subscriber::fmt::layer()
+                .event_format(file_format())
+                .with_writer(handles[2].writer())
+                .with_ansi(false)
+                .with_filter(FilterFn::new(slow_only));
+            let user_layer = tracing_subscriber::fmt::layer()
+                .event_format(file_format())
+                .with_writer(handles[3].writer())
+                .with_ansi(false)
+                .with_filter(FilterFn::new(user_only));
+
             let _ = tracing_subscriber::registry()
                 .with(filter)
                 .with(stdout_layer)
-                .with(file_layer)
+                .with(info_layer)
+                .with(error_layer)
+                .with(slow_layer)
+                .with(user_layer)
                 .try_init();
-            Some(guard)
+            Some(handles)
         }
         Err(err) => {
             eprintln!(
@@ -82,7 +133,66 @@ fn init_tracing(settings: &Settings) -> Option<tracing_appender::non_blocking::W
     }
 }
 
+fn start_file_logs(
+    settings: &Settings,
+) -> std::io::Result<Vec<car_monit_rust::logging::LogHandle>> {
+    let dir = &settings.log.dir;
+    let max_bytes = car_monit_rust::logging::parse_size(&settings.log.max_file_size);
+    let max_history = settings.log.max_history;
+    // Java logback: sys-info/sys-error 用 SizeAndTimeBasedFNATP（100MB + %i）；
+    // sys-slow/sys-user 只有 TimeBasedRollingPolicy（无单文件大小上限）。
+    Ok(vec![
+        car_monit_rust::logging::start_appender(dir, "sys-info", true, max_bytes, max_history)?,
+        car_monit_rust::logging::start_appender(dir, "sys-error", true, max_bytes, max_history)?,
+        car_monit_rust::logging::start_appender(dir, "sys-slow", false, u64::MAX, max_history)?,
+        car_monit_rust::logging::start_appender(dir, "sys-user", false, u64::MAX, max_history)?,
+    ])
+}
+
+fn level_in_file(level: &Level) -> bool {
+    matches!(*level, Level::INFO | Level::WARN | Level::ERROR)
+}
+
+fn not_monitor_file(metadata: &tracing::Metadata<'_>) -> bool {
+    !car_monit_rust::logging::is_monitor_file_target(metadata.target())
+}
+
+fn info_only(metadata: &tracing::Metadata<'_>) -> bool {
+    *metadata.level() == Level::INFO && not_monitor_file(metadata)
+}
+
+fn error_only(metadata: &tracing::Metadata<'_>) -> bool {
+    *metadata.level() == Level::ERROR && not_monitor_file(metadata)
+}
+
+fn slow_only(metadata: &tracing::Metadata<'_>) -> bool {
+    // Java: SqlLogInterceptor logger -> file_slow（additivity=false，level=info）。
+    // SQLx 的语句事件：WARN 是慢 SQL，DEBUG 是普通 SQL；Java 的 logger level=info
+    // 会丢弃 DEBUG，不能因为 RUST_LOG=debug 就把普通 SQL 写进 sys-slow。
+    if car_monit_rust::logging::is_sql_query_target(metadata.target()) {
+        return matches!(*metadata.level(), Level::WARN | Level::ERROR);
+    }
+    car_monit_rust::logging::is_slow_target(metadata.target()) && level_in_file(metadata.level())
+}
+
+fn user_only(metadata: &tracing::Metadata<'_>) -> bool {
+    car_monit_rust::logging::is_user_target(metadata.target()) && level_in_file(metadata.level())
+}
+
 async fn shutdown_signal() {
+    // Java: Spring Boot 优雅停机同时响应 SIGTERM（容器/K8s 滚动发布）。
+    #[cfg(unix)]
+    {
+        use tokio::signal::unix::{signal, SignalKind};
+        if let Ok(mut terminate) = signal(SignalKind::terminate()) {
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => {}
+                _ = terminate.recv() => {}
+            }
+            tracing::info!("shutdown signal received");
+            return;
+        }
+    }
     let _ = tokio::signal::ctrl_c().await;
     tracing::info!("shutdown signal received");
 }

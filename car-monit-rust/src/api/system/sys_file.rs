@@ -242,10 +242,13 @@ fn ext_allowed(original: &str) -> Option<String> {
 /// Java: `ossTemplate.putObject(bucket, fileName, stream)` -> 本地落盘。
 fn store_file(state: &AppState, file_name: &str, bytes: &[u8]) -> Result<(), AppError> {
     let dir = upload_dir(&state.settings.ruoyi.profile);
-    std::fs::create_dir_all(&dir)
-        .map_err(|err| AppError::Service(format!("创建上传目录失败: {err}")))?;
-    std::fs::write(dir.join(file_name), bytes)
-        .map_err(|err| AppError::Service(format!("写入文件失败: {err}")))
+    // 落盘是阻塞 IO，移出 tokio worker（Java 在 Servlet 线程里做同样的事）。
+    tokio::task::block_in_place(|| {
+        std::fs::create_dir_all(&dir)
+            .map_err(|err| AppError::Service(format!("创建上传目录失败: {err}")))?;
+        std::fs::write(dir.join(file_name), bytes)
+            .map_err(|err| AppError::Service(format!("写入文件失败: {err}")))
+    })
 }
 
 /// Java: `fileLog` —— 记录允许的文件类型；不支持的返回 -1。
@@ -389,12 +392,8 @@ async fn multipart_files(multipart: &mut Multipart) -> Result<Vec<(String, Vec<u
         .await
         .map_err(|err| AppError::BadRequest(err.to_string()))?
     {
-        let name = field.file_name().unwrap_or_default().to_string();
-        let bytes = field
-            .bytes()
-            .await
-            .map_err(|err| AppError::BadRequest(err.to_string()))?;
-        files.push((name, bytes.to_vec()));
+        let upload = crate::api::support::read_multipart_field(field).await?;
+        files.push((upload.file_name, upload.bytes));
     }
     Ok(files)
 }
@@ -450,11 +449,8 @@ async fn upload_file(
         .await
         .map_err(|err| AppError::BadRequest(err.to_string()))?
     {
-        let original = field.file_name().unwrap_or_default().to_string();
-        let bytes = field
-            .bytes()
-            .await
-            .map_err(|err| AppError::BadRequest(err.to_string()))?;
+        let upload = crate::api::support::read_multipart_field(field).await?;
+        let original = upload.file_name;
         let ext = original.rsplit_once('.').map(|(_, ext)| ext.to_lowercase());
         match ext.as_deref() {
             Some(ext)
@@ -464,7 +460,7 @@ async fn upload_file(
                     || ext.contains("gif") => {}
             _ => return Ok(AjaxResult::error("上传失败,请上传照片格式的附件！")),
         }
-        files.push((original, bytes.to_vec()));
+        files.push((original, upload.bytes));
     }
     upload_documents(&state, Some(&user), files, None).await
 }
@@ -492,12 +488,8 @@ async fn upload_supplier(
         .map_err(|err| AppError::BadRequest(err.to_string()))?
     {
         if field.file_name().is_some() {
-            let original = field.file_name().unwrap_or_default().to_string();
-            let bytes = field
-                .bytes()
-                .await
-                .map_err(|err| AppError::BadRequest(err.to_string()))?;
-            files.push((original, bytes.to_vec()));
+            let upload = crate::api::support::read_multipart_field(field).await?;
+            files.push((upload.file_name, upload.bytes));
         } else if let Ok(text) = field.text().await {
             buss_names.push(text);
         }

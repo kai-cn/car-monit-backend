@@ -2,7 +2,9 @@
 //       ruoyi-system/src/main/resources/mapper/system/SysDeptMapper.xml
 //       ruoyi-system/src/main/java/com/ruoyi/system/service/impl/SysDeptServiceImpl.java
 // 职责: 部门管理：列表/树/角色部门树/CRUD（含 sub_code 与 tenant_id 维护）。
-// 对应关系: @DataScope -> support::data_scope_sql；buildDeptTreeSelect -> JSON 树。
+// 对应关系: buildDeptTreeSelect -> JSON 树。
+// 注意: Java 的 SysDeptMapper.xml 把 `${params.dataScope}` 写在 XML 注释里
+//       （SysDeptMapper.xml:97），@DataScope 虽执行但 SQL 不生效；这里不得加数据范围过滤。
 
 use std::collections::HashMap;
 
@@ -165,16 +167,12 @@ fn shape_dept_rows(rows: &mut [Value]) {
 
 pub(crate) async fn select_dept_list(
     state: &AppState,
-    user: &LoginUser,
     params: &HashMap<String, String>,
 ) -> Result<Vec<Value>, AppError> {
     let mut builder = QueryBuilder::<MySql>::new(format!(
         "select {DEPT_COLUMNS} from sys_dept d where d.del_flag = '0'"
     ));
     push_dept_filters(&mut builder, params);
-    if let Some(scope) = support::data_scope_sql(user, "d", None) {
-        builder.push(scope);
-    }
     builder.push(" order by d.parent_id, d.order_num");
     let rows = builder.build().fetch_all(&state.db).await?;
     let mut rows = rows_to_json(&rows);
@@ -237,23 +235,21 @@ fn push_dept_filters(builder: &mut QueryBuilder<'_, MySql>, params: &HashMap<Str
 
 async fn list(
     State(state): State<AppState>,
-    Extension(user): Extension<LoginUser>,
     RawQuery(raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
-    let depts = select_dept_list(&state, &user, &params).await?;
+    let depts = select_dept_list(&state, &params).await?;
     Ok(AjaxResult::success_data(depts))
 }
 
 async fn exclude_child(
     State(state): State<AppState>,
-    Extension(user): Extension<LoginUser>,
     Path(dept_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     // Java: `@PathVariable Long deptId` —— 非数字是类型不匹配的 500 文案，不会退化成「不过滤」。
     let dept_id_num = support::path_long("deptId", &dept_id)?;
     let dept_id = dept_id_num.to_string();
-    let depts = select_dept_list(&state, &user, &HashMap::new()).await?;
+    let depts = select_dept_list(&state, &HashMap::new()).await?;
     let filtered = depts
         .into_iter()
         .filter(|dept| {
@@ -276,11 +272,10 @@ async fn exclude_child(
 
 async fn treeselect(
     State(state): State<AppState>,
-    Extension(user): Extension<LoginUser>,
     RawQuery(raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
     let params = support::query_map(&raw);
-    let depts = select_dept_list(&state, &user, &params).await?;
+    let depts = select_dept_list(&state, &params).await?;
     Ok(AjaxResult::success_data(build_tree_select(&depts)))
 }
 
@@ -313,18 +308,17 @@ async fn treeselect_new(
             params.insert("deptId".to_string(), "-1".to_string());
         }
     }
-    let depts = select_dept_list(&state, &user, &params).await?;
+    let depts = select_dept_list(&state, &params).await?;
     Ok(AjaxResult::success_data(build_tree_select(&depts)))
 }
 
 async fn role_dept_treeselect(
     State(state): State<AppState>,
-    Extension(user): Extension<LoginUser>,
     Path(role_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
     // Java: `@PathVariable Long roleId`。
     let role_id = support::path_long("roleId", &role_id)?.to_string();
-    let depts = select_dept_list(&state, &user, &HashMap::new()).await?;
+    let depts = select_dept_list(&state, &HashMap::new()).await?;
     let checked = select_dept_ids_by_role(&state, &role_id).await?;
     let mut result = AjaxResult::success();
     result.insert_value("checkedKeys", json!(checked));
@@ -332,14 +326,11 @@ async fn role_dept_treeselect(
     Ok(result)
 }
 
-async fn company_list(
-    State(state): State<AppState>,
-    Extension(user): Extension<LoginUser>,
-) -> Result<AjaxResult, AppError> {
+async fn company_list(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
     let mut params = HashMap::new();
     params.insert("isUint".to_string(), "1".to_string());
     Ok(AjaxResult::success_data(
-        select_dept_list(&state, &user, &params).await?,
+        select_dept_list(&state, &params).await?,
     ))
 }
 

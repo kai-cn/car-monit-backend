@@ -22,6 +22,10 @@ pub fn record_logininfor(
 ) {
     let pool = pool.clone();
     let username = username.to_string();
+    let log_username = username.clone();
+    let log_status = status.to_string();
+    let log_message = message.to_string();
+    // Java: AsyncFactory.recordLogininfor 先写 sys-user 日志，再落库。
     // Java: AsyncFactory 把登录结果映射为 sys_logininfor.status（0 成功 / 1 失败）。
     let status = match status {
         "Success" | "Logout" | "Register" => "0",
@@ -35,7 +39,20 @@ pub fn record_logininfor(
     let browser = meta.browser.clone();
     let os = meta.os.clone();
 
-    tokio::spawn(async move {
+    // 运行时关闭阶段 `tokio::spawn` 会 panic；审计失败不能产生二次 panic
+    // 覆盖调用方正在处理的原始 payload。
+    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        tokio::spawn(async move {
+        // Java: `sys_user_logger.info("[" + ip + "][" + address + "][" + username + "][" + status + "][" + message + "]")`
+        tracing::info!(
+            target: "sys-user",
+            "[{}][{}][{}][{}][{}]",
+            ip,
+            location,
+            log_username,
+            log_status,
+            log_message
+        );
         let result = sqlx::query(
             r#"
             insert into sys_logininfor
@@ -54,9 +71,13 @@ pub fn record_logininfor(
         .await;
 
         if let Err(err) = result {
-            tracing::warn!(error = %err, "记录登录日志失败");
+            tracing::warn!(
+                error = %crate::logging::Throwable::new(&err),
+                "记录登录日志失败"
+            );
         }
-    });
+        });
+    }));
 }
 
 /// Java: SysOperLog 中由 LogAspect 填充的字段。
@@ -81,7 +102,10 @@ pub struct OperRecord {
 /// Java: AsyncFactory.recordOper —— AsyncManager 固定延迟 10ms 后落库。
 pub fn record_oper(pool: &MySqlPool, record: OperRecord) {
     let pool = pool.clone();
-    tokio::spawn(async move {
+    // 运行时关闭阶段 `tokio::spawn` 会 panic；审计失败不能产生二次 panic
+    // 覆盖调用方正在处理的原始 payload。
+    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        tokio::spawn(async move {
         tokio::time::sleep(Duration::from_millis(10)).await;
         let result = sqlx::query(
             r#"
@@ -108,7 +132,11 @@ pub fn record_oper(pool: &MySqlPool, record: OperRecord) {
         .await;
 
         if let Err(err) = result {
-            tracing::warn!(error = %err, "记录操作日志失败");
+            tracing::warn!(
+                error = %crate::logging::Throwable::new(&err),
+                "记录操作日志失败"
+            );
         }
-    });
+        });
+    }));
 }

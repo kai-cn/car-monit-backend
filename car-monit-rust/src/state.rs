@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use sqlx::mysql::MySqlPoolOptions;
+use sqlx::ConnectOptions;
 use sqlx::MySqlPool;
 
 use crate::auth::jwt::JwtService;
@@ -29,6 +30,13 @@ pub struct AppState {
 
 impl AppState {
     pub async fn connect(settings: Settings) -> anyhow::Result<Self> {
+        // Java: `oss.info=true` 会创建 OssEndpoint，但 `oss.enable=false` 时没有 OssTemplate
+        // 可供注入，Spring 启动直接失败；这里保持同样的启动失败语义。
+        if settings.oss.info && !settings.oss.enable {
+            anyhow::bail!(
+                "oss.info=true 需要同时 oss.enable=true（Java OssAutoConfiguration 缺少 OssTemplate）"
+            );
+        }
         let settings = Arc::new(settings);
 
         let (host, port, db) = settings.mysql_endpoint()?;
@@ -50,6 +58,14 @@ impl AppState {
         if let Some(timezone) = settings.mysql_session_timezone() {
             connect_options = connect_options.timezone(timezone);
         }
+        // Java: SqlLogInterceptor 拦截每条 SQL —— 普通 SQL 记 DEBUG
+        // （SqlLogInterceptor logger 默认 info，运行时被抑制），耗时 >=
+        // monitor.slow-sql-threshold 时升级为 WARN 并写 sys-slow.log。
+        // SQLx 的 LogSettings 覆盖所有查询（含事务与 QueryBuilder 拼接的 SQL）。
+        let slow_sql_threshold = Duration::from_millis(settings.monitor.slow_sql_threshold);
+        connect_options = connect_options
+            .log_statements(log::LevelFilter::Debug)
+            .log_slow_statements(log::LevelFilter::Warn, slow_sql_threshold);
 
         let pool = MySqlPoolOptions::new()
             .max_connections(settings.database.pool.max_active)
@@ -85,6 +101,7 @@ impl AppState {
     /// 单次探活，供 /health 使用。
     pub async fn check_health(&self) -> Result<(), AppError> {
         sqlx::query("select 1").execute(&self.db).await?;
+        self.redis.ping().await?;
         Ok(())
     }
 }

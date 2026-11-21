@@ -56,7 +56,10 @@ thiserror = "2"
 anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-tracing-appender = "0.2"
+# sqlx ConnectOptions::log_statements 的参数类型（log::LevelFilter）。
+log = "0.4"
+# 日志 Throwable 栈帧：std 的 Backtrace::frames() 仍是 unstable，使用 stable 的 backtrace crate。
+backtrace = "0.3"
 
 validator = { version = "0.19", features = ["derive"] }
 dashmap = "6"
@@ -143,4 +146,7 @@ tempfile = "3"
 [profile.release]
 lto = "thin"
 codegen-units = 1
-strip = "symbols"
+# Java 的 throwable 带栈帧，`strip = "symbols"` 会让 backtrace::resolve 全部落空。
+# 实测 debug=1（仅行号表）在 Windows 下解析不到本 crate 的函数符号，
+# 会只剩 std/test harness 帧；因此用 debug=2 保留完整调试信息（不 strip）。
+debug = 2

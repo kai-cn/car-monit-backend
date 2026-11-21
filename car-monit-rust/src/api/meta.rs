@@ -7,6 +7,7 @@
 // 为什么用中间件：501 条端点里 284 条有权限点、239 条有 @Log。把这两件事
 // 放进统一中间件，handler 只写业务逻辑，且 sys_oper_log 的字段/截断规则只实现一次。
 
+use std::panic::AssertUnwindSafe;
 use std::sync::LazyLock;
 
 use axum::body::Body;
@@ -16,12 +17,14 @@ use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use axum::routing::MethodRouter;
 use dashmap::DashMap;
+use futures::FutureExt;
 
 use crate::auth::audit::{self, OperRecord};
 use crate::auth::security;
 use crate::common::utils::client_meta;
 use crate::domain::LoginUser;
 use crate::error::ErrorResponseMarker;
+use crate::middleware::web_filter::OriginalPath;
 use crate::response::AjaxResult;
 use crate::state::AppState;
 
@@ -120,8 +123,15 @@ pub fn registered() -> Vec<(String, String)> {
 }
 
 pub fn lookup(method: &Method, pattern: &str) -> Option<RouteMeta> {
+    // axum 的 `get()` 同时服务 HEAD，Spring 的 @GetMapping 也匹配 HEAD；
+    // 元数据必须按 GET 查找，否则 HEAD 会绕过 @PreAuthorize/@Log。
+    let method = if *method == Method::HEAD {
+        Method::GET
+    } else {
+        method.clone()
+    };
     REGISTRY
-        .get(&(static_method(method).to_string(), pattern.to_string()))
+        .get(&(static_method(&method).to_string(), pattern.to_string()))
         .map(|entry| *entry.value())
 }
 
@@ -149,9 +159,33 @@ route_helper!(put_route, Method::PUT, axum::routing::put);
 route_helper!(delete_route, Method::DELETE, axum::routing::delete);
 route_helper!(patch_route, Method::PATCH, axum::routing::patch);
 
+/// 中间件依赖的最小环境：抽出来后可以在不依赖 AppState/Redis 的单测里装配。
+pub trait MetaEnv: Clone + Send + Sync + 'static {
+    fn address_enabled(&self) -> bool;
+    fn audit(&self, record: OperRecord);
+}
+
+impl MetaEnv for AppState {
+    fn address_enabled(&self) -> bool {
+        self.settings.ruoyi.address_enabled
+    }
+
+    fn audit(&self, record: OperRecord) {
+        audit::record_oper(&self.db, record);
+    }
+}
+
 /// 执行 @PreAuthorize + @Log。必须位于认证中间件内侧。
 pub async fn meta_middleware(
     State(state): State<AppState>,
+    request: Request,
+    next: Next,
+) -> Response {
+    meta_middleware_impl(State(state), request, next).await
+}
+
+pub(crate) async fn meta_middleware_impl<E: MetaEnv>(
+    State(env): State<E>,
     request: Request,
     next: Next,
 ) -> Response {
@@ -186,7 +220,12 @@ pub async fn meta_middleware(
     // ---- 拆请求：权限检查已完成，这里缓存请求体用于 oper_param ----
     let (parts, body) = request.into_parts();
     let method = parts.method.clone();
-    let uri_path = parts.uri.path().to_string();
+    // Java LogAspect 的 operUrl 取 getRequestURI()：尾斜杠归一路径后仍要记原始 URI。
+    let uri_path = parts
+        .extensions
+        .get::<OriginalPath>()
+        .map(|path| path.0.clone())
+        .unwrap_or_else(|| parts.uri.path().to_string());
     let login_user = parts.extensions.get::<LoginUser>().cloned();
     let query = parts.uri.query().unwrap_or_default().to_string();
     let content_type = parts
@@ -221,11 +260,55 @@ pub async fn meta_middleware(
     };
 
     let request = Request::from_parts(parts, body);
-    let response = next.run(request).await;
+    let ctx = OperContext {
+        title: log_spec.title,
+        business_type: log_spec.business_type as i32,
+        method: log_spec.method,
+        request_method: method.as_str().to_string(),
+        oper_url: truncate(&uri_path, 255),
+        oper_ip: client_meta(
+            request.headers(),
+            request
+                .extensions()
+                .get::<axum::extract::ConnectInfo<std::net::SocketAddr>>()
+                .map(|info| info.0),
+            env.address_enabled(),
+        )
+        .ip,
+        oper_name: login_user
+            .as_ref()
+            .map(|user| user.username())
+            .unwrap_or_default(),
+        dept_name: login_user
+            .as_ref()
+            .and_then(|user| user.user.dept.as_ref())
+            .and_then(|dept| dept.dept_name.clone())
+            .unwrap_or_default(),
+        oper_param,
+    };
+
+    // Java: LogAspect 对抛出的异常同样落库（status=1 + errorMsg）；
+    // 这里先捕获 panic 记审计，再把 panic 原样抛回给 web_filter 转 500。
+    let response = match with_panic_audit(next.run(request), |message| {
+        env.audit(panic_oper_record(&ctx, &message));
+    })
+    .await
+    {
+        Ok(response) => response,
+        Err(payload) => std::panic::resume_unwind(payload),
+    };
 
     // ---- 结果体：LogAspect 的 jsonResult / status / errorMsg ----
     let is_error = response.extensions().get::<ErrorResponseMarker>().is_some();
     let (parts, body) = response.into_parts();
+
+    // Java: 导出类端点直接写 HttpServletResponse 流，LogAspect 拿不到 JSON 结果；
+    // 这里不缓冲二进制 body，避免 64MB 上限与二次拷贝。
+    if is_binary_response(&parts.headers) {
+        env.audit(ctx.record(None, if is_error { 1 } else { 0 }, None));
+        return Response::from_parts(parts, body);
+    }
+
     let body_bytes = match axum::body::to_bytes(body, RESPONSE_CAPTURE_LIMIT).await {
         Ok(bytes) => bytes,
         Err(_) => return Response::from_parts(parts, Body::empty()),
@@ -250,43 +333,84 @@ pub async fn meta_middleware(
         None
     };
 
-    let oper_name = login_user
-        .as_ref()
-        .map(|user| user.username())
-        .unwrap_or_default();
-    let dept_name = login_user
-        .as_ref()
-        .and_then(|user| user.user.dept.as_ref())
-        .and_then(|dept| dept.dept_name.clone())
-        .unwrap_or_default();
-    let client = client_meta(
-        &parts.headers,
-        parts
-            .extensions
-            .get::<axum::extract::ConnectInfo<std::net::SocketAddr>>()
-            .map(|info| info.0),
-        state.settings.ruoyi.address_enabled,
-    );
-
-    audit::record_oper(
-        &state.db,
-        OperRecord {
-            title: log_spec.title,
-            business_type: log_spec.business_type as i32,
-            method: log_spec.method,
-            request_method: method.as_str().to_string(),
-            oper_name,
-            dept_name,
-            oper_url: truncate(&uri_path, 255),
-            oper_ip: client.ip,
-            oper_param,
-            json_result,
-            status: if is_error { 1 } else { 0 },
-            error_msg,
-        },
-    );
+    env.audit(ctx.record(json_result, if is_error { 1 } else { 0 }, error_msg));
 
     Response::from_parts(parts, Body::from(body_bytes))
+}
+
+/// `@Log` 审计上下文：正常分支与 panic 分支共用的字段，抽出来便于单测。
+pub(crate) struct OperContext {
+    pub title: &'static str,
+    pub business_type: i32,
+    pub method: &'static str,
+    pub request_method: String,
+    pub oper_url: String,
+    pub oper_ip: String,
+    pub oper_name: String,
+    pub dept_name: String,
+    pub oper_param: Option<String>,
+}
+
+impl OperContext {
+    pub(crate) fn record(
+        &self,
+        json_result: Option<String>,
+        status: i32,
+        error_msg: Option<String>,
+    ) -> OperRecord {
+        OperRecord {
+            title: self.title,
+            business_type: self.business_type,
+            method: self.method,
+            request_method: self.request_method.clone(),
+            oper_name: self.oper_name.clone(),
+            dept_name: self.dept_name.clone(),
+            oper_url: self.oper_url.clone(),
+            oper_ip: self.oper_ip.clone(),
+            oper_param: self.oper_param.clone(),
+            json_result,
+            status,
+            error_msg,
+        }
+    }
+}
+
+/// Java: LogAspect 捕获异常时落 status=1、errorMsg=异常信息。
+pub(crate) fn panic_oper_record(ctx: &OperContext, message: &str) -> OperRecord {
+    let error_msg = truncate(&format!("panic: {message}"), LOG_TEXT_LIMIT);
+    ctx.record(None, 1, Some(error_msg))
+}
+
+/// 捕获 panic → 执行审计回调 → 原样返回 payload，由 web_filter 继续转 500。
+pub(crate) async fn with_panic_audit<F, A>(
+    future: F,
+    on_panic: A,
+) -> Result<F::Output, Box<dyn std::any::Any + Send>>
+where
+    F: std::future::Future,
+    A: FnOnce(String),
+{
+    match AssertUnwindSafe(future).catch_unwind().await {
+        Ok(value) => Ok(value),
+        Err(payload) => {
+            on_panic(crate::logging::panic_payload_text(&*payload));
+            Err(payload)
+        }
+    }
+}
+
+fn is_binary_response(headers: &axum::http::HeaderMap) -> bool {
+    let content_type = headers
+        .get(header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    let attachment = headers
+        .get(header::CONTENT_DISPOSITION)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    content_type.contains("application/octet-stream") || attachment.contains("attachment")
 }
 
 fn should_capture_body(method: &Method, content_type: &str) -> bool {
@@ -312,4 +436,117 @@ fn query_to_json(query: &str) -> String {
 
 fn truncate(value: &str, limit: usize) -> String {
     value.chars().take(limit).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_ctx() -> OperContext {
+        OperContext {
+            title: "用户管理",
+            business_type: 1,
+            method: "com.ruoyi.web.controller.system.SysUserController.add()",
+            request_method: "POST".to_string(),
+            oper_url: "/system/user/".to_string(),
+            oper_ip: "127.0.0.1".to_string(),
+            oper_name: "admin".to_string(),
+            dept_name: "研发部门".to_string(),
+            oper_param: Some("{\"userName\":\"x\"}".to_string()),
+        }
+    }
+
+    /// Java: LogAspect 捕获异常时 status=1、errorMsg=异常信息；原始 URI 原样保留。
+    #[test]
+    fn panic_oper_record_marks_failed_status() {
+        let record = panic_oper_record(&sample_ctx(), "boom");
+        assert_eq!(record.status, 1);
+        assert_eq!(record.error_msg.as_deref(), Some("panic: boom"));
+        assert!(record.json_result.is_none());
+        assert_eq!(record.oper_url, "/system/user/");
+    }
+
+    #[tokio::test]
+    async fn with_panic_audit_runs_sink_and_resumes_panic() {
+        async fn boom() {
+            panic!("boom")
+        }
+
+        let seen = std::sync::Arc::new(std::sync::Mutex::new(None::<String>));
+        let sink = seen.clone();
+        let result = with_panic_audit(boom(), move |message| {
+            *sink.lock().unwrap() = Some(message);
+        })
+        .await;
+        let payload = result.expect_err("panic 必须继续抛给 web_filter 转 500");
+        // 原始 payload 身份必须保留，不能被审计回调替换。
+        assert_eq!(crate::logging::panic_payload_text(&*payload), "boom");
+        assert_eq!(seen.lock().unwrap().as_deref(), Some("boom"));
+    }
+
+    static PANIC_LOG: LogSpec = LogSpec::new(
+        "panic-test",
+        BusinessType::Other,
+        "test.PanicController.panic()",
+    );
+
+    #[derive(Clone, Default)]
+    struct FakeEnv {
+        records: std::sync::Arc<std::sync::Mutex<Vec<OperRecord>>>,
+    }
+
+    impl MetaEnv for FakeEnv {
+        fn address_enabled(&self) -> bool {
+            false
+        }
+
+        fn audit(&self, record: OperRecord) {
+            self.records.lock().unwrap().push(record);
+        }
+    }
+
+    async fn panic_handler() {
+        panic!("boom-payload")
+    }
+
+    /// 装配级：不依赖 AppState/Redis，覆盖 meta_middleware 的 panic → 审计 → resume_unwind。
+    /// 同时证明运行时确实走了 `lookup`（删掉调用会拿不到 @Log 元数据）。
+    #[tokio::test]
+    async fn meta_middleware_audits_panic_and_preserves_payload() {
+        use tower::ServiceExt;
+
+        register(&Method::GET, "/__test/panic", None, Some(&PANIC_LOG));
+        let env = FakeEnv::default();
+        let app = axum::Router::new()
+            .route("/__test/panic", axum::routing::get(panic_handler))
+            .with_state(env.clone())
+            .layer(axum::middleware::from_fn_with_state(
+                env.clone(),
+                meta_middleware_impl::<FakeEnv>,
+            ));
+
+        let request = axum::http::Request::builder()
+            .uri("/__test/panic")
+            .body(axum::body::Body::empty())
+            .expect("request");
+        let outcome = std::panic::AssertUnwindSafe(app.oneshot(request))
+            .catch_unwind()
+            .await;
+        let payload = outcome.expect_err("panic 必须继续抛给 web_filter 转 500");
+        assert_eq!(
+            crate::logging::panic_payload_text(&*payload),
+            "boom-payload",
+            "原始 panic payload 必须完整保留"
+        );
+
+        let records = env.records.lock().unwrap();
+        assert_eq!(records.len(), 1, "panic 必须落一条审计");
+        assert_eq!(records[0].status, 1);
+        assert_eq!(
+            records[0].error_msg.as_deref(),
+            Some("panic: boom-payload")
+        );
+        assert_eq!(records[0].oper_url, "/__test/panic");
+        assert_eq!(records[0].title, "panic-test");
+    }
 }
