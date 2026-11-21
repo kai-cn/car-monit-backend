@@ -8,6 +8,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+COPY pyproject.toml README_PY.md ./
+COPY app ./app
+COPY config ./config
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
