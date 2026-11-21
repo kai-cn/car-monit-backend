@@ -35,7 +35,7 @@ on:
         description: '要打包的服务'
         required: true
         type: choice
-        options: [all, java, go, rust, py]
+        options: [all, java, go, rust, py, cpp]
       tag:
         description: 'release tag（留空则只产出 workflow artifact）'
         required: false
@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJSON(format('["{0}"]', inputs.service == 'all' && 'java","go","rust","py' || inputs.service || 'java","go","rust","py')) }}
+        service: ${{ fromJSON(format('["{0}"]', inputs.service == 'all' && 'java","go","rust","py","cpp' || inputs.service || 'java","go","rust","py","cpp')) }}
     steps:
       # 拉取仓库源码
       - uses: actions/checkout@v4
@@ -108,7 +108,7 @@ jobs:
         run: |
           set -euo pipefail
           cd car-monit-rust
-          cargo build --release --locked
+          cargo build --release
           cp target/release/car-monit-rust ../staging/rust/bin/car-monit-rust
 
       - name: 构建 Python wheel
@@ -120,6 +120,18 @@ jobs:
           python3 -m build --wheel
           cp dist/*.whl ../staging/py/
           cp -r config ../staging/py/
+
+      - name: 构建 C++ 二进制
+        if: matrix.service == 'cpp'
+        run: |
+          set -euo pipefail
+          cd car-monit-cpp
+          cmake -B build -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DVCPKG_TARGET_TRIPLET=x64-linux
+          cmake --build build --parallel
+          cp build/car-monit-cpp ../staging/cpp/bin/car-monit-cpp
+          cp -r config ../staging/cpp/
 
       - name: 组装安装包
         run: |
@@ -142,6 +154,9 @@ jobs:
               ;;
             py)
               exec_start="/opt/car-monit-py/venv/bin/python /opt/car-monit-py/run.py"
+              ;;
+            cpp)
+              exec_start="/opt/car-monit-cpp/bin/car-monit-cpp"
               ;;
           esac
 
@@ -301,7 +316,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJSON(format('["{0}"]', inputs.service == 'all' && 'java","go","rust","py' || inputs.service || 'java","go","rust","py')) }}
+        service: ${{ fromJSON(format('["{0}"]', inputs.service == 'all' && 'java","go","rust","py","cpp' || inputs.service || 'java","go","rust","py","cpp')) }}
     steps:
       # 下载上游 workflow 产物
       - uses: actions/download-artifact@v4
@@ -371,6 +386,15 @@ jobs:
               set -e
               echo "rust --help exit=$rc"
               case "$rc" in 0|124) ;; *) echo "::error::rust 启动失败 exit=$rc"; exit 1;; esac
+              ;;
+            cpp)
+              # C++ 二进制只做 ELF + 动态库完整性检查，不在容器内真启动。
+              test -x "$S/bin/car-monit-cpp"
+              file "$S/bin/car-monit-cpp"
+              if ldd "$S/bin/car-monit-cpp" | grep -q 'not found'; then
+                echo "::error::C++ 二进制缺少动态库"; ldd "$S/bin/car-monit-cpp"; exit 1
+              fi
+              ldd "$S/bin/car-monit-cpp" | sed -n '1,20p'
               ;;
             py)
               # 没有依赖装不进 venv，因此只验证 wheel 结构与元数据
