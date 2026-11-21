@@ -87,6 +87,18 @@ jobs:
         shell: pwsh
         run: cmake --build build --config Release --parallel
 
+      - name: 上传 C++ 构建产物
+        if: steps.detect.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpp-windows-x64
+          path: |
+            car-monit-cpp/build/Release/*.exe
+            car-monit-cpp/build/Release/*.dll
+            car-monit-cpp/build/Release/*.pdb
+          if-no-files-found: error
+          retention-days: 14
+
       - name: 对齐应用时区（Windows runner 默认 UTC）
         if: steps.detect.outputs.found == 'true'
         shell: pwsh
