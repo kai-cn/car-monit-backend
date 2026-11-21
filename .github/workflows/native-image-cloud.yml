@@ -199,8 +199,11 @@ jobs:
 
       - name: Install reactor modules (JVM jar)
         shell: bash
+        env:
+          LOG_PATH: ${{ runner.temp }}/ruoyi-logs
         run: |
           set -euo pipefail
+          mkdir -p "$LOG_PATH"
           mvn $MAVEN_ARGS -DskipTests install -pl "${{ steps.meta.outputs.module }}" -am
 
       - name: AOT + native-image
