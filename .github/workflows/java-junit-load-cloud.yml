@@ -167,7 +167,7 @@ jobs:
           java -jar out/app.jar --server.port=19903 --spring.main.allow-circular-references=true > out/app.log 2>&1 &
           echo $! > out/app.pid
           for i in $(seq 1 180); do
-            if curl -fsS -o /dev/null http://127.0.0.1:19903/captchaImage; then echo "service ready after ${i}s"; exit 0; fi
+            if (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1; then echo "service port ready after ${i}s"; exit 0; fi
             if ! kill -0 "$(cat out/app.pid)" 2>/dev/null; then echo 'service process exited'; tail -n 120 out/app.log; exit 1; fi
             sleep 1
           done
