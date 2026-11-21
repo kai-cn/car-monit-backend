@@ -204,7 +204,7 @@ jobs:
           mvn $MAVEN_ARGS -DskipTests install -pl "${{ steps.meta.outputs.module }}" -am
 
       - name: Prepare RuoYi log directories
-        if: matrix.platform == 'linux'
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           # AOT starts the Spring context; Logback writes to /home/ruoyi/logs.
