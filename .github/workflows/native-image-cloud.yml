@@ -203,6 +203,14 @@ jobs:
           set -euo pipefail
           mvn $MAVEN_ARGS -DskipTests install -pl "${{ steps.meta.outputs.module }}" -am
 
+      - name: Prepare RuoYi log directories
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          # AOT starts the Spring context; Logback writes to /home/ruoyi/logs.
+          sudo mkdir -p /home/ruoyi/logs /home/ruoyi/uploadPath
+          sudo chown -R "$(id -u):$(id -g)" /home/ruoyi
+
       - name: AOT + native-image
         shell: bash
         run: |
