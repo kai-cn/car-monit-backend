@@ -25,7 +25,7 @@
 
 | 项 | 数 | 依据 |
 |---|---|---|
-| Java 控制器 | 25 | `ruoyi-admin/src/main/java/com/ruoyi/web/controller/base/` 下全部 `*Controller.java` |
+| Java 控制器 | 26 | `ruoyi-admin/src/main/java/com/ruoyi/web/controller/base/` 下全部 `*Controller.java` |
 | 端点 | 106 | 方法级注解展开后的条数（`value = {...}` 会展开成多条），与 `scripts/audit_endpoints.py` 的 Java 侧计数同源 |
 | Python 控制器模块 | 25 | `app/api/base/` |
 | Domain 对照行 | 36 | 按 `# Migrated from:` 反查到的 Java 文件行数（Mapper 的接口与 XML 分别计） |
