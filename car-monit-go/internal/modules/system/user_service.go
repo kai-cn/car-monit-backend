@@ -17,6 +17,7 @@ import (
 	"gorm.io/gorm"
 
 	"car-monit-go/internal/model"
+	"car-monit-go/internal/platform/conv"
 	"car-monit-go/internal/web"
 )
 
@@ -450,7 +451,7 @@ func int64Or(p *int64) int64 {
 	return *p
 }
 
-func strPtr(s string) *string { return &s }
+func strPtr(s string) *string { return conv.Str(s) }
 
 // insertUser 对应 SysUserServiceImpl.insertUser（@Transactional）。
 func (s *service) insertUser(ctx context.Context, b *userBody, createBy string) (int64, error) {

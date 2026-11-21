@@ -6,6 +6,9 @@
 // DIFF: 配置中的 table-prefix 可能已带尾部下划线（如 ods_rt_szdn_snapshot_flow_），
 //
 //	TableNameByDate 会避免重复添加下划线，保证与 ShardingSphere 实际表名一致。
+//
+// 状态: 本包只提供表名/周期计算工具；base 模块目前使用自己的 tableNamesByDateRange，
+// 未复用本包（P1 待收敛）。分表预创建任务仍由 Java 侧承担。
 package sharding
 
 import (

@@ -47,6 +47,7 @@ spring:
 
 token:
   header: Authorization
+  # 本地开发默认值；生产必须通过 CARMONIT_TOKEN_SECRET 注入（非 local 环境使用默认值会启动失败）
   secret: abcdefghijklmnopqrstuvwxyz
   expireTime: 120
 
@@ -86,8 +87,9 @@ generator-code:
 
 oss:
   endpoint: http://172.30.100.102:9002
-  accessKey: jtwl_access_key
-  secretKey: minio.prod
+  # 密钥不入库：通过 CARMONIT_OSS_ACCESS_KEY / CARMONIT_OSS_SECRET_KEY 注入
+  accessKey: ""
+  secretKey: ""
   bucketName: developer
 
 forest:
@@ -98,7 +100,8 @@ forest:
 
 hengda:
   appid: YHZS
-  secret: b48381c4b98311ea90b100155d14fa3b
+  # 密钥不入库：通过 CARMONIT_HENGDA_SECRET 注入
+  secret: ""
 
 vehicleMonitor:
   baseUrl: http://127.0.0.1:9903   # car-monit-api 的 Go 端（configs/config.verify.yaml，Redis db1）；Java 端在 9902（Redis db0）
@@ -140,8 +143,25 @@ snapshot:
       table-prefix: "ods_rt_szdn_snapshot_flow_"
       sharding-field: snapshottime
       sharding-type: month
+    # Go 新增：GaussDB(vehicleMonitor HTTP 适配层) → MySQL 分表同步。
+    # source=disabled 时同步任务返回明确错误；base-url 为空回退 vehicleMonitor.baseUrl。
+    # 本地无 GaussDB/vehicleMonitor 实例，联调前请核对 /base/snapshotflow/* 的响应结构。
+    sync:
+      enabled: false
+      source: http
+      base-url: ""
+      page-size: 1000
+      workers: 4
 
 xss:
   enabled: true
   excludes: /system/notice
   urlPatterns: "/system/*,/monitor/*,/tool/*"
+
+# 雪花 ID 机器标识（Go 新增，对应 MyBatis-Plus IdWorker 的 workerId/datacenterId）。
+# -1 = 按主机名自动推导；取值范围 0~31。
+# 多副本部署必须保证 (datacenter-id, worker-id) 组合唯一，否则同一毫秒内会生成重复主键。
+# 也可用环境变量 CARMONIT_WORKER_ID / CARMONIT_DATACENTER_ID 覆盖（优先于本段）。
+instance:
+  worker-id: -1
+  datacenter-id: -1

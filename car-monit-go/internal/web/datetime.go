@@ -99,6 +99,10 @@ func ParseDate(s string) (time.Time, error) {
 		"2006/01/02 15:04:05",
 		"2006/01/02",
 		time.RFC3339,
+		// Jackson 默认的 java.util.Date 输出带毫秒（2025-08-29T16:30:59.000+08:00），
+		// RFC3339 不接受小数秒，这里补两种带毫秒的形态。
+		"2006-01-02T15:04:05.000Z07:00",
+		time.RFC3339Nano,
 	}
 	for _, layout := range layouts {
 		if t, err := time.ParseInLocation(layout, s, time.Local); err == nil {

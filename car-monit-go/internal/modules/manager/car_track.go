@@ -19,6 +19,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"car-monit-go/internal/auth"
+	"car-monit-go/internal/middleware"
 	"car-monit-go/internal/router"
 	"car-monit-go/internal/web"
 )
@@ -234,16 +235,22 @@ const zdataTrailTracksColumns = `t.uuid, t.type, t.point_count, t.plate_key, t.e
 
 func (h *handler) registerTrackInfo(reg *router.Registry) {
 	auth := reg.Authed
-	auth.GET("/manager/cartrackinfo/list", h.trackList)
+	// JAVA 对照: CarTrackInfoController.java:62-383 —— 权限点与 @Log 逐条照抄。
+	auth.GET("/manager/cartrackinfo/list", middleware.Perm("manager:cartrackinfo:list"), h.trackList)
 	auth.GET("/manager/cartrackinfo/listByCarId", h.trackListByCarID)
 	auth.GET("/manager/cartrackinfo/listByCarByTime", h.trackListByCarByTime)
-	auth.PUT("/manager/cartrackinfo/changeTrailInfo", h.trackChangeTrailInfo)
+	auth.PUT("/manager/cartrackinfo/changeTrailInfo",
+		middleware.OperLog(reg.App, "车辆行驶轨迹", middleware.BusinessUpdate), h.trackChangeTrailInfo)
 	auth.GET("/manager/cartrackinfo/carSnapShot", h.trackCarSnapshot)
-	auth.GET("/manager/cartrackinfo/export", h.trackExport)
+	auth.GET("/manager/cartrackinfo/export", middleware.Perm("manager:cartrackinfo:export"),
+		middleware.OperLog(reg.App, "车辆行驶轨迹", middleware.BusinessExport), h.trackExport)
 	auth.GET("/manager/cartrackinfo/:id", h.tableGet2(trackInfoSpec))
-	auth.POST("/manager/cartrackinfo", h.tableSave2(trackInfoSpec))
-	auth.PUT("/manager/cartrackinfo", h.tableSave2(trackInfoSpec))
-	auth.DELETE("/manager/cartrackinfo/:ids", h.tableDelete2(trackInfoSpec))
+	auth.POST("/manager/cartrackinfo", middleware.Perm("manager:cartrackinfo:add"),
+		middleware.OperLog(reg.App, "车辆行驶轨迹", middleware.BusinessInsert), h.tableSave2(trackInfoSpec))
+	auth.PUT("/manager/cartrackinfo", middleware.Perm("manager:cartrackinfo:edit"),
+		middleware.OperLog(reg.App, "车辆行驶轨迹", middleware.BusinessUpdate), h.tableSave2(trackInfoSpec))
+	auth.DELETE("/manager/cartrackinfo/:ids", middleware.Perm("manager:cartrackinfo:remove"),
+		middleware.OperLog(reg.App, "车辆行驶轨迹", middleware.BusinessDelete), h.tableDelete2(trackInfoSpec))
 }
 
 // trackQuery 对应 selectZdataTrailTracksList / getCyly + getHistoryTrail。

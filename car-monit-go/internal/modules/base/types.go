@@ -9,6 +9,7 @@ package base
 import (
 	"database/sql/driver"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -33,6 +34,11 @@ func (d *dateOnly) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), `"`)
 	if s == "" || s == "null" {
 		d.Time = time.Time{}
+		return nil
+	}
+	// 数值形态：fastjson2/Jackson 默认把 java.util.Date 写成毫秒时间戳。
+	if n, err := strconv.ParseInt(s, 10, 64); err == nil {
+		d.Time = time.UnixMilli(n)
 		return nil
 	}
 	t, err := web.ParseDate(s)
@@ -103,6 +109,11 @@ func (d *isoDateTime) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), `"`)
 	if s == "" || s == "null" {
 		d.Time = time.Time{}
+		return nil
+	}
+	// 数值形态：fastjson2/Jackson 默认把 java.util.Date 写成毫秒时间戳。
+	if n, err := strconv.ParseInt(s, 10, 64); err == nil {
+		d.Time = time.UnixMilli(n)
 		return nil
 	}
 	t, err := web.ParseDate(s)

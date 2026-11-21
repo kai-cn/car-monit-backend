@@ -23,6 +23,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"car-monit-go/internal/platform/sqlx"
 	"car-monit-go/internal/web"
 )
 
@@ -363,12 +364,7 @@ func sqlIntValue(value *int64) any {
 }
 
 // placeholders 生成 n 个逗号分隔的 ?。
-func placeholders(n int) string {
-	if n <= 0 {
-		return ""
-	}
-	return strings.TrimSuffix(strings.Repeat("?,", n), ",")
-}
+func placeholders(n int) string { return sqlx.Placeholders(n) }
 
 // ---------------------------------------------------------------------------
 // GenTableMapper

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"runtime/debug"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -41,7 +42,8 @@ func Recovery(a *app.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if r := recover(); r != nil {
-				a.Log.Error("请求发生未知异常", "panic", r, "path", c.Request.URL.Path, "stack", string(debug.Stack()))
+				logx.WithTrace(c.Request.Context(), a.Log).Error("请求发生未知异常",
+					"panic", r, "path", c.Request.URL.Path, "stack", string(debug.Stack()))
 				if !c.Writer.Written() {
 					web.RenderString(c, web.ErrorMsg("系统异常"))
 				}
@@ -49,6 +51,36 @@ func Recovery(a *app.App) gin.HandlerFunc {
 			}
 		}()
 		c.Next()
+	}
+}
+
+// AccessLog 每请求一条结构化日志，traceId 取自 TraceID 中间件写入的 context。
+//
+// JAVA 对照: 无（Java 只由 TraceIdFilter 写 MDC，没有访问日志）。
+// DIFF: 这是 Go 新增的可观测性落点，不改变任何响应；普通请求记 DEBUG，
+// 超过 monitor.slow-request-threshold 的请求记 WARN，避免生产日志被刷屏。
+func AccessLog(a *app.App) gin.HandlerFunc {
+	threshold := time.Duration(a.Cfg.Monitor.SlowRequestThreshold) * time.Millisecond
+	if threshold <= 0 {
+		threshold = 3 * time.Second
+	}
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+		cost := time.Since(start)
+		logger := logx.WithTrace(c.Request.Context(), a.Log)
+		attrs := []any{
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"status", c.Writer.Status(),
+			"costMs", cost.Milliseconds(),
+			"ip", c.ClientIP(),
+		}
+		if cost >= threshold {
+			logger.Warn("慢请求", append(attrs, "thresholdMs", threshold.Milliseconds())...)
+			return
+		}
+		logger.Debug("请求完成", attrs...)
 	}
 }
 

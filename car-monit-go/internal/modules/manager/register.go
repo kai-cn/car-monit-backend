@@ -67,7 +67,7 @@ func Register(reg *router.Registry) {
 		})
 	registerStandard(reg, h, "/manager/carsuspiciousback", "manager:carsuspiciousback", "可疑车辆备份", suspiciousBackSpec,
 		"carSuspiciousBack.xlsx", "可疑车辆备份数据", true, suspiciousBackExportCols())
-	registerStandard(reg, h, "/manager/suspiciouscheck", "manager:suspiciouscheck", "人工核实", suspiciousCheckSpec,
+	registerStandard(reg, h, "/manager/suspiciouscheck", "manager:suspiciouscheck", "可疑车辆人工核实", suspiciousCheckSpec,
 		"carSuspiciousCheck.xlsx", "人工核实", false, []exportCol{
 			// JAVA 对照: templates/export/carSuspiciousCheck.xlsx 的 $fe 引用里
 			// ruleName/noticeRangeAnme/notice/noticeType/noticeUserName/orgName 在
@@ -82,7 +82,7 @@ func Register(reg *router.Registry) {
 			{Title: "通知方式", Field: "noticeType", Dict: "notice_type", BlankOnMiss: true},
 			{Title: "通知人员", Field: "noticeUserName"}, {Title: "备注", Field: "remark"},
 		})
-	registerStandard(reg, h, "/manager/querylog", "manager:querylog", "查询日志", queryLogSpec,
+	registerStandardTitled(reg, h, "/manager/querylog", "manager:querylog", "查询日志", "日志信息", queryLogSpec,
 		"queryLog.xlsx", "查询日志", false, []exportCol{
 			{Title: "用户名称", Field: "userName"}, {Title: "用户IP", Field: "userIp"},
 			{Title: "模块菜单", Field: "modelType", Dict: "model_type"},
@@ -90,7 +90,7 @@ func Register(reg *router.Registry) {
 			{Title: "创建时间", Field: "createTime", Stamp: true},
 			{Title: "查询条件", Field: "queryCondition"},
 		})
-	registerStandard(reg, h, "/manager/gantrycar", "manager:gantrycar", "门架车辆", gantryCarSpec,
+	registerStandard(reg, h, "/manager/gantrycar", "manager:gantrycar", "门架拍识查询", gantryCarSpec,
 		"gantryCar.xlsx", "门架车辆", false, []exportCol{
 			{Title: "车牌号", Field: "carNo"},
 			{Title: "车型", Field: "carType", Dict: "car_type", BlankOnMiss: true},
@@ -101,7 +101,7 @@ func Register(reg *router.Registry) {
 			{Title: "出口门架"}, {Title: "出口时间"}, {Title: "交易类型"}, {Title: "收费金额"},
 			{Title: "备注", Field: "remark"},
 		})
-	registerStandard(reg, h, "/manager/whiteinfo", "manager:whiteinfo", "白名单", whiteInfoSpec,
+	registerStandard(reg, h, "/manager/whiteinfo", "manager:whiteinfo", "车俩白名单", whiteInfoSpec,
 		"carWhiteInfo.xlsx", "白名单", false, []exportCol{
 			{Title: "车牌颜色", Field: "plateColor", Dict: "plate_color", BlankOnMiss: true},
 			{Title: "车牌号", Field: "carNo"},
@@ -110,7 +110,7 @@ func Register(reg *router.Registry) {
 			{Title: "轴数", Field: "carNum"},
 			{Title: "备注", Field: "remark"},
 		})
-	registerStandard(reg, h, "/manager/routeinfo", "manager:routeinfo", "路线信息", routeInfoSpec,
+	registerStandard(reg, h, "/manager/routeinfo", "manager:routeinfo", "常用路线", routeInfoSpec,
 		"carRouterInfo.xlsx", "路线信息", false, []exportCol{
 			{Title: "车牌号", Field: "carNo"}, {Title: "车型", Field: "carType", Dict: "car_type"},
 			{Title: "车种", Field: "carVehicle", Dict: "car_vehicle"}, {Title: "轴数", Field: "carNum"},
@@ -131,7 +131,7 @@ func Register(reg *router.Registry) {
 			// car_split_record 与其域对象都没有 remark 属性
 			{Title: "备注"},
 		})
-	registerStandard(reg, h, "/manager/gantrytrade", "manager:gantrytrade", "门架交易", gantryTradeSpec,
+	registerStandard(reg, h, "/manager/gantrytrade", "manager:gantrytrade", "门架交易查询", gantryTradeSpec,
 		"gantryTrade.xlsx", "门架交易", false, []exportCol{
 			{Title: "车牌号", Field: "carNo"},
 			{Title: "车型", Field: "carType", Dict: "car_type", BlankOnMiss: true},
@@ -207,10 +207,20 @@ func Register(reg *router.Registry) {
 // registerStandard 装配一组「生成器模板」CRUD 路由。
 func registerStandard(reg *router.Registry, h *handler, base, perm, title string, spec *tableSpec,
 	fileName, sheet string, envelope bool, cols []exportCol) {
+	registerStandardTitled(reg, h, base, perm, title, "", spec, fileName, sheet, envelope, cols)
+}
+
+// registerStandardTitled 允许导出端点使用与其它端点不同的操作日志标题。
+// JAVA 对照: CarQueryLogController 的 @Log(title = "日志信息") 与其余端点的「查询日志」不同。
+func registerStandardTitled(reg *router.Registry, h *handler, base, perm, title, exportTitle string,
+	spec *tableSpec, fileName, sheet string, envelope bool, cols []exportCol) {
 	auth := reg.Authed
+	if exportTitle == "" {
+		exportTitle = title
+	}
 	auth.GET(base+"/list", middleware.Perm(perm+":list"), h.tableList2(spec))
 	auth.GET(base+"/export", middleware.Perm(perm+":export"),
-		middleware.OperLog(reg.App, title, middleware.BusinessExport), h.tableExport2(spec, fileName, sheet, cols, envelope))
+		middleware.OperLog(reg.App, exportTitle, middleware.BusinessExport), h.tableExport2(spec, fileName, sheet, cols, envelope))
 	auth.GET(base+"/:id", h.tableGet2(spec))
 	auth.POST(base, middleware.Perm(perm+":add"),
 		middleware.OperLog(reg.App, title, middleware.BusinessInsert), h.tableSave2(spec))

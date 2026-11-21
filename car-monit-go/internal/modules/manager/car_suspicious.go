@@ -23,7 +23,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
+	"car-monit-go/internal/idgen"
+	"car-monit-go/internal/middleware"
 	"car-monit-go/internal/router"
 	"car-monit-go/internal/web"
 )
@@ -72,20 +75,30 @@ var suspiciousSpec = &tableSpec{
 
 func (h *handler) registerSuspicious(reg *router.Registry) {
 	auth := reg.Authed
-	auth.GET("/manager/suspicious/list", h.suspiciousList)
+	// JAVA 对照: CarSuspiciousController.java:70-505。
+	// 权限点与 @Log 逐条照抄；其中 /check 的 @PreAuthorize 在 Java 里被注释（第 426 行），
+	// 因此 Go 侧也只挂 @Log 不挂 Perm。
+	auth.GET("/manager/suspicious/list", middleware.Perm("manager:suspicious:list"), h.suspiciousList)
 	auth.GET("/manager/suspicious/listCarNo", h.suspiciousListCarNo)
 	auth.GET("/manager/suspicious/listFileCarNo", h.suspiciousListFileCarNo)
 	auth.GET("/manager/suspicious/exportAbnormalPassage", h.suspiciousExportAbnormalPassage)
 	auth.GET("/manager/suspicious/listAll", h.suspiciousListAll)
-	auth.GET("/manager/suspicious/export", h.suspiciousExport)
-	auth.GET("/manager/suspicious/listHistory", h.suspiciousListHistory)
+	auth.GET("/manager/suspicious/export", middleware.Perm("manager:suspicious:export"),
+		middleware.OperLog(reg.App, "可疑车辆", middleware.BusinessExport), h.suspiciousExport)
+	auth.GET("/manager/suspicious/listHistory", middleware.Perm("manager:suspicious:list"),
+		h.suspiciousListHistory)
 	auth.GET("/manager/suspicious/history/:id", h.suspiciousHistoryGet)
-	auth.GET("/manager/suspicious/exportHistory", h.suspiciousExportHistory)
+	auth.GET("/manager/suspicious/exportHistory", middleware.Perm("manager:suspicious:export"),
+		middleware.OperLog(reg.App, "可疑车辆", middleware.BusinessExport), h.suspiciousExportHistory)
 	auth.GET("/manager/suspicious/:id", h.suspiciousGet)
-	auth.POST("/manager/suspicious", h.suspiciousSave)
-	auth.PUT("/manager/suspicious", h.suspiciousSave)
-	auth.PUT("/manager/suspicious/check", h.suspiciousCheck)
-	auth.DELETE("/manager/suspicious/:ids", h.suspiciousDelete)
+	auth.POST("/manager/suspicious", middleware.Perm("manager:suspicious:add"),
+		middleware.OperLog(reg.App, "可疑车辆", middleware.BusinessInsert), h.suspiciousSave)
+	auth.PUT("/manager/suspicious", middleware.Perm("manager:suspicious:edit"),
+		middleware.OperLog(reg.App, "可疑车辆", middleware.BusinessUpdate), h.suspiciousSave)
+	auth.PUT("/manager/suspicious/check",
+		middleware.OperLog(reg.App, "可疑车辆", middleware.BusinessUpdate), h.suspiciousCheck)
+	auth.DELETE("/manager/suspicious/:ids", middleware.Perm("manager:suspicious:remove"),
+		middleware.OperLog(reg.App, "可疑车辆", middleware.BusinessDelete), h.suspiciousDelete)
 	auth.POST("/manager/suspicious/syncSuspiciousCarTask", h.suspiciousSync)
 }
 
@@ -311,54 +324,76 @@ func (h *handler) suspiciousCheck(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	// 删除人工核验详情（物理删除）
-	_ = h.app.DB.WithContext(ctx).Exec("DELETE FROM car_suspicious_check WHERE car_id = ?", carID).Error
-	// 删除异常车辆信息（物理删除）
-	_ = h.app.DB.WithContext(ctx).Exec("DELETE FROM car_except_record WHERE car_id = ?", carID).Error
 
+	escapedType := ""
 	escapedAmount := 0.0
 	for _, check := range checkList {
+		addCheckType := isNull(check.EscapedType)
+		if !strings.Contains(escapedType, addCheckType) {
+			escapedType += addCheckType + ","
+		}
 		if check.DifAmount != nil {
 			escapedAmount += *check.DifAmount
 		}
 	}
+	escapedType = deleteEnd(escapedType)
+	// JAVA 对照: CarSuspiciousServiceImpl:256-268 的 escapedType 同样只计算不使用（源码遗留）；
+	// 保留计算以维持行为一致，这里显式消费避免 ineffassign 误报。
+	_ = escapedType
 
-	if isExcept == "1" {
-		// 查询车辆（重点车辆库）
-		var carCount int64
-		_ = h.app.DB.WithContext(ctx).Raw(
-			"SELECT COUNT(1) FROM car_info WHERE del_flag = '0' AND car_no = ?", carNo).Scan(&carCount).Error
-		if carCount == 0 {
-			userID := currentUserID(c)
-			epsID := currentEpsID(c)
-			now := time.Now()
-			carNum := bodyNumberInt64(body, "carNum")
-			_ = h.app.DB.WithContext(ctx).Table(carInfoTable).Create(map[string]any{
-				"id": newUUID(), "car_no": carNo, "car_type": bodyString(body, "carType"),
-				"car_num": carNum, "car_vehicle": bodyString(body, "carVehicle"),
-				"plate_color": bodyString(body, "plateColor"), "escaped_type": bodyString(body, "escapedType"),
-				"escaped_amount": escapedAmount, "del_flag": "0",
-				"create_by": userID, "create_time": now, "update_by": userID, "update_time": now,
-				"eps_id": epsID,
-			}).Error
+	// JAVA 对照: cherkCarSuspicious 带 @Transactional(rollbackFor = Exception.class)——
+	// 两次物理删除、人工核实/异常流水的批量插入、可疑车状态更新必须在同一事务里，
+	// 否则中途失败会留下「旧数据已删、新数据只写一半」的不可恢复中间态。
+	err = h.app.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 删除人工核验详情（物理删除）
+		if err := tx.Exec("DELETE FROM car_suspicious_check WHERE car_id = ?", carID).Error; err != nil {
+			return err
+		}
+		// 删除异常车辆信息（物理删除）
+		if err := tx.Exec("DELETE FROM car_except_record WHERE car_id = ?", carID).Error; err != nil {
+			return err
 		}
 
-		var excepts []*carExceptRecord
-		for _, check := range checkList {
-			check.CarID = strPtr(carID)
-			check.CarNo = strPtr(carNo)
-			check.SuspicousFlag = strPtr(isExcept)
-			record := &carExceptRecord{
-				CarID: strPtr(carID), CarNo: strPtr(carNo), CarType: strPtr(bodyString(body, "carType")),
-				CarVehicle: strPtr(bodyString(body, "carVehicle")), CarNum: bodyNumberInt64(body, "carNum"),
-				PassType: current.PassType, InStationID: current.InStationID, InStation: current.InStation,
-				InTime: current.InTime, OutStationID: current.GantryStationID, OutStation: current.GantrytStation,
-				OutTime: current.GantryTime, Status: strPtr("0"), TotalAmount: check.TotalAmount,
-				ChargeAmount: check.ChargeAmount, DifAmount: check.DifAmount, EscapedType: check.EscapedType,
+		if isExcept == "1" {
+			// 查询车辆（重点车辆库）
+			var carCount int64
+			if err := tx.Raw(
+				"SELECT COUNT(1) FROM car_info WHERE del_flag = '0' AND car_no = ?", carNo).
+				Scan(&carCount).Error; err != nil {
+				return err
 			}
-			excepts = append(excepts, record)
-		}
-		if len(checkList) > 0 {
+			if carCount == 0 {
+				userID := currentUserID(c)
+				epsID := currentEpsID(c)
+				now := time.Now()
+				carNum := bodyNumberInt64(body, "carNum")
+				if err := tx.Table(carInfoTable).Create(map[string]any{
+					"id": newUUID(), "car_no": carNo, "car_type": bodyString(body, "carType"),
+					"car_num": carNum, "car_vehicle": bodyString(body, "carVehicle"),
+					"plate_color": bodyString(body, "plateColor"), "escaped_type": bodyString(body, "escapedType"),
+					"escaped_amount": escapedAmount, "del_flag": "0",
+					"create_by": userID, "create_time": now, "update_by": userID, "update_time": now,
+					"eps_id": epsID,
+				}).Error; err != nil {
+					return err
+				}
+			}
+
+			var excepts []*carExceptRecord
+			for _, check := range checkList {
+				check.CarID = strPtr(carID)
+				check.CarNo = strPtr(carNo)
+				check.SuspicousFlag = strPtr(isExcept)
+				record := &carExceptRecord{
+					CarID: strPtr(carID), CarNo: strPtr(carNo), CarType: strPtr(bodyString(body, "carType")),
+					CarVehicle: strPtr(bodyString(body, "carVehicle")), CarNum: bodyNumberInt64(body, "carNum"),
+					PassType: current.PassType, InStationID: current.InStationID, InStation: current.InStation,
+					InTime: current.InTime, OutStationID: current.GantryStationID, OutStation: current.GantrytStation,
+					OutTime: current.GantryTime, Status: strPtr("0"), TotalAmount: check.TotalAmount,
+					ChargeAmount: check.ChargeAmount, DifAmount: check.DifAmount, EscapedType: check.EscapedType,
+				}
+				excepts = append(excepts, record)
+			}
 			for _, check := range checkList {
 				cols := map[string]any{
 					"id": newUUID(), "car_id": check.CarID, "car_no": check.CarNo,
@@ -371,9 +406,8 @@ func (h *handler) suspiciousCheck(c *gin.Context) {
 					"attachments": check.Attachments, "remark": check.Remark,
 				}
 				h.withInsertAudit(c, cols)
-				if err := h.insertRow(ctx, carSuspiciousCheckTable, cols); err != nil {
-					web.JSON(c, web.ErrorResult(err))
-					return
+				if err := insertRowTx(tx, carSuspiciousCheckTable, cols); err != nil {
+					return err
 				}
 			}
 			for _, record := range excepts {
@@ -388,33 +422,34 @@ func (h *handler) suspiciousCheck(c *gin.Context) {
 					"dif_amount": record.DifAmount, "escaped_type": record.EscapedType,
 				}
 				h.withInsertAudit(c, cols)
-				if err := h.insertRow(ctx, carExceptRecordTable, cols); err != nil {
-					web.JSON(c, web.ErrorResult(err))
-					return
+				if err := insertRowTx(tx, carExceptRecordTable, cols); err != nil {
+					return err
 				}
 			}
 		}
-	}
 
-	// 修改状态已核实
-	updateCols := map[string]any{
-		"check_status": "1", "is_except": isExcept,
-		"except_remark":   bodyString(body, "exceptRemark"),
-		"except_file_ids": bodyString(body, "exceptFileIds"),
-		"pass_type":       bodyString(body, "passType"),
-		"plate_color":     bodyString(body, "plateColor"),
-		"car_no":          carNo,
-		"car_type":        bodyString(body, "carType"),
-		"car_vehicle":     bodyString(body, "carVehicle"),
-		"car_num":         bodyNumberInt64(body, "carNum"),
-		"escaped_type":    bodyString(body, "escapedType"),
-		"remark":          bodyString(body, "remark"),
-	}
-	if isExcept == "0" {
-		updateCols["except_file_ids"] = ""
-	}
-	withUpdateAudit(c, updateCols)
-	if _, err := h.updateRow(ctx, carSuspiciousTable, carID, updateCols); err != nil {
+		// 修改状态已核实
+		updateCols := map[string]any{
+			"check_status": "1", "is_except": isExcept,
+			"except_remark":   bodyString(body, "exceptRemark"),
+			"except_file_ids": bodyString(body, "exceptFileIds"),
+			"pass_type":       bodyString(body, "passType"),
+			"plate_color":     bodyString(body, "plateColor"),
+			"car_no":          carNo,
+			"car_type":        bodyString(body, "carType"),
+			"car_vehicle":     bodyString(body, "carVehicle"),
+			"car_num":         bodyNumberInt64(body, "carNum"),
+			"escaped_type":    bodyString(body, "escapedType"),
+			"remark":          bodyString(body, "remark"),
+		}
+		if isExcept == "0" {
+			updateCols["except_file_ids"] = ""
+		}
+		withUpdateAudit(c, updateCols)
+		_, err := updateRowTx(tx, carSuspiciousTable, carID, updateCols)
+		return err
+	})
+	if err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}
@@ -636,7 +671,10 @@ func (h *handler) suspiciousSync(c *gin.Context) {
 		return
 	}
 	if len(payload.TrailInfoList) > 0 {
-		h.syncSuspiciousCar(c, payload.TrailInfoList)
+		if err := h.syncSuspiciousCar(c, payload.TrailInfoList); err != nil {
+			web.JSON(c, web.ErrorResult(err))
+			return
+		}
 	}
 	web.JSON(c, web.Success())
 }
@@ -672,7 +710,7 @@ type trailPoint struct {
 	SectionCode string `json:"sectionCode"`
 }
 
-func (h *handler) syncSuspiciousCar(c *gin.Context, rawList []json.RawMessage) {
+func (h *handler) syncSuspiciousCar(c *gin.Context, rawList []json.RawMessage) error {
 	whiteMap := map[string]struct{}{}
 	for _, white := range h.getRedisWhiteList(c) {
 		whiteMap[isNull(white.CarNo)] = struct{}{}
@@ -825,50 +863,59 @@ func (h *handler) syncSuspiciousCar(c *gin.Context, rawList []json.RawMessage) {
 
 	systemUserID := int64(1)
 	twoDaysAgo := time.Now().Add(-48 * time.Hour)
-	for _, item := range addList {
-		item.ID = strPtr(newSnowflakeID())
-		item.CreateBy = &systemUserID
-		item.UpdateBy = &systemUserID
-		item.CreateTime = ptrDateTime(twoDaysAgo)
-		item.UpdateTime = ptrDateTime(twoDaysAgo)
-		cols := map[string]any{
-			"id": item.ID, "plate_color": item.PlateColor, "car_no": item.CarNo,
-			"car_type": item.CarType, "car_vehicle": item.CarVehicle, "car_num": item.CarNum,
-			"pass_type": item.PassType, "in_station_id": item.InStationID, "in_station": item.InStation,
-			"in_time": item.InTime, "out_station_id": item.OutStationID, "out_station": item.OutStation,
-			"out_time": item.OutTime, "gantry_station_id": item.GantryStationID,
-			"gantryt_station": item.GantrytStation, "gantry_time": item.GantryTime,
-			"out_gantry_station_id": item.OutGantryStationID, "out_gantryt_station": item.OutGantrytStation,
-			"out_gantry_time": item.OutGantryTime, "escaped_type": item.EscapedType,
-			"remark": item.Remark, "track_id": item.TrackID, "track_josn": item.TrackJosn,
-			"track_names": item.TrackNames, "back_col1": item.BackCol1, "is_except": "1",
-			"status": "0", "del_flag": "0", "create_by": systemUserID, "create_time": twoDaysAgo,
-			"update_by": systemUserID, "update_time": twoDaysAgo,
+	// JAVA 对照: CarSuspiciousServiceImpl.syncSuspiciousCar 带 @Transactional(rollbackFor = Exception.class)。
+	// 单条写入失败在 Java 里会抛出并回滚整批，这里同样让整个批次同生共死。
+	return h.app.DB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+		for _, item := range addList {
+			item.ID = strPtr(newSnowflakeID())
+			item.CreateBy = &systemUserID
+			item.UpdateBy = &systemUserID
+			item.CreateTime = ptrDateTime(twoDaysAgo)
+			item.UpdateTime = ptrDateTime(twoDaysAgo)
+			cols := map[string]any{
+				"id": item.ID, "plate_color": item.PlateColor, "car_no": item.CarNo,
+				"car_type": item.CarType, "car_vehicle": item.CarVehicle, "car_num": item.CarNum,
+				"pass_type": item.PassType, "in_station_id": item.InStationID, "in_station": item.InStation,
+				"in_time": item.InTime, "out_station_id": item.OutStationID, "out_station": item.OutStation,
+				"out_time": item.OutTime, "gantry_station_id": item.GantryStationID,
+				"gantryt_station": item.GantrytStation, "gantry_time": item.GantryTime,
+				"out_gantry_station_id": item.OutGantryStationID, "out_gantryt_station": item.OutGantrytStation,
+				"out_gantry_time": item.OutGantryTime, "escaped_type": item.EscapedType,
+				"remark": item.Remark, "track_id": item.TrackID, "track_josn": item.TrackJosn,
+				"track_names": item.TrackNames, "back_col1": item.BackCol1, "is_except": "1",
+				"status": "0", "del_flag": "0", "create_by": systemUserID, "create_time": twoDaysAgo,
+				"update_by": systemUserID, "update_time": twoDaysAgo,
+			}
+			if err := insertRowTx(tx, carSuspiciousTable, cols); err != nil {
+				return err
+			}
 		}
-		if err := h.insertRow(c.Request.Context(), carSuspiciousTable, cols); err != nil {
-			continue
+		for _, item := range updateList {
+			cols := map[string]any{
+				"plate_color": item.PlateColor, "car_no": item.CarNo, "car_type": item.CarType,
+				"car_vehicle": item.CarVehicle, "car_num": item.CarNum, "pass_type": item.PassType,
+				"in_station_id": item.InStationID, "in_station": item.InStation, "in_time": item.InTime,
+				"out_station_id": item.OutStationID, "out_station": item.OutStation, "out_time": item.OutTime,
+				"gantry_station_id": item.GantryStationID, "gantryt_station": item.GantrytStation,
+				"gantry_time": item.GantryTime, "out_gantry_station_id": item.OutGantryStationID,
+				"out_gantryt_station": item.OutGantrytStation, "out_gantry_time": item.OutGantryTime,
+				"track_josn": item.TrackJosn, "track_names": item.TrackNames,
+				"back_col1": item.BackCol1, "is_except": "1", "status": "0",
+				"remark": item.Remark, "update_by": systemUserID, "update_time": twoDaysAgo,
+			}
+			if _, err := updateRowTx(tx, carSuspiciousTable, strOf(item.ID), cols); err != nil {
+				return err
+			}
 		}
-	}
-	for _, item := range updateList {
-		cols := map[string]any{
-			"plate_color": item.PlateColor, "car_no": item.CarNo, "car_type": item.CarType,
-			"car_vehicle": item.CarVehicle, "car_num": item.CarNum, "pass_type": item.PassType,
-			"in_station_id": item.InStationID, "in_station": item.InStation, "in_time": item.InTime,
-			"out_station_id": item.OutStationID, "out_station": item.OutStation, "out_time": item.OutTime,
-			"gantry_station_id": item.GantryStationID, "gantryt_station": item.GantrytStation,
-			"gantry_time": item.GantryTime, "out_gantry_station_id": item.OutGantryStationID,
-			"out_gantryt_station": item.OutGantrytStation, "out_gantry_time": item.OutGantryTime,
-			"track_josn": item.TrackJosn, "track_names": item.TrackNames,
-			"back_col1": item.BackCol1, "is_except": "1", "status": "0",
-			"remark": item.Remark, "update_by": systemUserID, "update_time": twoDaysAgo,
-		}
-		_, _ = h.updateRow(c.Request.Context(), carSuspiciousTable, strOf(item.ID), cols)
-	}
+		return nil
+	})
 }
 
 // ---------------------------------------------------------------- 工具
 
-func newSnowflakeID() string { return strconv.FormatInt(time.Now().UnixNano(), 10) }
+// newSnowflakeID 对应 MyBatis-Plus IdWorker.nextId()（car_suspicious 主键）。
+// DIFF: 原实现用 UnixNano，未带机器位；统一到 internal/idgen 后多副本不会碰撞。
+func newSnowflakeID() string { return idgen.NextString() }
 
 func carVehicleOfSync(carType string) string {
 	switch carType {

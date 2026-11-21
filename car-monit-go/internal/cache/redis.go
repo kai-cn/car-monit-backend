@@ -111,6 +111,29 @@ func (c *Cache) SetJavaString(ctx context.Context, key, value string, ttl time.D
 	return c.rdb.Set(ctx, key, b, ttl).Err()
 }
 
+// ReplaceJavaList 对应 setCacheList 的写入形态（每个元素一条 FastJson2 文本），
+// 但先 DEL 再 RPUSH。
+//
+// DIFF: Java 的 RedisCache#setCacheList 只做 rightPushAll，重复调用会无限追加；
+// 这里整份覆盖，避免 section_list 随每日同步无界增长。
+func (c *Cache) ReplaceJavaList(ctx context.Context, key string, values []any, o JavaOptions) error {
+	items := make([]any, 0, len(values))
+	for _, value := range values {
+		raw, err := ToJava(value, o)
+		if err != nil {
+			return err
+		}
+		items = append(items, string(raw))
+	}
+	pipe := c.rdb.TxPipeline()
+	pipe.Del(ctx, key)
+	if len(items) > 0 {
+		pipe.RPush(ctx, key, items...)
+	}
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
 // GetStringJava 读回 Java 写的字符串值（脱掉外层引号）；老 Go 写的裸文本原样返回。
 func (c *Cache) GetStringJava(ctx context.Context, key string) (string, bool) {
 	s, ok := c.GetString(ctx, key)

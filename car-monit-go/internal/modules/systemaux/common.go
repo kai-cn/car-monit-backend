@@ -19,18 +19,19 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/xuri/excelize/v2"
-
-	"car-monit-go/internal/excelx"
 	"gorm.io/gorm"
 
 	"car-monit-go/internal/app"
+	"car-monit-go/internal/excelx"
+	"car-monit-go/internal/idgen"
+	"car-monit-go/internal/platform/conv"
+	"car-monit-go/internal/platform/sqlx"
 	"car-monit-go/internal/web"
 )
 
@@ -82,21 +83,16 @@ func numVal(p *int64) int64 {
 }
 
 // isNull 对应 CommonUtil.isNull：null -> ""，否则 trim。
-func isNull(p *string) string {
-	if p == nil {
-		return ""
-	}
-	return strings.TrimSpace(*p)
-}
+func isNull(p *string) string { return conv.Null(p) }
 
 // isBlank 对应 StringUtils.isBlank / CommonUtil.isBlank。
-func isBlank(s string) bool { return strings.TrimSpace(s) == "" }
+func isBlank(s string) bool { return conv.Blank(s) }
 
 // isNotEmpty 对应 StringUtils.isNotEmpty（不 trim，null 视为空）。
 func isNotEmpty(p *string) bool { return p != nil && *p != "" }
 
 // isNotBlank 对应 StringUtils.isNotBlank / CommonUtil.isNotBlank（trim 后非空）。
-func isNotBlank(p *string) bool { return p != nil && strings.TrimSpace(*p) != "" }
+func isNotBlank(p *string) bool { return conv.NotBlank(p) }
 
 // deleteEnd 对应 CommonUtil.deleteEnd：只删一个结尾逗号。
 func deleteEnd(s string) string {
@@ -162,12 +158,7 @@ func parseLongArray(name, raw string) ([]int64, error) {
 }
 
 // inPlaceholders 生成 "?,?,?"；调用方保证 n > 0。
-func inPlaceholders(n int) string {
-	if n <= 0 {
-		return "NULL"
-	}
-	return strings.TrimSuffix(strings.Repeat("?,", n), ",")
-}
+func inPlaceholders(n int) string { return sqlx.PlaceholdersOrNull(n) }
 
 // int64Args 把 []int64 转成 []any，便于与 inPlaceholders 配合。
 func int64Args(ids []int64) []any {
@@ -293,36 +284,12 @@ func excelSend(c *gin.Context, filename string, err error) {
 // ---------------------------------------------------------------------------
 // 雪花主键
 // JAVA 对照: com/ruoyi/common/utils/uuid/SnowflakeIdWorker（sys_file 主键）
-// DIFF: Java 用独立 Bean 的雪花算法；Go 侧在本包内实现等价的时间戳+序号生成器。
+// DIFF: 生成器统一到 internal/idgen，workerId/datacenterId 由配置或环境变量决定，
+// 多副本部署不会共用同一个机器位。
 // ---------------------------------------------------------------------------
 
-type snowflake struct {
-	mu       sync.Mutex
-	lastMS   int64
-	sequence int64
-}
-
-var idWorker = &snowflake{}
-
-const snowflakeEpoch = int64(1288834974657)
-
-func (s *snowflake) Next() int64 {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	now := time.Now().UnixMilli()
-	if now == s.lastMS {
-		s.sequence = (s.sequence + 1) & 0xFFF
-		if s.sequence == 0 {
-			for now <= s.lastMS {
-				now = time.Now().UnixMilli()
-			}
-		}
-	} else {
-		s.sequence = 0
-	}
-	s.lastMS = now
-	return ((now - snowflakeEpoch) << 22) | (1 << 12) | s.sequence
-}
+// nextSnowflakeID 等价于 SnowflakeIdWorker.nextId()。
+func nextSnowflakeID() int64 { return idgen.NextInt64() }
 
 // uuidString 对应 StringUtils.getUUID()（去横线）。
 func uuidString() string { return strings.ReplaceAll(uuid.NewString(), "-", "") }

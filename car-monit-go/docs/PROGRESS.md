@@ -1,5 +1,71 @@
 # 迁移工作进度（接口返回逐一对比阶段）
 
+> **2026-11-08 真实中间件联调批次**：按用户下发的本机环境（MySQL 8/3307、Redis 8、
+> ES 7.15.2、Kafka 4.0.0），在 3307 实例上 `CREATE DATABASE carmonit_ingest_test` 做端到端验证
+> （用后 DROP）。实测 Kafka→Redis 幂等→月度分表→ES→DLQ 全链路：4 条消息中 1 条入库、
+> 1 条重复被跳过、2 条进 DLQ（信封字段与 Java `sendToDLQ` 一致），consumer group offset 4/4。
+> **联调中发现真实缺陷**：kafka-go v0.4.47 对 Kafka 4.0 的 `JoinGroup` 返回 EOF，消费端
+> 无法加入组；升级到 v0.4.51 后正常。另新增 `-tags=integration` 集成测试验证
+> `SyncSingleMonth`（2 行入库、缺 snapshottime 跳过、重复同步幂等）与 `PreCreateTables`。
+> 详见 MAPPING §4.1 与 MIGRATION_GUIDE §1.9。
+>
+> **2026-11-08 构建/迁移验证批次**：`cmd/migrate` 在本机 MySQL 8.0.30 上实跑 `-dry-run`
+> 与落库（`schema_migrations=0001`）。本机无 Docker，无法执行 `docker build`；已用
+> Dockerfile 内完全相同的构建命令交叉编译 linux/amd64 的 server 与 migrate（产物
+> 21.5MB / 8.2MB），并确认 Dockerfile 会 COPY 的 `configs/{vm,vmplus,templates}` 与
+> `configs/generator.yml` 均存在。**验证缺口**：distroless 运行期未实跑（无 Docker），
+> 镜像内非 root 用户写 `ruoyi.profile` 需保证挂载目录可写。
+>
+> **2026-11-08 基建收敛批次**：新增 `internal/platform/conv`，把散落在 base/manager/
+> systemaux/flow/system/generator/ops 的 `strPtr/isNull/strOf/isNotBlank/isBlank/splitCSV`
+> 收敛为唯一实现，各模块只保留同签名薄包装（调用点与 NULL/trim 语义不变）。
+> `placeholders/inPlaceholders` 统一委托 `internal/platform/sqlx`，并为 MyBatis 空集合
+> 语义补 `PlaceholdersOrNull`。**收敛过程中测试发现 `sqlx.SpacePlaceholders` 生成
+> `"?, ?, ?,"`（尾部多逗号）的既有缺陷，已修复并补单测**；ops 的 IN 拼接因此从手写
+> 循环改为统一实现。新增 `conv`/`sqlx` 单测覆盖 null、trim、CSV 尾空串与空集合。
+>
+> **2026-11-08 golangci-lint 实跑批次**：本机安装 v2.1.6 并真实执行（非仅留配置）。
+> 首轮 89 个问题全部收敛到 0：修复 3 处 errcheck、2 处 goimports、1 处 ineffassign、
+> 2 处可简化表达式；删除 27 个迁移遗留的死函数/常量；对 Java 语义必须保留的
+> `saveFlowApply/doFlowApply` 与公告死代码用 `//nolint:unused` 注明原因。
+> 配置层关闭 ST1000/ST1003/ST1005/ST1020-ST1022，理由均为“与迁移规范冲突”：
+> 每个文件顶部的中文对照注释、Java 方法名/字段名（如 `synchDb`、`CpuNum`）、
+> Java 原文错误消息必须逐字保留。`misspell` 对 `strat`/`curent` 两个 Java 原名加白名单。
+> 复跑命令（缓存目录需可写）：
+> `$env:GOLANGCI_LINT_CACHE="$env:TEMP\golangci-cache"; golangci-lint run` → `0 issues`。
+>
+> **2026-11-08 运行时回归批次**：本机无 Docker，改用 MySQL 8.0.30（临时 datadir，3307）+
+> 临时 miniredis（6379）实跑 `cmd/migrate`（dry-run + 落库）与 `cmd/server`；
+> `/healthz` 返回 database/redis 均 UP；admin 与无权限账号登录成功；
+> 无权限账号访问 4 个受保护只读端点全部 `code=403`，admin 同端点不被拒；
+> 非 admin 触发带 OperLog 的失败操作后，`sys_oper_log` 落到 `operName=noperm status=1`，
+> `sys_logininfor` 记录登录成功。上述矩阵固化为
+> `scripts/parity/check_permissions_runtime.py` + `make parity-perms-runtime`，
+> 并新增 CI 作业 `runtime-perms-audit`（MySQL/Redis service containers + 基线 schema）。
+> 细节与账号种子见 MIGRATION_GUIDE §1.8。
+>
+> **2026-11-08 数据面批次（分支 `car-monit-go-V2`）**：把此前"未接线"的 `internal/stream/*` 真正接到
+> 运行时。新增 `internal/modules/base/datasync{,_source,_sync,_baseinfo}.go`：
+> Kafka 消费 → Redis SETNX 幂等 → 按 `snapshottime` 路由 MySQL 月度分表 → ES `_bulk` 索引，
+> 失败消息重试 3 次后按 Java 信封进死信队列；`main` 在 `kafka.enabled=true` 时启动消费者并参与优雅停机。
+> 同时实现 `vehicleMonitoringTask`（7 个基础表全量刷新，含 `section_list` 覆盖写）、
+> `snapshotFlowSyncTask`（全量/增量/单月/GaussDB HTTP 适配层）、`shardingTableTask`（分表预创建），
+> 三者注册为 quartz 任务 Bean；`unmigratedTargets` 只剩 `trackTask.syncHistoryTrack`。
+> **关键 DIFF**：分表路由不再依赖 ShardingSphere；INSERT 改为 `ON DUPLICATE KEY UPDATE` 保证重试幂等；
+> 写入前按需建表；分表写失败不再静默 ack。**未验证**：真实 Kafka/ES/GaussDB 联调、
+> ES 毫秒时间戳 mapping、vehicleMonitor 的 `earliest-time` 响应结构（见 MAPPING §4.1）。
+> 新增离线测试 `datasync_test.go`（sqlmock + httptest）与 Redis 集成测试（默认跳过，
+> `CARMONIT_TEST_REDIS=1` 启用）。
+>
+> **2026-11-08 加固批次（分支 `car-monit-go-V2`）**：按代码审阅结论做生产化整改，
+> 不改动 API 契约。已完成：manager 手写控制器的权限点与操作日志逐条对齐 Java（含被注释注解不加）、
+> 可疑车辆核实/批量同步、异常流水+车辆金额回写、代码生成 4 个多写流程补事务并把吞错改为返回 error、
+> OperLog 改固定 worker 池（跳过文件流与 multipart、2000 字节上限）、雪花 ID 统一到 `internal/idgen`
+> 并支持多副本（`CARMONIT_WORKER_ID`/`CARMONIT_DATACENTER_ID`）、数据接入归属决策
+> （Kafka/ES/GaussDB 仍由 Java 承担，未迁移任务保存时直接拒绝）、`/healthz` DOWN 返回 503、
+> 服务器超时与优雅停机（限时收敛定时任务 + 排空操作日志）。
+> **注意**：这些改动会改变非 admin 用户的 403 行为与 `sys_oper_log` 行数，双端对拍需用无权限账号补测权限/审计维度。
+>
 > **2026-11-06→07 第四批：按"每条注册路由是否真被比过"重查一遍** —— 新增 `check_coverage.py`，
 > 口径直接复用各对拍脚本自己的定义。第一轮盘出 515 条路由里 **102 条从没被跑过**；补齐口径后
 > 现在是 437/450 = **97.1%** 覆盖，未覆盖只剩 13 条动作型端点（5 条可补 `actions`、8 条按约定该豁免，

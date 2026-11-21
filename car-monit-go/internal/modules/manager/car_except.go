@@ -15,7 +15,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
+	"car-monit-go/internal/middleware"
 	"car-monit-go/internal/router"
 	"car-monit-go/internal/web"
 )
@@ -78,19 +80,26 @@ var exceptRecordSpecNew = &tableSpec{
 
 func (h *handler) registerExceptRecord(reg *router.Registry) {
 	auth := reg.Authed
+	// JAVA 对照: CarExceptRecordController —— 该控制器没有 @PreAuthorize，只有 @Log。
 	auth.GET("/manager/exceptrecord/list", h.exceptList)
 	auth.GET("/manager/exceptrecord/listCarNo", h.exceptListCarNo)
 	auth.GET("/manager/exceptrecord/listCarOrgId", h.exceptListCarOrgID)
-	auth.GET("/manager/exceptrecord/exportOrgId", h.exceptExportOrgID)
+	auth.GET("/manager/exceptrecord/exportOrgId",
+		middleware.OperLog(reg.App, "异常车辆流水", middleware.BusinessExport), h.exceptExportOrgID)
 	auth.GET("/manager/exceptrecord/listExceptId", h.exceptListExceptID)
 	auth.GET("/manager/exceptrecord/exceptRecordCount", h.exceptRecordCount)
-	auth.GET("/manager/exceptrecord/export", h.exceptExport)
+	auth.GET("/manager/exceptrecord/export",
+		middleware.OperLog(reg.App, "异常车辆流水", middleware.BusinessExport), h.exceptExport)
 	auth.GET("/manager/exceptrecord/getConfirmId/:id", h.exceptGetConfirmID)
 	auth.GET("/manager/exceptrecord/:id", h.exceptGet)
-	auth.POST("/manager/exceptrecord", h.exceptSave)
-	auth.PUT("/manager/exceptrecord", h.exceptSave)
-	auth.DELETE("/manager/exceptrecord/:ids", h.exceptDelete)
-	auth.POST("/manager/exceptrecord/import", h.exceptImport)
+	auth.POST("/manager/exceptrecord",
+		middleware.OperLog(reg.App, "异常车辆流水", middleware.BusinessInsert), h.exceptSave)
+	auth.PUT("/manager/exceptrecord",
+		middleware.OperLog(reg.App, "异常车辆流水", middleware.BusinessUpdate), h.exceptSave)
+	auth.DELETE("/manager/exceptrecord/:ids",
+		middleware.OperLog(reg.App, "异常车辆流水", middleware.BusinessDelete), h.exceptDelete)
+	auth.POST("/manager/exceptrecord/import",
+		middleware.OperLog(reg.App, "新增流水导入", middleware.BusinessImport), h.exceptImport)
 }
 
 // normalizeExceptRecords 补齐 Java 实体字段默认值（列表/详情扫描后调用）。
@@ -288,34 +297,43 @@ func (h *handler) exceptSave(c *gin.Context) {
 		}
 	}
 	cols := pickColumns(body, carExceptRecordColumns)
-	if id != "" {
-		withUpdateAudit(c, cols)
-		if _, err := h.updateRow(c.Request.Context(), carExceptRecordTable, id, cols); err != nil {
-			web.JSON(c, web.ErrorResult(err))
-			return
+	ctx := c.Request.Context()
+	// JAVA 对照: CarExceptRecordServiceImpl.saveCarExceptRecord 带 @Transactional(rollbackFor = Exception.class)——
+	// 流水写入与 car_info 逃费金额回写必须同属一个事务。
+	err = h.app.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if id != "" {
+			withUpdateAudit(c, cols)
+			if _, err := updateRowTx(tx, carExceptRecordTable, id, cols); err != nil {
+				return err
+			}
+		} else {
+			cols["status"] = "0"
+			id = newUUID()
+			cols["id"] = id
+			h.withInsertAudit(c, cols)
+			if err := insertRowTx(tx, carExceptRecordTable, cols); err != nil {
+				return err
+			}
 		}
-	} else {
-		cols["status"] = "0"
-		id = newUUID()
-		cols["id"] = id
-		h.withInsertAudit(c, cols)
-		if err := h.insertRow(c.Request.Context(), carExceptRecordTable, cols); err != nil {
-			web.JSON(c, web.ErrorResult(err))
-			return
+		if carNo != "" {
+			return saveCarExceptTx(tx, carNo)
 		}
-	}
-	if carNo != "" {
-		h.saveCarExcept(c, carNo)
+		return nil
+	})
+	if err != nil {
+		web.JSON(c, web.ErrorResult(err))
+		return
 	}
 	web.JSON(c, web.SuccessFull("操作成功！", id))
 }
 
 // saveCarExcept 按车牌重算逃费类型/金额并回写 car_info（只更新已存在车牌）。
-func (h *handler) saveCarExcept(c *gin.Context, carNo string) {
-	h.saveCarExceptContext(c.Request.Context(), carNo)
+func (h *handler) saveCarExcept(ctx context.Context, carNo string) error {
+	return saveCarExceptTx(h.app.DB.WithContext(ctx), carNo)
 }
 
-func (h *handler) saveCarExceptContext(ctx context.Context, carNo string) {
+// saveCarExceptTx 是 saveCarExcept 的事务版本。
+func saveCarExceptTx(db *gorm.DB, carNo string) error {
 	sqlStr := "SELECT t.car_no, count(1) AS except_num, round(sum(t.dif_amount), 2) AS except_amount, " +
 		"round(sum(t.total_amount), 2) AS total_amount, round(sum(t.charge_amount), 2) AS charge_amount, " +
 		"group_concat(distinct t.escaped_type SEPARATOR ',') AS escaped_type " +
@@ -325,23 +343,29 @@ func (h *handler) saveCarExceptContext(ctx context.Context, carNo string) {
 		ExceptAmount *float64 `gorm:"column:except_amount"`
 		EscapedType  string   `gorm:"column:escaped_type"`
 	}
-	if err := h.app.DB.WithContext(ctx).Raw(sqlStr, carNo).Scan(&rows).Error; err != nil {
-		return
+	if err := db.Raw(sqlStr, carNo).Scan(&rows).Error; err != nil {
+		return err
 	}
 	for _, row := range rows {
 		if isBlank(row.CarNo) {
 			continue
 		}
 		var carID string
-		if err := h.app.DB.WithContext(ctx).Table(carInfoTable).
+		if err := db.Table(carInfoTable).
 			Select("id").Where("del_flag = '0' AND car_no = ?", row.CarNo).Limit(1).
-			Scan(&carID).Error; err != nil || carID == "" {
+			Scan(&carID).Error; err != nil {
+			return err
+		}
+		if carID == "" {
 			continue
 		}
-		_ = h.app.DB.WithContext(ctx).Table(carInfoTable).
+		if err := db.Table(carInfoTable).
 			Where("id = ? AND del_flag = '0'", carID).
-			Updates(map[string]any{"escaped_type": row.EscapedType, "escaped_amount": row.ExceptAmount}).Error
+			Updates(map[string]any{"escaped_type": row.EscapedType, "escaped_amount": row.ExceptAmount}).Error; err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // exceptDelete 对应 deleteCarExceptRecordByIds：有补缴记录则拒绝。
@@ -616,7 +640,11 @@ func (h *handler) exceptImport(c *gin.Context) {
 			item.TenantID = &tenantID
 		}
 		if isNull(item.CarNo) != "" {
-			h.saveCarExcept(c, isNull(item.CarNo))
+			// 导入是逐行累积错误的批处理：单行车牌回写失败只记录告警，
+			// 不影响其它行的导入结果（Java 侧这里的异常同样被 ImportUtil 逐行捕获）。
+			if err := h.saveCarExcept(c.Request.Context(), isNull(item.CarNo)); err != nil {
+				h.app.Log.Warn("导入后回写车辆逃费金额失败", "carNo", isNull(item.CarNo), "err", err)
+			}
 		}
 	}
 	web.JSON(c, web.SuccessFull("数据导入成功", importList))

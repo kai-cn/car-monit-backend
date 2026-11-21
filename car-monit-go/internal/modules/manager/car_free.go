@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"car-monit-go/internal/middleware"
 	"car-monit-go/internal/router"
 	"car-monit-go/internal/web"
 )
@@ -86,33 +87,43 @@ type carAuditVO struct {
 
 func (h *handler) registerAduitFree(reg *router.Registry) {
 	auth := reg.Authed
+	// JAVA 对照: CarAduitFreeController —— 无 @PreAuthorize，只有 4 个 @Log。
 	auth.GET("/manager/aduitfree/list", h.tableList2(aduitFreeSpec))
-	auth.GET("/manager/aduitfree/export", h.aduitFreeExport)
+	auth.GET("/manager/aduitfree/export",
+		middleware.OperLog(reg.App, "补缴处理", middleware.BusinessExport), h.aduitFreeExport)
 	auth.GET("/manager/aduitfree/incomeStatics", h.aduitFreeIncomeStatics)
 	auth.GET("/manager/aduitfree/exportIncomeStatics", h.aduitFreeExportIncomeStatics)
 	auth.GET("/manager/aduitfree/incomeDetailList", h.aduitFreeIncomeDetailList)
 	auth.GET("/manager/aduitfree/exportIncomeDetailList", h.aduitFreeExportIncomeDetailList)
 	auth.GET("/manager/aduitfree/:id", h.tableGet2(aduitFreeSpec))
-	auth.POST("/manager/aduitfree", h.tableSave2(aduitFreeSpec))
-	auth.PUT("/manager/aduitfree", h.tableSave2(aduitFreeSpec))
-	auth.DELETE("/manager/aduitfree/:ids", h.tableDelete2(aduitFreeSpec))
+	auth.POST("/manager/aduitfree",
+		middleware.OperLog(reg.App, "补缴处理", middleware.BusinessInsert), h.tableSave2(aduitFreeSpec))
+	auth.PUT("/manager/aduitfree",
+		middleware.OperLog(reg.App, "补缴处理", middleware.BusinessUpdate), h.tableSave2(aduitFreeSpec))
+	auth.DELETE("/manager/aduitfree/:ids",
+		middleware.OperLog(reg.App, "补缴处理", middleware.BusinessDelete), h.tableDelete2(aduitFreeSpec))
 }
 
 func (h *handler) registerConfimFree(reg *router.Registry) {
 	auth := reg.Authed
+	// JAVA 对照: CarConfimFreeController —— 无 @PreAuthorize，只有 4 个 @Log。
 	auth.GET("/manager/confimfree/list", h.tableList2(confimFreeSpec))
 	auth.GET("/manager/confimfree/listCarNo", h.confimFreeListCarNo)
 	auth.GET("/manager/confimfree/listCount", h.confimFreeListCount)
-	auth.GET("/manager/confimfree/export", h.confimFreeExport)
+	auth.GET("/manager/confimfree/export",
+		middleware.OperLog(reg.App, "确认补缴", middleware.BusinessExport), h.confimFreeExport)
 	auth.GET("/manager/confimfree/concernedList", h.confimFreeConcernedList)
 	auth.GET("/manager/confimfree/exportConcernedList", h.confimFreeExportConcernedList)
 	auth.GET("/manager/confimfree/carStatics", h.confimFreeCarStatics)
 	auth.GET("/manager/confimfree/exportCarStatics", h.confimFreeExportCarStatics)
 	auth.GET("/manager/confimfree/except/:exceptIds", h.confimFreeExcept)
 	auth.GET("/manager/confimfree/:id", h.confimFreeGet)
-	auth.POST("/manager/confimfree", h.confimFreeSave)
-	auth.PUT("/manager/confimfree", h.confimFreeSave)
-	auth.DELETE("/manager/confimfree/:ids", h.confimFreeDelete)
+	auth.POST("/manager/confimfree",
+		middleware.OperLog(reg.App, "确认补缴", middleware.BusinessInsert), h.confimFreeSave)
+	auth.PUT("/manager/confimfree",
+		middleware.OperLog(reg.App, "确认补缴", middleware.BusinessUpdate), h.confimFreeSave)
+	auth.DELETE("/manager/confimfree/:ids",
+		middleware.OperLog(reg.App, "确认补缴", middleware.BusinessDelete), h.confimFreeDelete)
 }
 
 // ---------------------------------------------------------------- 补缴处理

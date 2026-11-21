@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"car-monit-go/internal/platform/sqlx"
 )
 
 type condKind int
@@ -148,12 +150,7 @@ func buildWhereWith(prefix string, conds []cond, get func(string) string) (strin
 }
 
 // placeholders 生成 "?, ?, ?"。
-func placeholders(n int) string {
-	if n <= 0 {
-		return ""
-	}
-	return strings.TrimSuffix(strings.Repeat("?,", n), ",")
-}
+func placeholders(n int) string { return sqlx.Placeholders(n) }
 
 // ---------------------------------------------------------------------------
 // 反射工具
@@ -162,7 +159,7 @@ func placeholders(n int) string {
 // newSliceOf 返回 *[]*T（T 为 prototype 的元素类型），供 GORM Scan 使用。
 func newSliceOf(prototype any) any {
 	t := reflect.TypeOf(prototype).Elem()
-	return reflect.New(reflect.SliceOf(reflect.PointerTo(t))).Interface()
+	return reflect.New(reflect.SliceOf(reflect.PtrTo(t))).Interface()
 }
 
 // newElemOf 返回 *T。

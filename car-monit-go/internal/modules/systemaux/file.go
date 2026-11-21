@@ -376,7 +376,7 @@ func (s *fileService) saveSysFile(ctx context.Context, b *sysFileBody, userID in
 		return web.SuccessFull("操作成功！", *b.ID), nil
 	}
 
-	id := idWorker.Next()
+	id := nextSnowflakeID()
 	cols := make([]fileColumn, 0, 14)
 	cols = append(cols, fileColumn{"id", id})
 	if b.FileName != nil {
@@ -479,7 +479,7 @@ func (s *fileService) deleteSysFileByIDNew(ctx context.Context, id int64) {
 
 // insertLogRow 按保存逻辑补雪花 id 与审计列。
 func (s *fileService) insertLogRow(ctx context.Context, f *model.SysFile, userID int64, delFlag bool) error {
-	f.ID = idWorker.Next()
+	f.ID = nextSnowflakeID()
 	user := strconv.FormatInt(userID, 10)
 	now := web.Now()
 	cols := []fileColumn{

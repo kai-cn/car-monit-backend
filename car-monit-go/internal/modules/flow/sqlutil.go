@@ -26,6 +26,7 @@ import (
 	"car-monit-go/internal/auth"
 	"car-monit-go/internal/config"
 	"car-monit-go/internal/model"
+	"car-monit-go/internal/platform/conv"
 	"car-monit-go/internal/web"
 )
 
@@ -60,8 +61,8 @@ func actorFrom(c *gin.Context) actor {
 	return a
 }
 
-func strPtr(v string) *string { return &v }
-func i64Ptr(v int64) *int64   { return &v }
+func strPtr(v string) *string { return conv.Str(v) }
+func i64Ptr(v int64) *int64   { return conv.Int64(v) }
 
 func strVal(v *string) string {
 	if v == nil {

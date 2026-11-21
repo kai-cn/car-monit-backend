@@ -12,17 +12,18 @@ package manager
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
 	"car-monit-go/internal/app"
 	"car-monit-go/internal/auth"
 	"car-monit-go/internal/model"
+	"car-monit-go/internal/platform/conv"
 	"car-monit-go/internal/web"
 )
 
@@ -41,35 +42,19 @@ func newHandler(a *app.App) *handler { return &handler{app: a} }
 //
 // DIFF: Go 的实体字段用 *string 表达「Java 侧可能是 null」，
 // 因此这些工具函数接受 any，行为与 Java 的 String 工具一致。
-func strOf(v any) string {
-	switch x := v.(type) {
-	case nil:
-		return ""
-	case string:
-		return x
-	case *string:
-		if x == nil {
-			return ""
-		}
-		return *x
-	case []byte:
-		return string(x)
-	default:
-		return fmt.Sprint(v)
-	}
-}
+func strOf(v any) string { return conv.Value(v) }
 
 // strPtr 取字符串指针，用于给 *string 字段赋值。
-func strPtr(s string) *string { return &s }
+func strPtr(s string) *string { return conv.Str(s) }
 
 // isNull 对应 CommonUtil.isNull：null -> ""，否则 toString().trim()。
-func isNull(v any) string { return strings.TrimSpace(strOf(v)) }
+func isNull(v any) string { return conv.Null(v) }
 
 // isNotBlank 对应 CommonUtil.isNotBlank（StringUtils.isNotBlank）。
-func isNotBlank(v any) bool { return strings.TrimSpace(strOf(v)) != "" }
+func isNotBlank(v any) bool { return conv.NotBlank(v) }
 
 // isBlank 对应 CommonUtil.isBlank（StringUtils.isBlank）。
-func isBlank(v any) bool { return strings.TrimSpace(strOf(v)) == "" }
+func isBlank(v any) bool { return conv.Blank(v) }
 
 // deleteEnd 对应 CommonUtil.deleteEnd：去掉末尾一个逗号。
 func deleteEnd(v any) string { return strings.TrimSuffix(strings.TrimSpace(strOf(v)), ",") }
@@ -78,13 +63,7 @@ func deleteEnd(v any) string { return strings.TrimSuffix(strings.TrimSpace(strOf
 //
 // DIFF: Java 的 split 用正则且默认 limit=0（去掉尾部空串），Go 的 strings.Split 保留空串，
 // 因此这里手工裁剪，保证 "a," -> ["a"]、"a,,b" -> ["a","","b"] 与 Java 一致。
-func splitCSV(s string) []string {
-	parts := strings.Split(s, ",")
-	for len(parts) > 0 && parts[len(parts)-1] == "" {
-		parts = parts[:len(parts)-1]
-	}
-	return parts
-}
+func splitCSV(s string) []string { return conv.SplitCSV(s) }
 
 // newUUID 对应 StringUtils.getUUID()：32 位无连字符 UUID。
 func newUUID() string { return strings.ReplaceAll(uuid.NewString(), "-", "") }
@@ -117,10 +96,6 @@ func currentTenantID(c *gin.Context) int64 {
 	}
 	return -1
 }
-
-// ---------------------------------------------------------------------------
-// MyBatis 动态 SQL 的显式替身
-// ---------------------------------------------------------------------------
 
 // whereClause 对应 mapper XML 里那一串 <if test="..."> 条件。
 type whereClause struct {
@@ -323,7 +298,12 @@ func pickColumns(body map[string]any, allowed map[string]string) map[string]any 
 
 // insertRow 执行 INSERT（对应 BaseMapper.insert），返回主键。
 func (h *handler) insertRow(ctx context.Context, table string, cols map[string]any) error {
-	return h.app.DB.WithContext(ctx).Table(table).Create(cols).Error
+	return insertRowTx(h.app.DB.WithContext(ctx), table, cols)
+}
+
+// insertRowTx 是 insertRow 的事务版本：调用方已在 db.Transaction 内时使用，保证同一事务。
+func insertRowTx(tx *gorm.DB, table string, cols map[string]any) error {
+	return tx.Table(table).Create(cols).Error
 }
 
 // mpNonNullCols 对应 MyBatis-Plus 的默认字段策略 NOT_NULL：null 属性不进 INSERT/UPDATE 的列清单，
@@ -347,11 +327,16 @@ func mpNonNullCols(cols map[string]any) map[string]any {
 //
 // JAVA 对照: 实体上的 @TableLogic 会让 MP 在 updateById 时追加 del_flag = '0'。
 func (h *handler) updateRow(ctx context.Context, table, id string, cols map[string]any) (int64, error) {
+	return updateRowTx(h.app.DB.WithContext(ctx), table, id, cols)
+}
+
+// updateRowTx 是 updateRow 的事务版本。
+func updateRowTx(tx *gorm.DB, table, id string, cols map[string]any) (int64, error) {
 	if len(cols) == 0 {
 		return 0, nil
 	}
-	tx := h.app.DB.WithContext(ctx).Table(table).Where("id = ? AND del_flag = '0'", id).Updates(cols)
-	return tx.RowsAffected, tx.Error
+	res := tx.Table(table).Where("id = ? AND del_flag = '0'", id).Updates(cols)
+	return res.RowsAffected, res.Error
 }
 
 // softDeleteByIDs 对应 mapper 里的 deleteXxxByIds：update ... set del_flag = '1' where id in (...)。

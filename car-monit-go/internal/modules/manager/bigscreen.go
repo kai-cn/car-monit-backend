@@ -149,9 +149,13 @@ func (h *handler) bigSectionList(c *gin.Context) {
 		SectionCode string `gorm:"column:section_code"`
 		SectionName string `gorm:"column:section_name"`
 	}
-	_ = h.app.DB.WithContext(c.Request.Context()).Raw(
+	if err := h.app.DB.WithContext(c.Request.Context()).Raw(
 		"SELECT DISTINCT t.section_code, concat(t.road_code, '', t.section_name) AS section_name " +
-			"FROM ods_szdn_section t WHERE 1=1").Scan(&rows)
+			"FROM ods_szdn_section t WHERE 1=1").Scan(&rows).Error; err != nil {
+		h.app.Log.Error("大屏路段列表查询失败", "err", err)
+		web.JSON(c, web.ErrorResult(err))
+		return
+	}
 	out := make([]*sectionVO, 0, len(rows)+1)
 	out = append(out, &sectionVO{SectionCode: strPtr(sectionAll), SectionName: strPtr("全部")})
 	for _, row := range rows {
@@ -179,16 +183,20 @@ func (h *handler) bigTollGantryFwqList(c *gin.Context) {
 		sectionList = splitCSV(stripped)
 	}
 	out := make([]*tollGantryFwqVO, 0)
-	query := func(sqlStr string, args []any, build func(string, string) *tollGantryFwqVO) {
+	query := func(sqlStr string, args []any, build func(string, string) *tollGantryFwqVO) error {
 		var rows []struct {
 			Code string `gorm:"column:code"`
 			Name string `gorm:"column:name"`
 		}
-		_ = h.app.DB.WithContext(c.Request.Context()).Raw(sqlStr, args...).Scan(&rows)
+		if err := h.app.DB.WithContext(c.Request.Context()).Raw(sqlStr, args...).Scan(&rows).Error; err != nil {
+			return err
+		}
 		for _, row := range rows {
 			out = append(out, build(row.Code, row.Name))
 		}
+		return nil
 	}
+	var queryErr error
 	switch typeParam {
 	case "1":
 		sqlStr := "SELECT DISTINCT t.toll_code AS code, t.toll_name AS name FROM ods_szdn_toll t WHERE 1=1"
@@ -198,7 +206,7 @@ func (h *handler) bigTollGantryFwqList(c *gin.Context) {
 			args = append(args, sectionList)
 		}
 		sqlStr += " ORDER BY t.toll_name"
-		query(sqlStr, args, func(code, name string) *tollGantryFwqVO {
+		queryErr = query(sqlStr, args, func(code, name string) *tollGantryFwqVO {
 			return &tollGantryFwqVO{Type: strPtr("1"), Code: strPtr(code), Name: strPtr(name)}
 		})
 	case "2":
@@ -209,7 +217,7 @@ func (h *handler) bigTollGantryFwqList(c *gin.Context) {
 			args = append(args, sectionList)
 		}
 		sqlStr += " ORDER BY t.gantry_name"
-		query(sqlStr, args, func(code, name string) *tollGantryFwqVO {
+		queryErr = query(sqlStr, args, func(code, name string) *tollGantryFwqVO {
 			return &tollGantryFwqVO{Type: strPtr("2"), Code: strPtr(code), Name: strPtr(name)}
 		})
 	case "3":
@@ -224,9 +232,14 @@ func (h *handler) bigTollGantryFwqList(c *gin.Context) {
 			sqlStr += " AND t.section_code IN ?"
 			args = append(args, sectionList)
 		}
-		query(sqlStr, args, func(code, name string) *tollGantryFwqVO {
+		queryErr = query(sqlStr, args, func(code, name string) *tollGantryFwqVO {
 			return &tollGantryFwqVO{Type: strPtr("3"), Code: strPtr(code), Name: strPtr(name)}
 		})
+	}
+	if queryErr != nil {
+		h.app.Log.Error("大屏收费站/门架/服务区列表查询失败", "type", typeParam, "err", queryErr)
+		web.JSON(c, web.ErrorResult(queryErr))
+		return
 	}
 	web.JSON(c, web.SuccessData(out))
 }
@@ -236,7 +249,11 @@ func (h *handler) bigCarVoList(c *gin.Context) {
 	sqlStr := "SELECT t.car_no, t.car_type, t.escaped_type, t.escaped_amount FROM car_info t " +
 		"WHERE t.del_flag = '0' ORDER BY t.create_time DESC,t.id LIMIT 10"
 	var rows []*carInfoVO
-	_ = h.app.DB.WithContext(c.Request.Context()).Raw(sqlStr).Scan(&rows)
+	if err := h.app.DB.WithContext(c.Request.Context()).Raw(sqlStr).Scan(&rows).Error; err != nil {
+		h.app.Log.Error("大屏车辆列表查询失败", "err", err)
+		web.JSON(c, web.ErrorResult(err))
+		return
+	}
 	web.JSON(c, web.SuccessData(rows))
 }
 
@@ -269,7 +286,11 @@ func (h *handler) bigTopTen(c *gin.Context) {
 		"WHERE t.del_flag = '0' AND t.section_code = t1.section_code " +
 		"GROUP BY t1.road_code, t1.section_name ORDER BY car_num DESC LIMIT 10"
 	var rows []*topTenVO
-	_ = h.app.DB.WithContext(c.Request.Context()).Raw(sqlStr).Scan(&rows)
+	if err := h.app.DB.WithContext(c.Request.Context()).Raw(sqlStr).Scan(&rows).Error; err != nil {
+		h.app.Log.Error("大屏排行榜查询失败", "err", err)
+		web.JSON(c, web.ErrorResult(err))
+		return
+	}
 	index := 1
 	var topOne int64 = -1
 	for _, item := range rows {
@@ -288,8 +309,12 @@ func (h *handler) bigTopTen(c *gin.Context) {
 
 func (h *handler) bigOrgList(c *gin.Context) {
 	var rows []*orgVO
-	_ = h.app.DB.WithContext(c.Request.Context()).Raw(
-		"SELECT t.org_code, t.org_name FROM ods_yhgl_v_base_org t").Scan(&rows)
+	if err := h.app.DB.WithContext(c.Request.Context()).Raw(
+		"SELECT t.org_code, t.org_name FROM ods_yhgl_v_base_org t").Scan(&rows).Error; err != nil {
+		h.app.Log.Error("大屏机构列表查询失败", "err", err)
+		web.JSON(c, web.ErrorResult(err))
+		return
+	}
 	web.JSON(c, web.SuccessData(rows))
 }
 
@@ -326,8 +351,13 @@ func (h *handler) bigExceptRecordList(c *gin.Context) {
 			row.OrgID = nil
 		}
 		var count int64
-		_ = h.app.DB.WithContext(c.Request.Context()).Raw(
-			"SELECT COUNT(1) FROM car_aduit_free WHERE del_flag = '0' AND car_id = ?", row.CarID).Scan(&count).Error
+		if err := h.app.DB.WithContext(c.Request.Context()).Raw(
+			"SELECT COUNT(1) FROM car_aduit_free WHERE del_flag = '0' AND car_id = ?", row.CarID).
+			Scan(&count).Error; err != nil {
+			h.app.Log.Error("大屏补缴状态查询失败", "carId", strOf(row.CarID), "err", err)
+			web.JSON(c, web.ErrorResult(err))
+			return
+		}
 		if count > 0 {
 			row.SupplementaryStatus = strPtr("1")
 		}
@@ -339,9 +369,12 @@ func (h *handler) bigExceptRecordList(c *gin.Context) {
 // selectConfimOrgID 对应 selectOrgId(carId, id)。
 func (h *handler) selectConfimOrgID(c *gin.Context, carID, exceptID string) string {
 	var orgID string
-	_ = h.app.DB.WithContext(c.Request.Context()).Raw(
+	if err := h.app.DB.WithContext(c.Request.Context()).Raw(
 		"SELECT org_id FROM car_confim_free WHERE car_id = ? AND find_in_set(except_ids, ?) > 0 LIMIT 1",
-		carID, exceptID).Scan(&orgID)
+		carID, exceptID).Scan(&orgID).Error; err != nil {
+		h.app.Log.Error("查询补缴机构失败", "carId", carID, "exceptId", exceptID, "err", err)
+		return ""
+	}
 	return orgID
 }
 

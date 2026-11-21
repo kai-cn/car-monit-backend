@@ -39,6 +39,7 @@ func Setup(a *app.App) *gin.Engine {
 	engine := gin.New()
 	engine.Use(
 		middleware.TraceID(a),
+		middleware.AccessLog(a),
 		middleware.Recovery(a),
 		middleware.CORS(),
 		middleware.XSS(a),

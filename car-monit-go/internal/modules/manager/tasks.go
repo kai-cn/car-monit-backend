@@ -76,7 +76,10 @@ func RunSaveCarExcept(a *app.App) error {
 		return err
 	}
 	for _, carNo := range carNos {
-		h.saveCarExceptContext(ctx, carNo)
+		// 单个车牌失败不中断整批（任务型回写，与 Java 的 try/catch 语义一致），但要留痕。
+		if err := h.saveCarExcept(ctx, carNo); err != nil {
+			a.Log.Warn("回写车辆逃费金额失败", "carNo", carNo, "err", err)
+		}
 	}
 	return nil
 }

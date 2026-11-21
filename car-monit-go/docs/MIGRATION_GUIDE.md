@@ -13,6 +13,8 @@
 | Go | 1.24+（模块声明 `go 1.24`） | 迁移规范以 Go 1.26 为生产目标；当前构建机为 Go 1.24.1，故未使用 1.25+ 新语法。升级工具链后可将 `go`/`toolchain` 提升到 1.26 |
 | MySQL | `127.0.0.1:3307/carmonitdb`，root/root | 与 `application-druid.yml` 一致 |
 | Redis | `127.0.0.1:6379`，db 0 | 登录态、验证码、限流、防重键 |
+| golangci-lint | v2.1.6 | `make lint`；Windows 下若默认缓存目录不可写，设置 `GOLANGCI_LINT_CACHE` 到可写目录 |
+| Python | 3.10+ | `scripts/parity/*` 对拍脚本 |
 
 本地依赖可用 `docker-compose.yml` 启动（MySQL 映射 3307、Redis 6379）：
 
@@ -20,7 +22,16 @@
 docker compose up -d
 # 首次需导入表结构与数据：
 mysql -h127.0.0.1 -P3307 -uroot -proot carmonitdb < carmonitdb.sql
+# 版本化迁移（基线导入后执行；CI/发布流程必须与镜像同版本）
+go run ./cmd/migrate -c configs/config.yaml -dry-run
+go run ./cmd/migrate -c configs/config.yaml
 ```
+
+镜像为多阶段构建（`golang:1.24-alpine` → `distroless/static:nonroot`），配置以单文件挂载：
+`docker run -v $PWD/configs/config.yaml:/app/configs/config.yaml:ro ...`。
+`configs/{vm,vmplus,templates}` 与 `generator.yml` 已随镜像分发，单文件挂载不会遮蔽。
+**注意**：distroless 以非 root 运行，`ruoyi.profile`（上传/下载/导出目录）必须挂载为可写；
+否则导出类接口会返回“导出Excel失败”。
 
 ### 1.2 命令
 
@@ -57,6 +68,7 @@ level=INFO msg=服务启动 addr=:9989 config=configs/config.yaml
   - `CARMONIT_REDIS_ADDR` / `CARMONIT_REDIS_PASSWORD`
   - `CARMONIT_TOKEN_SECRET`
   - `CARMONIT_KAFKA_BOOTSTRAP_SERVERS`
+  - `CARMONIT_WORKER_ID` / `CARMONIT_DATACENTER_ID`：雪花 ID 机器位（0~31，见 §1.7）
 - 注意：`logging.level.com.ruoyi` 这类含点号键会被 Viper 解析为嵌套 map，`internal/logx` 会递归读取并取最详细级别（debug > info > warn > error）。
 
 ### 1.4 验证清单
@@ -64,9 +76,13 @@ level=INFO msg=服务启动 addr=:9989 config=configs/config.yaml
 1. **探活**（Go 新增端点）：
 
    ```bash
-   curl -s http://127.0.0.1:9989/healthz
+   curl -s -w '\nHTTP %{http_code}\n' http://127.0.0.1:9989/healthz
    # {"code":200,"msg":"UP","data":{"database":"UP","redis":"UP","version":"3.8.7"}}
+   # HTTP 200
    ```
+
+   DB 或 Redis 不可用时返回 `{"code":500,"msg":"DOWN",...}` 且 **HTTP 503**，
+   便于容器编排直接重启坏实例（Java 侧没有该端点，属 Go 新增）。
 
 2. **验证码**：
 
@@ -163,6 +179,64 @@ Redis 共存（`internal/cache/fastjson.go` + `internal/cache/javatypes.go`）�
 三态日期（`yyyy-MM-dd` / `yyyy-MM-dd HH:mm:ss` / Jackson 默认 ISO-8601）、Jackson 派生属性（`admin`/`default`/`children`）、
 各 Mapper XML 的投影列与排序，以及 MyBatis-Plus `insertFill/updateFill` 的审计字段边界（insert 不写 `update_by`/`update_time`）。
 
+### 1.7 数据接入边界与实例标识（2026-11-08 加固）
+
+**① 数据接入已接线（2026-11-08 更新）。** Kafka 消费、MySQL 月度分表写入、ES 索引、分表预创建、
+`vehicleMonitoringTask` / `snapshotFlowSyncTask` 均已实现，入口见
+[MAPPING.md §4](./MAPPING.md#4-消息队列--搜索引擎--分表)。
+
+| 能力 | 开关 | 行为 |
+|---|---|---|
+| Kafka → 分表 + ES | `kafka.enabled` | 启动消费者；未启用时日志提示“接入仍由 Java 承担” |
+| ES 索引 | `elasticsearch.enabled` | 只由 Kafka 消费链路与 ES 客户端写；关闭时跳过 |
+| GaussDB 同步 | `snapshot.flow.sync.enabled` + `source` | `source=http` 走 vehicleMonitor HTTP 适配层；`disabled` 时任务返回明确错误 |
+| 分表预创建 | `shardingTableTask.*` / `snapshotFlowSyncTask.preCreateTables(n)` | 由 sys_job 配置触发（Java 的 `@Scheduled` 因缺 `@EnableScheduling` 从未生效） |
+
+Kafka 消费开关示例（`configs/config.yaml`）：
+
+```yaml
+kafka:
+  enabled: true
+snapshot:
+  flow:
+    sync:
+      enabled: true       # 仅影响同步任务，不阻塞 Kafka 消费
+      source: http        # http | disabled
+      base-url: ""        # 空则回退 vehicleMonitor.baseUrl
+      page-size: 1000
+      workers: 4
+```
+
+未配置 Redis 时消费者仍可启动，但会打印“失去幂等保护”的告警；生产环境必须先确认 Redis 可用。
+GaussDB / ES / `section_list` 的未验证点见 MAPPING §4.1，联调前不要下线 Java 数据接入实例。
+
+`unmigratedTargets` 现在只剩 `trackTask.syncHistoryTrack`（依赖 `ICarTrackInfoService`/`IGeometryService`），
+保存该任务仍会直接被拒绝：
+
+```
+任务 trackTask.syncHistoryTrack 尚未迁移到 Go 版本（历史轨迹同步依赖 ...）；
+该能力仍由 Java 数据接入服务承担，请在 Java 侧配置或等待后续版本
+```
+
+**② 多副本必须区分雪花 ID 机器位。** `sys_*.id` 与业务表的 19 位主键由
+`internal/idgen` 生成（与 MyBatis-Plus `IdWorker` 位宽一致：41 位毫秒 + 5 位机房 + 5 位机器 + 12 位序列）。
+
+| 配置项 | 环境变量 | 默认 | 说明 |
+|---|---|---|---|
+| `instance.worker-id` | `CARMONIT_WORKER_ID` | -1（按主机名哈希） | 0~31；多副本必须唯一 |
+| `instance.datacenter-id` | `CARMONIT_DATACENTER_ID` | -1（回落 0） | 0~31；跨机房部署时区分 |
+
+启动时会打印实际生效的标识与来源：
+
+```
+level=INFO msg="雪花 ID 实例标识" workerId=7 datacenterId=0 source=hostname
+```
+
+- 单实例：保持 -1 即可（主机名推导稳定）。
+- 多副本：**必须**为每个副本显式设置不同的 `CARMONIT_WORKER_ID`（或不同的组合），
+  否则同一毫秒内可能生成重复主键，表现为插入时 `Duplicate entry`。
+- 取值越界会在配置校验阶段直接启动失败，而不是运行期才暴露。
+
 ### 1.5 常见问题
 
 | 现象 | 原因/处理 |
@@ -172,6 +246,79 @@ Redis 共存（`internal/cache/fastjson.go` + `internal/cache/javatypes.go`）�
 | 启动即报 `unmarshal config` | 配置键类型不匹配；对照 `internal/config/config.go` |
 | 所有业务接口 401 | 确认 `Authorization: Bearer <token>`，且 Redis 中 `login_tokens:<uuid>` 未过期 |
 | 验证码校验失败 | 验证码 2 分钟过期且校验一次即删除；`math` 类型答案是算式结果 |
+
+### 1.8 无权限账号运行时回归（2026-11-08）
+
+admin 对拍存在盲区：admin 持有 `*:*:*`，漏挂权限中间件也不会在返回体里暴露。
+现在用真实服务 + 无权限账号验证 403 与审计落行：
+
+```bash
+# 1) 启动 MySQL/Redis（本机无 Docker 时可用等价实例，见下）
+# 2) 导入基线 schema 后创建 noperm 账号（密码 Admin@123，BCrypt cost 10）
+INSERT INTO sys_dept (dept_id,parent_id,ancestors,dept_name,order_num,status,del_flag,tenant_id)
+VALUES (100,0,'0','测试部门',0,'0','0',1);
+INSERT INTO sys_user (user_id,dept_id,user_name,nick_name,user_type,password,status,del_flag)
+VALUES (2,100,'noperm','无权限','00','<bcrypt>','0','0');
+
+# 3) 起服务后执行矩阵
+python scripts/parity/check_permissions_runtime.py \
+  --base-url http://127.0.0.1:9989 \
+  --no-perm-user noperm --no-perm-password 'Admin@123'
+```
+
+脚本做三件事（只读端点，避免误写生产）：
+1. noperm 访问 `monitor:operlog:list` / `monitor:logininfor:list` / `system:dict:list` /
+   `system:role:export` 必须 HTTP 200 + `code=403`；
+2. 同一端点用 admin 访问不得是 403（防止全站误拒）；
+3. noperm 触发 `PUT /system/user/profile/updatePwd`（带 OperLog、仅需登录）后，
+   admin 在 `/monitor/operlog/list` 应查到 `operName=noperm`、`status=1` 的审计行。
+
+**本机实跑记录（2026-11-08）**：Docker 不可用，改用本机 MySQL 8.0.30（端口 3307，
+临时 datadir）+ 临时 miniredis（127.0.0.1:6379）替代 docker-compose；`cmd/migrate` 的
+`-dry-run` 与实跑均通过；脚本四项 403 全通过，审计行命中 `operName=noperm status=1
+operUrl=/system/user/profile/updatePwd`。CI 中同一脚本由 `runtime-perms-audit` 作业执行
+（MySQL 8.0 + Redis 7 service containers + 基线 schema）。
+
+> 本机回归发现的环境问题（非代码缺陷）：默认 `ruoyi.profile=D:/ruoyi/uploadPath` 在
+> 受限账户下不可创建，`GET /system/role/export` 返回“导出Excel失败”。部署时需保证
+> `ruoyi.profile` 可写；该端点已由脚本确认“权限判断先于导出逻辑生效”。
+
+### 1.9 数据接入真实联调（2026-11-08）
+
+本机中间件：MySQL 8.0.30（3307）、Redis 8.10.2、Elasticsearch 7.15.2、Kafka 4.0.0（KRaft）。
+按本机硬约束，**不要另起 MySQL 实例**：在 3307 实例上 `CREATE DATABASE`，用完 `DROP`。
+
+```bash
+# 1) 测试库 + 分表模板（表结构与 Java ods_rt_szdn_snapshot_flow_addcode 一致）
+mysql -h127.0.0.1 -P3307 -uroot -proot <<'SQL'
+CREATE DATABASE IF NOT EXISTS carmonit_ingest_test DEFAULT CHARACTER SET utf8mb4;
+SQL
+
+# 2) Kafka 主题（KRaft 模式，replication-factor=1）
+kafka-topics.bat --bootstrap-server 127.0.0.1:9092 --create \
+  --topic carmonit-e2e-snapshot-flow --partitions 1 --replication-factor 1
+
+# 3) 用临时 config（server.port=9999、kafka/elasticsearch enabled=true、
+#    redis.database=15、snapshot.flow.sync.source=disabled）启动服务
+go run ./cmd/server -c /path/to/e2e-config.yaml
+
+# 4) 投递合法/重复/坏消息后检查三处结果
+mysql -h127.0.0.1 -P3307 -uroot -proot -e \
+  "SELECT * FROM carmonit_ingest_test.ods_rt_szdn_snapshot_flow_202611"
+curl http://127.0.0.1:9200/carmonit-e2e-snapshot-flow/_doc/<bigId>
+kafka-console-consumer.bat --bootstrap-server 127.0.0.1:9092 \
+  --topic carmonit-e2e-snapshot-flow-dlq --from-beginning
+```
+
+同步任务（stub 上游）用集成测试跑：
+
+```bash
+export CARMONIT_TEST_DSN='root:root@tcp(127.0.0.1:3307)/carmonit_ingest_test?charset=utf8mb4&parseTime=True&loc=Local'
+go test -tags=integration -run TestDataSyncSyncSingleMonth -v ./internal/modules/base
+```
+
+**已知兼容性**：kafka-go v0.4.47 连接 Kafka 4.0（KRaft）时 `JoinGroup` 返回 EOF，
+消费端无法加入组；已升级到 v0.4.51。若回退依赖版本，必须用旧版 Kafka（如 2.8.2）验证。
 
 ## 2. Java 开发者速查
 
@@ -268,9 +415,18 @@ internal/router             路由注册表
 | 轨迹几何/设备统计 | 路网 Geometry + TrailDevBO | 返回空数组/0 | `changeTrailInfo`、`carLocation` 等仍返回完整轨迹点，仅缺路网叠加 |
 | 图片证明材料 | Word 模板嵌入图片 | 纯文本 docx | `exportAbnormalPassage` 下载协议一致，内容简化为关键字段 |
 | CORS | 反射 Origin + credentials | 相同 | 无变化 |
-| 操作日志 | AOP 切面 | 显式路由中间件 | 需在注册路由时选择是否挂载 |
-| Kafka/ES | Spring Kafka / ES Client | 待接入（配置已就绪） | 见第 4 节进度 |
-| 健康检查 | 无 | 新增 `/healthz` | 仅新增，不影响既有接口 |
+| 操作日志 | AOP 切面 + AsyncManager 线程池 | 显式路由中间件 + 固定 2 worker / 1024 队列 | 需在注册路由时选择是否挂载；超过 2000 字节的请求/响应只截断不完整落库，文件流不采集 |
+| 事务边界 | `@Transactional` 方法级代理 | `db.Transaction` 显式包裹 | 用户/角色/部门/字典/流程/任务/可疑车辆核实/异常流水/代码生成已对齐；新增多写逻辑必须显式加事务 |
+| 权限与审计 | `@PreAuthorize` / `@Log` 注解 | `middleware.Perm` / `middleware.OperLog` | 2026-11-08 已逐条对齐 manager 手写控制器；Java 中被注释的注解（如 `/manager/suspicious/check`）仍不挂 |
+| 雪花 ID | MyBatis-Plus `IdWorker`（MAC/进程推导） | `internal/idgen`（配置/主机名推导） | 多副本必须设置唯一 `CARMONIT_WORKER_ID`，见 §1.7 |
+| 未迁移的数据接入任务 | 保存成功、执行时报错 | **保存阶段直接拒绝** | 有意偏离：避免“保存成功但永不成功”的假象 |
+| Kafka/ES | Spring Kafka / ES Client | 已接线（`kafka.enabled` 控制） | 分表写失败不再静默 ack：本地重试 3 次后进死信队列；ES 失败仍只告警（同 Java），见 §1.7 与 MAPPING §4 |
+| 分表路由 | ShardingSphere 按 `snapshottime` 自动路由 | 按月份直接计算物理表 | 语义等价；不再依赖逻辑表与分片配置 |
+| 分表写入幂等 | 裸 INSERT（重复即失败） | `ON DUPLICATE KEY UPDATE big_id=big_id` | 有意偏离：让 Kafka 重试与重叠同步安全 |
+| 分表创建 | 依赖 ShardingTableTask 预创建 | 写入前按需 `CREATE TABLE ... LIKE` | 防止跨月首条消息因表不存在丢数据 |
+| `section_list` 缓存 | `rightPushAll`（不删除旧值） | 先 DEL 再 RPUSH | 修复 Java 侧每日同步无限追加的问题 |
+| 死信消息 | `{originalTopic,partition,offset,timestamp,reason,value}` | 相同信封 | 补 reason 字段，便于人工排查 |
+| 健康检查 | 无 | 新增 `/healthz`，DOWN 时 HTTP 503 | 仅新增，不影响既有接口 |
 
 ## 4. 迁移进度
 
@@ -285,6 +441,22 @@ internal/router             路由注册表
 | 车辆监管：20 个 manager 控制器 + 大屏 | 已完成（含 admin 登录联调） |
 | 数据接入：ODS/DWD 基础数据与快照流水（26 控制器） | 已完成（含 list/detail/export 联调） |
 | 流程：7 个 flow 控制器（55 个映射） | 已完成（含申请→委托→审批链路测试） |
-| Kafka 消费 / ES 索引 / 月分表写路径 | 配置就绪，代码待接入 |
+| Kernel/数据接入：Kafka 消费 / ES 索引 / 月分表写路径 | 已接线（默认关闭 Kafka），离线单测覆盖路由/幂等/重试；真实 Kafka/ES/GaussDB 未联调 |
+| 定时任务：`vehicleMonitoringTask` / `snapshotFlowSyncTask` / `shardingTableTask` | 8+6+2 个方法已注册为任务 Bean；`trackTask.syncHistoryTrack` 仍拒绝 |
 
 > 各模块完成后，本表状态与实际 `internal/modules/**` 目录、路由清单同步更新；未完成的接口不会静默返回假数据。
+
+## 5. Java 退役后的清理清单
+
+双端共存期为了“逐字节/逐格一致”引入了若干兼容层，Java 服务下线后可按下列顺序清理（每步都有测试或对拍兜底）：
+
+| 兼容层 | 位置 | 退役动作 |
+|---|---|---|
+| HashMap 桶序序列化 | `internal/web/javamap.go` | 删除，`AjaxResult` 改普通 struct（前端不依赖键序） |
+| Fastjson2 缓存格式 | `internal/cache/fastjson.go` | 删除 `ToJava/SetJava` 路径，改回 `encoding/json`；保留 `FromJava` 一个版本消化历史键 |
+| POI 单元格怪癖 | `internal/excelx/cell.go` | 只保留 Excel 必需规则；删除非法字符落 `?`、`= - + @` 补 TAB 等对拍规则 |
+| 错误消息的 Java 原文 | `internal/web/errors.go`、各模块 | 逐步替换为业务化文案；`msg` 变化会影响前端提示，需同步前端 |
+| JSON 键序 / 字段语义的 `DIFF` 注释 | 全仓库 300+ 处 | 保留关键差异说明，删除纯对拍用途的注释 |
+
+**清理前置条件**：至少一个完整回归周期内不再需要与 Java 双端比对（`scripts/parity/**` 全部停用），
+且前端已完成一次联调。

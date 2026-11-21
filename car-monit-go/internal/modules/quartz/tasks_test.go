@@ -3,10 +3,10 @@ package quartz
 import (
 	"net/http/httptest"
 	"strings"
-
-	"github.com/gin-gonic/gin"
 	"testing"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 func d(s string) time.Time {

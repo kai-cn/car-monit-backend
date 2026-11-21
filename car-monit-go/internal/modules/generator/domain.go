@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"car-monit-go/internal/platform/conv"
 	"car-monit-go/internal/web"
 )
 
@@ -447,4 +448,4 @@ func strVal(p *string) string {
 	return *p
 }
 
-func strPtr(v string) *string { return &v }
+func strPtr(v string) *string { return conv.Str(v) }

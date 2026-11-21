@@ -5,6 +5,9 @@
 // DIFF: Go 的 map 序列化按字典序，无法表达 Java HashMap 的桶序。
 // 这里实现 JavaMap：按 Java 8 HashMap（capacity=16 起步、hash 扰动）桶序序列化，
 // 保证 {"msg":...,"code":...,"data":...} 与 Java 侧字节顺序一致。
+//
+// 退役计划（Java 下线后）：本文件只为“双端逐字节对拍”存在，前端并不依赖键序。
+// Java 服务退役后应删除本文件，把 AjaxResult 改为普通 struct（code/msg/data 字段序固定）。
 package web
 
 import (

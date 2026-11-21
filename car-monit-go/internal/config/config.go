@@ -124,8 +124,26 @@ type SnapshotSharding struct {
 	ShardingType  string `mapstructure:"sharding-type"`
 }
 
+// SnapshotSync 是 Go 新增的 GaussDB 同步配置（Java 侧由 @Scheduled 触发，但未启用调度）。
+//
+// source=http 时通过 vehicleMonitor.baseUrl 的 /base/snapshotflow/* 读取上游；
+// source=disabled 时同步任务返回明确的"未配置"错误，不会静默成功。
+// base-url 为空时回退 vehicleMonitor.baseUrl。
+type SnapshotSync struct {
+	Enabled  bool   `mapstructure:"enabled"`
+	Source   string `mapstructure:"source"`
+	BaseURL  string `mapstructure:"base-url"`
+	PageSize int    `mapstructure:"page-size"`
+	Workers  int    `mapstructure:"workers"`
+}
+
+type SnapshotFlow struct {
+	Sharding SnapshotSharding `mapstructure:"sharding"`
+	Sync     SnapshotSync     `mapstructure:"sync"`
+}
+
 type Snapshot struct {
-	Flow SnapshotSharding `mapstructure:"flow"`
+	Flow SnapshotFlow `mapstructure:"flow"`
 }
 
 // Go 原生配置：替代 application-druid.yml 中的 JDBC/Druid 连接池。
@@ -202,6 +220,14 @@ type GeneratorCode struct {
 	} `mapstructure:"mybatis-plus"`
 }
 
+// Instance 是 Go 新增的实例标识，对应 MyBatis-Plus IdWorker 的 workerId / datacenterId。
+// -1 表示按主机名自动推导；多副本部署必须保证 (datacenterId, workerId) 组合唯一，
+// 否则雪花 ID 会在同一毫秒内碰撞（见 internal/idgen 与部署文档）。
+type Instance struct {
+	WorkerID     int64 `mapstructure:"worker-id"`
+	DatacenterID int64 `mapstructure:"datacenter-id"`
+}
+
 // JAVA 对照: application.yml 全量顶层配置
 type Config struct {
 	RuoYi          RuoYi          `mapstructure:"ruoyi"`
@@ -223,6 +249,7 @@ type Config struct {
 	VehicleMonitor VehicleMonitor `mapstructure:"vehicleMonitor"`
 	Xss            Xss            `mapstructure:"xss"`
 	GeneratorCode  GeneratorCode  `mapstructure:"generator-code"`
+	Instance       Instance       `mapstructure:"instance"`
 	IsLocalhost    string         `mapstructure:"isLocalhost"`
 	TxServiceURL   string         `mapstructure:"tx-service-url"`
 	RoadPathURL    string         `mapstructure:"roadPathUrl"`
@@ -300,7 +327,13 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("snapshot.flow.sharding.table-prefix", "ods_rt_szdn_snapshot_flow_")
 	v.SetDefault("snapshot.flow.sharding.sharding-field", "snapshottime")
 	v.SetDefault("snapshot.flow.sharding.sharding-type", "month")
+	v.SetDefault("snapshot.flow.sync.enabled", false)
+	v.SetDefault("snapshot.flow.sync.source", "http")
+	v.SetDefault("snapshot.flow.sync.page-size", 1000)
+	v.SetDefault("snapshot.flow.sync.workers", 4)
 	v.SetDefault("generator-code.mybatis-plus.enable", false)
+	v.SetDefault("instance.worker-id", -1)
+	v.SetDefault("instance.datacenter-id", -1)
 }
 
 // applyEnvOverrides 提供与 Spring Boot 等价的少量关键环境变量覆盖。
@@ -331,6 +364,26 @@ func applyEnvOverrides(c *Config) {
 	if v := os.Getenv("CARMONIT_KAFKA_BOOTSTRAP_SERVERS"); v != "" {
 		c.Kafka.BootstrapServers = strings.Split(v, ",")
 	}
+	if v := os.Getenv("CARMONIT_WORKER_ID"); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+			c.Instance.WorkerID = n
+		}
+	}
+	if v := os.Getenv("CARMONIT_DATACENTER_ID"); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+			c.Instance.DatacenterID = n
+		}
+	}
+	// 密钥类配置只从环境变量注入，避免出现在版本库里的 YAML。
+	if v := os.Getenv("CARMONIT_OSS_ACCESS_KEY"); v != "" {
+		c.Oss.AccessKey = v
+	}
+	if v := os.Getenv("CARMONIT_OSS_SECRET_KEY"); v != "" {
+		c.Oss.SecretKey = v
+	}
+	if v := os.Getenv("CARMONIT_HENGDA_SECRET"); v != "" {
+		c.Hengda.Secret = v
+	}
 }
 
 func buildDSN(n DatabaseNode) string {
@@ -359,8 +412,19 @@ func validate(c *Config) error {
 	if c.Token.Secret == "" {
 		return fmt.Errorf("token.secret 不能为空")
 	}
+	// 非本地环境禁止使用仓库里的示例密钥。
+	if !strings.EqualFold(c.IsLocalhost, "local") && c.Token.Secret == "abcdefghijklmnopqrstuvwxyz" {
+		return fmt.Errorf("token.secret 仍为示例值；请通过 CARMONIT_TOKEN_SECRET 注入生产密钥")
+	}
 	if c.Token.ExpireTime <= 0 {
 		c.Token.ExpireTime = 120
+	}
+	// 雪花 ID 的机器位/机房位各 5 bit；-1 表示按主机名自动推导。
+	if c.Instance.WorkerID < -1 || c.Instance.WorkerID > 31 {
+		return fmt.Errorf("instance.worker-id 必须在 0~31 或 -1(自动) 之间，当前 %d", c.Instance.WorkerID)
+	}
+	if c.Instance.DatacenterID < -1 || c.Instance.DatacenterID > 31 {
+		return fmt.Errorf("instance.datacenter-id 必须在 0~31 或 -1(自动) 之间，当前 %d", c.Instance.DatacenterID)
 	}
 	return nil
 }

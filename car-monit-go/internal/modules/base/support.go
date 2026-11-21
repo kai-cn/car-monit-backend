@@ -15,7 +15,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +22,9 @@ import (
 
 	"car-monit-go/internal/app"
 	"car-monit-go/internal/auth"
+	"car-monit-go/internal/idgen"
 	"car-monit-go/internal/model"
+	"car-monit-go/internal/platform/conv"
 	"car-monit-go/internal/web"
 )
 
@@ -34,72 +35,32 @@ type handler struct {
 
 func newHandler(a *app.App) *handler { return &handler{app: a} }
 
-// 雪花号状态（对应 MyBatis-Plus IdWorker 的 synchronized 生成器）。
-var (
-	snowflakeMu         sync.Mutex
-	lastSnowflakeMillis int64 = -1
-	snowflakeSeq        int64
-)
+// 雪花号由 internal/idgen 统一生成（见 nextSnowflakeID）。
 
 // ---------------------------------------------------------------------------
 // com.ruoyi.common.utils.CommonUtil
 // ---------------------------------------------------------------------------
 
 // isNull 对应 CommonUtil.isNull：null -> ""，否则 toString().trim()。
-func isNull(v any) string {
-	switch x := v.(type) {
-	case nil:
-		return ""
-	case string:
-		return strings.TrimSpace(x)
-	case *string:
-		if x == nil {
-			return ""
-		}
-		return strings.TrimSpace(*x)
-	case *int64:
-		if x == nil {
-			return ""
-		}
-		return strconv.FormatInt(*x, 10)
-	case *int:
-		if x == nil {
-			return ""
-		}
-		return strconv.Itoa(*x)
-	case *float64:
-		if x == nil {
-			return ""
-		}
-		return strconv.FormatFloat(*x, 'f', -1, 64)
-	default:
-		return strings.TrimSpace(fmt.Sprint(x))
-	}
-}
+func isNull(v any) string { return conv.Null(v) }
 
-// strOf 把可空字符串取成普通字符串（nil -> ""）。
-func strOf(v any) string { return isNull(v) }
+// strOf 把可空字符串取成普通字符串（nil -> ""，不 trim）。
+func strOf(v any) string { return conv.Value(v) }
 
 // strPtr 生成可空字符串指针。
-func strPtr(s string) *string { return &s }
+func strPtr(s string) *string { return conv.Str(s) }
 
 // isNotBlank 对应 CommonUtil.isNotBlank（StringUtils.isNotBlank）。
-func isNotBlank(v any) bool { return isNull(v) != "" }
+func isNotBlank(v any) bool { return conv.NotBlank(v) }
 
 // isBlank 对应 CommonUtil.isBlank（StringUtils.isBlank）。
-func isBlank(v any) bool { return isNull(v) == "" }
+func isBlank(v any) bool { return conv.Blank(v) }
 
 // deleteEnd 对应 CommonUtil.deleteEnd：去掉末尾一个逗号。
 func deleteEnd(v any) string { return strings.TrimSuffix(isNull(v), ",") }
 
 // splitCSV 对应 Java 的 String.split(",")：丢弃结果中的尾部空串。
-func splitCSV(s string) []string {
-	parts := strings.Split(s, ",")
-	for len(parts) > 0 && parts[len(parts)-1] == "" {
-		parts = parts[:len(parts)-1]
-	}
-	return parts
-}
+func splitCSV(s string) []string { return conv.SplitCSV(s) }
 
 // newUUID 对应 MyBatis-Plus IdWorker.get32UUID()：32 位无连字符 UUID。
 func newUUID() string { return strings.ReplaceAll(uuid.NewString(), "-", "") }
@@ -109,29 +70,9 @@ func newUUIDDashed() string { return uuid.NewString() }
 
 // nextSnowflakeID 对应 MyBatis-Plus IdWorker.nextId()（全局 id-type: ASSIGN_ID）。
 //
-// DIFF: 位宽与 MP 一致（41 位毫秒 | 22 位序列，datacenter/worker 固定 0）；
-// 具体数值不可比（时间相关），只保证 19 位、单实例内单调递增。
-func nextSnowflakeID() string {
-	const epoch = int64(1288834974657)
-	snowflakeMu.Lock()
-	defer snowflakeMu.Unlock()
-	now := time.Now().UnixMilli()
-	if now < lastSnowflakeMillis {
-		now = lastSnowflakeMillis
-	}
-	if now == lastSnowflakeMillis {
-		snowflakeSeq = (snowflakeSeq + 1) & 0xFFF
-		if snowflakeSeq == 0 {
-			for now <= lastSnowflakeMillis {
-				now = time.Now().UnixMilli()
-			}
-		}
-	} else {
-		snowflakeSeq = 0
-	}
-	lastSnowflakeMillis = now
-	return strconv.FormatInt(((now-epoch)<<22)|snowflakeSeq, 10)
-}
+// DIFF: 生成器统一到 internal/idgen，由 instance.worker-id / datacenter-id（或环境变量）
+// 决定机器位，多副本部署不再共用写死的 workerId。
+func nextSnowflakeID() string { return idgen.NextString() }
 
 // ---------------------------------------------------------------------------
 // 分页查询

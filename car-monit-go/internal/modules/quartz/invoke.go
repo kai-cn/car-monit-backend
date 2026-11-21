@@ -173,10 +173,27 @@ func (i *Invoker) resolveBean(beanName string) *taskBean {
 	return nil
 }
 
+// unmigratedTargets 记录"Java 有、Go 未迁移"的数据接入任务。
+//
+// DIFF: Java 允许保存这些任务（执行时才失败）；Go 版本在保存阶段直接拒绝，
+// 避免运维看到"保存成功"却只能在 sys_job_log 里发现持续失败。
+// 归属决策见 docs/MAPPING.md §4 与 docs/MIGRATION_GUIDE.md「数据接入边界」。
+//
+// 说明：vehicleMonitoringTask.* / snapshotFlowSyncTask.* / shardingTableTask.* 已在
+// internal/modules/base/datasync*.go 实现并注册（见 tasks.go），不再属于未迁移范围。
+var unmigratedTargets = map[string]string{
+	"trackTask.syncHistoryTrack": "历史轨迹同步依赖 ICarTrackInfoService/IGeometryService 与远端轨迹接口",
+}
+
 // ValidateTarget 在保存任务时做一次快速失败校验（DIFF: Java 直到执行时才暴露错误）。
 func (i *Invoker) ValidateTarget(invokeTarget string) error {
 	if err := CheckInvokeTarget(invokeTarget); err != nil {
 		return err
+	}
+	key := GetBeanName(invokeTarget) + "." + GetMethodName(invokeTarget)
+	if reason, ok := unmigratedTargets[key]; ok {
+		return fmt.Errorf("任务 %s 尚未迁移到 Go 版本（%s）；该能力仍由 Java 数据接入服务承担，"+
+			"请在 Java 侧配置或等待后续版本", invokeTarget, reason)
 	}
 	bean := i.resolveBean(GetBeanName(invokeTarget))
 	if bean == nil {

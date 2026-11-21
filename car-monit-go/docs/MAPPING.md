@@ -14,8 +14,8 @@
 | 配置 | `application.yml` + `@Value`/`@ConfigurationProperties` | Viper + `mapstructure` | 无 JSR-303；校验集中在 `LoadConfig`。含点号键（`logging.level.com.ruoyi`）会成为嵌套 map |
 | 日志 | SLF4J + Logback | `log/slog` | 无 logback.xml；级别由 `logging.level` 推导；MDC → context 中的 traceId |
 | 缓存 | Spring Cache 注解 / RedisTemplate | `internal/cache`（go-redis v9） | 无 `@Cacheable`，读写显式调用；键名与 Java 常量保持一致 |
-| 消息队列 | Spring Kafka `@KafkaListener` | kafka-go（待接入） | 需显式消费循环、offset 提交与优雅退出；配置已就绪（`kafka.enabled`） |
-| 搜索引擎 | Elasticsearch Java Client | 官方 Go 客户端（待接入） | 配置已就绪（`elasticsearch.enabled`） |
+| 消息队列 | Spring Kafka `@KafkaListener` | kafka-go（已接线，`kafka.enabled` 控制） | 显式消费循环、批处理后提交 offset、失败重试后进 DLQ；消费者随进程优雅停机 |
+| 搜索引擎 | Elasticsearch Java Client | REST `_bulk`/`_doc`（`internal/stream/es`） | 以 `bigId` 为文档 ID；只由 Kafka 链路与同步任务写，`elasticsearch.enabled` 控制 |
 | HTTP 客户端 | RestTemplate / Forest | `net/http` + 自定义 timeout | 每个出站请求必须带 context 与超时；禁止无超时的默认 client |
 | 定时任务 | Quartz Scheduler | robfig/cron/v3 | 6 段 cron 近似；无 Quartz 集群锁/错过补偿，需要时用 Redis/DB 锁补 |
 | 校验 | JSR-303 `@NotBlank`/`@Size` + `@Valid` | 手写校验 + 统一中文消息 | 错误消息必须与 Java 一致；不要用 gin binding 默认英文消息 |
@@ -199,9 +199,57 @@
 
 ## 4. 消息队列 / 搜索引擎 / 分表
 
+> **归属更新（2026-11-08 数据面批次）**：Go 版本已接线 Kafka 消费 → MySQL 月度分表 → ES 索引，
+> 并实现 `vehicleMonitoringTask` / `snapshotFlowSyncTask` / `shardingTableTask` 三个数据面任务。
+> 实现集中在 `internal/modules/base/datasync*.go`，复用 `internal/stream/{kafka,es,idempotent,sharding}`。
+>
+> - **Kafka 消费**：`kafka.enabled=true` 时 `cmd/server/main.go` 启动消费者，批次交给
+>   `DataSync.HandleSnapshotFlowBatch`；失败消息本地重试 3 次后进死信队列，offset 始终在批处理后提交。
+> - **分表写入**：按 `snapshottime` 月份直接计算物理表（`ShardingTableUtil` 语义），写入前按需
+>   `CREATE TABLE ... LIKE ods_rt_szdn_snapshot_flow_addcode`；INSERT 追加
+>   `ON DUPLICATE KEY UPDATE big_id=big_id` 保证重试/重叠同步幂等。
+> - **ES 索引**：`elasticsearch.enabled=true` 时以 `bigId` 为文档 ID 写 `_bulk`；失败只告警，
+>   不回滚 MySQL（与 Java `batchSave` 一致）。
+> - **GaussDB 同步**：通过 `snapshot.flow.sync.*` 配置的 HTTP 适配层读取 vehicleMonitor 的
+>   `/base/snapshotflow/*`，不直连 GaussDB。**该项未在本地验证**（见 §4.1）。
+> - **任务注册**：`vehicleMonitoringTask`、`snapshotFlowSyncTask`、`shardingTableTask` 已注册为
+>   quartz 任务 Bean，`unmigratedTargets` 只剩 `trackTask.syncHistoryTrack`。
+
+### 4.1 数据接入状态与未验证点
+
 | Java 组件 | Go 目标 | 状态 |
 |---|---|---|
-| Kafka `SnapshotFlowConsumer` 等消费者 | `internal/stream/kafka`（待接入） | 配置已就绪（`kafka.enabled` 默认 false） |
-| Elasticsearch 索引写入 | `internal/stream/es`（待接入） | 配置已就绪（`elasticsearch.enabled` 默认 false） |
-| ShardingSphere 月分表规则 | 各 ODS 模块按 `snapshot.flow.sharding.*` 拼接表名 | 配置已就绪 |
-| 定时维护任务（`ruoyi-*/task`） | `internal/modules/quartz` 任务注册表 | 随 quartz 模块迁移 |
+| `SnapshotFlowKafkaConsumerV2` | `internal/stream/kafka` + `base.DataSync.HandleSnapshotFlowBatch` | 已接线；`kafka.enabled=false` 时不启动 |
+| ES 索引写入 | `internal/stream/es` + `DataSync` | 已接线；`elasticsearch.enabled=false` 时不写 |
+| 幂等键（Redis SETNX） | `internal/stream/idempotent` | 已接线；Redis 未初始化时消费者启动告警并降级为无幂等 |
+| ShardingSphere 月分表规则 | `internal/stream/sharding` + `base.DataSync` | 已接线；分表按日期直接路由（不再依赖 ShardingSphere 逻辑表） |
+| `ShardingTableTask` | `base.DataSync.PreCreateTables` / `shardingTableTask.*` | 已注册；Java 的 `@Scheduled` 因缺 `@EnableScheduling` 从未生效 |
+| `vehicleMonitoringTask`（7 个方法） | `base.DataSync.Sync*Info` | 已注册，由现有 `sys_job` 记录（103~109、111）触发 |
+| `snapshotFlowSyncTask`（6 个方法） | `base.DataSync.Sync*` | 已注册为任务 Bean；Java 侧同样未真正自动运行 |
+| `trackTask.syncHistoryTrack` | — | **仍未迁移**（依赖 `ICarTrackInfoService`/`IGeometryService`），保存时拒绝 |
+
+**已验证（2026-11-08，真实中间件联调）**：
+- 本机 MySQL 8.0.30（3307）、Redis 8.10.2、Elasticsearch 7.15.2、Kafka 4.0.0（KRaft）。
+- 测试库 `carmonit_ingest_test`（用后 DROP），模板表 `ods_rt_szdn_snapshot_flow_addcode`。
+- 投递 4 条消息：合法 INSERT、同 bigId 重复、非 JSON、缺少 snapshottime。
+  结果：自动创建 `ods_rt_szdn_snapshot_flow_202611`；MySQL 落 1 行（重复被幂等跳过）；
+  ES `carmonit-e2e-snapshot-flow` 文档 1 条且 `snapshottime` 为毫秒时间戳；
+  失败 2 条进 DLQ，信封含 `originalTopic/partition/offset/timestamp/reason/value`；
+  consumer group offset 4/4、LAG 0。
+- 同步任务：`go test -tags=integration` 用 stub 上游验证 `SyncSingleMonth`
+  （2 行入库、缺 snapshottime 跳过、重复同步幂等）与 `PreCreateTables`（当前月+下月建表）。
+- **联调中发现并修复**：kafka-go v0.4.47 连接 Kafka 4.0 时 `JoinGroup` 返回 EOF，
+  已升级到 v0.4.51（同时带上 x/crypto/x/net/x/sys/x/text 小版本升级）。
+
+**仍未验证（必须在联调环境复核）**：
+1. 真实 vehicleMonitor 的 `/base/snapshotflow/earliest-time` 与 `/list` 响应结构
+   （HTTP 适配层按 Java `Date` / `TableDataInfo` 声明做兼容解析，本仓库无 vehicleMonitor 实例）。
+2. ES 生产索引 mapping：当前按 fastjson2 默认写毫秒时间戳；若线上是 date 类型需调整
+   `snapshotFlowESDoc`（本次已确认真实 ES 能按动态 mapping 正常索引）。
+3. `section_list` 缓存改为“先删后写”（Java 是 `rightPushAll` 无限追加），需确认无其他组件依赖旧行为。
+4. MySQL `TRUNCATE` 为 DDL 隐式提交，7 张基础表的“清空 + 重灌”在插入失败时仍会留下空表
+   （与 Java 实际行为一致，日志会告警）。
+5. distroless 镜像运行期（本机无 Docker CLI）：`ruoyi.profile` 挂载目录必须可写。
+
+**Java 下线前置条件**：在联调环境跑通上述 5 项，并用真实 Kafka/ES/GaussDB 流量完成一轮对拍。
+

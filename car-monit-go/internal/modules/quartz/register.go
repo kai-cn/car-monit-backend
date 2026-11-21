@@ -9,7 +9,7 @@
 //
 // DIFF: Spring 在 Bean 初始化时（@PostConstruct init）启动调度器；Go 在首次 Register 时
 // 懒创建单例并 Start（main.go 由并行协作方维护，本模块不能改）。
-// DIFF: main.go 未调用 Shutdown，进程退出时调度器随进程一起结束（不再补写日志）。
+// DIFF: 优雅停机由 main 调用 quartz.ShutdownShared 触发，限时等待在途任务收敛后再退出。
 package quartz
 
 import (

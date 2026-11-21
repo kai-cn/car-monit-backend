@@ -78,7 +78,7 @@ type odsSzdnToll struct {
 	IsAccess               *string   `json:"isAccess" gorm:"column:is_access"`
 
 	// @TableField(exist = false)：列表接口用 redis section_list 回填。
-	SectionName     *string   `json:"sectionName"`
+	SectionName     *string   `json:"sectionName" gorm:"-"`
 	SectionCodeList []*string `json:"sectionCodeList" gorm:"-"`
 }
 
@@ -111,11 +111,11 @@ type odsSzdnGantry struct {
 	Remark             *string `json:"remark" gorm:"column:remark"`
 
 	// @TableField(exist = false)
-	IsData          *string   `json:"isData"`
-	RoadName        *string   `json:"roadName"`
-	SectionName     *string   `json:"sectionName"`
-	TollName        *string   `json:"tollName"`
-	OrgName         *string   `json:"orgName"`
+	IsData          *string   `json:"isData" gorm:"-"`
+	RoadName        *string   `json:"roadName" gorm:"-"`
+	SectionName     *string   `json:"sectionName" gorm:"-"`
+	TollName        *string   `json:"tollName" gorm:"-"`
+	OrgName         *string   `json:"orgName" gorm:"-"`
 	SectionCodeList []*string `json:"sectionCodeList" gorm:"-"`
 }
 

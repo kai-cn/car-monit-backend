@@ -32,6 +32,8 @@ import (
 
 	"car-monit-go/internal/app"
 	"car-monit-go/internal/web"
+
+	"gorm.io/gorm"
 )
 
 // errNullMessage 对应 Java NullPointerException：GlobalExceptionHandler 取
@@ -46,6 +48,7 @@ type genTableService struct {
 	cfg         genConfig
 	mybatisPlus bool
 	engine      *velocityEngine
+	db          *gorm.DB
 	tables      *genTableMapper
 	columns     *genTableColumnMapper
 }
@@ -55,9 +58,19 @@ func newGenTableService(a *app.App) *genTableService {
 		cfg:         loadGenConfig(a.Cfg.ConfigFile),
 		mybatisPlus: a.Cfg.GeneratorCode.MybatisPlus.Enable,
 		engine:      newVelocityEngine(templateRoot(a.Cfg.ConfigFile)),
+		db:          a.DB,
 		tables:      newGenTableMapper(a.DB),
 		columns:     newGenTableColumnMapper(a.DB),
 	}
+}
+
+// withTx 返回绑定到指定事务的副本，对应 Spring @Transactional 的传播语义：
+// 事务内所有 mapper 调用必须复用同一个 *gorm.DB，否则会各自开新连接、无法回滚。
+func (s *genTableService) withTx(tx *gorm.DB) *genTableService {
+	c := *s
+	c.tables = newGenTableMapper(tx)
+	c.columns = newGenTableColumnMapper(tx)
+	return &c
 }
 
 // ---------------------------------------------------------------------------
@@ -132,8 +145,14 @@ func stringToList(ids string) []string {
 // 写
 // ---------------------------------------------------------------------------
 
-// updateGenTable 对应 @Transactional updateGenTable。
+// updateGenTable 对应 @Transactional updateGenTable：主表更新 + 每个列更新必须同属一个事务。
 func (s *genTableService) updateGenTable(ctx context.Context, table *GenTable) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return s.withTx(tx).doUpdateGenTable(ctx, table)
+	})
+}
+
+func (s *genTableService) doUpdateGenTable(ctx context.Context, table *GenTable) error {
 	// JAVA 对照: JSON.toJSONString(genTable.getParams())
 	options, err := fastjsonString(table.Params)
 	if err != nil {
@@ -158,15 +177,16 @@ func (s *genTableService) updateGenTable(ctx context.Context, table *GenTable) e
 	return nil
 }
 
-// deleteGenTableByIDs 对应 @Transactional deleteGenTableByIds。
+// deleteGenTableByIDs 对应 @Transactional deleteGenTableByIds：先删表再删列，失败必须一起回滚。
 func (s *genTableService) deleteGenTableByIDs(ctx context.Context, tableIDs []int64) error {
-	if _, err := s.tables.deleteGenTableByIDs(ctx, tableIDs); err != nil {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		scoped := s.withTx(tx)
+		if _, err := scoped.tables.deleteGenTableByIDs(ctx, tableIDs); err != nil {
+			return err
+		}
+		_, err := scoped.columns.deleteGenTableColumnByTableIDs(ctx, tableIDs)
 		return err
-	}
-	if _, err := s.columns.deleteGenTableColumnByTableIDs(ctx, tableIDs); err != nil {
-		return err
-	}
-	return nil
+	})
 }
 
 // importGenTable 对应 @Transactional importGenTable(List<GenTable>)：
@@ -179,6 +199,13 @@ func (s *genTableService) importGenTable(ctx context.Context, tableList []*GenTa
 }
 
 func (s *genTableService) doImportGenTable(ctx context.Context, tableList []*GenTable, operName string) error {
+	// JAVA 对照: importGenTable 带 @Transactional —— 任一张表/列写入失败，整批回滚。
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return s.withTx(tx).doImportGenTableInTx(ctx, tableList, operName)
+	})
+}
+
+func (s *genTableService) doImportGenTableInTx(ctx context.Context, tableList []*GenTable, operName string) error {
 	for _, table := range tableList {
 		tableName := strVal(table.TableName)
 		initTable(s.cfg, table, operName)
@@ -414,8 +441,14 @@ func (s *genTableService) generatorCode(ctx context.Context, tableName string) e
 	return nil
 }
 
-// synchDb 对应 @Transactional synchDb(String tableName)。
+// synchDb 对应 @Transactional synchDb(String tableName)：新增列与删除列必须同生共死。
 func (s *genTableService) synchDb(ctx context.Context, tableName string) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return s.withTx(tx).doSynchDb(ctx, tableName)
+	})
+}
+
+func (s *genTableService) doSynchDb(ctx context.Context, tableName string) error {
 	table, err := s.tables.selectGenTableByName(ctx, &tableName)
 	if err != nil {
 		return err

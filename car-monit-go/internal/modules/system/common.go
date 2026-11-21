@@ -22,6 +22,7 @@ import (
 	"car-monit-go/internal/app"
 	"car-monit-go/internal/auth"
 	"car-monit-go/internal/model"
+	"car-monit-go/internal/platform/sqlx"
 	"car-monit-go/internal/service/menusvc"
 	"car-monit-go/internal/web"
 )
@@ -142,12 +143,7 @@ func parseIDList(raw string) ([]int64, error) {
 }
 
 // placeholders 生成 "?,?,?"。
-func placeholders(n int) string {
-	if n <= 0 {
-		return ""
-	}
-	return strings.TrimSuffix(strings.Repeat("?,", n), ",")
-}
+func placeholders(n int) string { return sqlx.Placeholders(n) }
 
 // encodePassword 对应 SecurityUtils.encryptPassword（BCryptPasswordEncoder，strength=10）。
 func encodePassword(plain string) (string, error) {

@@ -21,16 +21,19 @@ import (
 	"car-monit-go/internal/cache"
 	"car-monit-go/internal/config"
 	"car-monit-go/internal/database"
+	"car-monit-go/internal/idgen"
 	"car-monit-go/internal/logx"
+	"car-monit-go/internal/middleware"
+	"car-monit-go/internal/modules/base"
+	"car-monit-go/internal/modules/quartz"
 	"car-monit-go/internal/router"
+	"car-monit-go/internal/stream/kafka"
 
 	// 业务模块通过 init() 向 router 注册路由。
-	_ "car-monit-go/internal/modules/base"
 	_ "car-monit-go/internal/modules/flow"
 	_ "car-monit-go/internal/modules/generator"
 	_ "car-monit-go/internal/modules/manager"
 	_ "car-monit-go/internal/modules/ops"
-	_ "car-monit-go/internal/modules/quartz"
 	_ "car-monit-go/internal/modules/system"
 	_ "car-monit-go/internal/modules/systemaux"
 )
@@ -46,6 +49,19 @@ func main() {
 	}
 
 	logger := logx.New(cfg)
+
+	// 雪花 ID 的实例标识必须在任何写入之前确定：多副本共用 (datacenterId, workerId)
+	// 会在同一毫秒内生成重复主键。未配置时按主机名自动推导并打印，便于排障。
+	idSource, err := idgen.Init(cfg.Instance.WorkerID, cfg.Instance.DatacenterID)
+	if err != nil {
+		logger.Error("初始化雪花 ID 生成器失败", "err", err)
+		os.Exit(1)
+	}
+	workerID, datacenterID := idgen.IDs()
+	logger.Info("雪花 ID 实例标识", "workerId", workerID, "datacenterId", datacenterID, "source", idSource)
+
+	// 数据接入：Kafka 消费者把门架抓拍流水写入 MySQL 月度分表与 ES。
+	// 关闭时（默认）数据接入仍由 Java 服务承担，Go 只提供查询/同步任务入口。
 
 	db, err := database.Open(cfg, logger)
 	if err != nil {
@@ -67,6 +83,32 @@ func main() {
 	defer func() { _ = c.Close() }()
 
 	a := app.New(cfg, db, c, logger)
+
+	var ingestCancel context.CancelFunc
+	ingestDone := make(chan struct{})
+	if cfg.Kafka.Enabled {
+		dataSync := base.NewDataSync(a)
+		consumer := kafka.NewConsumer(cfg, cfg.Kafka.Topic.SnapshotFlow, cfg.Kafka.Topic.SnapshotFlowDLQ,
+			dataSync.HandleSnapshotFlowBatch, logger)
+		ingestCtx, cancel := context.WithCancel(context.Background())
+		ingestCancel = cancel
+		go func() {
+			defer close(ingestDone)
+			logger.Info("Kafka 消费者已启动",
+				"topic", cfg.Kafka.Topic.SnapshotFlow, "dlq", cfg.Kafka.Topic.SnapshotFlowDLQ,
+				"group", cfg.Kafka.Consumer.GroupID, "esEnabled", cfg.Elasticsearch.Enabled)
+			if err := consumer.Run(ingestCtx); err != nil {
+				logger.Error("Kafka 消费者异常退出", "err", err)
+			}
+		}()
+	} else {
+		close(ingestDone)
+		logger.Info("Kafka 未启用（kafka.enabled=false），门架抓拍流水接入仍由 Java 服务承担")
+		if cfg.Elasticsearch.Enabled {
+			logger.Warn("Elasticsearch 已启用但 Kafka 未启用：Go 不会写入索引")
+		}
+	}
+
 	engine := router.Setup(a)
 
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
@@ -74,6 +116,10 @@ func main() {
 		Addr:              addr,
 		Handler:           engine,
 		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       60 * time.Second,
+		// 导出类接口（xlsx 生成 + 附件流）可能耗时较长，写超时放宽到 5 分钟。
+		WriteTimeout: 5 * time.Minute,
+		IdleTimeout:  120 * time.Second,
 	}
 
 	go func() {
@@ -89,11 +135,29 @@ func main() {
 	<-quit
 
 	logger.Info("收到退出信号，开始优雅停机")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
+	// 先停 HTTP 入口，不再接收新请求。
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Error("优雅停机失败", "err", err)
 	}
+	// 再收敛 Kafka 消费者（限 15s）：停止拉取并提交当前批次的 offset。
+	if ingestCancel != nil {
+		ingestCancel()
+		select {
+		case <-ingestDone:
+		case <-time.After(15 * time.Second):
+			logger.Warn("Kafka 消费者未在 15s 内退出")
+		}
+	}
+	// 再收敛定时任务（限 15s），避免任务写到一半被进程退出打断。
+	schedCtx, schedCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	quartz.ShutdownShared(schedCtx)
+	schedCancel()
+	// 最后排空操作日志队列（限 5s）。
+	logCtx, logCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	middleware.StopOperLog(logCtx)
+	logCancel()
 	logger.Info("服务已退出")
 }
 
