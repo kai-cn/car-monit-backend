@@ -1,0 +1,228 @@
+# ============================================================================
+# 文件：.github/workflows/java-junit-load-cloud.yml
+# 用途：按分支/Java版本生成并运行 JUnit 全接口契约测试 + 压测
+# 触发：workflow_dispatch
+# 思路：
+#   1. 用 master 作为控制平面，target_ref 可指向任意 java8/17/21/25 + boot3/4 分支
+#   2. 启动同一套 MySQL/Redis/PostgreSQL 夹具，构建目标 jar，固定端口启动
+#   3. 动态生成 JUnit5 测试源码（仅依赖 JDK + JUnit console standalone）
+#   4. 契约测试记录 status/bytes/latency/body；压测记录 rps/p50/p95/p99/error rate
+#   5. 上传 out/** 作为证据；不做任何凭据落盘
+# ============================================================================
+name: java-junit-load-cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_ref:
+        description: branch/tag to test
+        type: string
+        required: true
+        default: master
+      app:
+        description: service under test
+        type: choice
+        options: [backend, api]
+        default: backend
+      jdk:
+        description: JDK version used to build/run
+        type: choice
+        options: ['8', '17', '21', '25']
+        default: '25'
+      endpoints:
+        description: endpoint set
+        type: choice
+        options: [full, smoke]
+        default: full
+      load_threads:
+        description: concurrent workers for load test
+        type: string
+        default: '8'
+      load_seconds:
+        description: load duration in seconds
+        type: string
+        default: '30'
+      label:
+        description: report label
+        type: string
+        default: java-junit-load
+
+permissions:
+  contents: read
+
+concurrency:
+  group: java-junit-load-${{ inputs.target_ref }}-${{ inputs.app }}-${{ inputs.jdk }}
+  cancel-in-progress: true
+
+env:
+  MAVEN_ARGS: -B -ntp
+  BASE_URL: http://127.0.0.1:19903
+
+jobs:
+  contract-and-load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout control harness
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          path: harness
+
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_ref }}
+          path: src
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.jdk }}
+          cache: maven
+
+      - name: Start datastores and seed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ '${{ inputs.app }}' = 'api' ]; then
+            docker run -d --name pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=RuoYi -p 5432:5432 postgres:16-alpine
+          fi
+          docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
+          docker run -d --name rd -p 6379:6379 redis:7-alpine
+          for i in $(seq 1 90); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
+          for i in $(seq 1 30); do docker exec rd redis-cli ping >/dev/null 2>&1 && break; sleep 1; done
+          if [ '${{ inputs.app }}' = 'api' ]; then
+            for i in $(seq 1 60); do docker exec pg pg_isready -U postgres -d RuoYi >/dev/null 2>&1 && break; sleep 2; done
+            export PGPASSWORD=postgres
+            psql -h 127.0.0.1 -U postgres -d RuoYi -v ON_ERROR_STOP=1 -f harness/scripts/v3/ops/parity/sql/schema_jl_data01.sql >/dev/null
+            gunzip -c harness/scripts/v3/ops/parity/sql/seed_jl_data01.sql.gz > /tmp/seed.sql
+            psql -h 127.0.0.1 -U postgres -d RuoYi -v ON_ERROR_STOP=1 -f /tmp/seed.sql >/dev/null
+            for i in $(seq 1 10); do
+              docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot < harness/scripts/v3/ops/parity/sql/mysql_dict.sql && break
+              echo "mysql dict load retry $i"; sleep 3
+            done
+          else
+            docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/schema_carmonitdb.sql
+            docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
+          fi
+          echo "sys_user rows: $(docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -N -e 'select count(*) from carmonitdb.sys_user' 2>/dev/null || echo 0)"
+
+      - name: Build target jar
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd src
+          if [ '${{ inputs.app }}' = 'api' ]; then MODULE=pro-business-api; else MODULE=ruoyi-admin; fi
+          mvn $MAVEN_ARGS -DskipTests -pl "$MODULE" -am package
+          mkdir -p ../out
+          jar=$(ls "$MODULE"/target/*.jar | grep -v original | head -1)
+          cp "$jar" ../out/app.jar
+          ls -lh ../out/app.jar
+
+      - name: Generate JUnit suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ '${{ inputs.app }}' = 'api' ]; then
+            EP=harness/scripts/v3/ops/parity/endpoints/api-full.txt
+          else
+            EP=harness/scripts/v3/ops/parity/endpoints/backend-full.txt
+          fi
+          if [ '${{ inputs.endpoints }}' = 'smoke' ]; then
+            printf '/\n/captchaImage\n' > /tmp/smoke.txt
+            EP=/tmp/smoke.txt
+          fi
+          mkdir -p out/generated out/classes
+          python3 harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints "$EP" --out out/generated
+          curl -fsSL -o out/junit-platform-console-standalone.jar \
+            https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
+          javac -source 8 -target 8 -cp out/junit-platform-console-standalone.jar -d out/classes out/generated/*.java
+
+      - name: Start service under test
+        shell: bash
+        env:
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
+          SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
+          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
+          SPRING__DATASOURCE__DRUID__MASTER__DRIVERCLASSNAME: com.mysql.cj.jdbc.Driver
+          SPRING__REDIS__HOST: 127.0.0.1
+          SPRING__REDIS__PORT: '6379'
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
+          CARMONIT_MYSQL_HOST: 127.0.0.1
+          CARMONIT_MYSQL_PORT: '3306'
+          CARMONIT_MYSQL_USERNAME: root
+          CARMONIT_MYSQL_PASSWORD: root
+          SPRING_DATA_REDIS_HOST: 127.0.0.1
+          SPRING_DATA_REDIS_PORT: '6379'
+          TOKEN__SECRET: junit-cloud-secret-deterministic-0123456789abcdef
+          EXPORT_DOWNLOAD_SECRET: junit-cloud-secret-deterministic
+          LOG_PATH: /tmp/car-monit-logs
+        run: |
+          set -euo pipefail
+          mkdir -p "$LOG_PATH" /home/ruoyi/logs
+          java -jar out/app.jar --server.port=19903 > out/app.log 2>&1 &
+          echo $! > out/app.pid
+          for i in $(seq 1 180); do
+            if curl -fsS -o /dev/null http://127.0.0.1:19903/captchaImage; then echo "service ready after ${i}s"; exit 0; fi
+            if ! kill -0 "$(cat out/app.pid)" 2>/dev/null; then echo 'service process exited'; tail -n 120 out/app.log; exit 1; fi
+            sleep 1
+          done
+          echo 'service readiness timeout'; tail -n 120 out/app.log; exit 1
+
+      - name: JUnit full contract test
+        shell: bash
+        env:
+          BASE_URL: http://127.0.0.1:19903
+          OUT_DIR: ${{ github.workspace }}/out
+          LABEL: ${{ inputs.label }}
+          VARIANT: ${{ inputs.app }}-${{ inputs.jdk }}-${{ inputs.target_ref }}
+        run: |
+          set -euo pipefail
+          java -jar out/junit-platform-console-standalone.jar execute \
+            --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest \
+            --details=summary --reports-dir=out/junit-contract-reports
+          cat out/junit-contract.json | head -c 800 || true
+
+      - name: JUnit load test
+        shell: bash
+        env:
+          BASE_URL: http://127.0.0.1:19903
+          OUT_DIR: ${{ github.workspace }}/out
+          LABEL: ${{ inputs.label }}
+          VARIANT: ${{ inputs.app }}-${{ inputs.jdk }}-${{ inputs.target_ref }}
+          LOAD_THREADS: ${{ inputs.load_threads }}
+          LOAD_SECONDS: ${{ inputs.load_seconds }}
+          LOAD_WARMUP_SECONDS: '2'
+        run: |
+          set -euo pipefail
+          java -jar out/junit-platform-console-standalone.jar execute \
+            --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointLoadTest \
+            --details=summary --reports-dir=out/junit-load-reports
+          cat out/junit-load.json || true
+
+      - name: Dump app log tail
+        if: always()
+        shell: bash
+        run: |
+          if [ -f out/app.log ]; then tail -n 160 out/app.log || true; fi
+
+      - name: Upload JUnit and load evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-load-${{ inputs.app }}-${{ inputs.jdk }}-${{ inputs.label }}
+          path: |
+            out/**
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Stop service and datastores
+        if: always()
+        shell: bash
+        run: |
+          if [ -f out/app.pid ]; then kill "$(cat out/app.pid)" 2>/dev/null || true; fi
+          docker rm -f pg my rd 2>/dev/null || true
