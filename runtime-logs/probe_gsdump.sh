@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# LEGACY-SCRIPT-ANNOTATION
+# 文件：probe_gsdump.sh
+# 用途：只读检查/诊断。
+# 思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
+# 风险：通常只读；若脚本内有明确写操作以其自身说明为准。
 # 本地诊断 gs_dump 在 openGauss 3.0 容器内的可用调用形式。
 set -u
 C=opengauss

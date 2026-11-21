@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""
+LEGACY-SCRIPT-ANNOTATION
+文件：push_doc12.py
+用途：推送内容到远端。
+思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
+风险：会修改远端分支，执行前确认凭据与目标。
+"""
 import sys
 sys.path.insert(0, "D:/work/runtime-logs")
 from push_files_api import put_files

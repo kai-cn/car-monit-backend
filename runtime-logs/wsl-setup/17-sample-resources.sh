@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# LEGACY-SCRIPT-ANNOTATION
+# 文件：17-sample-resources.sh
+# 用途：运维辅助脚本。
+# 思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
+# 风险：执行前确认目标环境、凭据与影响范围。
 # 采样 WSL2 内内存 / 容器 / 构建进程占用
 # 用法: 17-sample-resources.sh <duration_seconds> <interval_seconds>
 set -u

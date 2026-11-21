@@ -1,3 +1,10 @@
+"""
+LEGACY-SCRIPT-ANNOTATION
+文件：diag_fail2.py
+用途：运维辅助脚本。
+思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
+风险：执行前确认目标环境、凭据与影响范围。
+"""
 import re
 def load(p):
     s=open(p,encoding="utf-8",errors="replace").read()

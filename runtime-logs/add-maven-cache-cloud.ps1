@@ -1,3 +1,8 @@
+# LEGACY-SCRIPT-ANNOTATION
+# 文件：add-maven-cache-cloud.ps1
+# 用途：运维辅助脚本。
+# 思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
+# 风险：执行前确认目标环境、凭据与影响范围。
 # Add an explicit ~/.m2/repository cache step to Maven-based workflows that lack one.
 # Usage: add-maven-cache-cloud.ps1 -RepoFull <owner/repo>
 # Skips workflows already using actions/cache or setup-java cache: maven.

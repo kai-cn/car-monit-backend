@@ -1,3 +1,8 @@
+# LEGACY-SCRIPT-ANNOTATION
+# 文件：put-remote-file.ps1
+# 用途：推送内容到远端。
+# 思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
+# 风险：会修改远端分支，执行前确认凭据与目标。
 # Create/update a single file on a remote GitHub branch via the REST contents API.
 # Usage: put-remote-file.ps1 -Repo <owner/repo> -Branch <branch> -Path <repo-path> -Src <local-file> -Message <commit-msg>
 # Reads the existing blob SHA when present so updates do not rewrite history; 404 means create new file.

@@ -1,3 +1,8 @@
+# LEGACY-SCRIPT-ANNOTATION
+# 文件：annotate-workflows-cloud.ps1
+# 用途：批量补充脚本注释。
+# 思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
+# 风险：会修改本地脚本文件，执行前确认目录。
 param([Parameter(Mandatory=$true)][string]$RepoFull)
 # Add explanatory comments next to the performance options injected earlier.
 # Usage: annotate-workflows-cloud.ps1 -RepoFull <owner/repo>

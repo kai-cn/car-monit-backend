@@ -1,3 +1,8 @@
+# LEGACY-SCRIPT-ANNOTATION
+# 文件：fetch-remote-file.ps1
+# 用途：同步或拉取本地/远端内容。
+# 思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
+# 风险：可能更新本地工作树或读取远端，执行前确认目标分支。
 # Fetch a single file from a remote GitHub branch via the REST contents API.
 # Usage: fetch-remote-file.ps1 -Repo <short-repo> -Branch <branch> -Path <repo-path> -Out <local-file>
 # Token is read from git credential helper by gh_api.ps1; never echoed or persisted.

@@ -1,3 +1,8 @@
+# LEGACY-SCRIPT-ANNOTATION
+# 文件：optimize-workflows-cloud.ps1
+# 用途：运维辅助脚本。
+# 思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
+# 风险：执行前确认目标环境、凭据与影响范围。
 # Performance pass over every workflow on every branch of one repository.
 # Usage: optimize-workflows-cloud.ps1 -RepoFull <owner/repo>
 # Changes: cancel superseded runs, run parity matrix in parallel, fastest artifact compression,
