@@ -134,7 +134,7 @@ jobs:
           java -jar out/app.jar --server.port=19903 --spring.main.allow-circular-references=true --spring.main.lazy-initialization=true --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration > out/app.log 2>&1 &
           echo $! > out/app.pid
           for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1 && break; sleep 1; done
-          TOKEN=$(python3 harness/scripts/v3/ops/junit/junit-auth-token.py --base-url "$BASE_URL")
+          TOKEN=$(python3 harness/scripts/v3/ops/junit/junit-auth-token.py --base-url "$BASE_URL" || true)
           if [ -n "$TOKEN" ]; then export ENDPOINT_HEADERS="Authorization: Bearer ${TOKEN}"; fi
           OUT_DIR="$PWD/out" VARIANT=java-master LABEL="${{ inputs.label }}" java -jar out/junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/contract-reports
           OUT_DIR="$PWD/out" VARIANT=java-master LOAD_THREADS=${{ inputs.load_threads }} LOAD_SECONDS=${{ inputs.load_seconds }} java -jar out/junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointLoadTest --details=summary --reports-dir=out/load-reports
@@ -253,6 +253,10 @@ jobs:
           CARMONIT_REDIS_ADDR: "127.0.0.1:6379"
           CARMONIT_SERVER_PORT: "19903"
           CARMONIT_TOKEN_SECRET: "junit-cloud-secret-deterministic-0123456789abcdef"
+          APP_SERVER_PORT: "19903"
+          APP_REDIS_HOST: "127.0.0.1"
+          APP_REDIS_PORT: "6379"
+          APP_TOKEN_SECRET: "junit-cloud-secret-deterministic-0123456789abcdef"
           APP_KAFKA_BOOTSTRAP_SERVERS: ""
           APP_SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: "jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false"
           APP_SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
@@ -325,7 +329,7 @@ jobs:
           python3 harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints "$EP" --out out/generated
           javac -encoding UTF-8 -source 8 -target 8 -cp out-junit.jar -d out/classes out/generated/*.java
           for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1 && break; sleep 1; done
-          TOKEN=$(python3 harness/scripts/v3/ops/junit/junit-auth-token.py --base-url "$BASE_URL")
+          TOKEN=$(python3 harness/scripts/v3/ops/junit/junit-auth-token.py --base-url "$BASE_URL" || true)
           if [ -n "$TOKEN" ]; then export ENDPOINT_HEADERS="Authorization: Bearer ${TOKEN}"; fi
           OUT_DIR="$PWD/out" VARIANT="${{ matrix.lang }}" LABEL="${{ inputs.label }}" java -jar out-junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/contract-reports
           OUT_DIR="$PWD/out" VARIANT="${{ matrix.lang }}" LOAD_THREADS=${{ inputs.load_threads }} LOAD_SECONDS=${{ inputs.load_seconds }} java -jar out-junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointLoadTest --details=summary --reports-dir=out/load-reports
