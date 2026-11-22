@@ -64,6 +64,10 @@ jobs:
           distribution: corretto
           java-version: '8'
           cache: maven
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
       - name: Start datastores
         shell: bash
         run: |
@@ -84,11 +88,14 @@ jobs:
             docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/schema_carmonitdb.sql
             docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
           fi
-      - name: Build and start Java baseline
+      - name: Build baseline and generate JUnit
         run: |
           set -euo pipefail
+          sudo mkdir -p /home/ruoyi/logs
+          sudo chown -R "$USER" /home/ruoyi
           export JAVA_HOME="$JAVA_HOME_25_X64"
           export PATH="$JAVA_HOME/bin:$PATH"
+          export MAVEN_ARGS="$MAVEN_ARGS -Dspring-boot.aot.skip=true"
           java -version
           cd src
           if [ '${{ inputs.app }}' = api ]; then MODULE=pro-business-api; EP=../harness/scripts/v3/ops/parity/endpoints/api-full.txt; else MODULE=ruoyi-admin; EP=../harness/scripts/v3/ops/parity/endpoints/backend-full.txt; fi
