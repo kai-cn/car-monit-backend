@@ -216,6 +216,8 @@ jobs:
             python3 -m pip install -q -r requirements.txt && \
             sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' config/application.yml && \
             TOKEN__SECRET=junit-cloud-secret-deterministic-0123456789abcdef \
+            SPRING__DATASOURCE__DRUID__MASTER__PASSWORD=root \
+            HENGDA__SECRET=pytest-only-hengda-signing-key-4d8e1a6b2f9c0357 \
             python3 -m uvicorn app.main:app --host 127.0.0.1 --port 19903 > "$GITHUB_WORKSPACE/app.log" 2>&1) &
           echo $! > app.pid
       - name: Build and start Go
@@ -252,9 +254,15 @@ jobs:
         if: steps.gate.outputs.run == 'yes' && matrix.lang == 'rust'
         shell: bash
         env:
-          APP_DATABASE__URL: "mysql://root:root@127.0.0.1:3306/carmonitdb"
-          APP_REDIS__URL: "redis://127.0.0.1:6379"
-          APP_SERVER__PORT: "19903"
+          APP_DATABASE__URL: "jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8"
+          APP_DATABASE__USERNAME: root
+          APP_DATABASE__PASSWORD: root
+          APP_DATABASE__POOL__MINIDLE: '0'
+          APP_DATABASE__POOL__MAXACTIVE: '10'
+          APP_DATABASE__POOL__MAXWAIT: '30000'
+          APP_REDIS__HOST: 127.0.0.1
+          APP_REDIS__PORT: '6379'
+          APP_SERVER__PORT: '19903'
         run: |
           set -euo pipefail
           cd src/car-monit-rust
