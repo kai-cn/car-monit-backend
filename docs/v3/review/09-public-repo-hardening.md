@@ -1,3 +1,9 @@
+<!--
+@description 本文件由 AI 辅助编写或维护，用于记录项目实现、验证与交接信息。
+@author Tencent Hunyuan Hy
+@date 2026-11-22 23:45:04
+-->
+
 # 09 公开仓库安全加固记录（backend）
 
 > 日期：2026-11-16；决策：参数化 + GitHub Secrets + 用户外部轮换；暂不公开；保留自托管 runner 但加固流程。

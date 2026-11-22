@@ -1,3 +1,9 @@
+<!--
+@description 本文件由 AI 辅助编写或维护，用于记录项目实现、验证与交接信息。
+@author Tencent Hunyuan Hy
+@date 2026-11-22 23:45:04
+-->
+
 # 10 公开仓库安全加固 + 云 runner CICD + native 镜像验收（backend 侧）
 
 > 日期：2026-11-16 ~ 11-17；承接 09-public-repo-hardening.md。

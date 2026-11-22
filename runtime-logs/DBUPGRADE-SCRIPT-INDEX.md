@@ -1,3 +1,9 @@
+<!--
+@description 本文件由 AI 辅助编写或维护，用于记录项目实现、验证与交接信息。
+@author Tencent Hunyuan Hy
+@date 2026-11-22 23:45:04
+-->
+
 # DB 升级验证 — 复现脚本索引（2026-11-18）
 
 所有脚本位于 `D:/work/runtime-logs/`，token 统一由 `gh_cred.py` 从 `.gh_token_cache` 读取（无账号弹窗、不回显）。

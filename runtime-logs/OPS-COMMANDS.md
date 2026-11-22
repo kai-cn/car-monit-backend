@@ -1,3 +1,9 @@
+<!--
+@description 本文件由 AI 辅助编写或维护，用于记录项目实现、验证与交接信息。
+@author Tencent Hunyuan Hy
+@date 2026-11-22 23:45:04
+-->
+
 # car-monit k3d 运维命令速查（本会话有效命令）
 
 > 环境：WSL2 `openEuler-24.03-LTS-SP4`；k3d 集群 `v3`（node 容器 `k3d-v3-server-0`）；

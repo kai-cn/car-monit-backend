@@ -1,3 +1,9 @@
+<!--
+@description 本文件由 AI 辅助编写或维护，用于记录项目实现、验证与交接信息。
+@author Tencent Hunyuan Hy
+@date 2026-11-22 23:45:04
+-->
+
 # WSL k3s 一主两从集群 + 自托管 Runner CI/CD 记录
 
 > 在 `car-monit-backend-java-V3` 与 `car-monit-api-java-V3` 两个工作树的

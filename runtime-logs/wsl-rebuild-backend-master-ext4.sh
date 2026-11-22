@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # @description 历史脚本 wsl-rebuild-backend-master-ext4.sh：驱动 WSL Docker/数据库完成本机验证；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
 # @author AI Assistant
-# @date 2026-11-22
+# @date 2026-11-22 23:45:04
 # @usage bash wsl-rebuild-backend-master-ext4.sh [args]；执行前确认目标环境与本地容器状态。
 # @dependencies Maven 与对应 JDK
 # Purpose: rebuild backend master in WSL ext4 because D drive reached 100% capacity.

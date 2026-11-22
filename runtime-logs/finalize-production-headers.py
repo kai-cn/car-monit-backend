@@ -2,7 +2,7 @@
 """
 @description 收尾修复生产级注释：规范 generate_junit_suite.py 文件头、补齐 yml 文件头、移除反斜杠续行后的空行。
 @author AI Assistant
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python finalize-production-headers.py
 @dependencies Python 3 标准库；仅处理固定工作目录中的本地文件。
 """
@@ -22,7 +22,7 @@ def header(path: Path) -> str:
     return '\n'.join([
         '# @description 历史运维/验证配置快照，保留用于复现与审计；本文件头补充维护背景与运行约束。',
         '# @author AI Assistant',
-        '# @date 2026-11-22',
+        '# @date 2026-11-22 23:45:04',
         '# @usage ' + usage,
         '# @dependencies 按原 workflow 声明的 runner、Actions 与外部服务依赖执行。',
     ]) + '\n'
@@ -41,7 +41,7 @@ def fix_generate() -> None:
     new_head = '''"""
 @description 从端点清单生成 Java8 兼容的 JUnit5 全接口契约与压测套件；结果以 JSON 记录，便于跨版本/跨语言对比。
 @author AI Assistant
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python generate_junit_suite.py --endpoints <file> --out <dir>
 @dependencies Python 3 标准库；生成的 Java 源码依赖 JUnit 5 Platform Console 与 JDK 8+。
 """'''

@@ -2,7 +2,7 @@
 """
 @description 校验生产级文件头覆盖范围与脚本语法，防止批量注释引入不可解析文件。
 @author AI Assistant
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python verify-production-headers.py
 @dependencies Python 3 标准库；YAML 校验依赖 PyYAML（缺失时跳过 YAML 语法检查）。
 """

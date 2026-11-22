@@ -111,7 +111,7 @@ AI 必须根据正在生成的语言或框架，自动应用以下特定规范�
 /**
  * @description 提供用户核心业务处理，包含注册、信息更新与权限校验
  * @author gpt-4o
- * @date 2023-10-25
+ * @date 2026-11-22 23:45:04
  */
 @Service
 @Slf4j
@@ -178,7 +178,7 @@ public class UserService {
 ```go
 // @description 订单处理服务层，包含订单创建及状态流转的核心业务逻辑
 // @author gpt-4o
-// @date 2023-10-25
+// @date 2026-11-22 23:45:04
 package service
 
 import (
@@ -226,7 +226,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *CreateOrderReq) (*O
 /**
  * @description 提供用户身份校验与 JWT Token 生成的领域服务
  * @author gpt-4o
- * @date 2023-10-25
+ * @date 2026-11-22 23:45:04
  */
 using System;
 using System.Threading.Tasks;
@@ -291,7 +291,7 @@ public class AuthService
 """
 @description 用户行为日志清洗与入库模块
 @author gpt-4o
-@date 2023-10-25
+@date 2026-11-22 23:45:04
 @dependencies 需要环境配置 PYTHONPATH 包含项目根目录
 """
 from typing import List, Optional
@@ -328,7 +328,7 @@ def clean_and_save_logs(raw_logs: List[dict]) -> Optional[int]:
 /**
  * @description 用户权限管理卡片组件，负责展示用户当前权限并提供编辑入口
  * @author gpt-4o
- * @date 2023-10-25
+ * @date 2026-11-22 23:45:04
  */
 import React, { useMemo } from 'react';
 
@@ -374,7 +374,7 @@ export default UserPermissionCard;
 /**
  * @description 高性能无锁环形缓冲区，用于单生产者单消费者(SPSC)场景的数据传递
  * @author gpt-4o
- * @date 2023-10-25
+ * @date 2026-11-22 23:45:04
  */
 #pragma once
 
@@ -431,7 +431,7 @@ private:
 ```rust
 //! @description 提供基于指数的重试机制工具函数，用于网络请求的容错处理
 //! @author gpt-4o
-//! @date 2023-10-25
+//! @date 2026-11-22 23:45:04
 
 use std::{thread, time::Duration};
 
@@ -486,7 +486,7 @@ where
 #
 # @description Docker 容器健康检查与自动重启脚本
 # @author gpt-4o
-# @date 2023-10-25
+# @date 2026-11-22 23:45:04
 # @usage ./health_check.sh <container_name>
 #   - container_name: 需要检查的 Docker 容器名称
 # @dependencies 依赖 docker CLI，且当前用户具有 docker 组权限
