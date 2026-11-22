@@ -5,44 +5,43 @@
       "load_rows": null,
       "load_error_rate": null,
       "raw_load": {
-        "total_requests": 3532,
-        "rps": 117.73333333333333,
-        "avg_latency_ms": 74.46347678369196,
-        "p95_ms": 76,
-        "p99_ms": 2015,
+        "total_requests": 635685,
+        "rps": 21189.5,
+        "avg_latency_ms": 0.45644619583598794,
+        "p95_ms": 1,
+        "p99_ms": 2,
         "errors": 0,
-        "business_4xx": 36,
+        "business_4xx": 0,
         "business_5xx": 0
       }
     },
     "python": {
       "contract_totals": {
         "endpoints": 302,
-        "status_match": 302,
-        "exact": 301,
-        "semantic": 301,
-        "nondet": 1,
-        "baseline_skip": 0,
-        "fails": 0
+        "status_match": 296,
+        "exact": 82,
+        "semantic": 178,
+        "nondet": 39,
+        "fails": 85
       },
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 477922,
-          "candidate": 28211,
-          "candidate_over_baseline": 0.059
+          "baseline": 635685,
+          "candidate": 27321,
+          "candidate_over_baseline": 0.043
         },
         {
           "metric": "rps",
-          "baseline": 15930.733333333334,
-          "candidate": 940.3666666666667,
-          "candidate_over_baseline": 0.059
+          "baseline": 21189.5,
+          "candidate": 910.7,
+          "candidate_over_baseline": 0.043
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 0.6076912132105239,
-          "candidate": 9.070327177342172,
-          "candidate_over_baseline": 14.9259
+          "baseline": 0.45644619583598794,
+          "candidate": 9.371509095567513,
+          "candidate_over_baseline": 20.5315
         },
         {
           "metric": "p50_ms",
@@ -58,9 +57,9 @@
         },
         {
           "metric": "p99_ms",
-          "baseline": 3,
-          "candidate": 20,
-          "candidate_over_baseline": 6.6667
+          "baseline": 2,
+          "candidate": 22,
+          "candidate_over_baseline": 11.0
         },
         {
           "metric": "errors",
@@ -74,11 +73,11 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 28211,
-        "rps": 940.3666666666667,
-        "avg_latency_ms": 9.070327177342172,
+        "total_requests": 27321,
+        "rps": 910.7,
+        "avg_latency_ms": 9.371509095567513,
         "p95_ms": 11,
-        "p99_ms": 20,
+        "p99_ms": 22,
         "errors": 0,
         "business_4xx": 0,
         "business_5xx": 0
@@ -87,30 +86,30 @@
     "go": {
       "contract_totals": {
         "endpoints": 302,
-        "status_match": 297,
-        "exact": 166,
-        "semantic": 182,
-        "nondet": 40,
-        "fails": 80
+        "status_match": 293,
+        "exact": 76,
+        "semantic": 176,
+        "nondet": 39,
+        "fails": 87
       },
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 477922,
-          "candidate": 1433796,
-          "candidate_over_baseline": 3.0001
+          "baseline": 635685,
+          "candidate": 1232430,
+          "candidate_over_baseline": 1.9387
         },
         {
           "metric": "rps",
-          "baseline": 15930.733333333334,
-          "candidate": 47793.2,
-          "candidate_over_baseline": 3.0001
+          "baseline": 21189.5,
+          "candidate": 41081.0,
+          "candidate_over_baseline": 1.9387
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 0.6076912132105239,
-          "candidate": 0.17824153505798593,
-          "candidate_over_baseline": 0.2933
+          "baseline": 0.45644619583598794,
+          "candidate": 0.2073756724519851,
+          "candidate_over_baseline": 0.4543
         },
         {
           "metric": "p50_ms",
@@ -126,9 +125,9 @@
         },
         {
           "metric": "p99_ms",
-          "baseline": 3,
+          "baseline": 2,
           "candidate": 1,
-          "candidate_over_baseline": 0.3333
+          "candidate_over_baseline": 0.5
         },
         {
           "metric": "errors",
@@ -142,44 +141,43 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 65419,
-        "rps": 2180.633333333333,
-        "avg_latency_ms": 3.93361255904248,
-        "p95_ms": 7,
-        "p99_ms": 15,
+        "total_requests": 1232430,
+        "rps": 41081.0,
+        "avg_latency_ms": 0.2073756724519851,
+        "p95_ms": 1,
+        "p99_ms": 1,
         "errors": 0,
-        "business_4xx": 1733,
+        "business_4xx": 20302,
         "business_5xx": 0
       }
     },
     "cpp": {
       "contract_totals": {
         "endpoints": 302,
-        "status_match": 302,
-        "exact": 295,
-        "semantic": 295,
-        "nondet": 1,
-        "baseline_skip": 0,
-        "fails": 6
+        "status_match": 301,
+        "exact": 0,
+        "semantic": 0,
+        "nondet": 37,
+        "fails": 265
       },
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 477922,
-          "candidate": 1304885,
-          "candidate_over_baseline": 2.7303
+          "baseline": 635685,
+          "candidate": 1702220,
+          "candidate_over_baseline": 2.6778
         },
         {
           "metric": "rps",
-          "baseline": 15930.733333333334,
-          "candidate": 43496.166666666664,
-          "candidate_over_baseline": 2.7303
+          "baseline": 21189.5,
+          "candidate": 56740.666666666664,
+          "candidate_over_baseline": 2.6778
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 0.6076912132105239,
-          "candidate": 0.195944470202355,
-          "candidate_over_baseline": 0.3224
+          "baseline": 0.45644619583598794,
+          "candidate": 0.15021266346300713,
+          "candidate_over_baseline": 0.3291
         },
         {
           "metric": "p50_ms",
@@ -195,9 +193,9 @@
         },
         {
           "metric": "p99_ms",
-          "baseline": 3,
+          "baseline": 2,
           "candidate": 1,
-          "candidate_over_baseline": 0.3333
+          "candidate_over_baseline": 0.5
         },
         {
           "metric": "errors",
@@ -211,9 +209,9 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 1304885,
-        "rps": 43496.166666666664,
-        "avg_latency_ms": 0.195944470202355,
+        "total_requests": 1702220,
+        "rps": 56740.666666666664,
+        "avg_latency_ms": 0.15021266346300713,
         "p95_ms": 1,
         "p99_ms": 1,
         "errors": 0,
@@ -224,30 +222,30 @@
     "rust": {
       "contract_totals": {
         "endpoints": 302,
-        "status_match": 297,
-        "exact": 166,
-        "semantic": 180,
-        "nondet": 41,
-        "fails": 81
+        "status_match": 293,
+        "exact": 81,
+        "semantic": 179,
+        "nondet": 39,
+        "fails": 84
       },
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 477922,
-          "candidate": 735392,
-          "candidate_over_baseline": 1.5387
+          "baseline": 635685,
+          "candidate": 1366756,
+          "candidate_over_baseline": 2.1501
         },
         {
           "metric": "rps",
-          "baseline": 15930.733333333334,
-          "candidate": 24513.066666666666,
-          "candidate_over_baseline": 1.5387
+          "baseline": 21189.5,
+          "candidate": 45558.53333333333,
+          "candidate_over_baseline": 2.1501
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 0.6076912132105239,
-          "candidate": 0.3476227644575954,
-          "candidate_over_baseline": 0.572
+          "baseline": 0.45644619583598794,
+          "candidate": 0.18709191691860141,
+          "candidate_over_baseline": 0.4099
         },
         {
           "metric": "p50_ms",
@@ -263,9 +261,9 @@
         },
         {
           "metric": "p99_ms",
-          "baseline": 3,
+          "baseline": 2,
           "candidate": 1,
-          "candidate_over_baseline": 0.3333
+          "candidate_over_baseline": 0.5
         },
         {
           "metric": "errors",
@@ -279,13 +277,13 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 45723,
-        "rps": 1524.1,
-        "avg_latency_ms": 5.598451545174201,
-        "p95_ms": 11,
-        "p99_ms": 20,
+        "total_requests": 1366756,
+        "rps": 45558.53333333333,
+        "avg_latency_ms": 0.18709191691860141,
+        "p95_ms": 1,
+        "p99_ms": 1,
         "errors": 0,
-        "business_4xx": 1211,
+        "business_4xx": 0,
         "business_5xx": 0
       }
     }
@@ -296,61 +294,61 @@
       "load_rows": null,
       "load_error_rate": null,
       "raw_load": {
-        "total_requests": 6516,
-        "rps": 217.2,
-        "avg_latency_ms": 39.30647636586863,
-        "p95_ms": 89,
-        "p99_ms": 161,
+        "total_requests": 14574,
+        "rps": 485.8,
+        "avg_latency_ms": 17.568066419651434,
+        "p95_ms": 66,
+        "p99_ms": 142,
         "errors": 0,
-        "business_4xx": 493,
-        "business_5xx": 273
+        "business_4xx": 1105,
+        "business_5xx": 672
       }
     },
     "python": {
       "contract_totals": {
         "endpoints": 79,
-        "status_match": 30,
-        "exact": 17,
-        "semantic": 20,
-        "nondet": 10,
-        "fails": 49
+        "status_match": 75,
+        "exact": 19,
+        "semantic": 53,
+        "nondet": 7,
+        "fails": 19
       },
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 17833,
-          "candidate": 38,
-          "candidate_over_baseline": 0.0021
+          "baseline": 14574,
+          "candidate": 1144,
+          "candidate_over_baseline": 0.0785
         },
         {
           "metric": "rps",
-          "baseline": 594.4333333333333,
-          "candidate": 1.2666666666666666,
-          "candidate_over_baseline": 0.0021
+          "baseline": 485.8,
+          "candidate": 38.13333333333333,
+          "candidate_over_baseline": 0.0785
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 14.357931923961196,
-          "candidate": 8458.368421052632,
-          "candidate_over_baseline": 589.1077
+          "baseline": 17.568066419651434,
+          "candidate": 223.87674825174824,
+          "candidate_over_baseline": 12.7434
         },
         {
           "metric": "p50_ms",
-          "baseline": 8,
-          "candidate": 10036,
-          "candidate_over_baseline": 1254.5
+          "baseline": 9,
+          "candidate": 226,
+          "candidate_over_baseline": 25.1111
         },
         {
           "metric": "p95_ms",
-          "baseline": 50,
-          "candidate": 10060,
-          "candidate_over_baseline": 201.2
+          "baseline": 66,
+          "candidate": 433,
+          "candidate_over_baseline": 6.5606
         },
         {
           "metric": "p99_ms",
-          "baseline": 108,
-          "candidate": 10065,
-          "candidate_over_baseline": 93.1944
+          "baseline": 142,
+          "candidate": 554,
+          "candidate_over_baseline": 3.9014
         },
         {
           "metric": "errors",
@@ -364,62 +362,61 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 4118,
-        "rps": 137.26666666666668,
-        "avg_latency_ms": 62.21393880524526,
-        "p95_ms": 109,
-        "p99_ms": 143,
+        "total_requests": 1144,
+        "rps": 38.13333333333333,
+        "avg_latency_ms": 223.87674825174824,
+        "p95_ms": 433,
+        "p99_ms": 554,
         "errors": 0,
-        "business_4xx": 313,
-        "business_5xx": 2771
+        "business_4xx": 88,
+        "business_5xx": 0
       }
     },
     "go": {
       "contract_totals": {
         "endpoints": 79,
-        "status_match": 62,
-        "exact": 6,
-        "semantic": 36,
-        "nondet": 6,
-        "baseline_skip": 0,
-        "fails": 37
+        "status_match": 75,
+        "exact": 18,
+        "semantic": 47,
+        "nondet": 7,
+        "fails": 25
       },
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 17833,
-          "candidate": 79046,
-          "candidate_over_baseline": 4.4326
+          "baseline": 14574,
+          "candidate": 42155,
+          "candidate_over_baseline": 2.8925
         },
         {
           "metric": "rps",
-          "baseline": 594.4333333333333,
-          "candidate": 2634.866666666667,
-          "candidate_over_baseline": 4.4326
+          "baseline": 485.8,
+          "candidate": 1405.1666666666667,
+          "candidate_over_baseline": 2.8925
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 14.357931923961196,
-          "candidate": 3.237431369076234,
-          "candidate_over_baseline": 0.2255
+          "baseline": 17.568066419651434,
+          "candidate": 6.06990867038311,
+          "candidate_over_baseline": 0.3455
         },
         {
           "metric": "p50_ms",
-          "baseline": 8,
-          "candidate": 2,
-          "candidate_over_baseline": 0.25
+          "baseline": 9,
+          "candidate": 3,
+          "candidate_over_baseline": 0.3333
         },
         {
           "metric": "p95_ms",
-          "baseline": 50,
-          "candidate": 12,
-          "candidate_over_baseline": 0.24
+          "baseline": 66,
+          "candidate": 24,
+          "candidate_over_baseline": 0.3636
         },
         {
           "metric": "p99_ms",
-          "baseline": 108,
-          "candidate": 21,
-          "candidate_over_baseline": 0.1944
+          "baseline": 142,
+          "candidate": 40,
+          "candidate_over_baseline": 0.2817
         },
         {
           "metric": "errors",
@@ -433,61 +430,61 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 79046,
-        "rps": 2634.866666666667,
-        "avg_latency_ms": 3.237431369076234,
-        "p95_ms": 12,
-        "p99_ms": 21,
+        "total_requests": 42155,
+        "rps": 1405.1666666666667,
+        "avg_latency_ms": 6.06990867038311,
+        "p95_ms": 24,
+        "p99_ms": 40,
         "errors": 0,
-        "business_4xx": 5009,
-        "business_5xx": 12004
+        "business_4xx": 3201,
+        "business_5xx": 0
       }
     },
     "cpp": {
       "contract_totals": {
         "endpoints": 79,
-        "status_match": 31,
-        "exact": 21,
-        "semantic": 21,
-        "nondet": 8,
-        "fails": 50
+        "status_match": 75,
+        "exact": 31,
+        "semantic": 41,
+        "nondet": 9,
+        "fails": 29
       },
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 17833,
-          "candidate": 12152,
-          "candidate_over_baseline": 0.6814
+          "baseline": 14574,
+          "candidate": 13976,
+          "candidate_over_baseline": 0.959
         },
         {
           "metric": "rps",
-          "baseline": 594.4333333333333,
-          "candidate": 405.06666666666666,
-          "candidate_over_baseline": 0.6814
+          "baseline": 485.8,
+          "candidate": 465.8666666666667,
+          "candidate_over_baseline": 0.959
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 14.357931923961196,
-          "candidate": 21.077764976958527,
-          "candidate_over_baseline": 1.468
+          "baseline": 17.568066419651434,
+          "candidate": 18.329064109902692,
+          "candidate_over_baseline": 1.0433
         },
         {
           "metric": "p50_ms",
-          "baseline": 8,
-          "candidate": 9,
-          "candidate_over_baseline": 1.125
+          "baseline": 9,
+          "candidate": 6,
+          "candidate_over_baseline": 0.6667
         },
         {
           "metric": "p95_ms",
-          "baseline": 50,
-          "candidate": 61,
-          "candidate_over_baseline": 1.22
+          "baseline": 66,
+          "candidate": 44,
+          "candidate_over_baseline": 0.6667
         },
         {
           "metric": "p99_ms",
-          "baseline": 108,
-          "candidate": 95,
-          "candidate_over_baseline": 0.8796
+          "baseline": 142,
+          "candidate": 65,
+          "candidate_over_baseline": 0.4577
         },
         {
           "metric": "errors",
@@ -501,61 +498,61 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 10279,
-        "rps": 342.6333333333333,
-        "avg_latency_ms": 28.20089502869929,
-        "p95_ms": 42,
-        "p99_ms": 42,
+        "total_requests": 13976,
+        "rps": 465.8666666666667,
+        "avg_latency_ms": 18.329064109902692,
+        "p95_ms": 44,
+        "p99_ms": 65,
         "errors": 0,
-        "business_4xx": 783,
-        "business_5xx": 6510
+        "business_4xx": 1060,
+        "business_5xx": 0
       }
     },
     "rust": {
       "contract_totals": {
         "endpoints": 79,
-        "status_match": 72,
-        "exact": 51,
-        "semantic": 52,
-        "nondet": 4,
-        "fails": 23
+        "status_match": 73,
+        "exact": 30,
+        "semantic": 49,
+        "nondet": 10,
+        "fails": 20
       },
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 17833,
-          "candidate": 159694,
-          "candidate_over_baseline": 8.955
+          "baseline": 14574,
+          "candidate": 118073,
+          "candidate_over_baseline": 8.1016
         },
         {
           "metric": "rps",
-          "baseline": 594.4333333333333,
-          "candidate": 5323.133333333333,
-          "candidate_over_baseline": 8.955
+          "baseline": 485.8,
+          "candidate": 3935.766666666667,
+          "candidate_over_baseline": 8.1016
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 14.357931923961196,
-          "candidate": 1.602082733227297,
-          "candidate_over_baseline": 0.1116
+          "baseline": 17.568066419651434,
+          "candidate": 2.1669136889890153,
+          "candidate_over_baseline": 0.1233
         },
         {
           "metric": "p50_ms",
-          "baseline": 8,
-          "candidate": 1,
-          "candidate_over_baseline": 0.125
+          "baseline": 9,
+          "candidate": 2,
+          "candidate_over_baseline": 0.2222
         },
         {
           "metric": "p95_ms",
-          "baseline": 50,
-          "candidate": 4,
-          "candidate_over_baseline": 0.08
+          "baseline": 66,
+          "candidate": 6,
+          "candidate_over_baseline": 0.0909
         },
         {
           "metric": "p99_ms",
-          "baseline": 108,
-          "candidate": 11,
-          "candidate_over_baseline": 0.1019
+          "baseline": 142,
+          "candidate": 15,
+          "candidate_over_baseline": 0.1056
         },
         {
           "metric": "errors",
@@ -569,14 +566,14 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 177538,
-        "rps": 5917.933333333333,
-        "avg_latency_ms": 1.4409816489990874,
-        "p95_ms": 4,
-        "p99_ms": 10,
+        "total_requests": 118073,
+        "rps": 3935.766666666667,
+        "avg_latency_ms": 2.1669136889890153,
+        "p95_ms": 6,
+        "p99_ms": 15,
         "errors": 0,
-        "business_4xx": 11240,
-        "business_5xx": 17978
+        "business_4xx": 8970,
+        "business_5xx": 11960
       }
     }
   }
