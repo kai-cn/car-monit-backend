@@ -70,6 +70,8 @@ jobs:
           set -euo pipefail
           docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
           docker run -d --name rd -p 6379:6379 redis:7-alpine
+          for i in $(seq 1 90); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
+          for i in $(seq 1 30); do docker exec rd redis-cli ping >/dev/null 2>&1 && break; sleep 1; done
           if [ '${{ inputs.app }}' = api ]; then
             docker run -d --name pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=RuoYi -p 5432:5432 postgres:16-alpine
             for i in $(seq 1 60); do docker exec pg pg_isready -U postgres -d RuoYi >/dev/null 2>&1 && break; sleep 2; done
@@ -82,8 +84,6 @@ jobs:
             docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/schema_carmonitdb.sql
             docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
           fi
-          for i in $(seq 1 90); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
-          for i in $(seq 1 30); do docker exec rd redis-cli ping >/dev/null 2>&1 && break; sleep 1; done
       - name: Build baseline and generate JUnit
         shell: bash
         run: |
@@ -94,9 +94,12 @@ jobs:
           mkdir -p ../out/generated ../out/classes
           cp $(ls "$MODULE"/target/*.jar | grep -v original | head -1) ../out/app.jar
           python3 ../harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints "$EP" --out ../out/generated
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq junit-platform-console-standalone >/dev/null
-          cp /usr/share/java/junit-platform-console-standalone.jar ../out/junit.jar
+          URL=https://repo.maven.apache.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
+          for i in 1 2 3 4; do
+            curl -fsSL --retry 3 --retry-delay 5 -o ../out/junit.jar "$URL" && break
+            sleep $((i*5))
+          done
+          test -s ../out/junit.jar
           javac -encoding UTF-8 -source 8 -target 8 -cp ../out/junit.jar -d ../out/classes ../out/generated/*.java
       - name: Start baseline and run harness
         shell: bash
@@ -183,6 +186,8 @@ jobs:
           set -euo pipefail
           docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
           docker run -d --name rd -p 6379:6379 redis:7-alpine
+          for i in $(seq 1 90); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
+          for i in $(seq 1 30); do docker exec rd redis-cli ping >/dev/null 2>&1 && break; sleep 1; done
           if [ '${{ inputs.app }}' = api ]; then
             docker run -d --name pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=RuoYi -p 5432:5432 postgres:16-alpine
             for i in $(seq 1 60); do docker exec pg pg_isready -U postgres -d RuoYi >/dev/null 2>&1 && break; sleep 2; done
@@ -195,8 +200,6 @@ jobs:
             docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/schema_carmonitdb.sql
             docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
           fi
-          for i in $(seq 1 90); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
-          for i in $(seq 1 30); do docker exec rd redis-cli ping >/dev/null 2>&1 && break; sleep 1; done
       - name: Download baseline reports
         if: steps.gate.outputs.run == 'yes'
         uses: actions/download-artifact@v4
@@ -232,12 +235,10 @@ jobs:
           CARMONIT_TOKEN_SECRET: "junit-cloud-secret-deterministic-0123456789abcdef"
         run: |
           set -euo pipefail
-          if [ '${{ inputs.app }}' = api ]; then DIR=src/car-monit-api-go; BIN=bin/car-monit-api; CMD="./$BIN -config configs/config.yaml"; else DIR=src/car-monit-go; BIN=bin/car-monit-go; CMD="./$BIN -c configs/config.yaml"; fi
+          if [ '${{ inputs.app }}' = api ]; then DIR=src/car-monit-api-go; BIN=bin/car-monit-api; CMD="./$BIN -config configs/config.yaml"; PKG=./cmd/api; else DIR=src/car-monit-go; BIN=bin/car-monit-go; CMD="./$BIN -c configs/config.yaml"; PKG=./cmd/server; fi
           cd "$DIR"
           go mod tidy
-          go build -o "$BIN" ./cmd/server
-          (cd src && go build -o "$BIN" ./cmd/server) 2>/dev/null || true
-          if [ '${{ inputs.app }}' = api ]; then go build -o "$BIN" ./cmd/api; fi
+          go build -o "$BIN" "$PKG"
           eval "$CMD" > "$GITHUB_WORKSPACE/app.log" 2>&1 &
           echo $! > "$GITHUB_WORKSPACE/app.pid"
       - name: Build and start C++
