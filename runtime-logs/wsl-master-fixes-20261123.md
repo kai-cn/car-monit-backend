@@ -1,50 +1,67 @@
 <!--
-@description 记录 WSL master 中按 body.code 非 200 端点和服务日志逐语言修复的过程、结果、复现步骤与脚本索引。
+@description 记录 WSL master 基线下的非 200 端点修复过程、云端与本机结果、复现步骤及脚本索引。
 @author Tencent Hunyuan Hy
-@date 2026-11-23 01:00:50
+@date 2026-11-23 01:49:28
 -->
 
-# WSL master 非 200 端点逐语言修复记录
+# WSL master 非 200 端点修复与验证记录
 
-## 基线
+## 基线与成功判据
 
-- 仅使用 `master`；api/backend 的 Java V3 已合并，不再同步 V3 分支。
+- 基线：backend/api 的 `master`；Java V3 已合并，不再同步 V3。
 - WSL 工作树：`/home/dev/IdeaProjects/car-monit-backend`、`/home/dev/IdeaProjects/car-monit-api`。
-- 成功判据：`body.code == 200`；无 `code` 为待定；非 200 单独记录并复查。
+- 成功判据：`body.code == 200`；无 `code` 字段为待定；`body.code != 200` 单独记录。
+- 凭据只通过环境变量/GitHub Secrets 注入，仓库只保留占位符。
 
-## 已确认并修复的代码问题
+## 修复过程
 
-- backend Java：`FLOW_APPLY_INFO`、`SYS_INDEX_MENU` 表名大小写与 Linux MySQL schema 不一致，已改为小写。
-- backend Java：`SysJobLogController` 路径变量 `{configId}` 与方法参数 `jobLogId` 不一致，已改为 `{jobLogId}`。
-- backend Java：`BigScreenController.tollGantryFwqList` 的 `type` 必填导致探测请求 500，已改为可选并默认空串。
-- backend Java：`GenController.columnList` 缺少 `@PathVariable`，已补充。
-- backend Java/schema：新增 `sys_upgrade_info` CI fixture，字段匹配 `SysUpgradeInfoMapper.xml`。
-- backend Python/Go/Rust/C++：`geometry_copy1` 遗留表引用已改为现有 `geometry` 表。
-- backend Go：新增 `VEHICLE_MONITOR_BASE_URL` 环境变量覆盖，统一下游地址。
-- backend C++：`TOKEN__SECRET` 环境变量优先于配置文件默认 token，便于与 Java 签发 token 对齐。
-- api Go：blocked self-test 端点由 501 改为与 Java/Rust/Python 一致的 HTTP 200 空响应；保留日志原因。
-- api Go/Rust：`/api/v1/unified/{ds}/list` 先校验必填时间参数，再解析数据源，修正与 Java 的校验顺序差异。
-- api Go：测试配置默认使用本地 PG 用户和 Kafka 环境变量占位。
-- api Python：测试配置缺省 PG 口令使用受控测试占位。
-- api C++：blocked self-test 端点不再执行后台任务，改为 200 空响应。
-- 两仓 workflow：候选步骤统一注入 `TOKEN__SECRET`、`VEHICLE_MONITOR_BASE_URL`、`APP_VEHICLEMONITOR__BASEURL`。
+1. 在 WSL 修复 GitHub 443 解析并 clone backend/api master。
+2. 按 `body.code` 分析各语言 `junit-contract.json`，确认跨语言 artifact 保存了具体 `body`。
+3. 用管理员登录态重跑本机 backend 契约与压测，定位非 200 端点。
+4. 复查服务日志和源码，逐项修复：
+   - backend Java 表名大小写、路径变量、必填参数、生成器 `@PathVariable`、`sys_upgrade_info` fixture。
+   - backend Python/Go/Rust/C++ 的 `geometry_copy1` 遗留表引用。
+   - backend Go 的 `VEHICLE_MONITOR_BASE_URL` 覆盖。
+   - backend C++ 的 `TOKEN__SECRET` 环境变量。
+   - api Go blocked self-test 端点统一为 200 空响应。
+   - api Go/Rust 统一查询必填参数校验顺序。
+   - api Go/Python 测试数据库与 Kafka 配置默认占位。
+   - 两仓 workflow 统一注入 token 与下游 baseUrl。
+5. 本地提交、推送 master 后，重跑 Java JUnit 矩阵和跨语言 workflow。
+6. 收集最终证据并写入本文档。
+
+## 结果
+
+- Java JUnit 云端矩阵：16/16 success（历史最终结果）。
+- 重新派发的 Java JUnit 矩阵 16 次：全部 completed/failure，属于本次重跑结果，未改写为 success。
+- 跨语言 workflow：
+  - 历史严格门禁 run：backend `45031566682`、api `45031576935`，均 completed/failure；baseline success，候选真实 DIFF/NONDET 保留。
+  - 本次重跑 run：backend `45048630337`、api `45048639714`，均 completed/failure。
+- 本机重新编译打包：16/16 rc=0。
+- 本机管理员鉴权复测：契约 302 端点、认证失败 0。
+- body.code 判据：success=218，pending_no_code=35，non_200=49。
+- 压测：load errors=0，业务 4xx 如实保留。
+- 结论：代码修复已推送；云端重跑未通过，不能宣称严格跨语言一致性或 Java 矩阵重跑已成功。
 
 ## 复现步骤
 
-1. 在 WSL 中确认 `/home/dev/IdeaProjects/car-monit-{backend,api}` 为 master 最新提交。
-2. 启动 MySQL/Redis 等本地依赖，并按 `scripts/v3/ops/parity/sql/*.sql` 导入 fixture。
-3. 重新编译 backend/api master 的 Java 与各语言候选。
-4. 按 endpoint 清单运行契约测试，保存 `junit-contract.json`。
-5. 用 `runtime-logs/analyze-endpoint-code.py` 统计 success/pending_no_code/non_200。
-6. 查看候选 `app.log`，按错误文本定位代码并修复。
-7. 重新提交、推送 master，重跑云端 workflow 并汇总 artifact。
+1. 在 WSL 进入两个 master 工作树，执行 `git fetch origin && git checkout -B master origin/master`。
+2. 启动 MySQL/Redis，导入 `scripts/v3/ops/parity/sql/*.sql`。
+3. 运行 `runtime-logs/wsl-local-auth-retest.sh` 做本机管理员鉴权契约与压测。
+4. 运行 `analyze-endpoint-code.py`、`analyze-crosslang-code.py` 按 body.code 统计。
+5. 运行 `dispatch-java-junit-matrix.py` 与 `dispatch-crosslang-full.py` 派发云端验证。
+6. 运行 `collect-java-junit-runs.py`、`collect-crosslang-full.py` 收集结果。
+7. 对照 `app.log` 和 `junit-contract.json` 复查非 200 端点。
 
 ## 脚本索引
 
-- `runtime-logs/wsl-fix-github-clone.sh`：修复 WSL GitHub 解析并 clone master。
-- `runtime-logs/wsl-sync-master.sh`：同步 WSL master。
-- `runtime-logs/analyze-endpoint-code.py`：按 body.code 判据统计。
-- `runtime-logs/analyze-crosslang-code.py`：跨语言 body.code 判据统计。
-- `runtime-logs/patch-wsl-master-fixes.py` 至 `patch-wsl-master-fixes6.py`：逐批代码修复。
-- `runtime-logs/repair-wsl-selftest-and-schema.py`：修复 Go 文件边界与 schema fixture。
-- `runtime-logs/finalize-wsl-fixes.py`：最终修复与文档生成。
+- `wsl-fix-github-clone.sh`：修复 WSL GitHub 解析并 clone master。
+- `wsl-sync-master.sh`：同步 WSL master。
+- `wsl-local-auth-retest.sh`：管理员鉴权契约与压测。
+- `analyze-endpoint-code.py`、`analyze-crosslang-code.py`：body.code 判据统计。
+- `summarize-non200.py`：非 200 错误分类。
+- `patch-wsl-master-fixes.py` 至 `patch-wsl-master-fixes6.py`：逐批代码修复。
+- `repair-wsl-selftest-and-schema.py`：Go 文件边界与 schema fixture 修复。
+- `finalize-wsl-fixes.py`、`finalize-wsl-docs.py`：文档生成与收口。
+- `dispatch-java-junit-matrix.py`、`dispatch-crosslang-full.py`：云端派发。
+- `collect-java-junit-runs.py`、`collect-crosslang-full.py`：云端结果收集。
