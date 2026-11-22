@@ -63,7 +63,7 @@ RESOURCES = [
     # Java 的 SqlLogInterceptor 会把 BCrypt 串当正则替换，新增用户在 Java 侧必然 500
     {"base": "/system/user", "pk": "userId", "table": "sys_user",
      "keep": ["deptId"],
-     "extra": {"password": "Admin@2025-x", "phonenumber": "19@NUM@", "email": "@NUM@1@t.io"}},
+     "extra": {"password": "__SET_CARMONIT_ADMIN_PASSWORD__x", "phonenumber": "19@NUM@", "email": "@NUM@1@t.io"}},
     {"base": "/base/config", "pk": "id", "table": "car_warning_config"},
     {"base": "/base/configServiceArea", "pk": "id", "table": "base_config_service_area"},
     {"base": "/base/section", "pk": "id", "table": "ods_szdn_section"},

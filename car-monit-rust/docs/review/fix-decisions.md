@@ -1,3 +1,9 @@
+<!--
+@description 本文件由 AI 辅助编写或维护，用于记录项目实现、验证与交接信息。
+@author Tencent Hunyuan Hy
+@date 2026-11-22 23:45:04
+-->
+
 # 日志形态对齐 Java logback —— 自主决策记录
 
 本文件记录「把 Rust 迁移日志对齐 Java logback 运行时形态」过程中，所有需要拍板的取舍。

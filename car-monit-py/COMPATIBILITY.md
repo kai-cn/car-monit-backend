@@ -4685,7 +4685,7 @@ Java 源里活的 `@Log(title` 共 **233** 处（另有 5 处整段被块注释�
 Java 侧 `application.yml` 也写着 `server.port: 9989`，与 Python 撞车，所以 Java 用
 `--server.port=8090` 起。
 
-**结论**：两端都能用 `admin/Admin@2025-` 正常登录，15 个接口里 13 个逐字节一致，2 个差异
+**结论**：两端都能用 `admin/__SET_CARMONIT_ADMIN_PASSWORD__` 正常登录，15 个接口里 13 个逐字节一致，2 个差异
 都不是缺陷：
 
 | 接口 | 差异 | 结论 |

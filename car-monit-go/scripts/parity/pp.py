@@ -4,7 +4,7 @@
 环境约定（见 docs/PARITY-2026-11-02.md）：
   Java  http://127.0.0.1:9988  Redis db0   MySQL 127.0.0.1:3307/carmonitdb
   Go    http://127.0.0.1:9989  Redis db2   同一库
-账号 admin / Admin@2025-；Java 登录需要验证码，答案从 db0 的 captcha_codes:<uuid> 读。
+账号 admin / __SET_CARMONIT_ADMIN_PASSWORD__；Java 登录需要验证码，答案从 db0 的 captcha_codes:<uuid> 读。
 """
 import json
 import os
@@ -111,14 +111,14 @@ def login_java():
     uuid = j.get("uuid")
     ans = r("get", "captcha_codes:" + uuid, db=JAVA_DB).strip().strip('"') if uuid else ""
     out = req(JAVA, "/login", method="POST",
-              body={"username": "admin", "password": "Admin@2025-", "code": ans, "uuid": uuid})
+              body={"username": "admin", "password": "__SET_CARMONIT_ADMIN_PASSWORD__", "code": ans, "uuid": uuid})
     if "token" not in out:
         raise RuntimeError("Java 登录失败: %s (captcha=%r)" % (json.dumps(out, ensure_ascii=False)[:200], ans))
     return out["token"]
 
 
 def login_go():
-    out = req(GO, "/login", method="POST", body={"username": "admin", "password": "Admin@2025-"})
+    out = req(GO, "/login", method="POST", body={"username": "admin", "password": "__SET_CARMONIT_ADMIN_PASSWORD__"})
     if "token" not in out:
         raise RuntimeError("Go 登录失败: %s" % json.dumps(out, ensure_ascii=False)[:200])
     return out["token"]
