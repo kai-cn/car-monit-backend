@@ -1,23 +1,22 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
-LEGACY-SCRIPT-ANNOTATION
-文件：patch-crosslang-matrix-quotes.py
-用途：本地或远端修复/改造。
-思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
-风险：会修改文件、索引或远端，执行前确认可回滚。
+@description 历史脚本 patch-crosslang-matrix-quotes.py：修改 workflow、脚本或测试口径；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
+@author AI Assistant
+@date 2026-11-22
+@usage python patch-crosslang-matrix-quotes.py [args]；具体参数以脚本 argparse 或源码说明为准。
+@dependencies Python 3 标准库及脚本原有第三方依赖
 """
-"""Quote matrix.lang comparisons for GitHub Actions expressions."""
-from pathlib import Path
-import yaml
-
-FILES = [
-    Path(r'D:\work\IdeaProjects\car-monit-backend-new\.github\workflows\crosslang-full-parity-cloud.yml'),
-    Path(r'D:\work\IdeaProjects\car-monit-api\.github\workflows\crosslang-full-parity-cloud.yml'),
-]
-for p in FILES:
-    t = p.read_text(encoding='utf-8')
-    for lang in ('python', 'go', 'cpp', 'rust'):
-        t = t.replace('matrix.lang == ' + lang, "matrix.lang == '" + lang + "'")
-    p.write_text(t, encoding='utf-8')
-    yaml.safe_load(t)
-    print('patched', p)
+from pathlib import Path
+import yaml
+
+FILES = [
+    Path(r'D:\work\IdeaProjects\car-monit-backend-new\.github\workflows\crosslang-full-parity-cloud.yml'),
+    Path(r'D:\work\IdeaProjects\car-monit-api\.github\workflows\crosslang-full-parity-cloud.yml'),
+]
+for p in FILES:
+    t = p.read_text(encoding='utf-8')
+    for lang in ('python', 'go', 'cpp', 'rust'):
+        t = t.replace('matrix.lang == ' + lang, "matrix.lang == '" + lang + "'")
+    p.write_text(t, encoding='utf-8')
+    yaml.safe_load(t)
+    print('patched', p)

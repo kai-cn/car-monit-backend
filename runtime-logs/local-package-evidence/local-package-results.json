@@ -1,0 +1,162 @@
+[
+  {
+    "app": "api",
+    "jdk": "8",
+    "branch": "car-monit-api-java-V3",
+    "sha": "9ac96a71\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/api__car-monit-api-java-V3/pro-business-api/target/pro-business-api-1.0.jar",
+    "size": 225801078,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/api__car-monit-api-java-V3.log"
+  },
+  {
+    "app": "api",
+    "jdk": "8",
+    "branch": "car-monit-api-java-fix",
+    "sha": "8e438178\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/api__car-monit-api-java-fix/pro-business-api/target/pro-business-api-1.0.jar",
+    "size": 232685879,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/api__car-monit-api-java-fix.log"
+  },
+  {
+    "app": "api",
+    "jdk": "17",
+    "branch": "car-monit-api-jdk17",
+    "sha": "b962832b\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/api__car-monit-api-jdk17/pro-business-api/target/pro-business-api-1.0.jar",
+    "size": 205274100,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/api__car-monit-api-jdk17.log"
+  },
+  {
+    "app": "api",
+    "jdk": "21",
+    "branch": "car-monit-api-jdk21",
+    "sha": "2e240cdc\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/api__car-monit-api-jdk21/pro-business-api/target/pro-business-api-1.0.jar",
+    "size": 210506917,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/api__car-monit-api-jdk21.log"
+  },
+  {
+    "app": "api",
+    "jdk": "25",
+    "branch": "car-monit-api-jdk25",
+    "sha": "8e7267b5\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/api__car-monit-api-jdk25/pro-business-api/target/pro-business-api-1.0.jar",
+    "size": 205271934,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/api__car-monit-api-jdk25.log"
+  },
+  {
+    "app": "api",
+    "jdk": "25",
+    "branch": "feature-dbupgrade",
+    "sha": "641ea62e\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/api__feature-dbupgrade/pro-business-api/target/pro-business-api-1.0.jar",
+    "size": 205271934,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/api__feature-dbupgrade.log"
+  },
+  {
+    "app": "api",
+    "jdk": "17",
+    "branch": "feature/springboot3-jdk17",
+    "sha": "779f714f\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/api__feature_springboot3-jdk17/pro-business-api/target/pro-business-api-1.0.jar",
+    "size": 196465722,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/api__feature_springboot3-jdk17.log"
+  },
+  {
+    "app": "api",
+    "jdk": "21",
+    "branch": "feature/springboot3",
+    "sha": "4d547316\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/api__feature_springboot3/pro-business-api/target/pro-business-api-1.0.jar",
+    "size": 196463369,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/api__feature_springboot3.log"
+  },
+  {
+    "app": "api",
+    "jdk": "8",
+    "branch": "master",
+    "sha": "81efbffe\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/api__master/pro-business-api/target/pro-business-api-1.0.jar",
+    "size": 232666654,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/api__master.log"
+  },
+  {
+    "app": "backend",
+    "jdk": "8",
+    "branch": "car-monit-backend-java-V3",
+    "sha": "450e9ea0\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/backend__car-monit-backend-java-V3/ruoyi-admin/target/ruoyi-admin.jar",
+    "size": 216188586,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/backend__car-monit-backend-java-V3.log"
+  },
+  {
+    "app": "backend",
+    "jdk": "17",
+    "branch": "car-monit-backend-jdk17",
+    "sha": "679d0ef0\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/backend__car-monit-backend-jdk17/ruoyi-admin/target/ruoyi-admin.jar",
+    "size": 178327406,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/backend__car-monit-backend-jdk17.log"
+  },
+  {
+    "app": "backend",
+    "jdk": "21",
+    "branch": "car-monit-backend-jdk21",
+    "sha": "950f747f\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/backend__car-monit-backend-jdk21/ruoyi-admin/target/ruoyi-admin.jar",
+    "size": 178328326,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/backend__car-monit-backend-jdk21.log"
+  },
+  {
+    "app": "backend",
+    "jdk": "25",
+    "branch": "car-monit-backend-jdk25",
+    "sha": "58c16f06\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/backend__car-monit-backend-jdk25/ruoyi-admin/target/ruoyi-admin.jar",
+    "size": 178335068,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/backend__car-monit-backend-jdk25.log"
+  },
+  {
+    "app": "backend",
+    "jdk": "8",
+    "branch": "feat/backend-full-parity",
+    "sha": "55e64b58\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/backend__feat_backend-full-parity/ruoyi-admin/target/ruoyi-admin.jar",
+    "size": 216024795,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/backend__feat_backend-full-parity.log"
+  },
+  {
+    "app": "backend",
+    "jdk": "25",
+    "branch": "feature-dbupgrade",
+    "sha": "88068b7f\n",
+    "rc": 0,
+    "jar": "/mnt/d/work/IdeaProjects/_local-package-20261122-130307/backend__feature-dbupgrade/ruoyi-admin/target/ruoyi-admin.jar",
+    "size": 178331232,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/backend__feature-dbupgrade.log"
+  },
+  {
+    "app": "backend",
+    "jdk": "8",
+    "branch": "master",
+    "sha": "394ab03f",
+    "rc": 0,
+    "jar": "/home/dev/local-package/backend-master/ruoyi-admin/target/ruoyi-admin.jar",
+    "size": 216188588,
+    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/backend__master-ext4.log"
+  }
+]

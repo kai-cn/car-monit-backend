@@ -5,9 +5,9 @@
       "load_rows": null,
       "load_error_rate": null,
       "raw_load": {
-        "total_requests": 464304,
-        "rps": 15476.8,
-        "avg_latency_ms": 0.6261178021296392,
+        "total_requests": 477922,
+        "rps": 15930.733333333334,
+        "avg_latency_ms": 0.6076912132105239,
         "p95_ms": 1,
         "p99_ms": 3,
         "errors": 0,
@@ -28,39 +28,39 @@
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 464304,
-          "candidate": 39273,
-          "candidate_over_baseline": 0.0846
+          "baseline": 477922,
+          "candidate": 28211,
+          "candidate_over_baseline": 0.059
         },
         {
           "metric": "rps",
-          "baseline": 15476.8,
-          "candidate": 1309.1,
-          "candidate_over_baseline": 0.0846
+          "baseline": 15930.733333333334,
+          "candidate": 940.3666666666667,
+          "candidate_over_baseline": 0.059
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 0.6261178021296392,
-          "candidate": 6.516028823873908,
-          "candidate_over_baseline": 10.407
+          "baseline": 0.6076912132105239,
+          "candidate": 9.070327177342172,
+          "candidate_over_baseline": 14.9259
         },
         {
           "metric": "p50_ms",
           "baseline": 0,
-          "candidate": 6,
+          "candidate": 8,
           "candidate_over_baseline": null
         },
         {
           "metric": "p95_ms",
           "baseline": 1,
-          "candidate": 8,
-          "candidate_over_baseline": 8.0
+          "candidate": 11,
+          "candidate_over_baseline": 11.0
         },
         {
           "metric": "p99_ms",
           "baseline": 3,
-          "candidate": 17,
-          "candidate_over_baseline": 5.6667
+          "candidate": 20,
+          "candidate_over_baseline": 6.6667
         },
         {
           "metric": "errors",
@@ -74,11 +74,11 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 39273,
-        "rps": 1309.1,
-        "avg_latency_ms": 6.516028823873908,
-        "p95_ms": 8,
-        "p99_ms": 17,
+        "total_requests": 28211,
+        "rps": 940.3666666666667,
+        "avg_latency_ms": 9.070327177342172,
+        "p95_ms": 11,
+        "p99_ms": 20,
         "errors": 0,
         "business_4xx": 0,
         "business_5xx": 0
@@ -97,21 +97,21 @@
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 464304,
-          "candidate": 1136782,
-          "candidate_over_baseline": 2.4484
+          "baseline": 477922,
+          "candidate": 1433796,
+          "candidate_over_baseline": 3.0001
         },
         {
           "metric": "rps",
-          "baseline": 15476.8,
-          "candidate": 37892.73333333333,
-          "candidate_over_baseline": 2.4484
+          "baseline": 15930.733333333334,
+          "candidate": 47793.2,
+          "candidate_over_baseline": 3.0001
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 0.6261178021296392,
-          "candidate": 0.22496045855757743,
-          "candidate_over_baseline": 0.3593
+          "baseline": 0.6076912132105239,
+          "candidate": 0.17824153505798593,
+          "candidate_over_baseline": 0.2933
         },
         {
           "metric": "p50_ms",
@@ -143,13 +143,13 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 1136782,
-        "rps": 37892.73333333333,
-        "avg_latency_ms": 0.22496045855757743,
+        "total_requests": 1433796,
+        "rps": 47793.2,
+        "avg_latency_ms": 0.17824153505798593,
         "p95_ms": 1,
         "p99_ms": 1,
         "errors": 0,
-        "business_4xx": 18740,
+        "business_4xx": 23618,
         "business_5xx": 0
       }
     },
@@ -166,21 +166,21 @@
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 464304,
-          "candidate": 847395,
-          "candidate_over_baseline": 1.8251
+          "baseline": 477922,
+          "candidate": 1304885,
+          "candidate_over_baseline": 2.7303
         },
         {
           "metric": "rps",
-          "baseline": 15476.8,
-          "candidate": 28246.5,
-          "candidate_over_baseline": 1.8251
+          "baseline": 15930.733333333334,
+          "candidate": 43496.166666666664,
+          "candidate_over_baseline": 2.7303
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 0.6261178021296392,
-          "candidate": 0.30178488190277264,
-          "candidate_over_baseline": 0.482
+          "baseline": 0.6076912132105239,
+          "candidate": 0.195944470202355,
+          "candidate_over_baseline": 0.3224
         },
         {
           "metric": "p50_ms",
@@ -212,9 +212,9 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 847395,
-        "rps": 28246.5,
-        "avg_latency_ms": 0.30178488190277264,
+        "total_requests": 1304885,
+        "rps": 43496.166666666664,
+        "avg_latency_ms": 0.195944470202355,
         "p95_ms": 1,
         "p99_ms": 1,
         "errors": 0,
@@ -235,21 +235,21 @@
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 464304,
-          "candidate": 1509643,
-          "candidate_over_baseline": 3.2514
+          "baseline": 477922,
+          "candidate": 735392,
+          "candidate_over_baseline": 1.5387
         },
         {
           "metric": "rps",
-          "baseline": 15476.8,
-          "candidate": 50321.433333333334,
-          "candidate_over_baseline": 3.2514
+          "baseline": 15930.733333333334,
+          "candidate": 24513.066666666666,
+          "candidate_over_baseline": 1.5387
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 0.6261178021296392,
-          "candidate": 0.16930360356720098,
-          "candidate_over_baseline": 0.2704
+          "baseline": 0.6076912132105239,
+          "candidate": 0.3476227644575954,
+          "candidate_over_baseline": 0.572
         },
         {
           "metric": "p50_ms",
@@ -281,9 +281,9 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 1509643,
-        "rps": 50321.433333333334,
-        "avg_latency_ms": 0.16930360356720098,
+        "total_requests": 735392,
+        "rps": 24513.066666666666,
+        "avg_latency_ms": 0.3476227644575954,
         "p95_ms": 1,
         "p99_ms": 1,
         "errors": 0,
@@ -298,62 +298,62 @@
       "load_rows": null,
       "load_error_rate": null,
       "raw_load": {
-        "total_requests": 13899,
-        "rps": 463.3,
-        "avg_latency_ms": 18.425857975393914,
-        "p95_ms": 65,
-        "p99_ms": 143,
+        "total_requests": 17833,
+        "rps": 594.4333333333333,
+        "avg_latency_ms": 14.357931923961196,
+        "p95_ms": 50,
+        "p99_ms": 108,
         "errors": 0,
-        "business_4xx": 1059,
-        "business_5xx": 606
+        "business_4xx": 1359,
+        "business_5xx": 790
       }
     },
     "python": {
       "contract_totals": {
         "endpoints": 79,
-        "status_match": 77,
-        "exact": 19,
-        "semantic": 52,
+        "status_match": 30,
+        "exact": 15,
+        "semantic": 20,
         "nondet": 10,
         "baseline_skip": 0,
-        "fails": 17
+        "fails": 49
       },
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 13899,
-          "candidate": 1771,
-          "candidate_over_baseline": 0.1274
+          "baseline": 17833,
+          "candidate": 38,
+          "candidate_over_baseline": 0.0021
         },
         {
           "metric": "rps",
-          "baseline": 463.3,
-          "candidate": 59.03333333333333,
-          "candidate_over_baseline": 0.1274
+          "baseline": 594.4333333333333,
+          "candidate": 1.2666666666666666,
+          "candidate_over_baseline": 0.0021
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 18.425857975393914,
-          "candidate": 144.9107848673066,
-          "candidate_over_baseline": 7.8645
+          "baseline": 14.357931923961196,
+          "candidate": 8458.368421052632,
+          "candidate_over_baseline": 589.1077
         },
         {
           "metric": "p50_ms",
-          "baseline": 10,
-          "candidate": 129,
-          "candidate_over_baseline": 12.9
+          "baseline": 8,
+          "candidate": 10036,
+          "candidate_over_baseline": 1254.5
         },
         {
           "metric": "p95_ms",
-          "baseline": 65,
-          "candidate": 338,
-          "candidate_over_baseline": 5.2
+          "baseline": 50,
+          "candidate": 10060,
+          "candidate_over_baseline": 201.2
         },
         {
           "metric": "p99_ms",
-          "baseline": 143,
-          "candidate": 407,
-          "candidate_over_baseline": 2.8462
+          "baseline": 108,
+          "candidate": 10065,
+          "candidate_over_baseline": 93.1944
         },
         {
           "metric": "errors",
@@ -367,83 +367,83 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 1771,
-        "rps": 59.03333333333333,
-        "avg_latency_ms": 144.9107848673066,
-        "p95_ms": 338,
-        "p99_ms": 407,
+        "total_requests": 38,
+        "rps": 1.2666666666666666,
+        "avg_latency_ms": 8458.368421052632,
+        "p95_ms": 10060,
+        "p99_ms": 10065,
         "errors": 0,
-        "business_4xx": 137,
-        "business_5xx": 91
+        "business_4xx": 5,
+        "business_5xx": 32
       }
     },
     "go": {
       "contract_totals": {
         "endpoints": 79,
-        "status_match": 0,
-        "exact": 18,
-        "semantic": 18,
-        "nondet": 0,
+        "status_match": 62,
+        "exact": 6,
+        "semantic": 36,
+        "nondet": 6,
         "baseline_skip": 0,
-        "fails": 79
+        "fails": 37
       },
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 13899,
-          "candidate": 1684625,
-          "candidate_over_baseline": 121.2048
+          "baseline": 17833,
+          "candidate": 79046,
+          "candidate_over_baseline": 4.4326
         },
         {
           "metric": "rps",
-          "baseline": 463.3,
-          "candidate": 56154.166666666664,
-          "candidate_over_baseline": 121.2048
+          "baseline": 594.4333333333333,
+          "candidate": 2634.866666666667,
+          "candidate_over_baseline": 4.4326
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 18.425857975393914,
-          "candidate": 0.15165096089634192,
-          "candidate_over_baseline": 0.0082
+          "baseline": 14.357931923961196,
+          "candidate": 3.237431369076234,
+          "candidate_over_baseline": 0.2255
         },
         {
           "metric": "p50_ms",
-          "baseline": 10,
-          "candidate": 0,
-          "candidate_over_baseline": 0.0
+          "baseline": 8,
+          "candidate": 2,
+          "candidate_over_baseline": 0.25
         },
         {
           "metric": "p95_ms",
-          "baseline": 65,
-          "candidate": 1,
-          "candidate_over_baseline": 0.0154
+          "baseline": 50,
+          "candidate": 12,
+          "candidate_over_baseline": 0.24
         },
         {
           "metric": "p99_ms",
-          "baseline": 143,
-          "candidate": 1,
-          "candidate_over_baseline": 0.007
+          "baseline": 108,
+          "candidate": 21,
+          "candidate_over_baseline": 0.1944
         },
         {
           "metric": "errors",
           "baseline": 0,
-          "candidate": 1684625,
+          "candidate": 0,
           "candidate_over_baseline": null
         }
       ],
       "load_error_rate": {
         "baseline": 0.0,
-        "candidate": 1.0
+        "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 1684625,
-        "rps": 56154.166666666664,
-        "avg_latency_ms": 0.15165096089634192,
-        "p95_ms": 1,
-        "p99_ms": 1,
-        "errors": 1684625,
-        "business_4xx": 0,
-        "business_5xx": 0
+        "total_requests": 79046,
+        "rps": 2634.866666666667,
+        "avg_latency_ms": 3.237431369076234,
+        "p95_ms": 12,
+        "p99_ms": 21,
+        "errors": 0,
+        "business_4xx": 5009,
+        "business_5xx": 12004
       }
     },
     "cpp": {
@@ -459,39 +459,39 @@
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 13899,
-          "candidate": 12102,
-          "candidate_over_baseline": 0.8707
+          "baseline": 17833,
+          "candidate": 12152,
+          "candidate_over_baseline": 0.6814
         },
         {
           "metric": "rps",
-          "baseline": 463.3,
-          "candidate": 403.4,
-          "candidate_over_baseline": 0.8707
+          "baseline": 594.4333333333333,
+          "candidate": 405.06666666666666,
+          "candidate_over_baseline": 0.6814
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 18.425857975393914,
-          "candidate": 21.163939844653775,
-          "candidate_over_baseline": 1.1486
+          "baseline": 14.357931923961196,
+          "candidate": 21.077764976958527,
+          "candidate_over_baseline": 1.468
         },
         {
           "metric": "p50_ms",
-          "baseline": 10,
+          "baseline": 8,
           "candidate": 9,
-          "candidate_over_baseline": 0.9
+          "candidate_over_baseline": 1.125
         },
         {
           "metric": "p95_ms",
-          "baseline": 65,
+          "baseline": 50,
           "candidate": 61,
-          "candidate_over_baseline": 0.9385
+          "candidate_over_baseline": 1.22
         },
         {
           "metric": "p99_ms",
-          "baseline": 143,
-          "candidate": 97,
-          "candidate_over_baseline": 0.6783
+          "baseline": 108,
+          "candidate": 95,
+          "candidate_over_baseline": 0.8796
         },
         {
           "metric": "errors",
@@ -505,83 +505,83 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 12102,
-        "rps": 403.4,
-        "avg_latency_ms": 21.163939844653775,
+        "total_requests": 12152,
+        "rps": 405.06666666666666,
+        "avg_latency_ms": 21.077764976958527,
         "p95_ms": 61,
-        "p99_ms": 97,
+        "p99_ms": 95,
         "errors": 0,
-        "business_4xx": 918,
+        "business_4xx": 925,
         "business_5xx": 0
       }
     },
     "rust": {
       "contract_totals": {
         "endpoints": 79,
-        "status_match": 0,
-        "exact": 18,
-        "semantic": 18,
-        "nondet": 0,
+        "status_match": 72,
+        "exact": 30,
+        "semantic": 49,
+        "nondet": 9,
         "baseline_skip": 0,
-        "fails": 79
+        "fails": 21
       },
       "load_rows": [
         {
           "metric": "total_requests",
-          "baseline": 13899,
-          "candidate": 5285038,
-          "candidate_over_baseline": 380.2459
+          "baseline": 17833,
+          "candidate": 159694,
+          "candidate_over_baseline": 8.955
         },
         {
           "metric": "rps",
-          "baseline": 463.3,
-          "candidate": 176167.93333333332,
-          "candidate_over_baseline": 380.2459
+          "baseline": 594.4333333333333,
+          "candidate": 5323.133333333333,
+          "candidate_over_baseline": 8.955
         },
         {
           "metric": "avg_latency_ms",
-          "baseline": 18.425857975393914,
-          "candidate": 0.048177137042344824,
-          "candidate_over_baseline": 0.0026
+          "baseline": 14.357931923961196,
+          "candidate": 1.602082733227297,
+          "candidate_over_baseline": 0.1116
         },
         {
           "metric": "p50_ms",
-          "baseline": 10,
-          "candidate": 0,
-          "candidate_over_baseline": 0.0
+          "baseline": 8,
+          "candidate": 1,
+          "candidate_over_baseline": 0.125
         },
         {
           "metric": "p95_ms",
-          "baseline": 65,
-          "candidate": 0,
-          "candidate_over_baseline": 0.0
+          "baseline": 50,
+          "candidate": 4,
+          "candidate_over_baseline": 0.08
         },
         {
           "metric": "p99_ms",
-          "baseline": 143,
-          "candidate": 1,
-          "candidate_over_baseline": 0.007
+          "baseline": 108,
+          "candidate": 11,
+          "candidate_over_baseline": 0.1019
         },
         {
           "metric": "errors",
           "baseline": 0,
-          "candidate": 5285038,
+          "candidate": 0,
           "candidate_over_baseline": null
         }
       ],
       "load_error_rate": {
         "baseline": 0.0,
-        "candidate": 1.0
+        "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 5285038,
-        "rps": 176167.93333333332,
-        "avg_latency_ms": 0.048177137042344824,
-        "p95_ms": 0,
-        "p99_ms": 1,
-        "errors": 5285038,
-        "business_4xx": 0,
-        "business_5xx": 0
+        "total_requests": 159694,
+        "rps": 5323.133333333333,
+        "avg_latency_ms": 1.602082733227297,
+        "p95_ms": 4,
+        "p99_ms": 11,
+        "errors": 0,
+        "business_4xx": 10109,
+        "business_5xx": 16172
       }
     }
   }

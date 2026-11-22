@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""
+@description 历史脚本 parity_probe_check.py：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
+@author AI Assistant
+@date 2026-11-22
+@usage python parity_probe_check.py [args]；具体参数以脚本 argparse 或源码说明为准。
+@dependencies Java 运行时；Python 3 标准库及脚本原有第三方依赖
+"""
 # ======================================================================
 # 文件：scripts/v3/ops/parity/parity_probe.py
 # 用途：探针：启动 jar/native 变体，逐端点采集 status/bytes/latency/body-sha 与进程树 RSS

@@ -1,5 +1,10 @@
-#!/usr/bin/env bash
-# Operational helper — native/CICD verification session (2026-11-16~17).
-# Purpose: Print a file section for diagnosis.
-# Risk: may call GitHub API or modify local/remote files; inspect before running.
-grep -n -A 12 'native-maven-plugin' /home/dev/IdeaProjects/car-monit-backend-jdk25/ruoyi-admin/pom.xml | head -30
+#!/usr/bin/env bash
+# @description 历史脚本 dump-backend25-pom.sh：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
+# @author AI Assistant
+# @date 2026-11-22
+# @usage bash dump-backend25-pom.sh [args]；执行前确认目标环境与本地容器状态。
+# @dependencies Maven 与对应 JDK
+# Operational helper — native/CICD verification session (2026-11-16~17).
+# Purpose: Print a file section for diagnosis.
+# Risk: may call GitHub API or modify local/remote files; inspect before running.
+grep -n -A 12 'native-maven-plugin' /home/dev/IdeaProjects/car-monit-backend-jdk25/ruoyi-admin/pom.xml | head -30
