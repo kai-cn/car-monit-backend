@@ -2,7 +2,7 @@
 """
 @description 重写 backend/api 跨语言全接口 workflow，修复 master 合并后的路径、鉴权顺序、依赖安装和严格对拍门禁。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/author-clean-crosslang-workflows.py
 @dependencies 只写本地两仓库 master 工作树，随后需本地 git commit/push。
 """
@@ -10,7 +10,7 @@ from pathlib import Path
 
 HEADER = '''# @description 以合并后的 Java master 为基线，对 Python/Go/C++/Rust 做全接口契约与压测对拍。
 # @author Tencent Hunyuan Hy
-# @date 2026-11-22
+# @date 2026-11-22 23:45:04
 # @usage workflow_dispatch：target_ref=master，app=backend/api，langs=all。
 # @dependencies 云 runner、Docker、JDK8、Python3、Go、CMake/vcpkg、Rust。
 '''

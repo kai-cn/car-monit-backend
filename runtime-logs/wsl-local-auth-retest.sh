@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # @description 用管理员登录态重跑 WSL 本机 backend 全接口契约与压测，验证返回不再全是认证失败。
 # @author Tencent Hunyuan Hy
-# @date 2026-11-22
+# @date 2026-11-22 23:45:04
 # @usage CARMONIT_ADMIN_USER=admin CARMONIT_ADMIN_PASSWORD=... bash runtime-logs/wsl-local-auth-retest.sh
 # @dependencies WSL Docker/MySQL/Redis、本地打包 jar、Python 3、JDK8、JUnit standalone。
 set -uo pipefail

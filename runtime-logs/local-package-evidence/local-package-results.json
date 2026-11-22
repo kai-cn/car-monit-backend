@@ -153,10 +153,10 @@
     "app": "backend",
     "jdk": "8",
     "branch": "master",
-    "sha": "394ab03f",
+    "sha": "fixed",
     "rc": 0,
     "jar": "/home/dev/local-package/backend-master/ruoyi-admin/target/ruoyi-admin.jar",
-    "size": 216188588,
-    "log": "/mnt/d/work/runtime-logs/local-package-evidence/logs/backend__master-ext4.log"
+    "size": 216191896,
+    "log": "/mnt/d/work/IdeaProjects/car-monit-backend-new/runtime-logs/local-package-evidence/logs/backend__master-fixed.log"
   }
 ]

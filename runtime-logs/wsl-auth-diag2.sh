@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # @description 诊断本机鉴权复测失败原因，读取应用日志与数据库连通性。
 # @author Tencent Hunyuan Hy
-# @date 2026-11-22
+# @date 2026-11-22 23:45:04
 # @usage bash runtime-logs/wsl-auth-diag2.sh
 # @dependencies WSL、docker、grep、redis-cli/mysql 客户端。
 echo "=== app log tail ==="

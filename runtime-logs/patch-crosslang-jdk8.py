@@ -2,7 +2,7 @@
 """
 @description 将跨语言 workflow 的 baseline JDK 改为 master 实际使用的 JDK8，避免 Boot2 在 JDK25 下缺少 JAXB。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/patch-crosslang-jdk8.py
 @dependencies 修改两仓库 master 工作树中的 crosslang workflow。
 """

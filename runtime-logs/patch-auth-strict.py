@@ -2,7 +2,7 @@
 """
 @description 给 JUnit 压测模板补 Header 支持，并给对拍脚本增加严格模式，确保多语言必须与 Java 返回一致才算通过。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/patch-auth-strict.py
 @dependencies 只修改 backend master 的 runtime-logs 文本脚本。
 """

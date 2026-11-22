@@ -2,7 +2,7 @@
 """
 @description 将跨语言派发脚本的基线分支与凭据读取路径切换到合并后的 backend master runtime-logs。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/patch-dispatch-master.py
 @dependencies Python 3 标准库。
 """

@@ -1,6 +1,6 @@
 # @description 历史脚本 check-ci.ps1：只读校验环境、语法或结果；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
 # @author Tencent Hunyuan Hy
-# @date 2026-11-22
+# @date 2026-11-22 23:45:04
 # @usage powershell -File check-ci.ps1 [params]；参数含义见脚本原有注释。
 # @dependencies GitHub API 访问凭据（从本地缓存读取，不落盘）
 # Operational helper — native/CICD verification session (2026-11-16~17).

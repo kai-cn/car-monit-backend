@@ -2,7 +2,7 @@
 """
 @description 清理最后的明文模式与 NUL 误建文件，检查最终文档结论，并输出待提交清单。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/final-clean-and-commit.py
 @dependencies Python 3 标准库。
 """

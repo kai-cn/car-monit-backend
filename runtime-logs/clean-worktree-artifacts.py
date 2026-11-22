@@ -2,7 +2,7 @@
 """
 @description 清理误建的异常目录和本地 token 缓存，避免它们被 git 跟踪。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/clean-worktree-artifacts.py
 @dependencies Python 3 标准库。
 """

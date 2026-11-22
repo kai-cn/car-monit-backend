@@ -1,3 +1,9 @@
+<!--
+@description 本文件由 AI 辅助编写或维护，用于记录项目实现、验证与交接信息。
+@author Tencent Hunyuan Hy
+@date 2026-11-22 23:45:04
+-->
+
 # openGauss 从 VirtualBox 迁移到 WSL2 + V3 带认证联调记录
 
 - 日期：2026-11-12

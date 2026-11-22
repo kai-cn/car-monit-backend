@@ -2,7 +2,7 @@
 #
 # @description 让 token 助手在登录端点不可用时返回空值，并修复 Python 候选脚本头部注释导致的语法错误。
 # @author Tencent Hunyuan Hy
-# @date 2026-11-22
+# @date 2026-11-22 23:45:04
 # @usage python runtime-logs/patch-token-tolerance.py
 # @dependencies 修改 backend master runtime-logs 及两仓库 harness。
 #

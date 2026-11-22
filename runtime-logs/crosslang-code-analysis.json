@@ -1,0 +1,356 @@
+[
+  {
+    "source": "api/baseline/junit-contract.json",
+    "total": 79,
+    "body_recorded": 61,
+    "counts": {
+      "success": 36,
+      "pending_no_code": 41,
+      "non_200": 2
+    },
+    "non_200_examples": [
+      {
+        "endpoint": "/api/v1/large/export/status/1",
+        "status": 200,
+        "code": 404,
+        "body_prefix": "{\"code\":404,\"message\":\"task not found\"}"
+      },
+      {
+        "endpoint": "/api/v1/unified/export/status/1",
+        "status": 200,
+        "code": 404,
+        "body_prefix": "{\"code\":404,\"message\":\"task not found\"}"
+      }
+    ]
+  },
+  {
+    "source": "api/cpp/out/junit-contract.json",
+    "total": 79,
+    "body_recorded": 65,
+    "counts": {
+      "pending_no_code": 72,
+      "non_200": 2,
+      "success": 5
+    },
+    "non_200_examples": [
+      {
+        "endpoint": "/api/v1/large/export/status/1",
+        "status": 200,
+        "code": 404,
+        "body_prefix": "{\"code\":404,\"message\":\"task not found\"}"
+      },
+      {
+        "endpoint": "/api/v1/unified/export/status/1",
+        "status": 200,
+        "code": 404,
+        "body_prefix": "{\"code\":404,\"message\":\"task not found\"}"
+      }
+    ]
+  },
+  {
+    "source": "api/go/out/junit-contract.json",
+    "total": 79,
+    "body_recorded": 76,
+    "counts": {
+      "success": 41,
+      "pending_no_code": 23,
+      "non_200": 15
+    },
+    "non_200_examples": [
+      {
+        "endpoint": "/api/v1/large/export/status/1",
+        "status": 200,
+        "code": 404,
+        "body_prefix": "{\"code\":404,\"message\":\"task not found\"}"
+      },
+      {
+        "endpoint": "/base/sysutilTest/syncSuspiciousCar1",
+        "status": 501,
+        "code": 501,
+        "body_prefix": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:175-185\",\"msg\":\"SysTestController/syncSuspiciousCar1 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecord"
+      },
+      {
+        "endpoint": "/base/sysutilTest/syncSuspiciousCar2",
+        "status": 501,
+        "code": 501,
+        "body_prefix": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:190-200\",\"msg\":\"SysTestController/syncSuspiciousCar2 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecord"
+      },
+      {
+        "endpoint": "/base/sysutilTest/syncSuspiciousCar3",
+        "status": 501,
+        "code": 501,
+        "body_prefix": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:205-215\",\"msg\":\"SysTestController/syncSuspiciousCar3 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecord"
+      },
+      {
+        "endpoint": "/base/sysutilTest/syncSuspiciousCar4",
+        "status": 501,
+        "code": 501,
+        "body_prefix": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:220-230\",\"msg\":\"SysTestController/syncSuspiciousCar4 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecord"
+      }
+    ]
+  },
+  {
+    "source": "api/python/out/junit-contract.json",
+    "total": 79,
+    "body_recorded": 66,
+    "counts": {
+      "pending_no_code": 73,
+      "non_200": 2,
+      "success": 4
+    },
+    "non_200_examples": [
+      {
+        "endpoint": "/api/v1/large/export/status/1",
+        "status": 200,
+        "code": 404,
+        "body_prefix": "{\"code\":404,\"message\":\"task not found\"}"
+      },
+      {
+        "endpoint": "/api/v1/unified/export/status/1",
+        "status": 200,
+        "code": 404,
+        "body_prefix": "{\"code\":404,\"message\":\"task not found\"}"
+      }
+    ]
+  },
+  {
+    "source": "api/rust/out/junit-contract.json",
+    "total": 79,
+    "body_recorded": 63,
+    "counts": {
+      "success": 36,
+      "pending_no_code": 40,
+      "non_200": 3
+    },
+    "non_200_examples": [
+      {
+        "endpoint": "/api/v1/large/export/status/1",
+        "status": 200,
+        "code": 404,
+        "body_prefix": "{\"code\":404,\"message\":\"task not found\"}"
+      },
+      {
+        "endpoint": "/api/v1/unified/1/list",
+        "status": 200,
+        "code": 400,
+        "body_prefix": "{\"code\":400,\"message\":\"未知数据源: 1, 合法取值: snapshot / fee / trail\"}"
+      },
+      {
+        "endpoint": "/api/v1/unified/export/status/1",
+        "status": 200,
+        "code": 404,
+        "body_prefix": "{\"code\":404,\"message\":\"task not found\"}"
+      }
+    ]
+  },
+  {
+    "source": "backend/baseline/junit-contract.json",
+    "total": 302,
+    "body_recorded": 295,
+    "counts": {
+      "success": 220,
+      "pending_no_code": 31,
+      "non_200": 51
+    },
+    "non_200_examples": [
+      {
+        "endpoint": "/base/geometry/syncAllGeometry",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"msg\":\"\\n### Error querying database.  Cause: java.sql.SQLSyntaxErrorException: Table 'carmonitdb.geometry_copy1' doesn't exist\\n### The error may exist in URL [jar:file:/home/runner/work/car-monit-b"
+      },
+      {
+        "endpoint": "/manager/fwqclls/list",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"total\":0,\"rows\":[],\"code\":500,\"msg\":\"数据服务暂不可用(UNAVAILABLE)，请稍后重试\"}"
+      },
+      {
+        "endpoint": "/manager/fwqclls/1",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"msg\":\"数据服务暂不可用(UNAVAILABLE)，请稍后重试\",\"code\":500}"
+      },
+      {
+        "endpoint": "/base/feeGantry/list",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"total\":0,\"rows\":[],\"code\":500,\"msg\":\"数据服务暂不可用(UNAVAILABLE)，请稍后重试\"}"
+      },
+      {
+        "endpoint": "/base/feeGantry/1",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"msg\":\"org.apache.http.conn.HttpHostConnectException: Connect to 127.0.0.1:9902 [/127.0.0.1] failed: Connection refused (Connection refused)\",\"code\":500}"
+      }
+    ]
+  },
+  {
+    "source": "backend/cpp/out/junit-contract.json",
+    "total": 302,
+    "body_recorded": 301,
+    "counts": {
+      "non_200": 300,
+      "success": 1,
+      "pending_no_code": 1
+    },
+    "non_200_examples": [
+      {
+        "endpoint": "/manager/carsuspiciousback/list",
+        "status": 200,
+        "code": 401,
+        "body_prefix": "{\"msg\":\"请求访问：/manager/carsuspiciousback/list，认证失败，无法访问系统资源\",\"code\":401}"
+      },
+      {
+        "endpoint": "/manager/carsuspiciousback/export",
+        "status": 200,
+        "code": 401,
+        "body_prefix": "{\"msg\":\"请求访问：/manager/carsuspiciousback/export，认证失败，无法访问系统资源\",\"code\":401}"
+      },
+      {
+        "endpoint": "/manager/carsuspiciousback/1",
+        "status": 200,
+        "code": 401,
+        "body_prefix": "{\"msg\":\"请求访问：/manager/carsuspiciousback/1，认证失败，无法访问系统资源\",\"code\":401}"
+      },
+      {
+        "endpoint": "/base/configServiceArea/list",
+        "status": 200,
+        "code": 401,
+        "body_prefix": "{\"msg\":\"请求访问：/base/configServiceArea/list，认证失败，无法访问系统资源\",\"code\":401}"
+      },
+      {
+        "endpoint": "/base/configServiceArea/listQuery",
+        "status": 200,
+        "code": 401,
+        "body_prefix": "{\"msg\":\"请求访问：/base/configServiceArea/listQuery，认证失败，无法访问系统资源\",\"code\":401}"
+      }
+    ]
+  },
+  {
+    "source": "backend/go/out/junit-contract.json",
+    "total": 302,
+    "body_recorded": 299,
+    "counts": {
+      "success": 234,
+      "non_200": 31,
+      "pending_no_code": 37
+    },
+    "non_200_examples": [
+      {
+        "endpoint": "/base/geometry/syncAllGeometry",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"msg\":\"Error 1146 (42S02): Table 'carmonitdb.geometry_copy1' doesn't exist\",\"code\":500}"
+      },
+      {
+        "endpoint": "/base/feeGantry/list",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"msg\":\"请求车辆监测服务失败: Get \\\"http://127.0.0.1:9903/base/feeGantry/list?pageNum=1\\u0026pageSize=10\\\": dial tcp 127.0.0.1:9903: connect: connection refused\",\"code\":500}"
+      },
+      {
+        "endpoint": "/base/feeGantry/1",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"msg\":\"请求车辆监测服务失败: Get \\\"http://127.0.0.1:9903/base/feeGantry/1\\\": dial tcp 127.0.0.1:9903: connect: connection refused\",\"code\":500}"
+      },
+      {
+        "endpoint": "/base/feeGantry/export",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"msg\":\"请求车辆监测服务失败: Get \\\"http://127.0.0.1:9903/base/feeGantry/export\\\": dial tcp 127.0.0.1:9903: connect: connection refused\",\"code\":500}"
+      },
+      {
+        "endpoint": "/base/feerecords/1",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"msg\":\"请求车辆监测服务失败: Get \\\"http://127.0.0.1:9903/base/feerecords/1\\\": dial tcp 127.0.0.1:9903: connect: connection refused\",\"code\":500}"
+      }
+    ]
+  },
+  {
+    "source": "backend/python/out/junit-contract.json",
+    "total": 302,
+    "body_recorded": 300,
+    "counts": {
+      "non_200": 298,
+      "success": 2,
+      "pending_no_code": 2
+    },
+    "non_200_examples": [
+      {
+        "endpoint": "/manager/carsuspiciousback/list",
+        "status": 200,
+        "code": 401,
+        "body_prefix": "{\"msg\":\"请求访问：/manager/carsuspiciousback/list，认证失败，无法访问系统资源\",\"code\":401}"
+      },
+      {
+        "endpoint": "/manager/carsuspiciousback/export",
+        "status": 200,
+        "code": 401,
+        "body_prefix": "{\"msg\":\"请求访问：/manager/carsuspiciousback/export，认证失败，无法访问系统资源\",\"code\":401}"
+      },
+      {
+        "endpoint": "/manager/carsuspiciousback/1",
+        "status": 200,
+        "code": 401,
+        "body_prefix": "{\"msg\":\"请求访问：/manager/carsuspiciousback/1，认证失败，无法访问系统资源\",\"code\":401}"
+      },
+      {
+        "endpoint": "/base/configServiceArea/list",
+        "status": 200,
+        "code": 401,
+        "body_prefix": "{\"msg\":\"请求访问：/base/configServiceArea/list，认证失败，无法访问系统资源\",\"code\":401}"
+      },
+      {
+        "endpoint": "/base/configServiceArea/listQuery",
+        "status": 200,
+        "code": 401,
+        "body_prefix": "{\"msg\":\"请求访问：/base/configServiceArea/listQuery，认证失败，无法访问系统资源\",\"code\":401}"
+      }
+    ]
+  },
+  {
+    "source": "backend/rust/out/junit-contract.json",
+    "total": 302,
+    "body_recorded": 298,
+    "counts": {
+      "success": 231,
+      "non_200": 33,
+      "pending_no_code": 38
+    },
+    "non_200_examples": [
+      {
+        "endpoint": "/base/geometry/syncAllGeometry",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"msg\":\"error returned from database: 1146 (42S02): Table 'carmonitdb.geometry_copy1' doesn't exist\",\"code\":500}"
+      },
+      {
+        "endpoint": "/base/feeGantry/list",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"msg\":\"/base/feeGantry/list 请求失败: error sending request for url (http://127.0.0.1:9911/base/feeGantry/list?pageNum=1&pageSize=10)\",\"code\":500}"
+      },
+      {
+        "endpoint": "/base/feeGantry/1",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"msg\":\"/base/feeGantry/1 请求失败: error sending request for url (http://127.0.0.1:9911/base/feeGantry/1)\",\"code\":500}"
+      },
+      {
+        "endpoint": "/base/feeGantry/export",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"msg\":\"/base/feeGantry/export 请求失败: error sending request for url (http://127.0.0.1:9911/base/feeGantry/export)\",\"code\":500}"
+      },
+      {
+        "endpoint": "/base/feerecords/1",
+        "status": 200,
+        "code": 500,
+        "body_prefix": "{\"msg\":\"/base/feerecords/1 请求失败: error sending request for url (http://127.0.0.1:9911/base/feerecords/1)\",\"code\":500}"
+      }
+    ]
+  }
+]

@@ -2,7 +2,7 @@
 """
 @description 将历史 runtime-logs 中的脚本、证据、yml 和 md 合并到 backend master 工作树，并按内容去重文档。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/migrate-runtime-logs-to-backend-master.py
 @dependencies Python 3 标准库；只处理本地两个固定目录，不访问 GitHub API。
 """

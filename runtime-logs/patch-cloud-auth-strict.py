@@ -2,7 +2,7 @@
 """
 @description 为 backend/api 的 JUnit 与跨语言 workflow 增加管理员鉴权、严格对拍门禁，并清理已合并分支的旧 checkout。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/patch-cloud-auth-strict.py
 @dependencies 修改两仓库 master 工作树中的 workflow 与 harness 脚本。
 """

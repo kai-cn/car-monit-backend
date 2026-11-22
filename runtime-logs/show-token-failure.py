@@ -2,7 +2,7 @@
 """
 @description 打印云端基线在 TOKEN 步骤附近的完整日志，定位鉴权失败原因。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/show-token-failure.py <logfile>
 @dependencies Python 3 标准库。
 """

@@ -1,3 +1,9 @@
+<!--
+@description 本文件由 AI 辅助编写或维护，用于记录项目实现、验证与交接信息。
+@author Tencent Hunyuan Hy
+@date 2026-11-22 23:45:04
+-->
+
 # V3 代码修复记录
 
 > 与 `01-code-audit-record.md` 配套，在两侧 V3 分支各存一份。

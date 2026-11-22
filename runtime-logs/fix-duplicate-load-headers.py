@@ -2,7 +2,7 @@
 """
 @description 删除压测模板中误重复插入的 headers 方法，恢复 Java8 编译通过。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/fix-duplicate-load-headers.py
 @dependencies 只修改 backend master 的 generate_junit_suite.py。
 """

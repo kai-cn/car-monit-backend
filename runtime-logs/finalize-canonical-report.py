@@ -2,7 +2,7 @@
 """
 @description 生成 backend master runtime-logs 下的最终报告，并如实记录严格跨语言对拍结果。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/finalize-canonical-report.py
 @dependencies 读取同目录的云端/本机证据 JSON。
 """

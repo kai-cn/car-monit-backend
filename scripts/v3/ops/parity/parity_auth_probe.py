@@ -22,7 +22,7 @@
   python parity_auth_probe.py --variant java8 --label java8 \\
     --cmd "java -jar out/baseline.jar --server.port=19903" --port 19903 \\
     --endpoints scripts/v3/ops/parity/endpoints/backend-full.txt \\
-    --auth-lang java --user admin --password 'Admin@2025-' \\
+    --auth-lang java --user admin --password '__SET_CARMONIT_ADMIN_PASSWORD__' \\
     --out out/java8.json --mode full --ready-timeout 300
 """
 from __future__ import annotations
@@ -196,7 +196,7 @@ def main():
     ap.add_argument('--check-stability', action='store_true')
     a = ap.parse_args()
     # 密码优先从环境变量读取，避免出现在 argv/进程列表；argv 值仅作本地测试兜底
-    password = os.environ.get(a.password_env) or a.password or 'Admin@2025-'
+    password = os.environ.get(a.password_env) or a.password or '__SET_CARMONIT_ADMIN_PASSWORD__'
 
     endpoints = [l.strip() for l in Path(a.endpoints).read_text(encoding='utf-8').splitlines()
                  if l.strip() and not l.startswith('#')]

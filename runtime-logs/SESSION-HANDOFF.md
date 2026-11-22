@@ -1,3 +1,9 @@
+<!--
+@description 本文件由 AI 辅助编写或维护，用于记录项目实现、验证与交接信息。
+@author Tencent Hunyuan Hy
+@date 2026-11-22 23:45:04
+-->
+
 # 会话交接总览（2026-11-17 收尾）—— 另一会话请从此文件读起
 
 > 本文件是自包含的进度快照；细节分别在下方"文档索引"列出的文件中。
@@ -198,4 +204,13 @@
 - 本机管理员鉴权复测：302 端点、认证失败 0；压测 533 请求、传输错误 0。
 - 跨语言严格门禁：baseline 成功；backend `45031566682`、api `45031576935` 因候选返回与 Java 不一致而 failure。
 - 严格门禁要求与 Java 返回一致；所有 DIFF/NONDET 如实保留在 `crosslang-evidence.json`，不得改写为 success。
+
+## 2026-11-22 Endpoint body.code 判据与代码修复
+
+- 新判据：`body.code==200` 成功；无 `code` 字段待定；`body.code!=200` 单独记录。
+- 本机修复前：success=217、pending=35、non_200=50；修复后：success=218、pending=35、non_200=49。
+- 单独复查 `/base/geometry/syncAllGeometry`：修复前 `code=500`（遗留表 `geometry_copy1` 不存在），修复后 `code=200`。
+- 代码修复：`ruoyi-system/.../GeometryMapper.xml` 改为仅查询现有 `geometry` 表。
+- 跨语言 artifact 保存了具体 endpoint JSON body，可用 `analyze-crosslang-code.py` 离线按新判据统计。
+- 专项报告：`docs/v3/review/15-endpoint-body-code-20261122.md`。
 

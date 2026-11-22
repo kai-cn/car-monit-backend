@@ -44,7 +44,7 @@ env:
   MAVEN_ARGS: -B -ntp
   # 管理员测试账号（与 parity/pp.py 一致）；可在仓库 Variables 覆盖
   AUTH_USER: ${{ vars.AUTH_USER || 'admin' }}
-  AUTH_PASS: ${{ secrets.AUTH_PASS || 'Admin@2025-' }}
+  AUTH_PASS: ${{ secrets.AUTH_PASS }}
   ENDPOINTS: scripts/v3/ops/parity/endpoints/backend-full.txt
 
 jobs:

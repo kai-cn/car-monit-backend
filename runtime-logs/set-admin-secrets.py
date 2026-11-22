@@ -2,7 +2,7 @@
 """
 @description 从环境变量读取管理员凭据并以 GitHub SealedBox 加密写入两仓库 Secrets，明文不落盘、不回显。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage CARMONIT_ADMIN_USER=admin CARMONIT_ADMIN_PASSWORD=... python runtime-logs/set-admin-secrets.py
 @dependencies PyNaCl；本地缓存 GitHub token；两仓库管理员权限。
 """

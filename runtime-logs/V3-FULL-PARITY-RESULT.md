@@ -1,3 +1,9 @@
+<!--
+@description 本文件由 AI 辅助编写或维护，用于记录项目实现、验证与交接信息。
+@author Tencent Hunyuan Hy
+@date 2026-11-22 23:45:04
+-->
+
 # Java V3 vs Python 全量接口对拍结果（云 runner 实测）
 
 > run：`44755264319`（backend 仓库 `python-v3-full-parity.yml`，ref=master）

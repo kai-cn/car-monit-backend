@@ -1,3 +1,9 @@
+<!--
+@description 本文件由 AI 辅助编写或维护，用于记录项目实现、验证与交接信息。
+@author Tencent Hunyuan Hy
+@date 2026-11-22 23:45:04
+-->
+
 # 12. 数据库大版本升级云验证（MySQL 8.0→9.7 / openGauss 3.0→7.0）
 
 > 结论先行：在 GitHub 云 runner 上完成三格验证，**业务一致性 fails=0**；MySQL 与 openGauss 均走真实逻辑导出/导入（openGauss 先 RC3、后 GA 正式镜像均验证）。以下数字全部来自云端 job 日志，未下载 artifact 到本地。凭据值仅在运行时由 masked Secret 注入，文档不记录。

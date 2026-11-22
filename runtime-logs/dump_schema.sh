@@ -2,7 +2,7 @@
 
 # @description 历史脚本 dump_schema.sh：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
 # @author Tencent Hunyuan Hy
-# @date 2026-11-22
+# @date 2026-11-22 23:45:04
 # @usage bash dump_schema.sh [args]；执行前确认目标环境与本地容器状态。
 # @dependencies Docker CLI 与已启动的守护进程
 # Operational helper — native/CICD verification session (2026-11-16~17).

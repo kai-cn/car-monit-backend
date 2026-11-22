@@ -2,7 +2,7 @@
 """
 @description 将指定 WSL shell 脚本转换为 LF 行尾，避免 Windows 下的 CRLF 导致 bash 语法错误。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/normalize-sh-lf.py <script1> [script2 ...]
 @dependencies Python 3 标准库。
 """

@@ -1,6 +1,6 @@
 # @description 历史脚本 dispatch-dbupgrade.ps1：派发或重派云端 runner 任务；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
 # @author Tencent Hunyuan Hy
-# @date 2026-11-22
+# @date 2026-11-22 23:45:04
 # @usage powershell -File dispatch-dbupgrade.ps1 [params]；参数含义见脚本原有注释。
 # @dependencies 按脚本原有逻辑准备环境变量、参数与权限。
 # 用途：以运行时生成的临时口令触发两仓库 db-upgrade-cloud 云验证（口令不入库、不回显）。

@@ -2,7 +2,7 @@
 """
 @description 为关键生成脚本补函数级说明，并让生成的 Java 套件自带文件/类/方法 Javadoc。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python patch-production-function-docs.py
 @dependencies 只改写 D:\\work\\runtime-logs 下的固定脚本，随后复制到两仓库 harness 目录。
 """
@@ -17,7 +17,7 @@ t = t.replace(
     """CONTRACT = r'''/**
  * @description 全接口 HTTP 契约套件，对每个端点做两次请求并记录可达性、状态码、字节数、延迟、正文片段与稳定性。
  * @author Tencent Hunyuan Hy
- * @date 2026-11-22
+ * @date 2026-11-22 23:45:04
  * @usage 由 generate_junit_suite.py 生成，通过 JUnit Platform Console 执行；OUT_DIR/BASE_URL/ENDPOINT_HEADERS 由环境变量注入。
  * @dependencies JDK 8+、JUnit 5 Platform Console；不依赖被测服务源码。
  */
@@ -27,7 +27,7 @@ t = t.replace(
     """LOAD = r'''/**
  * @description 有界并发端点压测套件，记录吞吐、延迟分位数、传输错误与业务状态码分布。
  * @author Tencent Hunyuan Hy
- * @date 2026-11-22
+ * @date 2026-11-22 23:45:04
  * @usage 由 generate_junit_suite.py 生成，通过 JUnit Platform Console 执行；LOAD_THREADS/LOAD_SECONDS/LOAD_WARMUP_SECONDS 控制压测规模。
  * @dependencies JDK 8+、JUnit 5 Platform Console；BASE_URL 指向被测服务。
  */

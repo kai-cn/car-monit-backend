@@ -2,7 +2,7 @@
 """
 @description 为 JUnit 全接口套件获取管理员 Bearer Token；凭据只从环境变量读取，不落盘、不回显。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage CARMONIT_ADMIN_USER=admin CARMONIT_ADMIN_PASSWORD=... python junit-auth-token.py --base-url http://127.0.0.1:19903 > token.txt
 @dependencies Python 3 标准库；被测服务需提供 POST /login，且验证码允许空 code。
 """

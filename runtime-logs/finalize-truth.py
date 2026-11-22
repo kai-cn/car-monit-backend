@@ -2,7 +2,7 @@
 """
 @description 将最终严格对拍结论、本机鉴权复测证据和最终 run 号统一写入 canonical runtime-logs 与两仓库 review 文档。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/finalize-truth.py
 @dependencies 读取旧 runtime-logs 与 canonical 目录中的证据 JSON。
 """

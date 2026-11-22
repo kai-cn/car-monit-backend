@@ -2,7 +2,7 @@
 """
 @description 修复生产级注释插入位置错误：将 from __future__ 前的模块 docstring 转为注释，恢复 Python 语法。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/fix-future-import-headers.py
 @dependencies Python 3 标准库；只处理两仓库 harness 脚本。
 """

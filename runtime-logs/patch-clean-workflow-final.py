@@ -2,7 +2,7 @@
 """
 @description 修复干净跨语言 workflow 的数据库就绪顺序、JUnit jar 下载和 Go 构建入口。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/patch-clean-workflow-final.py
 @dependencies 修改两仓库 master 工作树中的 workflow。
 """

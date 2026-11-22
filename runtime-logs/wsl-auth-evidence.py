@@ -2,7 +2,7 @@
 """
 @description 汇总 WSL 管理员鉴权复测证据，统计认证失败与状态码分布。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/wsl-auth-evidence.py
 @dependencies WSL 路径 /home/dev/local-auth-retest。
 """

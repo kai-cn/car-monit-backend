@@ -2,7 +2,7 @@
 """
 @description 让鉴权助手兼容无 /login 的 api 服务，并为 backend Java/Python 显式关闭 p6spy 驱动。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/patch-token-and-driver.py
 @dependencies 修改 backend master runtime-logs 与两仓库 master 工作树。
 """

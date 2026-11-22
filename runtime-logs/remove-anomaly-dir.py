@@ -2,7 +2,7 @@
 """
 @description 清理误建在仓库根目录的异常目录，避免 git status 噪音。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/remove-anomaly-dir.py
 @dependencies Python 3 标准库。
 """

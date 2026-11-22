@@ -1,6 +1,6 @@
 # @description 将 WSL 本机鉴权复测证据复制到 backend master runtime-logs 并生成轻量摘要。
 # @author Tencent Hunyuan Hy
-# @date 2026-11-22
+# @date 2026-11-22 23:45:04
 # @usage powershell -File runtime-logs/sync-auth-evidence.ps1
 # @dependencies WSL ext4 中 /home/dev/local-auth-retest 证据。
 $src = '\\wsl$\openEuler-24.03-LTS-SP4\home\dev\local-auth-retest'

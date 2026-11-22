@@ -1,3 +1,9 @@
+<!--
+@description 本文件由 AI 辅助编写或维护，用于记录项目实现、验证与交接信息。
+@author Tencent Hunyuan Hy
+@date 2026-11-22 23:45:04
+-->
+
 # 交接：Python vs Java V3 全量接口对拍 workflow
 
 > 记录时间：2026-11-20（会话内实时记录）

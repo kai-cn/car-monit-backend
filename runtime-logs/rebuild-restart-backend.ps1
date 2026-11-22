@@ -1,6 +1,6 @@
 # @description 历史脚本 rebuild-restart-backend.ps1：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
 # @author Tencent Hunyuan Hy
-# @date 2026-11-22
+# @date 2026-11-22 23:45:04
 # @usage powershell -File rebuild-restart-backend.ps1 [params]；参数含义见脚本原有注释。
 # @dependencies Maven 与对应 JDK
 # Operational helper — native/CICD verification session (2026-11-16~17).

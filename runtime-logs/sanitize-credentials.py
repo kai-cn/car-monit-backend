@@ -2,7 +2,7 @@
 """
 @description 清理 runtime-logs 中的明文管理员口令与 JWT token 文件，统一改为环境变量占位。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/sanitize-credentials.py
 @dependencies Python 3 标准库；只处理本地 backend master 工作树。
 """

@@ -2,7 +2,7 @@
 
 # @description 历史脚本 verify_tz_hypothesis.sh：验证配置、构建或安全不变量；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
 # @author Tencent Hunyuan Hy
-# @date 2026-11-22
+# @date 2026-11-22 23:45:04
 # @usage bash verify_tz_hypothesis.sh [args]；执行前确认目标环境与本地容器状态。
 # @dependencies Docker CLI 与已启动的守护进程；Java 运行时
 # Operational helper — native/CICD verification session (2026-11-16~17).

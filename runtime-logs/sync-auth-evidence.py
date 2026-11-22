@@ -2,7 +2,7 @@
 """
 @description 将 WSL 管理员鉴权复测证据复制到 backend master runtime-logs 并生成摘要。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/sync-auth-evidence.py
 @dependencies WSL ext4 中 /home/dev/local-auth-retest 证据。
 """

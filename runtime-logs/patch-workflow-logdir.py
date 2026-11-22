@@ -2,7 +2,7 @@
 """
 @description 修复跨语言 workflow 中 /home/ruoyi/logs 的创建权限，避免基线启动前失败。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/patch-workflow-logdir.py
 @dependencies 修改两仓库 master 工作树中的 workflow。
 """

@@ -1,0 +1,14 @@
+{
+  "phase": "before_fix",
+  "counts": {
+    "success": 217,
+    "pending_no_code": 35,
+    "non_200": 50
+  },
+  "selected_endpoint": {
+    "endpoint": "/base/geometry/syncAllGeometry",
+    "status": 200,
+    "code": 500,
+    "body_prefix": "{\"msg\":\"\\n### Error querying database.  Cause: java.sql.SQLSyntaxErrorException: Table 'carmonitdb.geometry_copy1' doesn't exist"
+  }
+}

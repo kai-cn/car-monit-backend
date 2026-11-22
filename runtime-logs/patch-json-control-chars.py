@@ -2,7 +2,7 @@
 """
 @description 修复 JUnit 证据 JSON 中未转义控制字符导致解析失败的问题。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/patch-json-control-chars.py
 @dependencies 只修改 backend master 的 generate_junit_suite.py。
 """

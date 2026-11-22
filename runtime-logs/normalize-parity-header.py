@@ -2,7 +2,7 @@
 """
 @description 规范化 parity_compare.py 文件头，保留单个标准 docstring，确保 from __future__ 合法。
 @author Tencent Hunyuan Hy
-@date 2026-11-22
+@date 2026-11-22 23:45:04
 @usage python runtime-logs/normalize-parity-header.py
 @dependencies Python 3 标准库。
 """
