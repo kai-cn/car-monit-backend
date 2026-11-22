@@ -280,7 +280,6 @@ jobs:
           python3 harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints "$EP" --out out/generated
 
           curl -fsSL -o out/junit-platform-console-standalone.jar \
-
             https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
 
           javac -source 8 -target 8 -cp out/junit-platform-console-standalone.jar -d out/classes out/generated/*.java
@@ -372,9 +371,7 @@ jobs:
           set -euo pipefail
 
           java -jar out/junit-platform-console-standalone.jar execute \
-
             --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest \
-
             --details=summary --reports-dir=out/junit-contract-reports
 
           cat out/junit-contract.json | head -c 800 || true
@@ -406,9 +403,7 @@ jobs:
           set -euo pipefail
 
           java -jar out/junit-platform-console-standalone.jar execute \
-
             --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointLoadTest \
-
             --details=summary --reports-dir=out/junit-load-reports
 
           cat out/junit-load.json || true
