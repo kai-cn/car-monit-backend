@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-LEGACY-SCRIPT-ANNOTATION
-文件：generate_junit_suite.py
-用途：运维辅助脚本。
-思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
-风险：执行前确认目标环境、凭据与影响范围。
+@description 从端点清单生成 Java8 兼容的 JUnit5 全接口契约与压测套件；结果以 JSON 记录，便于跨版本/跨语言对比。
+@author AI Assistant
+@date 2026-11-22
+@usage python generate_junit_suite.py --endpoints <file> --out <dir>
+@dependencies Python 3 标准库；生成的 Java 源码依赖 JUnit 5 Platform Console 与 JDK 8+。
 """
 """Generate Java 8 compatible JUnit 5 full-endpoint contract and load suites.
 
@@ -19,7 +19,14 @@ import argparse
 from pathlib import Path
 
 
-CONTRACT = r'''package com.ruoyi.parity.generated;
+CONTRACT = r'''/**
+ * @description 全接口 HTTP 契约套件，对每个端点做两次请求并记录可达性、状态码、字节数、延迟、正文片段与稳定性。
+ * @author AI Assistant
+ * @date 2026-11-22
+ * @usage 由 generate_junit_suite.py 生成，通过 JUnit Platform Console 执行；OUT_DIR/BASE_URL/ENDPOINT_HEADERS 由环境变量注入。
+ * @dependencies JDK 8+、JUnit 5 Platform Console；不依赖被测服务源码。
+ */
+package com.ruoyi.parity.generated;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.DynamicTest;
@@ -41,7 +48,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-/** Generated full-endpoint HTTP contract suite. No business code dependency. */
+/**
+ * 全接口契约测试类，按端点清单动态生成测试；结果写入 junit-contract.json。
+ */
 public class EndpointContractTest {
     private static final String[] ENDPOINTS = __ENDPOINTS__;
     private static final List<Map<String, Object>> RESULTS =
@@ -118,6 +127,11 @@ public class EndpointContractTest {
         return row;
     }
 
+    /**
+     * 为每个端点生成一个动态测试。
+     * @returns 动态测试流；每个测试记录一次可达性证据，不把业务 4xx/5xx 当作框架失败。
+     * @sideEffect 向 RESULTS 线程安全列表写入端点结果。
+     */
     @TestFactory
     Stream<DynamicTest> allEndpoints() {
         List<DynamicTest> tests = new ArrayList<DynamicTest>();
@@ -166,7 +180,14 @@ public class EndpointContractTest {
 }
 '''
 
-LOAD = r'''package com.ruoyi.parity.generated;
+LOAD = r'''/**
+ * @description 有界并发端点压测套件，记录吞吐、延迟分位数、传输错误与业务状态码分布。
+ * @author AI Assistant
+ * @date 2026-11-22
+ * @usage 由 generate_junit_suite.py 生成，通过 JUnit Platform Console 执行；LOAD_THREADS/LOAD_SECONDS/LOAD_WARMUP_SECONDS 控制压测规模。
+ * @dependencies JDK 8+、JUnit 5 Platform Console；BASE_URL 指向被测服务。
+ */
+package com.ruoyi.parity.generated;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -190,7 +211,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** Generated bounded-concurrency load suite. */
+/**
+ * 有界并发压测类，按端点清单循环请求；结果写入 junit-load.json。
+ */
 public class EndpointLoadTest {
     private static final String[] ENDPOINTS = __ENDPOINTS__;
 
@@ -205,6 +228,11 @@ public class EndpointLoadTest {
         return sorted.get(Math.max(0, Math.min(sorted.size() - 1, idx)));
     }
 
+    /**
+     * 执行限时压测并汇总吞吐、延迟分位数和业务状态码。
+     * @throws InterruptedException 压测线程被中断时由 JUnit 标记为失败。
+     * @sideEffect 写出 junit-load.json 报告文件。
+     */
     @Test
     void runLoad() throws Exception {
         int threads = Math.max(1, Integer.parseInt(env("LOAD_THREADS", "8")));
@@ -316,7 +344,13 @@ public class EndpointLoadTest {
 '''
 
 
-def java_array(paths):
+def java_array(paths: list[str]) -> str:
+    """
+    将端点列表转换为 Java String 数组字面量。
+
+    @param paths: 非空端点路径列表，顺序决定动态测试执行顺序。
+    @returns 可直接嵌入 Java 源码的数组初始化表达式。
+    """
     items = []
     for i, p in enumerate(paths):
         comma = ',' if i + 1 < len(paths) else ''
@@ -324,7 +358,13 @@ def java_array(paths):
     return 'new String[]{\n' + '\n'.join(items) + '\n    }'
 
 
-def main():
+def main() -> None:
+    """
+    读取端点清单并生成契约/压测 Java 源码。
+
+    @raises SystemExit: 端点清单为空时终止，避免生成空测试套件。
+    @sideEffect 在输出目录写入 EndpointContractTest.java 与 EndpointLoadTest.java。
+    """
     ap = argparse.ArgumentParser()
     ap.add_argument('--endpoints', required=True)
     ap.add_argument('--out', required=True)

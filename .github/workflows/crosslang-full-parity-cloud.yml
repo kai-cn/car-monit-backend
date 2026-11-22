@@ -1,322 +1,327 @@
-# ============================================================================
-# 文件：.github/workflows/crosslang-full-parity-cloud.yml
-# 用途：以 Java25 Boot4 为基线，对比 Python/Go/C++ 全接口 + 压测
-# 触发：workflow_dispatch
-# 思路：
-#   - baseline job 构建 target_ref（默认 *-jdk25）并运行 JUnit 契约/压测
-#   - candidate job 按 lang 构建 master 中的语言实现，启动同等端口后运行同一套 JUnit
-#   - parity_compare.py 复用现有 exact/semantic/nondet/fails 判定
-#   - compare_load.py 对 rps / p95 / p99 / error rate 做 ratio 报告
-#   - C++ 使用已验证的 CMake + vcpkg + static libstdc++ 方案
-# ============================================================================
-name: crosslang-full-parity-cloud
-
-on:
-  workflow_dispatch:
-    inputs:
-      target_ref:
-        description: Java25 Boot4 baseline branch
-        type: string
-        required: true
-        default: car-monit-backend-jdk25
-      app:
-        description: backend or api
-        type: choice
-        options: [backend, api]
-        default: backend
-      langs:
-        description: comma list of python,go,cpp,rust or all
-        type: string
-        default: all
-      load_threads:
-        type: string
-        default: '8'
-      load_seconds:
-        type: string
-        default: '30'
-      label:
-        type: string
-        default: java25-vs-crosslang
-
-permissions:
-  contents: read
-
-concurrency:
-  group: crosslang-full-${{ inputs.target_ref }}-${{ inputs.app }}
-  cancel-in-progress: true
-
-env:
-  MAVEN_ARGS: -B -ntp
-  BASE_URL: http://127.0.0.1:19903
-
-jobs:
-  baseline:
-    runs-on: ubuntu-latest
-    timeout-minutes: 120
-    steps:
-      - name: Checkout control harness
-        uses: actions/checkout@v4
-        with:
-          ref: master
-          path: harness
-      - name: Checkout Java baseline
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.target_ref }}
-          path: src
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '25'
-          cache: maven
-      - name: Start datastores
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ '${{ inputs.app }}' = 'api' ]; then
-            docker run -d --name pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=RuoYi -p 5432:5432 postgres:16-alpine
-          fi
-          docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
-          docker run -d --name rd -p 6379:6379 redis:7-alpine
-          for i in $(seq 1 90); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
-          for i in $(seq 1 30); do docker exec rd redis-cli ping >/dev/null 2>&1 && break; sleep 1; done
-          if [ '${{ inputs.app }}' = 'api' ]; then
-            for i in $(seq 1 60); do docker exec pg pg_isready -U postgres -d RuoYi >/dev/null 2>&1 && break; sleep 2; done
-            export PGPASSWORD=postgres
-            psql -h 127.0.0.1 -U postgres -d RuoYi -v ON_ERROR_STOP=1 -f harness/scripts/v3/ops/parity/sql/schema_jl_data01.sql >/dev/null
-            gunzip -c harness/scripts/v3/ops/parity/sql/seed_jl_data01.sql.gz > /tmp/seed.sql
-            psql -h 127.0.0.1 -U postgres -d RuoYi -v ON_ERROR_STOP=1 -f /tmp/seed.sql >/dev/null
-          else
-            docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/schema_carmonitdb.sql
-            docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
-          fi
-      - name: Build baseline and generate JUnit
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd src
-          if [ '${{ inputs.app }}' = 'api' ]; then MODULE=pro-business-api; EP=../harness/scripts/v3/ops/parity/endpoints/api-full.txt; else MODULE=ruoyi-admin; EP=../harness/scripts/v3/ops/parity/endpoints/backend-full.txt; fi
-          mvn $MAVEN_ARGS -DskipTests -Dspring-boot.aot.skip=true -pl "$MODULE" -am package
-          mkdir -p ../out/generated ../out/classes
-          cp $(ls "$MODULE"/target/*.jar | grep -v original | head -1) ../out/app.jar
-          python3 ../harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints "$EP" --out ../out/generated
-          curl -fsSL -o ../out/junit.jar https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
-          javac -encoding UTF-8 -source 8 -target 8 -cp ../out/junit.jar -d ../out/classes ../out/generated/*.java
-      - name: Start baseline and run harness
-        shell: bash
-        env:
-          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
-          SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
-          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
-          SPRING__REDIS__HOST: 127.0.0.1
-          SPRING__REDIS__PORT: '6379'
-          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai
-          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
-          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
-          TOKEN__SECRET: junit-cloud-secret-deterministic-0123456789abcdef
-          LOG_PATH: /tmp/car-monit-logs
-        run: |
-          set -euo pipefail
-          sudo mkdir -p "$LOG_PATH" /home/ruoyi/logs; sudo chown -R "$(id -u):$(id -g)" /home/ruoyi "$LOG_PATH"; mkdir -p "$LOG_PATH" /home/ruoyi/logs
-          java -jar out/app.jar --server.port=19903 --spring.main.allow-circular-references=true --spring.main.lazy-initialization=true --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration > out/app.log 2>&1 &
-          echo $! > out/app.pid
-          for i in $(seq 1 180); do
-            if curl -fsS -o /dev/null http://127.0.0.1:19903/; then echo "HTTP ready after ${i}s"; break; fi
-            if ! kill -0 "$(cat out/app.pid)" 2>/dev/null; then echo "service exited"; tail -n 160 out/app.log; exit 1; fi
-            sleep 1
-          done
-          OUT_DIR="$PWD/out" VARIANT=java25-boot4 LABEL="${{ inputs.label }}" \
-            java -jar out/junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/junit-contract-reports
-          OUT_DIR="$PWD/out" VARIANT=java25-boot4 LOAD_THREADS=${{ inputs.load_threads }} LOAD_SECONDS=${{ inputs.load_seconds }} \
-            java -jar out/junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointLoadTest --details=summary --reports-dir=out/junit-load-reports
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: crosslang-full-baseline
-          path: |
-            out/junit-contract.json
-            out/junit-load.json
-            out/junit.jar
-            out/*.log
-          retention-days: 30
-      - name: Cleanup
-        if: always()
-        run: |
-          if [ -f out/app.pid ]; then kill "$(cat out/app.pid)" 2>/dev/null || true; fi
-          docker rm -f pg my rd 2>/dev/null || true
-
-  candidates:
-    needs: baseline
-    runs-on: ubuntu-latest
-    timeout-minutes: 120
-    strategy:
-      fail-fast: false
-      max-parallel: 2
-      matrix:
-        lang: [python, go, cpp, rust]
-    steps:
-      - name: Checkout harness
-        uses: actions/checkout@v4
-        with:
-          ref: master
-          path: harness
-      - name: Checkout candidate source
-        uses: actions/checkout@v4
-        with:
-          ref: master
-          path: src
-      - name: Gate language
-        id: gate
-        shell: bash
-        env:
-          IN: ${{ inputs.langs }}
-          LANG: ${{ matrix.lang }}
-        run: |
-          if [ "$IN" = all ] || echo ",$IN," | grep -q ",$LANG,"; then echo run=yes >> "$GITHUB_OUTPUT"; else echo run=no >> "$GITHUB_OUTPUT"; fi
-      - name: Setup Python
-        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Start datastores
-        if: steps.gate.outputs.run == 'yes'
-        shell: bash
-        run: |
-          set -euo pipefail
-          docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
-          docker run -d --name rd -p 6379:6379 redis:7-alpine
-          sudo mkdir -p /home/ruoyi/logs /home/ruoyi/uploadPath
-          sudo chown -R "$(id -u):$(id -g)" /home/ruoyi
-          for i in $(seq 1 90); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
-          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/schema_carmonitdb.sql
-          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
-      - name: Download baseline reports
-        if: steps.gate.outputs.run == 'yes'
-        uses: actions/download-artifact@v4
-        with:
-          name: crosslang-full-baseline
-          path: baseline
-      - name: Download JUnit jar
-        if: steps.gate.outputs.run == 'yes'
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -f baseline/junit.jar ]; then
-            cp baseline/junit.jar out-junit.jar
-            ls -lh out-junit.jar
-            exit 0
-          fi
-          if sudo apt-get update -qq && sudo apt-get install -y -qq junit-platform-console-standalone >/dev/null 2>&1; then
-            cp /usr/share/java/junit-platform-console-standalone.jar out-junit.jar
-            ls -lh out-junit.jar
-            exit 0
-          fi
-          URL=https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
-          curl -fsSL --retry 5 --retry-delay 5 -o out-junit.jar "$URL"
-      - name: Build and start Python
-        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
-        shell: bash
-        run: |
-          set -euo pipefail
-          (cd src/car-monit-py && \
-            python3 -m pip install -q -r requirements.txt && \
-            sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' config/application.yml && \
-            TOKEN__SECRET=junit-cloud-secret-deterministic-0123456789abcdef \
-            SPRING__DATASOURCE__DRUID__MASTER__PASSWORD=root \
-            HENGDA__SECRET=pytest-only-hengda-signing-key-4d8e1a6b2f9c0357 \
-            python3 -m uvicorn app.main:app --host 127.0.0.1 --port 19903 > "$GITHUB_WORKSPACE/app.log" 2>&1) &
-          echo $! > app.pid
-      - name: Build and start Go
-        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'go'
-        shell: bash
-        env:
-          CARMONIT_DATABASE_DSN: "root:root@tcp(127.0.0.1:3306)/carmonitdb?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true"
-          CARMONIT_REDIS_ADDR: "127.0.0.1:6379"
-          CARMONIT_SERVER_PORT: "19903"
-          CARMONIT_TOKEN_SECRET: "junit-cloud-secret-deterministic-0123456789abcdef"
-        run: |
-          set -euo pipefail
-          cd src/car-monit-go
-          go build -o bin/car-monit-go ./cmd/server
-          ./bin/car-monit-go -c configs/config.yaml > "$GITHUB_WORKSPACE/app.log" 2>&1 &
-          echo $! > "$GITHUB_WORKSPACE/app.pid"
-      - name: Build and start C++
-        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'cpp'
-        shell: bash
-        env:
-          CM_SERVER_PORT: "19903"
-        run: |
-          set -euo pipefail
-          cd src/car-monit-cpp
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" \
-            -DVCPKG_TARGET_TRIPLET=x64-linux \
-            -DCMAKE_EXE_LINKER_FLAGS="-static-libstdc++ -static-libgcc"
-          cmake --build build --parallel 2
-          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' configs/config.yaml 2>/dev/null || true
-          ./build/car-monit-cpp --config config > "$GITHUB_WORKSPACE/app.log" 2>&1 &
-          echo $! > "$GITHUB_WORKSPACE/app.pid"
-      - name: Build and start Rust
-        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'rust'
-        shell: bash
-        env:
-          APP_DATABASE__URL: "jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8"
-          APP_DATABASE__USERNAME: root
-          APP_DATABASE__PASSWORD: root
-          APP_DATABASE__POOL__MINIDLE: '0'
-          APP_DATABASE__POOL__MAXACTIVE: '10'
-          APP_DATABASE__POOL__MAXWAIT: '30000'
-          APP_REDIS__HOST: 127.0.0.1
-          APP_REDIS__PORT: '6379'
-          APP_SERVER__PORT: '19903'
-          APP_TOKEN__SECRET: 'Y3Jvc3NsYW5nLWRldGVybWluaXN0aWMtc2VjcmV0LTAxMjM0NTY3ODkw'
-        run: |
-          set -euo pipefail
-          cd src/car-monit-rust
-          cargo build --release
-          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' src/car-monit-rust/config/application.* 2>/dev/null || true
-          ./target/release/car-monit-rust > "$GITHUB_WORKSPACE/app.log" 2>&1 &
-          echo $! > "$GITHUB_WORKSPACE/app.pid"
-
-      - name: Wait candidate and run JUnit
-        if: steps.gate.outputs.run == 'yes'
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p out/generated out/classes
-          if [ '${{ inputs.app }}' = 'api' ]; then EP=harness/scripts/v3/ops/parity/endpoints/api-full.txt; else EP=harness/scripts/v3/ops/parity/endpoints/backend-full.txt; fi
-          python3 harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints "$EP" --out out/generated
-          javac -encoding UTF-8 -source 8 -target 8 -cp out-junit.jar -d out/classes out/generated/*.java
-          for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1 && break; sleep 1; done
-          OUT_DIR="$PWD/out" VARIANT="${{ matrix.lang }}" LABEL="${{ inputs.label }}" \
-            java -jar out-junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/contract-reports
-          OUT_DIR="$PWD/out" VARIANT="${{ matrix.lang }}" LOAD_THREADS=${{ inputs.load_threads }} LOAD_SECONDS=${{ inputs.load_seconds }} \
-            java -jar out-junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointLoadTest --details=summary --reports-dir=out/load-reports
-      - name: Compare contract and load
-        if: steps.gate.outputs.run == 'yes'
-        shell: bash
-        run: |
-          set -uo pipefail
-          python3 harness/scripts/v3/ops/parity/parity_compare.py \
-            --baseline baseline/junit-contract.json --candidate out/junit-contract.json \
-            --out out/contract-report.json --md out/contract-report.md \
-            --label "${{ inputs.label }}-${{ matrix.lang }}" || true
-          python3 harness/scripts/v3/ops/junit/compare_load.py \
-            --baseline baseline/junit-load.json --candidate out/junit-load.json \
-            --out out/load-report.json --md out/load-report.md \
-            --label "${{ inputs.label }}-${{ matrix.lang }}" || true
-          cat out/contract-report.md || true
-          cat out/load-report.md || true
-      - uses: actions/upload-artifact@v4
-        if: always() && steps.gate.outputs.run == 'yes'
-        with:
-          name: crosslang-full-${{ matrix.lang }}
-          path: |
-            out/**
-            app.log
-          retention-days: 30
-      - name: Cleanup
-        if: always()
-        run: |
-          if [ -f app.pid ]; then kill "$(cat app.pid)" 2>/dev/null || true; fi
-          docker rm -f my rd 2>/dev/null || true
+# @description 历史脚本 crosslang-full-parity-cloud.yml：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
+# @author AI Assistant
+# @date 2026-11-22
+# @usage GitHub Actions workflow_dispatch 或 push/PR 触发；输入参数见 workflow inputs。
+# @dependencies Docker CLI 与已启动的守护进程；Maven 与对应 JDK；Java 运行时；GitHub Actions runner、云上数据库容器与 Secrets
+# ============================================================================
+# 文件：.github/workflows/crosslang-full-parity-cloud.yml
+# 用途：以 Java25 Boot4 为基线，对比 Python/Go/C++ 全接口 + 压测
+# 触发：workflow_dispatch
+# 思路：
+#   - baseline job 构建 target_ref（默认 *-jdk25）并运行 JUnit 契约/压测
+#   - candidate job 按 lang 构建 master 中的语言实现，启动同等端口后运行同一套 JUnit
+#   - parity_compare.py 复用现有 exact/semantic/nondet/fails 判定
+#   - compare_load.py 对 rps / p95 / p99 / error rate 做 ratio 报告
+#   - C++ 使用已验证的 CMake + vcpkg + static libstdc++ 方案
+# ============================================================================
+name: crosslang-full-parity-cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_ref:
+        description: Java25 Boot4 baseline branch
+        type: string
+        required: true
+        default: car-monit-backend-jdk25
+      app:
+        description: backend or api
+        type: choice
+        options: [backend, api]
+        default: backend
+      langs:
+        description: comma list of python,go,cpp,rust or all
+        type: string
+        default: all
+      load_threads:
+        type: string
+        default: '8'
+      load_seconds:
+        type: string
+        default: '30'
+      label:
+        type: string
+        default: java25-vs-crosslang
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crosslang-full-${{ inputs.target_ref }}-${{ inputs.app }}
+  cancel-in-progress: true
+
+env:
+  MAVEN_ARGS: -B -ntp
+  BASE_URL: http://127.0.0.1:19903
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout control harness
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          path: harness
+      - name: Checkout Java baseline
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_ref }}
+          path: src
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Start datastores
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ '${{ inputs.app }}' = 'api' ]; then
+            docker run -d --name pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=RuoYi -p 5432:5432 postgres:16-alpine
+          fi
+          docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
+          docker run -d --name rd -p 6379:6379 redis:7-alpine
+          for i in $(seq 1 90); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
+          for i in $(seq 1 30); do docker exec rd redis-cli ping >/dev/null 2>&1 && break; sleep 1; done
+          if [ '${{ inputs.app }}' = 'api' ]; then
+            for i in $(seq 1 60); do docker exec pg pg_isready -U postgres -d RuoYi >/dev/null 2>&1 && break; sleep 2; done
+            export PGPASSWORD=postgres
+            psql -h 127.0.0.1 -U postgres -d RuoYi -v ON_ERROR_STOP=1 -f harness/scripts/v3/ops/parity/sql/schema_jl_data01.sql >/dev/null
+            gunzip -c harness/scripts/v3/ops/parity/sql/seed_jl_data01.sql.gz > /tmp/seed.sql
+            psql -h 127.0.0.1 -U postgres -d RuoYi -v ON_ERROR_STOP=1 -f /tmp/seed.sql >/dev/null
+          else
+            docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/schema_carmonitdb.sql
+            docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
+          fi
+      - name: Build baseline and generate JUnit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd src
+          if [ '${{ inputs.app }}' = 'api' ]; then MODULE=pro-business-api; EP=../harness/scripts/v3/ops/parity/endpoints/api-full.txt; else MODULE=ruoyi-admin; EP=../harness/scripts/v3/ops/parity/endpoints/backend-full.txt; fi
+          mvn $MAVEN_ARGS -DskipTests -Dspring-boot.aot.skip=true -pl "$MODULE" -am package
+          mkdir -p ../out/generated ../out/classes
+          cp $(ls "$MODULE"/target/*.jar | grep -v original | head -1) ../out/app.jar
+          python3 ../harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints "$EP" --out ../out/generated
+          curl -fsSL -o ../out/junit.jar https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
+          javac -encoding UTF-8 -source 8 -target 8 -cp ../out/junit.jar -d ../out/classes ../out/generated/*.java
+      - name: Start baseline and run harness
+        shell: bash
+        env:
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
+          SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
+          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
+          SPRING__REDIS__HOST: 127.0.0.1
+          SPRING__REDIS__PORT: '6379'
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
+          TOKEN__SECRET: junit-cloud-secret-deterministic-0123456789abcdef
+          LOG_PATH: /tmp/car-monit-logs
+        run: |
+          set -euo pipefail
+          sudo mkdir -p "$LOG_PATH" /home/ruoyi/logs; sudo chown -R "$(id -u):$(id -g)" /home/ruoyi "$LOG_PATH"; mkdir -p "$LOG_PATH" /home/ruoyi/logs
+          java -jar out/app.jar --server.port=19903 --spring.main.allow-circular-references=true --spring.main.lazy-initialization=true --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration > out/app.log 2>&1 &
+          echo $! > out/app.pid
+          for i in $(seq 1 180); do
+            if curl -fsS -o /dev/null http://127.0.0.1:19903/; then echo "HTTP ready after ${i}s"; break; fi
+            if ! kill -0 "$(cat out/app.pid)" 2>/dev/null; then echo "service exited"; tail -n 160 out/app.log; exit 1; fi
+            sleep 1
+          done
+          OUT_DIR="$PWD/out" VARIANT=java25-boot4 LABEL="${{ inputs.label }}" \
+            java -jar out/junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/junit-contract-reports
+          OUT_DIR="$PWD/out" VARIANT=java25-boot4 LOAD_THREADS=${{ inputs.load_threads }} LOAD_SECONDS=${{ inputs.load_seconds }} \
+            java -jar out/junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointLoadTest --details=summary --reports-dir=out/junit-load-reports
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: crosslang-full-baseline
+          path: |
+            out/junit-contract.json
+            out/junit-load.json
+            out/junit.jar
+            out/*.log
+          retention-days: 30
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f out/app.pid ]; then kill "$(cat out/app.pid)" 2>/dev/null || true; fi
+          docker rm -f pg my rd 2>/dev/null || true
+
+  candidates:
+    needs: baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        lang: [python, go, cpp, rust]
+    steps:
+      - name: Checkout harness
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          path: harness
+      - name: Checkout candidate source
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          path: src
+      - name: Gate language
+        id: gate
+        shell: bash
+        env:
+          IN: ${{ inputs.langs }}
+          LANG: ${{ matrix.lang }}
+        run: |
+          if [ "$IN" = all ] || echo ",$IN," | grep -q ",$LANG,"; then echo run=yes >> "$GITHUB_OUTPUT"; else echo run=no >> "$GITHUB_OUTPUT"; fi
+      - name: Setup Python
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Start datastores
+        if: steps.gate.outputs.run == 'yes'
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
+          docker run -d --name rd -p 6379:6379 redis:7-alpine
+          sudo mkdir -p /home/ruoyi/logs /home/ruoyi/uploadPath
+          sudo chown -R "$(id -u):$(id -g)" /home/ruoyi
+          for i in $(seq 1 90); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/schema_carmonitdb.sql
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
+      - name: Download baseline reports
+        if: steps.gate.outputs.run == 'yes'
+        uses: actions/download-artifact@v4
+        with:
+          name: crosslang-full-baseline
+          path: baseline
+      - name: Download JUnit jar
+        if: steps.gate.outputs.run == 'yes'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f baseline/junit.jar ]; then
+            cp baseline/junit.jar out-junit.jar
+            ls -lh out-junit.jar
+            exit 0
+          fi
+          if sudo apt-get update -qq && sudo apt-get install -y -qq junit-platform-console-standalone >/dev/null 2>&1; then
+            cp /usr/share/java/junit-platform-console-standalone.jar out-junit.jar
+            ls -lh out-junit.jar
+            exit 0
+          fi
+          URL=https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
+          curl -fsSL --retry 5 --retry-delay 5 -o out-junit.jar "$URL"
+      - name: Build and start Python
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd src/car-monit-py && \
+            python3 -m pip install -q -r requirements.txt && \
+            sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' config/application.yml && \
+            TOKEN__SECRET=junit-cloud-secret-deterministic-0123456789abcdef \
+            SPRING__DATASOURCE__DRUID__MASTER__PASSWORD=root \
+            HENGDA__SECRET=pytest-only-hengda-signing-key-4d8e1a6b2f9c0357 \
+            python3 -m uvicorn app.main:app --host 127.0.0.1 --port 19903 > "$GITHUB_WORKSPACE/app.log" 2>&1) &
+          echo $! > app.pid
+      - name: Build and start Go
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'go'
+        shell: bash
+        env:
+          CARMONIT_DATABASE_DSN: "root:root@tcp(127.0.0.1:3306)/carmonitdb?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true"
+          CARMONIT_REDIS_ADDR: "127.0.0.1:6379"
+          CARMONIT_SERVER_PORT: "19903"
+          CARMONIT_TOKEN_SECRET: "junit-cloud-secret-deterministic-0123456789abcdef"
+        run: |
+          set -euo pipefail
+          cd src/car-monit-go
+          go build -o bin/car-monit-go ./cmd/server
+          ./bin/car-monit-go -c configs/config.yaml > "$GITHUB_WORKSPACE/app.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/app.pid"
+      - name: Build and start C++
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'cpp'
+        shell: bash
+        env:
+          CM_SERVER_PORT: "19903"
+        run: |
+          set -euo pipefail
+          cd src/car-monit-cpp
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DVCPKG_TARGET_TRIPLET=x64-linux \
+            -DCMAKE_EXE_LINKER_FLAGS="-static-libstdc++ -static-libgcc"
+          cmake --build build --parallel 2
+          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' configs/config.yaml 2>/dev/null || true
+          ./build/car-monit-cpp --config config > "$GITHUB_WORKSPACE/app.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/app.pid"
+      - name: Build and start Rust
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'rust'
+        shell: bash
+        env:
+          APP_DATABASE__URL: "jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8"
+          APP_DATABASE__USERNAME: root
+          APP_DATABASE__PASSWORD: root
+          APP_DATABASE__POOL__MINIDLE: '0'
+          APP_DATABASE__POOL__MAXACTIVE: '10'
+          APP_DATABASE__POOL__MAXWAIT: '30000'
+          APP_REDIS__HOST: 127.0.0.1
+          APP_REDIS__PORT: '6379'
+          APP_SERVER__PORT: '19903'
+          APP_TOKEN__SECRET: 'Y3Jvc3NsYW5nLWRldGVybWluaXN0aWMtc2VjcmV0LTAxMjM0NTY3ODkw'
+        run: |
+          set -euo pipefail
+          cd src/car-monit-rust
+          cargo build --release
+          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' src/car-monit-rust/config/application.* 2>/dev/null || true
+          ./target/release/car-monit-rust > "$GITHUB_WORKSPACE/app.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/app.pid"
+
+      - name: Wait candidate and run JUnit
+        if: steps.gate.outputs.run == 'yes'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out/generated out/classes
+          if [ '${{ inputs.app }}' = 'api' ]; then EP=harness/scripts/v3/ops/parity/endpoints/api-full.txt; else EP=harness/scripts/v3/ops/parity/endpoints/backend-full.txt; fi
+          python3 harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints "$EP" --out out/generated
+          javac -encoding UTF-8 -source 8 -target 8 -cp out-junit.jar -d out/classes out/generated/*.java
+          for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1 && break; sleep 1; done
+          OUT_DIR="$PWD/out" VARIANT="${{ matrix.lang }}" LABEL="${{ inputs.label }}" \
+            java -jar out-junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/contract-reports
+          OUT_DIR="$PWD/out" VARIANT="${{ matrix.lang }}" LOAD_THREADS=${{ inputs.load_threads }} LOAD_SECONDS=${{ inputs.load_seconds }} \
+            java -jar out-junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointLoadTest --details=summary --reports-dir=out/load-reports
+      - name: Compare contract and load
+        if: steps.gate.outputs.run == 'yes'
+        shell: bash
+        run: |
+          set -uo pipefail
+          python3 harness/scripts/v3/ops/parity/parity_compare.py \
+            --baseline baseline/junit-contract.json --candidate out/junit-contract.json \
+            --out out/contract-report.json --md out/contract-report.md \
+            --label "${{ inputs.label }}-${{ matrix.lang }}" || true
+          python3 harness/scripts/v3/ops/junit/compare_load.py \
+            --baseline baseline/junit-load.json --candidate out/junit-load.json \
+            --out out/load-report.json --md out/load-report.md \
+            --label "${{ inputs.label }}-${{ matrix.lang }}" || true
+          cat out/contract-report.md || true
+          cat out/load-report.md || true
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.gate.outputs.run == 'yes'
+        with:
+          name: crosslang-full-${{ matrix.lang }}
+          path: |
+            out/**
+            app.log
+          retention-days: 30
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f app.pid ]; then kill "$(cat app.pid)" 2>/dev/null || true; fi
+          docker rm -f my rd 2>/dev/null || true
