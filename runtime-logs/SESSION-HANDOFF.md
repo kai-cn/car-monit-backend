@@ -156,3 +156,19 @@
 - 证据 `native-crosslang-status.json`；失败迭代日志 `native-logs/` 仅作过程记录。
 - 157 个历史脚本补齐注释，复扫 0 缺失；认证不再弹账号选择框。
 - 工作记忆：api-java-V3 `.workbuddy/memory/2026-11-21.md`。
+
+## 2026-11-22 Java JUnit 与 Java25 跨语言全量验证收官
+
+- Java JUnit 全接口/压测：16/16 run success（backend 7、api 9），证据 `D:\work\runtime-logs\java-junit-results.json`。
+- Java25 Boot4 crosslang：backend `44983230639`、api `44983238487`；baseline + python/go/cpp/rust 全部 job success。
+- 证据：`D:\work\runtime-logs\crosslang-evidence.json` / `crosslang-evidence.md`；对齐差异如实记录，未用断言掩盖。
+- 本地复跑：JUnit 生成/Java8 编译 2/2、workflow YAML 4/4、脚本注释 TOTAL_MISSING 0、stub 驱动 contract/load rc=0/0 errors=0。
+- 关键修复：AOT skip、sudo 日志目录、Corretto 8、lazy init/Kafka exclude、artifact 携带 JUnit jar、候选启动命令与环境修正。
+
+## 2026-11-22 最终全量验证报告引用
+
+- 最终报告：`docs/v3/review/13-final-junit-crosslang-20261122.md`
+- Java JUnit：16/16 success。
+- crosslang workflow：backend `44983230639`、api `44983238487`，baseline + python/go/cpp/rust 全部 job success。
+- 对齐差异与压测比值为 artifact 真实记录，未用断言掩盖。
+

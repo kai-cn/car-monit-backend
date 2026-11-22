@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Operational helper — native/CICD verification session (2026-11-16~17).
+# Purpose: Operational helper created during the native/CICD verification session.
+# Risk: may call GitHub API or modify local/remote files; inspect before running.
+set -u
+: "${CM_TOKEN:?}"
+K="docker exec k3d-v3-server-0 kubectl"
+echo "=== secret ==="
+$K get secret car-monit-cluster-secrets 2>&1 | head -3
+echo "=== wait 1+1 ==="
+for i in $(seq 1 24); do
+  sleep 10
+  d=$($K get deploy car-monit-api car-monit-backend --no-headers 2>/dev/null)
+  echo "poll $i: $(echo "$d" | tr '\n' ' ')"
+  r=$(echo "$d" | awk '{s+=$3} END{print s}')
+  [ "${r:-0}" = "2" ] && { echo "1+1 READY"; break; }
+done
+echo "=== endpoints ==="
+curl -s -o /dev/null -w 'api no-token=%{http_code}\n' -m 15 http://172.18.0.2:30902/api/v3/es/readiness
+curl -s -o /dev/null -w 'api with-token=%{http_code}\n' -m 15 -H "X-Internal-Token: $CM_TOKEN" http://172.18.0.2:30902/api/v3/es/readiness
+curl -s -o /dev/null -w 'backend captcha=%{http_code}\n' -m 15 http://172.18.0.2:30989/captchaImage
+curl -s -m 20 -H "X-Internal-Token: $CM_TOKEN" 'http://172.18.0.2:30902/base/section/list?pageNum=1&pageSize=3' | head -c 90; echo
+echo "=== pod memory ==="
+for n in k3d-v3-server-0 k3d-v3-agent-0 k3d-v3-agent-1; do
+  docker exec "$n" crictl stats -o json 2>/dev/null | jq -r '.stats[]? | select(.attributes.metadata.name | test("backend|api")) | [.attributes.metadata.name, ((.memory.workingSetBytes.value // 0) | tonumber / 1048576 | floor | tostring)] | @tsv' 2>/dev/null | head -6
+done
+echo "=== WSL memory ==="
+free -h | head -2

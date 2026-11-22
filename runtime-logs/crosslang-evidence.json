@@ -1,0 +1,588 @@
+{
+  "backend": {
+    "baseline": {
+      "contract_totals": null,
+      "load_rows": null,
+      "load_error_rate": null,
+      "raw_load": {
+        "total_requests": 464304,
+        "rps": 15476.8,
+        "avg_latency_ms": 0.6261178021296392,
+        "p95_ms": 1,
+        "p99_ms": 3,
+        "errors": 0,
+        "business_4xx": 0,
+        "business_5xx": 0
+      }
+    },
+    "python": {
+      "contract_totals": {
+        "endpoints": 302,
+        "status_match": 302,
+        "exact": 301,
+        "semantic": 301,
+        "nondet": 1,
+        "baseline_skip": 0,
+        "fails": 0
+      },
+      "load_rows": [
+        {
+          "metric": "total_requests",
+          "baseline": 464304,
+          "candidate": 39273,
+          "candidate_over_baseline": 0.0846
+        },
+        {
+          "metric": "rps",
+          "baseline": 15476.8,
+          "candidate": 1309.1,
+          "candidate_over_baseline": 0.0846
+        },
+        {
+          "metric": "avg_latency_ms",
+          "baseline": 0.6261178021296392,
+          "candidate": 6.516028823873908,
+          "candidate_over_baseline": 10.407
+        },
+        {
+          "metric": "p50_ms",
+          "baseline": 0,
+          "candidate": 6,
+          "candidate_over_baseline": null
+        },
+        {
+          "metric": "p95_ms",
+          "baseline": 1,
+          "candidate": 8,
+          "candidate_over_baseline": 8.0
+        },
+        {
+          "metric": "p99_ms",
+          "baseline": 3,
+          "candidate": 17,
+          "candidate_over_baseline": 5.6667
+        },
+        {
+          "metric": "errors",
+          "baseline": 0,
+          "candidate": 0,
+          "candidate_over_baseline": null
+        }
+      ],
+      "load_error_rate": {
+        "baseline": 0.0,
+        "candidate": 0.0
+      },
+      "raw_load": {
+        "total_requests": 39273,
+        "rps": 1309.1,
+        "avg_latency_ms": 6.516028823873908,
+        "p95_ms": 8,
+        "p99_ms": 17,
+        "errors": 0,
+        "business_4xx": 0,
+        "business_5xx": 0
+      }
+    },
+    "go": {
+      "contract_totals": {
+        "endpoints": 302,
+        "status_match": 297,
+        "exact": 292,
+        "semantic": 292,
+        "nondet": 1,
+        "baseline_skip": 0,
+        "fails": 9
+      },
+      "load_rows": [
+        {
+          "metric": "total_requests",
+          "baseline": 464304,
+          "candidate": 1136782,
+          "candidate_over_baseline": 2.4484
+        },
+        {
+          "metric": "rps",
+          "baseline": 15476.8,
+          "candidate": 37892.73333333333,
+          "candidate_over_baseline": 2.4484
+        },
+        {
+          "metric": "avg_latency_ms",
+          "baseline": 0.6261178021296392,
+          "candidate": 0.22496045855757743,
+          "candidate_over_baseline": 0.3593
+        },
+        {
+          "metric": "p50_ms",
+          "baseline": 0,
+          "candidate": 0,
+          "candidate_over_baseline": null
+        },
+        {
+          "metric": "p95_ms",
+          "baseline": 1,
+          "candidate": 1,
+          "candidate_over_baseline": 1.0
+        },
+        {
+          "metric": "p99_ms",
+          "baseline": 3,
+          "candidate": 1,
+          "candidate_over_baseline": 0.3333
+        },
+        {
+          "metric": "errors",
+          "baseline": 0,
+          "candidate": 0,
+          "candidate_over_baseline": null
+        }
+      ],
+      "load_error_rate": {
+        "baseline": 0.0,
+        "candidate": 0.0
+      },
+      "raw_load": {
+        "total_requests": 1136782,
+        "rps": 37892.73333333333,
+        "avg_latency_ms": 0.22496045855757743,
+        "p95_ms": 1,
+        "p99_ms": 1,
+        "errors": 0,
+        "business_4xx": 18740,
+        "business_5xx": 0
+      }
+    },
+    "cpp": {
+      "contract_totals": {
+        "endpoints": 302,
+        "status_match": 302,
+        "exact": 295,
+        "semantic": 295,
+        "nondet": 1,
+        "baseline_skip": 0,
+        "fails": 6
+      },
+      "load_rows": [
+        {
+          "metric": "total_requests",
+          "baseline": 464304,
+          "candidate": 847395,
+          "candidate_over_baseline": 1.8251
+        },
+        {
+          "metric": "rps",
+          "baseline": 15476.8,
+          "candidate": 28246.5,
+          "candidate_over_baseline": 1.8251
+        },
+        {
+          "metric": "avg_latency_ms",
+          "baseline": 0.6261178021296392,
+          "candidate": 0.30178488190277264,
+          "candidate_over_baseline": 0.482
+        },
+        {
+          "metric": "p50_ms",
+          "baseline": 0,
+          "candidate": 0,
+          "candidate_over_baseline": null
+        },
+        {
+          "metric": "p95_ms",
+          "baseline": 1,
+          "candidate": 1,
+          "candidate_over_baseline": 1.0
+        },
+        {
+          "metric": "p99_ms",
+          "baseline": 3,
+          "candidate": 1,
+          "candidate_over_baseline": 0.3333
+        },
+        {
+          "metric": "errors",
+          "baseline": 0,
+          "candidate": 0,
+          "candidate_over_baseline": null
+        }
+      ],
+      "load_error_rate": {
+        "baseline": 0.0,
+        "candidate": 0.0
+      },
+      "raw_load": {
+        "total_requests": 847395,
+        "rps": 28246.5,
+        "avg_latency_ms": 0.30178488190277264,
+        "p95_ms": 1,
+        "p99_ms": 1,
+        "errors": 0,
+        "business_4xx": 0,
+        "business_5xx": 0
+      }
+    },
+    "rust": {
+      "contract_totals": {
+        "endpoints": 302,
+        "status_match": 302,
+        "exact": 301,
+        "semantic": 301,
+        "nondet": 1,
+        "baseline_skip": 0,
+        "fails": 0
+      },
+      "load_rows": [
+        {
+          "metric": "total_requests",
+          "baseline": 464304,
+          "candidate": 1509643,
+          "candidate_over_baseline": 3.2514
+        },
+        {
+          "metric": "rps",
+          "baseline": 15476.8,
+          "candidate": 50321.433333333334,
+          "candidate_over_baseline": 3.2514
+        },
+        {
+          "metric": "avg_latency_ms",
+          "baseline": 0.6261178021296392,
+          "candidate": 0.16930360356720098,
+          "candidate_over_baseline": 0.2704
+        },
+        {
+          "metric": "p50_ms",
+          "baseline": 0,
+          "candidate": 0,
+          "candidate_over_baseline": null
+        },
+        {
+          "metric": "p95_ms",
+          "baseline": 1,
+          "candidate": 1,
+          "candidate_over_baseline": 1.0
+        },
+        {
+          "metric": "p99_ms",
+          "baseline": 3,
+          "candidate": 1,
+          "candidate_over_baseline": 0.3333
+        },
+        {
+          "metric": "errors",
+          "baseline": 0,
+          "candidate": 0,
+          "candidate_over_baseline": null
+        }
+      ],
+      "load_error_rate": {
+        "baseline": 0.0,
+        "candidate": 0.0
+      },
+      "raw_load": {
+        "total_requests": 1509643,
+        "rps": 50321.433333333334,
+        "avg_latency_ms": 0.16930360356720098,
+        "p95_ms": 1,
+        "p99_ms": 1,
+        "errors": 0,
+        "business_4xx": 0,
+        "business_5xx": 0
+      }
+    }
+  },
+  "api": {
+    "baseline": {
+      "contract_totals": null,
+      "load_rows": null,
+      "load_error_rate": null,
+      "raw_load": {
+        "total_requests": 13899,
+        "rps": 463.3,
+        "avg_latency_ms": 18.425857975393914,
+        "p95_ms": 65,
+        "p99_ms": 143,
+        "errors": 0,
+        "business_4xx": 1059,
+        "business_5xx": 606
+      }
+    },
+    "python": {
+      "contract_totals": {
+        "endpoints": 79,
+        "status_match": 77,
+        "exact": 19,
+        "semantic": 52,
+        "nondet": 10,
+        "baseline_skip": 0,
+        "fails": 17
+      },
+      "load_rows": [
+        {
+          "metric": "total_requests",
+          "baseline": 13899,
+          "candidate": 1771,
+          "candidate_over_baseline": 0.1274
+        },
+        {
+          "metric": "rps",
+          "baseline": 463.3,
+          "candidate": 59.03333333333333,
+          "candidate_over_baseline": 0.1274
+        },
+        {
+          "metric": "avg_latency_ms",
+          "baseline": 18.425857975393914,
+          "candidate": 144.9107848673066,
+          "candidate_over_baseline": 7.8645
+        },
+        {
+          "metric": "p50_ms",
+          "baseline": 10,
+          "candidate": 129,
+          "candidate_over_baseline": 12.9
+        },
+        {
+          "metric": "p95_ms",
+          "baseline": 65,
+          "candidate": 338,
+          "candidate_over_baseline": 5.2
+        },
+        {
+          "metric": "p99_ms",
+          "baseline": 143,
+          "candidate": 407,
+          "candidate_over_baseline": 2.8462
+        },
+        {
+          "metric": "errors",
+          "baseline": 0,
+          "candidate": 0,
+          "candidate_over_baseline": null
+        }
+      ],
+      "load_error_rate": {
+        "baseline": 0.0,
+        "candidate": 0.0
+      },
+      "raw_load": {
+        "total_requests": 1771,
+        "rps": 59.03333333333333,
+        "avg_latency_ms": 144.9107848673066,
+        "p95_ms": 338,
+        "p99_ms": 407,
+        "errors": 0,
+        "business_4xx": 137,
+        "business_5xx": 91
+      }
+    },
+    "go": {
+      "contract_totals": {
+        "endpoints": 79,
+        "status_match": 0,
+        "exact": 18,
+        "semantic": 18,
+        "nondet": 0,
+        "baseline_skip": 0,
+        "fails": 79
+      },
+      "load_rows": [
+        {
+          "metric": "total_requests",
+          "baseline": 13899,
+          "candidate": 1684625,
+          "candidate_over_baseline": 121.2048
+        },
+        {
+          "metric": "rps",
+          "baseline": 463.3,
+          "candidate": 56154.166666666664,
+          "candidate_over_baseline": 121.2048
+        },
+        {
+          "metric": "avg_latency_ms",
+          "baseline": 18.425857975393914,
+          "candidate": 0.15165096089634192,
+          "candidate_over_baseline": 0.0082
+        },
+        {
+          "metric": "p50_ms",
+          "baseline": 10,
+          "candidate": 0,
+          "candidate_over_baseline": 0.0
+        },
+        {
+          "metric": "p95_ms",
+          "baseline": 65,
+          "candidate": 1,
+          "candidate_over_baseline": 0.0154
+        },
+        {
+          "metric": "p99_ms",
+          "baseline": 143,
+          "candidate": 1,
+          "candidate_over_baseline": 0.007
+        },
+        {
+          "metric": "errors",
+          "baseline": 0,
+          "candidate": 1684625,
+          "candidate_over_baseline": null
+        }
+      ],
+      "load_error_rate": {
+        "baseline": 0.0,
+        "candidate": 1.0
+      },
+      "raw_load": {
+        "total_requests": 1684625,
+        "rps": 56154.166666666664,
+        "avg_latency_ms": 0.15165096089634192,
+        "p95_ms": 1,
+        "p99_ms": 1,
+        "errors": 1684625,
+        "business_4xx": 0,
+        "business_5xx": 0
+      }
+    },
+    "cpp": {
+      "contract_totals": {
+        "endpoints": 79,
+        "status_match": 75,
+        "exact": 31,
+        "semantic": 41,
+        "nondet": 9,
+        "baseline_skip": 0,
+        "fails": 29
+      },
+      "load_rows": [
+        {
+          "metric": "total_requests",
+          "baseline": 13899,
+          "candidate": 12102,
+          "candidate_over_baseline": 0.8707
+        },
+        {
+          "metric": "rps",
+          "baseline": 463.3,
+          "candidate": 403.4,
+          "candidate_over_baseline": 0.8707
+        },
+        {
+          "metric": "avg_latency_ms",
+          "baseline": 18.425857975393914,
+          "candidate": 21.163939844653775,
+          "candidate_over_baseline": 1.1486
+        },
+        {
+          "metric": "p50_ms",
+          "baseline": 10,
+          "candidate": 9,
+          "candidate_over_baseline": 0.9
+        },
+        {
+          "metric": "p95_ms",
+          "baseline": 65,
+          "candidate": 61,
+          "candidate_over_baseline": 0.9385
+        },
+        {
+          "metric": "p99_ms",
+          "baseline": 143,
+          "candidate": 97,
+          "candidate_over_baseline": 0.6783
+        },
+        {
+          "metric": "errors",
+          "baseline": 0,
+          "candidate": 0,
+          "candidate_over_baseline": null
+        }
+      ],
+      "load_error_rate": {
+        "baseline": 0.0,
+        "candidate": 0.0
+      },
+      "raw_load": {
+        "total_requests": 12102,
+        "rps": 403.4,
+        "avg_latency_ms": 21.163939844653775,
+        "p95_ms": 61,
+        "p99_ms": 97,
+        "errors": 0,
+        "business_4xx": 918,
+        "business_5xx": 0
+      }
+    },
+    "rust": {
+      "contract_totals": {
+        "endpoints": 79,
+        "status_match": 0,
+        "exact": 18,
+        "semantic": 18,
+        "nondet": 0,
+        "baseline_skip": 0,
+        "fails": 79
+      },
+      "load_rows": [
+        {
+          "metric": "total_requests",
+          "baseline": 13899,
+          "candidate": 5285038,
+          "candidate_over_baseline": 380.2459
+        },
+        {
+          "metric": "rps",
+          "baseline": 463.3,
+          "candidate": 176167.93333333332,
+          "candidate_over_baseline": 380.2459
+        },
+        {
+          "metric": "avg_latency_ms",
+          "baseline": 18.425857975393914,
+          "candidate": 0.048177137042344824,
+          "candidate_over_baseline": 0.0026
+        },
+        {
+          "metric": "p50_ms",
+          "baseline": 10,
+          "candidate": 0,
+          "candidate_over_baseline": 0.0
+        },
+        {
+          "metric": "p95_ms",
+          "baseline": 65,
+          "candidate": 0,
+          "candidate_over_baseline": 0.0
+        },
+        {
+          "metric": "p99_ms",
+          "baseline": 143,
+          "candidate": 1,
+          "candidate_over_baseline": 0.007
+        },
+        {
+          "metric": "errors",
+          "baseline": 0,
+          "candidate": 5285038,
+          "candidate_over_baseline": null
+        }
+      ],
+      "load_error_rate": {
+        "baseline": 0.0,
+        "candidate": 1.0
+      },
+      "raw_load": {
+        "total_requests": 5285038,
+        "rps": 176167.93333333332,
+        "avg_latency_ms": 0.048177137042344824,
+        "p95_ms": 0,
+        "p99_ms": 1,
+        "errors": 5285038,
+        "business_4xx": 0,
+        "business_5xx": 0
+      }
+    }
+  }
+}

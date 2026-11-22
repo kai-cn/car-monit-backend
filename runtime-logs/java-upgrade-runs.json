@@ -1,0 +1,178 @@
+[
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "master",
+    "workflow": "java-upgrade-verify.yml",
+    "id": 425224669,
+    "status": "completed",
+    "run_id": 44778467874,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:08Z",
+    "updated_at": "2026-11-20T16:58:40Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "car-monit-api-java-V3",
+    "workflow": "java-upgrade-verify.yml",
+    "id": 425224669,
+    "status": "completed",
+    "run_id": 44778473486,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:10Z",
+    "updated_at": "2026-11-20T17:00:59Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "car-monit-api-java-fix",
+    "workflow": "java-upgrade-verify.yml",
+    "id": 425224669,
+    "status": "completed",
+    "run_id": 44779227325,
+    "conclusion": "success",
+    "created_at": "2026-11-20T17:01:42Z",
+    "updated_at": "2026-11-20T17:02:10Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "car-monit-api-jdk17",
+    "workflow": "parity-verify-cloud.yml",
+    "id": 420793840,
+    "status": "completed",
+    "run_id": 44778482704,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:14Z",
+    "updated_at": "2026-11-20T17:02:03Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "car-monit-api-jdk21",
+    "workflow": "parity-verify-cloud.yml",
+    "id": 420793840,
+    "status": "completed",
+    "run_id": 44778487362,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:16Z",
+    "updated_at": "2026-11-20T17:03:10Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "car-monit-api-jdk25",
+    "workflow": "parity-verify-cloud.yml",
+    "id": 420793840,
+    "status": "completed",
+    "run_id": 44778493003,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:18Z",
+    "updated_at": "2026-11-20T17:08:00Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "feature/springboot3",
+    "workflow": "parity-verify-cloud.yml",
+    "id": 420793840,
+    "status": "completed",
+    "run_id": 44778497480,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:19Z",
+    "updated_at": "2026-11-20T17:10:18Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "feature/springboot3-jdk17",
+    "workflow": "parity-verify-cloud.yml",
+    "id": 420793840,
+    "status": "completed",
+    "run_id": 44778502719,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:21Z",
+    "updated_at": "2026-11-20T17:07:50Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "feature-dbupgrade",
+    "workflow": "parity-verify-cloud.yml",
+    "id": 420793840,
+    "status": "completed",
+    "run_id": 44778507073,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:23Z",
+    "updated_at": "2026-11-20T17:13:46Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "master",
+    "workflow": "java-upgrade-verify.yml",
+    "id": 425224352,
+    "status": "completed",
+    "run_id": 44778512814,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:25Z",
+    "updated_at": "2026-11-20T17:00:47Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "car-monit-backend-java-V3",
+    "workflow": "java-upgrade-verify.yml",
+    "id": 425224352,
+    "status": "completed",
+    "run_id": 44778519089,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:27Z",
+    "updated_at": "2026-11-20T16:58:11Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "car-monit-backend-jdk17",
+    "workflow": "parity-verify-cloud.yml",
+    "id": 420796691,
+    "status": "completed",
+    "run_id": 44778523688,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:29Z",
+    "updated_at": "2026-11-20T17:04:38Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "car-monit-backend-jdk21",
+    "workflow": "parity-verify-cloud.yml",
+    "id": 420796691,
+    "status": "completed",
+    "run_id": 44778528104,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:31Z",
+    "updated_at": "2026-11-20T17:06:32Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "car-monit-backend-jdk25",
+    "workflow": "parity-verify-cloud.yml",
+    "id": 420796691,
+    "status": "completed",
+    "run_id": 44778532730,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:32Z",
+    "updated_at": "2026-11-20T17:17:09Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "feat/backend-full-parity",
+    "workflow": "java-upgrade-verify.yml",
+    "id": 425224352,
+    "status": "completed",
+    "run_id": 44778536413,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:34Z",
+    "updated_at": "2026-11-20T16:59:50Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "feature-dbupgrade",
+    "workflow": "parity-verify-cloud.yml",
+    "id": 420796691,
+    "status": "completed",
+    "run_id": 44778541611,
+    "conclusion": "success",
+    "created_at": "2026-11-20T16:57:36Z",
+    "updated_at": "2026-11-20T17:12:22Z"
+  }
+]
