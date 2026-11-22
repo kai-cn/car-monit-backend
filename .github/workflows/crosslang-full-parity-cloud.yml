@@ -118,9 +118,13 @@ jobs:
         run: |
           set -euo pipefail
           sudo mkdir -p "$LOG_PATH" /home/ruoyi/logs; sudo chown -R "$(id -u):$(id -g)" /home/ruoyi "$LOG_PATH"; mkdir -p "$LOG_PATH" /home/ruoyi/logs
-          java -jar out/app.jar --server.port=19903 > out/app.log 2>&1 &
+          java -jar out/app.jar --server.port=19903 --spring.main.allow-circular-references=true --spring.main.lazy-initialization=true --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration > out/app.log 2>&1 &
           echo $! > out/app.pid
-          for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1 && break; sleep 1; done
+          for i in $(seq 1 180); do
+            if curl -fsS -o /dev/null http://127.0.0.1:19903/; then echo "HTTP ready after ${i}s"; break; fi
+            if ! kill -0 "$(cat out/app.pid)" 2>/dev/null; then echo "service exited"; tail -n 160 out/app.log; exit 1; fi
+            sleep 1
+          done
           OUT_DIR="$PWD/out" VARIANT=java25-boot4 LABEL="${{ inputs.label }}" \
             java -jar out/junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/junit-contract-reports
           OUT_DIR="$PWD/out" VARIANT=java25-boot4 LOAD_THREADS=${{ inputs.load_threads }} LOAD_SECONDS=${{ inputs.load_seconds }} \
