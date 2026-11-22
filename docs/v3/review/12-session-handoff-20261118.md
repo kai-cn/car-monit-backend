@@ -31,3 +31,16 @@
   - `wsl-retest-evidence/junit-contract.json`、`junit-load.json`：本机 302/302、145354 请求、0 errors。
 - 待办：F1/F2 用户侧真实凭据外部轮换与 Secrets 更新。
 
+
+## 2026-11-22 生产级注释、复现与证据索引
+
+- 已办：历史脚本与新生成工程代码统一补齐生产级文件头；Python 关键函数补中文 docstring；生成 Java 套件补 Javadoc。
+- 校验：`MISSING_HEADERS 0`、`PYTHON_SYNTAX_ERRORS 0`；`bad-selfhosted.yml` 为负向审计样本，YAML 解析失败是预期。
+- 从头复现：`D:\work\runtime-logs\从头复现步骤-20261122.md`，覆盖云端 JUnit、跨语言、本机打包、WSL 服务复测、注释校验。
+- 测试与压测证据：
+  - `java-junit-results.json`：16/16 cloud success。
+  - `crosslang-full-results.json` / `crosslang-evidence.json`：跨语言 workflow 与真实对齐差异。
+  - `local-package-evidence/local-package-results.json`：本机 16/16 打包成功。
+  - `wsl-retest-evidence/junit-contract.json`、`junit-load.json`：本机 302/302、145354 请求、0 errors。
+- 待办：F1/F2 用户侧真实凭据外部轮换与 Secrets 更新。
+
