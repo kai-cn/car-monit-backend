@@ -200,13 +200,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if sudo apt-get update -qq && sudo apt-get install -y -qq junit-platform-console-standalone >/dev/null 2>&1; then
+            cp /usr/share/java/junit-platform-console-standalone.jar out-junit.jar
+            ls -lh out-junit.jar
+            exit 0
+          fi
           URL=https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
-          for i in 1 2 3 4; do
-            if curl -fsSL -o out-junit.jar "$URL"; then exit 0; fi
-            echo "junit download retry $i"; sleep $((i*5))
-          done
-          URL=https://repo2.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
-          curl -fsSL --retry 3 --retry-delay 5 -o out-junit.jar "$URL"
+          curl -fsSL --retry 5 --retry-delay 5 -o out-junit.jar "$URL"
       - name: Build and start Python
         if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
         shell: bash
