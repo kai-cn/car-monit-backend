@@ -230,6 +230,9 @@ jobs:
         shell: bash
         env:
           TOKEN__SECRET: junit-cloud-secret-deterministic-0123456789abcdef
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: "jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false"
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
           VEHICLE_MONITOR_BASE_URL: "http://127.0.0.1:9902"
           APP_VEHICLEMONITOR__BASEURL: "http://127.0.0.1:9902"
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
