@@ -10,6 +10,7 @@ import argparse
 import json
 import re
 import sys
+import urllib.error
 import urllib.request
 
 
@@ -26,8 +27,14 @@ def main() -> None:
     req = urllib.request.Request(a.base_url.rstrip('/') + '/login', data=body,
                                  headers={'Content-Type': 'application/json', 'Accept': 'application/json'},
                                  method='POST')
-    with urllib.request.urlopen(req, timeout=30) as r:
-        text = r.read().decode('utf-8', errors='replace')
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            text = r.read().decode('utf-8', errors='replace')
+    except urllib.error.HTTPError as e:
+        # api 服务未暴露 /login；跳过 Header，由基线/候选统一按匿名响应对拍。
+        if e.code == 404:
+            return
+        raise
     m = re.search(r'"token"\s*:\s*"([^"]+)"', text)
     if not m:
         raise SystemExit('Login response has no token: ' + text[:200])

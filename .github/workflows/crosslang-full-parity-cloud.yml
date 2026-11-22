@@ -107,6 +107,7 @@ jobs:
           SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
           SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
+          SPRING__DATASOURCE__DRUID__MASTER__DRIVERCLASSNAME: com.mysql.cj.jdbc.Driver
           SPRING__REDIS__HOST: 127.0.0.1
           SPRING__REDIS__PORT: '6379'
           SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false
@@ -123,7 +124,7 @@ jobs:
           echo $! > out/app.pid
           for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1 && break; sleep 1; done
           TOKEN=$(python3 harness/scripts/v3/ops/junit/junit-auth-token.py --base-url "$BASE_URL")
-          export ENDPOINT_HEADERS="Authorization: Bearer ${TOKEN}"
+          if [ -n "$TOKEN" ]; then export ENDPOINT_HEADERS="Authorization: Bearer ${TOKEN}"; fi
           OUT_DIR="$PWD/out" VARIANT=java-master LABEL="${{ inputs.label }}" java -jar out/junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/contract-reports
           OUT_DIR="$PWD/out" VARIANT=java-master LOAD_THREADS=${{ inputs.load_threads }} LOAD_SECONDS=${{ inputs.load_seconds }} java -jar out/junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointLoadTest --details=summary --reports-dir=out/load-reports
       - uses: actions/upload-artifact@v4
@@ -219,6 +220,7 @@ jobs:
         env:
           TOKEN__SECRET: junit-cloud-secret-deterministic-0123456789abcdef
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
+          SPRING__DATASOURCE__DRUID__MASTER__DRIVERCLASSNAME: com.mysql.cj.jdbc.Driver
           HENGDA__SECRET: pytest-only-hengda-signing-key-4d8e1a6b2f9c0357
         run: |
           set -euo pipefail
@@ -296,7 +298,7 @@ jobs:
           javac -encoding UTF-8 -source 8 -target 8 -cp out-junit.jar -d out/classes out/generated/*.java
           for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1 && break; sleep 1; done
           TOKEN=$(python3 harness/scripts/v3/ops/junit/junit-auth-token.py --base-url "$BASE_URL")
-          export ENDPOINT_HEADERS="Authorization: Bearer ${TOKEN}"
+          if [ -n "$TOKEN" ]; then export ENDPOINT_HEADERS="Authorization: Bearer ${TOKEN}"; fi
           OUT_DIR="$PWD/out" VARIANT="${{ matrix.lang }}" LABEL="${{ inputs.label }}" java -jar out-junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/contract-reports
           OUT_DIR="$PWD/out" VARIANT="${{ matrix.lang }}" LOAD_THREADS=${{ inputs.load_threads }} LOAD_SECONDS=${{ inputs.load_seconds }} java -jar out-junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointLoadTest --details=summary --reports-dir=out/load-reports
       - name: Compare contract and load
