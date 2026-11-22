@@ -217,6 +217,7 @@ jobs:
           CARMONIT_DATABASE_DSN: "root:root@tcp(127.0.0.1:3306)/carmonitdb?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true"
           CARMONIT_REDIS_ADDR: "127.0.0.1:6379"
           CARMONIT_SERVER_PORT: "19903"
+          CARMONIT_TOKEN_SECRET: "junit-cloud-secret-deterministic-0123456789abcdef"
         run: |
           set -euo pipefail
           cd src/car-monit-go
@@ -236,7 +237,7 @@ jobs:
             -DVCPKG_TARGET_TRIPLET=x64-linux \
             -DCMAKE_EXE_LINKER_FLAGS="-static-libstdc++ -static-libgcc"
           cmake --build build --parallel 2
-          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' config/application.yaml || true
+          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' configs/config.yaml 2>/dev/null || true
           ./build/car-monit-cpp --config config > "$GITHUB_WORKSPACE/app.log" 2>&1 &
           echo $! > "$GITHUB_WORKSPACE/app.pid"
       - name: Build and start Rust
