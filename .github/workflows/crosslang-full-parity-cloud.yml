@@ -269,6 +269,7 @@ jobs:
           APP_REDIS__HOST: 127.0.0.1
           APP_REDIS__PORT: '6379'
           APP_SERVER__PORT: '19903'
+          APP_TOKEN__SECRET: 'Y3Jvc3NsYW5nLWRldGVybWluaXN0aWMtc2VjcmV0LTAxMjM0NTY3ODkw'
         run: |
           set -euo pipefail
           cd src/car-monit-rust
