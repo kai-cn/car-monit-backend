@@ -336,7 +336,7 @@ class MasterDataSourceSection(_Section):
     """``spring.datasource.druid.master.*`` -- Druid master pool."""
 
     url: str = (
-        "jdbc:p6spy:mysql://127.0.0.1:3307/carmonitdb?useUnicode=true&characterEncoding=utf8"
+        "jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8"
         "&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowMultiQueries=true"
     )
     username: str = "root"
