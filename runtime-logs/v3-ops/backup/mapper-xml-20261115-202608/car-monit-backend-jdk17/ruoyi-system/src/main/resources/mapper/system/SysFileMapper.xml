@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.SysFileMapper">
+    
+    <resultMap type="SysFile" id="SysFileResult">
+        <result property="id"    column="id"    />
+        <result property="fileName"    column="file_name"    />
+        <result property="bucketName"    column="bucket_name"    />
+        <result property="original"    column="original"    />
+        <result property="type"    column="type"    />
+        <result property="fileSize"    column="file_size"    />
+        <result property="bussType"    column="buss_type"    />
+        <result property="bussName"    column="buss_name"    />
+        <result property="createUser"    column="create_user"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateUser"    column="update_user"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="tenantId"    column="tenant_id"    />
+    </resultMap>
+
+    <sql id="selectSysFileVo">
+         t.id, t.file_name, t.bucket_name, t.original, t.type, t.file_size,t.buss_type, t.buss_name,
+         t.create_user, t.create_time, t.update_user, t.update_time, t.del_flag, t.tenant_id
+    </sql>
+
+    <select id="selectSysFileList" parameterType="SysFile" resultMap="SysFileResult">
+        select
+        <include refid="selectSysFileVo"/>
+        from sys_file t
+        where t.del_flag = '0'
+            <if test="id != null  and id != ''"> and t.id = #{id}</if>
+            <if test="fileName != null  and fileName != ''"> and t.file_name like concat('%', #{fileName}, '%')</if>
+            <if test="bucketName != null  and bucketName != ''"> and t.bucket_name like concat('%', #{bucketName}, '%')</if>
+            <if test="original != null  and original != ''"> and t.original = #{original}</if>
+            <if test="type != null  and type != ''"> and t.type = #{type}</if>
+            <if test="fileSize != null "> and t.file_size = #{fileSize}</if>
+            <if test="bussType != null  and bussType != ''"> and t.buss_type = #{bussType}</if>
+            <if test="bussName != null  and bussName != ''"> and t.buss_name like concat('%', #{bussName}, '%')</if>
+            <if test="createUser != null  and createUser != ''"> and t.create_user = #{createUser}</if>
+            <if test="updateUser != null  and updateUser != ''"> and t.update_user = #{updateUser}</if>
+            <if test="tenantId != null "> and t.tenant_id = #{tenantId}</if>
+          order by t.create_time desc,t.id
+    </select>
+
+    <select id="selectSysFileById" parameterType="Long" resultMap="SysFileResult">
+        select
+        <include refid="selectSysFileVo"/>
+        from sys_file t
+        where t.id = #{id}
+    </select>
+    <select id="selectSysFileByIds" parameterType="String" resultMap="SysFileResult">
+        select
+        <include refid="selectSysFileVo"/>,
+        t2.nick_name createUserName
+        from sys_file t
+        left join sys_user t2 on t.create_user = t2.user_id and t2.del_flag='0'
+        where t.id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        order by t.id
+    </select>
+        
+    <insert id="insertSysFile" parameterType="SysFile" useGeneratedKeys="true" keyProperty="id">
+        insert into sys_file
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="fileName != null">file_name,</if>
+            <if test="bucketName != null">bucket_name,</if>
+            <if test="original != null">original,</if>
+            <if test="type != null">type,</if>
+            <if test="fileSize != null">file_size,</if>
+            <if test="bussType != null">buss_type,</if>
+            <if test="bussName != null">buss_name,</if>
+            <if test="createUser != null">create_user,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateUser != null">update_user,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="tenantId != null">tenant_id,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="fileName != null">#{fileName},</if>
+            <if test="bucketName != null">#{bucketName},</if>
+            <if test="original != null">#{original},</if>
+            <if test="type != null">#{type},</if>
+            <if test="fileSize != null">#{fileSize},</if>
+            <if test="bussType != null">#{bussType},</if>
+            <if test="bussName != null">#{bussName},</if>
+            <if test="createUser != null">#{createUser},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateUser != null">#{updateUser},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="tenantId != null">#{tenantId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateSysFile" parameterType="SysFile">
+        update sys_file
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="fileName != null">file_name = #{fileName},</if>
+            <if test="bucketName != null">bucket_name = #{bucketName},</if>
+            <if test="original != null">original = #{original},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="fileSize != null">file_size = #{fileSize},</if>
+            <if test="bussType != null">buss_type = #{bussType},</if>
+            <if test="bussName != null">buss_name = #{bussName},</if>
+            <if test="createUser != null">create_user = #{createUser},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateUser != null">update_user = #{updateUser},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="tenantId != null">tenant_id = #{tenantId},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <update id="deleteSysFileById" parameterType="Long">
+        update sys_file set del_flag = '1' where id = #{id}
+    </update>
+
+    <update id="deleteSysFileByIds" parameterType="String">
+        update sys_file set del_flag = '1' where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+
+    <delete id="deleteSysFileByIdNew" parameterType="Long">
+        delete from  sys_file  where id = #{id}
+    </delete>
+
+    <update id="updateCAFile" parameterType="Long">
+        update sys_file set id = 3001 where id = #{id}
+    </update>
+</mapper>

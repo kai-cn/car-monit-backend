@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>ruoyi</artifactId>
+        <groupId>com.ruoyi</groupId>
+        <version>3.8.7</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <packaging>jar</packaging>
+    <artifactId>ruoyi-admin</artifactId>
+
+    <description>
+        web服务入口
+    </description>
+
+    <dependencies>
+
+        <!-- Kafka -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
+        <!-- Elasticsearch -->
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
+        </dependency>
+
+        <!-- mybatis sql打印完整的调试 -->
+        <dependency>
+            <groupId>p6spy</groupId>
+            <artifactId>p6spy</artifactId>
+            <version>${p6spy.version}</version>
+        </dependency>
+
+        <!-- spring-boot-devtools -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional> <!-- 表示依赖不会传递 -->
+        </dependency>
+
+        <!-- OpenAPI 3 文档（springdoc；替代在 Boot 3/4 下无法启动的 springfox 3.0.0） -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+
+        <!-- Mysql驱动包（Boot 4 BOM 管理 com.mysql:mysql-connector-j） -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ShardingSphere 分表数据源（ShardingSphereConfig） -->
+        <dependency>
+            <groupId>org.apache.shardingsphere</groupId>
+            <artifactId>shardingsphere-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.shardingsphere</groupId>
+            <artifactId>shardingsphere-sharding-core</artifactId>
+        </dependency>
+
+        <!-- 核心模块-->
+        <dependency>
+            <groupId>com.ruoyi</groupId>
+            <artifactId>ruoyi-framework</artifactId>
+        </dependency>
+
+        <!-- 定时任务-->
+        <dependency>
+            <groupId>com.ruoyi</groupId>
+            <artifactId>ruoyi-quartz</artifactId>
+        </dependency>
+
+        <!-- 代码生成-->
+        <dependency>
+            <groupId>com.ruoyi</groupId>
+            <artifactId>ruoyi-generator</artifactId>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <configuration>
+                    <fork>true</fork> <!-- 如果没有该配置，devtools不会生效 -->
+                    <mainClass>com.ruoyi.RuoYiApplication</mainClass>
+                    <!-- 镜像瘦身：以下传递依赖在代码中 0 引用，且分表开关默认关闭、
+                         阿里云 MNS 通道未启用，打进 fat jar 只会白白增大镜像与元空间。
+                         排除后需通过实机启动 + 分页/导出接口回归确认无类缺失。 -->
+                    <excludeGroupIds>org.apache.calcite,org.apache.groovy,com.aliyun.mns</excludeGroupIds>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                    <warName>${project.artifactId}</warName>
+                </configuration>
+           </plugin>
+
+            <plugin>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+                <configuration>
+                    <buildArgs>
+                        <buildArg>--initialize-at-run-time=io.grpc.netty.shaded</buildArg>
+                        <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.internal.tcnative</buildArg>
+                        <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.handler.ssl</buildArg>
+                        <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.util.internal.SystemPropertyUtil</buildArg>
+                        <buildArg>--initialize-at-run-time=io.grpc.netty.shaded.io.netty.util.ResourceLeakDetectorFactory</buildArg>
+                        <buildArg>--initialize-at-build-time=ch.qos.logback</buildArg>
+                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2</buildArg>
+                        <buildArg>--initialize-at-build-time=ch.qos.logback.classic.Logger</buildArg>
+                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.JSONFactory$CacheItem</buildArg>
+                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.writer.ObjectWriterBaseModule</buildArg>
+                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.function.impl.ToDouble</buildArg>
+                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.reader.ObjectReaderImplString</buildArg>
+                        <buildArg>--initialize-at-build-time=com.alibaba.fastjson2.JSONReader$Context</buildArg>
+                    </buildArgs>
+                </configuration>
+            </plugin>
+
+        </plugins>
+        <finalName>${project.artifactId}</finalName>
+    </build>
+
+
+    <!-- native-image: Flink Job is submitted via flink run, not part of the Boot app classpath.
+         Excluded at compile time only for native builds (-Pnative,native-flink-exclude). -->
+    <profiles>
+        <profile>
+            <id>native-flink-exclude</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/flink/VehicleTrackFlinkJob.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+
+        </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>

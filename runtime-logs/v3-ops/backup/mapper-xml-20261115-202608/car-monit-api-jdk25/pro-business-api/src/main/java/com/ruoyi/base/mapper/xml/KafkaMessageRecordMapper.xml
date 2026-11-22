@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.base.mapper.KafkaMessageRecordMapper">
+
+    <!-- 
+       ResultMap：定义数据库字段与Java实体属性的映射关系
+       思路：将数据库的下划线命名转换为Java的驼峰命名
+       目的：让MyBatis能够正确地将查询结果映射到实体对象
+    -->
+    <resultMap type="KafkaMessageRecord" id="KafkaMessageRecordResult">
+        <result property="id" column="id"/>
+        <result property="dataId" column="data_id"/>
+        <result property="topic" column="topic"/>
+        <result property="messageJson" column="message_json"/>
+        <result property="status" column="status"/>
+        <result property="retryCount" column="retry_count"/>
+        <result property="createTime" column="create_time"/>
+        <result property="sendTime" column="send_time"/>
+        <result property="errorMsg" column="error_msg"/>
+    </resultMap>
+
+    <!-- 
+       查询待重试的失败消息
+       思路：
+       - 筛选状态为0（待发送）或2（发送失败）的记录
+       - 筛选重试次数小于最大限制的记录
+       - 按创建时间升序排列，先创建的先重试
+       - 限制返回数量，防止一次性查询过多
+       
+       目的：获取需要重新发送的消息，避免遗漏和重复
+    -->
+    <select id="selectFailedRecords" resultMap="KafkaMessageRecordResult">
+        SELECT * FROM jl_data01.kafka_message_record
+        WHERE status IN (0, 2)
+        AND retry_count &lt; #{maxRetryCount}
+        ORDER BY create_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 
+       更新消息发送状态
+       思路：根据ID更新状态和发送成功时间
+       目的：标记消息为成功状态
+    -->
+    <update id="updateStatusById">
+        UPDATE jl_data01.kafka_message_record
+        SET status = #{status}, send_time = #{sendTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 
+       增加重试次数并记录错误
+       思路：
+       - 重试次数+1
+       - 更新错误信息
+       - 状态设为2（失败）
+       
+       目的：记录失败情况，为后续重试做准备
+    -->
+    <update id="incrementRetryCount">
+        UPDATE jl_data01.kafka_message_record
+        SET retry_count = retry_count + 1, error_msg = #{errorMsg}, status = 2
+        WHERE id = #{id}
+    </update>
+
+</mapper>

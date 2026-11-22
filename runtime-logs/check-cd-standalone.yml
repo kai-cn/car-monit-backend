@@ -1,0 +1,256 @@
+# @description 历史运维/验证配置快照，保留用于复现与审计；本文件头补充维护背景与运行约束。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage GitHub Actions workflow_dispatch 或事件触发；输入参数见 workflow inputs。
+# @dependencies 按原 workflow 声明的 runner、Actions 与外部服务依赖执行。
+# ============================================================================
+# 文件：.github/workflows/cd-standalone.yml
+# 用途：单机部署：打包 standalone 产物并上传 Release
+# 触发：手动 dispatch / push 事件
+# 主要 job：build、verify
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
+name: cd-standalone
+
+# 单机部署 CD：构建离线 tar.gz 制品（jar / Go 二进制 / Python 源码+离线 wheels /
+# systemd unit / 参数化 install.sh、uninstall.sh / SHA256SUMS），并在全新 runner 上做
+# 完整生命周期验证：解包→校验和→install→启动→/health→stop→uninstall→断言清理。
+# 与 K8s 的 deploy.yml 互不影响。
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "打包哪个实现"
+        required: true
+        type: choice
+        default: all
+        options: [all, java, go, python, rust]
+      tag:
+        description: "可选：把制品附加到已存在的 Release tag（留空则仅构建）"
+        required: false
+        type: string
+        default: ""
+  push:
+    branches: ["master"]
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+jobs:
+  # ── job: build ──
+  build:
+    name: build standalone artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write   # tag 推送时 gh release upload 需要
+    steps:
+      # 拉取仓库源码
+      - uses: actions/checkout@v4
+
+      # 安装 JDK
+      - uses: actions/setup-java@v4
+        # Perf: let setup-java restore Maven dependencies from the action cache.
+        # Perf: Maven dependency cache; key follows pom.xml changes.
+        with:
+          cache: maven
+          distribution: temurin
+          java-version: "8"
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.10"
+
+      # 安装 Python
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 构建各语言产物并组装
+        shell: bash
+        env:
+          SERVICE: ${{ inputs.service || 'all' }}
+        run: |
+          set -euo pipefail
+          want() { [ "$SERVICE" = "all" ] || [[ ",$SERVICE," == *",$1,"* ]]; }
+          DIST="$GITHUB_WORKSPACE/dist/standalone"
+          mkdir -p "$DIST"
+
+          if want java; then
+            mvn -B -ntp -DskipTests package
+            mkdir -p "$DIST/payloads/java"
+            cp pro-business-api/target/pro-business-api-1.0.jar "$DIST/payloads/java/app.jar"
+          fi
+
+          if want go; then
+            mkdir -p "$DIST/payloads/go"
+            ( cd car-monit-api-go && \
+              CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOFLAGS=-buildvcs=false \
+              go build -trimpath -ldflags "-s -w" -o "$DIST/payloads/go/api" ./cmd/api )
+          fi
+
+          if want python; then
+            mkdir -p "$DIST/payloads/python/wheels"
+            cp -r car-monit-api-python/app car-monit-api-python/com car-monit-api-python/java \
+                  car-monit-api-python/javax car-monit-api-python/org \
+                  car-monit-api-python/pro-base-common car-monit-api-python/pro-business-api \
+                  car-monit-api-python/run.py car-monit-api-python/bootstrap.py \
+                  car-monit-api-python/requirements.txt car-monit-api-python/requirements.lock.txt \
+                  "$DIST/payloads/python/"
+            python -m pip download --only-binary=:all: \
+              -r car-monit-api-python/requirements.lock.txt \
+              -d "$DIST/payloads/python/wheels"
+          fi
+
+          if want rust; then
+            if [ -d car-monit-api-rust ]; then
+              ( cd car-monit-api-rust && cargo build --release && \
+                mkdir -p "$DIST/payloads/rust" && \
+                cp target/release/car-monit-api-rust "$DIST/payloads/rust/" )
+            else
+              echo "::notice::car-monit-api-rust 未入库，跳过 Rust 产物"
+            fi
+          fi
+
+          cp -r deploy/standalone/systemd deploy/standalone/config \
+                deploy/standalone/install.sh deploy/standalone/uninstall.sh \
+                deploy/standalone/README.md "$DIST/"
+
+          ( cd "$DIST" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS )
+
+          ARCHIVE="car-monit-api-standalone-${GITHUB_SHA:0:7}.tar.gz"
+          tar -czf "$GITHUB_WORKSPACE/$ARCHIVE" -C "$DIST" .
+          ls -lh "$GITHUB_WORKSPACE/$ARCHIVE"
+
+      - name: 上传单机 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: standalone-tar-${{ github.sha }}
+          path: car-monit-api-standalone-*.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: 附加到 GitHub Release（tag/dispatch 指定 tag）
+        if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.tag != '')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        shell: bash
+        run: |
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" --generate-notes --title "$RELEASE_TAG"
+          gh release upload "$RELEASE_TAG" car-monit-api-standalone-*.tar.gz --clobber
+
+  # ── job: verify ──
+  verify:
+    name: verify standalone lifecycle
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # 安装 Python
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 下载上游 workflow 产物
+      - uses: actions/download-artifact@v4
+        with:
+          name: standalone-tar-${{ github.sha }}
+          path: downloaded
+
+      - name: 解包、校验和、内容清单
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p verify
+          tar -xzf downloaded/car-monit-api-standalone-*.tar.gz -C verify
+          cd verify
+          sha256sum -c SHA256SUMS
+          tar -tzf ../downloaded/car-monit-api-standalone-*.tar.gz > /tmp/tar-list.txt
+          for entry in \
+            ./install.sh ./uninstall.sh ./README.md ./SHA256SUMS \
+            ./systemd/car-monit-api-python.service \
+            ./config/python.env.example; do
+            grep -qxF "$entry" /tmp/tar-list.txt || { echo "::error::tar 缺少 $entry"; exit 1; }
+          done
+          if [ -d ./payloads/python ]; then
+            grep -qxF './payloads/python/run.py' /tmp/tar-list.txt || { echo "::error::tar 缺少 python/run.py"; exit 1; }
+            grep -qE '^\./payloads/python/wheels/' /tmp/tar-list.txt || { echo "::error::tar 缺少 python/wheels"; exit 1; }
+          fi
+          if [ -f ./payloads/java/app.jar ]; then grep -qxF './payloads/java/app.jar' /tmp/tar-list.txt; fi
+          if [ -f ./payloads/go/api ]; then grep -qxF './payloads/go/api' /tmp/tar-list.txt; fi
+
+      - name: 完整生命周期演练（Python shim）
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$PWD/verify"
+          if [ -d "$ROOT/payloads/python" ]; then SVC=python
+          elif [ -d "$ROOT/payloads/java" ]; then SVC=java
+          elif [ -d "$ROOT/payloads/go" ]; then SVC=go
+          else echo "::error::artifact 中无可用服务"; exit 1; fi
+          echo "verify service=$SVC"
+          PREFIX="$PWD/lifecycle/opt"; LOGDIR="$PWD/lifecycle/log"; UNITDIR="$PWD/lifecycle/units"
+          OUT="$PWD/verify-report.txt"
+          {
+            echo "service=$SVC"
+            echo "artifact=$(ls downloaded/car-monit-api-standalone-*.tar.gz | xargs -n1 basename)"
+            echo "artifact_size=$(stat -c%s downloaded/car-monit-api-standalone-*.tar.gz)"
+          } > "$OUT"
+
+          bash "$ROOT/install.sh" --prefix "$PREFIX" --log-dir "$LOGDIR" --unit-dir "$UNITDIR" \
+            --service "$SVC" --user "$(id -un)" --no-start >> "$OUT" 2>&1
+
+          START_STATUS="000"; BODY=""
+          if [ "$SVC" = python ]; then
+            CAR_MONIT_RUNTIME=shim CAR_MONIT_PORT=19901 \
+              nohup "$PREFIX/python/venv/bin/python" "$PREFIX/python/run.py" \
+              > "$LOGDIR/python/stdout.log" 2>&1 &
+            PID=$!
+            for i in $(seq 1 30); do
+              START_STATUS=$(curl -s -o /tmp/health-body -w '%{http_code}' http://127.0.0.1:19901/health || true)
+              [ "$START_STATUS" = "200" ] && break
+              kill -0 "$PID" 2>/dev/null || break
+              sleep 1
+            done
+            BODY="$(cat /tmp/health-body 2>/dev/null || true)"
+            kill "$PID" 2>/dev/null || true
+            wait "$PID" 2>/dev/null || true
+          else
+            echo "非 Python 服务在本 runner 无外部 DB/Redis，按约定记录启动失败" >> "$OUT"
+            START_STATUS="000"; BODY="external middleware unavailable"
+          fi
+
+          {
+            echo "start_http_status=$START_STATUS"
+            echo "start_body=$BODY"
+            echo "process_log_tail:"
+            tail -n 20 "$LOGDIR/$SVC/stdout.log" 2>/dev/null || true
+          } >> "$OUT"
+
+          bash "$ROOT/uninstall.sh" --prefix "$PREFIX" --log-dir "$LOGDIR" --unit-dir "$UNITDIR" \
+            --service "$SVC" --no-systemctl >> "$OUT" 2>&1
+
+          if [ -d "$PREFIX/$SVC" ] || [ -d "$LOGDIR/$SVC" ] || [ -f "$UNITDIR/car-monit-api-$SVC.service" ]; then
+            echo "cleanup=FAILED" >> "$OUT"; echo "::error::uninstall 未清理干净"; exit 1
+          fi
+          echo "cleanup=OK" >> "$OUT"
+
+          {
+            echo "### 单机 artifact 生命周期验证"
+            echo '```'
+            cat "$OUT"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 上传验证报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: standalone-verify-report-${{ github.sha }}
+          path: verify-report.txt
+          if-no-files-found: warn
+          retention-days: 14

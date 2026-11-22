@@ -1,0 +1,99 @@
+{
+  "images":  [
+    {
+      "id":  "sha256:0de79ab52689a49db6d04793eb5ba8dcfa5823b8ee1a5d75b5f003d6293d5a1e",
+      "repoTags":  [
+        "docker.io/library/car-monit-api:ci-v2"
+      ],
+      "repoDigests":  [],
+      "size":  "650003780",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "sha256:f10f0477e5fe8bdde6d7bc2606d34ef7748ca31108edafa384ddd3dd4ff9fdda",
+      "repoTags":  [
+        "docker.io/library/car-monit-api:ci-verify"
+      ],
+      "repoDigests":  [],
+      "size":  "520484169",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "sha256:60f6895edb564885119e8d9270fb20b56b4cd63f6ccd31a54a84b1c3f764832f",
+      "repoTags":  [
+        "docker.io/library/car-monit-api:slim"
+      ],
+      "repoDigests":  [],
+      "size":  "438978008",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "sha256:16a3b6525703482190a7ba0c767b71b2519a22fa0eebd7f0dff9ba9592290343",
+      "repoTags":  [
+        "docker.io/library/car-monit-backend:ci-v2"
+      ],
+      "repoDigests":  [],
+      "size":  "584552773",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "sha256:3fd5d32ead9f4218f4f29cd3b2fb38748042ebb2b4a8e98cdfd8759e980b5b8c",
+      "repoTags":  [],
+      "repoDigests":  [],
+      "size":  "487758763",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "sha256:664855113ac23a6079202ce92391b5d8285d01a3ce45d5a1eae5ec29f709dd1e",
+      "repoTags":  [
+        "docker.io/library/car-monit-backend:ci-verify"
+      ],
+      "repoDigests":  [],
+      "size":  "487758667",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "sha256:6e27bb1ee89fc485d6cfeb87acfc1fff19c40f25e312440564e449432a10ad2e",
+      "repoTags":  [
+        "docker.io/library/car-monit-backend:slim"
+      ],
+      "repoDigests":  [],
+      "size":  "406252505",
+      "username":  "",
+      "pinned":  false
+    },
+    {
+      "id":  "sha256:f713ee04ec58ad6a470c729494da71cd5351fb3367cfe8fefc1951287a6706de",
+      "repoTags":  [
+        "docker.io/rancher/mirrored-coredns-coredns:1.14.3"
+      ],
+      "repoDigests":  [
+        "docker.io/rancher/mirrored-coredns-coredns@sha256:b21d26b915e10acb5bc78715c1e8b6047ab2675389b2bcc18b3a6499d90e74c0"
+      ],
+      "size":  "23543069",
+      "username":  "nonroot",
+      "pinned":  false
+    },
+    {
+      "id":  "sha256:6270bb605e12e581514ada5fd5b3216f727db55dc87d5889c790e4c760683fee",
+      "repoTags":  [
+        "docker.io/rancher/mirrored-pause:3.6"
+      ],
+      "repoDigests":  [
+        "docker.io/rancher/mirrored-pause@sha256:74c4244427b7312c5b901fe0f67cbc53683d06f4f24c6faee65d4182bf0fa893"
+      ],
+      "size":  "301463",
+      "uid":  {
+        "value":  "65535"
+      },
+      "username":  "",
+      "pinned":  false
+    }
+  ]
+}

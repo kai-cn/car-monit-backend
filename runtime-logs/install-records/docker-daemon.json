@@ -1,0 +1,23 @@
+{
+    "registry-mirrors": [
+        "https://3459yqkn.mirror.aliyuncs.com",
+        "https://docker-0.unsee.tech",
+        "https://docker-cf.registry.cyou",
+        "https://docker.1panel.live",
+        "https://ghcr.nju.edu.cn",
+        "https://docker.211678.top",
+        "https://docker.1panel.live",
+        "https://hub.rat.dev",
+        "https://docker.m.daocloud.io",
+        "https://do.nark.eu.org",
+        "https://dockerpull.com",
+        "https://dockerproxy.cn",
+        "https://docker.awsl9527.cn",
+        "https://registry.docker-cn.com",
+        "http://hub-mirror.c.163.com",
+        "https://docker.mirrors.ustc.edu.cn"
+    ],
+    "features": {
+        "enabled": ["legacy-schema1"]
+    }
+}

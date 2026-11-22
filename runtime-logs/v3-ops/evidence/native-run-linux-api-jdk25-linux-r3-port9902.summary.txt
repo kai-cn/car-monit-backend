@@ -1,0 +1,54 @@
+=== runner ===
+binary  : /mnt/d/work/IdeaProjects/car-monit-api-jdk25/pro-business-api/target/pro-business-api
+label   : api-jdk25-linux-r3-port9902
+log     : /mnt/d/work/runtime-logs/v3-ops/evidence/native-run-linux-api-jdk25-linux-r3-port9902.log
+binary size bytes: 357632736
+port_ready      : 1
+process_exited  : 0
+startup_ms      : 5
+http_root_code  : 404
+rss_kb          : 271096
+rss_mb          : 264
+threads         : 16
+cpu_time        : 00:00:02
+=== last 40 log lines ===
+	at java.base@25.0.4.1/java.lang.Thread.runWith(Thread.java:1487)
+	at java.base@25.0.4.1/java.lang.Thread.run(Thread.java:1474)
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:832)
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:808)
+Caused by: io.lettuce.core.RedisException: Connection is closed
+	at io.lettuce.core.protocol.DefaultEndpoint.validateWrite(DefaultEndpoint.java:293)
+	at io.lettuce.core.protocol.DefaultEndpoint.write(DefaultEndpoint.java:189)
+	at io.lettuce.core.protocol.MaintenanceAwareExpiryWriter.write(MaintenanceAwareExpiryWriter.java:92)
+	at io.lettuce.core.RedisChannelHandler.dispatch(RedisChannelHandler.java:203)
+	at io.lettuce.core.StatefulRedisConnectionImpl.dispatch(StatefulRedisConnectionImpl.java:188)
+	at io.lettuce.core.AbstractRedisAsyncCommands.dispatch(AbstractRedisAsyncCommands.java:838)
+	at io.lettuce.core.AbstractRedisAsyncCommands.get(AbstractRedisAsyncCommands.java:1335)
+	at org.springframework.data.redis.connection.lettuce.LettuceInvoker.lambda$just$2(LettuceInvoker.java:92)
+	... 20 common frames omitted
+	at io.netty.buffer.AdaptivePoolingAllocator$Chunk.releaseFromMagazine(AdaptivePoolingAllocator.java:1653)
+	at io.netty.buffer.AdaptivePoolingAllocator$Magazine.free(AdaptivePoolingAllocator.java:1550)
+	at io.netty.buffer.AdaptivePoolingAllocator$MagazineGroup.free(AdaptivePoolingAllocator.java:497)
+	at io.netty.buffer.AdaptivePoolingAllocator$MagazineGroup.access$300(AdaptivePoolingAllocator.java:367)
+	at io.netty.buffer.AdaptivePoolingAllocator$1.onRemoval(AdaptivePoolingAllocator.java:244)
+	at io.netty.buffer.AdaptivePoolingAllocator$1.onRemoval(AdaptivePoolingAllocator.java:231)
+	at io.netty.util.concurrent.FastThreadLocal.removeAndGet(FastThreadLocal.java:286)
+	at io.netty.util.concurrent.FastThreadLocal.remove(FastThreadLocal.java:268)
+	at io.netty.util.concurrent.FastThreadLocal.removeAll(FastThreadLocal.java:68)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:1305)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base@25.0.4.1/java.lang.Thread.runWith(Thread.java:1487)
+	at java.base@25.0.4.1/java.lang.Thread.run(Thread.java:1474)
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:832)
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:808)
+Application run failed
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'orikaMapperConfig': Instantiation of supplied bean failed
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.obtainFromSupplier(AbstractAutowireCapableBeanFactory.java:1248)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1185)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:563)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:331)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:196)

@@ -1,0 +1,10 @@
+# Final build artifact matrix (post independent-review remediation)
+# generated: 2026-11-11 15:47:36
+# build logs: D:/work/runtime-logs/jdk{17,21,25}-{api,backend}-build-final2.log
+# bytecode major: Java17=61, Java21=65 (JDK25 branch uses Java 21 baseline)
+jdk17-api      class_major=61 jar_bytes=229621226 spring_core=spring-core-5.3.39.jar test_libs=hamcrest-2.2.jar,json-path-2.7.0.jar,json-smart-2.4.11.jar
+jdk17-backend  class_major=61 jar_bytes=216429268 spring_core=spring-core-5.3.39.jar
+jdk21-api      class_major=65 jar_bytes=229617563 spring_core=spring-core-5.3.39.jar test_libs=hamcrest-2.2.jar,json-path-2.7.0.jar,json-smart-2.4.11.jar
+jdk21-backend  class_major=65 jar_bytes=216427791 spring_core=spring-core-5.3.39.jar
+jdk25-api      class_major=65 jar_bytes=229614106 spring_core=spring-core-5.3.39.jar test_libs=hamcrest-2.2.jar,json-path-2.7.0.jar,json-smart-2.4.11.jar
+jdk25-backend  class_major=65 jar_bytes=216424272 spring_core=spring-core-5.3.39.jar

@@ -1,0 +1,12 @@
+{
+    "app":  "api",
+    "jdk":  "25",
+    "platform":  "windows",
+    "name":  "api-jdk25-windows-amd64.exe",
+    "bytes":  348528640,
+    "size_MB":  332.38,
+    "sha256":  "8E505CAC08C9E615579B03F32B38545B4839BC7A21088FC4572EB3385C42AA1A",
+    "git_sha":  "0a76585",
+    "collected_at":  "20261115-185321",
+    "source":  "D:\\work\\IdeaProjects\\car-monit-api-jdk25\\pro-business-api\\target\\pro-business-api.exe"
+}

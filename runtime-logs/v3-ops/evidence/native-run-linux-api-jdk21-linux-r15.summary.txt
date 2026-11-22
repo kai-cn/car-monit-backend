@@ -1,0 +1,28 @@
+=== runner ===
+binary  : /mnt/d/work/IdeaProjects/car-monit-api-jdk21/pro-business-api/target/pro-business-api
+label   : api-jdk21-linux-r15
+log     : /mnt/d/work/runtime-logs/v3-ops/evidence/native-run-linux-api-jdk21-linux-r15.log
+binary size bytes: 93915872
+port_ready      : 0
+process_exited  : 1
+process_exited_before_sampling: 1
+=== last 40 log lines ===
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.2)
+
+Application run failed
+org.springframework.boot.AotInitializerNotFoundException: Startup with AOT mode enabled failed: AOT initializer com.ruoyi.EcBusinessApiApplication__ApplicationContextInitializer could not be found
+	at org.springframework.boot.SpringApplication.addAotGeneratedInitializerIfNecessary(SpringApplication.java:417)
+	at org.springframework.boot.SpringApplication.prepareContext(SpringApplication.java:373)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:308)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1353)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1342)
+	at com.ruoyi.EcBusinessApiApplication.main(EcBusinessApiApplication.java:19)
+	at java.base@21.0.13/java.lang.invoke.LambdaForm$DMH/sa346b79c.invokeStaticInit(LambdaForm$DMH)

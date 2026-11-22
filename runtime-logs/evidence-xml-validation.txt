@@ -1,0 +1,8 @@
+XML_TOTAL=405 XML_BAD=6
+POM_BAD=0
+BAD D:/work/IdeaProjects/car-monit-backend-jdk17\分区表分页查询Mapper示例.xml :: not well-formed (invalid token): line 54, column 32
+BAD D:/work/IdeaProjects/car-monit-backend-jdk21\分区表分页查询Mapper示例.xml :: not well-formed (invalid token): line 54, column 32
+BAD D:/work/IdeaProjects/car-monit-backend-jdk25\分区表分页查询Mapper示例.xml :: not well-formed (invalid token): line 54, column 32
+BAD D:/work/IdeaProjects/car-monit-api-jdk17\pro-business-api\src\main\resources\mapper\xml\PulsarMessageRecordMapper.xml :: unclosed token: line 1, column 0
+BAD D:/work/IdeaProjects/car-monit-api-jdk21\pro-business-api\src\main\resources\mapper\xml\PulsarMessageRecordMapper.xml :: unclosed token: line 1, column 0
+BAD D:/work/IdeaProjects/car-monit-api-jdk25\pro-business-api\src\main\resources\mapper\xml\PulsarMessageRecordMapper.xml :: unclosed token: line 1, column 0

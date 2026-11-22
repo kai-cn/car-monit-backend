@@ -1,0 +1,227 @@
+# @description 历史运维/验证配置快照，保留用于复现与审计；本文件头补充维护背景与运行约束。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage GitHub Actions workflow_dispatch 或事件触发；输入参数见 workflow inputs。
+# @dependencies 按原 workflow 声明的 runner、Actions 与外部服务依赖执行。
+# Python (car-monit-py-V2) vs Java V3 (car-monit-backend-java-V3) 全量接口对拍。
+#
+# 凭据注入：admin 口令只来自仓库 Secret CI_ADMIN_PASSWORD，通过 step 级 env 读取；
+# workflow/job 级 env 绝不出现口令（GitHub Actions 会回显 job/env 到公开日志）。
+# 探针在进程内登录并持有 token：不落盘、不进 out/*.json、不进日志。
+#
+# 覆盖：Java V3 的 302 个 GET 端点（含路径变量样例化），带 admin Bearer token 对拍 status/body。
+# 写端点（POST/PUT/DELETE）会污染共享 seed DB，故本 workflow 只做 GET；
+# 写端点对拍需两变体各自独立 DB，记入交接文档作为下一步。
+#
+# workflow_dispatch only。
+
+name: python-v3-full-parity
+
+on:
+  workflow_dispatch:
+    inputs:
+      linux_runner:
+        description: runner
+        type: string
+        default: ubuntu-latest
+      baseline_ref:
+        description: Java V3 baseline 分支
+        type: string
+        default: car-monit-backend-java-V3
+      candidate_ref:
+        description: Python candidate 分支
+        type: string
+        default: car-monit-py-V2
+      max_endpoints:
+        description: 最多探测端点数（0=全量）
+        type: string
+        default: '302'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: python-v3-full-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  full-parity:
+    runs-on: ${{ inputs.linux_runner }}
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.baseline_ref }}
+          path: baseline
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_ref }}
+          path: candidate
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          # 8u514 tarball 在本 runner 上下载后 tar 解压失败（Child returned status 1）；
+          # 固定到已验证可用的 8u442，避开损坏的缓存包。
+          java-version: '8.0.442'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-v3parity-${{ hashFiles('baseline/**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-v3parity-
+
+      - name: Install probe deps
+        shell: bash
+        run: python -m pip install -q bcrypt passlib
+
+      - name: Prepare endpoint list
+        shell: bash
+        env:
+          MAX: ${{ inputs.max_endpoints }}
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          cp baseline/scripts/v3/ops/parity/endpoints/backend-v3-get-full.txt out/endpoints.txt
+          if [ "$MAX" != "0" ]; then head -n "$MAX" out/endpoints.txt > out/e.tmp && mv out/e.tmp out/endpoints.txt; fi
+          echo "endpoints=$(wc -l < out/endpoints.txt)"
+
+      - name: Start datastores + seed
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
+          docker run -d --name rd -p 6379:6379 redis:7-alpine
+          for i in $(seq 1 60); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < baseline/scripts/v3/ops/parity/sql/schema_carmonitdb.sql
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < baseline/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
+          echo "seed rows: $(docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -N -e 'select count(*) from carmonitdb.sys_user')"
+
+      - name: Build Java V3 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          # logback.xml 固定写 /home/ruoyi/logs；runner 上预建并授权，避免 file appender 报错
+          sudo mkdir -p /home/ruoyi/logs && sudo chmod 777 /home/ruoyi/logs
+          cd baseline
+          mvn -B -ntp -DskipTests -pl ruoyi-admin -am package
+          cp $(ls ruoyi-admin/target/*.jar | grep -v original | head -1) ../out/baseline.jar
+          ls -lh ../out/baseline.jar
+
+      - name: Probe Java V3 (authenticated)
+        shell: bash
+        env:
+          CI_ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD }}
+          # Python settings 有密钥强度门禁（长度>=32 且熵>=3），用仓库 Secret 的高熵值
+          TOKEN__SECRET: ${{ secrets.JWT_SECRET }}
+          HENGDA__SECRET: ${{ secrets.CI_EXPORT_SECRET }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          # Java V3 启动门禁：DownloadTokenService 要求 export.download.secret
+          EXPORT_DOWNLOAD_SECRET: ${{ secrets.EXPORT_DOWNLOAD_SECRET }}
+          CI_EXPORT_SECRET: ${{ secrets.CI_EXPORT_SECRET }}
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
+          SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
+          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
+          SPRING__REDIS__HOST: 127.0.0.1
+          SPRING__REDIS__PORT: '6379'
+        run: |
+          set -uo pipefail
+          python baseline/scripts/v3/ops/parity/full_parity_probe.py \
+            --variant java-v3 --port 19903 \
+            --cmd "java -jar out/baseline.jar --server.port=19903" \
+            --endpoints out/endpoints.txt --out out/java-v3.json \
+            --mode full --check-stability --ready-timeout 300 || echo "java probe exit=$?"
+
+      - name: Diagnose Java V3 startup (cloud log only)
+        if: always()
+        shell: bash
+        run: |
+          echo "===== java-v3.json.app.log tail ====="
+          tail -100 out/java-v3.json.app.log 2>/dev/null || echo "(no app.log)"
+          echo "===== probe result head ====="
+          head -20 out/java-v3.json 2>/dev/null || echo "(no probe json)"
+
+      - name: Reset DB seed (clean state for Python)
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'DROP DATABASE carmonitdb; CREATE DATABASE carmonitdb;'
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < baseline/scripts/v3/ops/parity/sql/schema_carmonitdb.sql
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < baseline/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
+
+      - name: Probe Python (authenticated)
+        shell: bash
+        env:
+          CI_ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD }}
+          # Python settings 有密钥强度门禁（长度>=32 且熵>=3），用仓库 Secret 的高熵值
+          TOKEN__SECRET: ${{ secrets.JWT_SECRET }}
+          HENGDA__SECRET: ${{ secrets.CI_EXPORT_SECRET }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          # Java V3 启动门禁：DownloadTokenService 要求 export.download.secret
+          EXPORT_DOWNLOAD_SECRET: ${{ secrets.EXPORT_DOWNLOAD_SECRET }}
+          CI_EXPORT_SECRET: ${{ secrets.CI_EXPORT_SECRET }}
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
+          SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
+          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
+          SPRING__REDIS__HOST: 127.0.0.1
+          SPRING__REDIS__PORT: '6379'
+        run: |
+          set -uo pipefail
+          # requirements.txt 含 `-e .[test]`，必须在项目目录内执行，否则解析到仓库根报错
+          (cd candidate/car-monit-py && python -m pip install -q -r requirements.txt)
+          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' candidate/car-monit-py/config/application.yml
+          python baseline/scripts/v3/ops/parity/full_parity_probe.py \
+            --variant python --port 19904 \
+            --cmd "cd candidate/car-monit-py && python3 -m uvicorn app.main:app --host 127.0.0.1 --port 19904 --workers 1" \
+            --endpoints out/endpoints.txt --out out/python.json \
+            --mode full --check-stability --ready-timeout 300 || echo "python probe exit=$?"
+
+      - name: Diagnose Python startup (cloud log only)
+        if: always()
+        shell: bash
+        run: |
+          echo "===== python.json.app.log tail ====="
+          tail -100 out/python.json.app.log 2>/dev/null || echo "(no app.log)"
+          echo "===== probe result head ====="
+          head -20 out/python.json 2>/dev/null || echo "(no probe json)"
+
+      - name: Gate probe quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, sys
+          for name in ('java-v3', 'python'):
+              d = json.load(open('out/%s.json' % name, encoding='utf-8'))
+              print('%s probe: login=%s endpoints=%d error=%s' % (
+                  name, d.get('login'), d.get('endpoint_count'), d.get('error')))
+              if d.get('error') or d.get('login') != 'ok' or d.get('endpoint_count', 0) < 100:
+                  sys.exit('::error::%s probe quality gate failed' % name)
+          PY
+
+      - name: Compare Java V3 vs Python
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [ ! -f out/java-v3.json ] || [ ! -f out/python.json ]; then
+            echo "::error::probe result missing"; exit 1
+          fi
+          python baseline/scripts/v3/ops/parity/parity_compare.py \
+            --baseline out/java-v3.json --candidate out/python.json \
+            --out out/report.json --md out/report.md --label java-v3-vs-python || true
+          cat out/report.md || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-v3-full-parity
+          path: out/**
+          retention-days: 30
+
+      - name: Stop datastores
+        if: always()
+        shell: bash
+        run: docker rm -f my rd 2>/dev/null || true

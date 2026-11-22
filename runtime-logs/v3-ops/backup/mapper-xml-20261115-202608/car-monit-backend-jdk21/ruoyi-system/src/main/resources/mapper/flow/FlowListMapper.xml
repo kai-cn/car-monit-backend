@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.flow.mapper.FlowListMapper">
+    
+    <resultMap type="FlowList" id="FlowListResult">
+        <result property="id"    column="ID"    />
+        <result property="billOid"    column="BILL_OID"    />
+        <result property="bussType"    column="BUSS_TYPE"    />
+        <result property="taskId"    column="TASK_ID"    />
+        <result property="flowRuid"    column="flow_ruid"    />
+        <result property="currentOid"    column="CURRENT_OID"    />
+        <result property="shUser"    column="SH_USER"    />
+        <result property="shKey"    column="SH_KEY"    />
+        <result property="shValue"    column="SH_VALUE"    />
+        <result property="shContext"    column="SH_CONTEXT"    />
+        <result property="backCol1"    column="BACK_COL1"    />
+        <result property="backCol2"    column="BACK_COL2"    />
+        <result property="backCol3"    column="BACK_COL3"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectFlowListVo">
+         t.ID, t.BILL_OID, t.BUSS_TYPE, t.TASK_ID, t.flow_ruid, t.CURRENT_OID, t.SH_USER, t.SH_KEY, t.SH_VALUE, t.SH_CONTEXT, t.BACK_COL1, t.BACK_COL2, t.BACK_COL3, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time    </sql>
+
+    <select id="selectFlowListList" parameterType="FlowList" resultMap="FlowListResult">
+        select
+        <include refid="selectFlowListVo"/>
+        from flow_list t
+        where t.del_flag = '0'
+            <if test="id != null  and id != ''"> and t.id = #{id}</if>
+            <if test="billOid != null  and billOid != ''"> and t.BILL_OID = #{billOid}</if>
+            <if test="bussType != null  and bussType != ''"> and t.BUSS_TYPE = #{bussType}</if>
+            <if test="taskId != null  and taskId != ''"> and t.TASK_ID = #{taskId}</if>
+            <if test="flowRuid != null  and flowRuid != ''"> and t.flow_ruid = #{flowRuid}</if>
+            <if test="currentOid != null  and currentOid != ''"> and t.CURRENT_OID = #{currentOid}</if>
+            <if test="shUser != null  and shUser != ''"> and t.SH_USER = #{shUser}</if>
+            <if test="shKey != null  and shKey != ''"> and t.SH_KEY = #{shKey}</if>
+            <if test="shValue != null  and shValue != ''"> and t.SH_VALUE = #{shValue}</if>
+            <if test="shContext != null  and shContext != ''"> and t.SH_CONTEXT = #{shContext}</if>
+            <if test="backCol1 != null  and backCol1 != ''"> and t.BACK_COL1 = #{backCol1}</if>
+            <if test="backCol2 != null  and backCol2 != ''"> and t.BACK_COL2 = #{backCol2}</if>
+            <if test="backCol3 != null  and backCol3 != ''"> and t.BACK_COL3 = #{backCol3}</if>
+            <if test="sort != null "> and t.sort = #{sort}</if>
+            <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+            <if test="createBy != null "> and t.create_by = #{createBy}</if>
+          order by t.create_time ASC ,t.id
+    </select>
+
+
+    <select id="selectFlowListListNew" parameterType="FlowList" resultMap="FlowListResult">
+        select
+        <include refid="selectFlowListVo"/>
+        from flow_list t
+        where t.del_flag = '0'
+        <if test="id != null  and id != ''"> and t.id = #{id}</if>
+        <if test="billOid != null  and billOid != ''"> and t.BILL_OID = #{billOid}</if>
+        <if test="bussType != null  and bussType != ''"> and t.BUSS_TYPE = #{bussType}</if>
+        <if test="taskId != null  and taskId != ''"> and t.TASK_ID = #{taskId}</if>
+        <if test="flowRuid != null  and flowRuid != ''"> and t.flow_ruid = #{flowRuid}</if>
+        <if test="currentOid != null  and currentOid != ''"> and t.CURRENT_OID = #{currentOid}</if>
+        <if test="shUser != null  and shUser != ''"> and t.SH_USER = #{shUser}</if>
+        <if test="shKey != null  and shKey != ''"> and t.SH_KEY = #{shKey}</if>
+        <if test="shValue != null  and shValue != ''"> and t.SH_VALUE = #{shValue}</if>
+        <if test="shContext != null  and shContext != ''"> and t.SH_CONTEXT = #{shContext}</if>
+        <if test="backCol1 != null  and backCol1 != ''"> and t.BACK_COL1 = #{backCol1}</if>
+        <if test="backCol2 != null  and backCol2 != ''"> and t.BACK_COL2 = #{backCol2}</if>
+        <if test="backCol3 != null  and backCol3 != ''"> and t.BACK_COL3 = #{backCol3}</if>
+        <if test="sort != null "> and t.sort = #{sort}</if>
+        <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+        <if test="createBy != null "> and t.create_by = #{createBy}</if>
+        order by t.create_time desc ,t.id
+    </select>
+    
+    <select id="selectFlowListById" parameterType="String" resultMap="FlowListResult">
+        select
+        <include refid="selectFlowListVo"/>
+        from flow_list t
+        where t.ID = #{id}
+    </select>
+        
+    <insert id="insertFlowList" parameterType="FlowList">
+        insert into flow_list
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">ID,</if>
+            <if test="billOid != null">BILL_OID,</if>
+            <if test="bussType != null">BUSS_TYPE,</if>
+            <if test="taskId != null">TASK_ID,</if>
+            <if test="flowRuid != null">flow_ruid,</if>
+            <if test="currentOid != null">CURRENT_OID,</if>
+            <if test="shUser != null">SH_USER,</if>
+            <if test="shKey != null">SH_KEY,</if>
+            <if test="shValue != null">SH_VALUE,</if>
+            <if test="shContext != null">SH_CONTEXT,</if>
+            <if test="backCol1 != null">BACK_COL1,</if>
+            <if test="backCol2 != null">BACK_COL2,</if>
+            <if test="backCol3 != null">BACK_COL3,</if>
+            <if test="sort != null">sort,</if>
+            <if test="epsId != null">eps_id,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="billOid != null">#{billOid},</if>
+            <if test="bussType != null">#{bussType},</if>
+            <if test="taskId != null">#{taskId},</if>
+            <if test="flowRuid != null">#{flowRuid},</if>
+            <if test="currentOid != null">#{currentOid},</if>
+            <if test="shUser != null">#{shUser},</if>
+            <if test="shKey != null">#{shKey},</if>
+            <if test="shValue != null">#{shValue},</if>
+            <if test="shContext != null">#{shContext},</if>
+            <if test="backCol1 != null">#{backCol1},</if>
+            <if test="backCol2 != null">#{backCol2},</if>
+            <if test="backCol3 != null">#{backCol3},</if>
+            <if test="sort != null">#{sort},</if>
+            <if test="epsId != null">#{epsId},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateFlowList" parameterType="FlowList">
+        update flow_list
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="billOid != null">BILL_OID = #{billOid},</if>
+            <if test="bussType != null">BUSS_TYPE = #{bussType},</if>
+            <if test="taskId != null">TASK_ID = #{taskId},</if>
+            <if test="flowRuid != null">flow_ruid = #{flowRuid},</if>
+            <if test="currentOid != null">CURRENT_OID = #{currentOid},</if>
+            <if test="shUser != null">SH_USER = #{shUser},</if>
+            <if test="shKey != null">SH_KEY = #{shKey},</if>
+            <if test="shValue != null">SH_VALUE = #{shValue},</if>
+            <if test="shContext != null">SH_CONTEXT = #{shContext},</if>
+            <if test="backCol1 != null">BACK_COL1 = #{backCol1},</if>
+            <if test="backCol2 != null">BACK_COL2 = #{backCol2},</if>
+            <if test="backCol3 != null">BACK_COL3 = #{backCol3},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="epsId != null">eps_id = #{epsId},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where ID = #{id}
+    </update>
+
+    <update id="deleteFlowListById" parameterType="String">
+        update flow_list set del_flag = '1' where ID = #{id}
+    </update>
+
+    <update id="deleteFlowListByIds" parameterType="String">
+        update flow_list set del_flag = '1' where ID in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

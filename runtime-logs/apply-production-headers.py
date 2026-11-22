@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 @description 批量为历史脚本与新维护脚本补充生产级文件头；保留原有逻辑，仅规范化文件级说明。
-@author AI Assistant
+@author Tencent Hunyuan Hy
 @date 2026-11-22
 @usage python apply-production-headers.py
 @dependencies 仅依赖 Python 标准库；会扫描固定的 runtime-logs 与两仓库 harness 路径。

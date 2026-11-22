@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.flow.mapper.FlowTemplateMapper">
+    
+    <resultMap type="FlowTemplate" id="FlowTemplateResult">
+        <result property="id"    column="ID"    />
+        <result property="flowOid"    column="FLOW_OID"    />
+        <result property="flowType"    column="FLOW_TYPE"    />
+        <result property="nodeOrder"    column="NODE_ORDER"    />
+        <result property="nodeKey"    column="NODE_KEY"    />
+        <result property="nodeName"    column="NODE_NAME"    />
+        <result property="nextNodeOid"    column="NEXT_NODE_OID"    />
+        <result property="previousNodeOid"    column="PREVIOUS_NODE_OID"    />
+        <result property="returnNum"    column="RETURN_NUM"    />
+        <result property="returnNodeOid"    column="RETURN_NODE_OID"    />
+        <result property="configCondtion"    column="CONFIG_CONDTION"    />
+        <result property="configType"    column="CONFIG_TYPE"    />
+        <result property="configId"    column="CONFIG_ID"    />
+        <result property="configName"    column="CONFIG_NAME"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectFlowTemplateVo">
+         t.ID, t.FLOW_OID, t.FLOW_TYPE, t.NODE_ORDER, t.NODE_KEY, t.NODE_NAME, t.NEXT_NODE_OID, t.PREVIOUS_NODE_OID, t.RETURN_NUM, t.RETURN_NODE_OID,
+         t.CONFIG_CONDTION, t.CONFIG_TYPE, t.CONFIG_ID, t.CONFIG_NAME, t.sort,
+         t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time
+    </sql>
+
+    <select id="selectFlowTemplateList" parameterType="FlowTemplate" resultMap="FlowTemplateResult">
+        select
+        <include refid="selectFlowTemplateVo"/>
+        from flow_template t
+        where t.del_flag = '0'
+            <if test="id != null  and id != ''"> and t.id = #{id}</if>
+            <if test="flowOid != null  and flowOid != ''"> and t.FLOW_OID = #{flowOid}</if>
+            <if test="flowType != null  and flowType != ''"> and t.FLOW_TYPE = #{flowType}</if>
+            <if test="nodeOrder != null "> and t.NODE_ORDER = #{nodeOrder}</if>
+            <if test="nodeKey != null  and nodeKey != ''"> and t.NODE_KEY = #{nodeKey}</if>
+            <if test="nodeName != null  and nodeName != ''"> and t.NODE_NAME like concat('%', #{nodeName}, '%')</if>
+            <if test="nextNodeOid != null  and nextNodeOid != ''"> and t.NEXT_NODE_OID = #{nextNodeOid}</if>
+            <if test="previousNodeOid != null  and previousNodeOid != ''"> and t.PREVIOUS_NODE_OID = #{previousNodeOid}</if>
+            <if test="returnNum != null "> and t.RETURN_NUM = #{returnNum}</if>
+            <if test="returnNodeOid != null  and returnNodeOid != ''"> and t.RETURN_NODE_OID = #{returnNodeOid}</if>
+            <if test="configCondtion != null  and configCondtion != ''"> and t.CONFIG_CONDTION = #{configCondtion}</if>
+            <if test="configType != null  and configType != ''"> and t.CONFIG_TYPE = #{configType}</if>
+            <if test="configId != null  and configId != ''"> and t.CONFIG_ID = #{configId}</if>
+            <if test="configName != null  and configName != ''"> and t.CONFIG_NAME like concat('%', #{configName}, '%')</if>
+            <if test="sort != null "> and t.sort = #{sort}</if>
+            <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+            <if test="createBy != null "> and t.create_by = #{createBy}</if>
+          order by t.NODE_ORDER ,t.id
+    </select>
+    
+    <select id="selectFlowTemplateById" parameterType="String" resultMap="FlowTemplateResult">
+        select
+        <include refid="selectFlowTemplateVo"/>
+        from flow_template t
+        where t.ID = #{id}
+    </select>
+        
+    <insert id="insertFlowTemplate" parameterType="FlowTemplate">
+        insert into flow_template
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">ID,</if>
+            <if test="flowOid != null">FLOW_OID,</if>
+            <if test="flowType != null">FLOW_TYPE,</if>
+            <if test="nodeOrder != null">NODE_ORDER,</if>
+            <if test="nodeKey != null">NODE_KEY,</if>
+            <if test="nodeName != null">NODE_NAME,</if>
+            <if test="nextNodeOid != null">NEXT_NODE_OID,</if>
+            <if test="previousNodeOid != null">PREVIOUS_NODE_OID,</if>
+            <if test="returnNum != null">RETURN_NUM,</if>
+            <if test="returnNodeOid != null">RETURN_NODE_OID,</if>
+            <if test="configCondtion != null">CONFIG_CONDTION,</if>
+            <if test="configType != null">CONFIG_TYPE,</if>
+            <if test="configId != null">CONFIG_ID,</if>
+            <if test="configName != null">CONFIG_NAME,</if>
+            <if test="sort != null">sort,</if>
+            <if test="epsId != null">eps_id,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="flowOid != null">#{flowOid},</if>
+            <if test="flowType != null">#{flowType},</if>
+            <if test="nodeOrder != null">#{nodeOrder},</if>
+            <if test="nodeKey != null">#{nodeKey},</if>
+            <if test="nodeName != null">#{nodeName},</if>
+            <if test="nextNodeOid != null">#{nextNodeOid},</if>
+            <if test="previousNodeOid != null">#{previousNodeOid},</if>
+            <if test="returnNum != null">#{returnNum},</if>
+            <if test="returnNodeOid != null">#{returnNodeOid},</if>
+            <if test="configCondtion != null">#{configCondtion},</if>
+            <if test="configType != null">#{configType},</if>
+            <if test="configId != null">#{configId},</if>
+            <if test="configName != null">#{configName},</if>
+            <if test="sort != null">#{sort},</if>
+            <if test="epsId != null">#{epsId},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateFlowTemplate" parameterType="FlowTemplate">
+        update flow_template
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="flowOid != null">FLOW_OID = #{flowOid},</if>
+            <if test="flowType != null">FLOW_TYPE = #{flowType},</if>
+            <if test="nodeOrder != null">NODE_ORDER = #{nodeOrder},</if>
+            <if test="nodeKey != null">NODE_KEY = #{nodeKey},</if>
+            <if test="nodeName != null">NODE_NAME = #{nodeName},</if>
+            <if test="nextNodeOid != null">NEXT_NODE_OID = #{nextNodeOid},</if>
+            <if test="previousNodeOid != null">PREVIOUS_NODE_OID = #{previousNodeOid},</if>
+            <if test="returnNum != null">RETURN_NUM = #{returnNum},</if>
+            <if test="returnNodeOid != null">RETURN_NODE_OID = #{returnNodeOid},</if>
+            <if test="configCondtion != null">CONFIG_CONDTION = #{configCondtion},</if>
+            <if test="configType != null">CONFIG_TYPE = #{configType},</if>
+            <if test="configId != null">CONFIG_ID = #{configId},</if>
+            <if test="configName != null">CONFIG_NAME = #{configName},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="epsId != null">eps_id = #{epsId},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+
+
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where ID = #{id}
+    </update>
+
+    <update id="deleteFlowTemplateById" parameterType="String">
+        update flow_template set del_flag = '1' where ID = #{id}
+    </update>
+
+    <update id="deleteFlowTemplateByIds" parameterType="String">
+        update flow_template set del_flag = '1' where ID in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 节点key是否存在 -->
+    <select id="isExitsKey" parameterType="FlowTemplate" resultType="java.lang.Integer">
+         select count(1) from flow_template t
+         where t.del_flag = '0' and t.FLOW_OID = #{flowOid} and t.NODE_KEY = #{nodeKey}
+        <if test="id != null  and id != ''"> and t.id != #{id}</if>
+    </select>
+
+
+    <!-- 节点排序 是否存在 -->
+    <select id="isExitsSort" parameterType="FlowTemplate" resultType="java.lang.Integer">
+        select count(1) from flow_template t
+        where t.del_flag = '0' and t.FLOW_OID = #{flowOid} and t.NODE_ORDER = #{nodeOrder}
+        <if test="id != null  and id != ''"> and t.id != #{id}</if>
+    </select>
+
+
+</mapper>

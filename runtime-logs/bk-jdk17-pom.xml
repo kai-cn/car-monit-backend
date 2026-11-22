@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.ruoyi</groupId>
+    <artifactId>ruoyi</artifactId>
+    <version>3.8.7</version>
+
+    <name>ruoyi</name>
+    <url>http://www.ruoyi.vip</url>
+    <description>若依管理系统</description>
+
+    <!--
+      JDK 17 迁移说明（car-monit-backend-jdk17）第二阶段：
+      - Spring Boot 4.1.2（Spring Framework 7.0.x / Spring Security 7.1.x）是 JDK 17 可运行的
+        最新稳定版（spring-boot-starter-parent 4.1.2 的 java.version 基线为 17）。
+      - 命名空间整体切到 jakarta.*（Servlet 6.1 / Validation 3.x）。
+      - JSON 主线切到 Jackson 3（tools.jackson.*），Jackson 2 仅保留给
+        Elasticsearch 7.15.2 / AWS SDK v1 等第三方库内部使用。
+      - 使用编译器 release 选项而非 source/target，避免误用高于目标的 JDK API。
+      - 升级到 JDK 21/25 时只需修改 java.version / maven.compiler.release 两个属性。
+    -->
+    <properties>
+        <ruoyi.version>3.8.7</ruoyi.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>17</java.version>
+        <maven.compiler.release>17</maven.compiler.release>
+        <maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
+        <spring-boot.version>4.1.2</spring-boot.version>
+        <!-- 第三方依赖版本统一管理（Boot BOM 未接管的坐标） -->
+        <druid.version>1.2.28</druid.version>
+        <dynamic-datasource.version>4.6.0</dynamic-datasource.version>
+        <bitwalker.version>1.21</bitwalker.version>
+        <springdoc.version>3.2.0</springdoc.version>
+        <kaptcha.version>2.3.3</kaptcha.version>
+        <pagehelper.boot.version>4.1.1</pagehelper.boot.version>
+        <fastjson.version>2.0.66</fastjson.version>
+        <oshi.version>6.12.0</oshi.version>
+        <commons.io.version>2.20.0</commons.io.version>
+        <poi.version>4.1.2</poi.version>
+        <easypoi.version>4.3.0</easypoi.version>
+        <velocity.version>2.4.1</velocity.version>
+        <jwt.version>0.13.0</jwt.version>
+        <mybatis-plus.version>3.5.18</mybatis-plus.version>
+        <elasticsearch.version>7.15.2</elasticsearch.version>
+        <shardingsphere.version>5.5.3</shardingsphere.version>
+        <lombok.version>1.18.48</lombok.version>
+        <hutool.version>5.8.48</hutool.version>
+        <forest.version>1.8.0</forest.version>
+        <aws.sdk.version>1.11.543</aws.sdk.version>
+        <p6spy.version>3.9.1</p6spy.version>
+    </properties>
+
+    <!-- 依赖声明 -->
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- SpringBoot的依赖配置-->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- 分页插件（4.x 起对应 Spring Boot 4 / mybatis-spring-boot 4.0.x） -->
+            <dependency>
+                <groupId>com.github.pagehelper</groupId>
+                <artifactId>pagehelper-spring-boot-starter</artifactId>
+                <version>${pagehelper.boot.version}</version>
+            </dependency>
+
+            <!-- 阿里数据库连接池（Boot 4 专用 starter，勿混用 boot3/boot2 版本） -->
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>druid-spring-boot-4-starter</artifactId>
+                <version>${druid.version}</version>
+            </dependency>
+
+            <!-- 动态数据源（Boot 4 专用 starter） -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>dynamic-datasource-spring-boot4-starter</artifactId>
+                <version>${dynamic-datasource.version}</version>
+            </dependency>
+
+            <!-- mybatis-plus 增强CRUD（Boot 4 专用 starter） -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <!-- 3.5.9 起 IService/ServiceImpl 等扩展能力拆到独立模块，starter 不再传递 -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-extension</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <!-- 3.5.9 起依赖 jsqlparser 的 PaginationInnerInterceptor 等拆到独立模块。
+                 取 4.9 变体而非默认 5.x，是为了与 PageHelper 4.1.1（jsqlparser 4.9 API）共用同一份
+                 jsqlparser，避免分页插件在运行期出现 API 不匹配（历史上出现过 InstantiationError）。 -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-jsqlparser-4.9</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.jsqlparser</groupId>
+                <artifactId>jsqlparser</artifactId>
+                <version>4.9</version>
+            </dependency>
+
+            <!-- 解析客户端操作系统、浏览器等 -->
+            <dependency>
+                <groupId>eu.bitwalker</groupId>
+                <artifactId>UserAgentUtils</artifactId>
+                <version>${bitwalker.version}</version>
+            </dependency>
+
+            <!-- OpenAPI 3 文档（替代 Boot 3/4 下不可用的 springfox 3.0.0） -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+
+            <!-- io常用工具类 -->
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons.io.version}</version>
+            </dependency>
+
+            <!-- excel工具 -->
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+
+            <!-- easypoi 模板导出（只保留 base，easypoi-web/starter 依赖 javax.servlet 与 Boot 2 自动配置） -->
+            <dependency>
+                <groupId>cn.afterturn</groupId>
+                <artifactId>easypoi-base</artifactId>
+                <version>${easypoi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.afterturn</groupId>
+                <artifactId>easypoi-annotation</artifactId>
+                <version>${easypoi.version}</version>
+            </dependency>
+
+            <!-- velocity代码生成使用模板 -->
+            <dependency>
+                <groupId>org.apache.velocity</groupId>
+                <artifactId>velocity-engine-core</artifactId>
+                <version>${velocity.version}</version>
+            </dependency>
+
+            <!-- 阿里JSON解析器 -->
+            <dependency>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2</artifactId>
+                <version>${fastjson.version}</version>
+            </dependency>
+
+            <!-- Token生成与解析：jjwt 0.13.x（0.9.1 依赖 javax.xml.bind，JDK 11+ 已移除） -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jwt.version}</version>
+            </dependency>
+
+            <!-- 验证码 -->
+            <dependency>
+                <groupId>pro.fessional</groupId>
+                <artifactId>kaptcha</artifactId>
+                <version>${kaptcha.version}</version>
+            </dependency>
+
+            <!-- 定时任务-->
+            <dependency>
+                <groupId>com.ruoyi</groupId>
+                <artifactId>ruoyi-quartz</artifactId>
+                <version>${ruoyi.version}</version>
+            </dependency>
+
+            <!-- 代码生成-->
+            <dependency>
+                <groupId>com.ruoyi</groupId>
+                <artifactId>ruoyi-generator</artifactId>
+                <version>${ruoyi.version}</version>
+            </dependency>
+
+            <!-- 核心模块-->
+            <dependency>
+                <groupId>com.ruoyi</groupId>
+                <artifactId>ruoyi-framework</artifactId>
+                <version>${ruoyi.version}</version>
+            </dependency>
+
+            <!-- 系统模块-->
+            <dependency>
+                <groupId>com.ruoyi</groupId>
+                <artifactId>ruoyi-system</artifactId>
+                <version>${ruoyi.version}</version>
+            </dependency>
+
+            <!-- 通用工具-->
+            <dependency>
+                <groupId>com.ruoyi</groupId>
+                <artifactId>ruoyi-common</artifactId>
+                <version>${ruoyi.version}</version>
+            </dependency>
+
+            <!-- Elasticsearch（服务端 7.15.2，客户端按服务端对齐；Boot 4 BOM 不再管理 7.x 客户端）
+                 必须排除 org.elasticsearch:jna：该包仍是 com.sun.jna.* 包名，会和 OSHI 需要的
+                 官方 JNA 5.18 抢同名类，导致 /monitor/server 报 NoSuchMethodError Memory.close() -->
+            <dependency>
+                <groupId>org.elasticsearch</groupId>
+                <artifactId>elasticsearch</artifactId>
+                <version>${elasticsearch.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.elasticsearch</groupId>
+                        <artifactId>jna</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.elasticsearch.client</groupId>
+                <artifactId>elasticsearch-rest-high-level-client</artifactId>
+                <version>${elasticsearch.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.elasticsearch</groupId>
+                        <artifactId>jna</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <!-- ShardingSphere 分表中间件（5.5.3 起提供无 Spring 自动配置的 shardingsphere-jdbc，
+                 避免把 Boot 2 的 spring-boot-autoconfigure 带进 Boot 4 运行期类路径） -->
+            <dependency>
+                <groupId>org.apache.shardingsphere</groupId>
+                <artifactId>shardingsphere-jdbc</artifactId>
+                <version>${shardingsphere.version}</version>
+            </dependency>
+            <!-- 5.5.x 起分片能力（含 sharding-api）不再打进 shardingsphere-jdbc，需要显式引入 -->
+            <dependency>
+                <groupId>org.apache.shardingsphere</groupId>
+                <artifactId>shardingsphere-sharding-core</artifactId>
+                <version>${shardingsphere.version}</version>
+            </dependency>
+
+            <!-- 获取系统信息 -->
+            <dependency>
+                <groupId>com.github.oshi</groupId>
+                <artifactId>oshi-core</artifactId>
+                <version>${oshi.version}</version>
+            </dependency>
+
+            <!-- Lombok 1.18.48 支持 JDK 17 / 21 / 25，覆盖 Boot BOM 的旧版本 -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <modules>
+        <module>ruoyi-admin</module>
+        <module>ruoyi-framework</module>
+        <module>ruoyi-system</module>
+        <module>ruoyi-quartz</module>
+        <module>ruoyi-generator</module>
+        <module>ruoyi-common</module>
+    </modules>
+    <packaging>pom</packaging>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.0</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <parameters>true</parameters>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.4</version>
+            </plugin>
+        </plugins>
+    </build>
+
+    <repositories>
+        <repository>
+            <id>public</id>
+            <name>aliyun nexus</name>
+            <url>https://maven.aliyun.com/repository/public</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>public</id>
+            <name>aliyun nexus</name>
+            <url>https://maven.aliyun.com/repository/public</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+    </pluginRepositories>
+
+</project>

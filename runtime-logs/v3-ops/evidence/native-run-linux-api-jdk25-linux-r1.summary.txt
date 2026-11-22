@@ -1,0 +1,44 @@
+=== runner ===
+binary  : /mnt/d/work/IdeaProjects/car-monit-api-jdk25/pro-business-api/target/pro-business-api
+label   : api-jdk25-linux-r1
+log     : /mnt/d/work/runtime-logs/v3-ops/evidence/native-run-linux-api-jdk25-linux-r1.log
+binary size bytes: 342756064
+port_ready      : 0
+process_exited  : 1
+process_exited_before_sampling: 1
+=== last 40 log lines ===
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.2)
+
+[native-aot] explicit sqlSessionFactory reference patched into 0 MapperFactoryBean definition(s) -> sqlSessionFactory
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::loadLibrary has been called by io.netty.util.internal.NativeLibraryUtil in an unnamed module (file:/mnt/d/work/IdeaProjects/car-monit-api-jdk25/pro-business-api/target/pro-business-api)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+2026-11-16 00:34:30.981 [main] [1;31mERROR[0;39m [36mc.ruoyi.base.service.v3.plate.PlateColorDictionary:106[0;39m - [V3车牌] plate_color 字典加载失败，保留旧快照（当前 0 个码）: Failed to obtain JDBC Connection
+2026-11-16 00:34:31.510 [main] [1;31mERROR[0;39m [36mo.s.b.diagnostics.LoggingFailureAnalysisReporter:28[0;39m - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Field sysUtilService in com.ruoyi.base.controller.SysTestController required a bean of type 'com.ruoyi.base.forest.HttpSysUtilApiService' that could not be found.
+
+The injection point has the following annotations:
+	- @org.springframework.beans.factory.annotation.Autowired(required=true)
+
+
+Action:
+
+Consider defining a bean of type 'com.ruoyi.base.forest.HttpSysUtilApiService' in your configuration.
+

@@ -1,0 +1,51 @@
+# 原始实机 E2E 输出（2026-11-11，从会话记录逐行提取，非事后编造）
+[admin] GET /getInfo -> HTTP 200 code=200,msg=操作成功 roles=['admin'] perms=['*:*:*']
+[admin] POST /system/user create jdk17e2e_view(role=common) -> HTTP 200 code=200,msg=操作成功 
+[admin] GET /system/user/list jdk17e2e_view -> total=1 roles=[None]
+[admin] POST /system/user create jdk17e2e_mgr(role=project_manager) -> HTTP 200 code=200,msg=操作成功 
+[admin] GET /system/user/list jdk17e2e_mgr -> total=1 roles=[None]
+[jdk17e2e_view] POST /login -> HTTP 200 code=200,msg=操作成功 token_len=184
+[jdk17e2e_view] GET /getInfo -> HTTP 200 code=200,msg=操作成功 roles=['common'] perm_count=3
+[jdk17e2e_view] GET /getRouters -> HTTP 200 code=200,msg=操作成功 menu_count=0
+[jdk17e2e_mgr] POST /login -> HTTP 200 code=200,msg=操作成功 token_len=184
+[jdk17e2e_mgr] GET /getInfo -> HTTP 200 code=200,msg=操作成功 roles=['project_manager'] perm_count=74
+[jdk17e2e_mgr] GET /getRouters -> HTTP 200 code=200,msg=操作成功 menu_count=5
+[jdk17e2e_view] GET /manager/bigScreen/carStatistics -> HTTP 200 code=200,msg=操作成功  X-Data-Source=API rows=6
+[jdk17e2e_view] GET /manager/bigScreen/carAudit -> HTTP 200 code=200,msg=操作成功  X-Data-Source=API rows=-
+[jdk17e2e_view] GET /manager/bigScreen/orgList -> HTTP 200 code=200,msg=操作成功  X-Data-Source=- rows=481
+[jdk17e2e_view] GET /manager/bigScreen/sectionList -> HTTP 200 code=200,msg=操作成功  X-Data-Source=- rows=86
+[jdk17e2e_view] GET /manager/bigScreen/carVoList -> HTTP 200 code=200,msg=操作成功  X-Data-Source=- rows=10
+[jdk17e2e_view] GET /manager/bigScreen/exceptionCar -> HTTP 200 code=200,msg=操作成功  X-Data-Source=- rows=2
+[jdk17e2e_view] GET /monitor/bigscreen/metrics -> HTTP 200 code=200,msg=操作成功  X-Data-Source=- rows=-
+[jdk17e2e_view] GET /monitor/bigscreen/switches -> HTTP 200 code=200,msg=操作成功  X-Data-Source=- rows=-
+[jdk17e2e_mgr] GET /manager/bigScreen/carStatistics -> HTTP 200 code=200,msg=操作成功  X-Data-Source=CACHE rows=6
+[jdk17e2e_mgr] GET /manager/bigScreen/carAudit -> HTTP 200 code=200,msg=操作成功  X-Data-Source=CACHE rows=-
+[jdk17e2e_mgr] GET /manager/bigScreen/orgList -> HTTP 200 code=200,msg=操作成功  X-Data-Source=CACHE rows=481
+[jdk17e2e_mgr] GET /manager/bigScreen/sectionList -> HTTP 200 code=200,msg=操作成功  X-Data-Source=CACHE rows=86
+[jdk17e2e_mgr] GET /manager/bigScreen/carVoList -> HTTP 200 code=200,msg=操作成功  X-Data-Source=CACHE rows=10
+[jdk17e2e_mgr] GET /manager/bigScreen/exceptionCar -> HTTP 200 code=200,msg=操作成功  X-Data-Source=CACHE rows=2
+[jdk17e2e_mgr] GET /monitor/bigscreen/metrics -> HTTP 200 code=200,msg=操作成功  X-Data-Source=- rows=-
+[jdk17e2e_mgr] GET /monitor/bigscreen/switches -> HTTP 200 code=200,msg=操作成功  X-Data-Source=- rows=-
+[viewer][negative] GET /system/user/list -> HTTP 200 code=200,msg=查询成功,total=12 
+[viewer][negative] GET /manager/bigScreen/export/approvals -> HTTP 200 code=403,msg=没有权限，请联系管理员授权 
+[viewer][negative] POST /monitor/bigscreen/switches/export-approval -> HTTP 200 code=403,msg=没有权限，请联系管理员授权 
+[mgr] POST /export/display -> HTTP 200 code=200,msg=操作成功 
+[mgr] taskId=10b638e7adc64481b8a489f21c17cd7a
+[mgr] GET /export/status -> HTTP 200 code=200,msg=操作成功 
+[mgr] POST /export/download-url -> HTTP 200 code=200,msg=操作成功 tokenHeader=X-Export-Download-Token expiresIn=900
+[mgr] GET /export/download (no download token) -> HTTP 403
+[mgr] GET /export/download (valid token) -> HTTP 409 bytes=48 gzip=False
+[viewer][negative] cross-user download token -> HTTP 403
+[mgr] POST /export/retry(done task) -> HTTP 200 code=400,msg=仅 failed/canceled/paused 任务可重试，当前状态: running 
+[mgr] GET /export/approvals -> HTTP 200 code=200,msg=操作成功 
+[api] capabilities WITHOUT token -> HTTP 403
+[api] capabilities WITH token -> HTTP 200 modes=['display', 'full'] tables=['snapshot', 'fee', 'trail']
+[api] es/readiness WITH token -> HTTP 200 code=200 
+[api] GET /base/snapshotflow/list -> HTTP 200 code=200 total=0 rows=- msg=查询成功
+[api] GET /base/feerecords/list -> HTTP 200 code=200 total=0 rows=- msg=查询成功
+[api] GET /base/sysutil/carTrackQueryByCarNo -> HTTP 200 code=200 total=0 rows=- msg=查询成功
+[api] GET /api/v1/large/carTrackQueryByCarNo -> HTTP 200 code=200 total=- rows=0 msg=
+[admin] DELETE /system/user/990188,990189 -> HTTP 200 code=200,msg=操作成功 
+[admin] verify cleanup jdk17e2e_view -> total=0
+[admin] verify cleanup jdk17e2e_mgr -> total=0
+RESULT_LINES=49 REPORT_LINES=50

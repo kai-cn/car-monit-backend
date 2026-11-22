@@ -1,0 +1,24 @@
+{
+  "label": "api-jdk25-opengauss",
+  "baseline": {
+    "variant": "jar",
+    "startup_ms": 5423,
+    "peak_rss_mb": 323.1,
+    "avg_latency_ms": null
+  },
+  "candidate": {
+    "variant": "jar",
+    "startup_ms": 3608,
+    "peak_rss_mb": 285.5,
+    "avg_latency_ms": null
+  },
+  "totals": {
+    "endpoints": 0,
+    "status_match": 0,
+    "exact": 0,
+    "semantic": 0,
+    "nondet": 0,
+    "fails": 0
+  },
+  "rows": []
+}

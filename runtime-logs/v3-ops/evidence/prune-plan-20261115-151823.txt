@@ -1,0 +1,109 @@
+################ K3D IMAGE PRUNE PLAN 20261115-151823 ################
+mode=APPLY keep_tag=slim keep_digest_override=none prune_untagged=1
+
+in-use digests (2): sha256:0de79ab52689a49db6d04793eb5ba8dcfa5823b8ee1a5d75b5f003d6293d5a1e sha256:16a3b6525703482190a7ba0c767b71b2519a22fa0eebd7f0dff9ba9592290343
+
+================ k3d-v3-server-0 ================
+-- repo car-monit-api : 3 image(s) --
+   id=sha256:0de79ab52689a49db6d04793eb5ba8dcfa5823b8ee1a5d75b5f003d6293d5a1e size= tags=docker.io/library/car-monit-api:ci-v2 digests=650003780
+   id=sha256:f10f0477e5fe8bdde6d7bc2606d34ef7748ca31108edafa384ddd3dd4ff9fdda size= tags=docker.io/library/car-monit-api:ci-verify digests=520484169
+   id=sha256:60f6895edb564885119e8d9270fb20b56b4cd63f6ccd31a54a84b1c3f764832f size= tags=docker.io/library/car-monit-api:slim digests=438978008
+   KEEP  sha256:0de79ab52689a49db6d04793eb5ba8dcfa5823b8ee1a5d75b5f003d6293d5a1e
+   DROP  sha256:f10f0477e5fe8bdde6d7bc2606d34ef7748ca31108edafa384ddd3dd4ff9fdda  (docker.io/library/car-monit-api:ci-verify)
+   DROP  sha256:60f6895edb564885119e8d9270fb20b56b4cd63f6ccd31a54a84b1c3f764832f  (docker.io/library/car-monit-api:slim)
+
+-- repo car-monit-backend : 3 image(s) --
+   id=sha256:16a3b6525703482190a7ba0c767b71b2519a22fa0eebd7f0dff9ba9592290343 size= tags=docker.io/library/car-monit-backend:ci-v2 digests=584552773
+   id=sha256:664855113ac23a6079202ce92391b5d8285d01a3ce45d5a1eae5ec29f709dd1e size= tags=docker.io/library/car-monit-backend:ci-verify digests=487758667
+   id=sha256:6e27bb1ee89fc485d6cfeb87acfc1fff19c40f25e312440564e449432a10ad2e size= tags=docker.io/library/car-monit-backend:slim digests=406252505
+   KEEP  sha256:16a3b6525703482190a7ba0c767b71b2519a22fa0eebd7f0dff9ba9592290343
+   DROP  sha256:664855113ac23a6079202ce92391b5d8285d01a3ce45d5a1eae5ec29f709dd1e  (docker.io/library/car-monit-backend:ci-verify)
+   DROP  sha256:6e27bb1ee89fc485d6cfeb87acfc1fff19c40f25e312440564e449432a10ad2e  (docker.io/library/car-monit-backend:slim)
+
+
+================ k3d-v3-agent-0 ================
+-- repo car-monit-api : 3 image(s) --
+   id=sha256:0de79ab52689a49db6d04793eb5ba8dcfa5823b8ee1a5d75b5f003d6293d5a1e size= tags=docker.io/library/car-monit-api:ci-v2 digests=650003780
+   id=sha256:f10f0477e5fe8bdde6d7bc2606d34ef7748ca31108edafa384ddd3dd4ff9fdda size= tags=docker.io/library/car-monit-api:ci-verify digests=520484169
+   id=sha256:60f6895edb564885119e8d9270fb20b56b4cd63f6ccd31a54a84b1c3f764832f size= tags=docker.io/library/car-monit-api:slim digests=438978008
+   KEEP  sha256:0de79ab52689a49db6d04793eb5ba8dcfa5823b8ee1a5d75b5f003d6293d5a1e
+   DROP  sha256:f10f0477e5fe8bdde6d7bc2606d34ef7748ca31108edafa384ddd3dd4ff9fdda  (docker.io/library/car-monit-api:ci-verify)
+   DROP  sha256:60f6895edb564885119e8d9270fb20b56b4cd63f6ccd31a54a84b1c3f764832f  (docker.io/library/car-monit-api:slim)
+
+-- repo car-monit-backend : 3 image(s) --
+   id=sha256:16a3b6525703482190a7ba0c767b71b2519a22fa0eebd7f0dff9ba9592290343 size= tags=docker.io/library/car-monit-backend:ci-v2 digests=584552773
+   id=sha256:664855113ac23a6079202ce92391b5d8285d01a3ce45d5a1eae5ec29f709dd1e size= tags=docker.io/library/car-monit-backend:ci-verify digests=487758667
+   id=sha256:6e27bb1ee89fc485d6cfeb87acfc1fff19c40f25e312440564e449432a10ad2e size= tags=docker.io/library/car-monit-backend:slim digests=406252505
+   KEEP  sha256:16a3b6525703482190a7ba0c767b71b2519a22fa0eebd7f0dff9ba9592290343
+   DROP  sha256:664855113ac23a6079202ce92391b5d8285d01a3ce45d5a1eae5ec29f709dd1e  (docker.io/library/car-monit-backend:ci-verify)
+   DROP  sha256:6e27bb1ee89fc485d6cfeb87acfc1fff19c40f25e312440564e449432a10ad2e  (docker.io/library/car-monit-backend:slim)
+
+
+================ k3d-v3-agent-1 ================
+-- repo car-monit-api : 3 image(s) --
+   id=sha256:0de79ab52689a49db6d04793eb5ba8dcfa5823b8ee1a5d75b5f003d6293d5a1e size= tags=docker.io/library/car-monit-api:ci-v2 digests=650003780
+   id=sha256:f10f0477e5fe8bdde6d7bc2606d34ef7748ca31108edafa384ddd3dd4ff9fdda size= tags=docker.io/library/car-monit-api:ci-verify digests=520484169
+   id=sha256:60f6895edb564885119e8d9270fb20b56b4cd63f6ccd31a54a84b1c3f764832f size= tags=docker.io/library/car-monit-api:slim digests=438978008
+   KEEP  sha256:0de79ab52689a49db6d04793eb5ba8dcfa5823b8ee1a5d75b5f003d6293d5a1e
+   DROP  sha256:f10f0477e5fe8bdde6d7bc2606d34ef7748ca31108edafa384ddd3dd4ff9fdda  (docker.io/library/car-monit-api:ci-verify)
+   DROP  sha256:60f6895edb564885119e8d9270fb20b56b4cd63f6ccd31a54a84b1c3f764832f  (docker.io/library/car-monit-api:slim)
+
+-- repo car-monit-backend : 3 image(s) --
+   id=sha256:16a3b6525703482190a7ba0c767b71b2519a22fa0eebd7f0dff9ba9592290343 size= tags=docker.io/library/car-monit-backend:ci-v2 digests=584552773
+   id=sha256:664855113ac23a6079202ce92391b5d8285d01a3ce45d5a1eae5ec29f709dd1e size= tags=docker.io/library/car-monit-backend:ci-verify digests=487758667
+   id=sha256:6e27bb1ee89fc485d6cfeb87acfc1fff19c40f25e312440564e449432a10ad2e size= tags=docker.io/library/car-monit-backend:slim digests=406252505
+   KEEP  sha256:16a3b6525703482190a7ba0c767b71b2519a22fa0eebd7f0dff9ba9592290343
+   DROP  sha256:664855113ac23a6079202ce92391b5d8285d01a3ce45d5a1eae5ec29f709dd1e  (docker.io/library/car-monit-backend:ci-verify)
+   DROP  sha256:6e27bb1ee89fc485d6cfeb87acfc1fff19c40f25e312440564e449432a10ad2e  (docker.io/library/car-monit-backend:slim)
+
+
+################ SUMMARY ################
+kept images: 6 ; images to drop: 12
+
+################ EXECUTING ################
+-- rmi k3d-v3-server-0 sha256:f10f0477e5fe8bdde6d7bc2606d34ef7748ca31108edafa384ddd3dd4ff9fdda
+Deleted: docker.io/library/car-monit-api:ci-verify
+-- rmi k3d-v3-server-0 sha256:60f6895edb564885119e8d9270fb20b56b4cd63f6ccd31a54a84b1c3f764832f
+Deleted: docker.io/library/car-monit-api:slim
+-- rmi k3d-v3-server-0 sha256:664855113ac23a6079202ce92391b5d8285d01a3ce45d5a1eae5ec29f709dd1e
+Deleted: docker.io/library/car-monit-backend:ci-verify
+-- rmi k3d-v3-server-0 sha256:6e27bb1ee89fc485d6cfeb87acfc1fff19c40f25e312440564e449432a10ad2e
+Deleted: docker.io/library/car-monit-backend:slim
+-- rmi k3d-v3-agent-0 sha256:f10f0477e5fe8bdde6d7bc2606d34ef7748ca31108edafa384ddd3dd4ff9fdda
+Deleted: docker.io/library/car-monit-api:ci-verify
+-- rmi k3d-v3-agent-0 sha256:60f6895edb564885119e8d9270fb20b56b4cd63f6ccd31a54a84b1c3f764832f
+Deleted: docker.io/library/car-monit-api:slim
+-- rmi k3d-v3-agent-0 sha256:664855113ac23a6079202ce92391b5d8285d01a3ce45d5a1eae5ec29f709dd1e
+Deleted: docker.io/library/car-monit-backend:ci-verify
+-- rmi k3d-v3-agent-0 sha256:6e27bb1ee89fc485d6cfeb87acfc1fff19c40f25e312440564e449432a10ad2e
+Deleted: docker.io/library/car-monit-backend:slim
+-- rmi k3d-v3-agent-1 sha256:f10f0477e5fe8bdde6d7bc2606d34ef7748ca31108edafa384ddd3dd4ff9fdda
+Deleted: docker.io/library/car-monit-api:ci-verify
+-- rmi k3d-v3-agent-1 sha256:60f6895edb564885119e8d9270fb20b56b4cd63f6ccd31a54a84b1c3f764832f
+Deleted: docker.io/library/car-monit-api:slim
+-- rmi k3d-v3-agent-1 sha256:664855113ac23a6079202ce92391b5d8285d01a3ce45d5a1eae5ec29f709dd1e
+Deleted: docker.io/library/car-monit-backend:ci-verify
+-- rmi k3d-v3-agent-1 sha256:6e27bb1ee89fc485d6cfeb87acfc1fff19c40f25e312440564e449432a10ad2e
+Deleted: docker.io/library/car-monit-backend:slim
+-- crictl rmi --prune on k3d-v3-server-0
+Deleted: docker.io/rancher/mirrored-pause:3.6
+-- crictl rmi --prune on k3d-v3-agent-0
+Deleted: docker.io/rancher/mirrored-coredns-coredns:1.14.3
+Deleted: docker.io/rancher/mirrored-pause:3.6
+-- crictl rmi --prune on k3d-v3-agent-1
+Deleted: docker.io/rancher/mirrored-pause:3.6
+
+################ VERIFY ################
+-- k3d-v3-server-0 --
+IMAGE                                      TAG                 IMAGE ID            SIZE
+docker.io/library/car-monit-api            ci-v2               0de79ab52689a       650MB
+docker.io/library/car-monit-backend        ci-v2               16a3b65257034       585MB
+-- k3d-v3-agent-0 --
+IMAGE                                 TAG                 IMAGE ID            SIZE
+docker.io/library/car-monit-api       ci-v2               0de79ab52689a       650MB
+docker.io/library/car-monit-backend   ci-v2               16a3b65257034       585MB
+-- k3d-v3-agent-1 --
+IMAGE                                        TAG                 IMAGE ID            SIZE
+docker.io/library/car-monit-api              ci-v2               0de79ab52689a       650MB
+docker.io/library/car-monit-backend          ci-v2               16a3b65257034       585MB
+Plan / result log: /mnt/d/work/runtime-logs/v3-ops/evidence/prune-plan-20261115-151823.txt

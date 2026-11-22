@@ -1,0 +1,177 @@
+# @description 历史运维/验证配置快照，保留用于复现与审计；本文件头补充维护背景与运行约束。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage GitHub Actions workflow_dispatch 或事件触发；输入参数见 workflow inputs。
+# @dependencies 按原 workflow 声明的 runner、Actions 与外部服务依赖执行。
+# Rust mirror of ruoyi-admin/src/main/resources/application.yml + application-druid.yml
+# Keys keep the Java names; values must stay identical unless marked "rust-only".
+server:
+  port: 9989
+
+ruoyi:
+  name: RuoYi
+  version: 3.8.7
+  profile: D:/ruoyi/uploadPath
+  addressEnabled: false
+  captchaType: math
+
+user:
+  password:
+    maxRetryCount: 5
+    lockTime: 10
+
+token:
+  header: Authorization
+  secret: abcdefghijklmnopqrstuvwxyz
+  expireTime: 120
+
+database:
+  url: jdbc:mysql://127.0.0.1:3307/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&allowMultiQueries=true&serverTimezone=GMT%2B8
+  username: root
+  password: root
+  pool:
+    initialSize: 5
+    minIdle: 10
+    maxActive: 200
+    maxWait: 60000
+    connectTimeout: 30000
+    socketTimeout: 60000
+
+redis:
+  host: 127.0.0.1
+  port: 6379
+  # 两端各成一整套：Java 侧 backend(9988) 与 car-monit-api 的 Java 端(9902) 共用 db0，
+  # Rust 侧 backend(9990) 与 car-monit-api-rust(9911) 共用 db15。
+  # api 服务写的 `gantry_list`/`section_road_map`/`station_info` 等缓存要被 backend 读到，
+  # 所以「同一侧共用一个 db、两侧 db 不同」是拓扑要求，不是随意选的序号。
+  database: 15
+  password: ""
+  timeout: 10s
+
+kafka:
+  bootstrap_servers: 127.0.0.1:9092
+  topic:
+    snapshot-flow: ods-rt-szdn-snapshot-flow
+    snapshot-flow-dlq: ods-rt-szdn-snapshot-flow-dlq
+  consumer:
+    group-id: snapshot-flow-consumer-group
+    concurrency: 3
+    auto-offset-reset: earliest
+    max-poll-records: 500
+  producer:
+    acks: all
+    retries: 3
+
+cdc:
+  kafka:
+    bootstrap-servers: localhost:9092
+    topic: snapshot-flow-cdc
+    group-id: snapshot-flow-cdc-group
+    concurrency: 3
+  es_sync:
+    enabled: false
+  retry:
+    max-retries: 3
+
+elasticsearch:
+  host: 127.0.0.1
+  port: 9200
+  index: snapshot-flow
+  enabled: true
+
+# Java: application.yml 的 oss 段（OssProperties）—— /oss/** 控制器用它直连 MinIO/S3。
+# 双端默认值必须一致；本机的 172.30.100.102:9002 不可达，对拍时两端都另指假 S3：
+#   java  -jar ruoyi-admin.jar --oss.endpoint=http://127.0.0.1:9124
+#   rust  APP_OSS__ENDPOINT=http://127.0.0.1:9124 build\run-rust.cmd
+oss:
+  enable: true
+  info: false
+  endpoint: "http://172.30.100.102:9002"
+  access_key: "jtwl_access_key"
+  secret_key: "minio.prod"
+  bucket_name: "developer"
+  # Java 的 OssProperties.region 未在 yml 出现（null），SDK 落到 us-east-1
+  region: "us-east-1"
+  path_style_access: true
+
+sms:
+  signature: ""
+  template:
+    login: ""
+    register: ""
+
+forest:
+  max-connections: 500
+  connect-timeout: 60000
+  read-timeout: 60000
+  retry-count: 2
+  variables:
+    henda_url: "http://36.200.20.14:7890/8809/geoserver-pg/rest"
+    # Java: roadPathUrl（RoadPathApi 的 @BaseRequest(baseURL = "#{roadPathUrl}")）
+    road_path_url: "http://36.200.30.117:8080"
+
+# Java: hengda.appid / hengda.secret（IHenDaApi 签名）
+hengda:
+  appid: YHZS
+  secret: b48381c4b98311ea90b100155d14fa3b
+
+# Java: vehicleMonitor.baseUrl（Forest @BaseRequest 的 baseURL）
+vehicleMonitor:
+  # 双端各打对应实现：backend-Java -> car-monit-api 的 Java 端(9902)，
+  # backend-Rust -> car-monit-api-rust(9911)。jar 里的默认值就是 9902。
+  baseUrl: http://127.0.0.1:9911
+
+# Java: isLocalhost —— local 时实时轨迹任务只落库，不做上线/驶出判定
+isLocalhost: local
+
+# Java: tx-service-url —— LonLatPathsUtils 调腾讯 direction 的地址（getCarGeometryByPlan 用）
+tx-service-url: https://apis.map.qq.com
+
+monitor:
+  slow-request-threshold: 3000
+  slow-method-threshold: 500
+  slow-sql-threshold: 1000
+  trace-header: X-Trace-Id
+  enabled: true
+
+xss:
+  enabled: true
+  url-patterns: /system/*,/monitor/*,/tool/*
+  excludes: /system/notice
+
+upload:
+  max-file-size: 40MB
+  max-request-size: 200MB
+
+log:
+  dir: /home/ruoyi/logs
+  max-history: 60
+  max-file-size: 100MB
+
+# Java reads neither snapshot.flow.sharding.* nor sharding.enabled; both are kept
+# because the user decided the Rust side must actually shard.
+snapshot:
+  flow:
+    sharding:
+      enabled: true
+      table-prefix: ods_rt_szdn_snapshot_flow_
+      sharding-field: snapshottime
+      sharding-type: month
+
+sharding:
+  enabled: true
+
+# Rust-only switches (documented in README-MIGRATION.md).
+app:
+  health-endpoint-enabled: true
+  scheduler-enabled: true
+  scheduled-annotations-enabled: true
+  kafka-enabled: false
+  elasticsearch-enabled: true
+  oss-enabled: false
+  banner-enabled: true
+
+# Java: generator-code.mybatis-plus.enable —— 代码生成使用 vmplus（MyBatis-Plus）模板
+generator-code:
+  mybatis-plus:
+    enable: true

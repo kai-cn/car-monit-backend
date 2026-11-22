@@ -1,0 +1,55 @@
+OK   car-monit-backend-jdk17 cd.yml jobs=4 on={"push":{"branches":["master"],"tags":["v*.*.*"]},"workflow_dispatch":null}
+OK   car-monit-backend-jdk17 ci.yml jobs=9 on={"pull_request":{"branches":["master"]},"push":{"branches":["master","car-monit-go-V2","ca
+OK   car-monit-backend-jdk17 deploy.yml jobs=1 on={"workflow_dispatch":{"inputs":{"service":{"description":"要部署的服务","required":true,"type":"
+OK   car-monit-backend-jdk17 release.yml jobs=5 on={"push":{"tags":["v*.*.*"]}}
+OK   car-monit-backend-jdk17 self-hosted-ci.yml jobs=2 on={"workflow_dispatch":null,"push":{"branches":["car-monit-backend-java-V3","car-monit-backe
+OK   car-monit-backend-jdk17 _cpp.yml jobs=1 on={"workflow_call":null}
+OK   car-monit-backend-jdk21 cd.yml jobs=4 on={"push":{"branches":["master"],"tags":["v*.*.*"]},"workflow_dispatch":null}
+OK   car-monit-backend-jdk21 ci.yml jobs=9 on={"pull_request":{"branches":["master"]},"push":{"branches":["master","car-monit-go-V2","ca
+OK   car-monit-backend-jdk21 deploy.yml jobs=1 on={"workflow_dispatch":{"inputs":{"service":{"description":"要部署的服务","required":true,"type":"
+OK   car-monit-backend-jdk21 release.yml jobs=5 on={"push":{"tags":["v*.*.*"]}}
+OK   car-monit-backend-jdk21 self-hosted-ci.yml jobs=2 on={"workflow_dispatch":null,"push":{"branches":["car-monit-backend-java-V3","car-monit-backe
+OK   car-monit-backend-jdk21 _cpp.yml jobs=1 on={"workflow_call":null}
+OK   car-monit-backend-jdk25 cd.yml jobs=4 on={"push":{"branches":["master"],"tags":["v*.*.*"]},"workflow_dispatch":null}
+OK   car-monit-backend-jdk25 ci.yml jobs=9 on={"pull_request":{"branches":["master"]},"push":{"branches":["master","car-monit-go-V2","ca
+OK   car-monit-backend-jdk25 deploy.yml jobs=1 on={"workflow_dispatch":{"inputs":{"service":{"description":"要部署的服务","required":true,"type":"
+OK   car-monit-backend-jdk25 release.yml jobs=5 on={"push":{"tags":["v*.*.*"]}}
+OK   car-monit-backend-jdk25 self-hosted-ci.yml jobs=2 on={"workflow_dispatch":null,"push":{"branches":["car-monit-backend-java-V3","car-monit-backe
+OK   car-monit-backend-jdk25 _cpp.yml jobs=1 on={"workflow_call":null}
+OK   car-monit-api-jdk17 cd-standalone.yml jobs=2 on={"workflow_dispatch":{"inputs":{"service":{"description":"打包哪个实现","required":true,"type":"
+OK   car-monit-api-jdk17 deploy.yml jobs=3 on={"workflow_dispatch":{"inputs":{"environment":{"description":"目标环境（GitHub Environment，用于审批
+OK   car-monit-api-jdk17 master.yml jobs=12 on={"push":{"branches":["master","car-monit-api-java-V3"]},"workflow_dispatch":null}
+OK   car-monit-api-jdk17 pr.yml jobs=7 on={"pull_request":{"branches":["master"],"types":["opened","synchronize","reopened","ready_f
+OK   car-monit-api-jdk17 release.yml jobs=12 on={"push":{"tags":["v*.*.*"]},"workflow_dispatch":null}
+OK   car-monit-api-jdk17 self-hosted-ci.yml jobs=2 on={"workflow_dispatch":null,"push":{"branches":["car-monit-api-java-V3","car-monit-api-jdk17
+OK   car-monit-api-jdk17 _cpp.yml jobs=4 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk17 _go.yml jobs=1 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk17 _image.yml jobs=1 on={"workflow_call":{"inputs":{"language":{"description":"java | python | go | cpp | rust","r
+OK   car-monit-api-jdk17 _java.yml jobs=1 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk17 _python.yml jobs=3 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk17 _rust.yml jobs=1 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk21 cd-standalone.yml jobs=2 on={"workflow_dispatch":{"inputs":{"service":{"description":"打包哪个实现","required":true,"type":"
+OK   car-monit-api-jdk21 deploy.yml jobs=3 on={"workflow_dispatch":{"inputs":{"environment":{"description":"目标环境（GitHub Environment，用于审批
+OK   car-monit-api-jdk21 master.yml jobs=12 on={"push":{"branches":["master","car-monit-api-java-V3"]},"workflow_dispatch":null}
+OK   car-monit-api-jdk21 pr.yml jobs=7 on={"pull_request":{"branches":["master"],"types":["opened","synchronize","reopened","ready_f
+OK   car-monit-api-jdk21 release.yml jobs=12 on={"push":{"tags":["v*.*.*"]},"workflow_dispatch":null}
+OK   car-monit-api-jdk21 self-hosted-ci.yml jobs=2 on={"workflow_dispatch":null,"push":{"branches":["car-monit-api-java-V3","car-monit-api-jdk21
+OK   car-monit-api-jdk21 _cpp.yml jobs=4 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk21 _go.yml jobs=1 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk21 _image.yml jobs=1 on={"workflow_call":{"inputs":{"language":{"description":"java | python | go | cpp | rust","r
+OK   car-monit-api-jdk21 _java.yml jobs=1 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk21 _python.yml jobs=3 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk21 _rust.yml jobs=1 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk25 cd-standalone.yml jobs=2 on={"workflow_dispatch":{"inputs":{"service":{"description":"打包哪个实现","required":true,"type":"
+OK   car-monit-api-jdk25 deploy.yml jobs=3 on={"workflow_dispatch":{"inputs":{"environment":{"description":"目标环境（GitHub Environment，用于审批
+OK   car-monit-api-jdk25 master.yml jobs=12 on={"push":{"branches":["master","car-monit-api-java-V3"]},"workflow_dispatch":null}
+OK   car-monit-api-jdk25 pr.yml jobs=7 on={"pull_request":{"branches":["master"],"types":["opened","synchronize","reopened","ready_f
+OK   car-monit-api-jdk25 release.yml jobs=12 on={"push":{"tags":["v*.*.*"]},"workflow_dispatch":null}
+OK   car-monit-api-jdk25 self-hosted-ci.yml jobs=2 on={"workflow_dispatch":null,"push":{"branches":["car-monit-api-java-V3","car-monit-api-jdk25
+OK   car-monit-api-jdk25 _cpp.yml jobs=4 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk25 _go.yml jobs=1 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk25 _image.yml jobs=1 on={"workflow_call":{"inputs":{"language":{"description":"java | python | go | cpp | rust","r
+OK   car-monit-api-jdk25 _java.yml jobs=1 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk25 _python.yml jobs=3 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+OK   car-monit-api-jdk25 _rust.yml jobs=1 on={"workflow_call":{"inputs":{"mode":{"description":"pr | master | release","required":false
+YAML_TOTAL=54 YAML_BAD=0

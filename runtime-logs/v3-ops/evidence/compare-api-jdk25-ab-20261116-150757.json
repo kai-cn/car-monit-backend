@@ -1,0 +1,50 @@
+{
+  "label": "api-jdk25-ab",
+  "native_bytes": 358222560,
+  "jar_bytes": 212271942,
+  "stability_duration_s": 120,
+  "startup_ms": {
+    "jvm": 20435,
+    "native": 3740
+  },
+  "startup_peak_rss_MB": {
+    "jvm": 544.8,
+    "native": 280.0
+  },
+  "port_ready": {
+    "jvm": 1,
+    "native": 1
+  },
+  "steady": {
+    "jvm": {
+      "samples": 20,
+      "rss_avg_MB": 547.8,
+      "rss_min_MB": 545.2,
+      "rss_max_MB": 548.6,
+      "http_success": 20,
+      "http_total": 20,
+      "http_latency_avg_ms": 18.6
+    },
+    "native": {
+      "samples": 20,
+      "rss_avg_MB": 281.8,
+      "rss_min_MB": 280.3,
+      "rss_max_MB": 281.9,
+      "http_success": 20,
+      "http_total": 20,
+      "http_latency_avg_ms": 3.7
+    }
+  },
+  "native_stability": {
+    "samples": 24,
+    "rss_avg_MB": 277.9,
+    "rss_min_MB": 236.2,
+    "rss_max_MB": 287.3,
+    "http_success": 24,
+    "http_total": 24,
+    "http_latency_avg_ms": 5.9,
+    "rss_first_MB": 283.9,
+    "rss_last_MB": 236.2,
+    "rss_drift_MB": -47.7
+  }
+}

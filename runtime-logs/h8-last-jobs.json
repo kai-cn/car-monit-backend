@@ -1,0 +1,253 @@
+﻿{
+    "total_count":  2,
+    "jobs":  [
+                 {
+                     "id":  135561192782,
+                     "run_id":  44524395943,
+                     "workflow_name":  "parity-verify-cloud",
+                     "head_branch":  "car-monit-backend-jdk25",
+                     "run_url":  "https://api.github.com/repos/kai-cn/car-monit-backend/actions/runs/44524395943",
+                     "run_attempt":  1,
+                     "node_id":  "CR_kwDOVc69js8AAAAfkBOlTg",
+                     "head_sha":  "5d10e75f1a9e7b3141dd6ded4b47e870fa7d979b",
+                     "url":  "https://api.github.com/repos/kai-cn/car-monit-backend/actions/jobs/135561192782",
+                     "html_url":  "https://github.com/kai-cn/car-monit-backend/actions/runs/44524395943/job/135561192782",
+                     "status":  "completed",
+                     "conclusion":  "success",
+                     "created_at":  "2026-11-19T12:30:05Z",
+                     "started_at":  "2026-11-19T12:30:06Z",
+                     "completed_at":  "2026-11-19T12:30:12Z",
+                     "name":  "prepare",
+                     "steps":  [
+                                   {
+                                       "name":  "Set up job",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  1,
+                                       "started_at":  "2026-11-19T12:30:07Z",
+                                       "completed_at":  "2026-11-19T12:30:08Z"
+                                   },
+                                   {
+                                       "name":  "Run actions/checkout@v4",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  2,
+                                       "started_at":  "2026-11-19T12:30:08Z",
+                                       "completed_at":  "2026-11-19T12:30:09Z"
+                                   },
+                                   {
+                                       "name":  "Cache Maven repository",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  3,
+                                       "started_at":  "2026-11-19T12:30:09Z",
+                                       "completed_at":  "2026-11-19T12:30:09Z"
+                                   },
+                                   {
+                                       "name":  "Run v=$(grep -oP \u0027\u003cjava\\.version\u003e\\K[0-9]+\u0027 pom.xml | head -1)",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  4,
+                                       "started_at":  "2026-11-19T12:30:09Z",
+                                       "completed_at":  "2026-11-19T12:30:09Z"
+                                   },
+                                   {
+                                       "name":  "Run python3 - \u003c\u003c\u0027PY\u0027 \u003e\u003e \"$GITHUB_OUTPUT\"",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  5,
+                                       "started_at":  "2026-11-19T12:30:09Z",
+                                       "completed_at":  "2026-11-19T12:30:09Z"
+                                   },
+                                   {
+                                       "name":  "Post Cache Maven repository",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  9,
+                                       "started_at":  "2026-11-19T12:30:09Z",
+                                       "completed_at":  "2026-11-19T12:30:10Z"
+                                   },
+                                   {
+                                       "name":  "Post Run actions/checkout@v4",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  10,
+                                       "started_at":  "2026-11-19T12:30:10Z",
+                                       "completed_at":  "2026-11-19T12:30:10Z"
+                                   },
+                                   {
+                                       "name":  "Complete job",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  11,
+                                       "started_at":  "2026-11-19T12:30:10Z",
+                                       "completed_at":  "2026-11-19T12:30:10Z"
+                                   }
+                               ],
+                     "check_run_url":  "https://api.github.com/repos/kai-cn/car-monit-backend/check-runs/135561192782",
+                     "labels":  [
+                                    "ubuntu-latest"
+                                ],
+                     "runner_id":  1000002633,
+                     "runner_name":  "GitHub Actions 1000002633",
+                     "runner_group_id":  0,
+                     "runner_group_name":  "GitHub Actions"
+                 },
+                 {
+                     "id":  135561268728,
+                     "run_id":  44524395943,
+                     "workflow_name":  "parity-verify-cloud",
+                     "head_branch":  "car-monit-backend-jdk25",
+                     "run_url":  "https://api.github.com/repos/kai-cn/car-monit-backend/actions/runs/44524395943",
+                     "run_attempt":  1,
+                     "node_id":  "CR_kwDOVc69js8AAAAfkBTN-A",
+                     "head_sha":  "5d10e75f1a9e7b3141dd6ded4b47e870fa7d979b",
+                     "url":  "https://api.github.com/repos/kai-cn/car-monit-backend/actions/jobs/135561268728",
+                     "html_url":  "https://github.com/kai-cn/car-monit-backend/actions/runs/44524395943/job/135561268728",
+                     "status":  "in_progress",
+                     "conclusion":  null,
+                     "created_at":  "2026-11-19T12:30:12Z",
+                     "started_at":  "2026-11-19T12:30:15Z",
+                     "completed_at":  null,
+                     "name":  "verify (linux)",
+                     "steps":  [
+                                   {
+                                       "name":  "Set up job",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  1,
+                                       "started_at":  "2026-11-19T12:30:15Z",
+                                       "completed_at":  "2026-11-19T12:30:17Z"
+                                   },
+                                   {
+                                       "name":  "Run actions/checkout@v4",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  2,
+                                       "started_at":  "2026-11-19T12:30:17Z",
+                                       "completed_at":  "2026-11-19T12:30:19Z"
+                                   },
+                                   {
+                                       "name":  "Provision Mandrel java25",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  3,
+                                       "started_at":  "2026-11-19T12:30:19Z",
+                                       "completed_at":  "2026-11-19T12:30:29Z"
+                                   },
+                                   {
+                                       "name":  "MSVC dev environment (Windows)",
+                                       "status":  "completed",
+                                       "conclusion":  "skipped",
+                                       "number":  4,
+                                       "started_at":  "2026-11-19T12:30:29Z",
+                                       "completed_at":  "2026-11-19T12:30:29Z"
+                                   },
+                                   {
+                                       "name":  "Linux toolchain",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  5,
+                                       "started_at":  "2026-11-19T12:30:29Z",
+                                       "completed_at":  "2026-11-19T12:30:48Z"
+                                   },
+                                   {
+                                       "name":  "Build fat jar + install reactor deps (JVM baseline)",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  6,
+                                       "started_at":  "2026-11-19T12:30:48Z",
+                                       "completed_at":  "2026-11-19T12:32:30Z"
+                                   },
+                                   {
+                                       "name":  "Build native binary (candidate)",
+                                       "status":  "in_progress",
+                                       "conclusion":  null,
+                                       "number":  7,
+                                       "started_at":  "2026-11-19T12:32:30Z",
+                                       "completed_at":  null
+                                   },
+                                   {
+                                       "name":  "Locate jar + native",
+                                       "status":  "pending",
+                                       "conclusion":  null,
+                                       "number":  8,
+                                       "started_at":  null,
+                                       "completed_at":  null
+                                   },
+                                   {
+                                       "name":  "Start MySQL + Redis (Linux)",
+                                       "status":  "pending",
+                                       "conclusion":  null,
+                                       "number":  9,
+                                       "started_at":  null,
+                                       "completed_at":  null
+                                   },
+                                   {
+                                       "name":  "Probe JVM baseline",
+                                       "status":  "pending",
+                                       "conclusion":  null,
+                                       "number":  10,
+                                       "started_at":  null,
+                                       "completed_at":  null
+                                   },
+                                   {
+                                       "name":  "Probe native candidate",
+                                       "status":  "pending",
+                                       "conclusion":  null,
+                                       "number":  11,
+                                       "started_at":  null,
+                                       "completed_at":  null
+                                   },
+                                   {
+                                       "name":  "Compare + report",
+                                       "status":  "pending",
+                                       "conclusion":  null,
+                                       "number":  12,
+                                       "started_at":  null,
+                                       "completed_at":  null
+                                   },
+                                   {
+                                       "name":  "Upload parity evidence",
+                                       "status":  "pending",
+                                       "conclusion":  null,
+                                       "number":  13,
+                                       "started_at":  null,
+                                       "completed_at":  null
+                                   },
+                                   {
+                                       "name":  "Stop datastores",
+                                       "status":  "pending",
+                                       "conclusion":  null,
+                                       "number":  14,
+                                       "started_at":  null,
+                                       "completed_at":  null
+                                   },
+                                   {
+                                       "name":  "Post Provision Mandrel java25",
+                                       "status":  "pending",
+                                       "conclusion":  null,
+                                       "number":  27,
+                                       "started_at":  null,
+                                       "completed_at":  null
+                                   },
+                                   {
+                                       "name":  "Post Run actions/checkout@v4",
+                                       "status":  "pending",
+                                       "conclusion":  null,
+                                       "number":  28,
+                                       "started_at":  null,
+                                       "completed_at":  null
+                                   }
+                               ],
+                     "check_run_url":  "https://api.github.com/repos/kai-cn/car-monit-backend/check-runs/135561268728",
+                     "labels":  [
+                                    "ubuntu-latest"
+                                ],
+                     "runner_id":  1000002634,
+                     "runner_name":  "GitHub Actions 1000002634",
+                     "runner_group_id":  0,
+                     "runner_group_name":  "GitHub Actions"
+                 }
+             ]
+}

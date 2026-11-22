@@ -1,0 +1,11 @@
+# jcmd VM.version — captured live during final JDK25 re-validation
+# generated: 2026-11-11 15:44:07 +0800
+# api pid=20148 backend pid=35044
+=== pid 20148 ===
+20148:
+OpenJDK 64-Bit Server VM version 25.0.4.1+1-LTS
+JDK 25.0.4.1
+=== pid 35044 ===
+35044:
+OpenJDK 64-Bit Server VM version 25.0.4.1+1-LTS
+JDK 25.0.4.1

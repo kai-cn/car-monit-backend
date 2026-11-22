@@ -1,0 +1,49 @@
+=== runner ===
+binary  : /mnt/d/work/IdeaProjects/car-monit-api-jdk21/pro-business-api/target/pro-business-api
+label   : api-boot3-jdk21-linux-r9
+port    : 19902
+log     : /mnt/d/work/runtime-logs/v3-ops/evidence/native-run-linux-api-boot3-jdk21-linux-r9.log
+binary size bytes: 272763616
+port_ready      : 1
+process_exited  : 0
+startup_ms      : 2011
+http_root_code  : 000000
+rss_kb          : 236476
+rss_mb          : 230
+threads         : 11
+cpu_time        : 00:00:01
+=== startup markers ===
+2026-11-16 15:22:04.443 [main] [1;31mERROR[0;39m [36mc.ruoyi.base.service.v3.plate.PlateColorDictionary:106[0;39m - [V3车牌] plate_color 字典加载失败，保留旧快照（当前 0 个码）: com.mysql.cj.exceptions.CJException cannot be cast to com.mysql.cj.exceptions.WrongArgumentException
+2026-11-16 15:22:04.754 [pool-12-thread-1] [1;31mERROR[0;39m [36mc.ruoyi.base.service.impl.SnapshotFlowSyncService:119[0;39m - 全量同步异常
+2026-11-16 15:22:04.754 [pool-12-thread-2] [1;31mERROR[0;39m [36mc.ruoyi.base.service.impl.SnapshotFlowSyncService:177[0;39m - 增量同步异常
+=== last 30 log lines ===
+	at java.base@21.0.13/java.lang.invoke.LambdaForm$DMH/sa346b79c.invokeStaticInit(LambdaForm$DMH)
+Caused by: java.lang.ExceptionInInitializerError
+	at org.hibernate.validator.internal.engine.AbstractConfigurationImpl.<clinit>(AbstractConfigurationImpl.java:85)
+	at java.base@21.0.13/java.lang.Class.ensureInitialized(DynamicHub.java:604)
+	at org.hibernate.validator.HibernateValidator.createGenericConfiguration(HibernateValidator.java:33)
+	at jakarta.validation.Validation$GenericBootstrapImpl.configure(Validation.java:296)
+	at org.springframework.boot.validation.MessageInterpolatorFactory.getMessageInterpolator(MessageInterpolatorFactory.java:79)
+	at org.springframework.boot.validation.MessageInterpolatorFactory.getObject(MessageInterpolatorFactory.java:70)
+	at org.springframework.boot.autoconfigure.validation.ValidatorAdapter.create(ValidatorAdapter.java:139)
+	at org.springframework.boot.autoconfigure.validation.ValidatorAdapter.getExistingOrCreate(ValidatorAdapter.java:119)
+	at org.springframework.boot.autoconfigure.validation.ValidatorAdapter.get(ValidatorAdapter.java:111)
+	at org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration$EnableWebMvcConfiguration.mvcValidator(WebMvcAutoConfiguration.java:534)
+	at org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration__BeanDefinitions$EnableWebMvcConfiguration.lambda$getMvcValidatorInstanceSupplier$8(WebMvcAutoConfiguration__BeanDefinitions.java:309)
+	at org.springframework.util.function.ThrowingFunction.apply(ThrowingFunction.java:63)
+	at org.springframework.util.function.ThrowingFunction.apply(ThrowingFunction.java:51)
+	at org.springframework.beans.factory.aot.BeanInstanceSupplier.lambda$get$1(BeanInstanceSupplier.java:220)
+	at org.springframework.util.function.ThrowingSupplier.get(ThrowingSupplier.java:58)
+	at org.springframework.util.function.ThrowingSupplier.get(ThrowingSupplier.java:46)
+	at org.springframework.beans.factory.aot.BeanInstanceSupplier.invokeBeanSupplier(BeanInstanceSupplier.java:259)
+	at org.springframework.beans.factory.aot.BeanInstanceSupplier.get(BeanInstanceSupplier.java:220)
+	at org.springframework.beans.factory.support.DefaultListableBeanFactory.obtainInstanceFromSupplier(DefaultListableBeanFactory.java:1032)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.obtainFromSupplier(AbstractAutowireCapableBeanFactory.java:1257)
+	... 20 more
+Caused by: java.lang.IllegalArgumentException: Invalid logger interface org.hibernate.validator.internal.util.logging.Log (implementation not found)
+	at org.jboss.logging.Logger.doGetMessageLogger(Logger.java:2630)
+	at org.jboss.logging.Logger.getMessageLogger(Logger.java:2570)
+	at org.jboss.logging.Logger.getMessageLogger(Logger.java:2552)
+	at org.hibernate.validator.internal.util.logging.LoggerFactory.make(LoggerFactory.java:22)
+	at org.hibernate.validator.internal.util.Version.<clinit>(Version.java:20)
+	... 40 more

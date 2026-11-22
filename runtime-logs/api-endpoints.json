@@ -1,0 +1,555 @@
+[
+  {
+    "path": "/base/fwqjcxx/list",
+    "probe": "/base/fwqjcxx/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "DwdLcztFwqjcxxController"
+  },
+  {
+    "path": "/base/fwqjcxx/{agentPk}",
+    "probe": "/base/fwqjcxx/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "DwdLcztFwqjcxxController"
+  },
+  {
+    "path": "/base/fwqjcxx/listAll",
+    "probe": "/base/fwqjcxx/listAll",
+    "method": "getListAll",
+    "returns": "List<DwdLcztFwqjcxx>",
+    "controller": "DwdLcztFwqjcxxController"
+  },
+  {
+    "path": "/base/sfsjcxx/list",
+    "probe": "/base/sfsjcxx/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "DwdLcztSfsjcxxController"
+  },
+  {
+    "path": "/base/sfsjcxx/{agentPk}",
+    "probe": "/base/sfsjcxx/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "DwdLcztSfsjcxxController"
+  },
+  {
+    "path": "/base/sfsjcxx/listAll",
+    "probe": "/base/sfsjcxx/listAll",
+    "method": "getListAll",
+    "returns": "List<DwdLcztSfsjcxx>",
+    "controller": "DwdLcztSfsjcxxController"
+  },
+  {
+    "path": "/base/sfzjcxx/list",
+    "probe": "/base/sfzjcxx/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "DwdLcztSfzjcxxController"
+  },
+  {
+    "path": "/base/sfzjcxx/{agentPk}",
+    "probe": "/base/sfzjcxx/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "DwdLcztSfzjcxxController"
+  },
+  {
+    "path": "/base/sfzjcxx/listAll",
+    "probe": "/base/sfzjcxx/listAll",
+    "method": "getListAll",
+    "returns": "List<DwdLcztSfzjcxx>",
+    "controller": "DwdLcztSfzjcxxController"
+  },
+  {
+    "path": "/api/v1/large/snapshot",
+    "probe": "/api/v1/large/snapshot",
+    "method": "querySnapshotFlow",
+    "returns": "Map<String, Object>",
+    "controller": "LargeScaleQueryController"
+  },
+  {
+    "path": "/api/v1/large/fee",
+    "probe": "/api/v1/large/fee",
+    "method": "queryFeeRecords",
+    "returns": "Map<String, Object>",
+    "controller": "LargeScaleQueryController"
+  },
+  {
+    "path": "/api/v1/large/trail",
+    "probe": "/api/v1/large/trail",
+    "method": "queryTrail",
+    "returns": "Map<String, Object>",
+    "controller": "LargeScaleQueryController"
+  },
+  {
+    "path": "/api/v1/large/carTrackQueryByCarNo",
+    "probe": "/api/v1/large/carTrackQueryByCarNo",
+    "method": "queryCarTrackByCarNo",
+    "returns": "Map<String, Object>",
+    "controller": "LargeScaleQueryController"
+  },
+  {
+    "path": "/api/v1/large/stats/group",
+    "probe": "/api/v1/large/stats/group",
+    "method": "groupByStats",
+    "returns": "Map<String, Object>",
+    "controller": "LargeScaleQueryController"
+  },
+  {
+    "path": "/api/v1/large/export/status/{taskId}",
+    "probe": "/api/v1/large/export/status/1",
+    "method": "getExportStatus",
+    "returns": "Map<String, Object>",
+    "controller": "LargeScaleQueryController"
+  },
+  {
+    "path": "/manager/fwqclls/list",
+    "probe": "/manager/fwqclls/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsCxztFwqcllsController"
+  },
+  {
+    "path": "/manager/fwqclls/{bigId}",
+    "probe": "/manager/fwqclls/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "OdsCxztFwqcllsController"
+  },
+  {
+    "path": "/base/feeGantry/list",
+    "probe": "/base/feeGantry/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsLwzxsfsjFeeGantryFusion01Controller"
+  },
+  {
+    "path": "/base/feeGantry/{bigId}",
+    "probe": "/base/feeGantry/1",
+    "method": "getInfo",
+    "returns": "OdsLwzxsfsjFeeGantryFusion01",
+    "controller": "OdsLwzxsfsjFeeGantryFusion01Controller"
+  },
+  {
+    "path": "/base/feerecords/list",
+    "probe": "/base/feerecords/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsLwzxsfsjFeeRecords01Controller"
+  },
+  {
+    "path": "/base/feerecords/listToExport",
+    "probe": "/base/feerecords/listToExport",
+    "method": "listToExport",
+    "returns": "List<OdsLwzxsfsjFeeRecords01>",
+    "controller": "OdsLwzxsfsjFeeRecords01Controller"
+  },
+  {
+    "path": "/base/feerecords/{bigId}",
+    "probe": "/base/feerecords/1",
+    "method": "getInfo",
+    "returns": "OdsLwzxsfsjFeeRecords01",
+    "controller": "OdsLwzxsfsjFeeRecords01Controller"
+  },
+  {
+    "path": "/base/feeStationEnter/list",
+    "probe": "/base/feeStationEnter/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsLwzxsfsjFeeStationEnter01Controller"
+  },
+  {
+    "path": "/base/feeStationEnter/{bigId}",
+    "probe": "/base/feeStationEnter/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "OdsLwzxsfsjFeeStationEnter01Controller"
+  },
+  {
+    "path": "/base/feestationexit/list",
+    "probe": "/base/feestationexit/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsLwzxsfsjFeeStationExit01Controller"
+  },
+  {
+    "path": "/base/feestationexit/{bigId}",
+    "probe": "/base/feestationexit/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "OdsLwzxsfsjFeeStationExit01Controller"
+  },
+  {
+    "path": "/base/snapshotflow/list",
+    "probe": "/base/snapshotflow/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsRtSzdnSnapshotFlowAddcodeController"
+  },
+  {
+    "path": "/base/snapshotflow/listToExport",
+    "probe": "/base/snapshotflow/listToExport",
+    "method": "listToExport",
+    "returns": "List<OdsRtSzdnSnapshotFlowAddcode>",
+    "controller": "OdsRtSzdnSnapshotFlowAddcodeController"
+  },
+  {
+    "path": "/base/snapshotflow/{bigId}",
+    "probe": "/base/snapshotflow/1",
+    "method": "getInfo",
+    "returns": "OdsRtSzdnSnapshotFlowAddcode",
+    "controller": "OdsRtSzdnSnapshotFlowAddcodeController"
+  },
+  {
+    "path": "/base/provcapture/list",
+    "probe": "/base/provcapture/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsRtSzdnSnapshotFlowProvcaptureAddcodeController"
+  },
+  {
+    "path": "/base/provcapture/{bigId}",
+    "probe": "/base/provcapture/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "OdsRtSzdnSnapshotFlowProvcaptureAddcodeController"
+  },
+  {
+    "path": "/base/stationcapture/list",
+    "probe": "/base/stationcapture/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsRtSzdnSnapshotFlowStationcaptureAddcodeController"
+  },
+  {
+    "path": "/base/stationcapture/{bigId}",
+    "probe": "/base/stationcapture/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "OdsRtSzdnSnapshotFlowStationcaptureAddcodeController"
+  },
+  {
+    "path": "/base/gantry/list",
+    "probe": "/base/gantry/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsSzdnGantryController"
+  },
+  {
+    "path": "/base/gantry/{id}",
+    "probe": "/base/gantry/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "OdsSzdnGantryController"
+  },
+  {
+    "path": "/base/gantry/listAll",
+    "probe": "/base/gantry/listAll",
+    "method": "getListAll",
+    "returns": "List<OdsSzdnGantry>",
+    "controller": "OdsSzdnGantryController"
+  },
+  {
+    "path": "/base/gantryIp/list",
+    "probe": "/base/gantryIp/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsSzdnGantryIpController"
+  },
+  {
+    "path": "/base/gantryIp/{id}",
+    "probe": "/base/gantryIp/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "OdsSzdnGantryIpController"
+  },
+  {
+    "path": "/base/vehicleweight/list",
+    "probe": "/base/vehicleweight/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsSzdnProvinceBorderVehicleWeightNewstructureController"
+  },
+  {
+    "path": "/base/vehicleweight/{dataSource}",
+    "probe": "/base/vehicleweight/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "OdsSzdnProvinceBorderVehicleWeightNewstructureController"
+  },
+  {
+    "path": "/base/vehicleweight/map",
+    "probe": "/base/vehicleweight/map",
+    "method": "map",
+    "returns": "AjaxResult",
+    "controller": "OdsSzdnProvinceBorderVehicleWeightNewstructureController"
+  },
+  {
+    "path": "/base/section/list",
+    "probe": "/base/section/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsSzdnSectionController"
+  },
+  {
+    "path": "/base/section/{id}",
+    "probe": "/base/section/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "OdsSzdnSectionController"
+  },
+  {
+    "path": "/base/section/listAll",
+    "probe": "/base/section/listAll",
+    "method": "getListAll",
+    "returns": "List<OdsSzdnSection>",
+    "controller": "OdsSzdnSectionController"
+  },
+  {
+    "path": "/base/toll/list",
+    "probe": "/base/toll/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsSzdnTollController"
+  },
+  {
+    "path": "/base/toll/{id}",
+    "probe": "/base/toll/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "OdsSzdnTollController"
+  },
+  {
+    "path": "/base/toll/listAll",
+    "probe": "/base/toll/listAll",
+    "method": "getListAll",
+    "returns": "List<OdsSzdnToll>",
+    "controller": "OdsSzdnTollController"
+  },
+  {
+    "path": "/base/tollStationIp/list",
+    "probe": "/base/tollStationIp/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsSzdnTollStationIpController"
+  },
+  {
+    "path": "/base/tollStationIp/{id}",
+    "probe": "/base/tollStationIp/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "OdsSzdnTollStationIpController"
+  },
+  {
+    "path": "/base/org/list",
+    "probe": "/base/org/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "OdsYhglVBaseOrgController"
+  },
+  {
+    "path": "/base/org/{bigId}",
+    "probe": "/base/org/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "OdsYhglVBaseOrgController"
+  },
+  {
+    "path": "/base/org/listAll",
+    "probe": "/base/org/listAll",
+    "method": "getListAll",
+    "returns": "List<OdsYhglVBaseOrg>",
+    "controller": "OdsYhglVBaseOrgController"
+  },
+  {
+    "path": "/progressive/snapshotflow/list",
+    "probe": "/progressive/snapshotflow/list",
+    "method": "snapshotFlowList",
+    "returns": "TableDataInfo",
+    "controller": "ProgressiveQueryController"
+  },
+  {
+    "path": "/progressive/feerecords/list",
+    "probe": "/progressive/feerecords/list",
+    "method": "feeRecordsList",
+    "returns": "TableDataInfo",
+    "controller": "ProgressiveQueryController"
+  },
+  {
+    "path": "/progressive/trailfitting/list",
+    "probe": "/progressive/trailfitting/list",
+    "method": "trailFittingList",
+    "returns": "TableDataInfo",
+    "controller": "ProgressiveQueryController"
+  },
+  {
+    "path": "/progressive/scale-level",
+    "probe": "/progressive/scale-level",
+    "method": "scaleLevel",
+    "returns": "AjaxResult",
+    "controller": "ProgressiveQueryController"
+  },
+  {
+    "path": "/base/sysutilTest/syncCurrentTrack",
+    "probe": "/base/sysutilTest/syncCurrentTrack",
+    "method": "syncCurrentTrack",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/syncBaseInfo",
+    "probe": "/base/sysutilTest/syncBaseInfo",
+    "method": "syncBaseInfo",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/syncHistroyTrack",
+    "probe": "/base/sysutilTest/syncHistroyTrack",
+    "method": "syncHistroyTrack",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/syncSuspiciousCar1",
+    "probe": "/base/sysutilTest/syncSuspiciousCar1",
+    "method": "syncSuspiciousCar1",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/syncSuspiciousCar2",
+    "probe": "/base/sysutilTest/syncSuspiciousCar2",
+    "method": "syncSuspiciousCar2",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/syncSuspiciousCar3",
+    "probe": "/base/sysutilTest/syncSuspiciousCar3",
+    "method": "syncSuspiciousCar3",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/syncSuspiciousCar4",
+    "probe": "/base/sysutilTest/syncSuspiciousCar4",
+    "method": "syncSuspiciousCar4",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/syncSuspiciousCar5",
+    "probe": "/base/sysutilTest/syncSuspiciousCar5",
+    "method": "syncSuspiciousCar5",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/syncSuspiciousCar6",
+    "probe": "/base/sysutilTest/syncSuspiciousCar6",
+    "method": "syncSuspiciousCar6",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/syncSuspiciousCar7",
+    "probe": "/base/sysutilTest/syncSuspiciousCar7",
+    "method": "syncSuspiciousCar7",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/syncSuspiciousCar8",
+    "probe": "/base/sysutilTest/syncSuspiciousCar8",
+    "method": "syncSuspiciousCar8",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/syncSuspiciousCar9",
+    "probe": "/base/sysutilTest/syncSuspiciousCar9",
+    "method": "syncSuspiciousCar9",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/syncSuspiciousCar10",
+    "probe": "/base/sysutilTest/syncSuspiciousCar10",
+    "method": "syncSuspiciousCar10",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/syncOdsSzdnGantry",
+    "probe": "/base/sysutilTest/syncOdsSzdnGantry",
+    "method": "syncOdsSzdnGantry",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutilTest/separateSnapshotFlowTimeList",
+    "probe": "/base/sysutilTest/separateSnapshotFlowTimeList",
+    "method": "separateSnapshotFlowTimeList",
+    "returns": "void",
+    "controller": "SysTestController"
+  },
+  {
+    "path": "/base/sysutil/saveRedis",
+    "probe": "/base/sysutil/saveRedis",
+    "method": "saveRedis",
+    "returns": "AjaxResult",
+    "controller": "SysUtilController"
+  },
+  {
+    "path": "/base/sysutil/carTrackQueryByCarNo",
+    "probe": "/base/sysutil/carTrackQueryByCarNo",
+    "method": "carTrackQueryByCarNo",
+    "returns": "TableDataInfo",
+    "controller": "SysUtilController"
+  },
+  {
+    "path": "/base/sysutil/carTrackQueryByTime",
+    "probe": "/base/sysutil/carTrackQueryByTime",
+    "method": "carTrackQueryByTime",
+    "returns": "TableDataInfo",
+    "controller": "SysUtilController"
+  },
+  {
+    "path": "/base/sysutil/getByTrailBo",
+    "probe": "/base/sysutil/getByTrailBo",
+    "method": "getByTrailBo",
+    "returns": "TrailBo",
+    "controller": "SysUtilController"
+  },
+  {
+    "path": "/api/v1/unified/{ds}/list",
+    "probe": "/api/v1/unified/1/list",
+    "method": "list",
+    "returns": "Map<String, Object>",
+    "controller": "UnifiedQueryController"
+  },
+  {
+    "path": "/api/v1/unified/export/status/{taskId}",
+    "probe": "/api/v1/unified/export/status/1",
+    "method": "getExportStatus",
+    "returns": "Map<String, Object>",
+    "controller": "UnifiedQueryController"
+  },
+  {
+    "path": "/base/trailtracks/list",
+    "probe": "/base/trailtracks/list",
+    "method": "list",
+    "returns": "TableDataInfo",
+    "controller": "ZdataTrailTracksController"
+  },
+  {
+    "path": "/base/trailtracks/{uuid}",
+    "probe": "/base/trailtracks/1",
+    "method": "getInfo",
+    "returns": "AjaxResult",
+    "controller": "ZdataTrailTracksController"
+  }
+]

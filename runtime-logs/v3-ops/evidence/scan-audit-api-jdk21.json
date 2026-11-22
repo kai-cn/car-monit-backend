@@ -1,0 +1,764 @@
+{
+  "classpathEntries": 308,
+  "indexedClasses": 93606,
+  "mainClasses": [
+    "com/ruoyi/EcBusinessApiApplication",
+    "com/ruoyi/base/HasStatic",
+    "com/ruoyi/base/Test",
+    "com/ruoyi/common/utils/CryptoJSTools",
+    "com/ruoyi/common/utils/MD5Example",
+    "com/ruoyi/common/utils/RepeatUtil",
+    "org/apache/catalina/realm/RealmBase",
+    "org/apache/catalina/startup/Bootstrap",
+    "org/apache/catalina/startup/Tomcat",
+    "org/apache/catalina/startup/Tool",
+    "org/apache/catalina/util/ServerInfo",
+    "org/apache/tomcat/util/net/openssl/ciphers/OpenSSLCipherConfigurationParser",
+    "org/springframework/boot/SpringApplication",
+    "org/springframework/boot/SpringApplicationAotProcessor",
+    "io/netty/util/Version",
+    "org/postgresql/util/PGJDBCMain",
+    "org/apache/ibatis/javassist/CtClass",
+    "org/apache/ibatis/javassist/Loader",
+    "org/apache/ibatis/javassist/tools/Dump",
+    "org/apache/ibatis/javassist/tools/framedump",
+    "org/apache/ibatis/javassist/tools/reflect/Compiler",
+    "org/apache/ibatis/javassist/tools/reflect/Loader",
+    "org/apache/ibatis/javassist/tools/web/Viewer",
+    "org/apache/ibatis/javassist/tools/web/Webserver",
+    "com/zaxxer/hikari/util/JavassistProxyFactory",
+    "net/sf/jsqlparser/parser/ParserKeywordsUtils",
+    "net/sf/jsqlparser/util/PerformanceTest",
+    "com/alibaba/druid/filter/config/ConfigTools",
+    "org/aspectj/util/PartialOrder",
+    "org/aspectj/bridge/Version",
+    "org/apache/commons/codec/cli/Digest",
+    "org/mozilla/universalchardet/UniversalDetector",
+    "org/jsoup/examples/HtmlToPlainText",
+    "org/jsoup/examples/ListLinks",
+    "lombok/launch/Main",
+    "org/codehaus/janino/SimpleCompiler",
+    "org/codehaus/janino/tools/HprofScrubber",
+    "org/codehaus/janino/UnicodeUnescapeReader",
+    "org/codehaus/janino/samples/DeclarationCounter",
+    "org/codehaus/janino/Unparser",
+    "org/codehaus/commons/compiler/samples/ClassBodyDemo",
+    "org/codehaus/commons/compiler/samples/CompilerDemo",
+    "org/codehaus/commons/compiler/AbstractJavaSourceClassLoader",
+    "org/codehaus/commons/compiler/samples/ExpressionDemo",
+    "org/codehaus/commons/compiler/samples/ScriptDemo",
+    "org/codehaus/commons/compiler/samples/ShippingCost",
+    "javassist/CtClass",
+    "javassist/Loader",
+    "javassist/tools/Dump",
+    "javassist/tools/framedump",
+    "javassist/tools/reflect/Compiler",
+    "javassist/tools/reflect/Loader",
+    "javassist/tools/web/Viewer",
+    "javassist/tools/web/Webserver",
+    "ch/qos/logback/classic/net/SimpleSSLSocketServer",
+    "ch/qos/logback/classic/net/SimpleSocketServer",
+    "org/xerial/snappy/OSInfo",
+    "net/jpountz/lz4/LZ4Factory",
+    "net/jpountz/xxhash/XXHashFactory",
+    "org/apache/kafka/clients/producer/ProducerConfig",
+    "org/apache/kafka/clients/producer/internals/ProducerMetrics",
+    "org/apache/kafka/clients/admin/AdminClientConfig",
+    "org/apache/kafka/clients/consumer/ConsumerConfig",
+    "org/apache/kafka/clients/consumer/internals/ConsumerMetrics",
+    "org/apache/kafka/common/protocol/Protocol",
+    "org/apache/kafka/common/protocol/types/Type",
+    "org/apache/kafka/common/protocol/ApiKeys",
+    "org/apache/kafka/common/protocol/Errors",
+    "org/apache/pulsar/common/sasl/KerberosName",
+    "org/apache/pulsar/shade/org/apache/commons/codec/cli/Digest",
+    "org/apache/pulsar/shade/org/apache/avro/Protocol",
+    "org/apache/pulsar/shade/org/apache/avro/util/RandomData",
+    "org/apache/pulsar/shade/org/apache/commons/compress/archivers/Lister",
+    "org/apache/pulsar/shade/org/apache/commons/compress/archivers/sevenz/CLI",
+    "org/apache/pulsar/shade/it/unimi/dsi/fastutil/BigArrays",
+    "org/apache/pulsar/shade/io/netty/util/Version",
+    "de/ntcomputer/executablepacker/runtime/ExecutableLauncher",
+    "org/bouncycastle/pkix/util/X509CertificateFormatter",
+    "org/bouncycastle/LICENSE",
+    "org/bouncycastle/math/ec/tools/DiscoverEndomorphisms",
+    "org/bouncycastle/math/ec/tools/F2mSqrtOptimizer",
+    "org/bouncycastle/math/ec/tools/TraceOptimizer",
+    "org/apache/rocketmq/logging/ch/qos/logback/classic/net/SimpleSSLSocketServer",
+    "org/apache/rocketmq/logging/ch/qos/logback/classic/net/SimpleSocketServer",
+    "org/apache/rocketmq/common/sysflag/SubscriptionSysFlag",
+    "io/grpc/netty/shaded/io/netty/util/Version",
+    "org/elasticsearch/Version",
+    "org/elasticsearch/index/shard/ShardToolCli",
+    "org/elasticsearch/cluster/coordination/NodeToolCli",
+    "org/elasticsearch/bootstrap/Elasticsearch",
+    "org/elasticsearch/jdk/JarHell",
+    "org/elasticsearch/jdk/JdkJarHellCheck",
+    "org/apache/lucene/index/CheckIndex",
+    "org/apache/lucene/index/IndexUpgrader",
+    "org/apache/lucene/store/LockStressTest",
+    "org/apache/lucene/store/LockVerifyServer",
+    "org/apache/lucene/index/IndexSplitter",
+    "org/apache/lucene/index/MultiPassIndexSplitter",
+    "org/apache/lucene/misc/GetTermInfo",
+    "org/apache/lucene/misc/HighFreqTerms",
+    "org/apache/lucene/misc/IndexMergeTool",
+    "org/joda/time/tz/ZoneInfoCompiler",
+    "org/HdrHistogram/HistogramLogProcessor",
+    "com/sun/jna/Native"
+  ],
+  "scanPackages": [
+    "ch/qos/logback/classic/net",
+    "com/alibaba/druid/filter/config",
+    "com/ruoyi",
+    "com/ruoyi/base",
+    "com/ruoyi/common/utils",
+    "com/sun/jna",
+    "com/zaxxer/hikari/util",
+    "de/ntcomputer/executablepacker/runtime",
+    "io/grpc/netty/shaded/io/netty/util",
+    "io/netty/util",
+    "javassist",
+    "javassist/tools",
+    "javassist/tools/reflect",
+    "javassist/tools/web",
+    "lombok/launch",
+    "net/jpountz/lz4",
+    "net/jpountz/xxhash",
+    "net/sf/jsqlparser/parser",
+    "net/sf/jsqlparser/util",
+    "org/HdrHistogram",
+    "org/apache/catalina/realm",
+    "org/apache/catalina/startup",
+    "org/apache/catalina/util",
+    "org/apache/commons/codec/cli",
+    "org/apache/ibatis/javassist",
+    "org/apache/ibatis/javassist/tools",
+    "org/apache/ibatis/javassist/tools/reflect",
+    "org/apache/ibatis/javassist/tools/web",
+    "org/apache/kafka/clients/admin",
+    "org/apache/kafka/clients/consumer",
+    "org/apache/kafka/clients/consumer/internals",
+    "org/apache/kafka/clients/producer",
+    "org/apache/kafka/clients/producer/internals",
+    "org/apache/kafka/common/protocol",
+    "org/apache/kafka/common/protocol/types",
+    "org/apache/lucene/index",
+    "org/apache/lucene/misc",
+    "org/apache/lucene/store",
+    "org/apache/pulsar/common/sasl",
+    "org/apache/pulsar/shade/io/netty/util",
+    "org/apache/pulsar/shade/it/unimi/dsi/fastutil",
+    "org/apache/pulsar/shade/org/apache/avro",
+    "org/apache/pulsar/shade/org/apache/avro/util",
+    "org/apache/pulsar/shade/org/apache/commons/codec/cli",
+    "org/apache/pulsar/shade/org/apache/commons/compress/archivers",
+    "org/apache/pulsar/shade/org/apache/commons/compress/archivers/sevenz",
+    "org/apache/rocketmq/common/sysflag",
+    "org/apache/rocketmq/logging/ch/qos/logback/classic/net",
+    "org/apache/tomcat/util/net/openssl/ciphers",
+    "org/aspectj/bridge",
+    "org/aspectj/util",
+    "org/bouncycastle",
+    "org/bouncycastle/math/ec/tools",
+    "org/bouncycastle/pkix/util",
+    "org/codehaus/commons/compiler",
+    "org/codehaus/commons/compiler/samples",
+    "org/codehaus/janino",
+    "org/codehaus/janino/samples",
+    "org/codehaus/janino/tools",
+    "org/elasticsearch",
+    "org/elasticsearch/bootstrap",
+    "org/elasticsearch/cluster/coordination",
+    "org/elasticsearch/index/shard",
+    "org/elasticsearch/jdk",
+    "org/joda/time/tz",
+    "org/jsoup/examples",
+    "org/mozilla/universalchardet",
+    "org/postgresql/util",
+    "org/springframework/boot",
+    "org/xerial/snappy"
+  ],
+  "scannedClasses": 26912,
+  "landmines": {
+    "io/grpc/netty/shaded/io/netty/util/internal/Hidden$NettyBlockHoundIntegration": [
+      "reactor/blockhound/BlockHound$Builder",
+      "reactor/blockhound/integration/BlockHoundIntegration"
+    ],
+    "io/grpc/netty/shaded/io/netty/util/internal/logging/Log4JLogger": [
+      "org/apache/log4j/Logger"
+    ],
+    "io/netty/util/internal/Hidden$NettyBlockHoundIntegration": [
+      "reactor/blockhound/BlockHound$Builder",
+      "reactor/blockhound/integration/BlockHoundIntegration"
+    ],
+    "io/netty/util/internal/logging/Log4JLogger": [
+      "org/apache/log4j/Logger"
+    ],
+    "lombok/launch/PatchFixesHider$FieldInitializer": [
+      "org/eclipse/jdt/internal/core/CompilationUnitStructureRequestor",
+      "org/eclipse/jdt/internal/core/SourceFieldElementInfo"
+    ],
+    "lombok/launch/PatchFixesHider$Javadoc": [
+      "org/eclipse/jdt/core/IJavaElement"
+    ],
+    "lombok/launch/PatchFixesHider$PatchFixes": [
+      "org/eclipse/jdt/core/IAnnotatable",
+      "org/eclipse/jdt/core/IMember",
+      "org/eclipse/jdt/core/IMethod",
+      "org/eclipse/jdt/core/ISourceRange",
+      "org/eclipse/jdt/core/IType",
+      "org/eclipse/jdt/core/dom/ASTNode",
+      "org/eclipse/jdt/core/dom/ASTVisitor",
+      "org/eclipse/jdt/core/dom/AbstractTypeDeclaration",
+      "org/eclipse/jdt/core/dom/CompilationUnit",
+      "org/eclipse/jdt/core/dom/IMethodBinding",
+      "org/eclipse/jdt/core/dom/MethodDeclaration",
+      "org/eclipse/jdt/core/dom/Name",
+      "org/eclipse/jdt/core/dom/SimpleName",
+      "org/eclipse/jdt/core/dom/Type",
+      "org/eclipse/jdt/core/dom/rewrite/ListRewrite",
+      "org/eclipse/jdt/internal/compiler/ast/ASTNode",
+      "org/eclipse/jdt/internal/compiler/ast/AbstractMethodDeclaration",
+      "org/eclipse/jdt/internal/compiler/ast/Annotation",
+      "org/eclipse/jdt/internal/compiler/ast/Expression",
+      "org/eclipse/jdt/internal/compiler/ast/FieldDeclaration",
+      "org/eclipse/jdt/internal/core/dom/rewrite/RewriteEvent",
+      "org/eclipse/jdt/internal/core/dom/rewrite/TokenScanner",
+      "org/eclipse/jdt/internal/corext/refactoring/SearchResultGroup",
+      "org/eclipse/jdt/internal/corext/refactoring/code/CallContext",
+      "org/eclipse/jdt/internal/corext/refactoring/code/SourceProvider",
+      "org/eclipse/jdt/internal/corext/refactoring/structure/MemberVisibilityAdjustor$IncomingMemberVisibilityAdjustment"
+    ],
+    "lombok/launch/PatchFixesHider$Tests": [
+      "org/eclipse/jdt/internal/compiler/ast/AbstractMethodDeclaration",
+      "org/eclipse/jdt/internal/compiler/ast/FieldDeclaration",
+      "org/eclipse/jdt/internal/compiler/ast/TypeDeclaration"
+    ],
+    "lombok/launch/PatchFixesHider$Val": [
+      "org/eclipse/jdt/internal/compiler/ast/Expression",
+      "org/eclipse/jdt/internal/compiler/ast/LocalDeclaration",
+      "org/eclipse/jdt/internal/compiler/lookup/BlockScope",
+      "org/eclipse/jdt/internal/compiler/lookup/TypeBinding"
+    ],
+    "org/apache/pulsar/shade/io/netty/util/internal/Hidden$NettyBlockHoundIntegration": [
+      "reactor/blockhound/BlockHound$Builder",
+      "reactor/blockhound/integration/BlockHoundIntegration"
+    ],
+    "org/apache/pulsar/shade/io/netty/util/internal/logging/CommonsLogger": [
+      "org/apache/pulsar/shade/org/apache/commons/logging/Log"
+    ],
+    "org/apache/pulsar/shade/io/netty/util/internal/logging/Log4JLogger": [
+      "org/apache/log4j/Logger"
+    ],
+    "org/codehaus/janino/AntCompilerAdapter": [
+      "org/apache/tools/ant/types/Path"
+    ],
+    "org/elasticsearch/common/logging/ClusterIdConverter": [
+      "org/apache/logging/log4j/core/LogEvent"
+    ],
+    "org/elasticsearch/common/logging/ESJsonLayout": [
+      "org/apache/logging/log4j/core/LogEvent",
+      "org/apache/logging/log4j/core/layout/ByteBufferDestination",
+      "org/apache/logging/log4j/core/layout/PatternLayout"
+    ],
+    "org/elasticsearch/common/logging/ESJsonLayout$Builder": [
+      "org/apache/logging/log4j/core/layout/AbstractStringLayout$Builder"
+    ],
+    "org/elasticsearch/common/logging/ESMessageFieldConverter": [
+      "org/apache/logging/log4j/core/LogEvent",
+      "org/apache/logging/log4j/core/config/Configuration"
+    ],
+    "org/elasticsearch/common/logging/HeaderWarningAppender": [
+      "org/apache/logging/log4j/core/Filter",
+      "org/apache/logging/log4j/core/LogEvent"
+    ],
+    "org/elasticsearch/common/logging/JsonThrowablePatternConverter": [
+      "org/apache/logging/log4j/core/LogEvent",
+      "org/apache/logging/log4j/core/config/Configuration"
+    ],
+    "org/elasticsearch/common/logging/LogConfigurator$2": [
+      "org/apache/logging/log4j/core/LoggerContext",
+      "org/apache/logging/log4j/core/config/Configuration",
+      "org/apache/logging/log4j/core/config/ConfigurationSource",
+      "org/apache/logging/log4j/core/config/properties/PropertiesConfiguration"
+    ],
+    "org/elasticsearch/common/logging/LogConfigurator$3": [
+      "org/apache/logging/log4j/core/LoggerContext",
+      "org/apache/logging/log4j/core/config/properties/PropertiesConfigurationFactory"
+    ],
+    "org/elasticsearch/common/logging/Loggers": [
+      "org/apache/logging/log4j/core/Appender"
+    ],
+    "org/elasticsearch/common/logging/NodeAndClusterIdConverter": [
+      "org/apache/logging/log4j/core/LogEvent"
+    ],
+    "org/elasticsearch/common/logging/NodeIdConverter": [
+      "org/apache/logging/log4j/core/LogEvent"
+    ],
+    "org/elasticsearch/common/logging/NodeNamePatternConverter": [
+      "org/apache/logging/log4j/core/LogEvent"
+    ],
+    "org/elasticsearch/common/logging/ProductOriginConverter": [
+      "org/apache/logging/log4j/core/LogEvent"
+    ],
+    "org/elasticsearch/common/logging/RateLimitingFilter": [
+      "org/apache/logging/log4j/core/Filter$Result",
+      "org/apache/logging/log4j/core/LogEvent",
+      "org/apache/logging/log4j/core/Logger"
+    ],
+    "org/elasticsearch/common/logging/TraceIdConverter": [
+      "org/apache/logging/log4j/core/LogEvent"
+    ],
+    "org/springframework/boot/BeanDefinitionLoader$GroovyBeanDefinitionSource": [
+      "groovy/lang/Closure"
+    ],
+    "org/springframework/boot/amqp/autoconfigure/EnvironmentBuilderCustomizer": [
+      "com/rabbitmq/stream/EnvironmentBuilder"
+    ],
+    "org/springframework/boot/amqp/autoconfigure/RabbitStreamConfiguration": [
+      "com/rabbitmq/stream/Environment",
+      "com/rabbitmq/stream/EnvironmentBuilder",
+      "org/springframework/rabbit/stream/config/StreamRabbitListenerContainerFactory",
+      "org/springframework/rabbit/stream/producer/RabbitStreamTemplate"
+    ],
+    "org/springframework/boot/amqp/autoconfigure/RabbitStreamTemplateConfigurer": [
+      "org/springframework/rabbit/stream/micrometer/RabbitStreamTemplateObservationConvention",
+      "org/springframework/rabbit/stream/producer/ProducerCustomizer",
+      "org/springframework/rabbit/stream/producer/RabbitStreamTemplate",
+      "org/springframework/rabbit/stream/support/converter/StreamMessageConverter"
+    ],
+    "org/springframework/boot/amqp/autoconfigure/health/RabbitHealthContributorAutoConfiguration": [
+      "org/springframework/boot/health/contributor/HealthContributor"
+    ],
+    "org/springframework/boot/amqp/autoconfigure/metrics/RabbitConnectionFactoryMetricsPostProcessor": [
+      "io/micrometer/core/instrument/MeterRegistry"
+    ],
+    "org/springframework/boot/amqp/docker/compose/RabbitDockerComposeConnectionDetailsFactory": [
+      "org/springframework/boot/docker/compose/service/connection/DockerComposeConnectionSource"
+    ],
+    "org/springframework/boot/amqp/docker/compose/RabbitDockerComposeConnectionDetailsFactory$RabbitDockerComposeConnectionDetails": [
+      "org/springframework/boot/docker/compose/core/RunningService"
+    ],
+    "org/springframework/boot/amqp/docker/compose/RabbitStreamDockerComposeConnectionDetailsFactory": [
+      "org/springframework/boot/docker/compose/service/connection/DockerComposeConnectionSource"
+    ],
+    "org/springframework/boot/amqp/docker/compose/RabbitStreamDockerComposeConnectionDetailsFactory$RabbitStreamDockerComposeConnectionDetails": [
+      "org/springframework/boot/docker/compose/core/RunningService"
+    ],
+    "org/springframework/boot/amqp/health/RabbitHealthIndicator": [
+      "org/springframework/boot/health/contributor/Health$Builder"
+    ],
+    "org/springframework/boot/amqp/metrics/RabbitMetrics": [
+      "io/micrometer/core/instrument/MeterRegistry"
+    ],
+    "org/springframework/boot/amqp/testcontainers/DeprecatedRabbitContainerConnectionDetailsFactory": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/amqp/testcontainers/DeprecatedRabbitContainerConnectionDetailsFactory$RabbitMqContainerConnectionDetails": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/amqp/testcontainers/RabbitContainerConnectionDetailsFactory": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/amqp/testcontainers/RabbitContainerConnectionDetailsFactory$RabbitMqContainerConnectionDetails": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/amqp/testcontainers/RabbitStreamContainerConnectionDetailsFactory": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/amqp/testcontainers/RabbitStreamContainerConnectionDetailsFactory$RabbitMqStreamContainerConnectionDetails": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/data/autoconfigure/metrics/PropertiesAutoTimer": [
+      "io/micrometer/core/instrument/Timer$Builder"
+    ],
+    "org/springframework/boot/data/metrics/AutoTimer": [
+      "io/micrometer/core/instrument/Timer$Builder"
+    ],
+    "org/springframework/boot/data/metrics/AutoTimer$1": [
+      "io/micrometer/core/instrument/Timer$Builder"
+    ],
+    "org/springframework/boot/data/metrics/DefaultRepositoryTagsProvider": [
+      "io/micrometer/core/instrument/Tag",
+      "io/micrometer/core/instrument/Tags"
+    ],
+    "org/springframework/boot/data/metrics/MetricsRepositoryMethodInvocationListener": [
+      "io/micrometer/core/instrument/Timer$Builder"
+    ],
+    "org/springframework/boot/data/redis/autoconfigure/health/DataRedisHealthContributorAutoConfiguration": [
+      "org/springframework/boot/health/contributor/HealthContributor"
+    ],
+    "org/springframework/boot/data/redis/autoconfigure/health/DataRedisReactiveHealthContributorAutoConfiguration": [
+      "org/springframework/boot/health/contributor/ReactiveHealthContributor"
+    ],
+    "org/springframework/boot/data/redis/docker/compose/RedisDockerComposeConnectionDetailsFactory": [
+      "org/springframework/boot/docker/compose/service/connection/DockerComposeConnectionSource"
+    ],
+    "org/springframework/boot/data/redis/docker/compose/RedisDockerComposeConnectionDetailsFactory$RedisDockerComposeConnectionDetails": [
+      "org/springframework/boot/docker/compose/core/RunningService"
+    ],
+    "org/springframework/boot/data/redis/health/DataRedisHealth": [
+      "org/springframework/boot/health/contributor/Health$Builder"
+    ],
+    "org/springframework/boot/data/redis/health/DataRedisHealthIndicator": [
+      "org/springframework/boot/health/contributor/Health$Builder"
+    ],
+    "org/springframework/boot/data/redis/health/DataRedisReactiveHealthIndicator": [
+      "org/springframework/boot/health/contributor/Health",
+      "org/springframework/boot/health/contributor/Health$Builder"
+    ],
+    "org/springframework/boot/data/redis/testcontainers/RedisContainerConnectionDetailsFactory": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/data/redis/testcontainers/RedisContainerConnectionDetailsFactory$RedisContainerConnectionDetails": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/http/converter/autoconfigure/JacksonHttpMessageConvertersConfiguration$JacksonXmlHttpMessageConverterConfiguration": [
+      "tools/jackson/dataformat/xml/XmlMapper"
+    ],
+    "org/springframework/boot/http/converter/autoconfigure/JacksonHttpMessageConvertersConfiguration$JacksonXmlHttpMessageConvertersCustomizer": [
+      "tools/jackson/dataformat/xml/XmlMapper"
+    ],
+    "org/springframework/boot/http/converter/autoconfigure/JsonbHttpMessageConvertersConfiguration$JsonbHttpMessageConverterConfiguration": [
+      "jakarta/json/bind/Jsonb"
+    ],
+    "org/springframework/boot/http/converter/autoconfigure/JsonbHttpMessageConvertersConfiguration$JsonbHttpMessageConvertersCustomizer": [
+      "jakarta/json/bind/Jsonb"
+    ],
+    "org/springframework/boot/http/converter/autoconfigure/KotlinSerializationHttpMessageConvertersConfiguration": [
+      "kotlinx/serialization/json/Json"
+    ],
+    "org/springframework/boot/http/converter/autoconfigure/KotlinSerializationHttpMessageConvertersConfiguration$KotlinSerializationJsonConvertersCustomizer": [
+      "kotlinx/serialization/json/Json"
+    ],
+    "org/springframework/boot/jackson/autoconfigure/CborFactoryBuilderCustomizer": [
+      "tools/jackson/dataformat/cbor/CBORFactoryBuilder"
+    ],
+    "org/springframework/boot/jackson/autoconfigure/CborMapperBuilderCustomizer": [
+      "tools/jackson/dataformat/cbor/CBORMapper$Builder"
+    ],
+    "org/springframework/boot/jackson/autoconfigure/JacksonAutoConfiguration$CborConfiguration": [
+      "tools/jackson/dataformat/cbor/CBORFactory",
+      "tools/jackson/dataformat/cbor/CBORFactoryBuilder",
+      "tools/jackson/dataformat/cbor/CBORMapper",
+      "tools/jackson/dataformat/cbor/CBORMapper$Builder"
+    ],
+    "org/springframework/boot/jackson/autoconfigure/JacksonAutoConfiguration$CborConfiguration$StandardCborFactoryBuilderCustomizer": [
+      "tools/jackson/dataformat/cbor/CBORFactoryBuilder"
+    ],
+    "org/springframework/boot/jackson/autoconfigure/JacksonAutoConfiguration$CborConfiguration$StandardCborMapperBuilderCustomizer": [
+      "tools/jackson/dataformat/cbor/CBORMapper$Builder"
+    ],
+    "org/springframework/boot/jackson/autoconfigure/JacksonAutoConfiguration$XmlConfiguration": [
+      "tools/jackson/dataformat/xml/XmlFactory",
+      "tools/jackson/dataformat/xml/XmlFactoryBuilder",
+      "tools/jackson/dataformat/xml/XmlMapper",
+      "tools/jackson/dataformat/xml/XmlMapper$Builder"
+    ],
+    "org/springframework/boot/jackson/autoconfigure/JacksonAutoConfiguration$XmlConfiguration$StandardXmlFactoryBuilderCustomizer": [
+      "tools/jackson/dataformat/xml/XmlFactoryBuilder"
+    ],
+    "org/springframework/boot/jackson/autoconfigure/JacksonAutoConfiguration$XmlConfiguration$StandardXmlMapperBuilderCustomizer": [
+      "tools/jackson/dataformat/xml/XmlMapper$Builder"
+    ],
+    "org/springframework/boot/jackson/autoconfigure/JacksonAutoConfiguration$XmlConfiguration$XmlProblemDetailsConfiguration$ProblemDetailXmlMapperBuilderCustomizer": [
+      "tools/jackson/dataformat/xml/XmlMapper$Builder"
+    ],
+    "org/springframework/boot/jackson/autoconfigure/XmlFactoryBuilderCustomizer": [
+      "tools/jackson/dataformat/xml/XmlFactoryBuilder"
+    ],
+    "org/springframework/boot/jackson/autoconfigure/XmlMapperBuilderCustomizer": [
+      "tools/jackson/dataformat/xml/XmlMapper$Builder"
+    ],
+    "org/springframework/boot/jdbc/DataSourceBuilder$ComboPooledDataSourceProperties": [
+      "com/mchange/v2/c3p0/ComboPooledDataSource"
+    ],
+    "org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Dbcp2": [
+      "org/apache/commons/dbcp2/BasicDataSource"
+    ],
+    "org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$OracleUcp": [
+      "oracle/ucp/jdbc/PoolDataSourceImpl"
+    ],
+    "org/springframework/boot/jdbc/autoconfigure/DataSourceConfiguration$Tomcat": [
+      "org/apache/tomcat/jdbc/pool/DataSource"
+    ],
+    "org/springframework/boot/jdbc/autoconfigure/Dbcp2JdbcConnectionDetailsBeanPostProcessor": [
+      "org/apache/commons/dbcp2/BasicDataSource"
+    ],
+    "org/springframework/boot/jdbc/autoconfigure/OracleUcpJdbcConnectionDetailsBeanPostProcessor": [
+      "oracle/ucp/jdbc/PoolDataSourceImpl"
+    ],
+    "org/springframework/boot/jdbc/autoconfigure/TomcatJdbcConnectionDetailsBeanPostProcessor": [
+      "org/apache/tomcat/jdbc/pool/DataSource"
+    ],
+    "org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration": [
+      "org/springframework/boot/health/contributor/HealthContributor"
+    ],
+    "org/springframework/boot/jdbc/autoconfigure/health/DataSourceHealthContributorAutoConfiguration$RoutingDataSourceHealthContributor": [
+      "org/springframework/boot/health/contributor/HealthContributor"
+    ],
+    "org/springframework/boot/jdbc/autoconfigure/metrics/DataSourcePoolMetricsAutoConfiguration$DataSourcePoolMetadataMetricsConfiguration$DataSourcePoolMetadataMeterBinder": [
+      "io/micrometer/core/instrument/MeterRegistry"
+    ],
+    "org/springframework/boot/jdbc/autoconfigure/metrics/DataSourcePoolMetricsAutoConfiguration$HikariDataSourceMetricsConfiguration$HikariDataSourceMeterBinder": [
+      "io/micrometer/core/instrument/MeterRegistry"
+    ],
+    "org/springframework/boot/jdbc/docker/compose/ClickHouseJdbcDockerComposeConnectionDetailsFactory": [
+      "org/springframework/boot/docker/compose/service/connection/DockerComposeConnectionSource"
+    ],
+    "org/springframework/boot/jdbc/docker/compose/ClickHouseJdbcDockerComposeConnectionDetailsFactory$ClickhouseJdbcDockerComposeConnectionDetails": [
+      "org/springframework/boot/docker/compose/core/RunningService"
+    ],
+    "org/springframework/boot/jdbc/docker/compose/JdbcUrlBuilder": [
+      "org/springframework/boot/docker/compose/core/RunningService"
+    ],
+    "org/springframework/boot/jdbc/docker/compose/MariaDbJdbcDockerComposeConnectionDetailsFactory": [
+      "org/springframework/boot/docker/compose/service/connection/DockerComposeConnectionSource"
+    ],
+    "org/springframework/boot/jdbc/docker/compose/MariaDbJdbcDockerComposeConnectionDetailsFactory$MariaDbJdbcDockerComposeConnectionDetails": [
+      "org/springframework/boot/docker/compose/core/RunningService"
+    ],
+    "org/springframework/boot/jdbc/docker/compose/MySqlJdbcDockerComposeConnectionDetailsFactory": [
+      "org/springframework/boot/docker/compose/service/connection/DockerComposeConnectionSource"
+    ],
+    "org/springframework/boot/jdbc/docker/compose/MySqlJdbcDockerComposeConnectionDetailsFactory$MySqlJdbcDockerComposeConnectionDetails": [
+      "org/springframework/boot/docker/compose/core/RunningService"
+    ],
+    "org/springframework/boot/jdbc/docker/compose/OracleJdbcDockerComposeConnectionDetailsFactory": [
+      "org/springframework/boot/docker/compose/service/connection/DockerComposeConnectionSource"
+    ],
+    "org/springframework/boot/jdbc/docker/compose/OracleJdbcDockerComposeConnectionDetailsFactory$OracleJdbcDockerComposeConnectionDetails": [
+      "org/springframework/boot/docker/compose/core/RunningService"
+    ],
+    "org/springframework/boot/jdbc/docker/compose/PostgresJdbcDockerComposeConnectionDetailsFactory": [
+      "org/springframework/boot/docker/compose/service/connection/DockerComposeConnectionSource"
+    ],
+    "org/springframework/boot/jdbc/docker/compose/PostgresJdbcDockerComposeConnectionDetailsFactory$PostgresJdbcDockerComposeConnectionDetails": [
+      "org/springframework/boot/docker/compose/core/RunningService"
+    ],
+    "org/springframework/boot/jdbc/docker/compose/SqlServerJdbcDockerComposeConnectionDetailsFactory": [
+      "org/springframework/boot/docker/compose/service/connection/DockerComposeConnectionSource"
+    ],
+    "org/springframework/boot/jdbc/docker/compose/SqlServerJdbcDockerComposeConnectionDetailsFactory$SqlServerJdbcDockerComposeConnectionDetails": [
+      "org/springframework/boot/docker/compose/core/RunningService"
+    ],
+    "org/springframework/boot/jdbc/health/DataSourceHealthIndicator": [
+      "org/springframework/boot/health/contributor/Health$Builder"
+    ],
+    "org/springframework/boot/jdbc/metadata/CommonsDbcp2DataSourcePoolMetadata": [
+      "org/apache/commons/dbcp2/BasicDataSource"
+    ],
+    "org/springframework/boot/jdbc/metadata/OracleUcpDataSourcePoolMetadata": [
+      "oracle/ucp/jdbc/PoolDataSource"
+    ],
+    "org/springframework/boot/jdbc/metadata/TomcatDataSourcePoolMetadata": [
+      "org/apache/tomcat/jdbc/pool/DataSource"
+    ],
+    "org/springframework/boot/jdbc/metrics/DataSourcePoolMetrics": [
+      "io/micrometer/core/instrument/MeterRegistry"
+    ],
+    "org/springframework/boot/jdbc/testcontainers/JdbcContainerConnectionDetailsFactory": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/jdbc/testcontainers/JdbcContainerConnectionDetailsFactory$JdbcContainerConnectionDetails": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/kafka/autoconfigure/metrics/KafkaMetricsAutoConfiguration": [
+      "io/micrometer/core/instrument/MeterRegistry"
+    ],
+    "org/springframework/boot/kafka/autoconfigure/metrics/KafkaMetricsAutoConfiguration$KafkaStreamsMetricsConfiguration": [
+      "io/micrometer/core/instrument/MeterRegistry"
+    ],
+    "org/springframework/boot/kafka/testcontainers/ApacheKafkaContainerConnectionDetailsFactory": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/kafka/testcontainers/ApacheKafkaContainerConnectionDetailsFactory$ApacheKafkaContainerConnectionDetails": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/kafka/testcontainers/ConfluentKafkaContainerConnectionDetailsFactory": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/kafka/testcontainers/ConfluentKafkaContainerConnectionDetailsFactory$ConfluentKafkaContainerConnectionDetails": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/kafka/testcontainers/RedpandaContainerConnectionDetailsFactory": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/kafka/testcontainers/RedpandaContainerConnectionDetailsFactory$RedpandaContainerConnectionDetails": [
+      "org/springframework/boot/testcontainers/service/connection/ContainerConnectionSource"
+    ],
+    "org/springframework/boot/logging/log4j2/ColorConverter": [
+      "org/apache/logging/log4j/core/LogEvent",
+      "org/apache/logging/log4j/core/config/Configuration"
+    ],
+    "org/springframework/boot/logging/log4j2/CorrelationIdConverter": [
+      "org/apache/logging/log4j/core/LogEvent"
+    ],
+    "org/springframework/boot/logging/log4j2/ElasticCommonSchemaStructuredLogFormatter": [
+      "org/apache/logging/log4j/core/time/Instant"
+    ],
+    "org/springframework/boot/logging/log4j2/EnclosedInSquareBracketsConverter": [
+      "org/apache/logging/log4j/core/LogEvent",
+      "org/apache/logging/log4j/core/config/Configuration"
+    ],
+    "org/springframework/boot/logging/log4j2/ExtendedWhitespaceThrowablePatternConverter": [
+      "org/apache/logging/log4j/core/LogEvent",
+      "org/apache/logging/log4j/core/config/Configuration"
+    ],
+    "org/springframework/boot/logging/log4j2/Extractor": [
+      "org/apache/logging/log4j/core/LogEvent"
+    ],
+    "org/springframework/boot/logging/log4j2/GraylogExtendedLogFormatStructuredLogFormatter": [
+      "org/apache/logging/log4j/core/LogEvent",
+      "org/apache/logging/log4j/core/time/Instant"
+    ],
+    "org/springframework/boot/logging/log4j2/Log4J2LoggingSystem": [
+      "org/apache/logging/log4j/core/LoggerContext",
+      "org/apache/logging/log4j/core/config/Configuration",
+      "org/apache/logging/log4j/core/config/LoggerConfig"
+    ],
+    "org/springframework/boot/logging/log4j2/LogstashStructuredLogFormatter": [
+      "org/apache/logging/log4j/core/time/Instant"
+    ],
+    "org/springframework/boot/logging/log4j2/SpringBootConfigurationFactory": [
+      "org/apache/logging/log4j/core/LoggerContext",
+      "org/apache/logging/log4j/core/config/Configuration",
+      "org/apache/logging/log4j/core/config/ConfigurationSource"
+    ],
+    "org/springframework/boot/logging/log4j2/SpringBootTriggeringPolicy": [
+      "org/apache/logging/log4j/core/LogEvent",
+      "org/apache/logging/log4j/core/appender/rolling/RollingFileManager"
+    ],
+    "org/springframework/boot/logging/log4j2/SpringBootTriggeringPolicy$SpringBootTriggeringPolicyBuilder": [
+      "org/apache/logging/log4j/core/appender/rolling/TriggeringPolicy",
+      "org/apache/logging/log4j/core/config/Configuration"
+    ],
+    "org/springframework/boot/logging/log4j2/SpringEnvironmentLookup": [
+      "org/apache/logging/log4j/core/LogEvent",
+      "org/apache/logging/log4j/core/LoggerContext"
+    ],
+    "org/springframework/boot/logging/log4j2/StructuredLogLayout": [
+      "org/apache/logging/log4j/core/LogEvent"
+    ],
+    "org/springframework/boot/logging/log4j2/WhitespaceThrowablePatternConverter": [
+      "org/apache/logging/log4j/core/config/Configuration",
+      "org/apache/logging/log4j/core/pattern/LogEventPatternConverter"
+    ],
+    "org/springframework/boot/servlet/actuate/web/exchanges/HttpExchangesFilter": [
+      "org/springframework/boot/actuate/web/exchanges/HttpExchangeRepository"
+    ],
+    "org/springframework/boot/servlet/autoconfigure/actuate/web/ServletEndpointManagementContextConfiguration": [
+      "org/springframework/boot/actuate/autoconfigure/endpoint/expose/IncludeExcludeEndpointFilter",
+      "org/springframework/boot/actuate/autoconfigure/endpoint/web/WebEndpointProperties"
+    ],
+    "org/springframework/boot/servlet/autoconfigure/actuate/web/ServletManagementContextAutoConfiguration": [
+      "org/springframework/boot/actuate/autoconfigure/endpoint/web/WebEndpointProperties"
+    ],
+    "org/springframework/boot/servlet/autoconfigure/actuate/web/ServletManagementWebServerFactoryCustomizer": [
+      "org/springframework/boot/actuate/autoconfigure/web/server/ManagementServerProperties"
+    ],
+    "org/springframework/boot/servlet/autoconfigure/actuate/web/exchanges/ServletHttpExchangesAutoConfiguration": [
+      "org/springframework/boot/actuate/autoconfigure/web/exchanges/HttpExchangesProperties",
+      "org/springframework/boot/actuate/web/exchanges/HttpExchangeRepository"
+    ],
+    "org/springframework/boot/tomcat/autoconfigure/actuate/web/server/TomcatReactiveManagementContextAutoConfiguration": [
+      "org/springframework/boot/actuate/autoconfigure/web/server/ManagementContextFactory"
+    ],
+    "org/springframework/boot/tomcat/autoconfigure/actuate/web/server/TomcatServletManagementContextAutoConfiguration": [
+      "org/springframework/boot/actuate/autoconfigure/web/server/ManagementContextFactory"
+    ],
+    "org/springframework/boot/tomcat/autoconfigure/metrics/TomcatMetricsAutoConfiguration": [
+      "io/micrometer/core/instrument/MeterRegistry"
+    ],
+    "org/springframework/boot/tomcat/metrics/TomcatMetricsBinder": [
+      "io/micrometer/core/instrument/MeterRegistry"
+    ],
+    "org/springframework/boot/web/server/context/SpringBootTestRandomPortContextCustomizer": [
+      "org/springframework/test/context/MergedContextConfiguration"
+    ],
+    "org/springframework/boot/web/server/context/SpringBootTestRandomPortContextCustomizerFactory": [
+      "org/springframework/test/context/ContextCustomizer"
+    ],
+    "org/springframework/boot/web/server/reactive/context/ReactiveWebServerApplicationContextLocalTestWebServerProvider": [
+      "org/springframework/boot/test/http/server/LocalTestWebServer",
+      "org/springframework/boot/test/http/server/LocalTestWebServer$BaseUriDetails"
+    ],
+    "org/springframework/boot/web/server/servlet/context/ServletWebServerApplicationContextLocalTestWebServerProvider": [
+      "org/springframework/boot/test/http/server/LocalTestWebServer",
+      "org/springframework/boot/test/http/server/LocalTestWebServer$BaseUriDetails"
+    ],
+    "org/springframework/boot/webmvc/actuate/endpoint/web/AbstractWebMvcEndpointHandlerMapping": [
+      "org/springframework/boot/actuate/endpoint/web/EndpointMapping",
+      "org/springframework/boot/actuate/endpoint/web/EndpointMediaTypes",
+      "org/springframework/boot/actuate/endpoint/web/ExposableWebEndpoint",
+      "org/springframework/boot/actuate/endpoint/web/WebOperation",
+      "org/springframework/boot/actuate/endpoint/web/WebOperationRequestPredicate"
+    ],
+    "org/springframework/boot/webmvc/actuate/endpoint/web/AbstractWebMvcEndpointHandlerMapping$InvalidEndpointBadRequestException": [
+      "org/springframework/boot/actuate/endpoint/InvalidEndpointRequestException"
+    ],
+    "org/springframework/boot/webmvc/actuate/endpoint/web/AbstractWebMvcEndpointHandlerMapping$ServletWebOperationAdapter": [
+      "org/springframework/boot/actuate/endpoint/InvocationContext",
+      "org/springframework/boot/actuate/endpoint/web/WebOperation",
+      "org/springframework/boot/actuate/endpoint/web/WebServerNamespace"
+    ],
+    "org/springframework/boot/webmvc/actuate/endpoint/web/AdditionalHealthEndpointPathsWebMvcHandlerMapping": [
+      "org/springframework/boot/actuate/endpoint/web/ExposableWebEndpoint"
+    ],
+    "org/springframework/boot/webmvc/actuate/endpoint/web/ControllerEndpointHandlerMapping": [
+      "org/springframework/boot/actuate/endpoint/Access",
+      "org/springframework/boot/actuate/endpoint/EndpointAccessResolver",
+      "org/springframework/boot/actuate/endpoint/EndpointId",
+      "org/springframework/boot/actuate/endpoint/web/EndpointMapping",
+      "org/springframework/boot/actuate/endpoint/web/annotation/ExposableControllerEndpoint"
+    ],
+    "org/springframework/boot/webmvc/actuate/endpoint/web/WebMvcEndpointHandlerMapping": [
+      "org/springframework/boot/actuate/endpoint/web/EndpointLinksResolver",
+      "org/springframework/boot/actuate/endpoint/web/EndpointMapping",
+      "org/springframework/boot/actuate/endpoint/web/EndpointMediaTypes"
+    ],
+    "org/springframework/boot/webmvc/actuate/web/mappings/DispatcherServletMappingDetails": [
+      "org/springframework/boot/actuate/web/mappings/HandlerMethodDescription"
+    ],
+    "org/springframework/boot/webmvc/autoconfigure/WebMvcObservationAutoConfiguration": [
+      "org/springframework/boot/micrometer/observation/autoconfigure/ObservationProperties"
+    ],
+    "org/springframework/boot/webmvc/autoconfigure/WebMvcObservationAutoConfiguration$MeterFilterConfiguration": [
+      "org/springframework/boot/micrometer/metrics/MaximumAllowableTagsMeterFilter",
+      "org/springframework/boot/micrometer/metrics/autoconfigure/MetricsProperties",
+      "org/springframework/boot/micrometer/observation/autoconfigure/ObservationProperties"
+    ],
+    "org/springframework/boot/webmvc/autoconfigure/actuate/endpoint/web/WebMvcHealthEndpointExtensionAutoConfiguration": [
+      "org/springframework/boot/actuate/endpoint/web/ExposableWebEndpoint",
+      "org/springframework/boot/actuate/endpoint/web/WebEndpointsSupplier",
+      "org/springframework/boot/health/actuate/endpoint/HealthEndpointGroups"
+    ],
+    "org/springframework/boot/webmvc/autoconfigure/actuate/web/WebMvcEndpointManagementContextConfiguration": [
+      "org/springframework/boot/actuate/autoconfigure/endpoint/web/CorsEndpointProperties",
+      "org/springframework/boot/actuate/autoconfigure/endpoint/web/WebEndpointProperties",
+      "org/springframework/boot/actuate/endpoint/EndpointAccessResolver",
+      "org/springframework/boot/actuate/endpoint/jackson/EndpointJackson2ObjectMapper",
+      "org/springframework/boot/actuate/endpoint/jackson/EndpointJsonMapper",
+      "org/springframework/boot/actuate/endpoint/web/EndpointMediaTypes",
+      "org/springframework/boot/actuate/endpoint/web/ServletEndpointRegistrar",
+      "org/springframework/boot/actuate/endpoint/web/WebEndpointsSupplier",
+      "org/springframework/boot/actuate/endpoint/web/annotation/ControllerEndpointsSupplier",
+      "org/springframework/boot/actuate/endpoint/web/annotation/ServletEndpointsSupplier"
+    ],
+    "org/springframework/boot/webmvc/autoconfigure/actuate/web/WebMvcEndpointManagementContextConfiguration$EndpointJackson2ObjectMapperWebMvcConfigurer": [
+      "org/springframework/boot/actuate/endpoint/jackson/EndpointJackson2ObjectMapper"
+    ],
+    "org/springframework/boot/webmvc/autoconfigure/actuate/web/WebMvcEndpointManagementContextConfiguration$EndpointJsonMapperWebMvcConfigurer": [
+      "org/springframework/boot/actuate/endpoint/jackson/EndpointJsonMapper"
+    ],
+    "org/springframework/boot/webmvc/autoconfigure/actuate/web/WebMvcEndpointManagementContextConfiguration$HealthConfiguration": [
+      "org/springframework/boot/actuate/endpoint/web/ExposableWebEndpoint",
+      "org/springframework/boot/actuate/endpoint/web/WebEndpointsSupplier",
+      "org/springframework/boot/health/actuate/endpoint/HealthEndpointGroups"
+    ],
+    "org/xerial/snappy/SnappyBundleActivator": [
+      "org/osgi/framework/BundleContext"
+    ]
+  }
+}

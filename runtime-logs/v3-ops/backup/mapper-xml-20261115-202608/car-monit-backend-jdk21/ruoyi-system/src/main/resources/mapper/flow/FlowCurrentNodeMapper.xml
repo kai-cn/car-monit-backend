@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.flow.mapper.FlowCurrentNodeMapper">
+    
+    <resultMap type="FlowCurrentNode" id="FlowCurrentNodeResult">
+        <result property="id"    column="ID"    />
+        <result property="flowOid"    column="FLOW_OID"    />
+        <result property="currentOid"    column="CURRENT_OID"    />
+        <result property="nodeOrder"    column="NODE_ORDER"    />
+        <result property="nodeKey"    column="NODE_KEY"    />
+        <result property="nodeName"    column="NODE_NAME"    />
+        <result property="configType"    column="CONFIG_TYPE"    />
+        <result property="configId"    column="CONFIG_ID"    />
+        <result property="configName"    column="CONFIG_NAME"    />
+        <result property="billOid"    column="BILL_OID"    />
+        <result property="auitEmpOid"    column="AUIT_EMP_OID"    />
+        <result property="auitEmpName"    column="AUIT_EMP_NAME"    />
+        <result property="backCol1"    column="BACK_COL1"    />
+        <result property="backCol2"    column="BACK_COL2"    />
+        <result property="backCol3"    column="BACK_COL3"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectFlowCurrentNodeVo">
+         t.ID, t.FLOW_OID, t.CURRENT_OID, t.NODE_ORDER, t.NODE_KEY, t.NODE_NAME, t.CONFIG_TYPE, t.CONFIG_ID, t.CONFIG_NAME, t.BILL_OID, t.AUIT_EMP_OID, t.AUIT_EMP_NAME,
+          t.BACK_COL1, t.BACK_COL2, t.BACK_COL3, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time
+    </sql>
+
+    <select id="selectFlowCurrentNodeList" parameterType="FlowCurrentNode" resultMap="FlowCurrentNodeResult">
+        select
+        <include refid="selectFlowCurrentNodeVo"/>
+        from flow_current_node t
+        where t.del_flag = '0'
+            <if test="id != null  and id != ''"> and t.id = #{id}</if>
+            <if test="flowOid != null  and flowOid != ''"> and t.FLOW_OID = #{flowOid}</if>
+            <if test="currentOid != null  and currentOid != ''"> and t.CURRENT_OID = #{currentOid}</if>
+            <if test="nodeOrder != null "> and t.NODE_ORDER = #{nodeOrder}</if>
+            <if test="nodeKey != null  and nodeKey != ''"> and t.NODE_KEY = #{nodeKey}</if>
+            <if test="nodeName != null  and nodeName != ''"> and t.NODE_NAME like concat('%', #{nodeName}, '%')</if>
+            <if test="configType != null  and configType != ''"> and t.CONFIG_TYPE = #{configType}</if>
+            <if test="configId != null  and configId != ''"> and t.CONFIG_ID = #{configId}</if>
+            <if test="configName != null  and configName != ''"> and t.CONFIG_NAME like concat('%', #{configName}, '%')</if>
+            <if test="billOid != null  and billOid != ''"> and t.BILL_OID = #{billOid}</if>
+            <if test="auitEmpOid != null  and auitEmpOid != ''"> and t.AUIT_EMP_OID = #{auitEmpOid}</if>
+            <if test="auitEmpName != null  and auitEmpName != ''"> and t.AUIT_EMP_NAME like concat('%', #{auitEmpName}, '%')</if>
+            <if test="backCol1 != null  and backCol1 != ''"> and t.BACK_COL1 = #{backCol1}</if>
+            <if test="backCol2 != null  and backCol2 != ''"> and t.BACK_COL2 = #{backCol2}</if>
+            <if test="backCol3 != null  and backCol3 != ''"> and t.BACK_COL3 = #{backCol3}</if>
+            <if test="sort != null "> and t.sort = #{sort}</if>
+            <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+            <if test="createBy != null "> and t.create_by = #{createBy}</if>
+          order by t.create_time desc,t.id
+    </select>
+    
+    <select id="selectFlowCurrentNodeById" parameterType="String" resultMap="FlowCurrentNodeResult">
+        select
+        <include refid="selectFlowCurrentNodeVo"/>
+        from flow_current_node t
+        where t.ID = #{id}
+    </select>
+        
+    <insert id="insertFlowCurrentNode" parameterType="FlowCurrentNode">
+        insert into flow_current_node
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">ID,</if>
+            <if test="flowOid != null">FLOW_OID,</if>
+            <if test="currentOid != null">CURRENT_OID,</if>
+            <if test="nodeOrder != null">NODE_ORDER,</if>
+            <if test="nodeKey != null">NODE_KEY,</if>
+            <if test="nodeName != null">NODE_NAME,</if>
+            <if test="configType != null">CONFIG_TYPE,</if>
+            <if test="configId != null">CONFIG_ID,</if>
+            <if test="configName != null">CONFIG_NAME,</if>
+            <if test="billOid != null">BILL_OID,</if>
+            <if test="auitEmpOid != null">AUIT_EMP_OID,</if>
+            <if test="auitEmpName != null">AUIT_EMP_NAME,</if>
+            <if test="backCol1 != null">BACK_COL1,</if>
+            <if test="backCol2 != null">BACK_COL2,</if>
+            <if test="backCol3 != null">BACK_COL3,</if>
+            <if test="sort != null">sort,</if>
+            <if test="epsId != null">eps_id,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="flowOid != null">#{flowOid},</if>
+            <if test="currentOid != null">#{currentOid},</if>
+            <if test="nodeOrder != null">#{nodeOrder},</if>
+            <if test="nodeKey != null">#{nodeKey},</if>
+            <if test="nodeName != null">#{nodeName},</if>
+            <if test="configType != null">#{configType},</if>
+            <if test="configId != null">#{configId},</if>
+            <if test="configName != null">#{configName},</if>
+            <if test="billOid != null">#{billOid},</if>
+            <if test="auitEmpOid != null">#{auitEmpOid},</if>
+            <if test="auitEmpName != null">#{auitEmpName},</if>
+            <if test="backCol1 != null">#{backCol1},</if>
+            <if test="backCol2 != null">#{backCol2},</if>
+            <if test="backCol3 != null">#{backCol3},</if>
+            <if test="sort != null">#{sort},</if>
+            <if test="epsId != null">#{epsId},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateFlowCurrentNode" parameterType="FlowCurrentNode">
+        update flow_current_node
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="flowOid != null">FLOW_OID = #{flowOid},</if>
+            <if test="currentOid != null">CURRENT_OID = #{currentOid},</if>
+            <if test="nodeOrder != null">NODE_ORDER = #{nodeOrder},</if>
+            <if test="nodeKey != null">NODE_KEY = #{nodeKey},</if>
+            <if test="nodeName != null">NODE_NAME = #{nodeName},</if>
+            <if test="configType != null">CONFIG_TYPE = #{configType},</if>
+            <if test="configId != null">CONFIG_ID = #{configId},</if>
+            <if test="configName != null">CONFIG_NAME = #{configName},</if>
+            <if test="billOid != null">BILL_OID = #{billOid},</if>
+            <if test="auitEmpOid != null">AUIT_EMP_OID = #{auitEmpOid},</if>
+            <if test="auitEmpName != null">AUIT_EMP_NAME = #{auitEmpName},</if>
+            <if test="backCol1 != null">BACK_COL1 = #{backCol1},</if>
+            <if test="backCol2 != null">BACK_COL2 = #{backCol2},</if>
+            <if test="backCol3 != null">BACK_COL3 = #{backCol3},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="epsId != null">eps_id = #{epsId},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where ID = #{id}
+    </update>
+
+    <update id="deleteFlowCurrentNodeById" parameterType="String">
+        update flow_current_node set del_flag = '1' where ID = #{id}
+    </update>
+
+    <update id="deleteFlowCurrentNodeByIds" parameterType="String">
+        update flow_current_node set del_flag = '1' where ID in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+
+    <delete id="deleteByBillId" parameterType="String">
+        delete from  flow_current_node  where BILL_OID = #{billOid}
+    </delete>
+
+
+    <select id="selectEmpInfoList" parameterType="FlowCurrentNode" resultMap="FlowCurrentNodeResult">
+        select
+          t.user_id AUIT_EMP_OID,t.nick_name AUIT_EMP_NAME
+        from sys_user t
+        where t.del_flag = '0' and t.status = '0'
+        <!--角色-->
+        <if test="roleId != null  and roleId != ''">
+            and exists (select 1 from sys_user_role t1 where t1.user_id = t.user_id and t1.role_id = #{roleId})
+        </if>
+        <!--租户id-->
+        <if test="tenantId != null ">
+            and exists (select 1 from sys_dept td where td.del_flag = '0' and td.dept_id = t.dept_id and td.tenant_id = #{tenantId})
+        </if>
+
+        <!--部门id-->
+        <if test="deptId != null ">
+            and t.dept_id = #{deptId}
+        </if>
+
+        <!--科室值班人审核-->
+        <if test="flag != null and flag == 'dutyAudit' ">
+            and t.dept_id in  (select tp.borrow_dept_id from ${backCol1} tp where  tp.id = #{billOid})
+        </if>
+
+
+
+        <!--部门经理-->
+        <if test="flag != null and flag == 'bmjlAudit' ">
+            AND EXISTS (
+                SELECT
+                  1
+                FROM
+                sys_dept ds
+                WHERE ds.del_flag = '0'
+                AND ds.dept_id = (SELECT tt.dept_id FROM sys_user tt WHERE tt.user_id = #{backCol1})
+                AND ds.leader_id = t.user_id
+            )
+        </if>
+
+        <!--分管领导-->
+        <if test="flag != null and flag == 'fgldAudit' ">
+            AND EXISTS (
+                SELECT
+                  1
+                FROM
+                sys_dept ds
+                WHERE ds.del_flag = '0'
+                AND ds.dept_id = (SELECT tt.dept_id FROM sys_user tt WHERE tt.user_id = #{backCol1})
+                AND ds.fgld_id = t.user_id
+            )
+        </if>
+
+    </select>
+
+    <update id="updateFlowTable" parameterType="FlowCurrentNode">
+        update ${tableName} set
+        <if test="flowKey != null">flow_key = #{flowKey},</if>
+        <if test="flowRuid != null">flow_ruid = #{flowRuid},</if>
+        <if test="flowApplyOid != null">flow_apply_oid = #{flowApplyOid},</if>
+        <if test="flowStatus != null">flow_status = #{flowStatus},</if>
+        <if test="flowStatus != null and flowStatus == 3 ">sh_time = now(),</if>
+
+        update_time = now()
+        where id = #{billOid}
+    </update>
+
+    <!-- 根据角色和部门查询人员 -->
+    <select id="selectUserListByRole" parameterType="FlowCurrentNode" resultMap="FlowCurrentNodeResult">
+        select
+        t.user_id AUIT_EMP_OID,t.nick_name AUIT_EMP_NAME
+        from sys_user t
+        where t.del_flag = '0' and t.status = '0'
+        <!--角色-->
+        <if test="roleKey != null  and roleKey != ''">
+            and exists (select 1 from sys_user_role t1,sys_role t2 where t1.user_id = t.user_id and t1.role_id = t2.role_id and t2.role_key = #{roleKey})
+        </if>
+        <!--部门id-->
+        <if test="deptId != null ">
+            and  t.dept_id = #{deptId}
+        </if>
+    </select>
+
+    <!-- 根据部门设置的分管领导 -->
+    <select id="selectUserListByDept" parameterType="FlowCurrentNode" resultMap="FlowCurrentNodeResult">
+        select
+        t.user_id AUIT_EMP_OID,t.nick_name AUIT_EMP_NAME
+        from sys_user t
+        where t.del_flag = '0' and t.status = '0'
+        AND EXISTS (
+            SELECT
+            1
+            FROM
+            sys_dept ds
+            WHERE ds.del_flag = '0'
+            AND ds.dept_id = #{deptId}
+            AND ds.leader_id = t.user_id
+        )
+    </select>
+
+
+
+</mapper>

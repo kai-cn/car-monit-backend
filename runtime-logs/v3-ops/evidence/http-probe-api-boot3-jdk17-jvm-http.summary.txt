@@ -1,0 +1,18 @@
+port_ready=1
+http_code=200 body_bytes=3391
+{"total":1016,"rows":[{"bigId":"1890082065","algorithmidentifier":null,"antennaid":null,"axlecount":6,"balanceafter":null,"balancebefore":null,"cardfeesumafter":null,"cardfeesumbefore":null,"computerorder":null,"consumetime":null,"cpucardid":null,"cpucardtype":null,"cpuenddate":null,"cpuissueid":null,"cpunetid":null,"cpustartdate":null,"cpuvehicleplate":null,"cpuvehicletype":null,"cpuversion":null
+error_lines=0
+0
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.6)
+
+[native-aot] explicit sqlSessionFactory reference patched into 23 MapperFactoryBean definition(s) -> sqlSessionFactory
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts

@@ -1,0 +1,15 @@
+=== jvm runner ===
+jar   : /mnt/d/work/IdeaProjects/car-monit-api-jdk17/pro-business-api/target/pro-business-api-1.0.jar
+java  : /home/dev/.cache/ci-toolchain/jdk-17.0.21+9/bin/java
+port  : 19902
+label : api-boot4-jdk17-jvm
+jar size bytes: 206201059
+port_ready     : 1
+process_exited : 0
+startup_ms     : 16043
+http_root_code : 404
+rss_kb         : 418848
+rss_mb         : 409
+threads        : 93
+cpu_time       : 00:00:39
+=== startup evidence ===

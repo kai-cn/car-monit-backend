@@ -1,0 +1,153 @@
+# Final independent-review remediation gate
+# generated: 2026-11-12 09:17:17 +0800
+# scope: six local JDK migration worktrees + D:/work/runtime-logs evidence
+# method: read-only filesystem/POM/jar/git checks; js-yaml workflow parse; validation-time DB evidence; current runtime state file
+PASS POM_PARSE :: total=30 bad=0
+PASS PREEXISTING_NON_POM_XML_PARSE_FAILURES :: xml_total=405 bad=6 files=PulsarMessageRecordMapper.xml,分区表分页查询Mapper示例.xml
+PASS JAVA_VERSION car-monit-backend-jdk17 :: expected=17 actual=17
+PASS COMPILER_RELEASE car-monit-backend-jdk17 :: expected=17 actual=17
+PASS SPRING_FRAMEWORK car-monit-backend-jdk17 :: 5.3.39
+PASS LOMBOK car-monit-backend-jdk17 :: 1.18.48
+PASS NO_NOOP_COMPILER_FLAGS car-monit-backend-jdk17
+PASS NO_STALE_ASM_OVERRIDE car-monit-backend-jdk17
+PASS JAVA_VERSION car-monit-backend-jdk21 :: expected=21 actual=21
+PASS COMPILER_RELEASE car-monit-backend-jdk21 :: expected=21 actual=21
+PASS SPRING_FRAMEWORK car-monit-backend-jdk21 :: 5.3.39
+PASS LOMBOK car-monit-backend-jdk21 :: 1.18.48
+PASS NO_NOOP_COMPILER_FLAGS car-monit-backend-jdk21
+PASS NO_STALE_ASM_OVERRIDE car-monit-backend-jdk21
+PASS JAVA_VERSION car-monit-backend-jdk25 :: expected=21 actual=21
+PASS COMPILER_RELEASE car-monit-backend-jdk25 :: expected=21 actual=21
+PASS SPRING_FRAMEWORK car-monit-backend-jdk25 :: 5.3.39
+PASS LOMBOK car-monit-backend-jdk25 :: 1.18.48
+PASS NO_NOOP_COMPILER_FLAGS car-monit-backend-jdk25
+PASS NO_STALE_ASM_OVERRIDE car-monit-backend-jdk25
+PASS JAVA_VERSION car-monit-api-jdk17 :: expected=17 actual=17
+PASS COMPILER_RELEASE car-monit-api-jdk17 :: expected=17 actual=17
+PASS API_SOURCE_TARGET car-monit-api-jdk17 :: expected=17
+PASS SPRING_FRAMEWORK car-monit-api-jdk17 :: 5.3.39
+PASS LOMBOK car-monit-api-jdk17 :: 1.18.48
+PASS NO_NOOP_COMPILER_FLAGS car-monit-api-jdk17
+PASS NO_STALE_ASM_OVERRIDE car-monit-api-jdk17
+PASS JAVA_VERSION car-monit-api-jdk21 :: expected=21 actual=21
+PASS COMPILER_RELEASE car-monit-api-jdk21 :: expected=21 actual=21
+PASS API_SOURCE_TARGET car-monit-api-jdk21 :: expected=21
+PASS SPRING_FRAMEWORK car-monit-api-jdk21 :: 5.3.39
+PASS LOMBOK car-monit-api-jdk21 :: 1.18.48
+PASS NO_NOOP_COMPILER_FLAGS car-monit-api-jdk21
+PASS NO_STALE_ASM_OVERRIDE car-monit-api-jdk21
+PASS JAVA_VERSION car-monit-api-jdk25 :: expected=21 actual=21
+PASS COMPILER_RELEASE car-monit-api-jdk25 :: expected=21 actual=21
+PASS API_SOURCE_TARGET car-monit-api-jdk25 :: expected=21
+PASS SPRING_FRAMEWORK car-monit-api-jdk25 :: 5.3.39
+PASS LOMBOK car-monit-api-jdk25 :: 1.18.48
+PASS NO_NOOP_COMPILER_FLAGS car-monit-api-jdk25
+PASS NO_STALE_ASM_OVERRIDE car-monit-api-jdk25
+PASS STARTER_TEST_SCOPE car-monit-api-jdk17
+PASS STARTER_TEST_SCOPE car-monit-api-jdk21
+PASS STARTER_TEST_SCOPE car-monit-api-jdk25
+PASS JDK25_LOMBOK_PROCESSOR backend
+PASS JDK25_LOMBOK_PROCESSOR api
+PASS SELF_HOSTED_SETUP_JAVA car-monit-backend-jdk17 :: jdk=17
+PASS SELF_HOSTED_VERSION_ASSERT car-monit-backend-jdk17
+PASS NO_JDK8_WORKFLOW_VALUE car-monit-backend-jdk17
+PASS SELF_HOSTED_SETUP_JAVA car-monit-backend-jdk21 :: jdk=21
+PASS SELF_HOSTED_VERSION_ASSERT car-monit-backend-jdk21
+PASS NO_JDK8_WORKFLOW_VALUE car-monit-backend-jdk21
+PASS SELF_HOSTED_SETUP_JAVA car-monit-backend-jdk25 :: jdk=25
+PASS SELF_HOSTED_VERSION_ASSERT car-monit-backend-jdk25
+PASS NO_JDK8_WORKFLOW_VALUE car-monit-backend-jdk25
+PASS SELF_HOSTED_SETUP_JAVA car-monit-api-jdk17 :: jdk=17
+PASS SELF_HOSTED_VERSION_ASSERT car-monit-api-jdk17
+PASS NO_JDK8_WORKFLOW_VALUE car-monit-api-jdk17
+PASS SELF_HOSTED_SETUP_JAVA car-monit-api-jdk21 :: jdk=21
+PASS SELF_HOSTED_VERSION_ASSERT car-monit-api-jdk21
+PASS NO_JDK8_WORKFLOW_VALUE car-monit-api-jdk21
+PASS SELF_HOSTED_SETUP_JAVA car-monit-api-jdk25 :: jdk=25
+PASS SELF_HOSTED_VERSION_ASSERT car-monit-api-jdk25
+PASS NO_JDK8_WORKFLOW_VALUE car-monit-api-jdk25
+PASS REUSABLE_WORKFLOW_INPUT_WIRED car-monit-api-jdk17
+PASS CALLER_JDK_VERSION car-monit-api-jdk17/master.yml :: jdk=17
+PASS CALLER_JDK_VERSION car-monit-api-jdk17/pr.yml :: jdk=17
+PASS CALLER_JDK_VERSION car-monit-api-jdk17/release.yml :: jdk=17
+PASS REUSABLE_WORKFLOW_INPUT_WIRED car-monit-api-jdk21
+PASS CALLER_JDK_VERSION car-monit-api-jdk21/master.yml :: jdk=21
+PASS CALLER_JDK_VERSION car-monit-api-jdk21/pr.yml :: jdk=21
+PASS CALLER_JDK_VERSION car-monit-api-jdk21/release.yml :: jdk=21
+PASS REUSABLE_WORKFLOW_INPUT_WIRED car-monit-api-jdk25
+PASS CALLER_JDK_VERSION car-monit-api-jdk25/master.yml :: jdk=25
+PASS CALLER_JDK_VERSION car-monit-api-jdk25/pr.yml :: jdk=25
+PASS CALLER_JDK_VERSION car-monit-api-jdk25/release.yml :: jdk=25
+PASS WORKFLOW_YAML :: YAML_TOTAL=54 YAML_BAD=0
+PASS FINAL2_BUILD jdk17-api
+PASS FINAL2_BUILD jdk17-backend
+PASS FINAL2_BUILD jdk21-api
+PASS FINAL2_BUILD jdk21-backend
+PASS FINAL2_BUILD jdk25-api
+PASS FINAL2_BUILD jdk25-backend
+PASS FINAL_SMOKE jdk17 :: checks=26 fails=0
+PASS FINAL_SMOKE jdk21 :: checks=26 fails=0
+PASS FINAL_SMOKE jdk25 :: checks=26 fails=0
+PASS FAT_JAR jdk17-api :: bytes=229621226
+PASS SPRING_CORE jdk17-api
+PASS NO_TEST_LIBS_IN_PROD_JAR jdk17-api
+PASS CLASS_MAJOR jdk17-api :: expected=61 actual=61
+PASS ARTIFACT_MATRIX_SIZE jdk17-api :: jar=229621226
+PASS FAT_JAR jdk17-backend :: bytes=216429268
+PASS SPRING_CORE jdk17-backend
+PASS CLASS_MAJOR jdk17-backend :: expected=61 actual=61
+PASS ARTIFACT_MATRIX_SIZE jdk17-backend :: jar=216429268
+PASS FAT_JAR jdk21-api :: bytes=229617563
+PASS SPRING_CORE jdk21-api
+PASS NO_TEST_LIBS_IN_PROD_JAR jdk21-api
+PASS CLASS_MAJOR jdk21-api :: expected=65 actual=65
+PASS ARTIFACT_MATRIX_SIZE jdk21-api :: jar=229617563
+PASS FAT_JAR jdk21-backend :: bytes=216427791
+PASS SPRING_CORE jdk21-backend
+PASS CLASS_MAJOR jdk21-backend :: expected=65 actual=65
+PASS ARTIFACT_MATRIX_SIZE jdk21-backend :: jar=216427791
+PASS FAT_JAR jdk25-api :: bytes=229614106
+PASS SPRING_CORE jdk25-api
+PASS NO_TEST_LIBS_IN_PROD_JAR jdk25-api
+PASS CLASS_MAJOR jdk25-api :: expected=65 actual=65
+PASS ARTIFACT_MATRIX_SIZE jdk25-api :: jar=229614106
+PASS FAT_JAR jdk25-backend :: bytes=216424272
+PASS SPRING_CORE jdk25-backend
+PASS CLASS_MAJOR jdk25-backend :: expected=65 actual=65
+PASS ARTIFACT_MATRIX_SIZE jdk25-backend :: jar=216424272
+PASS JDK25_JCMD_LIVE_EVIDENCE
+PASS JDK25_FORCED_CACHE_MISS_EVIDENCE
+PASS NO_UPSTREAM car-monit-backend-jdk17
+PASS NO_UNTRACKED_FILES car-monit-backend-jdk17
+PASS NO_STAGED_COMMIT car-monit-backend-jdk17
+PASS NO_BRANCH_LOCAL_DOC car-monit-backend-jdk17
+PASS NO_UPSTREAM car-monit-backend-jdk21
+PASS NO_UNTRACKED_FILES car-monit-backend-jdk21
+PASS NO_STAGED_COMMIT car-monit-backend-jdk21
+PASS NO_BRANCH_LOCAL_DOC car-monit-backend-jdk21
+PASS NO_UPSTREAM car-monit-backend-jdk25
+PASS NO_UNTRACKED_FILES car-monit-backend-jdk25
+PASS NO_STAGED_COMMIT car-monit-backend-jdk25
+PASS NO_BRANCH_LOCAL_DOC car-monit-backend-jdk25
+PASS NO_UPSTREAM car-monit-api-jdk17
+PASS NO_UNTRACKED_FILES car-monit-api-jdk17
+PASS NO_STAGED_COMMIT car-monit-api-jdk17
+PASS NO_BRANCH_LOCAL_DOC car-monit-api-jdk17
+PASS NO_UPSTREAM car-monit-api-jdk21
+PASS NO_UNTRACKED_FILES car-monit-api-jdk21
+PASS NO_STAGED_COMMIT car-monit-api-jdk21
+PASS NO_BRANCH_LOCAL_DOC car-monit-api-jdk21
+PASS NO_UPSTREAM car-monit-api-jdk25
+PASS NO_UNTRACKED_FILES car-monit-api-jdk25
+PASS NO_STAGED_COMMIT car-monit-api-jdk25
+PASS NO_BRANCH_LOCAL_DOC car-monit-api-jdk25
+PASS STALE_DOC_GENERATOR_REMOVED
+PASS STALE_JDK17_DOC_REMOVED
+PASS NO_LOCAL_SECRETS_IN_AUTHORITATIVE_DOCS
+PASS APP_JAVA_COUNT :: 0
+PASS VALIDATION_TIME_DB_CLEANUP :: remaining_e2e=0 total_users=8
+PASS NO_DUPLICATE_SERVICES :: none
+PASS CURRENT_RUNTIME_EVIDENCE_FILE :: D:/work/runtime-logs\evidence-current-runtime-state.txt
+FINAL_GATE_CHECKS=146
+FINAL_GATE_FAILS=0
+FINAL_GATE_VERDICT=PASS

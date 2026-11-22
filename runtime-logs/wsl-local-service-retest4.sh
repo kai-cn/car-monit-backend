@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # @description 历史脚本 wsl-local-service-retest4.sh：驱动 WSL Docker/数据库完成本机验证；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
-# @author AI Assistant
+# @author Tencent Hunyuan Hy
 # @date 2026-11-22
 # @usage bash wsl-local-service-retest4.sh [args]；执行前确认目标环境与本地容器状态。
 # @dependencies Docker CLI 与已启动的守护进程；Java 运行时

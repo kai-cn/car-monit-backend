@@ -1,0 +1,130 @@
+[
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "app": "backend",
+    "ref": "master",
+    "jdk": "8",
+    "run_id": 44993519137,
+    "label": "backend-8-master"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "app": "backend",
+    "ref": "car-monit-backend-java-V3",
+    "jdk": "8",
+    "run_id": 44993526377,
+    "label": "backend-8-car-monit-backend-java-V3"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "app": "backend",
+    "ref": "feat/backend-full-parity",
+    "jdk": "8",
+    "run_id": 44993534171,
+    "label": "backend-8-feat_backend-full-parity"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "app": "backend",
+    "ref": "car-monit-backend-jdk17",
+    "jdk": "17",
+    "run_id": 44993542032,
+    "label": "backend-17-car-monit-backend-jdk17"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "app": "backend",
+    "ref": "car-monit-backend-jdk21",
+    "jdk": "21",
+    "run_id": 44993549410,
+    "label": "backend-21-car-monit-backend-jdk21"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "app": "backend",
+    "ref": "car-monit-backend-jdk25",
+    "jdk": "25",
+    "run_id": 44993556344,
+    "label": "backend-25-car-monit-backend-jdk25"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "app": "backend",
+    "ref": "feature-dbupgrade",
+    "jdk": "25",
+    "run_id": 44993563358,
+    "label": "backend-25-feature-dbupgrade"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "app": "api",
+    "ref": "master",
+    "jdk": "8",
+    "run_id": 44993569427,
+    "label": "api-8-master"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "app": "api",
+    "ref": "car-monit-api-java-V3",
+    "jdk": "8",
+    "run_id": 44993575886,
+    "label": "api-8-car-monit-api-java-V3"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "app": "api",
+    "ref": "car-monit-api-java-fix",
+    "jdk": "8",
+    "run_id": 44993583228,
+    "label": "api-8-car-monit-api-java-fix"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "app": "api",
+    "ref": "feature/springboot3-jdk17",
+    "jdk": "17",
+    "run_id": 44993590020,
+    "label": "api-17-feature_springboot3-jdk17"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "app": "api",
+    "ref": "feature/springboot3",
+    "jdk": "21",
+    "run_id": 44993597379,
+    "label": "api-21-feature_springboot3"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "app": "api",
+    "ref": "car-monit-api-jdk17",
+    "jdk": "17",
+    "run_id": 44993604632,
+    "label": "api-17-car-monit-api-jdk17"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "app": "api",
+    "ref": "car-monit-api-jdk21",
+    "jdk": "21",
+    "run_id": 44993611914,
+    "label": "api-21-car-monit-api-jdk21"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "app": "api",
+    "ref": "car-monit-api-jdk25",
+    "jdk": "25",
+    "run_id": 44993619858,
+    "label": "api-25-car-monit-api-jdk25"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "app": "api",
+    "ref": "feature-dbupgrade",
+    "jdk": "25",
+    "run_id": 44993628784,
+    "label": "api-25-feature-dbupgrade"
+  }
+]

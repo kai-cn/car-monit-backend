@@ -1,0 +1,254 @@
+# @description 历史运维/验证配置快照，保留用于复现与审计；本文件头补充维护背景与运行约束。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage GitHub Actions workflow_dispatch 或事件触发；输入参数见 workflow inputs。
+# @dependencies 按原 workflow 声明的 runner、Actions 与外部服务依赖执行。
+# Native-image vs JVM full-interface + resource/performance parity verification (backend repo).
+#
+# Matrix: jdk x platform. Builds fat jar (baseline) + native binary (candidate), brings up
+# MySQL + Redis (backend only needs MySQL; PostgreSQL not required), loads schema + seed,
+# probes unauthenticated + captcha endpoints on both variants, compares status/bytes/latency.
+#
+# Constraints (see docs/v3/review/11-cloud-parity-verification.md):
+#   * Boot4 native only RUNS on Java 25; JDK17/21 native fail at startup -> build-only cells.
+#   * Windows runners have no service containers -> DB-less reachability pass only.
+#   * RuoYi backend endpoints mostly require auth; parity covers /captchaImage, /login (POST
+#     excluded: probe is GET-only), startup time, peak RSS, and latency on captcha.
+#
+# workflow_dispatch only.
+
+name: parity-verify-cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: runner OS
+        type: choice
+        options: [linux, windows, both]
+        default: linux
+      repeat:
+        type: string
+        default: '1'
+      linux_runner:
+        type: string
+        default: ubuntu-latest
+      windows_runner:
+        type: string
+        default: windows-latest
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parity-${{ github.ref }}-${{ inputs.platform }}
+  cancel-in-progress: false
+
+env:
+  MAVEN_OPTS: -Xmx3g -XX:+UseSerialGC
+  MAVEN_ARGS: -B -ntp
+  MODULE: ruoyi-admin
+  ENDPOINTS: scripts/v3/ops/parity/endpoints/backend.txt
+
+jobs:
+  prepare:
+    runs-on: ${{ inputs.linux_runner }}
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+      jdk: ${{ steps.jdk.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: jdk
+        shell: bash
+        run: |
+          v=$(grep -oP '<java\.version>\K[0-9]+' pom.xml | head -1)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "detected java.version=$v"
+      - id: gen
+        shell: bash
+        env:
+          IN_PLATFORM: ${{ inputs.platform }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          plats = ['linux','windows'] if os.environ['IN_PLATFORM'] == 'both' else [os.environ['IN_PLATFORM']]
+          cells = [{'platform': p} for p in plats]
+          print('matrix=' + json.dumps({'include': cells}, separators=(',', ':')))
+          PY
+          grep '^matrix=' "$GITHUB_OUTPUT"
+
+  verify:
+    needs: prepare
+    runs-on: ${{ matrix.platform == 'linux' && inputs.linux_runner || inputs.windows_runner }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    env:
+      CELL_JDK: ${{ needs.prepare.outputs.jdk }}
+      CELL_PLATFORM: ${{ matrix.platform }}
+      LABEL: backend-jdk${{ needs.prepare.outputs.jdk }}-${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Provision Mandrel java${{ needs.prepare.outputs.jdk }}
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: ${{ needs.prepare.outputs.jdk }}
+          distribution: 'mandrel'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: MSVC dev environment (Windows)
+        if: matrix.platform == 'windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Linux toolchain
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc g++ zlib1g-dev
+
+      - name: Build fat jar + install reactor deps (JVM baseline)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # ruoyi-admin binds spring-boot process-aot to the default lifecycle (added for
+          # native builds); it boots the app and needs the logback dir to exist.
+          if [ "$CELL_PLATFORM" = 'linux' ]; then
+            sudo mkdir -p /home/ruoyi/logs && sudo chown "$(id -u):$(id -g)" /home/ruoyi/logs
+          fi
+          mvn $MAVEN_ARGS -DskipTests -pl "$MODULE" -am install
+          mkdir -p out
+          jar=$(ls "$MODULE"/target/*.jar | grep -v original | head -1)
+          cp "$jar" out/baseline.jar
+          ls -lh out/baseline.jar
+
+      - name: Build native binary (candidate)
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -uo pipefail
+          MVN=mvn; [ "$CELL_PLATFORM" = 'windows' ] && MVN=mvn.cmd
+          "$MVN" $MAVEN_ARGS -Pnative,native-flink-exclude -DskipTests \
+              -pl "$MODULE" native:compile || echo "::warning::native build failed; jar baseline still probed"
+          echo "native build step done"
+
+      - name: Locate jar + native
+        id: art
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "jar=out/baseline.jar" >> "$GITHUB_OUTPUT"
+          if [ "$CELL_PLATFORM" = 'windows' ]; then bin="$MODULE/target/$MODULE.exe"; else bin="$MODULE/target/$MODULE"; fi
+          if [ -f "$bin" ]; then echo "native=$bin" >> "$GITHUB_OUTPUT"; echo "native OK ($(wc -c < "$bin") bytes)"; else echo "native=" >> "$GITHUB_OUTPUT"; echo "::warning::native binary not found at $bin"; fi
+
+      - name: Start MySQL + Redis (Linux)
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
+          docker run -d --name rd -p 6379:6379 redis:7-alpine
+          for i in $(seq 1 90); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
+          for i in $(seq 1 30); do docker exec rd redis-cli ping >/dev/null 2>&1 && break; sleep 1; done
+          for i in $(seq 1 10); do
+            docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/schema_carmonitdb.sql && break
+            echo "schema load retry $i"; sleep 3
+          done
+          for i in $(seq 1 10); do
+            docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/seed_carmonitdb.sql && break
+            echo "seed load retry $i"; sleep 3
+          done
+          echo "sys_user rows: $(docker exec my mysql -uroot -proot -N -e 'select count(*) from carmonitdb.sys_user')"
+          # RuoYi runtime dirs (logback / upload path) must exist and be writable.
+          sudo mkdir -p /home/ruoyi/logs /home/ruoyi/uploadPath
+          sudo chown -R "$(id -u):$(id -g)" /home/ruoyi
+
+      - name: Probe JVM baseline
+        shell: bash
+        env:
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
+          SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
+          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
+          SPRING__DATASOURCE__DRUID__MASTER__DRIVERCLASSNAME: com.mysql.cj.jdbc.Driver
+          SPRING__REDIS__HOST: 127.0.0.1
+          SPRING__REDIS__PORT: "6379"
+          TOKEN__SECRET: parity-cloud-secret-deterministic
+          EXPORT_DOWNLOAD_SECRET: parity-cloud-export-secret-deterministic
+        run: |
+          set -uo pipefail
+          MODE=full; [ "$CELL_PLATFORM" = 'windows' ] && MODE=reachability
+          python scripts/v3/ops/parity/parity_probe.py \
+            --variant jar --label "$LABEL" \
+            --cmd "java -jar ${{ steps.art.outputs.jar }} --server.port=19903" \
+            --port 19903 --endpoints "$ENDPOINTS" \
+            --out out/jar.json --mode "$MODE" --check-stability \
+            --repeat "${{ inputs.repeat }}" --ready-timeout 300 || echo "jar probe exit=$?"
+
+      - name: Probe native candidate
+        if: steps.art.outputs.native != ''
+        shell: bash
+        env:
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
+          SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
+          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
+          SPRING__DATASOURCE__DRUID__MASTER__DRIVERCLASSNAME: com.mysql.cj.jdbc.Driver
+          SPRING__REDIS__HOST: 127.0.0.1
+          SPRING__REDIS__PORT: "6379"
+          TOKEN__SECRET: parity-cloud-secret-deterministic
+          EXPORT_DOWNLOAD_SECRET: parity-cloud-export-secret-deterministic
+        run: |
+          set -uo pipefail
+          MODE=full; [ "$CELL_PLATFORM" = 'windows' ] && MODE=reachability
+          NATIVE="${{ steps.art.outputs.native }}"
+          [ "$CELL_PLATFORM" = 'linux' ] && chmod +x "$NATIVE"
+          python scripts/v3/ops/parity/parity_probe.py \
+            --variant native --label "$LABEL" \
+            --cmd "\"$NATIVE\" --server.port=19902" \
+            --port 19902 --endpoints "$ENDPOINTS" \
+            --out out/native.json --mode "$MODE" --check-stability \
+            --repeat "${{ inputs.repeat }}" --ready-timeout 300 || echo "native probe exit=$?"
+
+      - name: Compare + report
+        shell: bash
+        run: |
+          set -uo pipefail
+          # Dump probe app-log tails for diagnosis (startup errors surface here).
+          for f in out/jar.json.app.log out/native.json.app.log; do
+            if [ -f "$f" ]; then
+              echo "::group::tail $f"
+              grep -E 'ERROR|Caused by|APPLICATION FAILED|Exception|Started .* in|Tomcat started' "$f" | tail -40 || true
+              echo "::endgroup::"
+            fi
+          done
+          if [ ! -f out/native.json ]; then
+            echo "::warning::native probe missing - build-only cell (Boot4 native runtime needs JDK25)"
+            exit 0
+          fi
+          ALLOW=""; [ "$CELL_PLATFORM" = 'windows' ] && ALLOW="500,503"
+          python scripts/v3/ops/parity/parity_compare.py \
+            --baseline out/jar.json --candidate out/native.json \
+            --out out/report.json --md out/report.md \
+            --label "$LABEL" --allow-diff-status "$ALLOW" || true
+          cat out/report.md || true
+
+      - name: Upload parity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-backend-${{ needs.prepare.outputs.jdk }}-${{ matrix.platform }}
+          path: |
+            out/**
+            */target/*.jar
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Stop datastores
+        if: always() && matrix.platform == 'linux'
+        shell: bash
+        run: docker rm -f my rd 2>/dev/null || true

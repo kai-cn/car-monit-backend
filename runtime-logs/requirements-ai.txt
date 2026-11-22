@@ -1,0 +1,12 @@
+# AI Agent 依赖（可选 extras，两个框架分支共用同一份版本基线）
+# 安装：pip install -r requirements.txt -r requirements-ai.txt
+#
+# 版本策略（2026-11 可用，按官方 v1 稳定线）：
+#   langchain 1.5.x —— create_agent / @tool / AgentMiddleware
+#   langgraph 1.x    —— StateGraph / ToolNode / InMemorySaver（create_agent 底层）
+#   langchain-openai 1.8.x —— ChatOpenAI（OpenAI 兼容，可接豆包/通义/DeepSeek）
+#   pydantic 2.x     —— 项目 FastAPI 已依赖，此处显式约束上限
+langchain>=1.5,<2.0
+langgraph>=1.0,<2.0
+langchain-openai>=1.8,<2.0
+pydantic>=2.7,<3.0

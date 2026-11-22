@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.flow.mapper.FlowApplyInfoMapper">
+    
+    <resultMap type="FlowApplyInfo" id="FlowApplyInfoResult">
+        <result property="id"    column="ID"    />
+        <result property="billOid"    column="BILL_OID"    />
+        <result property="bussType"    column="BUSS_TYPE"    />
+        <result property="flowRuid"    column="FLOW_RUID"    />
+        <result property="msgTitle"    column="MSG_TITLE"    />
+        <result property="msgContext"    column="MSG_CONTEXT"    />
+        <result property="msgType"    column="MSG_TYPE"    />
+        <result property="msgUrl"    column="MSG_URL"    />
+        <result property="applyName"    column="APPLY_NAME"    />
+        <result property="currentOid"    column="CURRENT_OID"    />
+        <result property="pcOid"    column="PC_OID"    />
+        <result property="backCol1"    column="BACK_COL1"    />
+        <result property="backCol2"    column="BACK_COL2"    />
+        <result property="backCol3"    column="BACK_COL3"    />
+        <result property="flowStatus"    column="FLOW_STATUS"    />
+        <result property="sort"    column="sort"    />
+        <result property="epsId"    column="eps_id"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="entrustInfo"    column="entrust_info"    />
+    </resultMap>
+
+    <sql id="selectFlowApplyInfoVo">
+         t.ID, t.entrust_info, t.BILL_OID, t.BUSS_TYPE, t.FLOW_RUID, t.MSG_TITLE, t.MSG_CONTEXT, t.MSG_TYPE, t.MSG_URL, t.APPLY_NAME,
+         t.CURRENT_OID, t.PC_OID, t.BACK_COL1, t.BACK_COL2, t.BACK_COL3, t.FLOW_STATUS, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time
+    </sql>
+
+    <select id="selectFlowApplyInfoList" parameterType="FlowApplyInfo" resultMap="FlowApplyInfoResult">
+        select
+        <include refid="selectFlowApplyInfoVo"/>,t.BACK_COL1 auitEmpName
+        from flow_apply_info t
+        where t.del_flag = '0'
+            <if test="id != null  and id != ''"> and t.id = #{id}</if>
+            <if test="billOid != null  and billOid != ''"> and t.BILL_OID = #{billOid}</if>
+            <if test="bussType != null  and bussType != ''"> and t.BUSS_TYPE = #{bussType}</if>
+            <if test="flowRuid != null  and flowRuid != ''"> and t.FLOW_RUID = #{flowRuid}</if>
+            <if test="msgTitle != null  and msgTitle != ''"> and t.MSG_TITLE like concat('%', #{msgTitle}, '%')</if>
+            <if test="msgContext != null  and msgContext != ''"> and t.MSG_CONTEXT like concat('%', #{msgContext}, '%')</if>
+            <if test="msgType != null  and msgType != ''"> and t.MSG_TYPE = #{msgType}</if>
+            <if test="msgUrl != null  and msgUrl != ''"> and t.MSG_URL = #{msgUrl}</if>
+            <if test="applyName != null  and applyName != ''"> and t.APPLY_NAME like concat('%', #{applyName}, '%')</if>
+            <if test="currentOid != null  and currentOid != ''"> and t.CURRENT_OID = #{currentOid}</if>
+            <if test="pcOid != null  and pcOid != ''"> and t.PC_OID = #{pcOid}</if>
+            <if test="backCol1 != null  and backCol1 != ''"> and t.BACK_COL1 = #{backCol1}</if>
+            <if test="backCol2 != null  and backCol2 != ''"> and t.BACK_COL2 = #{backCol2}</if>
+            <if test="backCol3 != null  and backCol3 != ''"> and t.BACK_COL3 = #{backCol3}</if>
+            <if test="flowStatus != null  and flowStatus != ''"> and t.FLOW_STATUS = #{flowStatus}</if>
+            <if test="sort != null "> and t.sort = #{sort}</if>
+            <if test="epsId != null "> and t.eps_id = #{epsId}</if>
+            <if test="createBy != null "> and t.create_by = #{createBy}</if>
+          order by t.create_time desc,t.id
+    </select>
+    
+    <select id="selectFlowApplyInfoById" parameterType="String" resultMap="FlowApplyInfoResult">
+        select
+        <include refid="selectFlowApplyInfoVo"/>
+        from flow_apply_info t
+        where t.ID = #{id}
+    </select>
+        
+    <insert id="insertFlowApplyInfo" parameterType="FlowApplyInfo">
+        insert into flow_apply_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">ID,</if>
+            <if test="entrustInfo != null">entrust_info,</if>
+            <if test="billOid != null">BILL_OID,</if>
+            <if test="bussType != null">BUSS_TYPE,</if>
+            <if test="flowRuid != null">FLOW_RUID,</if>
+            <if test="msgTitle != null">MSG_TITLE,</if>
+            <if test="msgContext != null">MSG_CONTEXT,</if>
+            <if test="msgType != null">MSG_TYPE,</if>
+            <if test="msgUrl != null">MSG_URL,</if>
+            <if test="applyName != null">APPLY_NAME,</if>
+            <if test="currentOid != null">CURRENT_OID,</if>
+            <if test="pcOid != null">PC_OID,</if>
+            <if test="backCol1 != null">BACK_COL1,</if>
+            <if test="backCol2 != null">BACK_COL2,</if>
+            <if test="backCol3 != null">BACK_COL3,</if>
+            <if test="flowStatus != null">FLOW_STATUS,</if>
+            <if test="sort != null">sort,</if>
+            <if test="epsId != null">eps_id,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="entrustInfo != null">#{entrustInfo},</if>
+            <if test="billOid != null">#{billOid},</if>
+            <if test="bussType != null">#{bussType},</if>
+            <if test="flowRuid != null">#{flowRuid},</if>
+            <if test="msgTitle != null">#{msgTitle},</if>
+            <if test="msgContext != null">#{msgContext},</if>
+            <if test="msgType != null">#{msgType},</if>
+            <if test="msgUrl != null">#{msgUrl},</if>
+            <if test="applyName != null">#{applyName},</if>
+            <if test="currentOid != null">#{currentOid},</if>
+            <if test="pcOid != null">#{pcOid},</if>
+            <if test="backCol1 != null">#{backCol1},</if>
+            <if test="backCol2 != null">#{backCol2},</if>
+            <if test="backCol3 != null">#{backCol3},</if>
+            <if test="flowStatus != null">#{flowStatus},</if>
+            <if test="sort != null">#{sort},</if>
+            <if test="epsId != null">#{epsId},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateFlowApplyInfo" parameterType="FlowApplyInfo">
+        update flow_apply_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="billOid != null">BILL_OID = #{billOid},</if>
+            <if test="entrustInfo != null">entrust_info = #{entrustInfo},</if>
+            <if test="bussType != null">BUSS_TYPE = #{bussType},</if>
+            <if test="flowRuid != null">FLOW_RUID = #{flowRuid},</if>
+            <if test="msgTitle != null">MSG_TITLE = #{msgTitle},</if>
+            <if test="msgContext != null">MSG_CONTEXT = #{msgContext},</if>
+            <if test="msgType != null">MSG_TYPE = #{msgType},</if>
+            <if test="msgUrl != null">MSG_URL = #{msgUrl},</if>
+            <if test="applyName != null">APPLY_NAME = #{applyName},</if>
+            <if test="currentOid != null">CURRENT_OID = #{currentOid},</if>
+            <if test="pcOid != null">PC_OID = #{pcOid},</if>
+            <if test="backCol1 != null">BACK_COL1 = #{backCol1},</if>
+            <if test="backCol2 != null">BACK_COL2 = #{backCol2},</if>
+            <if test="backCol3 != null">BACK_COL3 = #{backCol3},</if>
+            <if test="flowStatus != null">FLOW_STATUS = #{flowStatus},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="epsId != null">eps_id = #{epsId},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where ID = #{id}
+    </update>
+
+    <update id="deleteFlowApplyInfoById" parameterType="String">
+        update flow_apply_info set del_flag = '1' where ID = #{id}
+    </update>
+
+    <update id="deleteFlowApplyInfoByIds" parameterType="String">
+        update flow_apply_info set del_flag = '1' where ID in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 根据业务id查询对应的信息 -->
+    <select id="selectByBillId" parameterType="java.lang.String" resultMap="FlowApplyInfoResult">
+        SELECT
+        <include refid="selectFlowApplyInfoVo"/>
+        FROM flow_apply_info t
+        WHERE t.del_flag = 0 AND t.bill_oid = #{billId}
+    </select>
+
+</mapper>

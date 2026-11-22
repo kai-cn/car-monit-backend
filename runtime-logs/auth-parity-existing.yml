@@ -1,0 +1,296 @@
+# @description 历史运维/验证配置快照，保留用于复现与审计；本文件头补充维护背景与运行约束。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage GitHub Actions workflow_dispatch 或事件触发；输入参数见 workflow inputs。
+# @dependencies 按原 workflow 声明的 runner、Actions 与外部服务依赖执行。
+# ============================================================================
+# backend 璁よ瘉鎬佸叏绔�鐐硅法璇�瑷�瀵规瘮锛圝ava8 鍩虹嚎 vs Go / Python / Rust锛�
+# ============================================================================
+# 涓� crosslang-parity-cloud.yml 鐨勫尯鍒�锛�
+#   * crosslang 鐢� parity_probe.py 鍙�鎺� 2 涓�鍏嶈�よ瘉绔�鐐癸紙/captchaImage銆�/锛夛紱
+#   * 鏈� workflow 鐢� parity_auth_probe.py 鍏堢櫥褰曟嬁 Bearer token锛岄�愮��鐐规帰娴�
+#     endpoints/backend-full.txt锛�72 涓�锛氫粠 Java 鍏ㄩ儴 400 涓�绔�鐐瑰嚭鍙戯紝涓�
+#     Go/Python/Rust 鍙栧洓璇�瑷�浜ら泦 158 涓�锛屽啀鎸夊畨鍏ㄨ竟鐣岃繃婊ゅ緱鍒扮殑绾�鍙�璇荤��鐐癸級锛�
+#     骞跺�� RuoYi銆孒TTP 200 浣� body.code=401/403/500銆嶇殑鍋囩豢鍋氱粷瀵瑰け璐ユ柇瑷�銆�
+#   * 鑼冨洿璇存槑锛氳�嗙洊銆屽叾瀹冭��瑷�涔熷疄鐜扮殑鐩稿悓绔�鐐广�嶇殑涓氬姟涓�鑷存�э紱Java 鐙�鏈夌��鐐广��
+#     鍐欐搷浣溿�佸壇浣滅敤鍨� GET銆佽矾寰勫弬鏁颁笌鏂囦欢娴佺��鐐逛笉鍦� body 涓�鑷存�у垽瀹氳寖鍥淬��
+#
+# 姣忎釜鍙樹綋鍦ㄧ嫭绔� runner 涓婏細璧� MySQL8 + Redis -> 鏋勫缓 -> 璁よ瘉鎺㈤拡閲囬泦 ->
+# 涓婁紶 JSON锛涘�欓�� job 涓嬭浇 Java8 鍩虹嚎 JSON锛岀敤 parity_compare.py 鍋�
+# status/exact/semantic/nondet 鍒ゅ畾銆傚�欓�変晶 AUTH_FAIL 鎴� DIFF 鍗冲け璐ワ紱
+# 鍩虹嚎渚ц嚜韬�涓嶅彲鐢�锛堜緷璧栬繍琛屾椂/seed 鑰� 500锛夌殑绔�鐐硅�� BASELINE_SKIP 璺宠繃锛�
+# 涓嶈�″叆澶辫触浣嗕細鍦ㄦ姤鍛婁腑鍒楀嚭渚涘�¤�°��
+#
+# 鍑�鎹�锛氱�＄悊鍛樿处鍙锋潵鑷�浠撳簱 Variables/Secrets锛圓UTH_USER/AUTH_PASS锛夛紱
+#       鏈�閰嶇疆鏃跺洖閫�鍒伴粯璁ゆ祴璇曞�硷紙涓� scripts/parity/pp.py 涓�鑷达級銆�
+# workflow_dispatch only.
+
+name: backend-auth-parity-cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      langs:
+        description: comma list of go,python,rust, or 'all'
+        type: string
+        default: all
+      linux_runner:
+        type: string
+        default: ubuntu-latest
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-auth-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MAVEN_ARGS: -B -ntp
+  # 绠＄悊鍛樻祴璇曡处鍙凤紙涓� parity/pp.py 涓�鑷达級锛涘彲鍦ㄤ粨搴� Variables 瑕嗙洊
+  AUTH_USER: ${{ vars.AUTH_USER || 'admin' }}
+  AUTH_PASS: ${{ secrets.AUTH_PASS || 'Admin@2025-' }}
+  ENDPOINTS: scripts/v3/ops/parity/endpoints/backend-full.txt
+
+jobs:
+  # 鈹�鈹� Java8 鍩虹嚎锛氳�よ瘉鎬侀噰闆嗗叏绔�鐐� 鈹�鈹�
+  baseline-java8:
+    runs-on: ${{ inputs.linux_runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          cache: maven
+          distribution: temurin
+          java-version: '8'
+      - name: Start datastores + seed
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
+          docker run -d --name rd -p 6379:6379 redis:7-alpine
+          for i in $(seq 1 60); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/schema_carmonitdb.sql
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/seed_carmonitdb.sql
+          echo "sys_user rows: $(docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -N -e 'select count(*) from carmonitdb.sys_user')"
+      - name: Build Java8 jar
+        shell: bash
+        run: |
+          set -euo pipefail
+          # logback.xml 鍥哄畾鍐� /home/ruoyi/logs锛涚‘淇濆瓨鍦�锛岄伩鍏嶆枃浠� appender 鎶ラ敊
+          sudo mkdir -p /home/ruoyi/logs && sudo chmod 777 /home/ruoyi/logs
+          mvn $MAVEN_ARGS -DskipTests -pl ruoyi-admin -am package
+          mkdir -p out
+          cp $(ls ruoyi-admin/target/*.jar | grep -v original | head -1) out/baseline.jar
+          ls -lh out/baseline.jar
+      - name: Probe Java8 (authenticated, full endpoints)
+        shell: bash
+        env:
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:p6spy:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
+          SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
+          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
+          SPRING__REDIS__HOST: 127.0.0.1
+          SPRING__REDIS__PORT: "6379"
+          TOKEN__SECRET: parity-cloud-secret-deterministic
+        run: |
+          set -uo pipefail
+          python scripts/v3/ops/parity/parity_auth_probe.py --variant java8 --label java8-auth \
+            --cmd "java -jar out/baseline.jar --server.port=19903" --port 19903 \
+            --endpoints "$ENDPOINTS" --auth-lang java \
+            --user "$AUTH_USER" --password-env AUTH_PASS \
+            --out out/java8.json --mode full --check-stability --ready-timeout 300 || echo "baseline auth probe exit=$?"
+      - name: Diagnose Java8 startup (if failed)
+        if: always()
+        shell: bash
+        run: |
+          echo "===== java8.json.app.log tail ====="
+          tail -80 out/java8.json.app.log 2>/dev/null || echo "(no app.log)"
+      - name: Gate Java8 baseline quality
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, sys
+          d=json.load(open('out/java8.json'))
+          ep=d.get('endpoint_count',0); ready=d.get('diff_ready',0); af=d.get('auth_fail_count',0)
+          err=d.get('error'); login=d.get('login') or {}
+          print('JAVA8_AUTH_SUMMARY login_token=%s endpoints=%d diff_ready=%d auth_fail=%d error=%s' % (
+              bool(login.get('token') if isinstance(login,dict) else False), ep, ready, af, err))
+          # 鍩虹嚎璐ㄩ噺闂ㄧ�侊細蹇呴』鏃� error銆佹湁瓒冲�熷彲鐢ㄧ��鐐广�佹棤璁よ瘉澶辫触
+          if err:
+              print('::error::Java8 baseline probe error: %s' % err); sys.exit(1)
+          if not (isinstance(login,dict) and login.get('code')==200):
+              print('::error::Java8 login did not return code=200: %s' % login); sys.exit(1)
+          if ready < 10:
+              print('::error::Java8 diff_ready=%d < 10, baseline unusable' % ready); sys.exit(1)
+          # 鍏ㄧ��鐐规墿灞曞悗锛岄儴鍒嗙��鐐逛緷璧栬繍琛屾椂/seed 鏁版嵁锛屽彲鑳藉湪鍩虹嚎鑷�韬�杩斿洖
+          # 涓氬姟閿欒��锛坈ode=500锛夋垨 HTTP 5xx銆傝繖绫荤��鐐瑰�规墍鏈夎��瑷�鍚屾牱涓嶅彲鐢�锛�
+          # 涓嶅睘浜庡疄鐜板樊寮傦細鍦� compare 闃舵�垫寜 BASELINE_SKIP 璺宠繃锛屼笉褰卞搷闂ㄧ�併��
+          # 杩欓噷浠呮墦鍗板憡璀︽竻鍗曪紱鐪熸�ｈ嚧鍛界殑鏄� login 澶辫触涓� diff_ready 涓嶈冻銆�
+          if af > 0:
+              bad = [e['endpoint'] for e in d.get('endpoints', []) if e.get('auth_fail')]
+              print('::warning::Java8 auth_fail=%d on baseline (will be BASELINE_SKIP in compare): %s' % (
+                  af, ', '.join(bad[:30])))
+          print('JAVA8_BASELINE_GATE_OK')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: auth-baseline-java8
+          path: out/**
+          retention-days: 30
+      - name: Stop datastores
+        if: always()
+        shell: bash
+        run: docker rm -f my rd 2>/dev/null || true
+
+  # 鈹�鈹� 鍊欓�夛細Go / Python / Rust 璁よ瘉鎬侀噰闆� + 瀵规瘮 鈹�鈹�
+  candidates:
+    needs: baseline-java8
+    runs-on: ${{ inputs.linux_runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        lang: [go, python, rust]
+    steps:
+      - uses: actions/checkout@v4
+      - id: gate
+        shell: bash
+        env:
+          IN: ${{ inputs.langs }}
+          LANG: ${{ matrix.lang }}
+        run: |
+          if [ "$IN" = "all" ] || echo ",$IN," | grep -q ",$LANG,"; then echo "run=yes" >> "$GITHUB_OUTPUT"; else echo "run=no" >> "$GITHUB_OUTPUT"; fi
+      - name: Start datastores + seed
+        if: steps.gate.outputs.run == 'yes'
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
+          docker run -d --name rd -p 6379:6379 redis:7-alpine
+          for i in $(seq 1 60); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/schema_carmonitdb.sql
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/seed_carmonitdb.sql
+      - name: Download baseline probe
+        if: steps.gate.outputs.run == 'yes'
+        uses: actions/download-artifact@v4
+        with:
+          name: auth-baseline-java8
+          path: out
+      - name: Build Go
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'go'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd car-monit-go && go build -o bin/car-monit-go ./cmd/server
+      - name: Probe Go (auth)
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'go'
+        shell: bash
+        env:
+          CARMONIT_DATABASE_DSN: "root:root@tcp(127.0.0.1:3306)/carmonitdb?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true"
+          CARMONIT_REDIS_ADDR: "127.0.0.1:6379"
+          CARMONIT_SERVER_PORT: "9989"
+        run: |
+          set -uo pipefail
+          python scripts/v3/ops/parity/parity_auth_probe.py --variant go --label go-auth \
+            --cmd "car-monit-go/bin/car-monit-go -c car-monit-go/configs/config.yaml" --port 9989 \
+            --endpoints "$ENDPOINTS" --auth-lang go \
+            --user "$AUTH_USER" --password-env AUTH_PASS \
+            --out out/go.json --mode full --check-stability --ready-timeout 120 || echo "go auth probe exit=$?"
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
+        with:
+          python-version: '3.12'
+      - name: Setup Python + deps
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Pillow 鐨� JPEG 鏀�鎸侀渶瑕佺郴缁熷ご锛汸yO3 渚濊禆(orjson/pydantic-core)鍦� 3.14 鏃犳硶缂栬瘧
+          sudo apt-get update -qq && sudo apt-get install -y -qq libjpeg-dev zlib1g-dev >/dev/null
+          python3 -m pip install -q --upgrade pip
+          python3 -m pip install -q -r car-monit-py/requirements.txt
+          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' car-monit-py/config/application.yml
+      - name: Probe Python (auth)
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
+        shell: bash
+        run: |
+          set -uo pipefail
+          python scripts/v3/ops/parity/parity_auth_probe.py --variant python --label python-auth \
+            --cmd "cd car-monit-py && python3 -m uvicorn app.main:app --host 127.0.0.1 --port 9989" --port 9989 \
+            --endpoints "$ENDPOINTS" --auth-lang python \
+            --user "$AUTH_USER" --password-env AUTH_PASS \
+            --out out/python.json --mode full --check-stability --ready-timeout 180 || echo "python auth probe exit=$?"
+      - name: Build Rust
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'rust'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd car-monit-rust && cargo build --release 2>&1 | tail -3
+      - name: Probe Rust (auth)
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'rust'
+        shell: bash
+        run: |
+          set -uo pipefail
+          sudo mkdir -p /home/ruoyi/logs && sudo chmod 777 /home/ruoyi/logs
+          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' car-monit-rust/config/application.yaml
+          python scripts/v3/ops/parity/parity_auth_probe.py --variant rust --label rust-auth \
+            --cmd "cd car-monit-rust && ./target/release/car-monit-rust" --port 9989 \
+            --endpoints "$ENDPOINTS" --auth-lang rust \
+            --user "$AUTH_USER" --password-env AUTH_PASS \
+            --out out/rust.json --mode full --check-stability --ready-timeout 240 || echo "rust auth probe exit=$?"
+      - name: Diagnose candidate startup (if failed)
+        if: always() && steps.gate.outputs.run == 'yes'
+        shell: bash
+        run: |
+          echo "===== ${{ matrix.lang }} app.log tail ====="
+          tail -40 "out/${{ matrix.lang }}.json.app.log" 2>/dev/null || echo "(no app.log)"
+      - name: Compare vs Java8 (authenticated, full endpoints)
+        if: steps.gate.outputs.run == 'yes'
+        shell: bash
+        run: |
+          set -euo pipefail
+          CAND="out/${{ matrix.lang }}.json"
+          if [ ! -f "$CAND" ]; then echo "::error::${{ matrix.lang }} auth probe JSON missing"; exit 1; fi
+          python - "$CAND" "${{ matrix.lang }}" <<'PY'
+          import json, sys
+          lang=sys.argv[2]
+          d=json.load(open(sys.argv[1]))
+          ep=d.get('endpoint_count',0); ready=d.get('diff_ready',0); af=d.get('auth_fail_count',0)
+          err=d.get('error'); login=d.get('login') or {}
+          print('%s_AUTH_SUMMARY login_code=%s endpoints=%d diff_ready=%d auth_fail=%d error=%s' % (
+              lang, login.get('code') if isinstance(login,dict) else None, ep, ready, af, err))
+          if err:
+              print('::error::%s probe error: %s' % (lang, err)); sys.exit(1)
+          if not (isinstance(login,dict) and login.get('code')==200):
+              print('::error::%s login did not return code=200: %s' % (lang, login)); sys.exit(1)
+          if ready < 10:
+              print('::error::%s diff_ready=%d < 10, candidate unusable' % (lang, ready)); sys.exit(1)
+          if af > 0:
+              print('::warning::%s auth_fail=%d on candidate (compare will gate details)' % (lang, af))
+          print('%s_CANDIDATE_GATE_OK' % lang)
+          PY
+          set +e
+          python scripts/v3/ops/parity/parity_compare.py \
+            --baseline out/java8.json --candidate "$CAND" \
+            --out "out/report-${{ matrix.lang }}.json" --md "out/report-${{ matrix.lang }}.md" \
+            --label "java8-vs-${{ matrix.lang }}-auth"
+          RC=$?
+          set -e
+          echo "===== parity report (${{ matrix.lang }}) ====="
+          cat "out/report-${{ matrix.lang }}.md" 2>/dev/null || true
+          echo "PARITY_COMPARE_RC=$RC"
+          exit $RC
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.gate.outputs.run == 'yes'
+        with:
+          name: auth-candidate-${{ matrix.lang }}
+          path: out/**
+          retention-days: 30
+      - name: Stop datastores
+        if: always()
+        shell: bash
+        run: docker rm -f my rd 2>/dev/null || true

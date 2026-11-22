@@ -1,0 +1,62 @@
+{
+  "label": "api-jdk17-boot4-business",
+  "app": "-",
+  "endpoints": [
+    {
+      "endpoint": 0,
+      "bytes_jvm": 3391,
+      "bytes_native": 3391,
+      "exact": true,
+      "semantic": true,
+      "type": "json"
+    },
+    {
+      "endpoint": 1,
+      "bytes_jvm": 6024,
+      "bytes_native": 6024,
+      "exact": true,
+      "semantic": true,
+      "type": "json"
+    },
+    {
+      "endpoint": 2,
+      "bytes_jvm": 900175,
+      "bytes_native": 900175,
+      "exact": true,
+      "semantic": true,
+      "type": "json"
+    },
+    {
+      "endpoint": 3,
+      "bytes_jvm": 10116,
+      "bytes_native": 10116,
+      "exact": true,
+      "semantic": true,
+      "type": "json"
+    },
+    {
+      "endpoint": 4,
+      "bytes_jvm": 126,
+      "bytes_native": 126,
+      "exact": true,
+      "semantic": true,
+      "type": "json"
+    },
+    {
+      "endpoint": 5,
+      "bytes_jvm": 126,
+      "bytes_native": 126,
+      "exact": true,
+      "semantic": true,
+      "type": "json"
+    },
+    {
+      "endpoint": 6,
+      "bytes_jvm": 126,
+      "bytes_native": 126,
+      "exact": true,
+      "semantic": true,
+      "type": "json"
+    }
+  ]
+}

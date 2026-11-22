@@ -1,0 +1,23 @@
+	Command being timed: "env MANDREL_HOME=/home/dev/tools/mandrel-25 MVN=/home/dev/.cache/ci-toolchain/apache-maven-3.9.9/bin/mvn MAVEN_REPO=/home/dev/.m2/repository bash /mnt/d/work/runtime-logs/v3-ops/v3-native-build-fast.sh api 21 /home/dev/IdeaProjects/car-monit-api-jdk21 api-jdk21-ext4-fast-noclean-r5"
+	User time (seconds): 2711.36
+	System time (seconds): 244.40
+	Percent of CPU this job got: 392%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 12:33.63
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 10773828
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 510530
+	Minor (reclaiming a frame) page faults: 5668178
+	Voluntary context switches: 1472520
+	Involuntary context switches: 1305072
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 0
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

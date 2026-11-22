@@ -1,0 +1,28 @@
+# Current runtime state — captured 2026-11-12 09:09 +0800
+# This file records a fresh read-only check, not the 2026-11-11 validation-time state.
+
+## OS process / listener check
+# command: Get-CimInstance Win32_Process -Filter "Name = 'java.exe'" | Where-Object { $_.CommandLine -match 'ruoyi-admin|pro-business-api' }
+# command: Get-NetTCPConnection -State Listen -LocalPort 9989,9902,3307,6379,9200,9092,15432
+AppJavaCount=0
+AppJavaPids=[]
+ListeningPorts=[]
+
+# command: Get-CimInstance Win32_Process -Filter "Name = 'mysqld.exe'" / "'redis-server.exe'" / "'java.exe'"
+InfraProcessCount=0
+InfraProcesses=[]
+
+## MySQL cleanup re-query
+# command: mysql -h127.0.0.1 -P3307 -N -B -e "SELECT COUNT(*) ...; SELECT COUNT(*) FROM carmonitdb.sys_user;"
+CurrentMySqlQuery=no output; port 3307 is not listening
+# Therefore DB counts cannot be re-queried at this moment. No service was started to force a re-query.
+
+## Validation-time state (2026-11-11, already evidenced)
+remaining_e2e=0
+total_users=8
+infra_singletons_at_validation_end=3307,6379,9200,9092,15432
+
+## Conclusion
+No app Java processes and no duplicate infra services are running at the current re-check.
+The E2E physical-delete result was verified at validation time with live MySQL; it is documented as historical,
+not as a fresh 2026-11-12 DB query. No contrary evidence was found.

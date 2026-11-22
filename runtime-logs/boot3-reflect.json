@@ -1,0 +1,158 @@
+[
+  {
+    "name": "com.github.pagehelper.PageHelper",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.PageInterceptor",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.util.ClassUtil",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.AS400Dialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.CirroDataDialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.Db2Dialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.FirebirdDialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.HerdDBDialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.HsqldbDialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.InformixDialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.MySqlDialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.Oracle9iDialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.OracleDialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.OscarDialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.PostgreSqlDialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.SqlServer2012Dialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.SqlServerDialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.github.pagehelper.dialect.helper.XuguDialect",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.ruoyi.base.domain.SysUtil",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.springframework.boot.autoconfigure.data.redis.RedisProperties",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.springframework.boot.autoconfigure.data.redis.RedisProperties$Pool",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.springframework.boot.autoconfigure.data.redis.RedisProperties$Cluster",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.springframework.boot.autoconfigure.data.redis.RedisProperties$Sentinel",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.apache.commons.pool2.impl.DefaultEvictionPolicy",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.apache.commons.pool2.impl.GenericObjectPool",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.apache.commons.pool2.impl.GenericObjectPoolConfig",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.apache.commons.pool2.impl.BaseObjectPoolConfig",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "io.netty.channel.epoll.EpollSocketChannel",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "io.netty.channel.epoll.EpollServerSocketChannel",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "io.netty.channel.epoll.EpollDatagramChannel",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "io.netty.channel.epoll.EpollChannelOption",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "io.netty.channel.epoll.EpollEventLoopGroup",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  }
+]

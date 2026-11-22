@@ -1,0 +1,55 @@
+######## V3 RELEASE JAR AUDIT (read-only) 20261115-153302 ########
+root=D:\work\IdeaProjects
+
+APP      JDK      JAR_BYTES   LIBS     LIB_CMP   LIB_UNCMP    CLASSES      META  DEAD_PLAT  STALE  FLINK
+api      jdk17    211030817    296   209822690   209822690     825713      5361          3     no      0
+
+-- jdk17/api top 15 nested jars (compressed bytes) --
+      27646206     27646206  pulsar-client-4.2.5.jar
+      14382683     14382683  elasticsearch-7.17.0.jar
+      10855979     10855979  grpc-netty-shaded-1.84.1.jar
+      10238460     10238460  kafka-clients-4.2.2.jar
+       7910194      7910194  bouncy-castle-bc-4.2.5-pkg.jar
+       7305999      7305999  zstd-jni-1.5.6-10.jar
+       7224011      7224011  bcprov-jdk18on-1.86.jar
+       4478226      4478226  druid-1.2.28.jar
+       3656521      3656521  tomcat-embed-core-11.0.27.jar
+       3611408      3611408  lucene-core-8.11.1.jar
+       3041591      3041591  guava-32.1.2-jre.jar
+       2897362      2897362  netty-codec-native-quic-4.2.19.Final-linux-x86_64.jar
+       2837064      2837064  hutool-all-5.8.48.jar
+       2607237      2607237  mysql-connector-j-9.7.0.jar
+       2595839      2595839  lettuce-core-7.5.2.RELEASE.jar
+
+-- removable candidates (non linux-x86_64 native / docs / flink) --
+   platform: 3 entries, 85480 bytes
+            9846  netty-resolver-dns-classes-macos-4.2.19.Final.jar
+           38182  netty-transport-native-epoll-4.2.19.Final-linux-riscv64.jar
+           37452  netty-transport-native-io_uring-4.2.19.Final-linux-riscv64.jar
+   docs: 0 entries, 0 bytes
+   flink: 0 entries, 0 bytes
+
+backend  jdk17    178301142    335   177418151   177418151     571194      1839          0     no      0
+
+api      jdk21    215881053    296   214703313   214703313     801806      4804         13    YES      0
+
+backend  jdk21    199747840    339   198864541   198864541     571041      1578          0    YES      0
+
+api      jdk25    211027173    296   209822685   209822685     823492      5361          3     no      0
+
+backend  jdk25    199749631    339   198866348   198866348     571024      1579          0    YES      0
+
+Interpretation:
+  * LIB_CMP dominates the jar; classes are small. Reducing image size
+    therefore means: (1) per-JDK jlink runtime, (2) shared base/JRE
+    layers, (3) removing only provably dead native/doc entries.
+  * STALE=YES means the jar is OLDER than its pom: it was packaged
+    before the slimming excludes were added. Re-packaging with the
+    CURRENT pom (no source edit) removes those libs. Verified case:
+      api jdk21/25     : +4 netty-codec-native-quic variants ~9.33 MB
+      backend jdk21/25 : calcite+groovy+aliyun-mns+linq4j ~21.45 MB
+  * DO NOT re-compress BOOT-INF/lib entries as DEFLATED: Spring Boot
+    requires nested jars to be STORED (LIB_CMP == LIB_UNCMP here).
+    Changing that breaks `java -jar` at startup.
+  * This audit never modifies any jar.
+report=D:\work\runtime-logs\v3-ops\evidence\jar-audit-20261115-153302.txt

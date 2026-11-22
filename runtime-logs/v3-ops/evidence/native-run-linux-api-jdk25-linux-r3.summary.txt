@@ -1,0 +1,52 @@
+=== runner ===
+binary  : /mnt/d/work/IdeaProjects/car-monit-api-jdk25/pro-business-api/target/pro-business-api
+label   : api-jdk25-linux-r3
+log     : /mnt/d/work/runtime-logs/v3-ops/evidence/native-run-linux-api-jdk25-linux-r3.log
+binary size bytes: 357632736
+port_ready      : 0
+process_exited  : 0
+rss_kb          : 271084
+rss_mb          : 264
+threads         : 16
+cpu_time        : 00:00:04
+=== last 40 log lines ===
+2026-11-16 02:07:38.028 [pool-15-thread-2] [1;31mERROR[0;39m [36mc.ruoyi.base.service.impl.SnapshotFlowSyncService:177[0;39m - 增量同步异常
+java.lang.IllegalStateException: LettuceConnectionFactory is STOPPING
+	at org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory.assertStarted(LettuceConnectionFactory.java:1463)
+	at org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory.getConnection(LettuceConnectionFactory.java:1050)
+	at org.springframework.data.redis.core.RedisConnectionUtils.fetchConnection(RedisConnectionUtils.java:195)
+	at org.springframework.data.redis.core.RedisConnectionUtils.doGetConnection(RedisConnectionUtils.java:144)
+	at org.springframework.data.redis.core.RedisConnectionUtils.getConnection(RedisConnectionUtils.java:105)
+	at org.springframework.data.redis.core.RedisTemplate.execute(RedisTemplate.java:405)
+	at org.springframework.data.redis.core.RedisTemplate.execute(RedisTemplate.java:385)
+	at org.springframework.data.redis.core.AbstractOperations.execute(AbstractOperations.java:166)
+	at org.springframework.data.redis.core.DefaultValueOperations.get(DefaultValueOperations.java:55)
+	at com.ruoyi.base.service.impl.SnapshotFlowSyncService.incrementalSync(SnapshotFlowSyncService.java:133)
+	at java.base@25.0.4.1/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base@25.0.4.1/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base@25.0.4.1/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base@25.0.4.1/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base@25.0.4.1/java.lang.Thread.runWith(Thread.java:1487)
+	at java.base@25.0.4.1/java.lang.Thread.run(Thread.java:1474)
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:832)
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:808)
+2026-11-16 02:08:38.032 [pool-15-thread-2] [1;31mERROR[0;39m [36mc.ruoyi.base.service.impl.SnapshotFlowSyncService:177[0;39m - 增量同步异常
+java.lang.IllegalStateException: LettuceConnectionFactory is STOPPING
+	at org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory.assertStarted(LettuceConnectionFactory.java:1463)
+	at org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory.getConnection(LettuceConnectionFactory.java:1050)
+	at org.springframework.data.redis.core.RedisConnectionUtils.fetchConnection(RedisConnectionUtils.java:195)
+	at org.springframework.data.redis.core.RedisConnectionUtils.doGetConnection(RedisConnectionUtils.java:144)
+	at org.springframework.data.redis.core.RedisConnectionUtils.getConnection(RedisConnectionUtils.java:105)
+	at org.springframework.data.redis.core.RedisTemplate.execute(RedisTemplate.java:405)
+	at org.springframework.data.redis.core.RedisTemplate.execute(RedisTemplate.java:385)
+	at org.springframework.data.redis.core.AbstractOperations.execute(AbstractOperations.java:166)
+	at org.springframework.data.redis.core.DefaultValueOperations.get(DefaultValueOperations.java:55)
+	at com.ruoyi.base.service.impl.SnapshotFlowSyncService.incrementalSync(SnapshotFlowSyncService.java:133)
+	at java.base@25.0.4.1/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base@25.0.4.1/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base@25.0.4.1/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base@25.0.4.1/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base@25.0.4.1/java.lang.Thread.runWith(Thread.java:1487)
+	at java.base@25.0.4.1/java.lang.Thread.run(Thread.java:1474)
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:832)
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:808)

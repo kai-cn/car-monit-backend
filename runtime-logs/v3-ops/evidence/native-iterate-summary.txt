@@ -1,0 +1,25 @@
+base_args=D:\work\IdeaProjects\car-monit-api-jdk25\target\tmp\native-image-no-fastjson2-package.args
+started=2026-11-15T20:54:44.336875
+round=1 rc=5 elapsed_s=105 exe=False
+  build-time com.alibaba.fastjson2.function.impl.ToBoolean
+  build-time com.alibaba.fastjson2.reader.ObjectReaderProvider$LRUAutoTypeCache
+round=2 rc=5 elapsed_s=93 exe=False
+  build-time com.alibaba.fastjson2.util.TypeUtils$Cache
+round=3 rc=5 elapsed_s=111 exe=False
+  build-time com.alibaba.fastjson2.writer.ObjectWriterBaseModule$WriterAnnotationProcessor
+round=4 rc=5 elapsed_s=95 exe=False
+  build-time com.alibaba.fastjson2.util.ParameterizedTypeImpl
+round=5 rc=5 elapsed_s=96 exe=False
+  build-time com.alibaba.fastjson2.function.impl.ToFloat
+  build-time com.alibaba.fastjson2.function.impl.ToLong
+round=6 rc=5 elapsed_s=89 exe=False
+  build-time com.alibaba.fastjson2.introspect.PropertyAccessorFactoryUnsafe
+round=7 rc=5 elapsed_s=84 exe=False
+  build-time com.alibaba.fastjson2.function.impl.ToString
+round=8 rc=5 elapsed_s=100 exe=False
+  build-time com.alibaba.fastjson2.writer.ObjectWriterCreator$LambdaInfo
+round=9 rc=5 elapsed_s=99 exe=False
+  build-time com.alibaba.fastjson2.function.impl.ToByte
+round=10 rc=5 elapsed_s=93 exe=False
+  build-time com.alibaba.fastjson2.function.impl.ToBigDecimal
+RESULT=MAX_ROUNDS_REACHED

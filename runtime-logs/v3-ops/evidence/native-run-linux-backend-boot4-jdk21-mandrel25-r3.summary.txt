@@ -1,0 +1,28 @@
+=== runner ===
+binary  : /mnt/d/work/IdeaProjects/car-monit-backend-jdk21/ruoyi-admin/target/ruoyi-admin
+label   : backend-boot4-jdk21-mandrel25-r3
+port    : 19903
+log     : /mnt/d/work/runtime-logs/v3-ops/evidence/native-run-linux-backend-boot4-jdk21-mandrel25-r3.log
+binary size bytes: 256641760
+port_ready      : 0
+process_exited  : 1
+process_exited_before_sampling: 1
+=== startup markers ===
+=== last 30 log lines ===
+Exception in thread "main" java.lang.NoClassDefFoundError: Could not initialize class org.slf4j.MarkerFactory
+	at org.apache.logging.slf4j.SLF4JLogger.convertMarker(SLF4JLogger.java:112)
+	at org.apache.logging.slf4j.SLF4JLogger.getMarker(SLF4JLogger.java:108)
+	at org.apache.logging.slf4j.SLF4JLogger.isEnabledFor(SLF4JLogger.java:283)
+	at org.apache.logging.slf4j.SLF4JLogger.isEnabled(SLF4JLogger.java:132)
+	at org.apache.logging.log4j.spi.AbstractLogger.logIfEnabled(AbstractLogger.java:2372)
+	at org.apache.commons.logging.impl.Log4jApiLogFactory$Log4j2Log.logIfEnabled(Log4jApiLogFactory.java:131)
+	at org.apache.commons.logging.impl.Log4jApiLogFactory$Log4j2Log.trace(Log4jApiLogFactory.java:139)
+	at org.springframework.core.io.support.SpringFactoriesLoader.load(SpringFactoriesLoader.java:197)
+	at org.springframework.core.io.support.SpringFactoriesLoader.load(SpringFactoriesLoader.java:140)
+	at org.springframework.boot.WebApplicationType.deduce(WebApplicationType.java:52)
+	at org.springframework.boot.SpringApplication.<init>(SpringApplication.java:266)
+	at org.springframework.boot.SpringApplication.<init>(SpringApplication.java:248)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1353)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1342)
+	at com.ruoyi.RuoYiApplication.main(RuoYiApplication.java:18)
+	at java.base@25.0.4.1/java.lang.invoke.LambdaForm$DMH/sa346b79c.invokeStaticInit(LambdaForm$DMH)

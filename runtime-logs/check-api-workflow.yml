@@ -1,0 +1,261 @@
+# @description 历史运维/验证配置快照，保留用于复现与审计；本文件头补充维护背景与运行约束。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage GitHub Actions workflow_dispatch 或事件触发；输入参数见 workflow inputs。
+# @dependencies 按原 workflow 声明的 runner、Actions 与外部服务依赖执行。
+# ============================================================================
+# 文件：.github/workflows/parity-verify-cloud.yml
+# 用途：云上 native vs JVM 全接口 + 资源性能对比（jdk × 平台矩阵）
+# 触发：手动 dispatch
+# 主要 job：prepare、verify
+# 说明：本文件仅新增中文注释，不改动任何执行逻辑；runner/权限/守卫以实际配置为准。
+# ============================================================================
+# Native-image vs JVM full-interface + resource/performance parity verification (api repo).
+#
+# For each matrix cell (jdk x platform):
+#   1. Build the fat jar (JVM baseline) and the native binary (candidate) from the same commit.
+#   2. Linux: bring up PostgreSQL + MySQL + Redis via `docker run`, load schema + seed.
+#   3. Probe ALL GET endpoints on both variants; record status/bytes/latency/body-sha + 2nd-call
+#      sha (to flag non-deterministic endpoints).
+#   4. Emit a parity report (exact/semantic/status/nondet) + startup/RSS/latency deltas.
+#
+# Known constraints (see docs/v3/review/11-cloud-parity-verification.md):
+#   * Boot4 native only RUNS on Java 25; JDK17/21 native builds succeed but fail at startup
+#     with NativeImageRequirementsException. Those cells are recorded as build-only.
+#   * GitHub Windows runners have no service containers -> Windows cells run a DB-less
+#     reachability pass (marked MODE=reachability) and are NOT compared for body parity.
+#
+# workflow_dispatch only (no push) to control cloud minutes.
+
+name: parity-verify-cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      jdk:
+        description: JDK line
+        type: choice
+        options: ['25', '21', '17', all]
+        default: '25'
+      platform:
+        description: runner OS
+        type: choice
+        options: [linux, windows, both]
+        default: linux
+      repeat:
+        description: repeat rounds for latency averaging
+        type: string
+        default: '1'
+      linux_runner:
+        type: string
+        default: ubuntu-latest
+      windows_runner:
+        type: string
+        default: windows-latest
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parity-${{ github.ref }}-${{ inputs.jdk }}-${{ inputs.platform }}
+  cancel-in-progress: false
+
+env:
+  MAVEN_OPTS: -Xmx3g -XX:+UseSerialGC
+  MAVEN_ARGS: -B -ntp
+  MODULE: pro-business-api
+  ENDPOINTS: scripts/v3/ops/parity/endpoints/api.txt
+
+jobs:
+  # ── job: prepare ──
+  prepare:
+    runs-on: ${{ inputs.linux_runner }}
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - id: gen
+        shell: bash
+        env:
+          IN_JDK: ${{ inputs.jdk }}
+          IN_PLATFORM: ${{ inputs.platform }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          jdks = ['25','21','17'] if os.environ['IN_JDK'] == 'all' else [os.environ['IN_JDK']]
+          plats = ['linux','windows'] if os.environ['IN_PLATFORM'] == 'both' else [os.environ['IN_PLATFORM']]
+          cells = [{'jdk': j, 'platform': p} for j in jdks for p in plats]
+          print('matrix=' + json.dumps({'include': cells}, separators=(',', ':')))
+          PY
+          grep '^matrix=' "$GITHUB_OUTPUT"
+
+  # ── job: verify ──
+  verify:
+    needs: prepare
+    runs-on: ${{ matrix.platform == 'linux' && inputs.linux_runner || inputs.windows_runner }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    env:
+      CELL_JDK: ${{ matrix.jdk }}
+      CELL_PLATFORM: ${{ matrix.platform }}
+      LABEL: api-jdk${{ matrix.jdk }}-${{ matrix.platform }}
+    steps:
+      # 拉取仓库源码
+      - uses: actions/checkout@v4
+
+      - name: Provision Mandrel java${{ matrix.jdk }}
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: ${{ matrix.jdk }}
+          distribution: 'mandrel'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: MSVC dev environment (Windows)
+        if: matrix.platform == 'windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Linux toolchain
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc g++ zlib1g-dev
+
+      - name: Build fat jar (JVM baseline)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn $MAVEN_ARGS -DskipTests -pl "$MODULE" -am package
+          ls -lh "$MODULE"/target/*.jar
+
+      - name: Build native binary (candidate)
+        shell: bash
+        run: |
+          set -euo pipefail
+          MVN=mvn; [ "$CELL_PLATFORM" = 'windows' ] && MVN=mvn.cmd
+          "$MVN" $MAVEN_ARGS -Pnative,native-flink-exclude -DskipTests \
+              -pl "$MODULE" clean native:compile
+          echo "native build done"
+
+      - name: Locate jar + native binary
+        id: art
+        shell: bash
+        run: |
+          set -euo pipefail
+          jar=$(ls "$MODULE"/target/*.jar | grep -v original | head -1)
+          echo "jar=$jar" >> "$GITHUB_OUTPUT"
+          if [ "$CELL_PLATFORM" = 'windows' ]; then bin="$MODULE/target/$MODULE.exe"; else bin="$MODULE/target/$MODULE"; fi
+          if [ -f "$bin" ]; then
+            echo "native=$bin" >> "$GITHUB_OUTPUT"
+            echo "native OK ($(wc -c < "$bin") bytes)"
+          else
+            echo "native=" >> "$GITHUB_OUTPUT"
+            echo "::warning::native binary not found at $bin"
+          fi
+
+      - name: Start datastores (Linux)
+        if: matrix.platform == 'linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=RuoYi -p 5432:5432 postgres:16-alpine
+          docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
+          docker run -d --name rd -p 6379:6379 redis:7-alpine
+          for i in $(seq 1 60); do docker exec pg pg_isready -U postgres -d RuoYi >/dev/null 2>&1 && break; sleep 2; done
+          for i in $(seq 1 60); do docker exec my mysqladmin ping -uroot -proot >/dev/null 2>&1 && break; sleep 2; done
+          for i in $(seq 1 30); do docker exec rd redis-cli ping >/dev/null 2>&1 && break; sleep 1; done
+          export PGPASSWORD=postgres
+          psql -h 127.0.0.1 -U postgres -d RuoYi -v ON_ERROR_STOP=1 -f scripts/v3/ops/parity/sql/schema_jl_data01.sql >/dev/null
+          gunzip -c scripts/v3/ops/parity/sql/seed_jl_data01.sql.gz > /tmp/seed.sql
+          psql -h 127.0.0.1 -U postgres -d RuoYi -v ON_ERROR_STOP=1 -f /tmp/seed.sql >/dev/null
+          docker exec -i my mysql -uroot -proot < scripts/v3/ops/parity/sql/mysql_dict.sql
+          echo "gantry rows: $(psql -h 127.0.0.1 -U postgres -d RuoYi -Atc 'select count(*) from jl_data01.ods_szdn_gantry')"
+
+      - name: Probe JVM baseline
+        shell: bash
+        env:
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
+          CARMONIT_MYSQL_HOST: 127.0.0.1
+          CARMONIT_MYSQL_PORT: "3306"
+          CARMONIT_MYSQL_USERNAME: root
+          CARMONIT_MYSQL_PASSWORD: root
+          SPRING_DATA_REDIS_HOST: 127.0.0.1
+          SPRING_DATA_REDIS_PORT: "6379"
+          SPRING_REDIS_HOST: 127.0.0.1
+          SPRING_REDIS_PORT: "6379"
+          EXPORT_DOWNLOAD_SECRET: parity-cloud-secret-deterministic
+        run: |
+          set -uo pipefail
+          MODE=full; [ "$CELL_PLATFORM" = 'windows' ] && MODE=reachability
+          python scripts/v3/ops/parity/parity_probe.py \
+            --variant jar --label "$LABEL" \
+            --cmd "java -jar ${{ steps.art.outputs.jar }} --server.port=19903" \
+            --port 19903 --endpoints "$ENDPOINTS" \
+            --out out/jar.json --mode "$MODE" --check-stability \
+            --repeat "${{ inputs.repeat }}" --ready-timeout 300 || echo "jar probe exit=$?"
+
+      - name: Probe native candidate
+        if: steps.art.outputs.native != ''
+        shell: bash
+        env:
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
+          CARMONIT_MYSQL_HOST: 127.0.0.1
+          CARMONIT_MYSQL_PORT: "3306"
+          CARMONIT_MYSQL_USERNAME: root
+          CARMONIT_MYSQL_PASSWORD: root
+          SPRING_DATA_REDIS_HOST: 127.0.0.1
+          SPRING_DATA_REDIS_PORT: "6379"
+          SPRING_REDIS_HOST: 127.0.0.1
+          SPRING_REDIS_PORT: "6379"
+          EXPORT_DOWNLOAD_SECRET: parity-cloud-secret-deterministic
+        run: |
+          set -uo pipefail
+          MODE=full; [ "$CELL_PLATFORM" = 'windows' ] && MODE=reachability
+          NATIVE="${{ steps.art.outputs.native }}"
+          [ "$CELL_PLATFORM" = 'linux' ] && chmod +x "$NATIVE"
+          python scripts/v3/ops/parity/parity_probe.py \
+            --variant native --label "$LABEL" \
+            --cmd "\"$NATIVE\" --server.port=19902" \
+            --port 19902 --endpoints "$ENDPOINTS" \
+            --out out/native.json --mode "$MODE" --check-stability \
+            --repeat "${{ inputs.repeat }}" --ready-timeout 300 || echo "native probe exit=$?"
+
+      - name: Compare + report
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [ ! -f out/native.json ]; then
+            echo "::warning::native probe missing - cell is build-only (Boot4 native runtime requires JDK25)"
+            exit 0
+          fi
+          ALLOW=""; [ "$CELL_PLATFORM" = 'windows' ] && ALLOW="500,503"
+          python scripts/v3/ops/parity/parity_compare.py \
+            --baseline out/jar.json --candidate out/native.json \
+            --out out/report.json --md out/report.md \
+            --label "$LABEL" --allow-diff-status "$ALLOW" || true
+          cat out/report.md || true
+
+      - name: Upload parity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-${{ matrix.jdk }}-${{ matrix.platform }}
+          path: |
+            out/**
+            */target/*.jar
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Stop datastores
+        if: always() && matrix.platform == 'linux'
+        shell: bash
+        run: docker rm -f pg my rd 2>/dev/null || true

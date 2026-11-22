@@ -1,0 +1,1506 @@
+{
+  "label": "api-jdk25-mysql",
+  "baseline": {
+    "variant": "jar",
+    "startup_ms": 8720,
+    "peak_rss_mb": 501.8,
+    "avg_latency_ms": 9.77
+  },
+  "candidate": {
+    "variant": "jar",
+    "startup_ms": 7816,
+    "peak_rss_mb": 540.8,
+    "avg_latency_ms": 9.14
+  },
+  "totals": {
+    "endpoints": 79,
+    "status_match": 79,
+    "exact": 20,
+    "semantic": 20,
+    "nondet": 59,
+    "fails": 0
+  },
+  "rows": [
+    {
+      "endpoint": "/api/v1/large/carTrackQueryByCarNo",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        119,
+        119
+      ],
+      "latency_ms": [
+        1.84,
+        2.76
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/api/v1/large/export/status/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        39,
+        39
+      ],
+      "latency_ms": [
+        3.54,
+        3.62
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/api/v1/large/fee",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1.54,
+        2.18
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/api/v1/large/snapshot",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        107,
+        107
+      ],
+      "latency_ms": [
+        4.58,
+        6.38
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/api/v1/large/stats/group",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        110,
+        110
+      ],
+      "latency_ms": [
+        1.89,
+        1.87
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/api/v1/large/trail",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1.66,
+        2.35
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/api/v1/unified/1/list",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        107,
+        107
+      ],
+      "latency_ms": [
+        4.08,
+        3.66
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/api/v1/unified/export/status/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        39,
+        39
+      ],
+      "latency_ms": [
+        1.95,
+        5.81
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feeGantry/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        112,
+        112
+      ],
+      "latency_ms": [
+        5.0,
+        5.9
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/feeGantry/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        115,
+        115
+      ],
+      "latency_ms": [
+        14.94,
+        25.79
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/feeStationEnter/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        118,
+        118
+      ],
+      "latency_ms": [
+        4.73,
+        3.73
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/feeStationEnter/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        121,
+        121
+      ],
+      "latency_ms": [
+        9.03,
+        11.4
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/feerecords/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        113,
+        113
+      ],
+      "latency_ms": [
+        4.72,
+        4.52
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/feerecords/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        116,
+        116
+      ],
+      "latency_ms": [
+        25.33,
+        28.0
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/feerecords/listToExport",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        124,
+        124
+      ],
+      "latency_ms": [
+        6.28,
+        6.49
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/feestationexit/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        117,
+        117
+      ],
+      "latency_ms": [
+        5.08,
+        5.99
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/feestationexit/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        120,
+        120
+      ],
+      "latency_ms": [
+        8.29,
+        7.75
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        110,
+        110
+      ],
+      "latency_ms": [
+        9.52,
+        13.41
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        113,
+        113
+      ],
+      "latency_ms": [
+        150.16,
+        149.52
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/listAll",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        116,
+        116
+      ],
+      "latency_ms": [
+        5.36,
+        6.0
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/gantry/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        109,
+        109
+      ],
+      "latency_ms": [
+        6.38,
+        3.94
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/gantry/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        112,
+        112
+      ],
+      "latency_ms": [
+        6.26,
+        6.95
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/gantry/listAll",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        115,
+        115
+      ],
+      "latency_ms": [
+        3.68,
+        4.72
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/gantryIp/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        111,
+        111
+      ],
+      "latency_ms": [
+        4.36,
+        4.73
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/gantryIp/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        114,
+        114
+      ],
+      "latency_ms": [
+        5.6,
+        4.56
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/org/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        106,
+        106
+      ],
+      "latency_ms": [
+        3.9,
+        3.4
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/org/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        109,
+        109
+      ],
+      "latency_ms": [
+        5.79,
+        5.84
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/org/listAll",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        112,
+        112
+      ],
+      "latency_ms": [
+        5.68,
+        3.42
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/provcapture/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        114,
+        114
+      ],
+      "latency_ms": [
+        4.92,
+        5.2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/provcapture/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        117,
+        117
+      ],
+      "latency_ms": [
+        11.18,
+        10.4
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/section/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        110,
+        110
+      ],
+      "latency_ms": [
+        3.49,
+        4.14
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/section/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        113,
+        113
+      ],
+      "latency_ms": [
+        5.65,
+        4.81
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/section/listAll",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        116,
+        116
+      ],
+      "latency_ms": [
+        5.67,
+        4.17
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        110,
+        110
+      ],
+      "latency_ms": [
+        5.63,
+        5.73
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        113,
+        113
+      ],
+      "latency_ms": [
+        8.45,
+        11.46
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/listAll",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        116,
+        116
+      ],
+      "latency_ms": [
+        5.16,
+        5.28
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        110,
+        110
+      ],
+      "latency_ms": [
+        3.9,
+        5.53
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        113,
+        113
+      ],
+      "latency_ms": [
+        6.78,
+        8.15
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/listAll",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        116,
+        116
+      ],
+      "latency_ms": [
+        4.27,
+        5.15
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/snapshotflow/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        115,
+        115
+      ],
+      "latency_ms": [
+        5.01,
+        8.5
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/snapshotflow/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        118,
+        118
+      ],
+      "latency_ms": [
+        17.05,
+        9.25
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/snapshotflow/listToExport",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        126,
+        126
+      ],
+      "latency_ms": [
+        4.87,
+        4.89
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/stationcapture/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        117,
+        117
+      ],
+      "latency_ms": [
+        4.45,
+        7.05
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/stationcapture/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        120,
+        120
+      ],
+      "latency_ms": [
+        6.92,
+        6.4
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/sysutil/carTrackQueryByCarNo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        92.8,
+        47.16
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutil/carTrackQueryByTime",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        5.07,
+        7.08
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutil/getByTrailBo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        724,
+        724
+      ],
+      "latency_ms": [
+        35.61,
+        24.85
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutil/saveRedis",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5.32,
+        4.24
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/separateSnapshotFlowTimeList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        17.61,
+        10.62
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncBaseInfo",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        125,
+        125
+      ],
+      "latency_ms": [
+        4.0,
+        3.93
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncCurrentTrack",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        3.8,
+        3.68
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncHistroyTrack",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        2.0,
+        1.68
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncOdsSzdnGantry",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        130,
+        130
+      ],
+      "latency_ms": [
+        10.62,
+        10.48
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        2.36,
+        2.83
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar10",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        5.1,
+        1.55
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar2",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        1.46,
+        1.66
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar3",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        3.8,
+        4.26
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar4",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        3.52,
+        2.09
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar5",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        7.87,
+        5.59
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar6",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        2.49,
+        4.73
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar7",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        4.38,
+        2.24
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar8",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        3.37,
+        1.96
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar9",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        3.41,
+        2.36
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/toll/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        107,
+        107
+      ],
+      "latency_ms": [
+        4.23,
+        4.23
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/toll/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        110,
+        110
+      ],
+      "latency_ms": [
+        5.61,
+        6.3
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/toll/listAll",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        113,
+        113
+      ],
+      "latency_ms": [
+        14.75,
+        3.98
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/tollStationIp/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        116,
+        116
+      ],
+      "latency_ms": [
+        4.81,
+        5.64
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/tollStationIp/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        119,
+        119
+      ],
+      "latency_ms": [
+        5.2,
+        4.13
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/trailtracks/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        114,
+        114
+      ],
+      "latency_ms": [
+        9.98,
+        14.56
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/trailtracks/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        117,
+        117
+      ],
+      "latency_ms": [
+        14.19,
+        14.54
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/vehicleweight/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        116,
+        116
+      ],
+      "latency_ms": [
+        6.65,
+        5.4
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/vehicleweight/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        119,
+        119
+      ],
+      "latency_ms": [
+        7.8,
+        6.99
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/vehicleweight/map",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        118,
+        118
+      ],
+      "latency_ms": [
+        5.62,
+        6.39
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/manager/fwqclls/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        113,
+        113
+      ],
+      "latency_ms": [
+        6.44,
+        6.36
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/manager/fwqclls/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        116,
+        116
+      ],
+      "latency_ms": [
+        9.49,
+        11.06
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/progressive/feerecords/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        123,
+        123
+      ],
+      "latency_ms": [
+        4.83,
+        5.26
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/progressive/scale-level",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        166,
+        166
+      ],
+      "latency_ms": [
+        31.68,
+        29.86
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/progressive/snapshotflow/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        125,
+        125
+      ],
+      "latency_ms": [
+        7.67,
+        8.63
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/progressive/trailfitting/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        125,
+        125
+      ],
+      "latency_ms": [
+        3.36,
+        4.6
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    }
+  ]
+}

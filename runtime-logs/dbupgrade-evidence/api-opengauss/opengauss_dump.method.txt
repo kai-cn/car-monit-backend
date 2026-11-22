@@ -1,0 +1,1 @@
+FAILED:pg_dump; fallback to gs_dump in container

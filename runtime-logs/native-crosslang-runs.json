@@ -1,0 +1,168 @@
+[
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "car-monit-api-jdk17",
+    "workflow": "native-image-cloud.yml",
+    "inputs": {
+      "release_tag": "",
+      "stage": "build",
+      "app": "api",
+      "jdk": "25",
+      "platform": "linux",
+      "runner_mode": "cloud",
+      "linux_runner": "ubuntu-latest",
+      "windows_runner": "windows-latest"
+    },
+    "status": "dispatched"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "car-monit-api-jdk21",
+    "workflow": "native-image-cloud.yml",
+    "inputs": {
+      "release_tag": "",
+      "stage": "build",
+      "app": "api",
+      "jdk": "25",
+      "platform": "linux",
+      "runner_mode": "cloud",
+      "linux_runner": "ubuntu-latest",
+      "windows_runner": "windows-latest"
+    },
+    "status": "dispatched"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "car-monit-api-jdk25",
+    "workflow": "native-image-cloud.yml",
+    "inputs": {
+      "release_tag": "",
+      "stage": "build",
+      "app": "api",
+      "jdk": "25",
+      "platform": "linux",
+      "runner_mode": "cloud",
+      "linux_runner": "ubuntu-latest",
+      "windows_runner": "windows-latest"
+    },
+    "status": "dispatched"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "feature-dbupgrade",
+    "workflow": "native-image-cloud.yml",
+    "inputs": {
+      "release_tag": "",
+      "stage": "build",
+      "app": "api",
+      "jdk": "25",
+      "platform": "linux",
+      "runner_mode": "cloud",
+      "linux_runner": "ubuntu-latest",
+      "windows_runner": "windows-latest"
+    },
+    "status": "dispatched"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "feature/springboot3",
+    "workflow": "native-image-cloud.yml",
+    "inputs": {
+      "release_tag": "",
+      "stage": "build",
+      "app": "api",
+      "jdk": "25",
+      "platform": "linux",
+      "runner_mode": "cloud",
+      "linux_runner": "ubuntu-latest",
+      "windows_runner": "windows-latest"
+    },
+    "status": "dispatched"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "feature/springboot3-jdk17",
+    "workflow": "native-image-cloud.yml",
+    "inputs": {
+      "release_tag": "",
+      "stage": "build",
+      "app": "api",
+      "jdk": "25",
+      "platform": "linux",
+      "runner_mode": "cloud",
+      "linux_runner": "ubuntu-latest",
+      "windows_runner": "windows-latest"
+    },
+    "status": "dispatched"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "car-monit-backend-jdk17",
+    "workflow": "native-image-cloud.yml",
+    "inputs": {
+      "release_tag": "",
+      "stage": "build",
+      "app": "backend",
+      "jdk": "25",
+      "platform": "linux",
+      "runner_mode": "cloud",
+      "linux_runner": "ubuntu-latest",
+      "windows_runner": "windows-latest"
+    },
+    "status": "dispatched"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "car-monit-backend-jdk21",
+    "workflow": "native-image-cloud.yml",
+    "inputs": {
+      "release_tag": "",
+      "stage": "build",
+      "app": "backend",
+      "jdk": "25",
+      "platform": "linux",
+      "runner_mode": "cloud",
+      "linux_runner": "ubuntu-latest",
+      "windows_runner": "windows-latest"
+    },
+    "status": "dispatched"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "car-monit-backend-jdk25",
+    "workflow": "native-image-cloud.yml",
+    "inputs": {
+      "release_tag": "",
+      "stage": "build",
+      "app": "backend",
+      "jdk": "25",
+      "platform": "linux",
+      "runner_mode": "cloud",
+      "linux_runner": "ubuntu-latest",
+      "windows_runner": "windows-latest"
+    },
+    "status": "dispatched"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "feature-dbupgrade",
+    "workflow": "native-image-cloud.yml",
+    "inputs": {
+      "release_tag": "",
+      "stage": "build",
+      "app": "backend",
+      "jdk": "25",
+      "platform": "linux",
+      "runner_mode": "cloud",
+      "linux_runner": "ubuntu-latest",
+      "windows_runner": "windows-latest"
+    },
+    "status": "dispatched"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "master",
+    "workflow": "crosslang-parity-cloud.yml",
+    "status": "dispatched"
+  }
+]

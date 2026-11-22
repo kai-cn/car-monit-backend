@@ -1,0 +1,82 @@
+# @description 历史运维/验证配置快照，保留用于复现与审计；本文件头补充维护背景与运行约束。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage GitHub Actions workflow_dispatch 或事件触发；输入参数见 workflow inputs。
+# @dependencies 按原 workflow 声明的 runner、Actions 与外部服务依赖执行。
+# AI Agent E2E（云 runner，两个框架分支共用）
+#
+# 触发：workflow_dispatch（framework=langgraph|langchain|both）
+# 安全：不把任何凭据写入 workflow/job env（GitHub Actions 会回显）。
+#       LLM key 故意为空 → FakeAgentModel；Agent 访问令牌从 step 级 secrets 注入。
+# 覆盖：pytest tests/ai_agent + 真实 HTTP smoke（tools/ai_agent_smoke.py）
+
+name: ai-agent-e2e
+
+on:
+  workflow_dispatch:
+    inputs:
+      framework:
+        description: which branch to test
+        type: choice
+        options: [langgraph, langchain, both]
+        default: both
+      linux_runner:
+        type: string
+        default: ubuntu-latest
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-agent-e2e-${{ inputs.framework }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ${{ inputs.linux_runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: ${{ fromJSON(inputs.framework == 'both' && '["langgraph","langchain"]' || format('["{0}"]', inputs.framework)) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ai-agent-${{ matrix.framework }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -q --upgrade pip
+          python -m pip install -q -r car-monit-api-python/requirements.txt -r car-monit-api-python/requirements-ai.txt
+
+      - name: Unit + contract tests
+        shell: bash
+        working-directory: car-monit-api-python
+        env:
+          # app/main.py 导入时会做 settings 密钥强度门禁；CI 用 Secret 注入（日志显示 ***）
+          TOKEN__SECRET: ${{ secrets.JWT_SECRET }}
+          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: ${{ secrets.CI_DB_TEST_PASSWORD }}
+          HENGDA__SECRET: ${{ secrets.HENDA_SECRET }}
+          AI_AGENT_ACCESS_TOKEN: ${{ secrets.CI_AI_AGENT_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m pytest tests/ai_agent -q --cov=app/ai_agent --cov-report=term-missing --cov-fail-under=70
+
+      - name: Real HTTP smoke
+        shell: bash
+        working-directory: car-monit-api-python
+        env:
+          TOKEN__SECRET: ${{ secrets.JWT_SECRET }}
+          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: ${{ secrets.CI_DB_TEST_PASSWORD }}
+          HENGDA__SECRET: ${{ secrets.HENDA_SECRET }}
+          AI_AGENT_ACCESS_TOKEN: ${{ secrets.CI_AI_AGENT_TOKEN }}
+          AI_AGENT_API_KEY: ''
+        run: |
+          set -euo pipefail
+          python tools/ai_agent_smoke.py

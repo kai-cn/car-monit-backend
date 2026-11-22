@@ -1,0 +1,202 @@
+# @description 历史运维/验证配置快照，保留用于复现与审计；本文件头补充维护背景与运行约束。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage GitHub Actions workflow_dispatch 或事件触发；输入参数见 workflow inputs。
+# @dependencies 按原 workflow 声明的 runner、Actions 与外部服务依赖执行。
+apiVersion: v1
+kind: Service
+metadata:
+  name: car-monit-api
+  labels: { app: car-monit-api }
+spec:
+  type: NodePort
+  selector: { app: car-monit-api }
+  ports:
+    - { name: http, port: 9902, targetPort: 9902, nodePort: 30902 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: car-monit-backend
+  labels: { app: car-monit-backend }
+spec:
+  type: NodePort
+  selector: { app: car-monit-backend }
+  ports:
+    - { name: http, port: 9989, targetPort: 9989, nodePort: 30989 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: car-monit-api
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  selector:
+    matchLabels: { app: car-monit-api }
+  template:
+    metadata:
+      labels: { app: car-monit-api }
+    spec:
+      containers:
+        - name: api
+          image: car-monit-api:local
+          imagePullPolicy: Never
+          ports: [{ containerPort: 9902 }]
+          args:
+            - --add-opens=java.base/java.lang=ALL-UNNAMED
+            - -XX:+UseCompactObjectHeaders
+            - -Xms20m
+            - -Xmx64m
+            - -XX:MaxMetaspaceSize=136m
+            - -XX:CompressedClassSpaceSize=24m
+            - -XX:ReservedCodeCacheSize=12m
+            - -XX:MaxDirectMemorySize=2m
+            - -XX:MaxHeapFreeRatio=10
+            - -XX:MinHeapFreeRatio=5
+            - -Xss192k
+            - -XX:CICompilerCount=2
+            - -XX:+UseSerialGC
+            - -XX:-UsePerfData
+            - -Dsun.zip.disableMemoryMapping=true
+            - -Djdk.nio.maxCachedBufferSize=65536
+            - -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
+            - -Dfile.encoding=UTF-8
+            - -Duser.timezone=Asia/Shanghai
+            - -jar
+            - /app/app.jar
+            - --server.port=9902
+            - --spring.datasource.dynamic.datasource.master.url=jdbc:postgresql://172.18.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+            - --traffic.query.engine=legacy
+            - --traffic.sync.enabled=false
+            - --spring.main.lazy-initialization=true
+            - --server.tomcat.threads.max=2
+            - --server.tomcat.threads.min-spare=1
+            - --spring.task.scheduling.pool.size=1
+            - --spring.datasource.dynamic.druid.initial-size=1
+            - --spring.datasource.dynamic.druid.min-idle=1
+            - --spring.datasource.dynamic.druid.max-active=2
+            - --logging.level.root=WARN
+            - --logging.level.p6spy=OFF
+            - --logging.level.com.baomidou=WARN
+          env:
+            - name: SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD
+              valueFrom: { secretKeyRef: { name: car-monit-cluster-secrets, key: opengauss-password } }
+            - name: TRAFFIC_INTERNAL_TOKEN
+              valueFrom: { secretKeyRef: { name: car-monit-cluster-secrets, key: internal-token } }
+            - { name: SPRING_DATA_REDIS_HOST, value: 172.18.0.1 }
+            - { name: SPRING_DATA_REDIS_PORT, value: "6380" }
+            - { name: SPRING_KAFKA_BOOTSTRAP_SERVERS, value: 172.29.16.1:9092 }
+          resources:
+            requests: { memory: 300Mi, cpu: 100m }
+            limits: { memory: 300Mi, cpu: 2000m }
+          readinessProbe:
+            tcpSocket: { port: 9902 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 18
+          livenessProbe:
+            tcpSocket: { port: 9902 }
+            initialDelaySeconds: 300
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions: [{ key: app, operator: In, values: [car-monit-api] }]
+                topologyKey: kubernetes.io/hostname
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: car-monit-backend
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  selector:
+    matchLabels: { app: car-monit-backend }
+  template:
+    metadata:
+      labels: { app: car-monit-backend }
+    spec:
+      containers:
+        - name: backend
+          image: car-monit-backend:local
+          imagePullPolicy: Never
+          ports: [{ containerPort: 9989 }]
+          args:
+            - -XX:+UseCompactObjectHeaders
+            - -Xms20m
+            - -Xmx64m
+            - -XX:MaxMetaspaceSize=136m
+            - -XX:CompressedClassSpaceSize=24m
+            - -XX:ReservedCodeCacheSize=12m
+            - -XX:MaxDirectMemorySize=2m
+            - -XX:MaxHeapFreeRatio=10
+            - -XX:MinHeapFreeRatio=5
+            - -Xss192k
+            - -XX:CICompilerCount=2
+            - -XX:+UseSerialGC
+            - -XX:-UsePerfData
+            - -Dsun.zip.disableMemoryMapping=true
+            - -Djdk.nio.maxCachedBufferSize=65536
+            - -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
+            - -Dfile.encoding=UTF-8
+            - -Duser.timezone=Asia/Shanghai
+            - -jar
+            - /app/app.jar
+            - --server.port=9989
+            - --spring.datasource.driverClassName=com.mysql.cj.jdbc.Driver
+            - --spring.datasource.druid.master.url=jdbc:mysql://172.18.0.1:3307/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowMultiQueries=true
+            - --spring.main.lazy-initialization=true
+            - --server.tomcat.threads.max=2
+            - --server.tomcat.threads.min-spare=1
+            - --spring.task.scheduling.pool.size=1
+            - --spring.datasource.druid.initial-size=1
+            - --spring.datasource.druid.min-idle=1
+            - --spring.datasource.druid.max-active=2
+            - --logging.level.root=WARN
+            - --logging.level.p6spy=OFF
+            - --logging.level.com.baomidou=WARN
+          env:
+            - name: SPRING_DATASOURCE_DRUID_MASTER_PASSWORD
+              valueFrom: { secretKeyRef: { name: car-monit-cluster-secrets, key: mysql-password } }
+            - name: TRAFFIC_API_INTERNAL_TOKEN
+              valueFrom: { secretKeyRef: { name: car-monit-cluster-secrets, key: internal-token } }
+            - name: EXPORT_DOWNLOAD_SECRET
+              valueFrom: { secretKeyRef: { name: car-monit-cluster-secrets, key: export-secret } }
+            - { name: VEHICLE_MONITOR_BASE_URL, value: http://car-monit-api:9902 }
+            - { name: SPRING_DATA_REDIS_HOST, value: 172.18.0.1 }
+            - { name: SPRING_DATA_REDIS_PORT, value: "6380" }
+          resources:
+            requests: { memory: 300Mi, cpu: 100m }
+            limits: { memory: 300Mi, cpu: 2000m }
+          readinessProbe:
+            tcpSocket: { port: 9989 }
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 18
+          livenessProbe:
+            tcpSocket: { port: 9989 }
+            initialDelaySeconds: 300
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions: [{ key: app, operator: In, values: [car-monit-backend] }]
+                topologyKey: kubernetes.io/hostname

@@ -1,0 +1,50 @@
+{
+  "label": "api-jdk25-cloudnative-20261117",
+  "native_bytes": 368249088,
+  "jar_bytes": 212271942,
+  "stability_duration_s": 60,
+  "startup_ms": {
+    "jvm": 16899,
+    "native": 2654
+  },
+  "startup_peak_rss_MB": {
+    "jvm": 598.4,
+    "native": 305.1
+  },
+  "port_ready": {
+    "jvm": 1,
+    "native": 1
+  },
+  "steady": {
+    "jvm": {
+      "samples": 20,
+      "rss_avg_MB": 601.0,
+      "rss_min_MB": 598.5,
+      "rss_max_MB": 601.8,
+      "http_success": 20,
+      "http_total": 20,
+      "http_latency_avg_ms": 15.7
+    },
+    "native": {
+      "samples": 20,
+      "rss_avg_MB": 307.1,
+      "rss_min_MB": 305.5,
+      "rss_max_MB": 307.3,
+      "http_success": 20,
+      "http_total": 20,
+      "http_latency_avg_ms": 2.4
+    }
+  },
+  "native_stability": {
+    "samples": 12,
+    "rss_avg_MB": 305.8,
+    "rss_min_MB": 304.1,
+    "rss_max_MB": 306.0,
+    "http_success": 12,
+    "http_total": 12,
+    "http_latency_avg_ms": 3.0,
+    "rss_first_MB": 304.1,
+    "rss_last_MB": 306.0,
+    "rss_drift_MB": 1.9
+  }
+}

@@ -1,0 +1,12 @@
+{
+    "app":  "api",
+    "jdk":  "25",
+    "platform":  "linux",
+    "name":  "api-jdk25-linux-amd64",
+    "bytes":  340921056,
+    "size_MB":  325.13,
+    "sha256":  "9399D12952BEA5CB8622E209B1E308F44E1FA0C7F5E8CFC3C793E1573D00D7B1",
+    "git_sha":  "0a76585",
+    "collected_at":  "20261115-192852",
+    "source":  "D:\\work\\IdeaProjects\\car-monit-api-jdk25\\pro-business-api\\target\\pro-business-api"
+}

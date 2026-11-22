@@ -1,0 +1,42 @@
+{
+  "label": "api-jdk25-mysql",
+  "app": "api",
+  "db": "mysql",
+  "old": {
+    "ready": null,
+    "error": null,
+    "endpoint_count": 79,
+    "status_fail": 59,
+    "startup_ms": 8720,
+    "startup_peak_rss_mb": 501.8,
+    "steady_rss_mb": 514.2,
+    "avg_latency_ms": 9.77
+  },
+  "new": {
+    "ready": null,
+    "error": null,
+    "endpoint_count": 79,
+    "status_fail": 59,
+    "startup_ms": 7816,
+    "startup_peak_rss_mb": 540.8,
+    "steady_rss_mb": 540.8,
+    "avg_latency_ms": 9.14
+  },
+  "consistency": {
+    "status_match": 79,
+    "exact": 20,
+    "semantic": 20,
+    "nondet": 59,
+    "diff": null,
+    "fails": 0
+  },
+  "db_old_version": "8.0.46",
+  "db_new_version": "9.7.4",
+  "db_old_stats": {
+    "cpu": "0.37%",
+    "mem": "370.9MiB / 15.33GiB",
+    "mem_pct": "2.36%"
+  },
+  "db_new_stats": {},
+  "dump_method": "mysqldump(mysql:8.0 -> plain SQL)"
+}

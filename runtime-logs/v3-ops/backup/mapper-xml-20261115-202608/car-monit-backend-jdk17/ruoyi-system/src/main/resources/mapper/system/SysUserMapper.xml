@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.SysUserMapper">
+
+    <resultMap type="SysUser" id="SysUserResult">
+        <id property="userId" column="user_id"/>
+        <result property="userNo" column="user_no"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="userName" column="user_name"/>
+        <result property="nickName" column="nick_name"/>
+        <result property="userType" column="user_type"/>
+        <result property="email" column="email"/>
+        <result property="phonenumber" column="phonenumber"/>
+        <result property="sex" column="sex"/>
+        <result property="avatar" column="avatar"/>
+        <result property="password" column="password"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="loginIp" column="login_ip"/>
+        <result property="loginDate" column="login_date"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="certEntityId" column="cert_entity_id"/>
+        <result property="certId" column="cert_id"/>
+        <result property="bussId" column="buss_id"/>
+        <result property="bussName" column="buss_name"/>
+        <result property="epsName" column="eps_name"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="subCode" column="sub_code"/>
+        <result property="tenantName" column="tenant_name"/>
+        <result property="imageId" column="image_id"/>
+        <association property="dept" column="dept_id" javaType="SysDept" resultMap="deptResult"/>
+        <collection property="roles" javaType="java.util.List" resultMap="RoleResult"/>
+
+    </resultMap>
+
+    <resultMap id="deptResult" type="SysDept">
+        <id property="deptId" column="dept_id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="deptName" column="dept_name"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="leader" column="leader"/>
+        <result property="status" column="dept_status"/>
+    </resultMap>
+
+    <resultMap id="RoleResult" type="SysRole">
+        <id property="roleId" column="role_id"/>
+        <result property="roleName" column="role_name"/>
+        <result property="roleKey" column="role_key"/>
+        <result property="roleSort" column="role_sort"/>
+        <result property="dataScope" column="data_scope"/>
+        <result property="status" column="role_status"/>
+    </resultMap>
+
+    <sql id="selectUserVo">
+        select u.user_id,
+               u.user_no,
+               u.dept_id,
+               u.user_name,
+               u.nick_name,
+               u.email,
+               u.avatar,
+               u.phonenumber,
+               u.password,
+               u.sex,
+               u.status,
+               u.del_flag,
+               u.login_ip,
+               u.login_date,
+               u.create_by,
+               u.create_time,
+               u.remark,
+               u.user_type,
+               u.cert_entity_id,
+               u.cert_id,
+               ifnull(u.buss_id, u.user_name) buss_id,
+               u.buss_name,
+               u.eps_name,
+               ifnull(d.tenant_id, -1)        tenant_id,
+               d.sub_code,
+               d.dept_id,
+               d.parent_id,
+               d.dept_name,
+               d.order_num,
+               d.leader,
+               d.status as                    dept_status,
+               r.role_id,
+               r.role_name,
+               r.role_key,
+               r.role_sort,
+               r.data_scope,
+               r.status as                    role_status
+        from sys_user u
+                 left join sys_dept d on u.dept_id = d.dept_id
+                 left join sys_user_role ur on u.user_id = ur.user_id
+                 left join sys_role r on r.role_id = ur.role_id
+    </sql>
+
+    <select id="selectUserList" parameterType="SysUser" resultMap="SysUserResult">
+        select u.user_id,u.user_no, u.dept_id, u.nick_name, u.user_name, u.email, u.avatar, u.phonenumber, u.password,
+        u.sex, u.status, u.del_flag, u.login_ip, u.login_date,u.create_by, u.create_time, u.remark,
+        u.user_type,u.cert_entity_id, u.cert_id, u.buss_id, u.buss_name, u.eps_name,ifnull(d.tenant_id,-1)
+        tenant_id,d2.dept_name tenant_name,
+        d.dept_name, d.leader,u.image_id
+        from sys_user u
+        left join sys_dept d on u.dept_id = d.dept_id
+        left join sys_dept d2 on d.tenant_id = d2.dept_id
+        where u.del_flag = '0'
+
+        <if test="userId != null and userId != ''">
+            AND u.user_id = #{userId}
+        </if>
+
+        <if test="userNo != null and userNo != ''">
+            AND u.user_no = #{userNo}
+        </if>
+
+        <if test="userName != null and userName != ''">
+            AND u.user_name like concat('%', #{userName}, '%')
+        </if>
+        <if test="status != null and status != ''">
+            AND u.status = #{status}
+        </if>
+        <if test="phonenumber != null and phonenumber != ''">
+            AND u.phonenumber like concat('%', #{phonenumber}, '%')
+        </if>
+        <if test="params.beginTime != null and params.beginTime != ''"><!-- 开始时间检索 -->
+            AND date_format(u.create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+        </if>
+        <if test="params.endTime != null and params.endTime != ''"><!-- 结束时间检索 -->
+            AND date_format(u.create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+        </if>
+        <if test="deptId != null and deptId != 0">
+            AND (u.dept_id = #{deptId} OR u.dept_id IN ( SELECT t.dept_id FROM sys_dept t WHERE find_in_set(#{deptId},
+            ancestors) ))
+        </if>
+        <if test="userType != null  and userType != ''">and u.user_type = #{userType}</if>
+        <if test="certEntityId != null  and certEntityId != ''">and u.cert_entity_id = #{certEntityId}</if>
+        <if test="certId != null  and certId != ''">and u.cert_id = #{certId}</if>
+        <if test="bussId != null  and bussId != ''">and u.buss_id = #{bussId}</if>
+        <if test="bussName != null  and bussName != ''">and u.buss_name like concat('%', #{bussName}, '%')</if>
+        <if test="epsName != null  and epsName != ''">and u.eps_name like concat('%', #{epsName}, '%')</if>
+        <if test="tenantId != null ">and d.tenant_id = #{tenantId}</if>
+
+        <if test="roleCode != null and roleCode != ''">
+            and EXISTS (select 1 from sys_user_role t1,sys_role t2
+            where t2.del_flag = '0' and t2.role_id = t1.role_id and t1.user_id = u.user_id
+            and t2.role_key = #{roleCode} )
+        </if>
+
+        <!--上级单位-->
+        <if test="flag != null and flag == 'sjzbDept' ">
+            and exists (
+            select 1 from sys_dept tb,sys_dept tb1
+            where tb.del_flag = '0' and tb.del_flag = '0' and tb1.dept_id = tb.parent_id
+            and tb.dept_id = #{dataId} and tb1.dept_id = d.tenant_id
+            )
+        </if>
+
+        <!--上级单位的采购经理-->
+        <if test="flag != null and flag == 'sjzbDeptCg' ">
+            and exists (
+            select 1 from sys_dept tb,sys_dept tb1
+            where tb.del_flag = '0' and tb.del_flag = '0' and tb1.dept_id = tb.parent_id
+            and tb.dept_id = #{dataId} and tb1.dept_id = d.tenant_id
+            )
+            AND EXISTS (
+            SELECT
+            1
+            FROM
+            sys_user_role sr,
+            sys_role r
+            WHERE
+            r.role_id = sr.role_id
+            AND r.role_key = 'cgjl_manager'
+            AND sr.user_id = u.user_id
+            )
+        </if>
+
+
+        <!-- 查询采购经理角色-->
+        <if test="flag != null and flag == 'myDeptCg' ">
+            AND EXISTS (
+            SELECT
+            1
+            FROM
+            sys_user_role sr,
+            sys_role r
+            WHERE
+            r.role_id = sr.role_id
+            AND r.role_key = 'cgjl_manager'
+            AND sr.user_id = u.user_id
+            )
+        </if>
+
+        <if test="queryNickName != null and queryNickName != ''">
+            AND u.nick_name LIKE CONCAT('%', #{queryNickName}, '%')
+        </if>
+
+        <if test="excludeId != null">
+            AND u.user_id != #{excludeId}
+        </if>
+
+        <!-- 数据范围过滤${params.dataScope} -->
+
+    </select>
+
+    <select id="selectUserByUserName" parameterType="String" resultMap="SysUserResult">
+        <include refid="selectUserVo"/>
+        where u.user_name = #{userName}
+    </select>
+
+    <select id="selectUserByCertEntityID" parameterType="String" resultMap="SysUserResult">
+        <include refid="selectUserVo"/>
+        where u.cert_entity_id = #{certEntityId}
+    </select>
+
+    <select id="selectUserById" parameterType="Long" resultMap="SysUserResult">
+        <include refid="selectUserVo"/>
+        where u.user_id = #{userId}
+    </select>
+
+    <select id="checkUserNameUnique" parameterType="String" resultType="int">
+        select count(1)
+        from sys_user
+        where user_name = #{userName}
+          and del_flag = '0' limit 1
+    </select>
+
+    <select id="checkPhoneUnique" parameterType="String" resultMap="SysUserResult">
+        select user_id, phonenumber
+        from sys_user
+        where phonenumber = #{phonenumber}
+          and del_flag = '0' limit 1
+    </select>
+
+    <select id="checkEmailUnique" parameterType="String" resultMap="SysUserResult">
+        select user_id, email
+        from sys_user
+        where email = #{email}
+          and del_flag = '0' limit 1
+    </select>
+
+    <insert id="insertUser" parameterType="SysUser" useGeneratedKeys="true" keyProperty="userId">
+        insert into sys_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userNo != null">user_no,</if>
+            <if test="deptId != null">dept_id,</if>
+            <if test="userName != null and userName != ''">user_name,</if>
+            <if test="nickName != null and nickName != ''">nick_name,</if>
+            <if test="userType != null">user_type,</if>
+            <if test="email != null">email,</if>
+            <if test="phonenumber != null">phonenumber,</if>
+            <if test="sex != null">sex,</if>
+            <if test="avatar != null">avatar,</if>
+            <if test="password != null">password,</if>
+            <if test="status != null">status,</if>
+            <if test="remark != null">remark,</if>
+            <if test="certEntityId != null">cert_entity_id,</if>
+            <if test="certId != null">cert_id,</if>
+            <if test="bussId != null">buss_id,</if>
+            <if test="bussName != null">buss_name,</if>
+            <if test="epsName != null">eps_name,</if>
+            <if test="loginIp != null">login_ip,</if>
+            <if test="loginDate != null">login_date,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="tenantId != null">tenant_id,</if>
+            <if test="imageId != null">image_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userNo != null">#{userNo},</if>
+            <if test="deptId != null">#{deptId},</if>
+            <if test="userName != null and userName != ''">#{userName},</if>
+            <if test="nickName != null and nickName != ''">#{nickName},</if>
+            <if test="userType != null">#{userType},</if>
+            <if test="email != null">#{email},</if>
+            <if test="phonenumber != null">#{phonenumber},</if>
+            <if test="sex != null">#{sex},</if>
+            <if test="avatar != null">#{avatar},</if>
+            <if test="password != null">#{password},</if>
+            <if test="status != null">#{status},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="certEntityId != null">#{certEntityId},</if>
+            <if test="certId != null">#{certId},</if>
+            <if test="bussId != null">#{bussId},</if>
+            <if test="bussName != null">#{bussName},</if>
+            <if test="epsName != null">#{epsName},</if>
+            <if test="loginIp != null">#{loginIp},</if>
+            <if test="loginDate != null">#{loginDate},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="tenantId != null">#{tenantId},</if>
+            <if test="imageId != null">#{imageId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateUser" parameterType="SysUser">
+        update sys_user
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userNo != null">user_no = #{userNo},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="userName != null and userName != ''">user_name = #{userName},</if>
+            <if test="nickName != null and nickName != ''">nick_name = #{nickName},</if>
+            <if test="password != null and password != ''">password = #{password},</if>
+            <if test="userType != null">user_type = #{userType},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="phonenumber != null">phonenumber = #{phonenumber},</if>
+            <if test="sex != null">sex = #{sex},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="certEntityId != null">cert_entity_id = #{certEntityId},</if>
+            <if test="certId != null">cert_id = #{certId},</if>
+            <if test="bussId != null">buss_id = #{bussId},</if>
+            <if test="bussName != null">buss_name = #{bussName},</if>
+            <if test="epsName != null">eps_name = #{epsName},</if>
+            <if test="loginIp != null">login_ip = #{loginIp},</if>
+            <if test="loginDate != null">login_date = #{loginDate},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="tenantId != null">tenant_id = #{tenantId},</if>
+            <if test="imageId != null">image_id = #{imageId},</if>
+        </trim>
+        where user_id = #{userId}
+    </update>
+
+    <update id="updateUserInfoByBussId" parameterType="SysUser">
+        update sys_user
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userNo != null">user_no = #{userNo},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="userName != null and userName != ''">user_name = #{userName},</if>
+            <if test="nickName != null and nickName != ''">nick_name = #{nickName},</if>
+            <if test="userType != null">user_type = #{userType},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="phonenumber != null">phonenumber = #{phonenumber},</if>
+            <if test="sex != null">sex = #{sex},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="certEntityId != null">cert_entity_id = #{certEntityId},</if>
+            <if test="certId != null">cert_id = #{certId},</if>
+            <if test="bussName != null">buss_name = #{bussName},</if>
+            <if test="epsName != null">eps_name = #{epsName},</if>
+            <if test="loginIp != null">login_ip = #{loginIp},</if>
+            <if test="loginDate != null">login_date = #{loginDate},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="tenantId != null">tenant_id = #{tenantId},</if>
+        </trim>
+        where buss_id = #{bussId}
+    </update>
+
+    <update id="updateUserStatus" parameterType="SysUser">
+        update sys_user
+        set status = #{status}
+        where user_id = #{userId}
+    </update>
+
+    <update id="updateUserPwd" parameterType="SysUser">
+        update sys_user
+        set password    = #{password},
+            update_time = now()
+        where phonenumber = #{phonenumber}
+          and user_name = #{userName}
+    </update>
+
+    <update id="updateUserAvatar" parameterType="SysUser">
+        update sys_user
+        set avatar = #{avatar}
+        where user_name = #{userName}
+    </update>
+
+    <update id="resetUserPwd" parameterType="SysUser">
+        update sys_user
+        set password    = #{password},
+            update_time = now()
+        where user_name = #{userName}
+    </update>
+
+    <delete id="deleteUserById" parameterType="Long">
+        update sys_user
+        set del_flag = '1'
+        where user_id = #{userId}
+    </delete>
+
+    <delete id="deleteUserByIds" parameterType="Long">
+        update sys_user set del_flag = '1' where user_id in
+        <foreach collection="array" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteUserByBussId" parameterType="String">
+        update sys_user
+        set del_flag = '1'
+        where buss_id = #{bussId}
+    </delete>
+
+    <delete id="deleteUserByBussIds" parameterType="String">
+        update sys_user set del_flag = '1' where buss_id in
+        <foreach collection="array" item="bussId" open="(" separator="," close=")">
+            #{bussId}
+        </foreach>
+    </delete>
+
+    <!--根据bussID和userName判断唯一性-->
+    <select id="existsByBussId" parameterType="SysUser" resultType="int">
+        select count(1)
+        from sys_user t
+        where t.del_flag='0'
+        <if test="bussId != null and bussId != ''">
+            and t.buss_id != #{bussId}
+        </if>
+        <if test="userName != null and userName != ''">
+            and t.user_name = #{userName}
+        </if>
+    </select>
+
+    <update id="updateUserInfoByBussIdAndUserType" parameterType="SysUser">
+        update sys_user
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userNo != null">user_no = #{userNo},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="userName != null and userName != ''">user_name = #{userName},</if>
+            <if test="nickName != null and nickName != ''">nick_name = #{nickName},</if>
+            <if test="userType != null">user_type = #{userType},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="phonenumber != null">phonenumber = #{phonenumber},</if>
+            <if test="sex != null">sex = #{sex},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="certEntityId != null">cert_entity_id = #{certEntityId},</if>
+            <if test="certId != null">cert_id = #{certId},</if>
+            <if test="bussName != null">buss_name = #{bussName},</if>
+            <if test="epsName != null">eps_name = #{epsName},</if>
+            <if test="loginIp != null">login_ip = #{loginIp},</if>
+            <if test="loginDate != null">login_date = #{loginDate},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="tenantId != null">tenant_id = #{tenantId},</if>
+        </trim>
+        where buss_id = #{bussId} AND user_type = #{userType}
+    </update>
+
+    <select id="selectPwdJudge" parameterType="Long" resultType="SysUser">
+        select case
+                   when TIMESTAMPDIFF(DAY,t.update_time, DATE_FORMAT(NOW(), '%Y-%m-%d')) >= 90 then 3
+                   when t.update_time is NULL then 1
+                   else 0 end pjFlag
+        from sys_user t
+        where t.user_id = #{userId}
+    </select>
+
+    <select id="getSendUserInfosByEpsId" resultType="com.ruoyi.system.domain.vo.UserRoleModel">
+        SELECT t1.role_id,
+               GROUP_CONCAT(t.user_id)   userId,
+               GROUP_CONCAT(t.nick_name) userName
+        FROM sys_user t
+                 LEFT JOIN sys_user_role t1 on t1.user_id = t.user_id
+        WHERE t.del_flag = '0'
+          AND t.STATUS = '0'
+          AND t1.role_id = #{roleId}
+          and exists(select 1
+                     from sys_dept td
+                     where td.del_flag = '0' and td.dept_id = t.dept_id and td.dept_id = #{epsId})
+        GROUP BY t1.role_id
+    </select>
+
+    <select id="selectByRoleKey" resultType="com.ruoyi.system.domain.vo.UserRoleModel">
+        SELECT t1.role_id,
+               t.user_id   userId,
+               t.nick_name userName
+        FROM sys_user t
+                 LEFT JOIN sys_user_role t1 on t1.user_id = t.user_id
+                 LEFT JOIN sys_role t3 on t1.role_id = t3.role_id and t3.del_flag = '0'
+        WHERE t.del_flag = '0'
+          AND t.STATUS = '0'
+          AND t3.role_key = #{roleKey}
+    </select>
+</mapper>

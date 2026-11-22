@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 @description 追加生产级注释规范落地记录、已办/待办、脚本与证据索引、复现步骤引用。
-@author AI Assistant
+@author Tencent Hunyuan Hy
 @date 2026-11-22
 @usage python append-production-annotation-docs.py
 @dependencies 只改写本地交接 Markdown，幂等检查章节标题。

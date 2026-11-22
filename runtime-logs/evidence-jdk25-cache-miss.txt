@@ -1,0 +1,4 @@
+# JDK25 final re-validation: forced cache miss -> live backend->API HTTP chain
+# captured: 2026-11-11 15:44:51
+/manager/bigScreen/carStatistics -> HTTP 200 code=200 X-Data-Source=API
+/manager/bigScreen/carAudit -> HTTP 200 code=200 X-Data-Source=API

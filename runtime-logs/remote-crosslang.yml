@@ -1,0 +1,200 @@
+# @description 历史运维/验证配置快照，保留用于复现与审计；本文件头补充维护背景与运行约束。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage GitHub Actions workflow_dispatch 或事件触发；输入参数见 workflow inputs。
+# @dependencies 按原 workflow 声明的 runner、Actions 与外部服务依赖执行。
+# Cross-language full-interface + resource/performance parity vs Java8 baseline.
+#
+# Baseline : ruoyi-admin (Java 8, Spring Boot 2.5) fat jar  -> endpoint set in
+#            scripts/v3/ops/parity/endpoints/backend.txt (/captchaImage, /)
+# Candidates: Go (car-monit-go), Python (car-monit-py / uvicorn), Rust (car-monit-rust / axum)
+#            C# / Kotlin / C++ are SKIPPED: no runnable HTTP server in this repo (documented).
+#
+# All variants share the same MySQL (carmonitdb) + Redis seed. /captchaImage returns a random
+# captcha image, so body bytes are non-deterministic (verdict NONDET) while status / startup
+# time / peak RSS remain comparable. That limitation is intentional and recorded in the docs.
+#
+# workflow_dispatch only.
+
+name: crosslang-parity-cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      langs:
+        description: comma list of go,python,rust, or 'all'
+        type: string
+        default: all
+      linux_runner:
+        type: string
+        default: ubuntu-latest
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crosslang-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  MAVEN_ARGS: -B -ntp
+
+jobs:
+  baseline-java8:
+    runs-on: ${{ inputs.linux_runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+      - name: Start datastores + seed
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
+          docker run -d --name rd -p 6379:6379 redis:7-alpine
+          for i in $(seq 1 60); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/schema_carmonitdb.sql
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/seed_carmonitdb.sql
+          echo "sys_user rows: $(docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -N -e 'select count(*) from carmonitdb.sys_user')"
+      - name: Build Java8 jar
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn $MAVEN_ARGS -DskipTests -pl ruoyi-admin -am package
+          mkdir -p out
+          cp $(ls ruoyi-admin/target/*.jar | grep -v original | head -1) out/baseline.jar
+          ls -lh out/baseline.jar
+      - name: Probe Java8 baseline
+        shell: bash
+        env:
+          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
+          SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
+          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
+          SPRING__REDIS__HOST: 127.0.0.1
+          SPRING__REDIS__PORT: "6379"
+          TOKEN__SECRET: crosslang-secret
+        run: |
+          set -uo pipefail
+          python scripts/v3/ops/parity/parity_probe.py --variant java8 --label java8 \
+            --cmd "java -jar out/baseline.jar --server.port=19903" --port 19903 \
+            --endpoints scripts/v3/ops/parity/endpoints/backend.txt \
+            --out out/java8.json --mode full --check-stability --ready-timeout 300 || echo "baseline probe exit=$?"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: crosslang-baseline-java8
+          path: out/**
+          retention-days: 30
+      - name: Stop datastores
+        if: always()
+        shell: bash
+        run: docker rm -f my rd 2>/dev/null || true
+
+  candidates:
+    needs: baseline-java8
+    runs-on: ${{ inputs.linux_runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        lang: [go, python, rust]
+    steps:
+      - uses: actions/checkout@v4
+      - id: gate
+        shell: bash
+        env:
+          IN: ${{ inputs.langs }}
+          LANG: ${{ matrix.lang }}
+        run: |
+          if [ "$IN" = "all" ] || echo ",$IN," | grep -q ",$LANG,"; then echo "run=yes" >> "$GITHUB_OUTPUT"; else echo "run=no" >> "$GITHUB_OUTPUT"; fi
+      - name: Start datastores + seed
+        if: steps.gate.outputs.run == 'yes'
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
+          docker run -d --name rd -p 6379:6379 redis:7-alpine
+          for i in $(seq 1 60); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/schema_carmonitdb.sql
+          docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < scripts/v3/ops/parity/sql/seed_carmonitdb.sql
+      - name: Download baseline probe
+        if: steps.gate.outputs.run == 'yes'
+        uses: actions/download-artifact@v4
+        with:
+          name: crosslang-baseline-java8
+          path: out
+      - name: Build Go
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'go'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd car-monit-go
+          go build -o bin/car-monit-go ./cmd/server
+      - name: Probe Go
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'go'
+        shell: bash
+        env:
+          # config.yaml defaults to 3307 (local); override to the cloud MySQL on 3306.
+          CARMONIT_DATABASE_DSN: "root:root@tcp(127.0.0.1:3306)/carmonitdb?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true"
+          CARMONIT_REDIS_ADDR: "127.0.0.1:6379"
+          CARMONIT_SERVER_PORT: "9989"
+        run: |
+          set -uo pipefail
+          python scripts/v3/ops/parity/parity_probe.py --variant go --label go \
+            --cmd "car-monit-go/bin/car-monit-go -c car-monit-go/configs/config.yaml" --port 9989 \
+            --endpoints scripts/v3/ops/parity/endpoints/backend.txt \
+            --out out/go.json --mode full --check-stability --ready-timeout 120 || echo "go probe exit=$?"
+      - name: Probe Python
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
+        shell: bash
+        run: |
+          set -uo pipefail
+          python3 -m pip install -q -r car-monit-py/requirements.txt
+          # config hardcodes 3307 (local); point it at the cloud MySQL on 3306.
+          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' car-monit-py/config/application.yml
+          python scripts/v3/ops/parity/parity_probe.py --variant python --label python \
+            --cmd "cd car-monit-py && python3 -m uvicorn app.main:app --host 127.0.0.1 --port 9989" \
+            --port 9989 --endpoints scripts/v3/ops/parity/endpoints/backend.txt \
+            --out out/python.json --mode full --check-stability --ready-timeout 180 || echo "python probe exit=$?"
+      - name: Build Rust
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'rust'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd car-monit-rust && cargo build --release 2>&1 | tail -3
+      - name: Probe Rust
+        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'rust'
+        shell: bash
+        run: |
+          set -uo pipefail
+          sed -i 's#127\.0\.0\.1:3307#127.0.0.1:3306#g; s#useSSL=true#useSSL=false#g' car-monit-rust/config/application.yaml
+          python scripts/v3/ops/parity/parity_probe.py --variant rust --label rust \
+            --cmd "car-monit-rust/target/release/car-monit-rust" --port 9989 \
+            --endpoints scripts/v3/ops/parity/endpoints/backend.txt \
+            --out out/${{ matrix.lang }}.json --mode full --check-stability --ready-timeout 180 || echo "rust probe exit=$?"
+      - name: Compare vs Java8
+        if: steps.gate.outputs.run == 'yes'
+        shell: bash
+        run: |
+          set -uo pipefail
+          CAND="out/${{ matrix.lang }}.json"
+          if [ ! -f "$CAND" ]; then echo "::warning::${{ matrix.lang }} probe missing"; exit 0; fi
+          python scripts/v3/ops/parity/parity_compare.py \
+            --baseline out/java8.json --candidate "$CAND" \
+            --out "out/report-${{ matrix.lang }}.json" --md "out/report-${{ matrix.lang }}.md" \
+            --label "java8-vs-${{ matrix.lang }}" || true
+          cat "out/report-${{ matrix.lang }}.md" || true
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.gate.outputs.run == 'yes'
+        with:
+          name: crosslang-${{ matrix.lang }}
+          path: out/**
+          retention-days: 30
+      - name: Stop datastores
+        if: always()
+        shell: bash
+        run: docker rm -f my rd 2>/dev/null || true

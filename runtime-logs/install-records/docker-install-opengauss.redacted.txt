@@ -1,0 +1,36 @@
+docker 安装openguass
+https://huaweicloud.csdn.net/637cb97ce904663d78bc4fc9.html
+
+出现错误：docker pull enmotech/opengauss:latest Error response from daemon: Get "https://registry-1.docker.io/v2/": read tcp 172.30.100.109:37554->98.85.153.80:443: read: connection reset by peer
+修改docker的deamon.json文件，配置国内镜像
+
+1.设置docker加速。由于国内直接访问docker hub网速很慢，拉取镜像的时间很长。通常我们使用镜像加速或者从国内的一些平台镜像仓库上拉取。
+创建 /etc/docker/daemon.json 新增内容 。
+
+cd  /etc/docker/ 
+vi daemon.json
+配置几条国内的加速地址。我这分别是Docker中国区的、网易的和中国科技大学的。
+
+{ 
+ 
+        "registry-mirrors": [  
+            "https://registry.docker-cn.com", 
+            "http://hub-mirror.c.163.com", 
+             "https://docker.mirrors.ustc.edu.cn"] 
+ 
+}
+2.重启docker。
+
+systemctl  daemon-reload 
+service docker restart
+
+3.启动容器
+
+docker run --name opengauss -p 5432:5432 --privileged=true -d -e GS_PASSWORD=<由运行环境注入> enmotech/opengauss:3.0.0
+
+docker run --name opengauss \
+  --restart=always \
+  -p 5432:5432 \
+  -v /data/opengauss:/var/lib/opengauss \
+  -e GS_PASSWORD=<由运行环境注入> \
+  -d enmotech/opengauss:3.0.0

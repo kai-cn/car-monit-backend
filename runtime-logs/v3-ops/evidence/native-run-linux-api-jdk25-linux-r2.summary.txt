@@ -1,0 +1,52 @@
+=== runner ===
+binary  : /mnt/d/work/IdeaProjects/car-monit-api-jdk25/pro-business-api/target/pro-business-api
+label   : api-jdk25-linux-r2
+log     : /mnt/d/work/runtime-logs/v3-ops/evidence/native-run-linux-api-jdk25-linux-r2.log
+binary size bytes: 342952672
+port_ready      : 0
+process_exited  : 0
+rss_kb          : 264296
+rss_mb          : 258
+threads         : 16
+cpu_time        : 00:00:03
+=== last 40 log lines ===
+	at org.springframework.data.redis.core.RedisTemplate.execute(RedisTemplate.java:385)
+	at org.springframework.data.redis.core.AbstractOperations.execute(AbstractOperations.java:166)
+	at org.springframework.data.redis.core.DefaultValueOperations.get(DefaultValueOperations.java:55)
+	at com.ruoyi.base.service.impl.SnapshotFlowSyncService.incrementalSync(SnapshotFlowSyncService.java:133)
+	at java.base@25.0.4.1/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base@25.0.4.1/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base@25.0.4.1/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base@25.0.4.1/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base@25.0.4.1/java.lang.Thread.runWith(Thread.java:1487)
+	at java.base@25.0.4.1/java.lang.Thread.run(Thread.java:1474)
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:832)
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:808)
+2026-11-16 01:31:26.279 [pool-15-thread-2] [1;31mERROR[0;39m [36mc.ruoyi.base.service.impl.SnapshotFlowSyncService:177[0;39m - 增量同步异常
+java.lang.IllegalStateException: LettuceConnectionFactory is STOPPING
+	at org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory.assertStarted(LettuceConnectionFactory.java:1463)
+	at org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory.getConnection(LettuceConnectionFactory.java:1050)
+	at org.springframework.data.redis.core.RedisConnectionUtils.fetchConnection(RedisConnectionUtils.java:195)
+	at org.springframework.data.redis.core.RedisConnectionUtils.doGetConnection(RedisConnectionUtils.java:144)
+	at org.springframework.data.redis.core.RedisConnectionUtils.getConnection(RedisConnectionUtils.java:105)
+	at org.springframework.data.redis.core.RedisTemplate.execute(RedisTemplate.java:405)
+	at org.springframework.data.redis.core.RedisTemplate.execute(RedisTemplate.java:385)
+	at org.springframework.data.redis.core.AbstractOperations.execute(AbstractOperations.java:166)
+	at org.springframework.data.redis.core.DefaultValueOperations.get(DefaultValueOperations.java:55)
+	at com.ruoyi.base.service.impl.SnapshotFlowSyncService.incrementalSync(SnapshotFlowSyncService.java:133)
+	at java.base@25.0.4.1/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:545)
+	at java.base@25.0.4.1/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base@25.0.4.1/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base@25.0.4.1/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base@25.0.4.1/java.lang.Thread.runWith(Thread.java:1487)
+	at java.base@25.0.4.1/java.lang.Thread.run(Thread.java:1474)
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:832)
+	at org.graalvm.nativeimage.builder/com.oracle.svm.core.thread.PlatformThreads.threadStartRoutine(PlatformThreads.java:808)
+Application run failed
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'orikaMapperConfig': Instantiation of supplied bean failed
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.obtainFromSupplier(AbstractAutowireCapableBeanFactory.java:1248)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1185)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:563)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:333)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:371)

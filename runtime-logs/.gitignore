@@ -1,23 +1,38 @@
-# Local operational artifacts; never commit credentials, logs, binaries or evidence dumps.
-.gh_token_cache
-*token*.txt
-*password*.txt
-*secret*.txt
-api-local.properties
-NUL
-*.log
-*.err
-*.out
-*.gz
-*.zip
+# @description 排除 runtime-logs 下的运行产物与大文件，只保留脚本、证据、yml、md 等可审计文本。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage Git 自动读取；无需手动执行。
+# @dependencies Git。
 *.jar
-*.csv
+*.log
+*.class
+*.zip
+*.tar
+*.gz
+*.pdf
 *.png
 *.jpg
-*.xlsx
-*.docx
-*.pdf
+*.jpeg
+*.gif
+*.exe
+*.so
+*.dll
+*.dylib
+__pycache__/
+venv/
 node_modules/
-*.env
-*.pw
-secret-values.env
+target/
+classes/
+generated/
+junit-check/
+junit-*-artifact/
+junit3-*-artifact/
+junit-api-*-artifact/
+crosslang-evidence/
+cicd-artifacts/
+local-rerun-check/
+local-junit-smoke/
+wsl-jars/
+*.pid
+*.out
+*.err

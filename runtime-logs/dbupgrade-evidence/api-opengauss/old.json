@@ -1,0 +1,12 @@
+{
+  "label": "api-jdk25-opengauss-old",
+  "variant": "jar",
+  "mode": "full",
+  "port": 19903,
+  "endpoint_count": 79,
+  "startup_ms": 5423,
+  "startup_peak_rss_mb": 323.1,
+  "steady_rss_mb": null,
+  "endpoints": [],
+  "error": "process exited early rc=1"
+}

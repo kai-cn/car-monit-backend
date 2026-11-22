@@ -1,0 +1,15 @@
+=== jvm runner ===
+jar   : /mnt/d/work/IdeaProjects/car-monit-api-jdk25/pro-business-api/target/pro-business-api-1.0.jar
+java  : /home/dev/tools/mandrel-25/bin/java
+label : jdk25-jvm
+jar size bytes: 212299599
+port_ready     : 0
+process_exited : 0
+rss_kb         : 406848
+port_ready     : 0
+process_exited : 0
+rss_kb         : 386016
+rss_mb         : 376
+threads        : 21
+cpu_time       : 00:00:27
+=== startup evidence ===
