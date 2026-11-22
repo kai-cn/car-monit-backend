@@ -136,6 +136,7 @@ jobs:
           path: |
             out/junit-contract.json
             out/junit-load.json
+            out/junit.jar
             out/*.log
           retention-days: 30
       - name: Cleanup
@@ -200,6 +201,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [ -f baseline/junit.jar ]; then
+            cp baseline/junit.jar out-junit.jar
+            ls -lh out-junit.jar
+            exit 0
+          fi
           if sudo apt-get update -qq && sudo apt-get install -y -qq junit-platform-console-standalone >/dev/null 2>&1; then
             cp /usr/share/java/junit-platform-console-standalone.jar out-junit.jar
             ls -lh out-junit.jar
