@@ -1,0 +1,112 @@
+[
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "car-monit-api-jdk17",
+    "workflow": "native-image-cloud.yml",
+    "run_id": 44857280264,
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-21T02:41:45Z",
+    "updated_at": "2026-11-21T02:59:36Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "car-monit-api-jdk21",
+    "workflow": "native-image-cloud.yml",
+    "run_id": 44857282556,
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-21T02:41:46Z",
+    "updated_at": "2026-11-21T03:00:25Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "car-monit-api-jdk25",
+    "workflow": "native-image-cloud.yml",
+    "run_id": 44857285214,
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-21T02:41:48Z",
+    "updated_at": "2026-11-21T02:57:00Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "feature-dbupgrade",
+    "workflow": "native-image-cloud.yml",
+    "run_id": 44857287947,
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-21T02:41:50Z",
+    "updated_at": "2026-11-21T02:55:57Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "feature/springboot3",
+    "workflow": "native-image-cloud.yml",
+    "run_id": 44857290261,
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-21T02:41:52Z",
+    "updated_at": "2026-11-21T02:56:19Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-api",
+    "branch": "feature/springboot3-jdk17",
+    "workflow": "native-image-cloud.yml",
+    "run_id": 44857293035,
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-21T02:41:54Z",
+    "updated_at": "2026-11-21T02:54:30Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "car-monit-backend-jdk17",
+    "workflow": "native-image-cloud.yml",
+    "run_id": 44862852924,
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-21T03:46:52Z",
+    "updated_at": "2026-11-21T04:09:30Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "car-monit-backend-jdk21",
+    "workflow": "native-image-cloud.yml",
+    "run_id": 44857299003,
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-21T02:41:58Z",
+    "updated_at": "2026-11-21T03:01:34Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "car-monit-backend-jdk25",
+    "workflow": "native-image-cloud.yml",
+    "run_id": 44857301332,
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-21T02:42:00Z",
+    "updated_at": "2026-11-21T03:05:44Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "feature-dbupgrade",
+    "workflow": "native-image-cloud.yml",
+    "run_id": 44857304447,
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-21T02:42:02Z",
+    "updated_at": "2026-11-21T03:08:08Z"
+  },
+  {
+    "repo": "kai-cn/car-monit-backend",
+    "branch": "master",
+    "workflow": "crosslang-parity-cloud.yml",
+    "run_id": 44857308204,
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-21T02:42:04Z",
+    "updated_at": "2026-11-21T03:00:35Z"
+  }
+]

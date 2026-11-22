@@ -1,33 +1,38 @@
-#!/usr/bin/env bash
-# LEGACY-SCRIPT-ANNOTATION
-# 文件：druid-nofilter-probe.sh
-# 用途：运维辅助脚本。
-# 思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
-# 风险：执行前确认目标环境、凭据与影响范围。
-# Probe: start the native binary with Druid filters turned off, to confirm the
-# NPE at DruidDataSource.setConnectProperties:640 (filter.configFromProperties).
-set -u
-BIN=${1:?binary}
-PORT=${2:-19902}
-SECS=${3:-45}
-OUT=/mnt/d/work/runtime-logs/v3-ops/evidence/druid-nofilter-$PORT.log
-
-PASS=$(docker exec opengauss env 2>/dev/null | sed -n 's/^[^=]*GS_PASSWORD=//p' | tr -d '\r' | head -n 1)
-export SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME=gaussdb
-export SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD="$PASS"
-# 关掉 druid filters，并把 connectProperties 置空
-export SPRING_DATASOURCE_DYNAMIC_DRUID_FILTERS=""
-export SPRING_DATASOURCE_DYNAMIC_DRUID_CONNECTIONPROPERTIES=""
-
-cd "$(dirname "$BIN")" || exit 3
-"$BIN" --server.port="$PORT" >"$OUT" 2>&1 &
-PID=$!
-for i in $(seq 1 "$SECS"); do
-  sleep 1
-  if ! kill -0 "$PID" 2>/dev/null; then echo "exited at ${i}s"; break; fi
-  if grep -q "Started EcBusinessApiApplication" "$OUT" 2>/dev/null; then echo "STARTED at ${i}s"; break; fi
-done
-echo "=== markers ==="
-grep -E "Started EcBusiness|APPLICATION FAILED|Caused by: java.lang.NullPointer|BindException|Tomcat started" "$OUT" | tail -n 8
-kill -9 "$PID" 2>/dev/null || true
-echo "log: $OUT"
+#!/usr/bin/env bash
+# @description 历史脚本 druid-nofilter-probe.sh：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
+# @author AI Assistant
+# @date 2026-11-22
+# @usage bash druid-nofilter-probe.sh [args]；执行前确认目标环境与本地容器状态。
+# @dependencies Docker CLI 与已启动的守护进程
+# LEGACY-SCRIPT-ANNOTATION
+# 文件：druid-nofilter-probe.sh
+# 用途：运维辅助脚本。
+# 思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
+# 风险：执行前确认目标环境、凭据与影响范围。
+# Probe: start the native binary with Druid filters turned off, to confirm the
+# NPE at DruidDataSource.setConnectProperties:640 (filter.configFromProperties).
+set -u
+BIN=${1:?binary}
+PORT=${2:-19902}
+SECS=${3:-45}
+OUT=/mnt/d/work/runtime-logs/v3-ops/evidence/druid-nofilter-$PORT.log
+
+PASS=$(docker exec opengauss env 2>/dev/null | sed -n 's/^[^=]*GS_PASSWORD=//p' | tr -d '\r' | head -n 1)
+export SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME=gaussdb
+export SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD="$PASS"
+# 关掉 druid filters，并把 connectProperties 置空
+export SPRING_DATASOURCE_DYNAMIC_DRUID_FILTERS=""
+export SPRING_DATASOURCE_DYNAMIC_DRUID_CONNECTIONPROPERTIES=""
+
+cd "$(dirname "$BIN")" || exit 3
+"$BIN" --server.port="$PORT" >"$OUT" 2>&1 &
+PID=$!
+for i in $(seq 1 "$SECS"); do
+  sleep 1
+  if ! kill -0 "$PID" 2>/dev/null; then echo "exited at ${i}s"; break; fi
+  if grep -q "Started EcBusinessApiApplication" "$OUT" 2>/dev/null; then echo "STARTED at ${i}s"; break; fi
+done
+echo "=== markers ==="
+grep -E "Started EcBusiness|APPLICATION FAILED|Caused by: java.lang.NullPointer|BindException|Tomcat started" "$OUT" | tail -n 8
+kill -9 "$PID" 2>/dev/null || true
+echo "log: $OUT"

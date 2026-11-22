@@ -1,0 +1,40 @@
+{
+  "api": {
+    "generate_rc": 0,
+    "compile_rc": 0,
+    "generate": "generated 79 endpoints -> D:\\work\\runtime-logs\\local-rerun-check\\api\\generated",
+    "compile": ""
+  },
+  "backend": {
+    "generate_rc": 0,
+    "compile_rc": 0,
+    "generate": "generated 302 endpoints -> D:\\work\\runtime-logs\\local-rerun-check\\backend\\generated",
+    "compile": ""
+  },
+  "workflow_yaml": {
+    "D:\\work\\IdeaProjects\\car-monit-backend-new\\.github\\workflows\\java-junit-load-cloud.yml": "OK",
+    "D:\\work\\IdeaProjects\\car-monit-backend-new\\.github\\workflows\\crosslang-full-parity-cloud.yml": "OK",
+    "D:\\work\\IdeaProjects\\car-monit-api\\.github\\workflows\\java-junit-load-cloud.yml": "OK",
+    "D:\\work\\IdeaProjects\\car-monit-api\\.github\\workflows\\crosslang-full-parity-cloud.yml": "OK"
+  },
+  "script_comments": {
+    "rc": 0,
+    "output": "TOTAL_MISSING 0"
+  },
+  "java-junit-results.json": {
+    "total": 16,
+    "success": 16
+  },
+  "crosslang-full-results.json": {
+    "total": 2,
+    "success": 2
+  },
+  "native-crosslang-status.json": {
+    "total": 11,
+    "success": 11
+  },
+  "java-upgrade-runs.json": {
+    "total": 16,
+    "success": 16
+  }
+}

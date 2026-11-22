@@ -1,20 +1,25 @@
-#!/usr/bin/env bash
-# Operational helper — native/CICD verification session (2026-11-16~17).
-# Purpose: Operational helper created during the native/CICD verification session.
-# Risk: may call GitHub API or modify local/remote files; inspect before running.
-set -u
-echo "=== WSL docker container memory limits ==="
-for c in mysql_wsl opengauss k3d-v3-server-0 k3d-v3-agent-0 k3d-v3-agent-1; do
-  docker inspect --format '{{.Name}} mem={{.HostConfig.Memory}} status={{.State.Status}}' "$c" 2>/dev/null || true
-done
-echo "=== WSL init / systemd ==="
-ps -p 1 -o comm= 2>/dev/null || true
-systemctl is-system-running 2>&1 | head -2
-echo "=== package availability (no install) ==="
-rpm -q fontconfig dejavu-sans-fonts tcl jemalloc-devel 2>/dev/null | head -8
-echo "=== WSL disk ==="
-df -h / /srv 2>/dev/null | head -4
-echo "=== local redis tarballs / sources ==="
-find /home/dev /srv /tmp -maxdepth 3 -iname 'redis-*.tar.gz' 2>/dev/null | head -5
-echo "=== dnf repo reachable? (metadata only) ==="
-timeout 15 dnf -q list --available fontconfig 2>&1 | head -4
+#!/usr/bin/env bash
+# @description 历史脚本 plan-probe.sh：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
+# @author AI Assistant
+# @date 2026-11-22
+# @usage bash plan-probe.sh [args]；执行前确认目标环境与本地容器状态。
+# @dependencies Docker CLI 与已启动的守护进程
+# Operational helper — native/CICD verification session (2026-11-16~17).
+# Purpose: Operational helper created during the native/CICD verification session.
+# Risk: may call GitHub API or modify local/remote files; inspect before running.
+set -u
+echo "=== WSL docker container memory limits ==="
+for c in mysql_wsl opengauss k3d-v3-server-0 k3d-v3-agent-0 k3d-v3-agent-1; do
+  docker inspect --format '{{.Name}} mem={{.HostConfig.Memory}} status={{.State.Status}}' "$c" 2>/dev/null || true
+done
+echo "=== WSL init / systemd ==="
+ps -p 1 -o comm= 2>/dev/null || true
+systemctl is-system-running 2>&1 | head -2
+echo "=== package availability (no install) ==="
+rpm -q fontconfig dejavu-sans-fonts tcl jemalloc-devel 2>/dev/null | head -8
+echo "=== WSL disk ==="
+df -h / /srv 2>/dev/null | head -4
+echo "=== local redis tarballs / sources ==="
+find /home/dev /srv /tmp -maxdepth 3 -iname 'redis-*.tar.gz' 2>/dev/null | head -5
+echo "=== dnf repo reachable? (metadata only) ==="
+timeout 15 dnf -q list --available fontconfig 2>&1 | head -4

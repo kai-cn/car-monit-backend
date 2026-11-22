@@ -1,0 +1,19 @@
+{
+  "variant": "java",
+  "threads": 4,
+  "duration_seconds": 15,
+  "warmup_seconds": 1,
+  "total_requests": 145354,
+  "ok": 145354,
+  "errors": 0,
+  "business_4xx": 0,
+  "business_5xx": 0,
+  "rps": 9690.266666666666,
+  "avg_latency_ms": 0.4396232645816421,
+  "p50_ms": 0,
+  "p95_ms": 1,
+  "p99_ms": 3,
+  "bytes": 16761164,
+  "error_samples": [],
+  "endpoints": 302
+}
