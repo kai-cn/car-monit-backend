@@ -1,5 +1,22 @@
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+
+-- CI/test fixture: Java /system/upgradeInfo endpoints expect this table.
+CREATE TABLE IF NOT EXISTS `sys_upgrade_info` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `ver` varchar(64) DEFAULT NULL,
+  `info` text,
+  `back_col1` varchar(255) DEFAULT NULL,
+  `eps_id` bigint DEFAULT NULL,
+  `del_flag` char(1) DEFAULT '0',
+  `create_by` varchar(64) DEFAULT NULL,
+  `create_time` datetime DEFAULT NULL,
+  `update_by` varchar(64) DEFAULT NULL,
+  `update_time` datetime DEFAULT NULL,
+  `tenant_id` bigint DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!50503 SET NAMES utf8mb4 */;
@@ -2801,4 +2818,3 @@ CREATE TABLE `zdata_trail_tracks` (
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-

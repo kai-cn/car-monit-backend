@@ -384,6 +384,9 @@ func applyEnvOverrides(c *Config) {
 	if v := os.Getenv("CARMONIT_HENGDA_SECRET"); v != "" {
 		c.Hengda.Secret = v
 	}
+	if v := os.Getenv("VEHICLE_MONITOR_BASE_URL"); v != "" {
+		c.VehicleMonitor.BaseURL = v
+	}
 }
 
 func buildDSN(n DatabaseNode) string {

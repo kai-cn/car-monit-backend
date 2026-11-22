@@ -114,6 +114,8 @@ jobs:
           SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
           SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
           TOKEN__SECRET: junit-cloud-secret-deterministic-0123456789abcdef
+          VEHICLE_MONITOR_BASE_URL: "http://127.0.0.1:9902"
+          APP_VEHICLEMONITOR__BASEURL: "http://127.0.0.1:9902"
           CARMONIT_ADMIN_USER: ${{ secrets.CI_ADMIN_USER }}
           CARMONIT_ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD }}
           LOG_PATH: /tmp/car-monit-logs
@@ -219,6 +221,8 @@ jobs:
         shell: bash
         env:
           TOKEN__SECRET: junit-cloud-secret-deterministic-0123456789abcdef
+          VEHICLE_MONITOR_BASE_URL: "http://127.0.0.1:9902"
+          APP_VEHICLEMONITOR__BASEURL: "http://127.0.0.1:9902"
           SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
           SPRING__DATASOURCE__DRUID__MASTER__DRIVERCLASSNAME: com.mysql.cj.jdbc.Driver
           HENGDA__SECRET: pytest-only-hengda-signing-key-4d8e1a6b2f9c0357
@@ -264,7 +268,7 @@ jobs:
           APP_SERVER_PORT: "19903"
           APP_REDIS_HOST: "127.0.0.1"
           APP_REDIS_PORT: "6379"
-          APP_TOKEN__SECRET: "Y3Jvc3NsYW5nLWRldGVybWluaXN0aWMtc2VjcmV0LTAxMjM0NTY3ODkw"
+          APP_TOKEN__SECRET: "junit-cloud-secret-deterministic-0123456789abcdef"
           APP_DATABASE__URL: "jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8"
           APP_DATABASE__USERNAME: root
           APP_DATABASE__PASSWORD: root

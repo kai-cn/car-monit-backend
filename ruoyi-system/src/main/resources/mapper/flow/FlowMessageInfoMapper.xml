@@ -41,7 +41,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </if>
 
         from flow_message_info t
-        left join FLOW_APPLY_INFO app on app.del_flag = '0' and app.BILL_OID = t.BILL_OID
+        left join flow_apply_info app on app.del_flag = '0' and app.BILL_OID = t.BILL_OID
         where t.del_flag = '0'
             <if test="id != null  and id != ''"> and t.id = #{id}</if>
             <if test="messageNo != null  and messageNo != ''"> and t.message_no = #{messageNo}</if>

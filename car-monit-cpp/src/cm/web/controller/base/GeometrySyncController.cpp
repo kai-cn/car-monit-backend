@@ -231,7 +231,7 @@ void registerGeometrySyncController(Router& r) {
         cm::db::Result res;
         const std::string sql =
             "select t1.lxbh, t1.lxfx, IFNULL(t2.zdzh,t1.qdzh) qdzh"
-            " from (select lxbh, lxfx, min(qdzh) qdzh, max(zdzh) zdzh FROM geometry_copy1"
+            " from (select lxbh, lxfx, min(qdzh) qdzh, max(zdzh) zdzh FROM geometry"
             " group by lxbh, lxfx) t1"
             " left join (select lxbh, lxfx, min(qdzh) qdzh, max(zdzh) zdzh FROM geometry"
             " group by lxbh, lxfx) t2 on t1.lxbh = t2.lxbh and t1.lxfx = t2.lxfx"

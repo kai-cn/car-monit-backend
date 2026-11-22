@@ -140,7 +140,11 @@ void AppConfig::apply() {
     copyrightYear = static_cast<int>(getInt("ruoyi.copyrightYear", copyrightYear));
 
     tokenHeader = getString("token.header", tokenHeader);
-    tokenSecret = getString("token.secret", tokenSecret);
+    if (const char* envSecret = std::getenv("TOKEN__SECRET")) {
+        tokenSecret = envSecret;
+    } else {
+        tokenSecret = getString("token.secret", tokenSecret);
+    }
     tokenExpireTime = static_cast<int>(getInt("token.expireTime", tokenExpireTime));
 
     redisHost = getString("spring.redis.host", redisHost);

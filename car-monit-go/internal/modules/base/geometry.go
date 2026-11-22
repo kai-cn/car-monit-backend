@@ -23,11 +23,11 @@ func (h *handler) geometryGetHenDa(c *gin.Context) {
 
 // geometrySyncAll 对应 GET /base/geometry/syncAllGeometry。
 //
-// JAVA 对照: GeometryServiceImpl.syncAllGeometry 先查 geometry_copy1。
+// JAVA 对照: GeometryServiceImpl.syncAllGeometry 先查 geometry。
 // 目标库没有该表，Java 抛 SQLSyntaxErrorException（code 500），这里照做让 SQL 真正执行并失败。
 func (h *handler) geometrySyncAll(c *gin.Context) {
 	var rows []map[string]any
-	if err := h.app.DB.WithContext(c.Request.Context()).Raw("SELECT * FROM geometry_copy1").Scan(&rows).Error; err != nil {
+	if err := h.app.DB.WithContext(c.Request.Context()).Raw("SELECT * FROM geometry").Scan(&rows).Error; err != nil {
 		web.JSON(c, web.ErrorResult(err))
 		return
 	}

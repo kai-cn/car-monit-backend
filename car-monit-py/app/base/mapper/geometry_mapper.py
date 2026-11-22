@@ -74,7 +74,7 @@ class GeometryMapper(OdsListMapper):
 
     # Java: List<Geometry> syncAllGeometry()
     def sync_all_geometry(self) -> List[Geometry]:
-        """XML 原文：以 ``geometry_copy1`` 为基准，找出当前表**还没补到末桩号**的路线。
+        """XML 原文：以 ``geometry`` 为基准，找出当前表**还没补到末桩号**的路线。
 
         返回的 ``qdzh`` 是 ``ifnull(t2.zdzh, t1.qdzh)``（别名列），其余字段为
         ``null`` —— 与 ``resultMap`` 只映射 3 列一致。
@@ -82,7 +82,7 @@ class GeometryMapper(OdsListMapper):
         sql = (
             "select t1.lxbh, t1.lxfx, IFNULL(t2.zdzh,t1.qdzh) qdzh "
             "from (select lxbh, lxfx, min(qdzh) qdzh, max(zdzh) zdzh "
-            "      FROM geometry_copy1 group by lxbh, lxfx) t1 "
+            "      FROM geometry group by lxbh, lxfx) t1 "
             "left join (select lxbh, lxfx, min(qdzh) qdzh, max(zdzh) zdzh "
             "           FROM geometry group by lxbh, lxfx) t2 "
             "on t1.lxbh = t2.lxbh and t1.lxfx = t2.lxfx "

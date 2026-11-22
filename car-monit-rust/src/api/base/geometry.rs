@@ -143,11 +143,11 @@ async fn get_hen_da(
     Ok(AjaxResult::success_data(pivot))
 }
 
-/// Java: `syncAllGeometry()` —— 补齐 geometry_copy1 中落后于 geometry 的路线段。
+/// Java: `syncAllGeometry()` —— 补齐 geometry 中落后于 geometry 的路线段。
 async fn sync_all(State(state): State<AppState>) -> Result<AjaxResult, AppError> {
     let rows: Vec<(Option<String>, Option<String>, Option<i32>)> = sqlx::query_as(
         "select t1.lxbh, t1.lxfx, IFNULL(t2.zdzh, t1.qdzh) qdzh \
-         from (select lxbh, lxfx, min(qdzh) qdzh, max(zdzh) zdzh FROM geometry_copy1 \
+         from (select lxbh, lxfx, min(qdzh) qdzh, max(zdzh) zdzh FROM geometry \
                group by lxbh, lxfx) t1 \
          left join (select lxbh, lxfx, min(qdzh) qdzh, max(zdzh) zdzh FROM geometry \
                     group by lxbh, lxfx) t2 \
