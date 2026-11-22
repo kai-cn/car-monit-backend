@@ -1,5 +1,5 @@
 # @description 历史脚本 crosslang-full-parity-cloud.yml：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
-# @author AI Assistant
+# @author Tencent Hunyuan Hy
 # @date 2026-11-22
 # @usage GitHub Actions workflow_dispatch 或 push/PR 触发；输入参数见 workflow inputs。
 # @dependencies Docker CLI 与已启动的守护进程；Maven 与对应 JDK；Java 运行时；GitHub Actions runner、云上数据库容器与 Secrets
@@ -7,13 +7,13 @@
 
 # 文件：.github/workflows/crosslang-full-parity-cloud.yml
 
-# 用途：以 Java25 Boot4 为基线，对比 Python/Go/C++ 全接口 + 压测
+# 用途：以合并后的 Java master 为基线，对比 Python/Go/C++/Rust 全接口 + 压测
 
 # 触发：workflow_dispatch
 
 # 思路：
 
-#   - baseline job 构建 target_ref（默认 *-jdk25）并运行 JUnit 契约/压测
+#   - baseline job 构建 target_ref（默认 master，JDK8）并运行 JUnit 契约/压测
 
 #   - candidate job 按 lang 构建 master 中的语言实现，启动同等端口后运行同一套 JUnit
 
@@ -37,7 +37,7 @@ on:
 
       target_ref:
 
-        description: Java25 Boot4 baseline branch
+        description: merged master Java baseline
 
         type: string
 
@@ -139,9 +139,9 @@ jobs:
 
         with:
 
-          distribution: temurin
+          distribution: corretto
 
-          java-version: '25'
+          java-version: '8'
 
           cache: maven
 
