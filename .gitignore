@@ -49,3 +49,6 @@ nbdist/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Local credential cache
+.gh_token_cache

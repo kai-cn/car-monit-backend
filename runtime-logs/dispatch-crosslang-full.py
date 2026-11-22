@@ -30,7 +30,7 @@ import urllib.request
 
 from pathlib import Path
 
-sys.path.insert(0, r'D:\work\runtime-logs')
+sys.path.insert(0, r'D:\work\IdeaProjects\car-monit-backend-new\runtime-logs')
 
 from gh_cred import get_token
 
@@ -42,9 +42,9 @@ H = {'Authorization': 'Bearer ' + get_token(), 'Accept': 'application/vnd.github
 
 PLANS = [
 
-    ('kai-cn/car-monit-backend', 'car-monit-backend-jdk25', 'backend'),
+    ('kai-cn/car-monit-backend', 'master', 'backend'),
 
-    ('kai-cn/car-monit-api', 'car-monit-api-jdk25', 'api'),
+    ('kai-cn/car-monit-api', 'master', 'api'),
 
 ]
 
@@ -90,7 +90,7 @@ def main():
 
         body = {'ref': 'master', 'inputs': {'target_ref': ref, 'app': app, 'langs': 'all',
 
-                'load_threads': '8', 'load_seconds': '30', 'label': f'{app}-java25-crosslang-full'}}
+                'load_threads': '8', 'load_seconds': '30', 'label': f'{app}-java-master-crosslang-full'}}
 
         wf = api(f'https://api.github.com/repos/{repo}/actions/workflows/crosslang-full-parity-cloud.yml')['id']
 
