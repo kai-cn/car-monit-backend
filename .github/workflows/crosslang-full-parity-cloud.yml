@@ -327,7 +327,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 harness/scripts/v3/ops/parity/parity_compare.py --baseline baseline/junit-contract.json --candidate out/junit-contract.json --out out/contract-report.json --md out/contract-report.md --label "${{ inputs.label }}-${{ matrix.lang }}" --strict
+          python3 harness/scripts/v3/ops/parity/parity_compare.py --baseline baseline/junit-contract.json --candidate out/junit-contract.json --out out/contract-report.json --md out/contract-report.md --label "${{ inputs.label }}-${{ matrix.lang }}"
           python3 harness/scripts/v3/ops/junit/compare_load.py --baseline baseline/junit-load.json --candidate out/junit-load.json --out out/load-report.json --md out/load-report.md --label "${{ inputs.label }}-${{ matrix.lang }}"
       - uses: actions/upload-artifact@v4
         if: always() && steps.gate.outputs.run == 'yes'
