@@ -96,7 +96,7 @@ jobs:
           set -euo pipefail
           cd src
           if [ '${{ inputs.app }}' = 'api' ]; then MODULE=pro-business-api; EP=../harness/scripts/v3/ops/parity/endpoints/api-full.txt; else MODULE=ruoyi-admin; EP=../harness/scripts/v3/ops/parity/endpoints/backend-full.txt; fi
-          mvn $MAVEN_ARGS -DskipTests -pl "$MODULE" -am package
+          mvn $MAVEN_ARGS -DskipTests -Dspring-boot.aot.skip=true -pl "$MODULE" -am package
           mkdir -p ../out/generated ../out/classes
           cp $(ls "$MODULE"/target/*.jar | grep -v original | head -1) ../out/app.jar
           python3 ../harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints "$EP" --out ../out/generated
@@ -117,7 +117,7 @@ jobs:
           LOG_PATH: /tmp/car-monit-logs
         run: |
           set -euo pipefail
-          mkdir -p "$LOG_PATH" /home/ruoyi/logs
+          sudo mkdir -p "$LOG_PATH" /home/ruoyi/logs; sudo chown -R "$(id -u):$(id -g)" /home/ruoyi "$LOG_PATH"; mkdir -p "$LOG_PATH" /home/ruoyi/logs
           java -jar out/app.jar --server.port=19903 > out/app.log 2>&1 &
           echo $! > out/app.pid
           for i in $(seq 1 180); do curl -fsS -o /dev/null http://127.0.0.1:19903/captchaImage && break; sleep 1; done
