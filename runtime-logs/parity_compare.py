@@ -104,6 +104,7 @@ def main() -> None:
     ap.add_argument('--label', default='parity')
 
     ap.add_argument('--allow-diff-status', default='', help='comma-separated statuses that may differ')
+    ap.add_argument('--strict', action='store_true', help='require every endpoint exact/semantic match; NONDET is not a pass')
 
     a = ap.parse_args()
 
@@ -337,9 +338,14 @@ def main() -> None:
 
 
 
-    print('COMPARE label=%s endpoints=%d fails=%d' % (a.label, len(keys), fails))
+    strict_bad = 0
+    if a.strict:
+        for row in rows:
+            if row.get('verdict') != 'OK':
+                strict_bad += 1
+    print('COMPARE label=%s endpoints=%d fails=%d strict_bad=%d' % (a.label, len(keys), fails, strict_bad))
 
-    sys.exit(0 if fails == 0 else 1)
+    sys.exit(0 if fails == 0 and strict_bad == 0 else 1)
 
 
 

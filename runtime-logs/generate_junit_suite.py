@@ -80,6 +80,7 @@ public class EndpointContractTest {
             else if (c == '\n') b.append("\\n");
             else if (c == '\r') b.append("\\r");
             else if (c == '\t') b.append("\\t");
+            else if (c < 0x20) b.append(String.format("\\u%04x", (int) c));
             else b.append(c);
         }
         return b.toString();
@@ -222,6 +223,16 @@ public class EndpointLoadTest {
         return v == null || v.trim().isEmpty() ? fallback : v.trim();
     }
 
+    private static Map<String, String> headers() {
+        Map<String, String> out = new LinkedHashMap<String, String>();
+        String raw = env("ENDPOINT_HEADERS", "");
+        for (String line : raw.split("\\r?\\n")) {
+            int i = line.indexOf(':');
+            if (i > 0) out.put(line.substring(0, i).trim(), line.substring(i + 1).trim());
+        }
+        return out;
+    }
+
     private static long percentile(List<Long> sorted, double p) {
         if (sorted.isEmpty()) return 0;
         int idx = (int) Math.ceil(sorted.size() * p) - 1;
@@ -266,6 +277,7 @@ public class EndpointLoadTest {
                         c.setRequestMethod("GET");
                         c.setConnectTimeout(5000);
                         c.setReadTimeout(Integer.parseInt(env("HTTP_TIMEOUT_MS", "60000")));
+                        for (Map.Entry<String, String> h : headers().entrySet()) c.setRequestProperty(h.getKey(), h.getValue());
                         int status = c.getResponseCode();
                         statusSeen = status;
                         InputStream in = status < 400 ? c.getInputStream() : c.getErrorStream();
