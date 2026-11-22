@@ -1,0 +1,1617 @@
+{
+  "label": "api-java25-crosslang-full-go",
+  "baseline": {
+    "variant": "java25-boot4",
+    "startup_ms": null,
+    "peak_rss_mb": null,
+    "avg_latency_ms": 16.99
+  },
+  "candidate": {
+    "variant": "go",
+    "startup_ms": null,
+    "peak_rss_mb": null,
+    "avg_latency_ms": 2.86
+  },
+  "totals": {
+    "endpoints": 79,
+    "status_match": 62,
+    "exact": 6,
+    "semantic": 36,
+    "nondet": 6,
+    "baseline_skip": 0,
+    "fails": 37
+  },
+  "rows": [
+    {
+      "endpoint": "/api/v1/large/carTrackQueryByCarNo",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        119,
+        137
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"timestamp\":\"2026-11-22T06:33:20.013Z\",\"status\":400,\"error\":\"Bad Request\",\"path\":\"/api/v1/large/carTrackQueryByCarNo\"}",
+      "body_c": "{\"error\":\"Bad Request\",\"message\":\"\",\"path\":\"/api/v1/large/carTrackQueryByCarNo\",\"status\":400,\"timestamp\":\"2026-11-22T06:35:04.433+00:00\"}",
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (raw body); status equal, body drift not attributable"
+    },
+    {
+      "endpoint": "/api/v1/large/export/status/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        39,
+        39
+      ],
+      "latency_ms": [
+        2,
+        0
+      ],
+      "body_b": "{\"code\":404,\"message\":\"task not found\"}",
+      "body_c": "{\"code\":404,\"message\":\"task not found\"}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/api/v1/large/fee",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        102,
+        120
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"timestamp\":\"2026-11-22T06:33:20.003Z\",\"status\":400,\"error\":\"Bad Request\",\"path\":\"/api/v1/large/fee\"}",
+      "body_c": "{\"error\":\"Bad Request\",\"message\":\"\",\"path\":\"/api/v1/large/fee\",\"status\":400,\"timestamp\":\"2026-11-22T06:35:04.430+00:00\"}",
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (raw body); status equal, body drift not attributable"
+    },
+    {
+      "endpoint": "/api/v1/large/snapshot",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        107,
+        125
+      ],
+      "latency_ms": [
+        12,
+        0
+      ],
+      "body_b": "{\"timestamp\":\"2026-11-22T06:33:19.997Z\",\"status\":400,\"error\":\"Bad Request\",\"path\":\"/api/v1/large/snapshot\"}",
+      "body_c": "{\"error\":\"Bad Request\",\"message\":\"\",\"path\":\"/api/v1/large/snapshot\",\"status\":400,\"timestamp\":\"2026-11-22T06:35:04.429+00:00\"}",
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (raw body); status equal, body drift not attributable"
+    },
+    {
+      "endpoint": "/api/v1/large/stats/group",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        110,
+        128
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"timestamp\":\"2026-11-22T06:33:20.017Z\",\"status\":400,\"error\":\"Bad Request\",\"path\":\"/api/v1/large/stats/group\"}",
+      "body_c": "{\"error\":\"Bad Request\",\"message\":\"\",\"path\":\"/api/v1/large/stats/group\",\"status\":400,\"timestamp\":\"2026-11-22T06:35:04.434+00:00\"}",
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (raw body); status equal, body drift not attributable"
+    },
+    {
+      "endpoint": "/api/v1/large/trail",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        104,
+        122
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "{\"timestamp\":\"2026-11-22T06:33:20.008Z\",\"status\":400,\"error\":\"Bad Request\",\"path\":\"/api/v1/large/trail\"}",
+      "body_c": "{\"error\":\"Bad Request\",\"message\":\"\",\"path\":\"/api/v1/large/trail\",\"status\":400,\"timestamp\":\"2026-11-22T06:35:04.431+00:00\"}",
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (raw body); status equal, body drift not attributable"
+    },
+    {
+      "endpoint": "/api/v1/unified/1/list",
+      "status": [
+        400,
+        200
+      ],
+      "bytes": [
+        107,
+        81
+      ],
+      "latency_ms": [
+        25,
+        1
+      ],
+      "body_b": "{\"timestamp\":\"2026-11-22T06:33:21.221Z\",\"status\":400,\"error\":\"Bad Request\",\"path\":\"/api/v1/unified/1/list\"}",
+      "body_c": "{\"code\":400,\"message\":\"未知数据源: 1, 合法取值: snapshot / fee / trail\"}",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/api/v1/unified/export/status/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        39,
+        39
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "body_b": "{\"code\":404,\"message\":\"task not found\"}",
+      "body_c": "{\"code\":404,\"message\":\"task not found\"}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feeGantry/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        15,
+        1
+      ],
+      "body_b": "",
+      "body_c": "",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feeGantry/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        17445,
+        17495
+      ],
+      "latency_ms": [
+        38,
+        3
+      ],
+      "body_b": "{\"total\":150,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"actualfeeclass\":\"1\",\"axlecount\":6,\"bigId\":\"59\",\"createtime\":\"2024-11-11T18:09:21.000Z\",\"discountfee\":1388,\"electricalpercentage\":0,\"enaxlecount\":6,\"entime\":\"2024-10-26 16:53:57\",\"entolllanehex\":\"33010B3305\",\"entolllaneid\":\"G00603300202104010050\",\"entoll",
+      "body_c": "{\"total\":150,\"rows\":[{\"bigId\":\"59\",\"actualfeeclass\":\"1\",\"axlecount\":6,\"createtime\":\"2024-11-11T10:09:21.000+00:00\",\"discountfee\":1388,\"electricalpercentage\":0,\"enaxlecount\":6,\"entime\":\"2024-10-26 08:53:57\",\"entolllanehex\":\"33010B3305\",\"entolllaneid\":\"G00603300202104010050\",\"entollstationid\":\"G006033",
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (raw body); status equal, body drift not attributable"
+    },
+    {
+      "endpoint": "/base/feeStationEnter/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200}",
+      "body_c": "{\"code\":200,\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feeStationEnter/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8049,
+        7989
+      ],
+      "latency_ms": [
+        16,
+        2
+      ],
+      "body_b": "{\"total\":150,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"bigId\":2308,\"cardid\":\"15012312232021029616\",\"cid\":null,\"cidList\":null,\"electricalpercentage\":100,\"enaxlecount\":2,\"entime\":\"2024-11-24\",\"entolllanehex\":\"360101FD04\",\"entolllaneid\":\"G00703600100601010030\",\"entollstationid\":\"G0070360010060\",\"enweight\":1500",
+      "body_c": "{\"total\":150,\"rows\":[{\"bigId\":2308,\"cardid\":\"15012312232021029616\",\"electricalpercentage\":100,\"enaxlecount\":2,\"entime\":\"2024-11-24\",\"entolllanehex\":\"360101FD04\",\"entolllaneid\":\"G00703600100601010030\",\"entollstationid\":\"G0070360010060\",\"enweight\":1500,\"identifyvehicleid\":\"***9_4\",\"lanetype\":\"1\",\"",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feerecords/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        15,
+        1
+      ],
+      "body_b": "",
+      "body_c": "",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feerecords/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        37629
+      ],
+      "latency_ms": [
+        27,
+        6
+      ],
+      "body_b": "{\"total\":0,\"code\":200,\"msg\":\"查询成功\",\"rows\":[]}",
+      "body_c": "{\"total\":150,\"rows\":[{\"bigId\":\"1029052209\",\"algorithmidentifier\":\"1\",\"antennaid\":\"3\",\"axlecount\":2,\"balanceafter\":4291227038,\"balancebefore\":4291227038,\"cardfeesumafter\":2297,\"cardfeesumbefore\":1343,\"computerorder\":\"1\",\"consumetime\":267,\"cpucardid\":\"1901230000119937\",\"cpucardtype\":\"2\",\"cpuenddate\":\"",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/feerecords/listToExport",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        2,
+        37576
+      ],
+      "latency_ms": [
+        10,
+        3
+      ],
+      "body_b": "[]",
+      "body_c": "[{\"bigId\":\"1029052209\",\"algorithmidentifier\":\"1\",\"antennaid\":\"3\",\"axlecount\":2,\"balanceafter\":4291227038,\"balancebefore\":4291227038,\"cardfeesumafter\":2297,\"cardfeesumbefore\":1343,\"computerorder\":\"1\",\"consumetime\":267,\"cpucardid\":\"1901230000119937\",\"cpucardtype\":\"2\",\"cpuenddate\":\"20291222\",\"cpuissuei",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/feestationexit/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200}",
+      "body_c": "{\"code\":200,\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feestationexit/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        13774,
+        13724
+      ],
+      "latency_ms": [
+        16,
+        2
+      ],
+      "body_b": "{\"total\":150,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"actualfeeclass\":\"0\",\"axlecount\":2,\"bigId\":\"11150377\",\"cid\":null,\"cidList\":null,\"discountfee\":0,\"electricalpercentage\":0,\"enaxlecount\":null,\"entime\":\"1970-01-01 08:00:00\",\"entolllanehex\":\"0\",\"entolllaneid\":\"-1\",\"entollstationid\":\"-1\",\"entollstationname\":",
+      "body_c": "{\"total\":150,\"rows\":[{\"bigId\":\"11150377\",\"actualfeeclass\":\"0\",\"axlecount\":2,\"discountfee\":0,\"electricalpercentage\":0,\"enaxlecount\":null,\"entime\":\"1970-01-01 00:00:00\",\"entolllanehex\":\"0\",\"entolllaneid\":\"-1\",\"entollstationid\":\"-1\",\"entollstationname\":\"-1\",\"envehicleclass\":0,\"envehicleid\":\"默A00000_9\",",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/1",
+      "status": [
+        500,
+        200
+      ],
+      "bytes": [
+        110,
+        691
+      ],
+      "latency_ms": [
+        162,
+        2
+      ],
+      "body_b": "{\"timestamp\":\"2026-11-22T06:33:19.802Z\",\"status\":500,\"error\":\"Internal Server Error\",\"path\":\"/base/fwqjcxx/1\"}",
+      "body_c": "{\"code\":200,\"data\":{\"agentPk\":\"1\",\"yxtzj\":\"45L4479928780847000\",\"fwqbm\":\"G0321361123W0010\",\"fwqmc\":\"三清山西服务区\",\"wd\":\"28.78460594859297\",\"fxmc\":null,\"fxdm\":\"1\",\"jd\":\"117.99355545361145\",\"sslxbh\":\"G0321\",\"sslxmc\":null,\"ssldbh\":\"200R503210756000\",\"ssldmc\":\"德上\",\"sczhkgs\":\"1204.55005\",\"sczhszgs\":null,\"ssgl",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        6427,
+        6427
+      ],
+      "latency_ms": [
+        145,
+        66
+      ],
+      "body_b": "{\"total\":150,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"agentPk\":\"1\",\"allColPk\":null,\"cdzs\":\"2\",\"cws\":\"118\",\"fwqbm\":\"G0321361123W0010\",\"fwqmc\":\"三清山西服务区\",\"fxdm\":\"1\",\"fxmc\":null,\"jd\":\"117.99355545361145\",\"loadTime\":null,\"lyxt\":\"三清山西服务区\",\"mj\":null,\"sczhkgs\":\"1204.55005\",\"sczhszgs\":null,\"sfcyfw\":\"1\",\"sfszlkk\":\"1",
+      "body_c": "{\"total\":150,\"rows\":[{\"agentPk\":\"1\",\"yxtzj\":\"45L4479928780847000\",\"fwqbm\":\"G0321361123W0010\",\"fwqmc\":\"三清山西服务区\",\"wd\":\"28.78460594859297\",\"fxmc\":null,\"fxdm\":\"1\",\"jd\":\"117.99355545361145\",\"sslxbh\":\"G0321\",\"sslxmc\":null,\"ssldbh\":\"200R503210756000\",\"ssldmc\":\"德上\",\"sczhkgs\":\"1204.55005\",\"sczhszgs\":null,\"ss",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95184,
+        95184
+      ],
+      "latency_ms": [
+        30,
+        5
+      ],
+      "body_b": "[{\"agentPk\":\"1\",\"allColPk\":null,\"cdzs\":\"2\",\"cws\":\"118\",\"fwqbm\":\"G0321361123W0010\",\"fwqmc\":\"三清山西服务区\",\"fxdm\":\"1\",\"fxmc\":null,\"jd\":\"117.99355545361145\",\"loadTime\":null,\"lyxt\":\"三清山西服务区\",\"mj\":null,\"sczhkgs\":\"1204.55005\",\"sczhszgs\":null,\"sfcyfw\":\"1\",\"sfszlkk\":\"1\",\"sftgcsfw\":\"1\",\"sftgcshfw\":null,\"sftgjyfw\"",
+      "body_c": "[{\"agentPk\":\"1\",\"yxtzj\":\"45L4479928780847000\",\"fwqbm\":\"G0321361123W0010\",\"fwqmc\":\"三清山西服务区\",\"wd\":\"28.78460594859297\",\"fxmc\":null,\"fxdm\":\"1\",\"jd\":\"117.99355545361145\",\"sslxbh\":\"G0321\",\"sslxmc\":null,\"ssldbh\":\"200R503210756000\",\"ssldmc\":\"德上\",\"sczhkgs\":\"1204.55005\",\"sczhszgs\":null,\"ssglzxbm\":\"030000009\",",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/gantry/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        645,
+        645
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"belongGroup\":\"1\",\"boundaryGantryType\":\"0\",\"cityCode\":\"360781\",\"direction\":\"0\",\"districtName\":\"江西省赣州市瑞金市\",\"gantryCode\":\"G007636036000110010\",\"gantryCodeMerge\":\"G007636036000110010\",\"gantryName\":\"赣闽界隘岭站-瑞金东互通门架1\",\"gantryNameAlias\":\"赣闽界隘岭站-瑞金东互通门架1\",\"gantryType\":\"0\",\"h",
+      "body_c": "{\"code\":200,\"data\":{\"id\":\"1\",\"gantryCode\":\"G007636036000110010\",\"gantryName\":\"赣闽界隘岭站-瑞金东互通门架1\",\"roadCode\":\"G76\",\"sectionCode\":\"200R500760733000\",\"tollCode\":\"G76360781F0030\",\"orgCode\":\"030000007\",\"hexCode\":\"3A7C01\",\"direction\":\"0\",\"pileNo\":\"YK288+910\",\"lon\":\"116.13015820285543\",\"lat\":\"25.899167824168",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantry/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        6023,
+        6023
+      ],
+      "latency_ms": [
+        11,
+        1
+      ],
+      "body_b": "{\"total\":150,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"belongGroup\":\"1\",\"boundaryGantryType\":null,\"cityCode\":\"360730\",\"direction\":\"1\",\"districtName\":\"江西省赣州市宁都县\",\"gantryCode\":\"G003536012000720010\",\"gantryCodeMerge\":\"G003536012000720010\",\"gantryName\":\"瑞金北互通-宁都东互通门架1\",\"gantryNameAlias\":\"瑞金北互通-宁都东互通门架1\",\"gantry",
+      "body_c": "{\"total\":150,\"rows\":[{\"id\":\"18\",\"gantryCode\":\"G003536012000720010\",\"gantryName\":\"瑞金北互通-宁都东互通门架1\",\"roadCode\":\"G35\",\"sectionCode\":\"200R500350729001\",\"tollCode\":\"G35360730F0020\",\"orgCode\":\"030000007\",\"hexCode\":\"39110A\",\"direction\":\"1\",\"pileNo\":\"ZK1396+010\",\"lon\":\"116.13113948740477\",\"lat\":\"26.220474840",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantry/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        89589,
+        89589
+      ],
+      "latency_ms": [
+        9,
+        2
+      ],
+      "body_b": "[{\"belongGroup\":\"1\",\"boundaryGantryType\":null,\"cityCode\":\"360730\",\"direction\":\"1\",\"districtName\":\"江西省赣州市宁都县\",\"gantryCode\":\"G003536012000720010\",\"gantryCodeMerge\":\"G003536012000720010\",\"gantryName\":\"瑞金北互通-宁都东互通门架1\",\"gantryNameAlias\":\"瑞金北互通-宁都东互通门架1\",\"gantryType\":\"0\",\"hexCode\":\"39110A\",\"id\":\"18\",\"isDa",
+      "body_c": "[{\"id\":\"18\",\"gantryCode\":\"G003536012000720010\",\"gantryName\":\"瑞金北互通-宁都东互通门架1\",\"roadCode\":\"G35\",\"sectionCode\":\"200R500350729001\",\"tollCode\":\"G35360730F0020\",\"orgCode\":\"030000007\",\"hexCode\":\"39110A\",\"direction\":\"1\",\"pileNo\":\"ZK1396+010\",\"lon\":\"116.13113948740477\",\"lat\":\"26.22047484041828\",\"isVirtual\":\"",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/gantryIp/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        226,
+        226
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"brand\":\"Signalway\",\"gantryCode\":\"S003636011000510010\",\"gantryName\":\"南安互通-峡江互通门架1\",\"id\":1,\"ip\":\"36.121.3.43\",\"odsSzdnGantry\":null,\"orgCode\":\"020000253\",\"type\":null}}",
+      "body_c": "{\"code\":200,\"data\":{\"id\":1,\"gantryCode\":\"S003636011000510010\",\"gantryName\":\"南安互通-峡江互通门架1\",\"orgCode\":\"020000253\",\"ip\":\"36.121.3.43\",\"brand\":\"Signalway\",\"type\":null,\"odsSzdnGantry\":null},\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantryIp/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1939,
+        1939
+      ],
+      "latency_ms": [
+        9,
+        1
+      ],
+      "body_b": "{\"total\":150,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"brand\":\"Signalway\",\"gantryCode\":\"S003636011000510010\",\"gantryName\":\"南安互通-峡江互通门架1\",\"id\":1,\"ip\":\"36.121.3.43\",\"odsSzdnGantry\":null,\"orgCode\":\"020000253\",\"type\":null},{\"brand\":\"Signalway\",\"gantryCode\":\"S003636011000520010\",\"gantryName\":\"峡江互通-南安互通门架1\",\"id\":",
+      "body_c": "{\"total\":150,\"rows\":[{\"id\":1,\"gantryCode\":\"S003636011000510010\",\"gantryName\":\"南安互通-峡江互通门架1\",\"orgCode\":\"020000253\",\"ip\":\"36.121.3.43\",\"brand\":\"Signalway\",\"type\":null,\"odsSzdnGantry\":null},{\"id\":2,\"gantryCode\":\"S003636011000520010\",\"gantryName\":\"峡江互通-南安互通门架1\",\"orgCode\":\"020000253\",\"ip\":\"36.121.3.51\",\"",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/org/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200}",
+      "body_c": "{\"code\":200,\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/org/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        4053,
+        4053
+      ],
+      "latency_ms": [
+        10,
+        1
+      ],
+      "body_b": "{\"total\":150,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"bigId\":\"24945\",\"gradeLevel\":1,\"loadTime\":\"2025-08-29\",\"orgAddress\":null,\"orgCategory\":\"03\",\"orgCode\":\"000000936\",\"orgIsAuthorized\":\"0\",\"orgIsDeleted\":\"0\",\"orgIsManager\":\"0\",\"orgIsVirtual\":\"1\",\"orgIsYhAutarky\":\"0\",\"orgLevelCode\":\"00000011005300050001\",\"o",
+      "body_c": "{\"total\":150,\"rows\":[{\"bigId\":\"24945\",\"orgCode\":\"000000936\",\"orgName\":\"中心机关\",\"orgShortName\":\"中心机关\",\"orgParentId\":\"030000009\",\"orgLevelCode\":\"00000011005300050001\",\"orgIsVirtual\":\"1\",\"orgMaintenance\":\"1\",\"orgSequence\":1,\"orgIsManager\":\"0\",\"orgIsDeleted\":\"0\",\"orgCategory\":\"03\",\"orgIsAuthorized\":\"0\",\"o",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/org/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        58412,
+        58412
+      ],
+      "latency_ms": [
+        9,
+        3
+      ],
+      "body_b": "[{\"bigId\":\"24945\",\"gradeLevel\":1,\"loadTime\":\"2025-08-29\",\"orgAddress\":null,\"orgCategory\":\"03\",\"orgCode\":\"000000936\",\"orgIsAuthorized\":\"0\",\"orgIsDeleted\":\"0\",\"orgIsManager\":\"0\",\"orgIsVirtual\":\"1\",\"orgIsYhAutarky\":\"0\",\"orgLevelCode\":\"00000011005300050001\",\"orgMaintenance\":\"1\",\"orgName\":\"中心机关\",\"orgPare",
+      "body_c": "[{\"bigId\":\"24945\",\"orgCode\":\"000000936\",\"orgName\":\"中心机关\",\"orgShortName\":\"中心机关\",\"orgParentId\":\"030000009\",\"orgLevelCode\":\"00000011005300050001\",\"orgIsVirtual\":\"1\",\"orgMaintenance\":\"1\",\"orgSequence\":1,\"orgIsManager\":\"0\",\"orgIsDeleted\":\"0\",\"orgCategory\":\"03\",\"orgIsAuthorized\":\"0\",\"orgAddress\":null,\"org",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/provcapture/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200}",
+      "body_c": "{\"code\":200,\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/provcapture/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        11,
+        2
+      ],
+      "body_b": "{\"total\":0,\"code\":200,\"msg\":\"查询成功\",\"rows\":[]}",
+      "body_c": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/section/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        332,
+        332
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"endPileNo\":2915,\"id\":\"1\",\"mileage\":41,\"openDate\":\"2003-06-01\",\"orgCategory\":\"03\",\"orgCode\":\"020000253\",\"orgLevelCode\":\"0000001100530012\",\"orgName\":\"吉安西管理中心\",\"roadCode\":\"G45\",\"roadName\":\"大广高速\",\"sectionCode\":\"200R500450642000\",\"sectionName\":\"昌泰\",\"startPileNo\":2873}}",
+      "body_c": "{\"code\":200,\"data\":{\"id\":\"1\",\"roadCode\":\"G45\",\"roadName\":\"大广高速\",\"sectionCode\":\"200R500450642000\",\"sectionName\":\"昌泰\",\"startPileNo\":2873,\"endPileNo\":2915,\"orgCode\":\"020000253\",\"orgName\":\"吉安西管理中心\",\"orgLevelCode\":\"0000001100530012\",\"orgCategory\":\"03\",\"mileage\":41,\"openDate\":\"2003-05-31\"},\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/section/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        2953,
+        2953
+      ],
+      "latency_ms": [
+        9,
+        1
+      ],
+      "body_b": "{\"total\":85,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"endPileNo\":397,\"id\":\"18\",\"mileage\":0,\"openDate\":\"2005-11-01\",\"orgCategory\":\"03\",\"orgCode\":\"020110017\",\"orgLevelCode\":\"0000001100530011\",\"orgName\":\"南昌东管理中心\",\"roadCode\":\"G6021\",\"roadName\":\"杭长高速\",\"sectionCode\":\"200R560210671000\",\"sectionName\":\"乐温\",\"startPil",
+      "body_c": "{\"total\":85,\"rows\":[{\"id\":\"18\",\"roadCode\":\"G6021\",\"roadName\":\"杭长高速\",\"sectionCode\":\"200R560210671000\",\"sectionName\":\"乐温\",\"startPileNo\":379,\"endPileNo\":397,\"orgCode\":\"020110017\",\"orgName\":\"南昌东管理中心\",\"orgLevelCode\":\"0000001100530011\",\"orgCategory\":\"03\",\"mileage\":0,\"openDate\":\"2005-10-31\"},{\"id\":\"27\",\"ro",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/section/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        24990,
+        24990
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "body_b": "[{\"endPileNo\":397,\"id\":\"18\",\"mileage\":0,\"openDate\":\"2005-11-01\",\"orgCategory\":\"03\",\"orgCode\":\"020110017\",\"orgLevelCode\":\"0000001100530011\",\"orgName\":\"南昌东管理中心\",\"roadCode\":\"G6021\",\"roadName\":\"杭长高速\",\"sectionCode\":\"200R560210671000\",\"sectionName\":\"乐温\",\"startPileNo\":379},{\"endPileNo\":446,\"id\":\"27\",\"milea",
+      "body_c": "[{\"id\":\"18\",\"roadCode\":\"G6021\",\"roadName\":\"杭长高速\",\"sectionCode\":\"200R560210671000\",\"sectionName\":\"乐温\",\"startPileNo\":379,\"endPileNo\":397,\"orgCode\":\"020110017\",\"orgName\":\"南昌东管理中心\",\"orgLevelCode\":\"0000001100530011\",\"orgCategory\":\"03\",\"mileage\":0,\"openDate\":\"2005-10-31\"},{\"id\":\"27\",\"roadCode\":\"G76\",\"road",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        9,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200}",
+      "body_c": "{\"code\":200,\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        4755,
+        4755
+      ],
+      "latency_ms": [
+        31,
+        2
+      ],
+      "body_b": "{\"total\":24,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"agentPk\":\"d2c6df4afa7ff18d48786d728d3919d2\",\"allColPk\":\"1f594ad0aeb3dc00af2ecca389b1615c\",\"jd\":\"117.43187400\",\"loadTime\":\"2025-08-29 06:11:00\",\"lyxt\":\"机电运维管理系统\",\"sczhK\":\"K20+100\",\"sczhN\":\"20.100\",\"sfsbm\":null,\"sfsmc\":\"上万收费所\",\"ssglzxbm\":\"020110017\",\"ssglz",
+      "body_c": "{\"total\":24,\"rows\":[{\"agentPk\":\"d2c6df4afa7ff18d48786d728d3919d2\",\"yxtzj\":\"1531950771411013633\",\"sfsbm\":null,\"sfsmc\":\"上万收费所\",\"jd\":\"117.43187400\",\"wd\":\"28.46829500\",\"sslxbh\":\"S33\",\"sslxmc\":\"上万高速公路\",\"ssldbh\":\"200R50033360804000\",\"ssldmc\":\"上万高速上万段\",\"sczhK\":\"K20+100\",\"sczhN\":\"20.100\",\"ssglzxbm\":\"0201100",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        11086,
+        11086
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "body_b": "[{\"agentPk\":\"d2c6df4afa7ff18d48786d728d3919d2\",\"allColPk\":\"1f594ad0aeb3dc00af2ecca389b1615c\",\"jd\":\"117.43187400\",\"loadTime\":\"2025-08-29 06:11:00\",\"lyxt\":\"机电运维管理系统\",\"sczhK\":\"K20+100\",\"sczhN\":\"20.100\",\"sfsbm\":null,\"sfsmc\":\"上万收费所\",\"ssglzxbm\":\"020110017\",\"ssglzxmc\":null,\"ssldbh\":\"200R50033360804000\",\"ss",
+      "body_c": "[{\"agentPk\":\"d2c6df4afa7ff18d48786d728d3919d2\",\"yxtzj\":\"1531950771411013633\",\"sfsbm\":null,\"sfsmc\":\"上万收费所\",\"jd\":\"117.43187400\",\"wd\":\"28.46829500\",\"sslxbh\":\"S33\",\"sslxmc\":\"上万高速公路\",\"ssldbh\":\"200R50033360804000\",\"ssldmc\":\"上万高速上万段\",\"sczhK\":\"K20+100\",\"sczhN\":\"20.100\",\"ssglzxbm\":\"020110017\",\"ssglzxmc\":null",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200}",
+      "body_c": "{\"code\":200,\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        4583,
+        4583
+      ],
+      "latency_ms": [
+        40,
+        1
+      ],
+      "body_b": "{\"total\":150,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"agentPk\":\"363bc7b76e508c55dcb259cf6a3f007e\",\"allColPk\":\"c1d6f80963f0f971268c957bed9dcc81\",\"jd\":\"116.29458816\",\"loadTime\":\"2025-08-29 06:11:00\",\"lyxt\":\"机电运维管理系统\",\"sczhK\":\"K24+600\",\"sczhN\":\"24.600\",\"sfzdm\":\"G56360429F0010\",\"sfzmc\":\"均桥收费站\",\"ssglzxbm\":\"0300",
+      "body_c": "{\"total\":150,\"rows\":[{\"agentPk\":\"363bc7b76e508c55dcb259cf6a3f007e\",\"yxtzj\":\"1495673117678645249\",\"sfzdm\":\"G56360429F0010\",\"sfzmc\":\"均桥收费站\",\"jd\":\"116.29458816\",\"wd\":\"29.66365882\",\"sslxbh\":\"S22\",\"sslxmc\":\"都九高速公路\",\"ssldbh\":\"200R00223600000611000\",\"ssldmc\":\"都九高速九景段\",\"sczhK\":\"K24+600\",\"sczhN\":\"24.600\",\"ss",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        67281,
+        67281
+      ],
+      "latency_ms": [
+        11,
+        3
+      ],
+      "body_b": "[{\"agentPk\":\"363bc7b76e508c55dcb259cf6a3f007e\",\"allColPk\":\"c1d6f80963f0f971268c957bed9dcc81\",\"jd\":\"116.29458816\",\"loadTime\":\"2025-08-29 06:11:00\",\"lyxt\":\"机电运维管理系统\",\"sczhK\":\"K24+600\",\"sczhN\":\"24.600\",\"sfzdm\":\"G56360429F0010\",\"sfzmc\":\"均桥收费站\",\"ssglzxbm\":\"030000254\",\"ssglzxmc\":null,\"ssldbh\":\"200R0022360",
+      "body_c": "[{\"agentPk\":\"363bc7b76e508c55dcb259cf6a3f007e\",\"yxtzj\":\"1495673117678645249\",\"sfzdm\":\"G56360429F0010\",\"sfzmc\":\"均桥收费站\",\"jd\":\"116.29458816\",\"wd\":\"29.66365882\",\"sslxbh\":\"S22\",\"sslxmc\":\"都九高速公路\",\"ssldbh\":\"200R00223600000611000\",\"ssldmc\":\"都九高速九景段\",\"sczhK\":\"K24+600\",\"sczhN\":\"24.600\",\"ssglzxbm\":\"030000254\",",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/snapshotflow/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        8,
+        1
+      ],
+      "body_b": "",
+      "body_c": "",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/snapshotflow/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        10,
+        2
+      ],
+      "body_b": "{\"total\":0,\"code\":200,\"msg\":\"查询成功\",\"rows\":[]}",
+      "body_c": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/snapshotflow/listToExport",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        2,
+        2
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "body_b": "[]",
+      "body_c": "[]",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/stationcapture/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200}",
+      "body_c": "{\"code\":200,\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/stationcapture/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "body_b": "{\"total\":0,\"code\":200,\"msg\":\"查询成功\",\"rows\":[]}",
+      "body_c": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutil/carTrackQueryByCarNo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        14,
+        1
+      ],
+      "body_b": "{\"total\":0,\"code\":200,\"msg\":\"查询成功\",\"rows\":[]}",
+      "body_c": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutil/carTrackQueryByTime",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        11,
+        1
+      ],
+      "body_b": "{\"total\":0,\"code\":200,\"msg\":\"查询成功\",\"rows\":[]}",
+      "body_c": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutil/getByTrailBo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        724,
+        724
+      ],
+      "latency_ms": [
+        32,
+        0
+      ],
+      "body_b": "{\"borderWeighingCaptureBO\":null,\"captureTime\":null,\"countNum\":null,\"devCode\":null,\"devName\":null,\"direction\":null,\"directionIn\":null,\"feeRecord\":null,\"feeStationEnter\":null,\"feeStationExit\":null,\"gantryCaptureBO\":null,\"gantryIpBO\":null,\"imagesArry\":\"\",\"ipType\":null,\"isQuery\":null,\"isVirtual\":null,\"l",
+      "body_c": "{\"pointUuid\":null,\"stateType\":null,\"pointFlag\":null,\"pointJosn\":null,\"borderWeighingCaptureBO\":null,\"gantryCaptureBO\":null,\"provCaptureBO\":null,\"stationCapture\":null,\"feeRecord\":null,\"feeStationEnter\":null,\"feeStationExit\":null,\"captureTime\":null,\"directionIn\":null,\"locationCode\":null,\"locationName\"",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutil/saveRedis",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        31,
+        0
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200}",
+      "body_c": "{\"code\":200,\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/separateSnapshotFlowTimeList",
+      "status": [
+        200,
+        501
+      ],
+      "bytes": [
+        0,
+        591
+      ],
+      "latency_ms": [
+        22,
+        0
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:359-364\",\"msg\":\"SysTestController/separateSnapshotFlowTimeList 不提供（Java 侧同样无法执行）：产出 car_uspicious:*，其唯一消费方 syncSuspiciousCarDB() 无任何调用方，且会向外部 HTTP 接口推送数据；输入 js_car_snapshot:* 又只由上面那条中断的链路写入\",\"porting\":\"blocked\",\"reason\":\"产出 car_uspicious:*，其唯",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncBaseInfo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        48
+      ],
+      "latency_ms": [
+        150,
+        6
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":200,\"msg\":\"基础字典缓存已重建\"}",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncCurrentTrack",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        64
+      ],
+      "latency_ms": [
+        7,
+        0
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":200,\"msg\":\"实时轨迹已同步到 car_curent_trail:*\"}",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncHistroyTrack",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        65
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":200,\"msg\":\"历史轨迹已合并到 car_history_trail:*\"}",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncOdsSzdnGantry",
+      "status": [
+        200,
+        501
+      ],
+      "bytes": [
+        0,
+        526
+      ],
+      "latency_ms": [
+        54,
+        0
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:327-354\",\"msg\":\"SysTestController/syncOdsSzdnGantry 不提供（Java 侧同样无法执行）：依赖 OdsLwzxsfsjFeeRecords01Mapper.selectGantryNum（只有声明、无 SQL），且入参时间串为 \\\"2025-11-01 00-00-00\\\"，过不了 to_timestamp 的格式解析\",\"porting\":\"blocked\",\"reason\":\"依赖 OdsLwzxsfsjFeeRecords0",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar1",
+      "status": [
+        200,
+        501
+      ],
+      "bytes": [
+        0,
+        705
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:175-185\",\"msg\":\"SysTestController/syncSuspiciousCar1 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecords01Mapper.selectOdsLwzxsfsjFeeRecords01ListNew —— 该语句在全部 Mapper XML 中缺失，Java 侧调用时抛 Invalid bound sta",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar10",
+      "status": [
+        200,
+        501
+      ],
+      "bytes": [
+        0,
+        706
+      ],
+      "latency_ms": [
+        6,
+        0
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:311-321\",\"msg\":\"SysTestController/syncSuspiciousCar10 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecords01Mapper.selectOdsLwzxsfsjFeeRecords01ListNew —— 该语句在全部 Mapper XML 中缺失，Java 侧调用时抛 Invalid bound st",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar2",
+      "status": [
+        200,
+        501
+      ],
+      "bytes": [
+        0,
+        705
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:190-200\",\"msg\":\"SysTestController/syncSuspiciousCar2 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecords01Mapper.selectOdsLwzxsfsjFeeRecords01ListNew —— 该语句在全部 Mapper XML 中缺失，Java 侧调用时抛 Invalid bound sta",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar3",
+      "status": [
+        200,
+        501
+      ],
+      "bytes": [
+        0,
+        705
+      ],
+      "latency_ms": [
+        1,
+        0
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:205-215\",\"msg\":\"SysTestController/syncSuspiciousCar3 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecords01Mapper.selectOdsLwzxsfsjFeeRecords01ListNew —— 该语句在全部 Mapper XML 中缺失，Java 侧调用时抛 Invalid bound sta",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar4",
+      "status": [
+        200,
+        501
+      ],
+      "bytes": [
+        0,
+        705
+      ],
+      "latency_ms": [
+        3,
+        0
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:220-230\",\"msg\":\"SysTestController/syncSuspiciousCar4 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecords01Mapper.selectOdsLwzxsfsjFeeRecords01ListNew —— 该语句在全部 Mapper XML 中缺失，Java 侧调用时抛 Invalid bound sta",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar5",
+      "status": [
+        200,
+        501
+      ],
+      "bytes": [
+        0,
+        705
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:235-245\",\"msg\":\"SysTestController/syncSuspiciousCar5 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecords01Mapper.selectOdsLwzxsfsjFeeRecords01ListNew —— 该语句在全部 Mapper XML 中缺失，Java 侧调用时抛 Invalid bound sta",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar6",
+      "status": [
+        200,
+        501
+      ],
+      "bytes": [
+        0,
+        705
+      ],
+      "latency_ms": [
+        2,
+        0
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:250-260\",\"msg\":\"SysTestController/syncSuspiciousCar6 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecords01Mapper.selectOdsLwzxsfsjFeeRecords01ListNew —— 该语句在全部 Mapper XML 中缺失，Java 侧调用时抛 Invalid bound sta",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar7",
+      "status": [
+        200,
+        501
+      ],
+      "bytes": [
+        0,
+        705
+      ],
+      "latency_ms": [
+        9,
+        0
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:265-275\",\"msg\":\"SysTestController/syncSuspiciousCar7 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecords01Mapper.selectOdsLwzxsfsjFeeRecords01ListNew —— 该语句在全部 Mapper XML 中缺失，Java 侧调用时抛 Invalid bound sta",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar8",
+      "status": [
+        200,
+        501
+      ],
+      "bytes": [
+        0,
+        705
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:280-290\",\"msg\":\"SysTestController/syncSuspiciousCar8 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecords01Mapper.selectOdsLwzxsfsjFeeRecords01ListNew —— 该语句在全部 Mapper XML 中缺失，Java 侧调用时抛 Invalid bound sta",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar9",
+      "status": [
+        200,
+        501
+      ],
+      "bytes": [
+        0,
+        705
+      ],
+      "latency_ms": [
+        1,
+        0
+      ],
+      "body_b": "",
+      "body_c": "{\"code\":501,\"data\":null,\"javaRef\":\"SysTestController.java:296-306\",\"msg\":\"SysTestController/syncSuspiciousCar9 不提供（Java 侧同样无法执行）：依赖 SysUtilServiceImpl.syncSuspiciousCarQutaz，该方法需要 OdsLwzxsfsjFeeRecords01Mapper.selectOdsLwzxsfsjFeeRecords01ListNew —— 该语句在全部 Mapper XML 中缺失，Java 侧调用时抛 Invalid bound sta",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/toll/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1123,
+        1123
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"dynamicMonitorResource\":null,\"hexCode\":null,\"id\":\"1\",\"idCard\":\"44L4464527980850000\",\"inMonitorResource\":\"78f3570a76524ab5842a094953ebc254\",\"isAccess\":\"1\",\"laneMonitorResource\":\"8b8be1b74188409f912923d79d6dec4b,dda58d58b8e14276868530539ed012b8,6fdb8f5217104d858dbdf8e",
+      "body_c": "{\"code\":200,\"data\":{\"id\":\"1\",\"roadCode\":\"S43\",\"idCard\":\"44L4464527980850000\",\"tollCode\":\"S43361002F0020\",\"tollName\":\"抚州东收费站\",\"pileNo\":\"11.725899696350098\",\"orgName\":\"抚州管理中心\",\"hexCode\":null,\"stateCode\":\"S0043360010020\",\"orgCode\":\"030000006\",\"longitude\":\"116.46153232837898\",\"latitude\":\"27.978258476644",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/toll/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        10116,
+        10116
+      ],
+      "latency_ms": [
+        11,
+        2
+      ],
+      "body_b": "{\"total\":150,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"dynamicMonitorResource\":null,\"hexCode\":null,\"id\":\"1\",\"idCard\":\"44L4464527980850000\",\"inMonitorResource\":\"78f3570a76524ab5842a094953ebc254\",\"isAccess\":\"1\",\"laneMonitorResource\":\"8b8be1b74188409f912923d79d6dec4b,dda58d58b8e14276868530539ed012b8,6fdb8f5217",
+      "body_c": "{\"total\":150,\"rows\":[{\"id\":\"1\",\"roadCode\":\"S43\",\"idCard\":\"44L4464527980850000\",\"tollCode\":\"S43361002F0020\",\"tollName\":\"抚州东收费站\",\"pileNo\":\"11.725899696350098\",\"orgName\":\"抚州管理中心\",\"hexCode\":null,\"stateCode\":\"S0043360010020\",\"orgCode\":\"030000006\",\"longitude\":\"116.46153232837898\",\"latitude\":\"27.9782584766",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/toll/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        146759,
+        146759
+      ],
+      "latency_ms": [
+        16,
+        2
+      ],
+      "body_b": "[{\"dynamicMonitorResource\":null,\"hexCode\":null,\"id\":\"1\",\"idCard\":\"44L4464527980850000\",\"inMonitorResource\":\"78f3570a76524ab5842a094953ebc254\",\"isAccess\":\"1\",\"laneMonitorResource\":\"8b8be1b74188409f912923d79d6dec4b,dda58d58b8e14276868530539ed012b8,6fdb8f5217104d858dbdf8ef753979cb,7f85421df0d94d61a89df",
+      "body_c": "[{\"id\":\"1\",\"roadCode\":\"S43\",\"idCard\":\"44L4464527980850000\",\"tollCode\":\"S43361002F0020\",\"tollName\":\"抚州东收费站\",\"pileNo\":\"11.725899696350098\",\"orgName\":\"抚州管理中心\",\"hexCode\":null,\"stateCode\":\"S0043360010020\",\"orgCode\":\"030000006\",\"longitude\":\"116.46153232837898\",\"latitude\":\"27.978258476644598\",\"openDate\":\"1",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/tollStationIp/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200}",
+      "body_c": "{\"code\":200,\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/tollStationIp/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1560,
+        1560
+      ],
+      "latency_ms": [
+        9,
+        2
+      ],
+      "body_b": "{\"total\":150,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"brand\":\"haikang\",\"id\":40017,\"ip\":\"36.106.145.9\",\"odsSzdnToll\":null,\"orgCode\":\"030000008\",\"tollCode\":\"S0089360020040\",\"tollName\":\"莲花西收费站\"},{\"brand\":\"haikang\",\"id\":40025,\"ip\":\"36.105.121.121\",\"odsSzdnToll\":null,\"orgCode\":\"020110016\",\"tollCode\":\"S42360824F",
+      "body_c": "{\"total\":150,\"rows\":[{\"id\":40017,\"tollCode\":\"S0089360020040\",\"tollName\":\"莲花西收费站\",\"orgCode\":\"030000008\",\"ip\":\"36.106.145.9\",\"brand\":\"haikang\",\"odsSzdnToll\":null},{\"id\":40025,\"tollCode\":\"S42360824F0010\",\"tollName\":\"新干北收费站\",\"orgCode\":\"020110016\",\"ip\":\"36.105.121.121\",\"brand\":\"haikang\",\"odsSzdnToll\":nul",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/trailtracks/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        19,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200}",
+      "body_c": "{\"code\":200,\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/trailtracks/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        44378,
+        44378
+      ],
+      "latency_ms": [
+        48,
+        4
+      ],
+      "body_b": "{\"total\":150,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"applyTime1\":null,\"applyTime2\":null,\"carNo\":null,\"carNum\":null,\"carType\":null,\"carVehicle\":null,\"enaxlecount\":null,\"endLat\":null,\"endLatDec\":null,\"endLon\":null,\"endLonDec\":null,\"enterLocationcode\":null,\"enterTime\":\"2025-09-10 12:39:49\",\"entolllaneid\":nul",
+      "body_c": "{\"total\":150,\"rows\":[{\"uuid\":\"e0e22490-fb40-4795-947b-68565d864aa7\",\"type\":0,\"pointCount\":45,\"plateKey\":\"***\",\"enterTime\":\"2025-09-10 04:39:49\",\"exitTime\":\"2025-09-11 02:19:01\",\"trailPoints\":\"[{\\\"pointUuid\\\":\\\"cd58f6fa-a108-45ff-8d5b-4588201795f6\\\",\\\"stateType\\\":\\\"StationCapture\\\",\\\"captureTime\\",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/vehicleweight/1",
+      "status": [
+        500,
+        200
+      ],
+      "bytes": [
+        116,
+        33
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "body_b": "{\"timestamp\":\"2026-11-22T06:33:20.396Z\",\"status\":500,\"error\":\"Internal Server Error\",\"path\":\"/base/vehicleweight/1\"}",
+      "body_c": "{\"code\":200,\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/vehicleweight/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        10,
+        1
+      ],
+      "body_b": "{\"total\":0,\"code\":200,\"msg\":\"查询成功\",\"rows\":[]}",
+      "body_c": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/vehicleweight/map",
+      "status": [
+        500,
+        200
+      ],
+      "bytes": [
+        118,
+        43
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "body_b": "{\"timestamp\":\"2026-11-22T06:33:20.404Z\",\"status\":500,\"error\":\"Internal Server Error\",\"path\":\"/base/vehicleweight/map\"}",
+      "body_c": "{\"code\":200,\"data\":{},\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/manager/fwqclls/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        391,
+        391
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"axles\":null,\"bigId\":1,\"crosstime\":null,\"dangmark\":null,\"datauuid\":\"uuid-fwq-20251023001\",\"devicename\":null,\"directionname\":null,\"gradeLevel\":null,\"ipaddress\":null,\"loadTime\":null,\"plateno\":null,\"platepicurl\":null,\"platetype\":null,\"rollvehiclestype\":null,\"servicename",
+      "body_c": "{\"code\":200,\"data\":{\"bigId\":1,\"datauuid\":\"uuid-fwq-20251023001\",\"targetpicurl\":null,\"vehiclebrand\":null,\"platepicurl\":null,\"rollvehiclestype\":null,\"plateno\":null,\"directionname\":null,\"platetype\":null,\"dangmark\":null,\"crosstime\":null,\"axles\":null,\"devicename\":null,\"ipaddress\":null,\"servicename\":null,",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/fwqclls/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1105,
+        1105
+      ],
+      "latency_ms": [
+        13,
+        1
+      ],
+      "body_b": "{\"total\":3,\"code\":200,\"msg\":\"查询成功\",\"rows\":[{\"axles\":null,\"bigId\":1,\"crosstime\":null,\"dangmark\":null,\"datauuid\":\"uuid-fwq-20251023001\",\"devicename\":null,\"directionname\":null,\"gradeLevel\":null,\"ipaddress\":null,\"loadTime\":null,\"plateno\":null,\"platepicurl\":null,\"platetype\":null,\"rollvehiclestype\":null,\"",
+      "body_c": "{\"total\":3,\"rows\":[{\"bigId\":1,\"datauuid\":\"uuid-fwq-20251023001\",\"targetpicurl\":null,\"vehiclebrand\":null,\"platepicurl\":null,\"rollvehiclestype\":null,\"plateno\":null,\"directionname\":null,\"platetype\":null,\"dangmark\":null,\"crosstime\":null,\"axles\":null,\"devicename\":null,\"ipaddress\":null,\"servicename\":null,",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/progressive/feerecords/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        483566,
+        558569
+      ],
+      "latency_ms": [
+        34,
+        12
+      ],
+      "body_b": "{\"total\":150,\"code\":200,\"msg\":\"策略: phase1-gaussdb-gin\",\"rows\":[{\"algorithmidentifier\":null,\"antennaid\":null,\"axlecount\":2,\"balanceafter\":null,\"balancebefore\":null,\"bigId\":\"1872248497\",\"cardfeesumafter\":null,\"cardfeesumbefore\":null,\"cid\":\"b29c91ae837c457db627596144a34f41\",\"cidList\":null,\"code\":null,\"",
+      "body_c": "{\"total\":150,\"rows\":[{\"bigId\":\"1029052209\",\"algorithmidentifier\":\"1\",\"antennaid\":\"3\",\"axlecount\":2,\"balanceafter\":4291227038,\"balancebefore\":4291227038,\"cardfeesumafter\":2297,\"cardfeesumbefore\":1343,\"computerorder\":\"1\",\"consumetime\":267,\"cpucardid\":\"1901230000119937\",\"cpucardtype\":\"2\",\"cpuenddate\":\"",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/progressive/scale-level",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        166,
+        166
+      ],
+      "latency_ms": [
+        9,
+        0
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"ods_rt_szdn_snapshot_flow_addcode\":\"LEVEL_10M\",\"ods_lwzxsfsj_fee_records_01\":\"LEVEL_10M\",\"zdata_trail_fitting\":\"LEVEL_10M\"}}",
+      "body_c": "{\"code\":200,\"data\":{\"ods_lwzxsfsj_fee_records_01\":\"LEVEL_10M\",\"ods_rt_szdn_snapshot_flow_addcode\":\"LEVEL_10M\",\"zdata_trail_fitting\":\"LEVEL_10M\"},\"msg\":\"操作成功\"}",
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/progressive/snapshotflow/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        179032,
+        179782
+      ],
+      "latency_ms": [
+        33,
+        3
+      ],
+      "body_b": "{\"total\":150,\"code\":200,\"msg\":\"策略: phase1-gaussdb-gin\",\"rows\":[{\"applyTime1\":null,\"applyTime2\":null,\"bigId\":null,\"cameratype\":null,\"carbrand\":null,\"carcolor\":\"红色\",\"carcolorcode\":4,\"cardirection\":null,\"cartype\":\"货车\",\"cartypecode\":16,\"code\":null,\"codeList\":null,\"datasource\":null,\"datauuid\":\"736f1bc2-9",
+      "body_c": "{\"total\":150,\"rows\":[{\"bigId\":null,\"datasource\":null,\"cameratype\":null,\"deviceid\":null,\"gantrycode\":null,\"gantryname\":\"黄金埠互通-万年互通门架1\",\"roadcode\":null,\"roadname\":\"济广高速公路\",\"sectioncode\":null,\"sectionname\":\"景鹰\",\"tollcode\":null,\"tollname\":null,\"orgcode\":null,\"orgname\":null,\"direction\":1,\"hexcode\":null,\"",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/progressive/trailfitting/list",
+      "status": [
+        500,
+        200
+      ],
+      "bytes": [
+        125,
+        741150
+      ],
+      "latency_ms": [
+        7,
+        8
+      ],
+      "body_b": "{\"timestamp\":\"2026-11-22T06:33:20.660Z\",\"status\":500,\"error\":\"Internal Server Error\",\"path\":\"/progressive/trailfitting/list\"}",
+      "body_c": "{\"total\":150,\"rows\":[{\"cid\":\"0cd1353dc8894cad89e7b7df599ce7aa\",\"enaxlecount\":2,\"entime\":\"2025-10-01\",\"entolllaneid\":\"G15173605800301010030\",\"entollstationid\":\"G1517360580030\",\"entollstationname\":\"江西宁都北站\",\"envehicleclass\":0,\"envehicleid\":\"***\",\"envehicletype\":11,\"enweight\":3600,\"extime\":\"2025-10-",
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    }
+  ]
+}

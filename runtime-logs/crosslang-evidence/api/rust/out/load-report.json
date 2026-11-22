@@ -1,0 +1,53 @@
+{
+  "label": "api-java25-crosslang-full-rust",
+  "baseline_variant": "java25-boot4",
+  "candidate_variant": "rust",
+  "rows": [
+    {
+      "metric": "total_requests",
+      "baseline": 17833,
+      "candidate": 159694,
+      "candidate_over_baseline": 8.955
+    },
+    {
+      "metric": "rps",
+      "baseline": 594.4333333333333,
+      "candidate": 5323.133333333333,
+      "candidate_over_baseline": 8.955
+    },
+    {
+      "metric": "avg_latency_ms",
+      "baseline": 14.357931923961196,
+      "candidate": 1.602082733227297,
+      "candidate_over_baseline": 0.1116
+    },
+    {
+      "metric": "p50_ms",
+      "baseline": 8,
+      "candidate": 1,
+      "candidate_over_baseline": 0.125
+    },
+    {
+      "metric": "p95_ms",
+      "baseline": 50,
+      "candidate": 4,
+      "candidate_over_baseline": 0.08
+    },
+    {
+      "metric": "p99_ms",
+      "baseline": 108,
+      "candidate": 11,
+      "candidate_over_baseline": 0.1019
+    },
+    {
+      "metric": "errors",
+      "baseline": 0,
+      "candidate": 0,
+      "candidate_over_baseline": null
+    }
+  ],
+  "error_rate": {
+    "baseline": 0.0,
+    "candidate": 0.0
+  }
+}

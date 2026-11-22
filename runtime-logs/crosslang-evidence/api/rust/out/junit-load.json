@@ -1,0 +1,19 @@
+{
+  "variant": "rust",
+  "threads": 8,
+  "duration_seconds": 30,
+  "warmup_seconds": 2,
+  "total_requests": 177538,
+  "ok": 148320,
+  "errors": 0,
+  "business_4xx": 11240,
+  "business_5xx": 17978,
+  "rps": 5917.933333333333,
+  "avg_latency_ms": 1.4409816489990874,
+  "p50_ms": 1,
+  "p95_ms": 4,
+  "p99_ms": 10,
+  "bytes": 1815124342,
+  "error_samples": [],
+  "endpoints": 79
+}

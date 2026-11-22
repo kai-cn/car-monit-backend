@@ -28,7 +28,6 @@ junit-check/
 junit-*-artifact/
 junit3-*-artifact/
 junit-api-*-artifact/
-crosslang-evidence/
 cicd-artifacts/
 local-rerun-check/
 local-junit-smoke/

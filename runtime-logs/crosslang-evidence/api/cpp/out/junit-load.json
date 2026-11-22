@@ -1,0 +1,19 @@
+{
+  "variant": "cpp",
+  "threads": 8,
+  "duration_seconds": 30,
+  "warmup_seconds": 2,
+  "total_requests": 10279,
+  "ok": 2986,
+  "errors": 0,
+  "business_4xx": 783,
+  "business_5xx": 6510,
+  "rps": 342.6333333333333,
+  "avg_latency_ms": 28.20089502869929,
+  "p50_ms": 2,
+  "p95_ms": 42,
+  "p99_ms": 42,
+  "bytes": 1663682,
+  "error_samples": [],
+  "endpoints": 79
+}

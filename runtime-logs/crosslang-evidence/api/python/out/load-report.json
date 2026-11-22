@@ -1,0 +1,53 @@
+{
+  "label": "api-java25-crosslang-full-python",
+  "baseline_variant": "java25-boot4",
+  "candidate_variant": "python",
+  "rows": [
+    {
+      "metric": "total_requests",
+      "baseline": 17833,
+      "candidate": 38,
+      "candidate_over_baseline": 0.0021
+    },
+    {
+      "metric": "rps",
+      "baseline": 594.4333333333333,
+      "candidate": 1.2666666666666666,
+      "candidate_over_baseline": 0.0021
+    },
+    {
+      "metric": "avg_latency_ms",
+      "baseline": 14.357931923961196,
+      "candidate": 8458.368421052632,
+      "candidate_over_baseline": 589.1077
+    },
+    {
+      "metric": "p50_ms",
+      "baseline": 8,
+      "candidate": 10036,
+      "candidate_over_baseline": 1254.5
+    },
+    {
+      "metric": "p95_ms",
+      "baseline": 50,
+      "candidate": 10060,
+      "candidate_over_baseline": 201.2
+    },
+    {
+      "metric": "p99_ms",
+      "baseline": 108,
+      "candidate": 10065,
+      "candidate_over_baseline": 93.1944
+    },
+    {
+      "metric": "errors",
+      "baseline": 0,
+      "candidate": 0,
+      "candidate_over_baseline": null
+    }
+  ],
+  "error_rate": {
+    "baseline": 0.0,
+    "candidate": 0.0
+  }
+}

@@ -1,0 +1,533 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="JUnit Jupiter" tests="79" skipped="0" failures="0" errors="0" time="1.447" hostname="ip-10-0-142-97" timestamp="2026-11-22T14:15:49">
+<properties>
+<property name="file.encoding" value="UTF-8"/>
+<property name="file.separator" value="/"/>
+<property name="java.class.path" value="out-junit.jar"/>
+<property name="java.class.version" value="69.0"/>
+<property name="java.home" value="/usr/lib/jvm/temurin-25-jdk-amd64"/>
+<property name="java.io.tmpdir" value="/tmp"/>
+<property name="java.library.path" value="/opt/hostedtoolcache/Python/3.12.16/x64/lib:/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib"/>
+<property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+<property name="java.runtime.version" value="25.0.5+8-LTS"/>
+<property name="java.specification.name" value="Java Platform API Specification"/>
+<property name="java.specification.vendor" value="Oracle Corporation"/>
+<property name="java.specification.version" value="25"/>
+<property name="java.vendor" value="Eclipse Adoptium"/>
+<property name="java.vendor.url" value="https://adoptium.net/"/>
+<property name="java.vendor.url.bug" value="https://github.com/adoptium/adoptium-support/issues"/>
+<property name="java.vendor.version" value="Temurin-25.0.5+8"/>
+<property name="java.version" value="25.0.5"/>
+<property name="java.version.date" value="2026-10-20"/>
+<property name="java.vm.compressedOopsMode" value="Zero based"/>
+<property name="java.vm.info" value="mixed mode, sharing"/>
+<property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+<property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+<property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+<property name="java.vm.specification.version" value="25"/>
+<property name="java.vm.vendor" value="Eclipse Adoptium"/>
+<property name="java.vm.version" value="25.0.5+8-LTS"/>
+<property name="jdk.debug" value="release"/>
+<property name="line.separator" value="
+"/>
+<property name="native.encoding" value="UTF-8"/>
+<property name="os.arch" value="amd64"/>
+<property name="os.name" value="Linux"/>
+<property name="os.version" value="7.0.0-1016-aws"/>
+<property name="path.separator" value=":"/>
+<property name="stderr.encoding" value="UTF-8"/>
+<property name="stdin.encoding" value="UTF-8"/>
+<property name="stdout.encoding" value="UTF-8"/>
+<property name="sun.arch.data.model" value="64"/>
+<property name="sun.boot.library.path" value="/usr/lib/jvm/temurin-25-jdk-amd64/lib"/>
+<property name="sun.cpu.endian" value="little"/>
+<property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+<property name="sun.java.command" value="out-junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/contract-reports"/>
+<property name="sun.java.launcher" value="SUN_STANDARD"/>
+<property name="sun.jnu.encoding" value="UTF-8"/>
+<property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+<property name="user.dir" value="/home/runner/work/car-monit-api/car-monit-api"/>
+<property name="user.home" value="/home/runner"/>
+<property name="user.language" value="en"/>
+<property name="user.name" value="runner"/>
+<property name="user.timezone" value="Etc/UTC"/>
+</properties>
+<testcase name="allEndpoints()[17]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.018">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#17]
+display-name: /manager/fwqclls/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[16]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.015">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#16]
+display-name: /manager/fwqclls/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[19]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#19]
+display-name: /base/feeGantry/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[18]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.022">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#18]
+display-name: /base/feeGantry/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[60]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.026">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#60]
+display-name: /base/sysutilTest/syncSuspiciousCar1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[62]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.036">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#62]
+display-name: /base/sysutilTest/syncSuspiciousCar3
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[61]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.025">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#61]
+display-name: /base/sysutilTest/syncSuspiciousCar2
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[24]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.016">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#24]
+display-name: /base/feeStationEnter/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[68]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.028">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#68]
+display-name: /base/sysutilTest/syncSuspiciousCar9
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[23]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.018">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#23]
+display-name: /base/feeStationEnter/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[67]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.032">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#67]
+display-name: /base/sysutilTest/syncSuspiciousCar8
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[26]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.016">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#26]
+display-name: /base/feestationexit/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[25]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.019">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#25]
+display-name: /base/feestationexit/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[69]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.032">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#69]
+display-name: /base/sysutilTest/syncSuspiciousCar10
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[20]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.021">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#20]
+display-name: /base/feerecords/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[64]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.022">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#64]
+display-name: /base/sysutilTest/syncSuspiciousCar5
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[63]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.027">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#63]
+display-name: /base/sysutilTest/syncSuspiciousCar4
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[22]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.016">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#22]
+display-name: /base/feerecords/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[66]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.031">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#66]
+display-name: /base/sysutilTest/syncSuspiciousCar7
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[21]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.019">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#21]
+display-name: /base/feerecords/listToExport
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[65]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.037">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#65]
+display-name: /base/sysutilTest/syncSuspiciousCar6
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[2]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.018">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#2]
+display-name: /base/fwqjcxx/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[1]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.085">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#1]
+display-name: /base/fwqjcxx/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[49]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#49]
+display-name: /base/tollStationIp/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[8]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#8]
+display-name: /base/sfzjcxx/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[7]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.018">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#7]
+display-name: /base/sfzjcxx/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[9]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#9]
+display-name: /base/sfzjcxx/listAll
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[4]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.019">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#4]
+display-name: /base/sfsjcxx/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[3]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.018">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#3]
+display-name: /base/fwqjcxx/listAll
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[6]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#6]
+display-name: /base/sfsjcxx/listAll
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[5]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.018">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#5]
+display-name: /base/sfsjcxx/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[51]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#51]
+display-name: /base/org/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[50]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#50]
+display-name: /base/org/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[13]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.002">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#13]
+display-name: /api/v1/large/carTrackQueryByCarNo
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[57]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.002">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#57]
+display-name: /base/sysutilTest/syncCurrentTrack
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[12]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.002">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#12]
+display-name: /api/v1/large/trail
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[56]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.004">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#56]
+display-name: /progressive/scale-level
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[15]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.002">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#15]
+display-name: /api/v1/large/export/status/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[59]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.003">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#59]
+display-name: /base/sysutilTest/syncHistroyTrack
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[14]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.002">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#14]
+display-name: /api/v1/large/stats/group
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[58]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.016">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#58]
+display-name: /base/sysutilTest/syncBaseInfo
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[53]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#53]
+display-name: /progressive/snapshotflow/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[52]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#52]
+display-name: /base/org/listAll
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[11]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.002">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#11]
+display-name: /api/v1/large/fee
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[55]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.019">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#55]
+display-name: /progressive/trailfitting/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[10]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.004">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#10]
+display-name: /api/v1/large/snapshot
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[54]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.019">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#54]
+display-name: /progressive/feerecords/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[39]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.019">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#39]
+display-name: /base/vehicleweight/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[38]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#38]
+display-name: /base/gantryIp/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[40]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#40]
+display-name: /base/vehicleweight/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[46]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.018">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#46]
+display-name: /base/toll/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[45]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.018">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#45]
+display-name: /base/toll/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[48]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#48]
+display-name: /base/tollStationIp/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[47]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#47]
+display-name: /base/toll/listAll
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[42]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.019">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#42]
+display-name: /base/section/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[41]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.018">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#41]
+display-name: /base/vehicleweight/map
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[44]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.018">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#44]
+display-name: /base/section/listAll
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[43]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#43]
+display-name: /base/section/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[28]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.018">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#28]
+display-name: /base/snapshotflow/listToExport
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[27]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#27]
+display-name: /base/snapshotflow/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[29]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#29]
+display-name: /base/snapshotflow/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[71]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.004">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#71]
+display-name: /base/sysutilTest/separateSnapshotFlowTimeList
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[70]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.03">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#70]
+display-name: /base/sysutilTest/syncOdsSzdnGantry
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[73]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.002">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#73]
+display-name: /base/sysutil/carTrackQueryByCarNo
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[72]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.002">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#72]
+display-name: /base/sysutil/saveRedis
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[35]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.016">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#35]
+display-name: /base/gantry/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[79]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.018">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#79]
+display-name: /base/trailtracks/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[34]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.019">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#34]
+display-name: /base/gantry/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[78]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.016">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#78]
+display-name: /base/trailtracks/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[37]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.019">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#37]
+display-name: /base/gantryIp/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[36]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.017">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#36]
+display-name: /base/gantry/listAll
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[31]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.016">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#31]
+display-name: /base/provcapture/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[75]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.002">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#75]
+display-name: /base/sysutil/getByTrailBo
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[30]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.019">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#30]
+display-name: /base/provcapture/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[74]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.002">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#74]
+display-name: /base/sysutil/carTrackQueryByTime
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[33]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.021">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#33]
+display-name: /base/stationcapture/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[77]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.002">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#77]
+display-name: /api/v1/unified/export/status/1
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[32]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.018">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#32]
+display-name: /base/stationcapture/list
+]]></system-out>
+</testcase>
+<testcase name="allEndpoints()[76]" classname="com.ruoyi.parity.generated.EndpointContractTest" time="0.002">
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]/[class:com.ruoyi.parity.generated.EndpointContractTest]/[test-factory:allEndpoints()]/[dynamic-test:#76]
+display-name: /api/v1/unified/1/list
+]]></system-out>
+</testcase>
+<system-out><![CDATA[
+unique-id: [engine:junit-jupiter]
+display-name: JUnit Jupiter
+]]></system-out>
+</testsuite>

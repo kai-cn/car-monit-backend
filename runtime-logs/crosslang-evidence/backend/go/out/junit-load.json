@@ -1,0 +1,19 @@
+{
+  "variant": "go",
+  "threads": 8,
+  "duration_seconds": 30,
+  "warmup_seconds": 2,
+  "total_requests": 65419,
+  "ok": 63686,
+  "errors": 0,
+  "business_4xx": 1733,
+  "business_5xx": 0,
+  "rps": 2180.633333333333,
+  "avg_latency_ms": 3.93361255904248,
+  "p50_ms": 2,
+  "p95_ms": 7,
+  "p99_ms": 15,
+  "bytes": 90722052,
+  "error_samples": [],
+  "endpoints": 302
+}

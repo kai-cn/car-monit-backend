@@ -1,0 +1,53 @@
+{
+  "label": "backend-java25-crosslang-full-go",
+  "baseline_variant": "java25-boot4",
+  "candidate_variant": "go",
+  "rows": [
+    {
+      "metric": "total_requests",
+      "baseline": 477922,
+      "candidate": 1433796,
+      "candidate_over_baseline": 3.0001
+    },
+    {
+      "metric": "rps",
+      "baseline": 15930.733333333334,
+      "candidate": 47793.2,
+      "candidate_over_baseline": 3.0001
+    },
+    {
+      "metric": "avg_latency_ms",
+      "baseline": 0.6076912132105239,
+      "candidate": 0.17824153505798593,
+      "candidate_over_baseline": 0.2933
+    },
+    {
+      "metric": "p50_ms",
+      "baseline": 0,
+      "candidate": 0,
+      "candidate_over_baseline": null
+    },
+    {
+      "metric": "p95_ms",
+      "baseline": 1,
+      "candidate": 1,
+      "candidate_over_baseline": 1.0
+    },
+    {
+      "metric": "p99_ms",
+      "baseline": 3,
+      "candidate": 1,
+      "candidate_over_baseline": 0.3333
+    },
+    {
+      "metric": "errors",
+      "baseline": 0,
+      "candidate": 0,
+      "candidate_over_baseline": null
+    }
+  ],
+  "error_rate": {
+    "baseline": 0.0,
+    "candidate": 0.0
+  }
+}

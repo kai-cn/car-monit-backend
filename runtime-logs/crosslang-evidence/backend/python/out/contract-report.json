@@ -1,0 +1,6067 @@
+{
+  "label": "backend-java25-crosslang-full-python",
+  "baseline": {
+    "variant": "java25-boot4",
+    "startup_ms": null,
+    "peak_rss_mb": null,
+    "avg_latency_ms": 156.29
+  },
+  "candidate": {
+    "variant": "python",
+    "startup_ms": null,
+    "peak_rss_mb": null,
+    "avg_latency_ms": 1.89
+  },
+  "totals": {
+    "endpoints": 302,
+    "status_match": 302,
+    "exact": 301,
+    "semantic": 301,
+    "nondet": 1,
+    "baseline_skip": 0,
+    "fails": 0
+  },
+  "rows": [
+    {
+      "endpoint": "/base/cdc/config",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        94,
+        94
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/cdc/config，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/cdc/config，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/cdc/dead-letters",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/cdc/dead-letters，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/cdc/dead-letters，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/cdc/retry-messages",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/cdc/retry-messages，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/cdc/retry-messages，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/cdc/status",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        94,
+        94
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/cdc/status，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/cdc/status，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/config/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        92,
+        92
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/config/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/config/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/config/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/config/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/config/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/config/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/config/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/config/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/configServiceArea/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/configServiceArea/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/configServiceArea/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/configServiceArea/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        108,
+        108
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/configServiceArea/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/configServiceArea/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/configServiceArea/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        106,
+        106
+      ],
+      "latency_ms": [
+        3,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/configServiceArea/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/configServiceArea/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/configServiceArea/listQuery",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        111,
+        111
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/configServiceArea/listQuery，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/configServiceArea/listQuery，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feeGantry/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/feeGantry/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/feeGantry/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feeGantry/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/feeGantry/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/feeGantry/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feeGantry/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        3,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/feeGantry/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/feeGantry/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feeStationEnter/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/feeStationEnter/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/feeStationEnter/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feeStationEnter/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/feeStationEnter/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/feeStationEnter/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feerecords/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        96
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/feerecords/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/feerecords/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feerecords/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/feerecords/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/feerecords/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feerecords/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/feerecords/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/feerecords/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feestationexit/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/feestationexit/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/feestationexit/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feestationexit/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        105,
+        105
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/feestationexit/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/feestationexit/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feestationexit/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/feestationexit/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/feestationexit/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/fitting/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        93,
+        93
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/fitting/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/fitting/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/fitting/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        96
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/fitting/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/fitting/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        93,
+        93
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/fwqjcxx/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/fwqjcxx/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/fwqjcxx/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/fwqjcxx/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        96
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/fwqjcxx/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/fwqjcxx/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantry/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        92,
+        92
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/gantry/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/gantry/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantry/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/gantry/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/gantry/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantry/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/gantry/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/gantry/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantry/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/gantry/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/gantry/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantryIp/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        94,
+        94
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/gantryIp/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/gantryIp/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantryIp/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/gantryIp/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/gantryIp/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/geometry/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        94,
+        94
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/geometry/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/geometry/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/geometry/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/geometry/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/geometry/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/geometry/getHenDa",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/geometry/getHenDa，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/geometry/getHenDa，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/geometry/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/geometry/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/geometry/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/geometry/syncAllGeometry",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        108,
+        108
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/geometry/syncAllGeometry，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/geometry/syncAllGeometry，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/geometry/syncAllGeometry1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        109,
+        109
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/geometry/syncAllGeometry1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/geometry/syncAllGeometry1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/location/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        94,
+        94
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/location/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/location/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/location/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/location/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/location/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/org/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        89,
+        89
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/org/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/org/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/org/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        94,
+        94
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/org/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/org/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/org/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        92,
+        92
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/org/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/org/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/provcapture/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/provcapture/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/provcapture/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/provcapture/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/provcapture/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/provcapture/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/section/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        93,
+        93
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/section/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/section/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/section/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/section/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/section/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/section/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        96
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/section/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/section/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/section/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/section/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/section/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        93,
+        93
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/sfsjcxx/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/sfsjcxx/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/sfsjcxx/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/sfsjcxx/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        96
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/sfsjcxx/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/sfsjcxx/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        93,
+        93
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/sfzjcxx/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/sfzjcxx/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/sfzjcxx/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/sfzjcxx/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        96
+      ],
+      "latency_ms": [
+        3,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/sfzjcxx/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/sfzjcxx/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/snapshotflow/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/snapshotflow/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/snapshotflow/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/snapshotflow/earliest-time",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        110,
+        110
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/snapshotflow/earliest-time，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/snapshotflow/earliest-time，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/snapshotflow/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/snapshotflow/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/snapshotflow/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/snapshotflow/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/snapshotflow/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/snapshotflow/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/stationcapture/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/stationcapture/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/stationcapture/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/stationcapture/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/stationcapture/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/stationcapture/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/toll/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        90,
+        90
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/toll/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/toll/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/toll/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/toll/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/toll/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/toll/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        93,
+        93
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/toll/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/toll/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/toll/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        96
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/toll/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/toll/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/tollStationIp/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/tollStationIp/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/tollStationIp/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/tollStationIp/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/tollStationIp/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/tollStationIp/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/trailtracks/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/trailtracks/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/trailtracks/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/trailtracks/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/trailtracks/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/trailtracks/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/vehicleweight/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/vehicleweight/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/vehicleweight/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/vehicleweight/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/base/vehicleweight/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/base/vehicleweight/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/captchaImage",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        4092,
+        3988
+      ],
+      "latency_ms": [
+        1444,
+        20
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"img\":\"/9j/4AAQSkZJRgABAgAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAA8AKADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQo",
+      "body_c": "{\"msg\":\"操作成功\",\"img\":\"/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAA8AKADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQo",
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (raw body); status equal, body drift not attributable"
+    },
+    {
+      "endpoint": "/common/download",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        30,
+        3
+      ],
+      "body_b": "",
+      "body_c": "",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/common/download/resource",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/common/download/resource，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/common/download/resource，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/downTemplate/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        93,
+        93
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/downTemplate/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/downTemplate/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/applyinfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/applyinfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/applyinfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/applyinfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/applyinfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/applyinfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/applyinfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/applyinfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/applyinfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/applyinfo/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/applyinfo/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/applyinfo/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/currentnode/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/currentnode/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/currentnode/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/currentnode/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/currentnode/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/currentnode/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/currentnode/getInfoByBillId/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        113,
+        113
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/currentnode/getInfoByBillId/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/currentnode/getInfoByBillId/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/currentnode/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/currentnode/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/currentnode/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowlist/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        94,
+        94
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/flowlist/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/flowlist/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowlist/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/flowlist/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/flowlist/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowlist/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/flowlist/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/flowlist/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowlist/listnew",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/flowlist/listnew，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/flowlist/listnew，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowname/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        94,
+        94
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/flowname/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/flowname/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowname/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        0,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/flowname/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/flowname/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowname/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/flowname/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/flowname/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowname/listQuery",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/flowname/listQuery，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/flowname/listQuery，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowtemplate/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/flowtemplate/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/flowtemplate/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowtemplate/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/flowtemplate/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/flowtemplate/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowtemplate/flowlist",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        105,
+        105
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/flowtemplate/flowlist，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/flowtemplate/flowlist，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowtemplate/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/flowtemplate/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/flowtemplate/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messagedispose/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/messagedispose/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/messagedispose/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messagedispose/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        105,
+        105
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/messagedispose/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/messagedispose/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messagedispose/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/messagedispose/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/messagedispose/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messageinfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/messageinfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/messageinfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messageinfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/messageinfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/messageinfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messageinfo/exportShrz",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        106,
+        106
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/messageinfo/exportShrz，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/messageinfo/exportShrz，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messageinfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/messageinfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/messageinfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messageinfo/listxx",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/messageinfo/listxx，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/messageinfo/listxx，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messageinfo/listyb",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/messageinfo/listyb，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/messageinfo/listyb，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messageinfo/listyj",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/flow/messageinfo/listyj，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/flow/messageinfo/listyj，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/getInfo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        86,
+        86
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/getInfo，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/getInfo，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/getRouters",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        89,
+        89
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/getRouters，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/getRouters，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/aduitfree/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/aduitfree/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/aduitfree/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/aduitfree/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/aduitfree/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/aduitfree/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/aduitfree/exportIncomeDetailList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        119,
+        119
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/aduitfree/exportIncomeDetailList，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/aduitfree/exportIncomeDetailList，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/aduitfree/exportIncomeStatics",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        116,
+        116
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/aduitfree/exportIncomeStatics，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/aduitfree/exportIncomeStatics，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/aduitfree/incomeDetailList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        113,
+        113
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/aduitfree/incomeDetailList，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/aduitfree/incomeDetailList，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/aduitfree/incomeStatics",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        110,
+        110
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/aduitfree/incomeStatics，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/aduitfree/incomeStatics，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/aduitfree/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/aduitfree/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/aduitfree/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carAudit",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        105,
+        105
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/carAudit，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/carAudit，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carLocation",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        108,
+        108
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/carLocation，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/carLocation，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carStatistics",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        110,
+        110
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/carStatistics，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/carStatistics，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carVoList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        106,
+        106
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/carVoList，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/carVoList，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carWarning",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        107,
+        107
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/carWarning，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/carWarning，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/exceptRecordList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        113,
+        113
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/exceptRecordList，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/exceptRecordList，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/exceptionCar",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        109,
+        109
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/exceptionCar，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/exceptionCar，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/export/approvals",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        113,
+        113
+      ],
+      "latency_ms": [
+        0,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/export/approvals，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/export/approvals，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/export/download/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        114,
+        114
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/export/download/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/export/download/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/export/status/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        112,
+        112
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/export/status/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/export/status/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/incomeStatistic",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        112,
+        112
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/incomeStatistic，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/incomeStatistic，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/orgList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/orgList，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/orgList，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/sectionList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        108,
+        108
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/sectionList，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/sectionList，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/tollGantryFwqList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        114,
+        114
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/tollGantryFwqList，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/tollGantryFwqList，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/topTen",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/bigScreen/topTen，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/bigScreen/topTen，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/busstest/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/busstest/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/busstest/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/busstest/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/busstest/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/busstest/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/busstest/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/busstest/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/busstest/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carinfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        96
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/carinfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/carinfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carinfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/carinfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/carinfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carinfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/carinfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/carinfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carinfo/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/carinfo/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/carinfo/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carsuspiciousback/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        106,
+        106
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/carsuspiciousback/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/carsuspiciousback/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carsuspiciousback/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        111,
+        111
+      ],
+      "latency_ms": [
+        3,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/carsuspiciousback/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/carsuspiciousback/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carsuspiciousback/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        109,
+        109
+      ],
+      "latency_ms": [
+        52,
+        162
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/carsuspiciousback/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/carsuspiciousback/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/cartrackinfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/cartrackinfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/carSnapShot",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        111,
+        111
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/cartrackinfo/carSnapShot，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/cartrackinfo/carSnapShot，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        106,
+        106
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/cartrackinfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/cartrackinfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/cartrackinfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/cartrackinfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/listByCarByTime",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        115,
+        115
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/cartrackinfo/listByCarByTime，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/cartrackinfo/listByCarByTime，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/listByCarId",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        111,
+        111
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/cartrackinfo/listByCarId，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/cartrackinfo/listByCarId，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carwarning/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/carwarning/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/carwarning/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carwarning/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/carwarning/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/carwarning/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carwarning/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/carwarning/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/carwarning/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/confimfree/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/confimfree/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/carStatics",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        108,
+        108
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/confimfree/carStatics，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/confimfree/carStatics，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/concernedList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        111,
+        111
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/confimfree/concernedList，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/confimfree/concernedList，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/except/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        106,
+        106
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/confimfree/except/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/confimfree/except/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/confimfree/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/confimfree/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/exportCarStatics",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        114,
+        114
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/confimfree/exportCarStatics，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/confimfree/exportCarStatics，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/exportConcernedList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        117,
+        117
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/confimfree/exportConcernedList，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/confimfree/exportConcernedList，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/confimfree/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/confimfree/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/listCarNo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        107,
+        107
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/confimfree/listCarNo，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/confimfree/listCarNo，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/listCount",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        107,
+        107
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/confimfree/listCount，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/confimfree/listCount，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/exceptrecord/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/exceptrecord/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/exceptRecordCount",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        117,
+        117
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/exceptrecord/exceptRecordCount，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/exceptrecord/exceptRecordCount，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        106,
+        106
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/exceptrecord/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/exceptrecord/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/exportOrgId",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        111,
+        111
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/exceptrecord/exportOrgId，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/exceptrecord/exportOrgId，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/getConfirmId/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        114,
+        114
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/exceptrecord/getConfirmId/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/exceptrecord/getConfirmId/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/exceptrecord/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/exceptrecord/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/listCarNo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        109,
+        109
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/exceptrecord/listCarNo，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/exceptrecord/listCarNo，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/listCarOrgId",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        112,
+        112
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/exceptrecord/listCarOrgId，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/exceptrecord/listCarOrgId，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/listExceptId",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        112,
+        112
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/exceptrecord/listExceptId，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/exceptrecord/listExceptId，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/feerecord/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/feerecord/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/feerecord/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/feerecord/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/feerecord/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/feerecord/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/feerecord/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/feerecord/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/feerecord/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/fwqclls/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        96
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/fwqclls/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/fwqclls/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/fwqclls/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/fwqclls/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/fwqclls/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/gantrycar/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/gantrycar/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/gantrycar/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/gantrycar/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/gantrycar/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/gantrycar/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/gantrycar/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/gantrycar/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/gantrycar/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/gantrytrade/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/gantrytrade/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/gantrytrade/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/gantrytrade/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        105,
+        105
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/gantrytrade/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/gantrytrade/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/gantrytrade/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        4,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/gantrytrade/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/gantrytrade/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/querylog/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/querylog/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/querylog/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/querylog/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/querylog/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/querylog/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/querylog/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/querylog/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/querylog/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/routedetail/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/routedetail/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/routedetail/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/routedetail/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        105,
+        105
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/routedetail/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/routedetail/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/routedetail/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/routedetail/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/routedetail/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/routeinfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/routeinfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/routeinfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/routeinfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/routeinfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/routeinfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/routeinfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/routeinfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/routeinfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/splitrecord/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/splitrecord/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/splitrecord/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/splitrecord/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        105,
+        105
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/splitrecord/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/splitrecord/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/splitrecord/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/splitrecord/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/splitrecord/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        0,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/suspicious/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/suspicious/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/suspicious/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/suspicious/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/exportAbnormalPassage",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        119,
+        119
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/suspicious/exportAbnormalPassage，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/suspicious/exportAbnormalPassage，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/exportHistory",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        111,
+        111
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/suspicious/exportHistory，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/suspicious/exportHistory，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/history/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        107,
+        107
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/suspicious/history/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/suspicious/history/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/suspicious/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/suspicious/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        105,
+        105
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/suspicious/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/suspicious/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/listCarNo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        107,
+        107
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/suspicious/listCarNo，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/suspicious/listCarNo，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/listFileCarNo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        111,
+        111
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/suspicious/listFileCarNo，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/suspicious/listFileCarNo，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/listHistory",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        109,
+        109
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/suspicious/listHistory，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/suspicious/listHistory，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspiciouscheck/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/suspiciouscheck/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/suspiciouscheck/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspiciouscheck/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        109,
+        109
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/suspiciouscheck/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/suspiciouscheck/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspiciouscheck/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        107,
+        107
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/suspiciouscheck/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/suspiciouscheck/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/warningrule/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/warningrule/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/warningrule/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/warningrule/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        105,
+        105
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/warningrule/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/warningrule/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/warningrule/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/warningrule/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/warningrule/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/whiteinfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/whiteinfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/whiteinfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/whiteinfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/whiteinfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/whiteinfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/whiteinfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/manager/whiteinfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/manager/whiteinfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/bigscreen/metrics",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/bigscreen/metrics，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/bigscreen/metrics，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/bigscreen/switches",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        105,
+        105
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/bigscreen/switches，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/bigscreen/switches，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/cache/",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        93,
+        93
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/cache/，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/cache/，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/job/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        92,
+        92
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/job/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/job/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/job/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/job/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/job/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/job/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/job/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/job/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/jobLog/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/jobLog/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/jobLog/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/jobLog/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/jobLog/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/jobLog/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/jobLog/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/jobLog/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/jobLog/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/logininfor/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/logininfor/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/logininfor/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/logininfor/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        0,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/logininfor/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/logininfor/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/online/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/online/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/online/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/operlog/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/operlog/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/operlog/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/operlog/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/operlog/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/operlog/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/server/",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        94,
+        94
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/monitor/server/，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/monitor/server/，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/config/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        94,
+        94
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/config/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/config/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/config/configKey/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/config/configKey/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/config/configKey/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/config/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/config/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/config/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/config/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/config/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/config/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dept/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        92,
+        92
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dept/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dept/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dept/getCompanyList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        105,
+        105
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dept/getCompanyList，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dept/getCompanyList，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dept/getList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dept/getList，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dept/getList，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dept/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dept/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dept/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dept/list/exclude/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        105,
+        105
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dept/list/exclude/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dept/list/exclude/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dept/roleDeptTreeselect/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        111,
+        111
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dept/roleDeptTreeselect/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dept/roleDeptTreeselect/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dept/treeselect",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dept/treeselect，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dept/treeselect，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dept/treeselectNew",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dept/treeselectNew，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dept/treeselectNew，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/data/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dict/data/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dict/data/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/data/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dict/data/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dict/data/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/data/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dict/data/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dict/data/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/data/type/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dict/data/type/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dict/data/type/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/data/typemore/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        106,
+        106
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dict/data/typemore/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dict/data/typemore/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/type/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dict/type/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dict/type/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/type/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dict/type/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dict/type/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/type/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dict/type/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dict/type/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/type/optionselect",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        108,
+        108
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/dict/type/optionselect，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/dict/type/optionselect，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/file/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        92,
+        92
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/file/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/file/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/file/1/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        94,
+        94
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/file/1/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/file/1/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/file/getInfoById/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/file/getInfoById/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/file/getInfoById/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/file/getNewCa",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/file/getNewCa，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/file/getNewCa，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/file/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/file/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/file/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/file/view/1/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        41379,
+        3
+      ],
+      "body_b": "",
+      "body_c": "",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/indexmenu/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/indexmenu/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/indexmenu/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/indexmenu/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/indexmenu/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/indexmenu/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/indexmenu/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/indexmenu/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/indexmenu/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/indexmenu/mylist",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/indexmenu/mylist，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/indexmenu/mylist，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/menu/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        92,
+        92
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/menu/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/menu/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/menu/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/menu/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/menu/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/menu/roleMenuTreeselect/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        111,
+        111
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/menu/roleMenuTreeselect/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/menu/roleMenuTreeselect/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/menu/treeselect",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/menu/treeselect，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/menu/treeselect，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/notice/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        94,
+        94
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/notice/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/notice/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/notice/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/notice/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/notice/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/notice/listquery",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/notice/listquery，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/notice/listquery，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/notice/view/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        30,
+        5
+      ],
+      "body_b": "{\"msg\":\"操作成功\",\"code\":200}",
+      "body_c": "{\"msg\":\"操作成功\",\"code\":200}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/post/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        92,
+        92
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/post/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/post/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/post/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/post/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/post/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/post/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/post/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/post/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/post/optionselect",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/post/optionselect，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/post/optionselect，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/role/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        92,
+        92
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/role/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/role/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/role/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/role/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/role/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/role/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/role/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/role/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/role/optionselect",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/role/optionselect，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/role/optionselect，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/role/selectlist",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        101,
+        101
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/role/selectlist，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/role/selectlist，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/upgradeInfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/upgradeInfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/upgradeInfo/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/upgradeInfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/upgradeInfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/upgradeInfo/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/upgradeInfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/upgradeInfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/upgradeInfo/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/upgradeInfo/newest",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/upgradeInfo/newest，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/upgradeInfo/newest，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        91,
+        91
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/user/，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/user/，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/currentUser",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/user/currentUser，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/user/currentUser，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/user/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/user/export，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/getroleUser/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        104,
+        104
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/user/getroleUser/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/user/getroleUser/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/importTemplate",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        105,
+        105
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/user/importTemplate，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/user/importTemplate，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        0,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/user/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/user/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/list/dept",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/user/list/dept，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/user/list/dept，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/user/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/user/listAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/listMy",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/user/listMy，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/user/listMy，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/listSameUtil",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        103
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/user/listSameUtil，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/user/listSameUtil，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/listTenantIdAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        106,
+        106
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/user/listTenantIdAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/user/listTenantIdAll，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/listutil",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/user/listutil，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/user/listutil，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/profile/",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        99,
+        99
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/system/user/profile/，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/system/user/profile/，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/test/user/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        90,
+        90
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/test/user/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/test/user/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/test/user/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        93,
+        93
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/test/user/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/test/user/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        89,
+        89
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/tool/gen/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/tool/gen/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/all/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        96
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/tool/gen/all/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/tool/gen/all/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/batchGenCode",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        100,
+        100
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/tool/gen/batchGenCode，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/tool/gen/batchGenCode，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/column/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        96
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/tool/gen/column/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/tool/gen/column/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/db/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        95,
+        95
+      ],
+      "latency_ms": [
+        1,
+        2
+      ],
+      "body_b": "{\"msg\":\"请求访问：/tool/gen/db/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/tool/gen/db/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/download/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        98,
+        98
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/tool/gen/download/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/tool/gen/download/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/genCode/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/tool/gen/genCode/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/tool/gen/genCode/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        92,
+        92
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/tool/gen/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/tool/gen/list，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/preview/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        0,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/tool/gen/preview/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/tool/gen/preview/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/synchDb/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        97
+      ],
+      "latency_ms": [
+        1,
+        1
+      ],
+      "body_b": "{\"msg\":\"请求访问：/tool/gen/synchDb/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "body_c": "{\"msg\":\"请求访问：/tool/gen/synchDb/1，认证失败，无法访问系统资源\",\"code\":401}",
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    }
+  ]
+}
