@@ -13,31 +13,7 @@
 
 # Risk: may call GitHub API or modify local/remote files; inspect before running.
 
-"""Compare two probe result JSONs (baseline vs candidate) and emit a verdict + markdown.
 
-
-
-Usage:
-
-  python parity_compare.py --baseline out/jar.json --candidate out/native.json \
-
-      --out out/report.json --md out/report.md [--label api-jdk25-linux]
-
-
-
-Semantics:
-
-  * exact  : raw body bytes identical
-
-  * semantic: JSON-normalised body identical after dropping volatile keys
-
-  * status  : HTTP status identical
-
-  * latency/startup/RSS deltas are reported, not gated
-
-Exit code: 0 if all endpoints have identical status AND (exact or semantic) body, else 1.
-
-"""
 
 from __future__ import annotations
 

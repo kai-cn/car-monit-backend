@@ -1,46 +1,12 @@
 #!/usr/bin/env python3
 
-"""
-@description 历史脚本 parity_probe.py：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
-@author Tencent Hunyuan Hy
-@date 2026-11-22
-@usage python parity_probe.py [args]；具体参数以脚本 argparse 或源码说明为准。
-@dependencies Java 运行时；Python 3 标准库及脚本原有第三方依赖
-"""
-# Operational helper — native/CICD verification session (2026-11-16~17).
-
-# Purpose: Operational helper created during the native/CICD verification session.
-
-# Risk: may call GitHub API or modify local/remote files; inspect before running.
-
-"""Probe ONE application variant: start process, wait ready, hit endpoints, sample resources.
-
-
-
-Cross-platform (Linux + Windows). Outputs a JSON result file.
-
-
-
-Usage:
-
-  python parity_probe.py --variant jar --cmd "java -jar app.jar --server.port=19903" \
-
-     --port 19903 --endpoints endpoints.txt --out out/jar.json --label api-jdk25
-
-
-
-Design:
-
-  * readiness = TCP port accepts a connection (web server bound).
-
-  * each endpoint hit sequentially; status/bytes/latency/sha256 (+body in full mode).
-
-  * peak RSS sampled every 0.5s; startup_ms measured to first accepted TCP connection.
-
-  * process tree is force-killed on exit.
-
-"""
-
+#
+# @description 历史脚本 parity_probe.py：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage python parity_probe.py [args]；具体参数以脚本 argparse 或源码说明为准。
+# @dependencies Java 运行时；Python 3 标准库及脚本原有第三方依赖
+#
 from __future__ import annotations
 
 import argparse, hashlib, json, os, signal, socket, subprocess, sys, threading, time

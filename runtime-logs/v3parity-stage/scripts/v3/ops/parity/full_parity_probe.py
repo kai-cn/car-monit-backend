@@ -1,29 +1,29 @@
 #!/usr/bin/env python3
 
-"""
-@description 历史脚本 full_parity_probe.py：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
-@author Tencent Hunyuan Hy
-@date 2026-11-22
-@usage python full_parity_probe.py [args]；具体参数以脚本 argparse 或源码说明为准。
-@dependencies Java 运行时；Python 3 标准库及脚本原有第三方依赖
-
-口令只从环境变量读取（CI_ADMIN_PASSWORD），不写文件、不打印、不进 out/*.json。
-
-
-
-
-
-用法：
-
-
-  python full_parity_probe.py --variant java-v3 --port 19903 \
-
-
-    --cmd "java -jar out/baseline.jar --server.port=19903" \
-
-
-    --endpoints out/endpoints.txt --out out/java-v3.json
-"""
+#
+# @description 历史脚本 full_parity_probe.py：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage python full_parity_probe.py [args]；具体参数以脚本 argparse 或源码说明为准。
+# @dependencies Java 运行时；Python 3 标准库及脚本原有第三方依赖
+#
+# 口令只从环境变量读取（CI_ADMIN_PASSWORD），不写文件、不打印、不进 out/*.json。
+#
+#
+#
+#
+#
+# 用法：
+#
+#
+# python full_parity_probe.py --variant java-v3 --port 19903 \
+#
+#
+# --cmd "java -jar out/baseline.jar --server.port=19903" \
+#
+#
+# --endpoints out/endpoints.txt --out out/java-v3.json
+#
 from __future__ import annotations
 
 import argparse, hashlib, json, os, signal, socket, subprocess, sys, threading, time

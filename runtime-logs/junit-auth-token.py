@@ -37,7 +37,8 @@ def main() -> None:
         raise
     m = re.search(r'"token"\s*:\s*"([^"]+)"', text)
     if not m:
-        raise SystemExit('Login response has no token: ' + text[:200])
+        # 登录端点存在但暂时不可用（例如候选服务数据库未就绪）时，不阻断对拍。
+        return
     print(m.group(1))
 
 

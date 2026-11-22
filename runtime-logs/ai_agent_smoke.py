@@ -1,29 +1,29 @@
 #!/usr/bin/env python3
 
-"""
-@description 历史脚本 ai_agent_smoke.py：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
-@author Tencent Hunyuan Hy
-@date 2026-11-22
-@usage python ai_agent_smoke.py [args]；具体参数以脚本 argparse 或源码说明为准。
-@dependencies Python 3 标准库及脚本原有第三方依赖
-
-启动 FastAPI 子进程（uvicorn），等待 /health，然后以真实 HTTP 调用：
-
-
-  POST /ai/agent/query（带 X-Agent-Key）→ 断言契约
-
-
-  POST /ai/agent/query（无令牌）→ 断言 403
-
-
-全过程不需要真实 LLM key（AI_AGENT_API_KEY 为空 → FakeAgentModel）。
-
-
-
-
-
-【Java 对照】等价于 SpringBootTest + MockMvc 冒烟，但走真实 socket。
-"""
+#
+# @description 历史脚本 ai_agent_smoke.py：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage python ai_agent_smoke.py [args]；具体参数以脚本 argparse 或源码说明为准。
+# @dependencies Python 3 标准库及脚本原有第三方依赖
+#
+# 启动 FastAPI 子进程（uvicorn），等待 /health，然后以真实 HTTP 调用：
+#
+#
+# POST /ai/agent/query（带 X-Agent-Key）→ 断言契约
+#
+#
+# POST /ai/agent/query（无令牌）→ 断言 403
+#
+#
+# 全过程不需要真实 LLM key（AI_AGENT_API_KEY 为空 → FakeAgentModel）。
+#
+#
+#
+#
+#
+# 【Java 对照】等价于 SpringBootTest + MockMvc 冒烟，但走真实 socket。
+#
 from __future__ import annotations
 
 

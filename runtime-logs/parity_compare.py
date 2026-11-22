@@ -1,44 +1,12 @@
 #!/usr/bin/env python3
 
-"""
-@description 历史脚本 parity_compare.py：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
-@author Tencent Hunyuan Hy
-@date 2026-11-22
-@usage python parity_compare.py [args]；具体参数以脚本 argparse 或源码说明为准。
-@dependencies Python 3 标准库及脚本原有第三方依赖
-"""
-# Operational helper — native/CICD verification session (2026-11-16~17).
-
-# Purpose: Operational helper created during the native/CICD verification session.
-
-# Risk: may call GitHub API or modify local/remote files; inspect before running.
-
-"""Compare two probe result JSONs (baseline vs candidate) and emit a verdict + markdown.
-
-
-
-Usage:
-
-  python parity_compare.py --baseline out/jar.json --candidate out/native.json \
-
-      --out out/report.json --md out/report.md [--label api-jdk25-linux]
-
-
-
-Semantics:
-
-  * exact  : raw body bytes identical
-
-  * semantic: JSON-normalised body identical after dropping volatile keys
-
-  * status  : HTTP status identical
-
-  * latency/startup/RSS deltas are reported, not gated
-
-Exit code: 0 if all endpoints have identical status AND (exact or semantic) body, else 1.
-
-"""
-
+#
+# @description 历史脚本 parity_compare.py：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage python parity_compare.py [args]；具体参数以脚本 argparse 或源码说明为准。
+# @dependencies Python 3 标准库及脚本原有第三方依赖
+#
 from __future__ import annotations
 
 import argparse, json, statistics, sys

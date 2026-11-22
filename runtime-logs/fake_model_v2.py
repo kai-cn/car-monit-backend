@@ -1,26 +1,26 @@
 # -*- coding: utf-8 -*-
 
-"""
-@description 历史脚本 fake_model_v2.py：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
-@author Tencent Hunyuan Hy
-@date 2026-11-22
-@usage python fake_model_v2.py [args]；具体参数以脚本 argparse 或源码说明为准。
-@dependencies Python 3 标准库及脚本原有第三方依赖
-
-LangChain 官方 ``FakeListChatModel`` 只返回字符串，无法让 Agent 真正调用工具。
-
-
-本类继承 ``SimpleChatModel``（官方测试基类），覆盖 ``_generate`` 返回带
-
-
-``tool_calls`` 的 ``AIMessage``，这样 LangGraph/LangChain 的 agent 循环会按官方路径执行。
-
-
-
-
-
-【Java 对照】JUnit ``@MockBean ChatModel`` 的 thenReturn 序列。
-"""
+#
+# @description 历史脚本 fake_model_v2.py：执行运维或验证流程中的辅助操作；保留原有执行逻辑，仅补充交接所需背景、用法和依赖，避免脚本意图随会话丢失。
+# @author Tencent Hunyuan Hy
+# @date 2026-11-22
+# @usage python fake_model_v2.py [args]；具体参数以脚本 argparse 或源码说明为准。
+# @dependencies Python 3 标准库及脚本原有第三方依赖
+#
+# LangChain 官方 ``FakeListChatModel`` 只返回字符串，无法让 Agent 真正调用工具。
+#
+#
+# 本类继承 ``SimpleChatModel``（官方测试基类），覆盖 ``_generate`` 返回带
+#
+#
+# ``tool_calls`` 的 ``AIMessage``，这样 LangGraph/LangChain 的 agent 循环会按官方路径执行。
+#
+#
+#
+#
+#
+# 【Java 对照】JUnit ``@MockBean ChatModel`` 的 thenReturn 序列。
+#
 from __future__ import annotations
 
 
