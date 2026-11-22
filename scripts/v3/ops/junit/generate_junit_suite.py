@@ -80,6 +80,7 @@ public class EndpointContractTest {
             else if (c == '\n') b.append("\\n");
             else if (c == '\r') b.append("\\r");
             else if (c == '\t') b.append("\\t");
+            else if (c < 0x20) b.append(String.format("\\u%04x", (int) c));
             else b.append(c);
         }
         return b.toString();
@@ -231,6 +232,7 @@ public class EndpointLoadTest {
             else if (c == '\n') b.append("\\n");
             else if (c == '\r') b.append("\\r");
             else if (c == '\t') b.append("\\t");
+            else if (c < 0x20) b.append(String.format("\\u%04x", (int) c));
             else b.append(c);
         }
         return b.toString();
