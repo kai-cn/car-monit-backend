@@ -5,7 +5,7 @@
 ## 结论
 
 - Java JUnit 全接口/压测：16/16 cloud run success。
-- Java25 Boot4 crosslang：backend/api 两个 workflow success，baseline + python/go/cpp/rust 全部 job success。
+- Java25 Boot4 crosslang：backend/api 两个 workflow success，baseline + python/go/cpp/rust baseline success；候选严格对拍 failure。
 - 本地复跑：JUnit 生成与 Java8 编译通过；workflow YAML 4/4；脚本注释 TOTAL_MISSING 0；stub 驱动 contract/load 均 rc=0。
 - 跨语言对齐差异按 artifact 真实记录，未通过放宽断言隐藏；差异详见下表。
 
