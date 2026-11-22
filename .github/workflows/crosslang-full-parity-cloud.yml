@@ -120,7 +120,7 @@ jobs:
           sudo mkdir -p "$LOG_PATH" /home/ruoyi/logs; sudo chown -R "$(id -u):$(id -g)" /home/ruoyi "$LOG_PATH"; mkdir -p "$LOG_PATH" /home/ruoyi/logs
           java -jar out/app.jar --server.port=19903 > out/app.log 2>&1 &
           echo $! > out/app.pid
-          for i in $(seq 1 180); do curl -fsS -o /dev/null http://127.0.0.1:19903/captchaImage && break; sleep 1; done
+          for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1 && break; sleep 1; done
           OUT_DIR="$PWD/out" VARIANT=java25-boot4 LABEL="${{ inputs.label }}" \
             java -jar out/junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/junit-contract-reports
           OUT_DIR="$PWD/out" VARIANT=java25-boot4 LOAD_THREADS=${{ inputs.load_threads }} LOAD_SECONDS=${{ inputs.load_seconds }} \
@@ -129,7 +129,10 @@ jobs:
         if: always()
         with:
           name: crosslang-full-baseline
-          path: out/junit-contract.json,out/junit-load.json,out/*.log
+          path: |
+            out/junit-contract.json
+            out/junit-load.json
+            out/*.log
           retention-days: 30
       - name: Cleanup
         if: always()
@@ -254,7 +257,7 @@ jobs:
           if [ '${{ inputs.app }}' = 'api' ]; then EP=harness/scripts/v3/ops/parity/endpoints/api-full.txt; else EP=harness/scripts/v3/ops/parity/endpoints/backend-full.txt; fi
           python3 harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints "$EP" --out out/generated
           javac -encoding UTF-8 -source 8 -target 8 -cp out-junit.jar -d out/classes out/generated/*.java
-          for i in $(seq 1 180); do curl -fsS -o /dev/null http://127.0.0.1:19903/captchaImage && break; sleep 1; done
+          for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1 && break; sleep 1; done
           OUT_DIR="$PWD/out" VARIANT="${{ matrix.lang }}" LABEL="${{ inputs.label }}" \
             java -jar out-junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/contract-reports
           OUT_DIR="$PWD/out" VARIANT="${{ matrix.lang }}" LOAD_THREADS=${{ inputs.load_threads }} LOAD_SECONDS=${{ inputs.load_seconds }} \
