@@ -198,7 +198,15 @@ jobs:
       - name: Download JUnit jar
         if: steps.gate.outputs.run == 'yes'
         shell: bash
-        run: curl -fsSL -o out-junit.jar https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
+        run: |
+          set -euo pipefail
+          URL=https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
+          for i in 1 2 3 4; do
+            if curl -fsSL -o out-junit.jar "$URL"; then exit 0; fi
+            echo "junit download retry $i"; sleep $((i*5))
+          done
+          URL=https://repo2.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
+          curl -fsSL --retry 3 --retry-delay 5 -o out-junit.jar "$URL"
       - name: Build and start Python
         if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
         shell: bash
