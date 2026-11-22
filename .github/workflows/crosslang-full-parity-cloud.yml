@@ -84,10 +84,12 @@ jobs:
             docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/schema_carmonitdb.sql
             docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
           fi
-      - name: Build baseline and generate JUnit
-        shell: bash
+      - name: Build and start Java baseline
         run: |
           set -euo pipefail
+          export JAVA_HOME="$JAVA_HOME_25_X64"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          java -version
           cd src
           if [ '${{ inputs.app }}' = api ]; then MODULE=pro-business-api; EP=../harness/scripts/v3/ops/parity/endpoints/api-full.txt; else MODULE=ruoyi-admin; EP=../harness/scripts/v3/ops/parity/endpoints/backend-full.txt; fi
           mvn $MAVEN_ARGS -DskipTests -pl "$MODULE" -am package
