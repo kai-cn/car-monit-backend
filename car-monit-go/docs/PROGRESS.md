@@ -116,7 +116,7 @@
 |---|---|
 | Java 参考服务 | `ruoyi-admin/target/ruoyi-admin.jar`，端口 **9988**（`--server.port=9988`） |
 | Go 服务 | `bin/carmonit-server.exe`，端口 **9989**，配置 `configs/config.yaml` |
-| 账号 | admin / Admin@2025-（Java 登录需验证码，答案从 Redis `captcha_codes:<uuid>` 读取） |
+| 账号 | admin / __SET_CARMONIT_ADMIN_PASSWORD__（Java 登录需验证码，答案从 Redis `captcha_codes:<uuid>` 读取） |
 | 对比脚本 | 第三轮起统一在仓库内：`scripts/parity/compare_get.py --prefix /<模块> --out <报告.json>`（前两轮使用的 `cmp_api.py`/`cmp_one.py` 已作废） |
 | 写接口生命周期对比 | `scripts/parity/compare_write.py`：取真实行做模板 → 两端各插一条 `PARITY_*` 标记行 → 比 POST/详情/PUT/DELETE → 按标记硬清理 |
 | 落库逐列对比 | `scripts/parity/pp.py` 里的 `sql()`/`read_key()` 封装（MySQL CLI + db 感知的 redis-cli） |

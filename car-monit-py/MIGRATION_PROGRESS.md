@@ -1194,7 +1194,7 @@ Python 为了复用，把文案提到了模块级常量（`SUSPICIOUS_NOT_FOUND_
 ## 6.11 双前端实例实测（Phase 6.2）
 
 > 需求：同一个前端工程用 `npm run dev` 起两个实例，分别连 Java 与 Python，用
-> `admin/Admin@2025-` 登录并做使用验证对比。
+> `admin/__SET_CARMONIT_ADMIN_PASSWORD__` 登录并做使用验证对比。
 
 **环境**（本轮均处于运行状态）：
 
