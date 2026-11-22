@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""
+LEGACY-SCRIPT-ANNOTATION
+文件：generate_junit_suite.py
+用途：运维辅助脚本。
+思路：历史脚本缺少统一说明；本注释用于交代用途、思路与风险，不改变执行逻辑。
+风险：执行前确认目标环境、凭据与影响范围。
+"""
 """Generate Java 8 compatible JUnit 5 full-endpoint contract and load suites.
 
 Idea:
@@ -206,6 +213,7 @@ public class EndpointLoadTest {
         String base = env("BASE_URL", "http://127.0.0.1:19903");
 
         final ConcurrentLinkedQueue<Long> latency = new ConcurrentLinkedQueue<Long>();
+        final ConcurrentLinkedQueue<String> errorSamples = new ConcurrentLinkedQueue<String>();
         final AtomicLong total = new AtomicLong();
         final AtomicLong ok = new AtomicLong();
         final AtomicLong errors = new AtomicLong();
@@ -223,6 +231,7 @@ public class EndpointLoadTest {
                     String path = ENDPOINTS[i % ENDPOINTS.length];
                     i += threads;
                     HttpURLConnection c = null;
+                    int statusSeen = 0;
                     long t0 = System.currentTimeMillis();
                     try {
                         c = (HttpURLConnection) new URL(base + path).openConnection();
@@ -230,6 +239,7 @@ public class EndpointLoadTest {
                         c.setConnectTimeout(5000);
                         c.setReadTimeout(Integer.parseInt(env("HTTP_TIMEOUT_MS", "60000")));
                         int status = c.getResponseCode();
+                        statusSeen = status;
                         InputStream in = status < 400 ? c.getInputStream() : c.getErrorStream();
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         if (in != null) {
@@ -245,7 +255,18 @@ public class EndpointLoadTest {
                         else ok.incrementAndGet();
                     } catch (Exception e) {
                         total.incrementAndGet();
-                        errors.incrementAndGet();
+                        if (statusSeen == 0) {
+                            errors.incrementAndGet();
+                        } else if (statusSeen >= 500) {
+                            business5xx.incrementAndGet();
+                        } else if (statusSeen >= 400) {
+                            business4xx.incrementAndGet();
+                        } else {
+                            ok.incrementAndGet();
+                        }
+                        if (errorSamples.size() < 3) {
+                            errorSamples.add(path + ": " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                        }
                     } finally {
                         latency.add(System.currentTimeMillis() - t0);
                         if (c != null) c.disconnect();
@@ -276,6 +297,7 @@ public class EndpointLoadTest {
         result.put("p95_ms", percentile(sorted, 0.95));
         result.put("p99_ms", percentile(sorted, 0.99));
         result.put("bytes", bytes.get());
+        result.put("error_samples", new ArrayList<String>(errorSamples));
 
         StringBuilder s = new StringBuilder();
         s.append("{\n  \"variant\": \"").append(env("VARIANT", "java")).append("\",\n");
