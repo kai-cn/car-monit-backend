@@ -44,3 +44,10 @@
   - `wsl-retest-evidence/junit-contract.json`、`junit-load.json`：本机 302/302、145354 请求、0 errors。
 - 待办：F1/F2 用户侧真实凭据外部轮换与 Secrets 更新。
 
+## 2026-11-22 最终严格对拍结论
+
+- Java JUnit：16/16 success；本机重新编译打包：16/16 rc=0。
+- 本机管理员鉴权复测：302 端点、认证失败 0；压测 533 请求、传输错误 0。
+- 跨语言严格门禁：baseline 成功；backend `45031566682`、api `45031576935` 因候选返回与 Java 不一致而 failure。
+- 严格门禁要求与 Java 返回一致；所有 DIFF/NONDET 如实保留在 `crosslang-evidence.json`，不得改写为 success。
+
