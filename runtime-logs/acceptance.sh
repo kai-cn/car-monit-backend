@@ -51,7 +51,7 @@ ANS=$(echo "$RAW" | grep -oE '[0-9]+' | head -1)
 
 echo "answer=$ANS"
 
-BODY='{"username":"admin","password":"Admin@2025-","code":"","uuid":""}'
+BODY='{"username":"admin","password":"${CARMONIT_ADMIN_PASSWORD}","code":"","uuid":""}'
 
 LOGIN=$(curl -s -m 20 -X POST -H 'Content-Type: application/json' -d "$BODY" "$BE/login")
 

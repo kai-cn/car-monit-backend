@@ -49,7 +49,7 @@ env:
   MAVEN_ARGS: -B -ntp
   # 绠＄悊鍛樻祴璇曡处鍙凤紙涓� parity/pp.py 涓�鑷达級锛涘彲鍦ㄤ粨搴� Variables 瑕嗙洊
   AUTH_USER: ${{ vars.AUTH_USER || 'admin' }}
-  AUTH_PASS: ${{ secrets.AUTH_PASS || 'Admin@2025-' }}
+  AUTH_PASS: ${{ secrets.AUTH_PASS || '${CARMONIT_ADMIN_PASSWORD}' }}
   ENDPOINTS: scripts/v3/ops/parity/endpoints/backend-full.txt
 
 jobs:

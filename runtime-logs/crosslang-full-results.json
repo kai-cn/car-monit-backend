@@ -2,17 +2,17 @@
   {
     "repo": "kai-cn/car-monit-backend",
     "app": "backend",
-    "ref": "car-monit-backend-jdk25",
-    "run_id": 44993639979,
+    "ref": "master",
+    "run_id": 45031566682,
     "status": "completed",
-    "conclusion": "success"
+    "conclusion": "failure"
   },
   {
     "repo": "kai-cn/car-monit-api",
     "app": "api",
-    "ref": "car-monit-api-jdk25",
-    "run_id": 44993649569,
+    "ref": "master",
+    "run_id": 45031576935,
     "status": "completed",
-    "conclusion": "success"
+    "conclusion": "failure"
   }
 ]

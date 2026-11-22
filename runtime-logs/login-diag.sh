@@ -17,7 +17,7 @@ echo "=== full login error ==="
 
 curl -s -m 20 -X POST -H 'Content-Type: application/json' \
 
-  -d '{"username":"admin","password":"Admin@2025-","code":"1234","uuid":"dummy"}' \
+  -d '{"username":"admin","password":"${CARMONIT_ADMIN_PASSWORD}","code":"1234","uuid":"dummy"}' \
 
   http://172.18.0.2:30989/login
 

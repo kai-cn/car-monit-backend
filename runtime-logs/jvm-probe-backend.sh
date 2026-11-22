@@ -107,7 +107,7 @@ ANS=$(redis-cli -h 172.18.0.1 -p 6380 GET "captcha_codes:$UUID" 2>/dev/null | tr
 
 echo "uuid=${UUID:0:12} answer=$ANS"
 
-BODY=$(printf '{"username":"admin","password":"Admin@2025-","code":"%s","uuid":"%s"}' "$ANS" "$UUID")
+BODY=$(printf '{"username":"admin","password":"${CARMONIT_ADMIN_PASSWORD}","code":"%s","uuid":"%s"}' "$ANS" "$UUID")
 
 curl -s -m 15 -X POST -H 'Content-Type: application/json' -d "$BODY" http://127.0.0.1:19989/login | head -c 160; echo
 

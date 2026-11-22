@@ -30,7 +30,7 @@ TEXT = SECTION + '''
 
 - Java JUnit 全接口/压测：16/16 run success（backend 7、api 9），证据 `D:\\work\\runtime-logs\\java-junit-results.json`。
 
-- Java25 Boot4 crosslang：backend `44983230639`、api `44983238487`；baseline + python/go/cpp/rust 全部 job success。
+- Java25 Boot4 crosslang：backend `45031566682`、api `45031576935`；baseline success，严格对拍候选因返回差异 failure。
 
 - 证据：`D:\\work\\runtime-logs\\crosslang-evidence.json` / `crosslang-evidence.md`；对齐差异如实记录，未用断言掩盖。
 

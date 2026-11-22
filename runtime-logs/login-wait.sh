@@ -33,7 +33,7 @@ echo "=== login WITHOUT captcha code (code validation is skipped when blank) ===
 
 LOGIN=$(curl -s -m 25 -X POST -H 'Content-Type: application/json' \
 
-  -d '{"username":"admin","password":"Admin@2025-","code":"","uuid":""}' "$BE/login")
+  -d '{"username":"admin","password":"${CARMONIT_ADMIN_PASSWORD}","code":"","uuid":""}' "$BE/login")
 
 echo "login=$(echo "$LOGIN" | head -c 200)"
 

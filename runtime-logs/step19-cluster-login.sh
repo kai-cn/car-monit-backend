@@ -29,7 +29,7 @@ echo "captcha has_img=$(echo "$CAP" | jq -r '.img != null' 2>/dev/null) uuid=${U
 
 ANS=$(redis-cli -h 127.0.0.1 -p 6380 GET "captcha_codes:$UUID" 2>/dev/null | tr -d '"' | grep -oE '[0-9+-]+' | head -1)
 
-BODY=$(printf '{"username":"admin","password":"Admin@2025-","code":"%s","uuid":"%s"}' "$ANS" "$UUID")
+BODY=$(printf '{"username":"admin","password":"${CARMONIT_ADMIN_PASSWORD}","code":"%s","uuid":"%s"}' "$ANS" "$UUID")
 
 LOGIN=$(curl -s -m 25 -X POST -H 'Content-Type: application/json' -d "$BODY" "$BE/login")
 

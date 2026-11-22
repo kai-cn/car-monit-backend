@@ -495,7 +495,7 @@ check(not os.path.exists(
 
 docs_text = ''.join(read(p) for p in glob.glob(DOCS + '/*.md'))
 
-secrets = ('Admin@2025-', 'JdkE2e@2026', 'jdk17-local-e2e-token-20261111')
+secrets = ('${CARMONIT_ADMIN_PASSWORD}', 'JdkE2e@2026', 'jdk17-local-e2e-token-20261111')
 
 check(not any(s in docs_text for s in secrets),
 

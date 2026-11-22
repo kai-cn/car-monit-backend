@@ -48,7 +48,7 @@ TEXT = SECTION + '''
 
 - Java JUnit：16/16 success。
 
-- crosslang workflow：backend `44983230639`、api `44983238487`，baseline + python/go/cpp/rust 全部 job success。
+- crosslang workflow：backend `45031566682`、api `45031576935`，baseline success，严格对拍候选 failure。
 
 - 对齐差异与压测比值为 artifact 真实记录，未用断言掩盖。
 
@@ -64,7 +64,7 @@ for p in FILES:
 
     t = t.replace('backend Rust：302 端点 status_match=0，fails=302，已如实记录。',
 
-                  'backend Rust：302 端点 status_match=302，exact=301，fails=0；已按最终 artifact 更新。')
+                  'backend Rust 等候选的 status_match/exact/fails 以最终 crosslang-evidence.json 为准，严格门禁下存在差异即失败。')
 
     if SECTION not in t:
 

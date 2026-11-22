@@ -29,7 +29,7 @@ B = 'http://127.0.0.1:9989'
 
 A = 'http://127.0.0.1:9902'
 
-ADMIN_PW = 'Admin@2025-'
+ADMIN_PW = '${CARMONIT_ADMIN_PASSWORD}'
 
 TEST_PW = 'JdkE2e@2026'
 

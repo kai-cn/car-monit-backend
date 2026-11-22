@@ -5,13 +5,13 @@
       "load_rows": null,
       "load_error_rate": null,
       "raw_load": {
-        "total_requests": 477922,
-        "rps": 15930.733333333334,
-        "avg_latency_ms": 0.6076912132105239,
-        "p95_ms": 1,
-        "p99_ms": 3,
+        "total_requests": 3532,
+        "rps": 117.73333333333333,
+        "avg_latency_ms": 74.46347678369196,
+        "p95_ms": 76,
+        "p99_ms": 2015,
         "errors": 0,
-        "business_4xx": 0,
+        "business_4xx": 36,
         "business_5xx": 0
       }
     },
@@ -88,11 +88,10 @@
       "contract_totals": {
         "endpoints": 302,
         "status_match": 297,
-        "exact": 292,
-        "semantic": 292,
-        "nondet": 1,
-        "baseline_skip": 0,
-        "fails": 9
+        "exact": 166,
+        "semantic": 182,
+        "nondet": 40,
+        "fails": 80
       },
       "load_rows": [
         {
@@ -143,13 +142,13 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 1433796,
-        "rps": 47793.2,
-        "avg_latency_ms": 0.17824153505798593,
-        "p95_ms": 1,
-        "p99_ms": 1,
+        "total_requests": 65419,
+        "rps": 2180.633333333333,
+        "avg_latency_ms": 3.93361255904248,
+        "p95_ms": 7,
+        "p99_ms": 15,
         "errors": 0,
-        "business_4xx": 23618,
+        "business_4xx": 1733,
         "business_5xx": 0
       }
     },
@@ -225,12 +224,11 @@
     "rust": {
       "contract_totals": {
         "endpoints": 302,
-        "status_match": 302,
-        "exact": 301,
-        "semantic": 301,
-        "nondet": 1,
-        "baseline_skip": 0,
-        "fails": 0
+        "status_match": 297,
+        "exact": 166,
+        "semantic": 180,
+        "nondet": 41,
+        "fails": 81
       },
       "load_rows": [
         {
@@ -281,13 +279,13 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 735392,
-        "rps": 24513.066666666666,
-        "avg_latency_ms": 0.3476227644575954,
-        "p95_ms": 1,
-        "p99_ms": 1,
+        "total_requests": 45723,
+        "rps": 1524.1,
+        "avg_latency_ms": 5.598451545174201,
+        "p95_ms": 11,
+        "p99_ms": 20,
         "errors": 0,
-        "business_4xx": 0,
+        "business_4xx": 1211,
         "business_5xx": 0
       }
     }
@@ -298,24 +296,23 @@
       "load_rows": null,
       "load_error_rate": null,
       "raw_load": {
-        "total_requests": 17833,
-        "rps": 594.4333333333333,
-        "avg_latency_ms": 14.357931923961196,
-        "p95_ms": 50,
-        "p99_ms": 108,
+        "total_requests": 6516,
+        "rps": 217.2,
+        "avg_latency_ms": 39.30647636586863,
+        "p95_ms": 89,
+        "p99_ms": 161,
         "errors": 0,
-        "business_4xx": 1359,
-        "business_5xx": 790
+        "business_4xx": 493,
+        "business_5xx": 273
       }
     },
     "python": {
       "contract_totals": {
         "endpoints": 79,
         "status_match": 30,
-        "exact": 15,
+        "exact": 17,
         "semantic": 20,
         "nondet": 10,
-        "baseline_skip": 0,
         "fails": 49
       },
       "load_rows": [
@@ -367,14 +364,14 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 38,
-        "rps": 1.2666666666666666,
-        "avg_latency_ms": 8458.368421052632,
-        "p95_ms": 10060,
-        "p99_ms": 10065,
+        "total_requests": 4118,
+        "rps": 137.26666666666668,
+        "avg_latency_ms": 62.21393880524526,
+        "p95_ms": 109,
+        "p99_ms": 143,
         "errors": 0,
-        "business_4xx": 5,
-        "business_5xx": 32
+        "business_4xx": 313,
+        "business_5xx": 2771
       }
     },
     "go": {
@@ -449,12 +446,11 @@
     "cpp": {
       "contract_totals": {
         "endpoints": 79,
-        "status_match": 75,
-        "exact": 31,
-        "semantic": 41,
-        "nondet": 9,
-        "baseline_skip": 0,
-        "fails": 29
+        "status_match": 31,
+        "exact": 21,
+        "semantic": 21,
+        "nondet": 8,
+        "fails": 50
       },
       "load_rows": [
         {
@@ -505,25 +501,24 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 12152,
-        "rps": 405.06666666666666,
-        "avg_latency_ms": 21.077764976958527,
-        "p95_ms": 61,
-        "p99_ms": 95,
+        "total_requests": 10279,
+        "rps": 342.6333333333333,
+        "avg_latency_ms": 28.20089502869929,
+        "p95_ms": 42,
+        "p99_ms": 42,
         "errors": 0,
-        "business_4xx": 925,
-        "business_5xx": 0
+        "business_4xx": 783,
+        "business_5xx": 6510
       }
     },
     "rust": {
       "contract_totals": {
         "endpoints": 79,
         "status_match": 72,
-        "exact": 30,
-        "semantic": 49,
-        "nondet": 9,
-        "baseline_skip": 0,
-        "fails": 21
+        "exact": 51,
+        "semantic": 52,
+        "nondet": 4,
+        "fails": 23
       },
       "load_rows": [
         {
@@ -574,14 +569,14 @@
         "candidate": 0.0
       },
       "raw_load": {
-        "total_requests": 159694,
-        "rps": 5323.133333333333,
-        "avg_latency_ms": 1.602082733227297,
+        "total_requests": 177538,
+        "rps": 5917.933333333333,
+        "avg_latency_ms": 1.4409816489990874,
         "p95_ms": 4,
-        "p99_ms": 11,
+        "p99_ms": 10,
         "errors": 0,
-        "business_4xx": 10109,
-        "business_5xx": 16172
+        "business_4xx": 11240,
+        "business_5xx": 17978
       }
     }
   }

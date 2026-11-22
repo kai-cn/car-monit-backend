@@ -62,7 +62,7 @@ TEXT = SECTION + '''
 
 - 本机压测计数修正：取得 HTTP 状态后的读取异常归为业务响应，仅无状态码归为传输错误；证据 `runtime-logs/wsl-retest-evidence/junit-load.json`。
 
-- 最终云端 JUnit：16/16 success；最终跨语言：backend `44993639979`、api `44993649569`，baseline + python/go/cpp/rust 全部 job success。
+- 最终云端 JUnit：16/16 success；最终跨语言：backend `45031566682`、api `45031576935`，baseline success，严格对拍候选 failure。
 
 '''
 
