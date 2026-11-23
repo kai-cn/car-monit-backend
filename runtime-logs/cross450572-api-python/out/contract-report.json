@@ -1,0 +1,1506 @@
+{
+  "label": "api-java25-crosslang-full-python",
+  "baseline": {
+    "variant": "java-master",
+    "startup_ms": null,
+    "peak_rss_mb": null,
+    "avg_latency_ms": 22.35
+  },
+  "candidate": {
+    "variant": "python",
+    "startup_ms": null,
+    "peak_rss_mb": null,
+    "avg_latency_ms": 19.71
+  },
+  "totals": {
+    "endpoints": 79,
+    "status_match": 30,
+    "exact": 15,
+    "semantic": 20,
+    "nondet": 10,
+    "fails": 49
+  },
+  "rows": [
+    {
+      "endpoint": "/api/v1/large/carTrackQueryByCarNo",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        119,
+        137
+      ],
+      "latency_ms": [
+        2,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/api/v1/large/export/status/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        39,
+        39
+      ],
+      "latency_ms": [
+        3,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/api/v1/large/fee",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        102,
+        120
+      ],
+      "latency_ms": [
+        4,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/api/v1/large/snapshot",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        107,
+        125
+      ],
+      "latency_ms": [
+        32,
+        6
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/api/v1/large/stats/group",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        110,
+        128
+      ],
+      "latency_ms": [
+        4,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/api/v1/large/trail",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        104,
+        122
+      ],
+      "latency_ms": [
+        3,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/api/v1/unified/1/list",
+      "status": [
+        400,
+        400
+      ],
+      "bytes": [
+        107,
+        125
+      ],
+      "latency_ms": [
+        45,
+        5
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/api/v1/unified/export/status/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        39,
+        39
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/feeGantry/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        0,
+        130
+      ],
+      "latency_ms": [
+        18,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/feeGantry/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        17445,
+        133
+      ],
+      "latency_ms": [
+        51,
+        23
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/feeStationEnter/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        33,
+        136
+      ],
+      "latency_ms": [
+        4,
+        23
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/feeStationEnter/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        8049,
+        139
+      ],
+      "latency_ms": [
+        21,
+        21
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/feerecords/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        0,
+        131
+      ],
+      "latency_ms": [
+        20,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/feerecords/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        53,
+        134
+      ],
+      "latency_ms": [
+        35,
+        23
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/feerecords/listToExport",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        2,
+        142
+      ],
+      "latency_ms": [
+        13,
+        21
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/feestationexit/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        33,
+        135
+      ],
+      "latency_ms": [
+        6,
+        18
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/feestationexit/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        13774,
+        138
+      ],
+      "latency_ms": [
+        26,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        110,
+        128
+      ],
+      "latency_ms": [
+        297,
+        18
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        6427,
+        131
+      ],
+      "latency_ms": [
+        178,
+        138
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/listAll",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        95184,
+        134
+      ],
+      "latency_ms": [
+        38,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/gantry/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        645,
+        127
+      ],
+      "latency_ms": [
+        4,
+        17
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/gantry/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        6023,
+        130
+      ],
+      "latency_ms": [
+        14,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/gantry/listAll",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        89589,
+        133
+      ],
+      "latency_ms": [
+        14,
+        18
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/gantryIp/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        226,
+        129
+      ],
+      "latency_ms": [
+        4,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/gantryIp/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        1939,
+        132
+      ],
+      "latency_ms": [
+        13,
+        17
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/org/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        33,
+        124
+      ],
+      "latency_ms": [
+        5,
+        18
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/org/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        4053,
+        127
+      ],
+      "latency_ms": [
+        14,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/org/listAll",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        58412,
+        130
+      ],
+      "latency_ms": [
+        12,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/provcapture/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        33,
+        132
+      ],
+      "latency_ms": [
+        5,
+        18
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/provcapture/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        53,
+        135
+      ],
+      "latency_ms": [
+        18,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/section/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        332,
+        128
+      ],
+      "latency_ms": [
+        4,
+        17
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/section/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        2953,
+        131
+      ],
+      "latency_ms": [
+        12,
+        18
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/section/listAll",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        24990,
+        134
+      ],
+      "latency_ms": [
+        8,
+        16
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        33,
+        128
+      ],
+      "latency_ms": [
+        11,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        4755,
+        131
+      ],
+      "latency_ms": [
+        50,
+        22
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/listAll",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        11086,
+        134
+      ],
+      "latency_ms": [
+        6,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        33,
+        128
+      ],
+      "latency_ms": [
+        5,
+        20
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        4583,
+        131
+      ],
+      "latency_ms": [
+        39,
+        21
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/listAll",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        67281,
+        134
+      ],
+      "latency_ms": [
+        14,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/snapshotflow/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        0,
+        133
+      ],
+      "latency_ms": [
+        10,
+        17
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/snapshotflow/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        53,
+        136
+      ],
+      "latency_ms": [
+        14,
+        20
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/snapshotflow/listToExport",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        2,
+        144
+      ],
+      "latency_ms": [
+        6,
+        18
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/stationcapture/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        33,
+        135
+      ],
+      "latency_ms": [
+        4,
+        21
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/stationcapture/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        53,
+        138
+      ],
+      "latency_ms": [
+        11,
+        18
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/sysutil/carTrackQueryByCarNo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutil/carTrackQueryByTime",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutil/getByTrailBo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        724,
+        724
+      ],
+      "latency_ms": [
+        29,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutil/saveRedis",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        16,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/separateSnapshotFlowTimeList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        27,
+        4
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncBaseInfo",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        0,
+        143
+      ],
+      "latency_ms": [
+        155,
+        16
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncCurrentTrack",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        6,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncHistroyTrack",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        3,
+        5
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncOdsSzdnGantry",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        0,
+        148
+      ],
+      "latency_ms": [
+        49,
+        46
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        8,
+        23
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar10",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        8,
+        49
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar2",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        18,
+        20
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar3",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        2,
+        42
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar4",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        4,
+        50
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar5",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        16,
+        21
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar6",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        10,
+        51
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar7",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        6,
+        34
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar8",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        13,
+        34
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar9",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        10,
+        45
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/toll/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        1123,
+        125
+      ],
+      "latency_ms": [
+        6,
+        16
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/toll/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        10116,
+        128
+      ],
+      "latency_ms": [
+        15,
+        18
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/toll/listAll",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        146759,
+        131
+      ],
+      "latency_ms": [
+        31,
+        18
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/tollStationIp/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        33,
+        134
+      ],
+      "latency_ms": [
+        6,
+        17
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/tollStationIp/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        1560,
+        137
+      ],
+      "latency_ms": [
+        13,
+        17
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/trailtracks/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        33,
+        132
+      ],
+      "latency_ms": [
+        8,
+        18
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/trailtracks/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        44378,
+        135
+      ],
+      "latency_ms": [
+        48,
+        16
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/vehicleweight/1",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        116,
+        134
+      ],
+      "latency_ms": [
+        5,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/vehicleweight/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        53,
+        137
+      ],
+      "latency_ms": [
+        11,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/base/vehicleweight/map",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        118,
+        136
+      ],
+      "latency_ms": [
+        8,
+        18
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/manager/fwqclls/1",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        391,
+        131
+      ],
+      "latency_ms": [
+        7,
+        19
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/manager/fwqclls/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        1105,
+        134
+      ],
+      "latency_ms": [
+        18,
+        16
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/progressive/feerecords/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        483566,
+        141
+      ],
+      "latency_ms": [
+        45,
+        21
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/progressive/scale-level",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        166,
+        166
+      ],
+      "latency_ms": [
+        4,
+        5
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/progressive/snapshotflow/list",
+      "status": [
+        200,
+        500
+      ],
+      "bytes": [
+        179032,
+        143
+      ],
+      "latency_ms": [
+        44,
+        18
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/progressive/trailfitting/list",
+      "status": [
+        500,
+        500
+      ],
+      "bytes": [
+        125,
+        143
+      ],
+      "latency_ms": [
+        6,
+        21
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    }
+  ]
+}

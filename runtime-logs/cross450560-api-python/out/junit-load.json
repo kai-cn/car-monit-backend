@@ -1,0 +1,19 @@
+{
+  "variant": "python",
+  "threads": 8,
+  "duration_seconds": 30,
+  "warmup_seconds": 2,
+  "total_requests": 3377,
+  "ok": 848,
+  "errors": 0,
+  "business_4xx": 259,
+  "business_5xx": 2270,
+  "rps": 112.56666666666666,
+  "avg_latency_ms": 75.86822623630441,
+  "p50_ms": 72,
+  "p95_ms": 143,
+  "p99_ms": 177,
+  "bytes": 383006,
+  "error_samples": [],
+  "endpoints": 79
+}

@@ -1,0 +1,19 @@
+{
+  "variant": "java-master",
+  "threads": 8,
+  "duration_seconds": 30,
+  "warmup_seconds": 2,
+  "total_requests": 13510,
+  "ok": 11820,
+  "errors": 0,
+  "business_4xx": 1027,
+  "business_5xx": 663,
+  "rps": 450.3333333333333,
+  "avg_latency_ms": 18.94900074019245,
+  "p50_ms": 11,
+  "p95_ms": 63,
+  "p99_ms": 141,
+  "bytes": 210986552,
+  "error_samples": [],
+  "endpoints": 79
+}

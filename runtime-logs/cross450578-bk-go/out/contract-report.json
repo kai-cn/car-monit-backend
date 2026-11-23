@@ -1,0 +1,5503 @@
+{
+  "label": "backend-java25-crosslang-full-go",
+  "baseline": {
+    "variant": "java-master",
+    "startup_ms": null,
+    "peak_rss_mb": null,
+    "avg_latency_ms": 413.34
+  },
+  "candidate": {
+    "variant": "go",
+    "startup_ms": null,
+    "peak_rss_mb": null,
+    "avg_latency_ms": 6.05
+  },
+  "totals": {
+    "endpoints": 302,
+    "status_match": 293,
+    "exact": 76,
+    "semantic": 176,
+    "nondet": 40,
+    "fails": 86
+  },
+  "rows": [
+    {
+      "endpoint": "/base/cdc/config",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97513,
+        400
+      ],
+      "latency_ms": [
+        106,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/cdc/dead-letters",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/cdc/retry-messages",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/cdc/status",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        183,
+        183
+      ],
+      "latency_ms": [
+        611,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/config/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        8,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/config/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        90,
+        90
+      ],
+      "latency_ms": [
+        33,
+        5
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/config/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        64,
+        3
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/configServiceArea/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        12,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/configServiceArea/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        78,
+        78
+      ],
+      "latency_ms": [
+        30,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/configServiceArea/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        55,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/configServiceArea/listQuery",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        45
+      ],
+      "latency_ms": [
+        9,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/feeGantry/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        150,
+        153
+      ],
+      "latency_ms": [
+        2019,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/feeGantry/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        150,
+        158
+      ],
+      "latency_ms": [
+        2012,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/feeGantry/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        183
+      ],
+      "latency_ms": [
+        78,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/feeStationEnter/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        77,
+        33
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/feeStationEnter/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        53
+      ],
+      "latency_ms": [
+        10,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/feerecords/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        150,
+        154
+      ],
+      "latency_ms": [
+        2012,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/feerecords/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        107,
+        6236
+      ],
+      "latency_ms": [
+        8,
+        6
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/feerecords/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        107,
+        53
+      ],
+      "latency_ms": [
+        96,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/feestationexit/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        150,
+        158
+      ],
+      "latency_ms": [
+        2010,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/feestationexit/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        150,
+        163
+      ],
+      "latency_ms": [
+        2010,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/feestationexit/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        188
+      ],
+      "latency_ms": [
+        15,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/fitting/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        150,
+        33
+      ],
+      "latency_ms": [
+        23,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/fitting/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        53
+      ],
+      "latency_ms": [
+        32,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        6,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        90,
+        90
+      ],
+      "latency_ms": [
+        32,
+        6
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        109,
+        3
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantry/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantry/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        4
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantry/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        16,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantry/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        7,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantryIp/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/gantryIp/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        29,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/geometry/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        6,
+        4
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/geometry/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        81,
+        81
+      ],
+      "latency_ms": [
+        28,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/geometry/getHenDa",
+      "status": [
+        0,
+        200
+      ],
+      "bytes": [
+        0,
+        33
+      ],
+      "latency_ms": [
+        60054,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/geometry/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        16,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/geometry/syncAllGeometry",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1033,
+        33
+      ],
+      "latency_ms": [
+        192,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/geometry/syncAllGeometry1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/location/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        8,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/location/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        41,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/org/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        8,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/org/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        81,
+        81
+      ],
+      "latency_ms": [
+        22,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/org/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        15,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/provcapture/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        77,
+        33
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/provcapture/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        53
+      ],
+      "latency_ms": [
+        10,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/section/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        8,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/section/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        81,
+        81
+      ],
+      "latency_ms": [
+        27,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/section/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        12,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/section/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        4,
+        0
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        9,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        90,
+        90
+      ],
+      "latency_ms": [
+        28,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        54,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        10,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        90,
+        90
+      ],
+      "latency_ms": [
+        24,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        51,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/snapshotflow/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        150,
+        156
+      ],
+      "latency_ms": [
+        2010,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/snapshotflow/earliest-time",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        150,
+        168
+      ],
+      "latency_ms": [
+        2010,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/snapshotflow/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        107,
+        6186
+      ],
+      "latency_ms": [
+        7,
+        6
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/snapshotflow/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        107,
+        53
+      ],
+      "latency_ms": [
+        32,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/stationcapture/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        77,
+        33
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/stationcapture/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        53
+      ],
+      "latency_ms": [
+        6,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/toll/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/toll/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        90,
+        90
+      ],
+      "latency_ms": [
+        24,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/base/toll/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        18,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/toll/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/tollStationIp/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/tollStationIp/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        41,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/trailtracks/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/trailtracks/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        34,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/base/vehicleweight/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        77,
+        33
+      ],
+      "latency_ms": [
+        3,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/base/vehicleweight/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        97,
+        53
+      ],
+      "latency_ms": [
+        6,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/captchaImage",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        4028,
+        8052
+      ],
+      "latency_ms": [
+        375,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/common/download",
+      "status": [
+        200,
+        403
+      ],
+      "bytes": [
+        84,
+        104
+      ],
+      "latency_ms": [
+        11,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/common/download/resource",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        12,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/downTemplate/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        25,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/applyinfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        8,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/applyinfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        81,
+        81
+      ],
+      "latency_ms": [
+        20,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/flow/applyinfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        22,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/applyinfo/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/currentnode/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        10,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/currentnode/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        88,
+        88
+      ],
+      "latency_ms": [
+        23,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/flow/currentnode/getInfoByBillId/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        708,
+        708
+      ],
+      "latency_ms": [
+        7,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/currentnode/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        52,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowlist/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        7,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowlist/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        87,
+        87
+      ],
+      "latency_ms": [
+        16,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/flow/flowlist/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        12,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowlist/listnew",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        4,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowname/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowname/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        81,
+        81
+      ],
+      "latency_ms": [
+        17,
+        5
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/flow/flowname/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        26,
+        4
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowname/listQuery",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowtemplate/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowtemplate/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        81,
+        81
+      ],
+      "latency_ms": [
+        17,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/flow/flowtemplate/flowlist",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/flowtemplate/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        14,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messagedispose/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messagedispose/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        90,
+        90
+      ],
+      "latency_ms": [
+        17,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/flow/messagedispose/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        12,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messageinfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/flow/messageinfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1507,
+        89
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/flow/messageinfo/exportShrz",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        123,
+        23
+      ],
+      "latency_ms": [
+        10,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/flow/messageinfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        912,
+        89
+      ],
+      "latency_ms": [
+        21,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/flow/messageinfo/listxx",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1350,
+        89
+      ],
+      "latency_ms": [
+        7,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/flow/messageinfo/listyb",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        912,
+        89
+      ],
+      "latency_ms": [
+        7,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/flow/messageinfo/listyj",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        938,
+        89
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/getInfo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1979,
+        1984
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/getRouters",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8606,
+        8606
+      ],
+      "latency_ms": [
+        6,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/aduitfree/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/aduitfree/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        81,
+        81
+      ],
+      "latency_ms": [
+        18,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/manager/aduitfree/exportIncomeDetailList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        7211,
+        6137
+      ],
+      "latency_ms": [
+        64,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/aduitfree/exportIncomeStatics",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8167,
+        6115
+      ],
+      "latency_ms": [
+        107,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/aduitfree/incomeDetailList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        11,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/aduitfree/incomeStatics",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        14,
+        3
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/aduitfree/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        45,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carAudit",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        110,
+        110
+      ],
+      "latency_ms": [
+        11,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carLocation",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        8,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carStatistics",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        463,
+        463
+      ],
+      "latency_ms": [
+        81,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carVoList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        33
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carWarning",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        9,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/exceptRecordList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/exceptionCar",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        4,
+        0
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/export/approvals",
+      "status": [
+        200,
+        404
+      ],
+      "bytes": [
+        366,
+        113
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/bigScreen/export/download/1",
+      "status": [
+        200,
+        404
+      ],
+      "bytes": [
+        366,
+        114
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/bigScreen/export/status/1",
+      "status": [
+        200,
+        404
+      ],
+      "bytes": [
+        366,
+        112
+      ],
+      "latency_ms": [
+        9,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/bigScreen/incomeStatistic",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        33
+      ],
+      "latency_ms": [
+        8,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/bigScreen/orgList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        33
+      ],
+      "latency_ms": [
+        32,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/bigScreen/sectionList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        103,
+        87
+      ],
+      "latency_ms": [
+        9,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/bigScreen/tollGantryFwqList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        102,
+        102
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/topTen",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        33
+      ],
+      "latency_ms": [
+        7,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/busstest/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/busstest/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        81,
+        81
+      ],
+      "latency_ms": [
+        17,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/manager/busstest/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        220,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carinfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        8,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carinfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        7386,
+        6166
+      ],
+      "latency_ms": [
+        29,
+        7
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/carinfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        18,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carinfo/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        8,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carsuspiciousback/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        19,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carsuspiciousback/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        87,
+        87
+      ],
+      "latency_ms": [
+        3110,
+        7
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/manager/carsuspiciousback/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        339,
+        173
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/carSnapShot",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        87,
+        87
+      ],
+      "latency_ms": [
+        17,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        17,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/listByCarByTime",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/listByCarId",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        10,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carwarning/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/carwarning/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        7505,
+        6252
+      ],
+      "latency_ms": [
+        26,
+        5
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/carwarning/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        13,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/carStatics",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        8,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/concernedList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        15,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/except/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        51,
+        51
+      ],
+      "latency_ms": [
+        10,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8294,
+        6201
+      ],
+      "latency_ms": [
+        40,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/confimfree/exportCarStatics",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        7585,
+        6283
+      ],
+      "latency_ms": [
+        24,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/confimfree/exportConcernedList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8369,
+        6191
+      ],
+      "latency_ms": [
+        32,
+        5
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/confimfree/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        45,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/listCarNo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        9,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/confimfree/listCount",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        8,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        8,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/exceptRecordCount",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        7685,
+        6450
+      ],
+      "latency_ms": [
+        30,
+        5
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/exportOrgId",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        7685,
+        6450
+      ],
+      "latency_ms": [
+        33,
+        6
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/getConfirmId/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        45,
+        45
+      ],
+      "latency_ms": [
+        11,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        19,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/listCarNo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/listCarOrgId",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        8,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/listExceptId",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        8,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/feerecord/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/feerecord/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        81,
+        81
+      ],
+      "latency_ms": [
+        16,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/manager/feerecord/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        48,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/fwqclls/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        76,
+        33
+      ],
+      "latency_ms": [
+        7,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/fwqclls/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        53
+      ],
+      "latency_ms": [
+        269,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/gantrycar/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/gantrycar/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8364,
+        6213
+      ],
+      "latency_ms": [
+        23,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/gantrycar/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        35,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/gantrytrade/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        3
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/gantrytrade/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8472,
+        6264
+      ],
+      "latency_ms": [
+        25,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/gantrytrade/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        45,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/querylog/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        7,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/querylog/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        7389,
+        6429
+      ],
+      "latency_ms": [
+        35,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/querylog/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        3100
+      ],
+      "latency_ms": [
+        17,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/routedetail/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/routedetail/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        87,
+        87
+      ],
+      "latency_ms": [
+        15,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/manager/routedetail/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        51,
+        3
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/routeinfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/routeinfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8278,
+        6146
+      ],
+      "latency_ms": [
+        28,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/routeinfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        33,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/splitrecord/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/splitrecord/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8289,
+        6152
+      ],
+      "latency_ms": [
+        22,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/splitrecord/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        33,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        7567,
+        6296
+      ],
+      "latency_ms": [
+        24,
+        5
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/suspicious/exportAbnormalPassage",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        113,
+        23
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/suspicious/exportHistory",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        7567,
+        6305
+      ],
+      "latency_ms": [
+        29,
+        6
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/suspicious/history/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        250,
+        3
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/listCarNo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        6,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/listFileCarNo",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        6,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspicious/listHistory",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        8,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspiciouscheck/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/suspiciouscheck/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8312,
+        6174
+      ],
+      "latency_ms": [
+        27,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/manager/suspiciouscheck/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        13,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/warningrule/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/warningrule/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8185,
+        6112
+      ],
+      "latency_ms": [
+        21,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/warningrule/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        34,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/whiteinfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/manager/whiteinfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8244,
+        6117
+      ],
+      "latency_ms": [
+        36,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/manager/whiteinfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        15,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/bigscreen/metrics",
+      "status": [
+        200,
+        404
+      ],
+      "bytes": [
+        446,
+        104
+      ],
+      "latency_ms": [
+        10,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/monitor/bigscreen/switches",
+      "status": [
+        200,
+        404
+      ],
+      "bytes": [
+        415,
+        105
+      ],
+      "latency_ms": [
+        11,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/monitor/cache/",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        84,
+        6785
+      ],
+      "latency_ms": [
+        8,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/monitor/job/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/job/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        75,
+        75
+      ],
+      "latency_ms": [
+        18,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/monitor/job/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        28,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/jobLog/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        73,
+        33
+      ],
+      "latency_ms": [
+        7,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/monitor/jobLog/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        75,
+        75
+      ],
+      "latency_ms": [
+        15,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/monitor/jobLog/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        14,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/monitor/logininfor/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        75,
+        75
+      ],
+      "latency_ms": [
+        18,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/monitor/logininfor/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        321,
+        321
+      ],
+      "latency_ms": [
+        16,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/monitor/online/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        313,
+        317
+      ],
+      "latency_ms": [
+        17,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/monitor/operlog/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        75,
+        75
+      ],
+      "latency_ms": [
+        40,
+        9
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/monitor/operlog/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        5347,
+        4655
+      ],
+      "latency_ms": [
+        32,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/monitor/server/",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        86,
+        1076
+      ],
+      "latency_ms": [
+        4,
+        1012
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/system/config/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        378,
+        378
+      ],
+      "latency_ms": [
+        7,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/config/configKey/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        21,
+        21
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/config/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        75,
+        75
+      ],
+      "latency_ms": [
+        23,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/system/config/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        2885,
+        2885
+      ],
+      "latency_ms": [
+        13,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dept/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dept/getCompanyList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        2,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dept/getList",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        24222,
+        24222
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/system/dept/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        24222,
+        24222
+      ],
+      "latency_ms": [
+        17,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/system/dept/list/exclude/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        24222,
+        24222
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/system/dept/roleDeptTreeselect/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1840,
+        1840
+      ],
+      "latency_ms": [
+        6,
+        4
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dept/treeselect",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1822,
+        1822
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dept/treeselectNew",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/data/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        310,
+        310
+      ],
+      "latency_ms": [
+        8,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/data/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        75,
+        75
+      ],
+      "latency_ms": [
+        64,
+        9
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/system/dict/data/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        2799,
+        2799
+      ],
+      "latency_ms": [
+        145,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/data/type/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/data/typemore/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        7,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/type/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        236,
+        236
+      ],
+      "latency_ms": [
+        6,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/type/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        75,
+        75
+      ],
+      "latency_ms": [
+        14,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/system/dict/type/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1879,
+        1879
+      ],
+      "latency_ms": [
+        17,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/dict/type/optionselect",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        9980,
+        9980
+      ],
+      "latency_ms": [
+        4,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/file/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/file/1/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        0,
+        0
+      ],
+      "latency_ms": [
+        40625,
+        0
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/file/getInfoById/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/file/getNewCa",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        44,
+        44
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/file/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        15,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/file/view/1/1",
+      "status": [
+        200,
+        403
+      ],
+      "bytes": [
+        84,
+        109
+      ],
+      "latency_ms": [
+        3,
+        0
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF",
+      "note": "status mismatch on unstable endpoint (real difference)"
+    },
+    {
+      "endpoint": "/system/indexmenu/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/indexmenu/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        87,
+        87
+      ],
+      "latency_ms": [
+        13,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/system/indexmenu/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        3664,
+        3664
+      ],
+      "latency_ms": [
+        19,
+        4
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/indexmenu/mylist",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        861,
+        43
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/system/menu/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        369,
+        369
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/menu/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        70258,
+        70258
+      ],
+      "latency_ms": [
+        18,
+        4
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/system/menu/roleMenuTreeselect/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8396,
+        8396
+      ],
+      "latency_ms": [
+        8,
+        5
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/menu/treeselect",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        8378,
+        8378
+      ],
+      "latency_ms": [
+        9,
+        3
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/notice/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/notice/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        16,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/notice/listquery",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/notice/view/1",
+      "status": [
+        200,
+        403
+      ],
+      "bytes": [
+        84,
+        109
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/system/post/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        7,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/post/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        75,
+        75
+      ],
+      "latency_ms": [
+        15,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/system/post/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        16,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/post/optionselect",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/role/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        376,
+        376
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/role/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        75,
+        75
+      ],
+      "latency_ms": [
+        16,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/system/role/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1061,
+        1061
+      ],
+      "latency_ms": [
+        13,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/role/optionselect",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1051,
+        1051
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/role/selectlist",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1051,
+        1051
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/upgradeInfo/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/upgradeInfo/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        87,
+        87
+      ],
+      "latency_ms": [
+        11,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/system/upgradeInfo/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        19,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/upgradeInfo/newest",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        33,
+        33
+      ],
+      "latency_ms": [
+        4,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        727,
+        727
+      ],
+      "latency_ms": [
+        7,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/currentUser",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        747,
+        747
+      ],
+      "latency_ms": [
+        6,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/export",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        75,
+        75
+      ],
+      "latency_ms": [
+        44,
+        5
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/system/user/getroleUser/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        5,
+        2
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/importTemplate",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        75,
+        75
+      ],
+      "latency_ms": [
+        23,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "NONDET",
+      "note": "endpoint non-deterministic (data/ordering); body diff not attributable"
+    },
+    {
+      "endpoint": "/system/user/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        10431,
+        10436
+      ],
+      "latency_ms": [
+        20,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/system/user/list/dept",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        2803,
+        2808
+      ],
+      "latency_ms": [
+        9,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/system/user/listAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        8,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/listMy",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        1484,
+        1489
+      ],
+      "latency_ms": [
+        6,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/system/user/listSameUtil",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        13,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/listTenantIdAll",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        8,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/listutil",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/system/user/profile/",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        96,
+        1960
+      ],
+      "latency_ms": [
+        6,
+        3
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/test/user/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        117,
+        117
+      ],
+      "latency_ms": [
+        2,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/test/user/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        193,
+        193
+      ],
+      "latency_ms": [
+        10,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        116,
+        23
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/tool/gen/all/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        43,
+        43
+      ],
+      "latency_ms": [
+        3,
+        1
+      ],
+      "exact": true,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/batchGenCode",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        83,
+        23
+      ],
+      "latency_ms": [
+        7,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/tool/gen/column/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        41,
+        41
+      ],
+      "latency_ms": [
+        5,
+        1
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/db/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        17112,
+        17146
+      ],
+      "latency_ms": [
+        26,
+        9
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/download/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        113,
+        23
+      ],
+      "latency_ms": [
+        7,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/tool/gen/genCode/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        113,
+        23
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/tool/gen/list",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        53,
+        53
+      ],
+      "latency_ms": [
+        35,
+        2
+      ],
+      "exact": false,
+      "semantic": true,
+      "verdict": "OK"
+    },
+    {
+      "endpoint": "/tool/gen/preview/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        116,
+        23
+      ],
+      "latency_ms": [
+        6,
+        1
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    },
+    {
+      "endpoint": "/tool/gen/synchDb/1",
+      "status": [
+        200,
+        200
+      ],
+      "bytes": [
+        113,
+        23
+      ],
+      "latency_ms": [
+        30,
+        2
+      ],
+      "exact": false,
+      "semantic": false,
+      "verdict": "DIFF"
+    }
+  ]
+}

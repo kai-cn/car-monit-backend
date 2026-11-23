@@ -1,0 +1,19 @@
+{
+  "variant": "java-master",
+  "threads": 8,
+  "duration_seconds": 30,
+  "warmup_seconds": 2,
+  "total_requests": 2065,
+  "ok": 2062,
+  "errors": 3,
+  "business_4xx": 0,
+  "business_5xx": 0,
+  "rps": 68.83333333333333,
+  "avg_latency_ms": 175.77966101694915,
+  "p50_ms": 7,
+  "p95_ms": 54,
+  "p99_ms": 2010,
+  "bytes": 3258089,
+  "error_samples": [/base/geometry/getHenDa: SocketTimeoutException: Read timed out, /base/geometry/getHenDa: SocketTimeoutException: Read timed out, /base/geometry/getHenDa: SocketTimeoutException: Read timed out],
+  "endpoints": 302
+}
