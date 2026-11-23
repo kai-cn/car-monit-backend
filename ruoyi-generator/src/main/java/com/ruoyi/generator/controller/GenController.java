@@ -248,9 +248,13 @@ public class GenController extends BaseController
     @GetMapping("/batchGenCode")
     public void batchGenCode(HttpServletResponse response, String tables) throws IOException
     {
-        String[] tableNames = Convert.toStrArray(tables);
+        String[] tableNames = StringUtils.isEmpty(tables) ? new String[0] : Convert.toStrArray(tables);
+        if (tableNames.length == 0) {
+            genCode(response, new byte[0]);
+            return;
+        }
         byte[] data = genTableService.downloadCode(tableNames);
-        genCode(response, data);
+        genCode(response, data == null ? new byte[0] : data);
     }
 
     /**

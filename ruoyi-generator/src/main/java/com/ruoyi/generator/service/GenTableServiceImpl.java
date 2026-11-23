@@ -78,6 +78,9 @@ public class GenTableServiceImpl implements IGenTableService {
     @Override
     public GenTable selectGenTableById(Long id) {
         GenTable genTable = genTableMapper.selectGenTableById(id);
+        if (genTable == null) {
+            return new GenTable();
+        }
         setTableFromOptions(genTable);
         return genTable;
     }
@@ -196,6 +199,9 @@ public class GenTableServiceImpl implements IGenTableService {
         Map<String, String> dataMap = new LinkedHashMap<>();
         // 查询表信息
         GenTable table = genTableMapper.selectGenTableById(tableId);
+        if (table == null) {
+            return dataMap;
+        }
         // 过滤字段信息
         this.initFilterColumnInfo(table);
         // 初始化富文本信息
@@ -251,6 +257,9 @@ public class GenTableServiceImpl implements IGenTableService {
     public void generatorCode(String tableName) {
         // 查询表信息
         GenTable table = genTableMapper.selectGenTableByName(tableName);
+        if (table == null) {
+            return;
+        }
         // 将字典的key转换成驼峰类型
         this.dictionaryKeyToCamelCase(table);
         // 初始化富文本信息
@@ -297,6 +306,9 @@ public class GenTableServiceImpl implements IGenTableService {
     @Transactional
     public void synchDb(String tableName) {
         GenTable table = genTableMapper.selectGenTableByName(tableName);
+        if (table == null) {
+            return;
+        }
         List<GenTableColumn> tableColumns = table.getColumns();
         List<String> tableColumnNames = tableColumns.stream().map(GenTableColumn::getColumnName).collect(Collectors.toList());
 
@@ -342,6 +354,9 @@ public class GenTableServiceImpl implements IGenTableService {
     private void generatorCode(String tableName, ZipOutputStream zip) {
         // 查询表信息
         GenTable table = genTableMapper.selectGenTableByName(tableName);
+        if (table == null) {
+            return;
+        }
         // 将字典的key转换成驼峰类型
         this.dictionaryKeyToCamelCase(table);
         // 初始化附件上传信息

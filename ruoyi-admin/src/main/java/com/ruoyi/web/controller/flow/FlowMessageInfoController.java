@@ -163,6 +163,9 @@ public class FlowMessageInfoController extends BaseController
     public AjaxResult exportShrz(FlowMessageInfo flowMessageInfo, HttpServletResponse response) {
         Map<String, Object> map = new HashMap<String, Object>();
         FlowMessageInfo messageInfo = flowMessageInfoService.selectFlowMessageInfoById(flowMessageInfo.getId());
+        if (messageInfo == null) {
+            return AjaxResult.success(map);
+        }
         map.put("applyName",messageInfo.getApplyName());
         map.put("createTime", DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD,messageInfo.getCreateTime()));
         map.put("msgTitle",messageInfo.getMsgTitle());

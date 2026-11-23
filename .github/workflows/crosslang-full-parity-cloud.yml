@@ -64,6 +64,10 @@ jobs:
           distribution: corretto
           java-version: '8'
           cache: maven
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
       - name: Start datastores
         shell: bash
         run: |
@@ -85,9 +89,14 @@ jobs:
             docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
           fi
       - name: Build baseline and generate JUnit
-        shell: bash
         run: |
           set -euo pipefail
+          sudo mkdir -p /home/ruoyi/logs
+          sudo chown -R "$USER" /home/ruoyi
+          export JAVA_HOME="$JAVA_HOME_25_X64"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          export MAVEN_ARGS="$MAVEN_ARGS -Dspring-boot.aot.skip=true"
+          java -version
           cd src
           if [ '${{ inputs.app }}' = api ]; then MODULE=pro-business-api; EP=../harness/scripts/v3/ops/parity/endpoints/api-full.txt; else MODULE=ruoyi-admin; EP=../harness/scripts/v3/ops/parity/endpoints/backend-full.txt; fi
           mvn $MAVEN_ARGS -DskipTests -pl "$MODULE" -am package
@@ -114,6 +123,9 @@ jobs:
           SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
           SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
           TOKEN__SECRET: junit-cloud-secret-deterministic-0123456789abcdef
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: "jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false"
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
+          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
           VEHICLE_MONITOR_BASE_URL: "http://127.0.0.1:9902"
           APP_VEHICLEMONITOR__BASEURL: "http://127.0.0.1:9902"
           CARMONIT_ADMIN_USER: ${{ secrets.CI_ADMIN_USER }}
@@ -239,6 +251,9 @@ jobs:
           CARMONIT_REDIS_ADDR: "127.0.0.1:6379"
           CARMONIT_SERVER_PORT: "19903"
           CARMONIT_TOKEN_SECRET: "junit-cloud-secret-deterministic-0123456789abcdef"
+          APP_SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: "jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false"
+          APP_SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
+          APP_SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
         run: |
           set -euo pipefail
           if [ '${{ inputs.app }}' = api ]; then DIR=src/car-monit-api-go; BIN=bin/car-monit-api; CMD="./$BIN -config configs/config.yaml"; PKG=./cmd/api; else DIR=src/car-monit-go; BIN=bin/car-monit-go; CMD="./$BIN -c configs/config.yaml"; PKG=./cmd/server; fi
@@ -257,6 +272,7 @@ jobs:
           set -euo pipefail
           if [ '${{ inputs.app }}' = api ]; then DIR=src/car-monit-api-cpp; BUILD=build-release; BIN="$BUILD/car-monit-api"; CONFIG=configs/config.yaml; else DIR=src/car-monit-cpp; BUILD=build; BIN="$BUILD/car-monit-cpp"; CONFIG=config; fi
           cd "$DIR"
+          if [ '${{ inputs.app }}' = api ]; then sed -i 's#192\.168\.56\.10#127.0.0.1#g; s#username: gaussdb#username: postgres#g; s#port: 9901#port: 19903#g' configs/config.yaml; fi
           cmake -S . -B "$BUILD" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-linux -DCMAKE_EXE_LINKER_FLAGS="-static-libstdc++ -static-libgcc"
           cmake --build "$BUILD" --parallel 2
           "./$BIN" --config "$CONFIG" > "$GITHUB_WORKSPACE/app.log" 2>&1 &
@@ -285,6 +301,7 @@ jobs:
           set -euo pipefail
           if [ '${{ inputs.app }}' = api ]; then DIR=src/car-monit-api-rust; BIN=target/release/car-monit-api-rust; else DIR=src/car-monit-rust; BIN=target/release/car-monit-rust; fi
           cd "$DIR"
+          if [ '${{ inputs.app }}' = api ]; then sed -i 's#192\.168\.56\.10#127.0.0.1#g; s#username: gaussdb#username: postgres#g; s#port: 9901#port: 19903#g' config/application.yaml; fi
           cargo build --release
           "./$BIN" > "$GITHUB_WORKSPACE/app.log" 2>&1 &
           echo $! > "$GITHUB_WORKSPACE/app.pid"

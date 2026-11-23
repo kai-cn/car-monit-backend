@@ -2,7 +2,7 @@
 """
 @description 从端点清单生成 Java8 兼容的 JUnit5 全接口契约与压测套件；结果以 JSON 记录，便于跨版本/跨语言对比。
 @author Tencent Hunyuan Hy
-@date 2026-11-22 23:45:04
+@date 2026-11-22 09:01:14
 @usage python generate_junit_suite.py --endpoints <file> --out <dir>
 @dependencies Python 3 标准库；生成的 Java 源码依赖 JUnit 5 Platform Console 与 JDK 8+。
 """
@@ -22,7 +22,7 @@ from pathlib import Path
 CONTRACT = r'''/**
  * @description 全接口 HTTP 契约套件，对每个端点做两次请求并记录可达性、状态码、字节数、延迟、正文片段与稳定性。
  * @author Tencent Hunyuan Hy
- * @date 2026-11-22 23:45:04
+ * @date 2026-11-22 09:01:14
  * @usage 由 generate_junit_suite.py 生成，通过 JUnit Platform Console 执行；OUT_DIR/BASE_URL/ENDPOINT_HEADERS 由环境变量注入。
  * @dependencies JDK 8+、JUnit 5 Platform Console；不依赖被测服务源码。
  */
@@ -184,7 +184,7 @@ public class EndpointContractTest {
 LOAD = r'''/**
  * @description 有界并发端点压测套件，记录吞吐、延迟分位数、传输错误与业务状态码分布。
  * @author Tencent Hunyuan Hy
- * @date 2026-11-22 23:45:04
+ * @date 2026-11-22 09:01:14
  * @usage 由 generate_junit_suite.py 生成，通过 JUnit Platform Console 执行；LOAD_THREADS/LOAD_SECONDS/LOAD_WARMUP_SECONDS 控制压测规模。
  * @dependencies JDK 8+、JUnit 5 Platform Console；BASE_URL 指向被测服务。
  */
@@ -223,14 +223,19 @@ public class EndpointLoadTest {
         return v == null || v.trim().isEmpty() ? fallback : v.trim();
     }
 
-    private static Map<String, String> headers() {
-        Map<String, String> out = new LinkedHashMap<String, String>();
-        String raw = env("ENDPOINT_HEADERS", "");
-        for (String line : raw.split("\\r?\\n")) {
-            int i = line.indexOf(':');
-            if (i > 0) out.put(line.substring(0, i).trim(), line.substring(i + 1).trim());
+    private static String json(String s) {
+        if (s == null) return "";
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '"' || c == '\\') b.append('\\').append(c);
+            else if (c == '\n') b.append("\\n");
+            else if (c == '\r') b.append("\\r");
+            else if (c == '\t') b.append("\\t");
+            else if (c < 0x20) b.append(String.format("\\u%04x", (int) c));
+            else b.append(c);
         }
-        return out;
+        return b.toString();
     }
 
     private static long percentile(List<Long> sorted, double p) {
@@ -277,7 +282,6 @@ public class EndpointLoadTest {
                         c.setRequestMethod("GET");
                         c.setConnectTimeout(5000);
                         c.setReadTimeout(Integer.parseInt(env("HTTP_TIMEOUT_MS", "60000")));
-                        for (Map.Entry<String, String> h : headers().entrySet()) c.setRequestProperty(h.getKey(), h.getValue());
                         int status = c.getResponseCode();
                         statusSeen = status;
                         InputStream in = status < 400 ? c.getInputStream() : c.getErrorStream();
@@ -342,7 +346,21 @@ public class EndpointLoadTest {
         StringBuilder s = new StringBuilder();
         s.append("{\n  \"variant\": \"").append(env("VARIANT", "java")).append("\",\n");
         for (Map.Entry<String, Object> e : result.entrySet()) {
-            s.append("  \"").append(e.getKey()).append("\": ").append(e.getValue()).append(",\n");
+            s.append("  \"").append(e.getKey()).append("\": ");
+            Object v = e.getValue();
+            if (v instanceof java.util.List) {
+                s.append("[");
+                boolean first = true;
+                for (Object item : (java.util.List<?>) v) {
+                    if (!first) s.append(", ");
+                    s.append("\"").append(json(String.valueOf(item))).append("\"");
+                    first = false;
+                }
+                s.append("]");
+            } else {
+                s.append(v);
+            }
+            s.append(",\n");
         }
         s.append("  \"endpoints\": ").append(ENDPOINTS.length).append("\n}\n");
         Path out = Paths.get(env("OUT_DIR", ".") + "/junit-load.json");
