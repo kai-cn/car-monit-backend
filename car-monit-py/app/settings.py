@@ -36,7 +36,7 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qs, urlparse
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 from pydantic_settings import (
     BaseSettings,
     EnvSettingsSource,
@@ -498,7 +498,15 @@ class HengdaSection(_Section):
 
 
 class VehicleMonitorSection(_Section):
-    base_url: str = "http://127.0.0.1:9901"
+    # NOTE: 云端 parity 统一注入 VEHICLE_MONITOR_BASE_URL；9901 仅保留为历史默认值。
+    base_url: str = Field(
+        default="http://127.0.0.1:9901",
+        validation_alias=AliasChoices(
+            "VEHICLE_MONITOR_BASE_URL",
+            "APP_VEHICLEMONITOR__BASEURL",
+            "vehicle_monitor_base_url",
+        ),
+    )
 
 
 class KafkaConsumerSection(_Section):
@@ -965,7 +973,13 @@ def get_settings() -> AppSettings:
     构造参数 > 环境变量 > ``.env`` > ``config/application.yml`` > 字段默认值。
     这里不再把 YAML 当构造参数传入，否则会盖掉环境变量。
     """
-    return AppSettings()
+    settings = AppSettings()
+    # NOTE: 嵌套模型的 validation_alias 不会自动映射到根级环境变量；parity workflow 使用
+    # VEHICLE_MONITOR_BASE_URL 平铺变量，这里显式覆盖，避免仍回落历史 9901 地址。
+    override = os.environ.get("VEHICLE_MONITOR_BASE_URL") or os.environ.get("APP_VEHICLEMONITOR__BASEURL")
+    if override:
+        settings.vehicle_monitor.base_url = override
+    return settings
 
 
 def reset_settings_cache() -> None:

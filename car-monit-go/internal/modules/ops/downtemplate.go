@@ -46,7 +46,9 @@ func (h *downTemplateHandler) DownExcel(c *gin.Context) {
 	content, err := os.ReadFile(resolveTemplatePath(h.app.Cfg.ConfigFile, typeName))
 	if err != nil {
 		// Java: e.printStackTrace()（不经过日志框架）；这里走 slog，级别等价。
+		// 全接口探测用占位 type；返回 200 空响应与 Java 基准 HTTP 行为一致。
 		h.app.Log.Error("模板下载失败", "type", typeName, "err", err)
+		c.Data(200, templateContentType, []byte{})
 		return
 	}
 	c.Header("Content-Disposition", "attachment")

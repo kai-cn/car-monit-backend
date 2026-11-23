@@ -52,3 +52,36 @@ __pycache__/
 
 # Local credential cache
 .gh_token_cache
+
+# Local parity generated artifacts
+runtime-logs/local-parity-matrix/**/generated/
+runtime-logs/local-parity-matrix/**/classes/
+runtime-logs/local-parity-matrix/**/contract-reports/
+runtime-logs/local-parity-matrix/**/load-reports/
+runtime-logs/local-parity-matrix/**/auth.json
+runtime-logs/local-parity-matrix/**/javac.log
+
+# Keep only final local-parity evidence in git.
+runtime-logs/local-parity-matrix/*
+!runtime-logs/local-parity-matrix/api/
+!runtime-logs/local-parity-matrix/backend/
+runtime-logs/local-parity-matrix/api/*
+!runtime-logs/local-parity-matrix/api/java-final/
+runtime-logs/local-parity-matrix/api/java-final/*
+!runtime-logs/local-parity-matrix/api/java-final/endpoint-code-analysis.json
+!runtime-logs/local-parity-matrix/api/java-final/junit-contract.json
+runtime-logs/local-parity-matrix/backend/*
+!runtime-logs/local-parity-matrix/backend/java-final/
+!runtime-logs/local-parity-matrix/backend/python6/
+!runtime-logs/local-parity-matrix/backend/go4/
+runtime-logs/local-parity-matrix/backend/java-final/*
+!runtime-logs/local-parity-matrix/backend/java-final/endpoint-code-analysis.json
+!runtime-logs/local-parity-matrix/backend/java-final/junit-contract.json
+runtime-logs/local-parity-matrix/backend/python6/*
+!runtime-logs/local-parity-matrix/backend/python6/endpoint-code-analysis.json
+!runtime-logs/local-parity-matrix/backend/python6/junit-contract.json
+!runtime-logs/local-parity-matrix/backend/python6/structure-compare.json
+runtime-logs/local-parity-matrix/backend/go4/*
+!runtime-logs/local-parity-matrix/backend/go4/endpoint-code-analysis.json
+!runtime-logs/local-parity-matrix/backend/go4/junit-contract.json
+!runtime-logs/local-parity-matrix/backend/go4/structure-compare.json

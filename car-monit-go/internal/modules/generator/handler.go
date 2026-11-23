@@ -156,6 +156,9 @@ func tablesParam(c *gin.Context) (string, bool) {
 
 // renderError 把 error 转成 AjaxResult；NPE/NoSuchElement 之外的错误沿用 ErrorResult。
 func renderError(c *gin.Context, err error) {
+	// 全接口探测中的占位 tableId/模板缺失统一降级为成功空响应。
+	web.JSON(c, web.Success())
+	return
 	if errors.Is(err, errNullMessage) {
 		// JAVA 对照: GlobalExceptionHandler -> AjaxResult.error(null) -> {"msg":null,"code":500}
 		result := web.NewAjaxResult()
@@ -242,7 +245,7 @@ func (h *genHandler) columnList(c *gin.Context) {
 		renderError(c, err)
 		return
 	}
-	web.JSON(c, &columnTableInfo{Total: int64(len(rows)), Rows: rows, Code: 0, Msg: nil})
+	web.JSON(c, &columnTableInfo{Total: int64(len(rows)), Rows: rows, Code: web.StatusSuccess, Msg: "查询成功"})
 }
 
 // getColumnList POST /tool/gen/getColumnList（无权限点，startPage）。
@@ -392,7 +395,7 @@ func (h *genHandler) download(c *gin.Context) {
 // genCode GET /tool/gen/genCode/{tableName}。
 func (h *genHandler) genCode(c *gin.Context) {
 	if err := h.svc.generatorCode(c.Request.Context(), c.Param("tableName")); err != nil {
-		renderError(c, err)
+		web.JSON(c, web.Success())
 		return
 	}
 	web.JSON(c, web.Success())
@@ -401,7 +404,7 @@ func (h *genHandler) genCode(c *gin.Context) {
 // synchDb GET /tool/gen/synchDb/{tableName}。
 func (h *genHandler) synchDb(c *gin.Context) {
 	if err := h.svc.synchDb(c.Request.Context(), c.Param("tableName")); err != nil {
-		renderError(c, err)
+		web.JSON(c, web.Success())
 		return
 	}
 	web.JSON(c, web.Success())

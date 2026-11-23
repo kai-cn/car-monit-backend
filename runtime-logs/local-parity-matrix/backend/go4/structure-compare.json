@@ -1,0 +1,2725 @@
+{
+  "total": 302,
+  "passed": 230,
+  "failed": 72,
+  "rows": [
+    {
+      "endpoint": "/base/cdc/config",
+      "baseline_code": null,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/cdc/dead-letters",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/cdc/retry-messages",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/cdc/status",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/config/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/config/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/config/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/configServiceArea/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/configServiceArea/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/configServiceArea/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/configServiceArea/listQuery",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feeGantry/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feeGantry/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feeGantry/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feeStationEnter/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feeStationEnter/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feerecords/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feerecords/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feerecords/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feestationexit/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feestationexit/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feestationexit/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/fitting/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/fitting/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/fwqjcxx/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/fwqjcxx/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/fwqjcxx/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/gantry/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/gantry/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/gantry/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/gantry/listAll",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/gantryIp/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/gantryIp/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/geometry/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/geometry/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/geometry/getHenDa",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/geometry/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/geometry/syncAllGeometry",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/geometry/syncAllGeometry1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/location/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/location/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/org/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/org/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/org/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/provcapture/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/provcapture/list",
+      "baseline_code": 200,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/section/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/section/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/section/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/section/listAll",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sfsjcxx/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sfsjcxx/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sfsjcxx/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sfzjcxx/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sfzjcxx/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sfzjcxx/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/snapshotflow/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/snapshotflow/earliest-time",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/snapshotflow/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/snapshotflow/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/stationcapture/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/stationcapture/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/toll/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/toll/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/toll/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/toll/listAll",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/tollStationIp/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/tollStationIp/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/trailtracks/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/trailtracks/list",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/vehicleweight/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/vehicleweight/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/captchaImage",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/common/download",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 403,
+      "candidate_status": 403
+    },
+    {
+      "endpoint": "/common/download/resource",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/downTemplate/1",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/applyinfo/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/applyinfo/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/applyinfo/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/applyinfo/listAll",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/currentnode/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/currentnode/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/currentnode/getInfoByBillId/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/currentnode/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/flowlist/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/flowlist/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/flowlist/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/flowlist/listnew",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/flowname/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/flowname/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/flowname/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/flowname/listQuery",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/flowtemplate/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/flowtemplate/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/flowtemplate/flowlist",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/flowtemplate/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/messagedispose/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/messagedispose/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/messagedispose/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/messageinfo/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/messageinfo/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/messageinfo/exportShrz",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/messageinfo/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/messageinfo/listxx",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/messageinfo/listyb",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/flow/messageinfo/listyj",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/getInfo",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/getRouters",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/aduitfree/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/aduitfree/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/aduitfree/exportIncomeDetailList",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/aduitfree/exportIncomeStatics",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/aduitfree/incomeDetailList",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/aduitfree/incomeStatics",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/aduitfree/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/bigScreen/carAudit",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/bigScreen/carLocation",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/bigScreen/carStatistics",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/bigScreen/carVoList",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/bigScreen/carWarning",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/bigScreen/exceptRecordList",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/bigScreen/exceptionCar",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/bigScreen/export/approvals",
+      "baseline_code": 200,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 404
+    },
+    {
+      "endpoint": "/manager/bigScreen/export/download/1",
+      "baseline_code": 200,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 404
+    },
+    {
+      "endpoint": "/manager/bigScreen/export/status/1",
+      "baseline_code": 200,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 404
+    },
+    {
+      "endpoint": "/manager/bigScreen/incomeStatistic",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/bigScreen/orgList",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/bigScreen/sectionList",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/bigScreen/tollGantryFwqList",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/bigScreen/topTen",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/busstest/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/busstest/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/busstest/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/carinfo/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/carinfo/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/carinfo/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/carinfo/listAll",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/carsuspiciousback/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/carsuspiciousback/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/carsuspiciousback/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/carSnapShot",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/listByCarByTime",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/listByCarId",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/carwarning/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/carwarning/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/carwarning/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/confimfree/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/confimfree/carStatics",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/confimfree/concernedList",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/confimfree/except/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/confimfree/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/confimfree/exportCarStatics",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/confimfree/exportConcernedList",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/confimfree/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/confimfree/listCarNo",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/confimfree/listCount",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/exceptrecord/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/exceptrecord/exceptRecordCount",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/exceptrecord/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/exceptrecord/exportOrgId",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/exceptrecord/getConfirmId/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/exceptrecord/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/exceptrecord/listCarNo",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/exceptrecord/listCarOrgId",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/exceptrecord/listExceptId",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/feerecord/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/feerecord/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/feerecord/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/fwqclls/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/fwqclls/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/gantrycar/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/gantrycar/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/gantrycar/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/gantrytrade/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/gantrytrade/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/gantrytrade/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/querylog/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/querylog/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/querylog/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/routedetail/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/routedetail/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/routedetail/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/routeinfo/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/routeinfo/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/routeinfo/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/splitrecord/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/splitrecord/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/splitrecord/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/suspicious/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/suspicious/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/suspicious/exportAbnormalPassage",
+      "baseline_code": null,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/suspicious/exportHistory",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/suspicious/history/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/suspicious/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/suspicious/listAll",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/suspicious/listCarNo",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/suspicious/listFileCarNo",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/suspicious/listHistory",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/suspiciouscheck/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/suspiciouscheck/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/suspiciouscheck/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/warningrule/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/warningrule/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/warningrule/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/whiteinfo/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/whiteinfo/export",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/whiteinfo/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/monitor/bigscreen/metrics",
+      "baseline_code": 200,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 404
+    },
+    {
+      "endpoint": "/monitor/bigscreen/switches",
+      "baseline_code": 200,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 404
+    },
+    {
+      "endpoint": "/monitor/cache/",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/monitor/job/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/monitor/job/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/monitor/job/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/monitor/jobLog/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/monitor/jobLog/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/monitor/jobLog/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/monitor/logininfor/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/monitor/logininfor/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/monitor/online/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/monitor/operlog/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/monitor/operlog/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/monitor/server/",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/config/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/config/configKey/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/config/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/config/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dept/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dept/getCompanyList",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dept/getList",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dept/list",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dept/list/exclude/1",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dept/roleDeptTreeselect/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dept/treeselect",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dept/treeselectNew",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dict/data/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dict/data/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dict/data/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dict/data/type/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dict/data/typemore/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dict/type/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dict/type/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dict/type/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/dict/type/optionselect",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/file/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/file/1/1",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/file/getInfoById/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/file/getNewCa",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/file/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/file/view/1/1",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 403,
+      "candidate_status": 403
+    },
+    {
+      "endpoint": "/system/indexmenu/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/indexmenu/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/indexmenu/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/indexmenu/mylist",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/menu/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/menu/list",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/menu/roleMenuTreeselect/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/menu/treeselect",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/notice/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/notice/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/notice/listquery",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/notice/view/1",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 403,
+      "candidate_status": 403
+    },
+    {
+      "endpoint": "/system/post/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/post/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/post/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/post/optionselect",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/role/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/role/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/role/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/role/optionselect",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/role/selectlist",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/upgradeInfo/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/upgradeInfo/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/upgradeInfo/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/upgradeInfo/newest",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/user/",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/user/currentUser",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/user/export",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/user/getroleUser/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/user/importTemplate",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/user/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/user/list/dept",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/user/listAll",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/user/listMy",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/user/listSameUtil",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/user/listTenantIdAll",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/user/listutil",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/system/user/profile/",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/test/user/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/test/user/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/tool/gen/1",
+      "baseline_code": null,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/tool/gen/all/list",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/tool/gen/batchGenCode",
+      "baseline_code": null,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/tool/gen/column/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/tool/gen/db/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/tool/gen/download/1",
+      "baseline_code": null,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/tool/gen/genCode/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/tool/gen/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/tool/gen/preview/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/tool/gen/synchDb/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    }
+  ]
+}

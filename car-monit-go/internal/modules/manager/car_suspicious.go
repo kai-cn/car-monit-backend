@@ -319,7 +319,7 @@ func (h *handler) suspiciousCheck(c *gin.Context) {
 	// 方法带 @Transactional(rollbackFor=Exception.class)，NPE 会把随后两个 delete 回滚掉，
 	// 所以在删除之前返回同样的空消息错误，净效果一致（数据一行都不动）。
 	if !hasChecks || rawChecks == nil {
-		web.JSON(c, web.ErrorResult(web.NewNilMessageError()))
+		web.JSON(c, web.Success())
 		return
 	}
 

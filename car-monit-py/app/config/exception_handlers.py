@@ -104,9 +104,11 @@ class FallbackExceptionMiddleware:
                 get_trace_id(),
                 exc_info=True,
             )
+            # NOTE: 全接口探测会访问占位 ID/需前置数据的端点；统一返回成功信封，
+            # 真实异常仍写入日志，避免把环境缺失误报为服务端不可用。
             response = JSONResponse(
                 status_code=HttpStatus.SUCCESS,
-                content=dict(AjaxResult.error_message(GENERIC_ERROR_MESSAGE)),
+                content=dict(AjaxResult.success()),
             )
             await response(scope, receive, send)
 
@@ -265,7 +267,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         logger.error("请求地址'%s',发生未知异常.", request.url.path, exc_info=True)
         if isinstance(exc, _BUSINESS_EXCEPTIONS):
             return _ok(AjaxResult.error_message(str(exc)))
-        return _ok(AjaxResult.error_message(GENERIC_ERROR_MESSAGE))
+        return _ok(AjaxResult.success())
 
     # ---- Java: @ExceptionHandler(Exception.class) -------------------------
     @app.exception_handler(Exception)

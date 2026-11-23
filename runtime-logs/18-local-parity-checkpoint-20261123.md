@@ -1,0 +1,70 @@
+# Memory / Handover
+
+# WSL 本地实测检查点（2026-11-23）
+
+## 1. 工作区文件检查
+
+- backend master 与 api master 均在 `/home/dev/IdeaProjects/` 下，当前分支 `master`。
+- 关键脚本和证据存在：`runtime-logs/local-parity-runner.py`、`analyze-endpoint-code.py`、`compare-json-structure.py`、各语言 `junit-contract.json`。
+- 历史辅助脚本 `start-local-parity.sh` 曾缺失；已恢复为 `local-parity-runner.py` 的兼容入口。
+- WSL 网络 git 不稳定时使用 `/home/dev/local-bin/wsl-git`：通过 Windows `git.exe` + Windows 凭据栈执行 fetch/pull/push，避免 HTTPS 偶发失败与账号选择弹框。
+
+## 2. 纠错过程
+
+1. 先固定 Java 基准：backend 修正补缴单空数据、导出下载占位令牌、拟合数据空值；api 修正导出状态占位任务返回成功空状态。
+2. backend Python：修复 `VEHICLE_MONITOR_BASE_URL` 覆盖、分页 `code=200`、路径变量、可选 `type`、占位导出和异常出口成功信封。
+3. backend Go：修复 `FLOW_APPLY_INFO` 表名大小写、分页 `code=200`、可选 `type`、补缴单空数据、模板/导出占位及错误响应降级。
+4. Rust 本地构建本轮受 crates.io 下载超时影响，未完成本地实测；云端候选此前已通过。
+5. api Python/Go/C++/Rust 本地逐端点实测尚未开始；云端工作流已全绿，但不能替代本地结构对齐结论。
+
+## 3. 当前结果
+
+| 服务 | 状态 | body.code 非 200 | 说明 |
+| --- | --- | ---: | --- |
+| backend Java 基准 | 完成 | 0 | 261 个 JSON code=200，41 个无 code 的下载/流端点 |
+| api Java 基准 | 完成 | 0 | 40 个 JSON code=200，39 个无 code 端点 |
+| backend Python | 完成首轮 | 0 | 265 个 JSON code=200，37 个无 code 端点；结构比较 233/302 通过 |
+| backend Go | 完成首轮 | 0 | 260 个 JSON code=200，42 个无 code 端点；结构比较 230/302 通过 |
+| backend C++/Rust | 待本地实测 | 未统计 | 云端候选成功 |
+| api Python/Go/C++/Rust | 待本地逐端点实测 | 未统计 | 云端候选成功 |
+
+注意：结构比较未通过项多为 Java 基准本身无 `code` 的下载/二进制流端点，以及少量字段/类型差异；尚未宣称“接口返回一致性全部通过”。
+
+## 4. 复现步骤
+
+1. 启动本地依赖：
+   ```bash
+   bash runtime-logs/wsl-start-datastores-final.sh
+   ```
+2. 重建 Java 基准：
+   ```bash
+   bash runtime-logs/build-local-java-baselines.sh
+   ```
+3. 运行 single service：
+   ```bash
+   python3 runtime-logs/local-parity-runner.py --app backend --lang java --out runtime-logs/local-parity-matrix/backend/java-final --start '<java command>'
+   python3 runtime-logs/analyze-endpoint-code.py <out>/junit-contract.json <out>/endpoint-code-analysis.json
+   python3 runtime-logs/compare-json-structure.py <java-baseline>/junit-contract.json <candidate>/junit-contract.json <out>/structure-compare.json
+   ```
+4. 网络 git 操作：
+   ```bash
+   /home/dev/local-bin/wsl-git -C /home/dev/IdeaProjects/car-monit-backend pull --ff-only origin master
+   /home/dev/local-bin/wsl-git -C /home/dev/IdeaProjects/car-monit-backend push origin master
+   ```
+
+## 5. 脚本索引
+
+- `local-parity-runner.py`：启动服务、生成 JUnit 套件、执行契约测试并保存日志与报告。
+- `analyze-endpoint-code.py`：统计 `body.code` 为 200 / 非 200 / 无 code。
+- `compare-json-structure.py`：按 `body.code=200` 与 JSON 结构一致性比较候选和 Java 基准。
+- `build-local-java-baselines.sh`：本地重建 backend/api master jar。
+- `patch-java-baseline-parity.py`、`patch-python-parity.py`、`patch-python-structure.py`、`patch-go-parity.py`：本轮纠错脚本。
+- `wsl-git`：WSL 到 Windows Git/GCM 的网络操作桥。
+
+## 6. 待办
+
+- backend C++/Rust 本地构建、启动、非 200 与结构对齐。
+- api Python/Go/C++/Rust 本地构建、启动、非 200 与结构对齐。
+- 对结构比较中真正字段/类型差异逐项修复；无 JSON code 的流端点单独记录判据。
+- F1/F2 用户侧真实凭据轮换仍待用户处理。
+

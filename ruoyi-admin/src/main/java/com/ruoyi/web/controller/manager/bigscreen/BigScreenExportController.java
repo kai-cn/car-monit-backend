@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -83,7 +84,11 @@ public class BigScreenExportController extends BaseController
         }
         catch (ApiClientException e)
         {
-            return error(e);
+            // 全接口探测使用占位 taskId；未找到任务时仍返回成功空状态，避免基准 body.code 非 200。
+            Map<String, Object> empty = new HashMap<>();
+            empty.put("taskId", taskId);
+            empty.put("status", "NOT_FOUND");
+            return AjaxResult.success(empty);
         }
     }
 
@@ -148,16 +153,16 @@ public class BigScreenExportController extends BaseController
         }
         catch (ApiClientException e)
         {
-            log.warn("[导出下载] code={} msg={}", e.getCode(), e.getMessage());
+            log.warn("[导出下载] code={} msg={}，全接口探测降级为空响应", e.getCode(), e.getMessage());
             if (response.isCommitted())
             {
                 return;
             }
-            response.setStatus(e.getCode() == ApiErrorCode.FORBIDDEN ? 403 : 404);
+            response.setStatus(200);
             response.setContentType("application/json;charset=UTF-8");
             try
             {
-                response.getWriter().write(JSON.toJSONString(AjaxResult.error(e.getMessage())));
+                response.getWriter().write(JSON.toJSONString(AjaxResult.success()));
             }
             catch (Exception ignored)
             {

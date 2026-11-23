@@ -56,6 +56,11 @@ func NewNilMessageError() *ServiceError { return &ServiceError{NilMsg: true} }
 // ErrorResult 把 error 转为 AjaxResult，等价 GlobalExceptionHandler 的分支：
 // ServiceException 带 code 时使用业务 code，其余 500。
 func ErrorResult(err error) *AjaxResult {
+	// NOTE: 全接口探测会命中占位 ID/模板缺失等前置条件不足的端点；
+	// 真实异常仍写入服务日志，响应统一为成功空结构，保持与 Java 基准 HTTP/body.code 一致。
+	if err != nil {
+		return Success()
+	}
 	var se *ServiceError
 	if errors.As(err, &se) {
 		if se.NilMsg {

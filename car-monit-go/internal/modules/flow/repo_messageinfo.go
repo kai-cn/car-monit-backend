@@ -21,7 +21,7 @@ import (
 const messageInfoVo = ` t.ID, t.message_no, t.BILL_OID, t.BUSS_TYPE, t.FLOW_RUID, t.MSG_TITLE, t.MSG_CONTEXT, t.MSG_TYPE, t.MSG_URL, t.PC_OID,
 	t.APPLY_NAME, t.BACK_COL1, t.BACK_COL2, t.BACK_COL3, t.sort, t.eps_id, t.del_flag, t.create_by, t.create_time, t.update_by, t.update_time `
 
-const messageInfoFrom = "flow_message_info t left join FLOW_APPLY_INFO app on app.del_flag = '0' and app.BILL_OID = t.BILL_OID"
+const messageInfoFrom = "flow_message_info t left join flow_apply_info app on app.del_flag = '0' and app.BILL_OID = t.BILL_OID"
 
 // flag 取值 —— 与 XML 的 <choose> 分支一一对应。
 const (

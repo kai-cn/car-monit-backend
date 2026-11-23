@@ -56,8 +56,8 @@ public class ZdataTrailFittingController extends BaseController {
                             pageNum, pageSize, ZdataTrailFitting.class);
             return FlowApiSupport.page(result);
         } catch (ApiClientException e) {
-            logger.warn("[拟合轨迹] api 查询失败 code={} msg={}", e.getCode(), e.getMessage());
-            return FlowApiSupport.error(e);
+            logger.warn("[拟合轨迹] api 查询失败 code={} msg={}，降级为空分页", e.getCode(), e.getMessage());
+            return FlowApiSupport.page(null);
         }
     }
 

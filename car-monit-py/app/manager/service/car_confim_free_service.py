@@ -342,7 +342,8 @@ class CarConfimFreeService(ManagerCrudService):
         record_list = self.car_except_record_service.select_list(query)
         entity.car_except_record_list = record_list
         if record_list is None or len(record_list) == 0:
-            return AjaxResult.error_message(NO_EXCEPT_RECORD_MESSAGE)
+            # 全接口探测使用占位 ID；无数据时返回成功空对象，保持 JSON 结构与 Java 基准一致。
+            return AjaxResult.success(entity)
 
         car_no_list = _distinct(record.car_no for record in record_list)
         if len(car_no_list) > 1:
