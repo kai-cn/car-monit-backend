@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 @description 在 WSL 中用本地 MySQL/Redis 和已打包 jar 运行全接口契约与压测复测。
-@author Tencent Hunyuan Hy
-@date 2026-11-23 09:01:14
+@author AI Assistant
+@date 2026-11-23
 @usage python3 runtime-logs/wsl-local-retest-final.py
 @dependencies WSL Docker MySQL/Redis、Java8、JUnit console jar、backend master 本地 jar。
 """

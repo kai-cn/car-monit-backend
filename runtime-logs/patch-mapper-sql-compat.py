@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 @description 修复 api Java/Python mapper 的 PostgreSQL 列名大小写与整数参数类型错误。
-@author Tencent Hunyuan Hy
-@date 2026-11-23 09:01:14
+@author AI Assistant
+@date 2026-11-23
 @usage python3 runtime-logs/patch-mapper-sql-compat.py
 @dependencies api master 的 Java/Python mapper XML；不访问网络。
 """

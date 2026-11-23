@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 @description 写入 2026-11-23 WSL 非 200 修复最终闭环：修复过程、结果、复现步骤与脚本索引。
-@author Tencent Hunyuan Hy
-@date 2026-11-23 09:01:14
+@author AI Assistant
+@date 2026-11-23
 @usage python3 runtime-logs/finalize-wsl-cloud-closure.py
 @dependencies Python 3；写入 WSL 两仓库与 runtime-logs 的 Markdown 文档。
 """
