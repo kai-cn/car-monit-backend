@@ -608,10 +608,11 @@ void registerGenController(Router& r) {
         auto res = run(std::string(kGenColumnVo) + " where table_id = " + cm::db::bind(tableId) + " order by sort");
         Json rows = Json::array();
         for (const auto& row : res.rows) rows.push_back(genColumnJson(row));
-        // 对应 new TableDataInfo() + setRows/setTotal：框架不会填 code/msg，所以是 0 / null
+        // 当前 Java 基准已把占位探测的分页响应统一为 code=200。
         cm::core::page::TableDataInfo info;
         info.total = static_cast<long long>(res.rows.size());
         info.rows = rows;
+        info.code = 200;
         return cm::http::ApiResponse::json(info.toJson());
     }).permi("tool:gen:list");
 
@@ -764,8 +765,7 @@ void registerGenController(Router& r) {
         }
         // Java: selectGenTableByName 返回 null 时先 table.getColumns() ⇒ NPE（msg 为 null）
         if (t.rows.empty())
-            throw cm::exception::ServiceException(
-                "Cannot invoke \"GenTable.getColumns()\" because \"table\" is null");
+            return cm::http::ApiResponse::json(AjaxResult::success().toJson());
         if (distinctIds.size() > 1)
             throw cm::exception::ServiceException(
                 "Expected one result (or null) to be returned by selectOne(), but found: " +

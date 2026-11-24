@@ -1,0 +1,718 @@
+{
+  "total": 79,
+  "passed": 66,
+  "failed": 13,
+  "rows": [
+    {
+      "endpoint": "/api/v1/large/carTrackQueryByCarNo",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 400,
+      "candidate_status": 400
+    },
+    {
+      "endpoint": "/api/v1/large/export/status/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/api/v1/large/fee",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 400,
+      "candidate_status": 400
+    },
+    {
+      "endpoint": "/api/v1/large/snapshot",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 400,
+      "candidate_status": 400
+    },
+    {
+      "endpoint": "/api/v1/large/stats/group",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 400,
+      "candidate_status": 400
+    },
+    {
+      "endpoint": "/api/v1/large/trail",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 400,
+      "candidate_status": 400
+    },
+    {
+      "endpoint": "/api/v1/unified/1/list",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 400,
+      "candidate_status": 400
+    },
+    {
+      "endpoint": "/api/v1/unified/export/status/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feeGantry/1",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feeGantry/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feeStationEnter/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feeStationEnter/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feerecords/1",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feerecords/list",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feerecords/listToExport",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feestationexit/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/feestationexit/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/fwqjcxx/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/fwqjcxx/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/fwqjcxx/listAll",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/gantry/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/gantry/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/gantry/listAll",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/gantryIp/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/gantryIp/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/org/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/org/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/org/listAll",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/provcapture/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/provcapture/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/section/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/section/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/section/listAll",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sfsjcxx/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sfsjcxx/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sfsjcxx/listAll",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sfzjcxx/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sfzjcxx/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sfzjcxx/listAll",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/snapshotflow/1",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/snapshotflow/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/snapshotflow/listToExport",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/stationcapture/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/stationcapture/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutil/carTrackQueryByCarNo",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutil/carTrackQueryByTime",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutil/getByTrailBo",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutil/saveRedis",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/separateSnapshotFlowTimeList",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncBaseInfo",
+      "baseline_code": null,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncCurrentTrack",
+      "baseline_code": null,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncHistroyTrack",
+      "baseline_code": null,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncOdsSzdnGantry",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar1",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar10",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar2",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar3",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar4",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar5",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar6",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar7",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar8",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar9",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/toll/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/toll/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/toll/listAll",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/tollStationIp/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/tollStationIp/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/trailtracks/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/trailtracks/list",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/vehicleweight/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/vehicleweight/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/base/vehicleweight/map",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": false,
+      "pass": false,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/fwqclls/1",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/manager/fwqclls/list",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/progressive/feerecords/list",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/progressive/scale-level",
+      "baseline_code": 200,
+      "candidate_code": 200,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/progressive/snapshotflow/list",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": true,
+      "baseline_status": 200,
+      "candidate_status": 200
+    },
+    {
+      "endpoint": "/progressive/trailfitting/list",
+      "baseline_code": null,
+      "candidate_code": null,
+      "structure_match": true,
+      "pass": false,
+      "baseline_status": 500,
+      "candidate_status": 200
+    }
+  ]
+}

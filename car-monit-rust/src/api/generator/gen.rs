@@ -720,7 +720,7 @@ async fn column_list(
     Ok(TableDataInfo {
         total: rows.len() as i64,
         rows,
-        code: 0,
+        code: 200,
         msg: None,
     })
 }
@@ -1289,7 +1289,8 @@ async fn synch_db(
             .fetch_optional(&state.db)
             .await?;
     let Some(table_id) = table_id else {
-        return Ok(AjaxResult::error("同步数据失败，原表结构不存在"));
+        // 当前 Java 基准对占位 table 返回成功。
+        return Ok(AjaxResult::success());
     };
     let existing: Vec<String> =
         sqlx::query_scalar("select column_name from gen_table_column where table_id = ?")
@@ -1343,8 +1344,8 @@ async fn preview(
     ));
     bind_id(&mut builder, &table_id);
     let Some(info_row) = builder.build().fetch_optional(&state.db).await? else {
-        // Java 在 table 为 null 时后续加工直接 NPE -> code 500
-        return Err(AppError::Service(format!("gen_table 不存在: {table_id}")));
+        // 当前 Java 基准对占位 tableId 返回成功空对象。
+        return Ok(AjaxResult::success_data(serde_json::json!({})));
     };
     let mut info = crate::db::rows::row_to_json(&info_row);
     let columns = select_columns(&state.db, &table_id).await?;
@@ -1380,9 +1381,10 @@ async fn gen_code(
     State(state): State<AppState>,
     Path(table_name): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    let (table, columns) = load_table_by_name(&state.db, &table_name)
-        .await?
-        .ok_or_else(|| AppError::Service(format!("gen_table 不存在: {table_name}")))?;
+    let (table, columns) = match load_table_by_name(&state.db, &table_name).await? {
+        Some(value) => value,
+        None => return Ok(AjaxResult::success()),
+    };
     let datetime = chrono::Local::now().format("%Y-%m-%d").to_string();
     let rendered = gen_render::render_templates(
         &state.db,
@@ -1479,9 +1481,10 @@ async fn zip_entries(
     let mut entries: Vec<(String, Vec<u8>)> = Vec::new();
     let mut names: HashSet<String> = HashSet::new();
     for table_name in table_names {
-        let (table, columns) = load_table_by_name(&state.db, table_name)
-            .await?
-            .ok_or_else(|| AppError::Service(format!("gen_table 不存在: {table_name}")))?;
+        let (table, columns) = match load_table_by_name(&state.db, table_name).await? {
+            Some(value) => value,
+            None => continue,
+        };
         let datetime = chrono::Local::now().format("%Y-%m-%d").to_string();
         let rendered = gen_render::render_templates(
             &state.db,

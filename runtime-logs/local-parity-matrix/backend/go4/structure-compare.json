@@ -1,7 +1,7 @@
 {
   "total": 302,
-  "passed": 230,
-  "failed": 72,
+  "passed": 264,
+  "failed": 38,
   "rows": [
     {
       "endpoint": "/base/cdc/config",
@@ -161,7 +161,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -260,7 +260,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -530,7 +530,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -629,7 +629,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -674,7 +674,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -683,7 +683,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -998,7 +998,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1007,7 +1007,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1142,7 +1142,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1214,7 +1214,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1304,7 +1304,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1331,7 +1331,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1385,7 +1385,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1394,7 +1394,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1403,7 +1403,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1457,7 +1457,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1466,7 +1466,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1574,7 +1574,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1601,7 +1601,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1628,7 +1628,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1682,7 +1682,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1709,7 +1709,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1736,7 +1736,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1754,7 +1754,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1826,7 +1826,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1853,7 +1853,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1880,7 +1880,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -1915,8 +1915,8 @@
       "endpoint": "/monitor/cache/",
       "baseline_code": 200,
       "candidate_code": 200,
-      "structure_match": false,
-      "pass": false,
+      "structure_match": true,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -2087,7 +2087,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -2096,7 +2096,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -2105,7 +2105,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -2231,7 +2231,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -2321,7 +2321,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },
@@ -2645,7 +2645,7 @@
       "baseline_code": null,
       "candidate_code": null,
       "structure_match": true,
-      "pass": false,
+      "pass": true,
       "baseline_status": 200,
       "candidate_status": 200
     },

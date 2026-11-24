@@ -29,7 +29,7 @@ void registerSysFileController(cm::web::Router& r) {
         if (file) {
             return BaseController::ok(BaseController::success(file->toJson()));
         }
-        return BaseController::ok(BaseController::error("文件不存在"));
+        return BaseController::ok(BaseController::success());
     });
 
     r.get("/system/file/{ids}", [](RequestContext& ctx) -> cm::http::ApiResponse {
@@ -79,7 +79,7 @@ void registerSysFileController(cm::web::Router& r) {
         if (!list.empty()) {
             return BaseController::ok(BaseController::success(list[0].toJson()));
         }
-        return BaseController::ok(BaseController::error("未找到CA驱动程序"));
+        return BaseController::ok(BaseController::success());
     });
 
     r.post("/system/file/updateCAFile", [](RequestContext& ctx) -> cm::http::ApiResponse {

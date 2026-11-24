@@ -227,7 +227,7 @@ async fn my_list(
          concat(t2.path, '/', t1.path) as menuUrl, null as menuName1, null as menuName2, \
          null as menuName3, null as menuIds, null as remark, null as deptSubCode, \
          null as flag, null as searchValue, null as params \
-         from SYS_INDEX_MENU t \
+         from sys_index_menu t \
          left join sys_menu t1 on t.MENU_ID = t1.menu_id \
          left join sys_menu t2 on t1.parent_id = t2.menu_id \
          where t.del_flag='0' and t.USER_ID = ? \

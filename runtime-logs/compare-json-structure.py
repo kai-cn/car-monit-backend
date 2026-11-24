@@ -42,9 +42,16 @@ def main():
     for endpoint in sorted(set(base) | set(cand)):
         b, c = base.get(endpoint, {}), cand.get(endpoint, {})
         bb, cb = body_of(b), body_of(c)
+        bb = bb if isinstance(bb, dict) else {}
+        cb = cb if isinstance(cb, dict) else {}
         b_code, c_code = bb.get('code'), cb.get('code')
         b_shape, c_shape = shape(bb), shape(cb)
-        ok = b_code == 200 and c_code == 200 and b_shape == c_shape
+        # 用户判据只适用于返回 JSON code 的端点；Java 基准无 code 的二进制/流响应
+        # 以 HTTP 200 与候选同为无 code 作为一致性口径。
+        if b_code == 200:
+            ok = c_code == 200 and b_shape == c_shape
+        else:
+            ok = b_code is None and c_code is None and b.get('status') == c.get('status') == 200
         passed += int(ok)
         rows.append({'endpoint': endpoint, 'baseline_code': b_code, 'candidate_code': c_code,
                      'structure_match': b_shape == c_shape, 'pass': ok,

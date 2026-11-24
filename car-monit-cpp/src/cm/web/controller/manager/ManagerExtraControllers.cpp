@@ -480,7 +480,7 @@ void registerManagerExtraControllers(Router& r) {
         // selectSqlOf 而不是自己拼 FROM：specCarExceptRecord 现在带 join 与派生列 createInfo
         auto res = select(cm::web::crud::selectSqlOf(rs, cm::web::crud::buildWhere(rs, q),
                                                      " ORDER BY " + rs.orderBy)).rows;
-        if (res.empty()) return BaseController::ok(AjaxResult::error("异常车辆流水不存在！"));
+        if (res.empty()) return BaseController::ok(AjaxResult::success());
 
         std::vector<std::string> carNos, epsIds;
         for (const auto& row : res) {

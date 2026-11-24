@@ -1,0 +1,2124 @@
+{
+  "source": "/home/dev/IdeaProjects/car-monit-backend/runtime-logs/local-parity-matrix/backend/cpp4/junit-contract.json",
+  "total": 302,
+  "counts": {
+    "success": 266,
+    "pending_no_code": 36
+  },
+  "endpoints": [
+    {
+      "endpoint": "/manager/carsuspiciousback/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":63,\"rows\":[{\"id\":\"2019309574142369807\",\"epsId\":null,\"delFlag\":null,\"createBy\":null,\"createTime\":\"2026-02-03 07:18:14\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":null,\"plateColor\":\"9\",\"carNo\":\"豫RVZ189\",\"carType\":\"13\",\""
+    },
+    {
+      "endpoint": "/manager/carsuspiciousback/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"d0b19b33-a939-422f-bbfb-c0a433afb14e_可疑车辆备份.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/carsuspiciousback/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/configServiceArea/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":1,\"rows\":[{\"id\":null,\"epsId\":null,\"delFlag\":null,\"createBy\":null,\"createTime\":null,\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":null,\"fwqbm\":\"zdy_wafwq\",\"fwqmc\":\"万安服务区\",\"lon\":\"114.68264053339925\",\"lat\":\"26.6045067079070"
+    },
+    {
+      "endpoint": "/base/configServiceArea/listQuery",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"id\":null,\"epsId\":null,\"delFlag\":null,\"createBy\":null,\"createTime\":null,\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":null,\"fwqbm\":\"zdy_wafwq\",\"fwqmc\":\"万安服务区\",\"lon\":\"114.68264053339925\",\"lat\":\"26"
+    },
+    {
+      "endpoint": "/base/configServiceArea/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"f5c2edd9-4e3d-4f73-81ef-7a6d781a0d7e_服务区.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/configServiceArea/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/config/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":2,\"rows\":[{\"id\":\"9a00a4b44c18ab6fd60ae84724122dd8\",\"gantryCodeIn\":\"G003536008002420010\",\"gantryNameIn\":\"广昌枢纽-广昌互通门架1\",\"gantryCodeOut\":null,\"gantryNameOut\":null,\"timeSpan\":120,\"fwqbm\":\"zdy_wafwq\",\"fwqmc\":\"万安服务区\",\"lon\":\"114.682640533"
+    },
+    {
+      "endpoint": "/base/config/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"a96b8844-4e2f-474c-9cac-4df1affbcab9_服务区判定规则.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/config/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/cdc/status",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"deadLetterQueueSize\":0,\"consumerGroupId\":\"snapshot-flow-cdc-group\",\"kafkaTopic\":\"snapshot-flow-cdc\",\"retryQueueSize\":0,\"maxRetryAttempts\":3}}"
+    },
+    {
+      "endpoint": "/base/cdc/dead-letters",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[]}"
+    },
+    {
+      "endpoint": "/base/cdc/retry-messages",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[]}"
+    },
+    {
+      "endpoint": "/base/cdc/config",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"kafka\":{\"bootstrapServers\":\"localhost:9092\",\"consumerGroupId\":\"snapshot-flow-cdc-group\",\"topic\":\"snapshot-flow-cdc\",\"autoCommit\":true,\"autoCommitInterval\":1000,\"sessionTimeout\":30000,\"concurrency\":3},\"esSyn"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":218,\"rows\":[{\"agentPk\":\"138\",\"yxtzj\":\"45L4469428770847000\",\"fwqbm\":\"G6021361129W0010\",\"fwqmc\":\"万年北服务区\",\"wd\":\"28.769224644007775\",\"fxmc\":null,\"fxdm\":\"1\",\"jd\":\"116.94198428050115\",\"sslxbh\":\"G6021\",\"sslxmc\":null,\"ssldbh\":\"200R56021074"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"2cc09f40-e946-4458-b86d-e9391254f91f_服务区基础信息.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":32,\"rows\":[{\"agentPk\":null,\"yxtzj\":\"1720040000371359745\",\"sfsbm\":\"c1f3c455a557494bbb1be4548a8c5905\",\"sfsmc\":\"吉安西收费所\",\"jd\":\"114.75352300\",\"wd\":\"26.94908800\",\"sslxbh\":\"G72\",\"sslxmc\":\"泉南高速公路\",\"ssldbh\":\"200R500720756000\",\"ssldmc\":\"泉南高速"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"321e81af-c080-4b04-b87f-2029a2ffcaac_收费所基础信息.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":328,\"rows\":[{\"agentPk\":null,\"yxtzj\":\"168\",\"sfzdm\":\"G56361130F0040\",\"sfzmc\":\"婺源北收费站\",\"jd\":\"117.86884700\",\"wd\":\"29.30435800\",\"sslxbh\":\"G56\",\"sslxmc\":\"杭瑞高速公路\",\"ssldbh\":\"200R500560683000\",\"ssldmc\":\"杭瑞高速景婺黄段\",\"sczhK\":\"K275+085\",\"sczhN\":"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"3c8fbeec-1517-4ca4-82a4-229cdc3d02ba_收费站基础信息.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/geometry/getHenDa",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/geometry/syncAllGeometry",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/geometry/syncAllGeometry1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/geometry/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":11125,\"rows\":[{\"id\":1377198082,\"lxbh\":\"G0321\",\"lxfx\":\"2\",\"qdzh\":1119,\"zdzh\":1121,\"paths\":\"[[117.77081848100011,29.256026922000046],[117.76900588600006,29.25705406000003],[117.7681654160001,29.257530326000051],[117.76720512100007,29"
+    },
+    {
+      "endpoint": "/base/geometry/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"68f2f458-2749-4d74-aa19-de781ba35a95_车辆信息.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/geometry/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/fwqclls/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/manager/fwqclls/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/feeGantry/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":200,\"rows\":[{\"bigId\":\"100\",\"actualfeeclass\":\"3\",\"axlecount\":2,\"createtime\":\"2024-11-12T09:11:34.000+08:00\",\"discountfee\":0,\"electricalpercentage\":80,\"enaxlecount\":2,\"entime\":\"2024-10-26\",\"entolllanehex\":\"360101FA07\",\"entolllaneid\":"
+    },
+    {
+      "endpoint": "/base/feeGantry/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/feeGantry/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"cb95daf5-750b-4285-b655-f8e6e3a51ce4_交易流水.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/feerecords/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":200,\"rows\":[{\"bigId\":\"1029052209\",\"algorithmidentifier\":\"1\",\"antennaid\":\"3\",\"axlecount\":2,\"balanceafter\":4291227038.0,\"balancebefore\":4291227038.0,\"cardfeesumafter\":2297.0,\"cardfeesumbefore\":1343.0,\"computerorder\":\"1\",\"consumetime\""
+    },
+    {
+      "endpoint": "/base/feerecords/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"ce9aefa8-3599-4378-96b8-aaf1fa6eac80_基础-收费流水.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/feerecords/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/feeStationEnter/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":200,\"rows\":[{\"bigId\":2308,\"cardid\":\"15012312232021029616\",\"electricalpercentage\":100,\"enaxlecount\":2,\"entime\":\"2024-11-24\",\"entolllanehex\":\"360101FD04\",\"entolllaneid\":\"G00703600100601010030\",\"entollstationid\":\"G0070360010060\",\"enwe"
+    },
+    {
+      "endpoint": "/base/feeStationEnter/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/feestationexit/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":200,\"rows\":[{\"bigId\":\"11150377\",\"actualfeeclass\":\"0\",\"axlecount\":2,\"discountfee\":0,\"electricalpercentage\":0,\"enaxlecount\":null,\"entime\":\"1970-01-01\",\"entolllanehex\":\"0\",\"entolllaneid\":\"-1\",\"entollstationid\":\"-1\",\"entollstationname\""
+    },
+    {
+      "endpoint": "/base/feestationexit/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"3f423698-049b-49bb-9ea0-14e8b39b599f_收费站出口流水.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/feestationexit/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/snapshotflow/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":516,\"rows\":[{\"bigId\":\"10\",\"datasource\":\"ZdTrails:GantryCapture\",\"cameratype\":\"GantryXinluwei\",\"deviceid\":\"G006036028000320010TAG123\",\"gantrycode\":\"G006036028000320010\",\"gantryname\":\"黄马互通-温家圳互通门架1\",\"roadcode\":\"G60\",\"roadname\":\"沪昆高速公"
+    },
+    {
+      "endpoint": "/base/snapshotflow/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"41534297-d94a-40a9-83e1-e255c76592e9_门架抓拍流水.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/snapshotflow/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/snapshotflow/earliest-time",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"暂无数据\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/provcapture/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":200,\"rows\":[{\"bigId\":18,\"deviceip\":\"36.101.189.5\",\"tailcapturetimeunix\":-28800,\"tailcapturetime\":\"1970-01-01T00:00:00.000+08:00\",\"extendattribute\":null,\"smallsideimagewidth\":null,\"axletype\":null,\"smallsideimageheight\":null,\"plateco"
+    },
+    {
+      "endpoint": "/base/provcapture/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/stationcapture/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":200,\"rows\":[{\"bigId\":15188899,\"datasource\":\"ZdTrails:StationCapture\",\"cameratype\":\"StationCapture\",\"deviceid\":\"00000000\",\"deviceip\":\"36.100.114.9\",\"tollcode\":\"G70361021F0020\",\"tollname\":\"南城收费站\",\"orgcode\":30000006,\"siteid\":5,\"laneid"
+    },
+    {
+      "endpoint": "/base/stationcapture/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/gantry/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":1526,\"rows\":[{\"id\":\"212\",\"gantryCode\":\"G007036004000410010\",\"gantryName\":\"七里岗互通-南新互通门架1\",\"roadCode\":\"G70\",\"sectionCode\":\"200R500700853000\",\"tollCode\":\"G70360121F0010\",\"orgCode\":\"020110017\",\"hexCode\":\"380805\",\"direction\":\"1\",\"pileNo"
+    },
+    {
+      "endpoint": "/base/gantry/listAll",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":1526,\"rows\":[{\"id\":\"212\",\"gantryCode\":\"G007036004000410010\",\"gantryName\":\"七里岗互通-南新互通门架1\",\"roadCode\":\"G70\",\"sectionCode\":\"200R500700853000\",\"tollCode\":\"G70360121F0010\",\"orgCode\":\"020110017\",\"hexCode\":\"380805\",\"direction\":\"1\",\"pileNo"
+    },
+    {
+      "endpoint": "/base/gantry/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"61899af2-b52d-4c1b-a832-ef890312bdf2_门架信息.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/gantry/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"id\":\"1\",\"gantryCode\":\"G007636036000110010\",\"gantryName\":\"赣闽界隘岭站-瑞金东互通门架1\",\"roadCode\":\"G76\",\"sectionCode\":\"200R500760733000\",\"tollCode\":\"G76360781F0030\",\"orgCode\":\"030000007\",\"hexCode\":\"3A7C01\",\"direction\":\""
+    },
+    {
+      "endpoint": "/base/gantryIp/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/base/gantryIp/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/vehicleweight/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":200,\"rows\":[{\"dataSource\":\"ZdTrails:BorderWeighing\",\"dataType\":\"weigh\",\"plateNo\":\"车牌图片未匹配\",\"siteId\":\"3\",\"location\":\"赣州管理中心东江源省界\",\"driveNo\":2,\"plateColor\":\"其他\",\"plateColorCode\":\"9\",\"plateType\":\"其他\",\"plateTypeCode\":\"99\",\"vehicleColor"
+    },
+    {
+      "endpoint": "/base/vehicleweight/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/section/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":85,\"rows\":[{\"id\":\"40\",\"roadCode\":\"G0321\",\"roadName\":\"德上高速\",\"sectionCode\":\"200R503210683000\",\"sectionName\":\"景婺黄\",\"startPileNo\":1121,\"endPileNo\":1144,\"orgCode\":\"030000009\",\"orgName\":\"景德镇管理中心\",\"orgLevelCode\":\"0000001100530005\",\"orgCat"
+    },
+    {
+      "endpoint": "/base/section/listAll",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":85,\"rows\":[{\"id\":\"40\",\"roadCode\":\"G0321\",\"roadName\":\"德上高速\",\"sectionCode\":\"200R503210683000\",\"sectionName\":\"景婺黄\",\"startPileNo\":1121,\"endPileNo\":1144,\"orgCode\":\"030000009\",\"orgName\":\"景德镇管理中心\",\"orgLevelCode\":\"0000001100530005\",\"orgCat"
+    },
+    {
+      "endpoint": "/base/section/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"f411b1c0-2ea7-4b17-b9cb-bf21fbc2616b_路段信息.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/section/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"id\":\"1\",\"roadCode\":\"G45\",\"roadName\":\"大广高速\",\"sectionCode\":\"200R500450642000\",\"sectionName\":\"昌泰\",\"startPileNo\":2873,\"endPileNo\":2915,\"orgCode\":\"020000253\",\"orgName\":\"吉安西管理中心\",\"orgLevelCode\":\"0000001100530012\""
+    },
+    {
+      "endpoint": "/base/toll/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":321,\"rows\":[{\"id\":\"74\",\"roadCode\":\"G1517\",\"idCard\":\"44L4450326880849001\",\"tollCode\":\"G1517360825F0020\",\"tollName\":\"万合收费站\",\"pileNo\":\"565.7869873046875\",\"orgName\":\"吉安东管理中心\",\"hexCode\":null,\"stateCode\":\"G1517360580090\",\"orgCode\":\"03000"
+    },
+    {
+      "endpoint": "/base/toll/listAll",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":321,\"rows\":[{\"id\":\"74\",\"roadCode\":\"G1517\",\"idCard\":\"44L4450326880849001\",\"tollCode\":\"G1517360825F0020\",\"tollName\":\"万合收费站\",\"pileNo\":\"565.7869873046875\",\"orgName\":\"吉安东管理中心\",\"hexCode\":null,\"stateCode\":\"G1517360580090\",\"orgCode\":\"03000"
+    },
+    {
+      "endpoint": "/base/toll/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"9d28c3db-71de-460a-bfbc-8484268b74eb_收费站基础信息.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/toll/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"id\":\"1\",\"roadCode\":\"S43\",\"idCard\":\"44L4464527980850000\",\"tollCode\":\"S43361002F0020\",\"tollName\":\"抚州东收费站\",\"pileNo\":\"11.725899696350098\",\"orgName\":\"抚州管理中心\",\"hexCode\":null,\"stateCode\":\"S0043360010020\",\"orgCode\""
+    },
+    {
+      "endpoint": "/base/tollStationIp/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/base/tollStationIp/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/org/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":481,\"rows\":[{\"bigId\":\"24943\",\"orgCode\":\"000000000000000\",\"orgName\":\"江西省交通运输厅\",\"orgShortName\":\"省交通厅\",\"orgParentId\":\"00000000\",\"orgLevelCode\":\"0000\",\"orgIsVirtual\":\"1\",\"orgMaintenance\":\"1\",\"orgSequence\":1,\"orgIsManager\":\"0\",\"orgIsDel"
+    },
+    {
+      "endpoint": "/base/org/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"2c6fd862-250d-4ada-9936-60e717301ec3_机构信息.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/org/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/location/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":1644,\"rows\":[{\"id\":1,\"type\":\"toll\",\"name\":\"蒋巷收费站\",\"rawCode\":\"stationip:36.100.122.9\",\"standardCode\":\"G70360121F0050\",\"roadcode\":\"G70\",\"roadname\":\"福银高速\",\"sectioncode\":\"200R500700853000\",\"sectionname\":\"乐温\",\"tollcode\":\"G70360121F0050\""
+    },
+    {
+      "endpoint": "/base/location/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"id\":1,\"type\":\"toll\",\"name\":\"蒋巷收费站\",\"rawCode\":\"stationip:36.100.122.9\",\"standardCode\":\"G70360121F0050\",\"roadcode\":\"G70\",\"roadname\":\"福银高速\",\"sectioncode\":\"200R500700853000\",\"sectionname\":\"乐温\",\"tollcode\":\"G7036"
+    },
+    {
+      "endpoint": "/base/fitting/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/base/fitting/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/trailtracks/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":167,\"rows\":[{\"uuid\":\"49cc5906628d4809937b8db89c7dc409\",\"type\":null,\"pointCount\":4,\"plateKey\":\"吉DAS222\",\"enterTime\":\"2025-11-29 04:49:06\",\"exitTime\":\"2025-11-29 05:10:47\",\"trailPoints\":\"\",\"enterLocationcode\":null,\"exitLocationcode\":"
+    },
+    {
+      "endpoint": "/base/trailtracks/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/captchaImage",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"img\":\"iVBORw0KGgoAAAANSUhEUgAAAKAAAAA8CAIAAABuCSZCAAACPElEQVR4nO2c0W3DMAxEM0kn6STZoPN1CY/UzwZp0QaWTYuiKJGnOyiftE98lMw4Qm4fn3cO4HF7fL4oULkA3rat7wWpZi29glcoxKUBryACBhcBg4uAwUXA3VTZsg3u7BYCvELPXAoK8JoIZcUFvD0120Wj4jhvBPz2vgnDw6h"
+    },
+    {
+      "endpoint": "/common/download",
+      "status": 403,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T09:57:50.092+08:00\",\"status\":403,\"error\":\"Forbidden\",\"path\":\"/common/download\"}"
+    },
+    {
+      "endpoint": "/common/download/resource",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/downTemplate/1",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/flow/applyinfo/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/flow/applyinfo/listAll",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/flow/applyinfo/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"84658215-f2a9-4c69-b8e6-439b477cfe13_我的申请.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/flow/applyinfo/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/flow/currentnode/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/flow/currentnode/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"1741cde3-24f8-49a3-9a1a-3a78bcee0f6d_流程_当前节点.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/flow/currentnode/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/flow/currentnode/getInfoByBillId/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"id\":null,\"epsId\":null,\"delFlag\":null,\"createBy\":null,\"createTime\":null,\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"remark\":null,\"tenantId\":null,\"deptSubCode\":null,\"flag\":null,\"searchValue\":null,\"params\":"
+    },
+    {
+      "endpoint": "/flow/flowlist/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/flow/flowlist/listnew",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[]}"
+    },
+    {
+      "endpoint": "/flow/flowlist/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"b9bae7ff-1a8d-4286-b14b-8d6007948ac2_审核历史记录.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/flow/flowlist/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/flow/messagedispose/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/flow/messagedispose/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"28038fbb-a2cf-4a76-a4f6-19bdc39ed73d_系统消息处理人.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/flow/messagedispose/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/flow/messageinfo/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/flow/messageinfo/listyb",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/flow/messageinfo/listyj",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/flow/messageinfo/listxx",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/flow/messageinfo/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"f7960e2b-09af-414c-97c3-9fb70e58a21b_系统内部消息.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/flow/messageinfo/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/flow/messageinfo/exportShrz",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{}}"
+    },
+    {
+      "endpoint": "/flow/flowname/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/flow/flowname/listQuery",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/flow/flowname/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"850ae6e6-c1af-4fc2-9ffb-a0e352174d16_流程名称.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/flow/flowname/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/flow/flowtemplate/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/flow/flowtemplate/flowlist",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[]}"
+    },
+    {
+      "endpoint": "/flow/flowtemplate/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"db429134-2eb2-4e7b-b669-cbd2798a1c13_流程节点.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/flow/flowtemplate/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/busstest/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":11,\"rows\":[{\"id\":\"7390e020740f1160784e56b369aa4213\",\"epsId\":100,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2024-09-06 08:16:33\",\"updateBy\":1,\"updateTime\":\"2024-09-06 08:17:07\",\"sort\":null,\"tenantId\":100,\"billName\":\"测试\",\"billType\":\"1\""
+    },
+    {
+      "endpoint": "/manager/busstest/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"8019b03f-835d-424b-95ee-79784b790fc2_业务测试.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/busstest/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/aduitfree/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":84,\"rows\":[{\"id\":\"80764ebb4fd20a49baf2d6a9ce51c91a\",\"epsId\":25367,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2025-10-26 05:19:49\",\"updateBy\":null,\"updateTime\":\"2025-10-26 05:19:49\",\"sort\":null,\"tenantId\":-1,\"confirmId\":\"9e4491768a5ba"
+    },
+    {
+      "endpoint": "/manager/aduitfree/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"1c6f91b6-844a-44c7-953f-adb75cfe74b9_补缴处理.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/aduitfree/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/aduitfree/incomeStatics",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":84,\"rows\":[{\"id\":\"80764ebb4fd20a49baf2d6a9ce51c91a\",\"epsId\":25367,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2025-10-26 05:19:49\",\"updateBy\":null,\"updateTime\":\"2025-10-26 05:19:49\",\"sort\":null,\"tenantId\":-1,\"confirmId\":\"9e4491768a5ba"
+    },
+    {
+      "endpoint": "/manager/aduitfree/exportIncomeStatics",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "PK\u0003\u0004\u0014\u0000\u0000\u0000\u0000\u0000\u0000\u0000!\u0000v��\u0002\u0000\u0000�\u0002\u0000\u0000\u0013\u0000\u0000\u0000[Content_Types].xml<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxml"
+    },
+    {
+      "endpoint": "/manager/aduitfree/incomeDetailList",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/manager/aduitfree/exportIncomeDetailList",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "PK\u0003\u0004\u0014\u0000\u0000\u0000\u0000\u0000\u0000\u0000!\u0000v��\u0002\u0000\u0000�\u0002\u0000\u0000\u0013\u0000\u0000\u0000[Content_Types].xml<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxml"
+    },
+    {
+      "endpoint": "/manager/confimfree/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":83,\"rows\":[{\"id\":\"e9dc85996f48adaf39f18a7a835b0543\",\"epsId\":25367,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2026-02-03 08:19:19\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":-1,\"carId\":\"dd900debd5314084a5ca1d6c1fad3913\","
+    },
+    {
+      "endpoint": "/manager/confimfree/listCarNo",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/manager/confimfree/listCount",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/confimfree/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"e89da456-5aa9-4496-8a0e-b9b23af282c0_确认补缴.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/confimfree/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/confimfree/except/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/confimfree/concernedList",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":83,\"rows\":[{\"id\":\"e9dc85996f48adaf39f18a7a835b0543\",\"epsId\":25367,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2026-02-03 08:19:19\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":-1,\"carId\":\"dd900debd5314084a5ca1d6c1fad3913\","
+    },
+    {
+      "endpoint": "/manager/confimfree/exportConcernedList",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "PK\u0003\u0004\u0014\u0000\u0000\u0000\u0000\u0000\u0000\u0000!\u0000v��\u0002\u0000\u0000�\u0002\u0000\u0000\u0013\u0000\u0000\u0000[Content_Types].xml<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxml"
+    },
+    {
+      "endpoint": "/manager/confimfree/carStatics",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":83,\"rows\":[{\"id\":\"e9dc85996f48adaf39f18a7a835b0543\",\"epsId\":25367,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2026-02-03 08:19:19\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":-1,\"carId\":\"dd900debd5314084a5ca1d6c1fad3913\","
+    },
+    {
+      "endpoint": "/manager/confimfree/exportCarStatics",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "PK\u0003\u0004\u0014\u0000\u0000\u0000\u0000\u0000\u0000\u0000!\u0000v��\u0002\u0000\u0000�\u0002\u0000\u0000\u0013\u0000\u0000\u0000[Content_Types].xml<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxml"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":273,\"rows\":[{\"id\":\"0b52d6bb2ab294500019e09059f7d8a9\",\"epsId\":25367,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2026-02-05 08:14:43\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":-1,\"carId\":\"2019309574008152080\",\"carNo\":\"赣AK"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/listCarNo",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/listCarOrgId",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/exportOrgId",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "PK\u0003\u0004\u0014\u0000\u0000\u0000\u0000\u0000\u0000\u0000!\u0000v��\u0002\u0000\u0000�\u0002\u0000\u0000\u0013\u0000\u0000\u0000[Content_Types].xml<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxml"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/listExceptId",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/exceptRecordCount",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"4a1f5d5e-4528-4b69-bcdd-575c950a7a02_异常车辆流水.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/exceptrecord/getConfirmId/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":\"-1\"}"
+    },
+    {
+      "endpoint": "/manager/feerecord/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/manager/feerecord/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"04d31cd4-ab27-4edb-a16e-d5859cad1686_收费流水.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/feerecord/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/carinfo/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":185,\"rows\":[{\"id\":\"80e4eeef4e74497cb0bebdce6811dc37\",\"epsId\":25367,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2026-02-05 07:19:37\",\"updateBy\":1,\"updateTime\":\"2026-02-05 07:19:37\",\"sort\":null,\"tenantId\":null,\"carNo\":\"赣AK7388\",\"carType"
+    },
+    {
+      "endpoint": "/manager/carinfo/listAll",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":185,\"rows\":[{\"id\":\"80e4eeef4e74497cb0bebdce6811dc37\",\"epsId\":25367,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2026-02-05 07:19:37\",\"updateBy\":1,\"updateTime\":\"2026-02-05 07:19:37\",\"sort\":null,\"tenantId\":null,\"carNo\":\"赣AK7388\",\"carType"
+    },
+    {
+      "endpoint": "/manager/carinfo/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"b9a2265e-376f-48ff-b7e3-355d3937777b_车辆信息.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/carinfo/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/querylog/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":1912,\"rows\":[{\"id\":\"3500f43fb144752a41b08b3668c1f224\",\"epsId\":25367,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2026-11-24 08:42:44\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":-1,\"userId\":\"1\",\"userName\":\"管理员\",\"userIp\":\"1"
+    },
+    {
+      "endpoint": "/manager/querylog/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/querylog/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"8bbba6fe-ce21-43ee-a521-6cb7b2211c17_查询日志.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/routedetail/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/manager/routedetail/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"f9bcf369-c770-4ba9-99f8-662b0e354bea_常用路线明细.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/routedetail/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/routeinfo/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/manager/routeinfo/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"c749ecd6-9c40-471f-acaa-9e8d0faf2158_常用路线.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/routeinfo/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/splitrecord/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":1,\"rows\":[{\"id\":\"052e584247961967f3d9593ec2c8b2b4\",\"epsId\":25367,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2026-11-03 11:44:07\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":-1,\"carId\":null,\"carNo\":\"\",\"carType\":null,\"carV"
+    },
+    {
+      "endpoint": "/manager/splitrecord/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"d3cf012e-e008-4abe-bf26-0c3371158953_拆分流水.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/splitrecord/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/suspiciouscheck/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":75,\"rows\":[{\"id\":\"083f6f22de0e6fdb2b4b6f860eeac8b5\",\"epsId\":25339,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2025-09-05 07:51:31\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":-1,\"carId\":\"1\",\"carNo\":\"赣A0146B\",\"suspicousFla"
+    },
+    {
+      "endpoint": "/manager/suspiciouscheck/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"69f7a660-9e34-45b8-9754-84548c0c7b03_可疑车辆人工核实.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/suspiciouscheck/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/suspicious/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":64,\"rows\":[{\"id\":\"2019309574008152069\",\"epsId\":null,\"delFlag\":null,\"createBy\":null,\"createTime\":\"2026-02-03 07:18:13\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":null,\"plateColor\":\"1\",\"carNo\":\"赣CBB615\",\"carType\":\"99\",\""
+    },
+    {
+      "endpoint": "/manager/suspicious/listCarNo",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/manager/suspicious/listFileCarNo",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/manager/suspicious/exportAbnormalPassage",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/suspicious/listAll",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":64,\"rows\":[{\"id\":\"2019309574008152069\",\"epsId\":null,\"delFlag\":null,\"createBy\":null,\"createTime\":\"2026-02-03 07:18:13\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":null,\"plateColor\":\"1\",\"carNo\":\"赣CBB615\",\"carType\":\"99\",\""
+    },
+    {
+      "endpoint": "/manager/suspicious/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"a7c199ae-9db3-4cd7-b9ec-f560eec1985e_可疑车辆.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/suspicious/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/suspicious/listHistory",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":63,\"rows\":[{\"id\":\"12a0ec868e0f018a9fbaa7f0ec6b5e62\",\"epsId\":null,\"delFlag\":null,\"createBy\":null,\"createTime\":\"2025-10-28 11:29:55\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":null,\"plateColor\":\"0\",\"carNo\":\"赣O6202警\",\"ca"
+    },
+    {
+      "endpoint": "/manager/suspicious/history/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/suspicious/exportHistory",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "PK\u0003\u0004\u0014\u0000\u0000\u0000\u0000\u0000\u0000\u0000!\u0000v��\u0002\u0000\u0000�\u0002\u0000\u0000\u0013\u0000\u0000\u0000[Content_Types].xml<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxml"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":4,\"rows\":[{\"id\":\"1\",\"epsId\":null,\"delFlag\":\"0\",\"createBy\":null,\"createTime\":\"2025-09-11 08:00:20\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":null,\"carId\":\"101389248384467050\",\"carNo\":\"赣A0146B\",\"longitude\":\"115.269722\""
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/listByCarId",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/listByCarByTime",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":167,\"rows\":[{\"trailUuid\":\"吉DAS222\",\"enterTime\":null,\"tracks\":{\"uuid\":\"49cc5906628d4809937b8db89c7dc409\",\"type\":null,\"pointCount\":4,\"plateKey\":\"吉DAS222\",\"enterTime\":\"2025-11-29 04:49:06\",\"exitTime\":\"2025-11-29 05:10:47\",\"trailPoints"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/carSnapShot",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"8ff942b3-0945-4a4a-984c-d5ef1b714a08_车辆行驶轨迹.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/cartrackinfo/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"id\":\"1\",\"epsId\":null,\"delFlag\":\"0\",\"createBy\":null,\"createTime\":\"2025-09-11 08:00:20\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":null,\"carId\":\"101389248384467050\",\"carNo\":\"赣A0146B\",\"longitude\""
+    },
+    {
+      "endpoint": "/manager/carwarning/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":1627,\"rows\":[{\"id\":\"8d628feda62f6a1be9df9e328853dc77\",\"epsId\":null,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2026-02-04 08:40:22\",\"updateBy\":1,\"updateTime\":\"2026-02-04 08:40:22\",\"sort\":null,\"tenantId\":null,\"carId\":\"2775cb546d3245af9"
+    },
+    {
+      "endpoint": "/manager/carwarning/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"875d5af5-f37d-48b7-be58-131a8ab38695_预警车辆.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/carwarning/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/warningrule/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":3,\"rows\":[{\"id\":\"3f421b94debb543ad5b411ec704412d5\",\"epsId\":25367,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2025-11-26 06:55:20\",\"updateBy\":1,\"updateTime\":\"2025-11-26 08:10:45\",\"sort\":null,\"tenantId\":-1,\"ruleName\":null,\"noticeRangeId"
+    },
+    {
+      "endpoint": "/manager/warningrule/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"be991493-8719-41f3-a8da-3818c92d7a98_预警规则.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/warningrule/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/whiteinfo/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":5,\"rows\":[{\"id\":\"1d3ceae91c35b8185b48bd5d41d29d45\",\"epsId\":25367,\"delFlag\":\"0\",\"createBy\":966,\"createTime\":\"2025-11-01 06:35:39\",\"updateBy\":1,\"updateTime\":\"2025-12-08 09:24:00\",\"sort\":null,\"tenantId\":-1,\"plateColor\":\"1\",\"carNo\":\"赣A"
+    },
+    {
+      "endpoint": "/manager/whiteinfo/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"d563ca74-5771-48cc-9e94-9ccf4a731893_车俩白名单.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/whiteinfo/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/gantrycar/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":1,\"rows\":[{\"id\":\"63cd4a749613496f5dcdcc1700a8d51e\",\"epsId\":100,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2025-08-21 09:11:52\",\"updateBy\":1,\"updateTime\":\"2025-08-27 09:20:28\",\"sort\":null,\"tenantId\":100,\"carNo\":\"1\",\"carType\":\"1\",\"carV"
+    },
+    {
+      "endpoint": "/manager/gantrycar/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"c8b6de19-cc18-4ef9-aa8d-201a3db25f89_门架拍识查询.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/gantrycar/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/gantrytrade/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":1,\"rows\":[{\"id\":\"76381861e3b79830c00449e5d9c2470c\",\"epsId\":100,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2025-08-21 09:12:31\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":100,\"carNo\":\"1\",\"carType\":\"1\",\"carVehicle\":\"1\",\"c"
+    },
+    {
+      "endpoint": "/manager/gantrytrade/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"f2c1f651-744e-42e2-8ef7-8c5d32f00b69_门架交易查询.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/gantrytrade/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carStatistics",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"escapedType\":\"10\",\"escapedTypeName\":null,\"number\":44,\"escapedAmount\":17294.28},{\"escapedType\":\"20\",\"escapedTypeName\":null,\"number\":28,\"escapedAmount\":84882.23},{\"escapedType\":\"30\",\"escapedTypeName\":null,\"n"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carLocation",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[]}"
+    },
+    {
+      "endpoint": "/manager/bigScreen/sectionList",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"sectionCode\":\"all\",\"sectionName\":\"全部\"},{\"sectionCode\":\"200R500450642000\",\"sectionName\":\"G45昌泰\"},{\"sectionCode\":\"200R560210741000\",\"sectionName\":\"G6021德昌\"},{\"sectionCode\":\"200R500A6360741000\",\"sectionName\":"
+    },
+    {
+      "endpoint": "/manager/bigScreen/tollGantryFwqList",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[]}"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carVoList",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"carNo\":\"赣AK7388\",\"carType\":\"12\",\"escapedType\":\"10,60\",\"escapedAmount\":1334.23},{\"carNo\":\"豫NU3546\",\"carType\":\"13\",\"escapedType\":\"60\",\"escapedAmount\":7175.67},{\"carNo\":\"赣AZ1234\",\"carType\":\"16\",\"escapedType\":"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carAudit",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"totalCount\":73,\"finishedCount\":37,\"totalAmount\":115716.75,\"finishedAmount\":14476.19}}"
+    },
+    {
+      "endpoint": "/manager/bigScreen/carWarning",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[]}"
+    },
+    {
+      "endpoint": "/manager/bigScreen/exceptionCar",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"id\":null,\"epsId\":null,\"delFlag\":null,\"createBy\":null,\"createTime\":null,\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":null,\"plateColor\":null,\"carNo\":\"赣AK7388\",\"carType\":\"12\",\"carVehicle\":null,\"ca"
+    },
+    {
+      "endpoint": "/manager/bigScreen/topTen",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"roadCode\":\"G1517\",\"sectionName\":\"广吉\",\"carNum\":727,\"rank\":null,\"rate\":null},{\"roadCode\":\"G6011\",\"sectionName\":\"昌宁\",\"carNum\":180,\"rank\":null,\"rate\":null},{\"roadCode\":\"S47\",\"sectionName\":\"昌宁联络线\",\"carNum\":162,"
+    },
+    {
+      "endpoint": "/manager/bigScreen/orgList",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"orgCode\":\"000000000000000\",\"orgName\":\"江西省交通运输厅\"},{\"orgCode\":\"000000926\",\"orgName\":\"中心机关\"},{\"orgCode\":\"000000936\",\"orgName\":\"中心机关\"},{\"orgCode\":\"000000937\",\"orgName\":\"中心机关\"},{\"orgCode\":\"000000938\",\"orgName\":"
+    },
+    {
+      "endpoint": "/manager/bigScreen/incomeStatistic",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"orgName\":\"万安收费所\",\"amount\":3761.45,\"carNum\":22},{\"orgName\":\"吉安东收费所\",\"amount\":900.0,\"carNum\":1},{\"orgName\":\"小港收费所\",\"amount\":644.0,\"carNum\":1},{\"orgName\":\"兴国收费所\",\"amount\":401.0,\"carNum\":7},{\"orgName\":\"宁都收费所\","
+    },
+    {
+      "endpoint": "/manager/bigScreen/exceptRecordList",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":273,\"rows\":[{\"id\":\"0b52d6bb2ab294500019e09059f7d8a9\",\"epsId\":25367,\"delFlag\":\"0\",\"createBy\":1,\"createTime\":\"2026-02-05 08:14:43\",\"updateBy\":null,\"updateTime\":null,\"sort\":null,\"tenantId\":-1,\"carId\":\"2019309574008152080\",\"carNo\":\"赣AK"
+    },
+    {
+      "endpoint": "/manager/bigScreen/export/status/1",
+      "status": 404,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T09:57:51.272+08:00\",\"status\":404,\"error\":\"Not Found\",\"path\":\"/manager/bigScreen/export/status/1\"}"
+    },
+    {
+      "endpoint": "/manager/bigScreen/export/download/1",
+      "status": 404,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T09:57:51.274+08:00\",\"status\":404,\"error\":\"Not Found\",\"path\":\"/manager/bigScreen/export/download/1\"}"
+    },
+    {
+      "endpoint": "/manager/bigScreen/export/approvals",
+      "status": 404,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T09:57:51.276+08:00\",\"status\":404,\"error\":\"Not Found\",\"path\":\"/manager/bigScreen/export/approvals\"}"
+    },
+    {
+      "endpoint": "/monitor/bigscreen/metrics",
+      "status": 404,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T09:57:51.278+08:00\",\"status\":404,\"error\":\"Not Found\",\"path\":\"/monitor/bigscreen/metrics\"}"
+    },
+    {
+      "endpoint": "/monitor/bigscreen/switches",
+      "status": 404,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T09:57:51.279+08:00\",\"status\":404,\"error\":\"Not Found\",\"path\":\"/monitor/bigscreen/switches\"}"
+    },
+    {
+      "endpoint": "/monitor/cache/",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"info\":{\"acl_access_denied_auth\":\"0\",\"acl_access_denied_channel\":\"0\",\"acl_access_denied_cmd\":\"0\",\"acl_access_denied_key\":\"0\",\"acl_access_denied_tls_cert\":\"0\",\"active_clients\":\"1\",\"active_defrag_hits\":\"0\",\"ac"
+    },
+    {
+      "endpoint": "/monitor/server/",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"cpu\":{\"cpuNum\":6,\"total\":100.0,\"sys\":2.99,\"used\":31.34,\"wait\":1.49,\"free\":53.73},\"mem\":{\"total\":7.76,\"used\":3.85,\"free\":3.9,\"usage\":49.68},\"jvm\":{\"total\":116.04,\"max\":686.63,\"free\":570.59,\"used\":116.04,\"usa"
+    },
+    {
+      "endpoint": "/monitor/logininfor/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":4258,\"rows\":[{\"createBy\":null,\"createTime\":null,\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"infoId\":53341,\"userName\":\"admin\",\"status\":\"0\",\"ipaddr\":\"127.0.0.1\",\"loginLocation\":\"内网IP\",\"browser\":\"Unknown\",\"os\":\"Unknown\",\"msg\":\"登录"
+    },
+    {
+      "endpoint": "/monitor/logininfor/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"11e42614-1b7a-45fe-99e9-728c3eadc6b0_登录日志.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/monitor/operlog/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":28950,\"rows\":[{\"createBy\":null,\"createTime\":null,\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"operId\":95150,\"title\":\"登录日志\",\"businessType\":5,\"method\":\"com.ruoyi.web.controller.monitor.SysLogininforController.export()\",\"requestMe"
+    },
+    {
+      "endpoint": "/monitor/operlog/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"6067a8f0-4e35-4ed8-9aef-7516da9a3d72_操作日志.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/monitor/online/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":5,\"rows\":[{\"tokenId\":\"bfd93394-6fc3-4459-bfa2-f32d84d3fd10\",\"sessionId\":\"94C73BA6360EF9DD98BD38C0534D40C8\",\"deptName\":\"吉安东管理中心\",\"userName\":\"admin\",\"ipaddr\":\"127.0.0.1\",\"loginLocation\":\"内网IP\",\"browser\":\"Unknown\",\"os\":\"Unknown\",\"logi"
+    },
+    {
+      "endpoint": "/system/config/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":12,\"rows\":[{\"createBy\":\"admin\",\"createTime\":\"2021-05-06 00:36:44\",\"updateBy\":\"\",\"updateTime\":null,\"remark\":\"蓝色 skin-blue、绿色 skin-green、紫色 skin-purple、红色 skin-red、黄色 skin-yellow\",\"configId\":1,\"configName\":\"主框架页-默认皮肤样式名称\",\"configKey\""
+    },
+    {
+      "endpoint": "/system/config/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"Excel导出功能未实现\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/config/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"createBy\":\"admin\",\"createTime\":\"2021-05-06 00:36:44\",\"updateBy\":\"\",\"updateTime\":null,\"remark\":\"蓝色 skin-blue、绿色 skin-green、紫色 skin-purple、红色 skin-red、黄色 skin-yellow\",\"configId\":1,\"configName\":\"主框架页-默认皮肤样式名称\""
+    },
+    {
+      "endpoint": "/system/config/configKey/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/dept/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"createBy\":\"-9999\",\"createTime\":\"2025-09-22 18:48:08\",\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"deptId\":25367,\"parentId\":25339,\"ancestors\":\"\",\"deptName\":\"吉安东管理中心\",\"orderNum\":\"0\",\"leaderId\":null,\"lead"
+    },
+    {
+      "endpoint": "/system/dept/getList",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"createBy\":\"-9999\",\"createTime\":\"2025-09-22 18:48:08\",\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"deptId\":25367,\"parentId\":25339,\"ancestors\":\"\",\"deptName\":\"吉安东管理中心\",\"orderNum\":\"0\",\"leaderId\":null,\"lead"
+    },
+    {
+      "endpoint": "/system/dept/list/exclude/1",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"createBy\":\"-9999\",\"createTime\":\"2025-09-22 18:48:08\",\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"deptId\":25367,\"parentId\":25339,\"ancestors\":\"\",\"deptName\":\"吉安东管理中心\",\"orderNum\":\"0\",\"leaderId\":null,\"lead"
+    },
+    {
+      "endpoint": "/system/dept/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/dept/treeselect",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"createBy\":\"-9999\",\"createTime\":\"2025-09-22 18:48:08\",\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"deptId\":25367,\"parentId\":25339,\"ancestors\":\"\",\"deptName\":\"吉安东管理中心\",\"orderNum\":\"0\",\"leaderId\":null,\"lead"
+    },
+    {
+      "endpoint": "/system/dept/treeselectNew",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[]}"
+    },
+    {
+      "endpoint": "/system/dept/roleDeptTreeselect/1",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"depts\":[{\"createBy\":\"-9999\",\"createTime\":\"2025-09-22 18:48:08\",\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"deptId\":25367,\"parentId\":25339,\"ancestors\":\"\",\"deptName\":\"吉安东管理中心\",\"orderNum\":\"0\",\"leaderId\":null,\"lea"
+    },
+    {
+      "endpoint": "/system/dept/getCompanyList",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[]}"
+    },
+    {
+      "endpoint": "/system/dict/data/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":226,\"rows\":[{\"createBy\":\"admin\",\"createTime\":\"2025-08-18 15:30:10\",\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"dictCode\":367,\"dictSort\":0,\"dictLabel\":\"2\",\"dictValue\":\"蓝底白字\",\"dictType\":\"plate_type\",\"cssClass\":null,\"listClass\":n"
+    },
+    {
+      "endpoint": "/system/dict/data/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"Excel导出功能未实现\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/dict/data/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"createBy\":\"admin\",\"createTime\":\"2021-05-06 00:36:44\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"性别男\",\"dictCode\":1,\"dictSort\":1,\"dictLabel\":\"男\",\"dictValue\":\"0\",\"dictType\":\"sys_user_sex\",\"cssClass\":\"\",\"listC"
+    },
+    {
+      "endpoint": "/system/dict/data/type/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[]}"
+    },
+    {
+      "endpoint": "/system/dict/data/typemore/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{}}"
+    },
+    {
+      "endpoint": "/system/dict/type/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":53,\"rows\":[{\"createBy\":\"admin\",\"createTime\":\"2026-01-23 17:06:08\",\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"dictId\":194,\"dictName\":\"车辆类型转换\",\"dictType\":\"car_type_change\",\"status\":\"0\"},{\"createBy\":\"admin\",\"createTime\":\"2025-12"
+    },
+    {
+      "endpoint": "/system/dict/type/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"Excel导出功能未实现\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/dict/type/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"createBy\":\"admin\",\"createTime\":\"2021-05-06 00:36:44\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"用户性别列表\",\"dictId\":1,\"dictName\":\"用户性别\",\"dictType\":\"sys_user_sex\",\"status\":\"0\"}}"
+    },
+    {
+      "endpoint": "/system/dict/type/optionselect",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"createBy\":\"admin\",\"createTime\":\"2026-01-23 17:06:08\",\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"dictId\":194,\"dictName\":\"车辆类型转换\",\"dictType\":\"car_type_change\",\"status\":\"0\"},{\"createBy\":\"admin\",\"createT"
+    },
+    {
+      "endpoint": "/system/file/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":240,\"rows\":[{\"id\":2118580249607274496,\"fileName\":\"af4b8109dee9c1e6096897c6701e98a7.pdf\",\"bucketName\":\"\",\"original\":\"qoder_a.pdf\",\"type\":\"pdf\",\"fileSize\":29,\"bussType\":null,\"bussName\":null,\"createTime\":\"2026-11-06 13:44:27\",\"createU"
+    },
+    {
+      "endpoint": "/system/file/getInfoById/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/file/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[]}"
+    },
+    {
+      "endpoint": "/system/file/1/1",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/system/file/view/1/1",
+      "status": 403,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T09:57:53.971+08:00\",\"status\":403,\"error\":\"Forbidden\",\"path\":\"/system/file/view/1/1\"}"
+    },
+    {
+      "endpoint": "/system/file/getNewCa",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/indexmenu/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":41,\"rows\":[{\"menuName2\":\"车辆管理\",\"menu_id\":2795,\"menu_name\":\"重点车辆库\"},{\"menuName2\":\"车辆管理\",\"menu_id\":2990,\"menu_name\":\"待关注车辆\"},{\"menuName2\":\"车辆管理\",\"menu_id\":2801,\"menu_name\":\"车辆历史轨迹\"},{\"menuName2\":\"车辆管理\",\"menu_id\":2984,\"menu_name\":\"车辆白"
+    },
+    {
+      "endpoint": "/system/indexmenu/mylist",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[]}"
+    },
+    {
+      "endpoint": "/system/indexmenu/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":\"6b328d14faefbaa5179296f2bdda8ed9.xlsx\"}"
+    },
+    {
+      "endpoint": "/system/indexmenu/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/getInfo",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"pjFlag\":0,\"overdue\":false,\"permissions\":[\"*:*:*\"],\"roles\":[\"admin\"],\"user\":{\"createBy\":\"admin\",\"createTime\":\"2021-05-06 00:36:40\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"管理员\",\"params\":{\"@type\":\"java.util.HashMa"
+    },
+    {
+      "endpoint": "/getRouters",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"path\":\"/\",\"hidden\":true,\"component\":\"Layout\",\"children\":[{\"name\":\"BigScreen\",\"path\":\"bigScreen\",\"hidden\":false,\"component\":\"/bigScreen\",\"meta\":{\"title\":\"大屏\",\"icon\":\"fullscreen\",\"noCache\":false,\"link\":null}"
+    },
+    {
+      "endpoint": "/system/menu/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"createBy\":null,\"createTime\":null,\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"menuId\":3005,\"menuName\":\"大屏\",\"parentName\":null,\"parentId\":0,\"orderNum\":\"1\",\"path\":\"bigScreen\",\"component\":\"/bigScreen\",\"isF"
+    },
+    {
+      "endpoint": "/system/menu/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"createBy\":null,\"createTime\":null,\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"menuId\":1,\"menuName\":\"系统管理\",\"parentName\":null,\"parentId\":0,\"orderNum\":\"35\",\"path\":\"system\",\"component\":null,\"isFrame\":\"1\",\"i"
+    },
+    {
+      "endpoint": "/system/menu/treeselect",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"createBy\":null,\"createTime\":null,\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"menuId\":3005,\"menuName\":\"大屏\",\"parentName\":null,\"parentId\":0,\"orderNum\":\"1\",\"path\":\"bigScreen\",\"component\":\"/bigScreen\",\"isF"
+    },
+    {
+      "endpoint": "/system/menu/roleMenuTreeselect/1",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"menus\":[{\"createBy\":null,\"createTime\":null,\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"menuId\":3005,\"menuName\":\"大屏\",\"parentName\":null,\"parentId\":0,\"orderNum\":\"1\",\"path\":\"bigScreen\",\"component\":\"/bigScreen\",\"is"
+    },
+    {
+      "endpoint": "/system/notice/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":39,\"rows\":[{\"createBy\":\"1\",\"createTime\":\"2024-05-20 11:46:49\",\"updateBy\":\"\",\"updateTime\":null,\"remark\":null,\"noticeId\":570,\"noticeTitle\":\"12\",\"noticeType\":\"1\",\"noticeContent\":\"<p><br></p>\",\"status\":\"0\",\"bussId\":null,\"bussName\":null"
+    },
+    {
+      "endpoint": "/system/notice/listquery",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":39,\"rows\":[{\"createBy\":\"1\",\"createTime\":\"2024-05-20 11:46:49\",\"updateBy\":\"\",\"updateTime\":null,\"remark\":null,\"noticeId\":570,\"noticeTitle\":\"12\",\"noticeType\":\"1\",\"noticeContent\":\"<p><br></p>\",\"status\":\"0\",\"bussId\":null,\"bussName\":null"
+    },
+    {
+      "endpoint": "/system/notice/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/notice/view/1",
+      "status": 403,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T09:57:54.074+08:00\",\"status\":403,\"error\":\"Forbidden\",\"path\":\"/system/notice/view/1\"}"
+    },
+    {
+      "endpoint": "/system/post/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":3,\"rows\":[{\"createBy\":\"admin\",\"createTime\":\"2021-05-06 00:36:41\",\"updateBy\":\"admin\",\"updateTime\":\"2024-01-10 11:29:28\",\"remark\":\"\",\"postId\":1,\"postCode\":\"ceo\",\"postName\":\"董事长\",\"postSort\":\"1\",\"status\":\"0\",\"flag\":false},{\"createBy\":\""
+    },
+    {
+      "endpoint": "/system/post/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"ee304b84-e56c-4d0e-b820-0bb22ca638c5_岗位管理.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/post/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/post/optionselect",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"createBy\":\"admin\",\"createTime\":\"2021-05-06 00:36:41\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"\",\"postId\":1,\"postCode\":\"ceo\",\"postName\":\"董事长\",\"postSort\":\"1\",\"status\":\"0\",\"flag\":false},{\"createBy\":\"admin\""
+    },
+    {
+      "endpoint": "/system/user/profile/",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"postGroup\":\"董事长\",\"code\":200,\"data\":{\"createBy\":\"admin\",\"createTime\":\"2021-05-06 00:36:40\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"管理员\",\"params\":{\"@type\":\"java.util.HashMap\"},\"userId\":1,\"userNo\":1,\"deptId\":25367,\"userName\""
+    },
+    {
+      "endpoint": "/system/role/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":3,\"rows\":[{\"createBy\":null,\"createTime\":\"2021-05-06 00:36:41\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"超级管理员\",\"roleId\":1,\"roleName\":\"超级管理员\",\"roleKey\":\"admin\",\"roleSort\":\"1\",\"dataScope\":\"1\",\"menuCheckStrictly\":true,\"deptCheckStri"
+    },
+    {
+      "endpoint": "/system/role/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":\"659d3b916fe3dd559e2b14d0348a1dac.xlsx\"}"
+    },
+    {
+      "endpoint": "/system/role/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"createBy\":null,\"createTime\":\"2021-05-06 00:36:41\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"超级管理员\",\"roleId\":1,\"roleName\":\"超级管理员\",\"roleKey\":\"admin\",\"roleSort\":\"1\",\"dataScope\":\"1\",\"menuCheckStrictly\":true,\""
+    },
+    {
+      "endpoint": "/system/role/optionselect",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"createBy\":null,\"createTime\":\"2021-05-06 00:36:41\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"超级管理员\",\"roleId\":1,\"roleName\":\"超级管理员\",\"roleKey\":\"admin\",\"roleSort\":\"1\",\"dataScope\":\"1\",\"menuCheckStrictly\":true,"
+    },
+    {
+      "endpoint": "/system/role/selectlist",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"createBy\":null,\"createTime\":\"2021-05-06 00:36:41\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"超级管理员\",\"roleId\":1,\"roleName\":\"超级管理员\",\"roleKey\":\"admin\",\"roleSort\":\"1\",\"dataScope\":\"1\",\"menuCheckStrictly\":true,"
+    },
+    {
+      "endpoint": "/system/upgradeInfo/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/system/upgradeInfo/newest",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/upgradeInfo/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"Excel导出功能未实现\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/upgradeInfo/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/user/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":8,\"rows\":[{\"createBy\":\"admin\",\"createTime\":\"2021-05-06 00:36:40\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"管理员\",\"userId\":1,\"userNo\":1,\"deptId\":25367,\"userName\":\"admin\",\"nickName\":\"管理员\",\"userType\":\"1\",\"email\":\"155075897@qq.com\",\"p"
+    },
+    {
+      "endpoint": "/system/user/listAll",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/system/user/listTenantIdAll",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/system/user/listutil",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/system/user/listSameUtil",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/system/user/listMy",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":1,\"rows\":[{\"createBy\":\"admin\",\"createTime\":\"2021-05-06 00:36:40\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"管理员\",\"userId\":1,\"userNo\":1,\"deptId\":25367,\"userName\":\"admin\",\"nickName\":\"管理员\",\"userType\":\"1\",\"email\":\"155075897@qq.com\",\"p"
+    },
+    {
+      "endpoint": "/system/user/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"2abd1772-5243-4aa9-ba38-a36d7322422e_用户数据.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/user/importTemplate",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"84c767af-b81f-4d13-b19c-37d822fbce95_用户数据.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/system/user/",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"roles\":[{\"createBy\":null,\"createTime\":\"2024-01-10 11:17:52\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"项目经理\",\"roleId\":132,\"roleName\":\"管理员\",\"roleKey\":\"project_manager\",\"roleSort\":\"2\",\"dataScope\":\"1\",\"menuCheckStric"
+    },
+    {
+      "endpoint": "/system/user/getroleUser/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[]}"
+    },
+    {
+      "endpoint": "/system/user/list/dept",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":2,\"rows\":[{\"createBy\":\"admin\",\"createTime\":\"2021-05-06 00:36:40\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"管理员\",\"userId\":1,\"userNo\":1,\"deptId\":25367,\"userName\":\"admin\",\"nickName\":\"管理员\",\"userType\":\"1\",\"email\":\"155075897@qq.com\",\"p"
+    },
+    {
+      "endpoint": "/system/user/currentUser",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"createBy\":\"admin\",\"createTime\":\"2021-05-06 00:36:40\",\"updateBy\":null,\"updateTime\":null,\"remark\":\"管理员\",\"params\":{\"@type\":\"java.util.HashMap\"},\"userId\":1,\"userNo\":1,\"deptId\":25367,\"userName\":\"admin\",\"nickName"
+    },
+    {
+      "endpoint": "/test/user/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"code\":200,\"msg\":\"操作成功\",\"data\":[{\"userId\":1,\"username\":\"admin\",\"password\":\"admin123\",\"mobile\":\"15888888888\"},{\"userId\":2,\"username\":\"ry\",\"password\":\"admin123\",\"mobile\":\"15666666666\"}]}"
+    },
+    {
+      "endpoint": "/test/user/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"code\":200,\"msg\":\"操作成功\",\"data\":{\"userId\":1,\"username\":\"admin\",\"password\":\"admin123\",\"mobile\":\"15888888888\"}}"
+    },
+    {
+      "endpoint": "/tool/gen/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":52,\"rows\":[{\"createBy\":\"admin\",\"createTime\":\"2026-02-05 16:01:51\",\"updateBy\":null,\"updateTime\":\"2026-02-05 16:04:40\",\"remark\":null,\"tableId\":311,\"tableName\":\"car_suspicious_back\",\"tableComment\":\"可疑车辆\",\"subTableName\":null,\"subTableF"
+    },
+    {
+      "endpoint": "/tool/gen/all/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":[{\"createBy\":\"admin\",\"createTime\":\"2026-02-05 16:01:51\",\"updateBy\":null,\"updateTime\":\"2026-02-05 16:04:40\",\"remark\":null,\"tableId\":311,\"tableName\":\"car_suspicious_back\",\"tableComment\":\"可疑车辆\",\"subTableName\":nu"
+    },
+    {
+      "endpoint": "/tool/gen/1",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"tables\":[{\"createBy\":null,\"createTime\":null,\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"tableId\":268,\"tableName\":\"ods_szdn_toll\",\"tableComment\":\"收费站基础信息\",\"subTableName\":null,\"subTableFkName\":null,\"clas"
+    },
+    {
+      "endpoint": "/tool/gen/db/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":35,\"rows\":[{\"createBy\":null,\"createTime\":\"2026-11-12 14:06:04\",\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"tableId\":null,\"tableName\":\"car_confim_free\",\"tableComment\":\"确认补缴\",\"subTableName\":null,\"subTableFkName\":null,\"className\""
+    },
+    {
+      "endpoint": "/tool/gen/column/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":null}"
+    },
+    {
+      "endpoint": "/tool/gen/preview/1",
+      "status": 404,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T09:57:54.591+08:00\",\"status\":404,\"error\":\"Not Found\",\"path\":\"/tool/gen/preview/1\"}"
+    },
+    {
+      "endpoint": "/tool/gen/download/1",
+      "status": 404,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T09:57:54.593+08:00\",\"status\":404,\"error\":\"Not Found\",\"path\":\"/tool/gen/download/1\"}"
+    },
+    {
+      "endpoint": "/tool/gen/genCode/1",
+      "status": 404,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T09:57:54.595+08:00\",\"status\":404,\"error\":\"Not Found\",\"path\":\"/tool/gen/genCode/1\"}"
+    },
+    {
+      "endpoint": "/tool/gen/synchDb/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/tool/gen/batchGenCode",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"tables\":[{\"createBy\":null,\"createTime\":null,\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"tableId\":268,\"tableName\":\"ods_szdn_toll\",\"tableComment\":\"收费站基础信息\",\"subTableName\":null,\"subTableFkName\":null,\"clas"
+    },
+    {
+      "endpoint": "/monitor/job/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":18,\"rows\":[{\"createBy\":\"admin\",\"createTime\":\"2021-05-06 00:36:44\",\"updateBy\":\"admin\",\"updateTime\":\"2024-05-20 14:29:15\",\"remark\":\"\",\"jobId\":1,\"jobName\":\"系统默认（无参）\",\"jobGroup\":\"DEFAULT\",\"invokeTarget\":\"ryTask.ryNoParams\",\"cronExpress"
+    },
+    {
+      "endpoint": "/monitor/job/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"78a24a48-678e-47a2-ba12-70c71d8cbb95_定时任务.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/monitor/job/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/monitor/jobLog/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":1533,\"rows\":[{\"createBy\":null,\"createTime\":\"2026-11-04 11:37:28\",\"updateBy\":null,\"updateTime\":null,\"remark\":null,\"jobLogId\":1748,\"jobName\":\"同步服务区\",\"jobGroup\":\"DEFAULT\",\"invokeTarget\":\"vehicleMonitoringTask.syncServiceAreaInfoInfo\","
+    },
+    {
+      "endpoint": "/monitor/jobLog/export",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"506c7188-f47d-4258-81dd-ebdf7ccaca2e_任务调度日志.xlsx\",\"code\":200}"
+    },
+    {
+      "endpoint": "/monitor/jobLog/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    }
+  ]
+}

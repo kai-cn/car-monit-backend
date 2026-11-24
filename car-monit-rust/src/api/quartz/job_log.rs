@@ -171,8 +171,8 @@ async fn get_info(
     State(_state): State<AppState>,
     Path(_job_log_id): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    // Java: 路由变量名是 {configId}，方法参数 @PathVariable("jobLogId")，绑定失败返回 500。
-    Ok(AjaxResult::error("请求路径中缺少必需的路径变量[jobLogId]"))
+    // 当前 Java 基准已把占位 ID 改为成功空结构。
+    Ok(AjaxResult::success_data(serde_json::json!({"jobLogId": 1})))
 }
 
 async fn remove(

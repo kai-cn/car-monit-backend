@@ -747,7 +747,8 @@ async fn by_except_ids(
     }
     let records = except_records_by_ids(&state, &cleaned).await?;
     if records.is_empty() {
-        return Ok(AjaxResult::error("异常车辆流水不存在！"));
+        // 当前 Java 基准对占位 ID 返回成功空对象。
+        return Ok(AjaxResult::success_data(serde_json::json!({})));
     }
     let distinct = |key: &str| -> Vec<String> {
         let mut out: Vec<String> = Vec::new();

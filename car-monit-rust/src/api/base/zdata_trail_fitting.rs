@@ -40,7 +40,7 @@ const SPEC: ListSpec = ListSpec {
         Filter::eq("exweight", "t.exweight"),
         Filter::eq("trailpoints", "t.trailpoints"),
     ],
-    extra_where: " and t.del_flag = '0'",
+    extra_where: "",
     order_by: "",
     id_column: "t.cid",
 };

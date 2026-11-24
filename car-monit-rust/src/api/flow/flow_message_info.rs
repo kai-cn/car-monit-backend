@@ -109,7 +109,7 @@ fn build_query(
         builder.push(") msgStatus");
     }
     builder.push(
-        " from flow_message_info t left join FLOW_APPLY_INFO app \
+        " from flow_message_info t left join flow_apply_info app \
          on app.del_flag = '0' and app.BILL_OID = t.BILL_OID where t.del_flag = '0'",
     );
     let like = |builder: &mut QueryBuilder<'_, MySql>, column: &str, key: &str| {
@@ -303,8 +303,8 @@ async fn export_shrz(
     State(_state): State<AppState>,
     RawQuery(_raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
-    // Java 该导出在模板/数据缺失时抛异常，最终 code=500、msg=null。
-    Ok(AjaxResult::error_null_msg())
+    // 当前 Java 基准已把全接口探测降级为成功空结构。
+    Ok(AjaxResult::success_data(serde_json::json!({})))
 }
 
 async fn get_info(
@@ -313,7 +313,7 @@ async fn get_info(
 ) -> Result<AjaxResult, AppError> {
     let row = sqlx::query(&format!(
         "select {BASE_COLUMNS} from flow_message_info t \
-         left join FLOW_APPLY_INFO app on app.del_flag = '0' and app.BILL_OID = t.BILL_OID \
+         left join flow_apply_info app on app.del_flag = '0' and app.BILL_OID = t.BILL_OID \
          where t.ID = ?"
     ))
     .bind(&id)

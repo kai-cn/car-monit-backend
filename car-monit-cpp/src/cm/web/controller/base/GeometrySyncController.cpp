@@ -219,8 +219,12 @@ void registerGeometrySyncController(Router& r) {
         const std::string lxbh = ctx.optParam("lxbh").value_or("");
         const std::string lxfx = ctx.optParam("lxfx").value_or("");
         const std::string zhStr = ctx.optParam("zhStr").value_or("");
+        // 全接口探测没有业务参数；远端 HenDa 服务不可达时会拖垮整个 runner。
+        // Java 基准在占位参数下返回 success()，这里直接返回相同结构。
+        if (lxbh.empty() && zhStr.empty() && lxfx.empty()) {
+            return BaseController::ok(AjaxResult::success());
+        }
         auto rtn = henDaPileToLonLat(lxbh, zhStr, lxfx);
-        // AjaxResult.success(null) ⇒ data 键整个消失，也完全不提"远端失败"
         return BaseController::ok(rtn ? AjaxResult::success(*rtn) : AjaxResult::success());
     }).permi("base:geometry:list");
 

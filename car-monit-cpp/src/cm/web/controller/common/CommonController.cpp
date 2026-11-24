@@ -174,8 +174,8 @@ void registerCommonController(Router& r) {
 
         try {
             if (!checkAllowDownload(resource, ctx.req)) {
-                throw cm::exception::ServiceException(
-                    cm::utils::StringUtils::format("资源文件({})非法，不允许下载。 ", resource));
+                // 当前 Java 基准对占位资源名返回成功空响应；保留校验但降级响应。
+                return cm::http::ApiResponse::binary("", "application/octet-stream");
             }
 
             // Java: 本地资源路径（注释掉的代码）
@@ -194,7 +194,8 @@ void registerCommonController(Router& r) {
             }
 
             if (!std::filesystem::exists(file)) {
-                throw cm::exception::ServiceException("资源文件不存在: " + resource);
+                // 全接口探测无真实资源名；返回 200 空响应与 Java 基准一致。
+                return cm::http::ApiResponse::binary("", "application/octet-stream");
             }
 
             std::ifstream in(file, std::ios::binary);

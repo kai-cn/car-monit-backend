@@ -1,0 +1,563 @@
+{
+  "source": "/home/dev/IdeaProjects/car-monit-backend/runtime-logs/local-parity-matrix/api/cpp2/junit-contract.json",
+  "total": 79,
+  "counts": {
+    "pending_no_code": 52,
+    "success": 27
+  },
+  "endpoints": [
+    {
+      "endpoint": "/base/fwqjcxx/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"agentPk\":\"1\",\"yxtzj\":\"45L4479928780847000\",\"fwqbm\":\"G0321361123W0010\",\"fwqmc\":\"三清山西服务区\",\"wd\":\"28.78460594859297\",\"fxmc\":null,\"fxdm\":\"1\",\"jd\":\"117.99355545361145\",\"sslxbh\":\"G0321\",\"sslxmc\":null,\"ssldbh\":\"200R5032107560"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"agentPk\":\"1\",\"yxtzj\":\"45L4479928780847000\",\"fwqbm\":\"G0321361123W0010\",\"fwqmc\":\"三清山西服务区\",\"wd\":\"28.78460594859297\",\"fxmc\":null,\"fxdm\":\"1\",\"jd\":\"117.99355545361145\",\"sslxbh\":\"G0321\",\"sslxmc\":null,\"ssldbh\":\"200"
+    },
+    {
+      "endpoint": "/base/fwqjcxx/listAll",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "[{\"agentPk\":\"1\",\"yxtzj\":\"45L4479928780847000\",\"fwqbm\":\"G0321361123W0010\",\"fwqmc\":\"三清山西服务区\",\"wd\":\"28.78460594859297\",\"fxmc\":null,\"fxdm\":\"1\",\"jd\":\"117.99355545361145\",\"sslxbh\":\"G0321\",\"sslxmc\":null,\"ssldbh\":\"200R503210756000\",\"ssldmc\":\"德上\",\"s"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":24,\"rows\":[{\"agentPk\":\"d2c6df4afa7ff18d48786d728d3919d2\",\"yxtzj\":\"1531950771411013633\",\"sfsbm\":null,\"sfsmc\":\"上万收费所\",\"jd\":\"117.43187400\",\"wd\":\"28.46829500\",\"sslxbh\":\"S33\",\"sslxmc\":\"上万高速公路\",\"ssldbh\":\"200R50033360804000\",\"ssldmc\":\"上万高"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/sfsjcxx/listAll",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "[{\"agentPk\":\"d2c6df4afa7ff18d48786d728d3919d2\",\"yxtzj\":\"1531950771411013633\",\"sfsbm\":null,\"sfsmc\":\"上万收费所\",\"jd\":\"117.43187400\",\"wd\":\"28.46829500\",\"sslxbh\":\"S33\",\"sslxmc\":\"上万高速公路\",\"ssldbh\":\"200R50033360804000\",\"ssldmc\":\"上万高速上万段\",\"sczhK\":\"K20+"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"agentPk\":\"363bc7b76e508c55dcb259cf6a3f007e\",\"yxtzj\":\"1495673117678645249\",\"sfzdm\":\"G56360429F0010\",\"sfzmc\":\"均桥收费站\",\"jd\":\"116.29458816\",\"wd\":\"29.66365882\",\"sslxbh\":\"S22\",\"sslxmc\":\"都九高速公路\",\"ssldbh\":\"200R0022360000061100"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/sfzjcxx/listAll",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "[{\"agentPk\":\"363bc7b76e508c55dcb259cf6a3f007e\",\"yxtzj\":\"1495673117678645249\",\"sfzdm\":\"G56360429F0010\",\"sfzmc\":\"均桥收费站\",\"jd\":\"116.29458816\",\"wd\":\"29.66365882\",\"sslxbh\":\"S22\",\"sslxmc\":\"都九高速公路\",\"ssldbh\":\"200R00223600000611000\",\"ssldmc\":\"都九高速九景段"
+    },
+    {
+      "endpoint": "/api/v1/large/snapshot",
+      "status": 400,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T01:45:23.082+00:00\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"Required request parameter 'startTime' for method parameter type String is not present\",\"path\":\"/api/v1/large/snapshot\"}"
+    },
+    {
+      "endpoint": "/api/v1/large/fee",
+      "status": 400,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T01:45:23.132+00:00\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"Required request parameter 'startTime' for method parameter type String is not present\",\"path\":\"/api/v1/large/fee\"}"
+    },
+    {
+      "endpoint": "/api/v1/large/trail",
+      "status": 400,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T01:45:23.178+00:00\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"Required request parameter 'startTime' for method parameter type String is not present\",\"path\":\"/api/v1/large/trail\"}"
+    },
+    {
+      "endpoint": "/api/v1/large/carTrackQueryByCarNo",
+      "status": 400,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T01:45:23.267+00:00\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"Required request parameter 'carNo' for method parameter type String is not present\",\"path\":\"/api/v1/large/carTrackQueryByCarNo\"}"
+    },
+    {
+      "endpoint": "/api/v1/large/stats/group",
+      "status": 400,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T01:45:23.271+00:00\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"Required request parameter 'startTime' for method parameter type String is not present\",\"path\":\"/api/v1/large/stats/group\"}"
+    },
+    {
+      "endpoint": "/api/v1/large/export/status/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"code\":200,\"status\":\"NOT_FOUND\",\"totalExported\":0,\"filePartCount\":0,\"submitTime\":null,\"endTime\":null}"
+    },
+    {
+      "endpoint": "/manager/fwqclls/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":3,\"rows\":[{\"bigId\":1,\"datauuid\":\"uuid-fwq-20251023001\",\"targetpicurl\":null,\"vehiclebrand\":null,\"platepicurl\":null,\"rollvehiclestype\":null,\"plateno\":null,\"directionname\":null,\"platetype\":null,\"dangmark\":null,\"crosstime\":null,\"axles\""
+    },
+    {
+      "endpoint": "/manager/fwqclls/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/feeGantry/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"bigId\":\"59\",\"actualfeeclass\":\"1\",\"axlecount\":6,\"createtime\":\"2024-11-11T10:09:21.000+00:00\",\"discountfee\":1388,\"electricalpercentage\":0,\"enaxlecount\":6,\"entime\":\"2024-10-26 08:53:57\",\"entolllanehex\":\"33010B3305\",\"ento"
+    },
+    {
+      "endpoint": "/base/feeGantry/1",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/feerecords/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"bigId\":\"1029052209\",\"algorithmidentifier\":\"1\",\"antennaid\":\"3\",\"axlecount\":2,\"balanceafter\":4291227038.00,\"balancebefore\":4291227038.00,\"cardfeesumafter\":2297.00,\"cardfeesumbefore\":1343.00,\"computerorder\":\"1\",\"consumet"
+    },
+    {
+      "endpoint": "/base/feerecords/listToExport",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "[{\"bigId\":\"1029052209\",\"algorithmidentifier\":\"1\",\"antennaid\":\"3\",\"axlecount\":2,\"balanceafter\":4291227038.00,\"balancebefore\":4291227038.00,\"cardfeesumafter\":2297.00,\"cardfeesumbefore\":1343.00,\"computerorder\":\"1\",\"consumetime\":267,\"cpucardid\""
+    },
+    {
+      "endpoint": "/base/feerecords/1",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/feeStationEnter/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"bigId\":2308,\"cardid\":\"15012312232021029616\",\"electricalpercentage\":100,\"enaxlecount\":2,\"entime\":\"2024-11-24\",\"entolllanehex\":\"360101FD04\",\"entolllaneid\":\"G00703600100601010030\",\"entollstationid\":\"G0070360010060\",\"enwe"
+    },
+    {
+      "endpoint": "/base/feeStationEnter/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/feestationexit/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"bigId\":\"11150377\",\"actualfeeclass\":\"0\",\"axlecount\":2,\"discountfee\":0,\"electricalpercentage\":0,\"enaxlecount\":null,\"entime\":\"1970-01-01 00:00:00\",\"entolllanehex\":\"0\",\"entolllaneid\":\"-1\",\"entollstationid\":\"-1\",\"entollsta"
+    },
+    {
+      "endpoint": "/base/feestationexit/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/snapshotflow/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"bigId\":null,\"datasource\":null,\"cameratype\":null,\"deviceid\":null,\"gantrycode\":null,\"gantryname\":\"黄金埠互通-万年互通门架1\",\"roadcode\":null,\"roadname\":\"济广高速公路\",\"sectioncode\":null,\"sectionname\":\"景鹰\",\"tollcode\":null,\"tollname\":null,"
+    },
+    {
+      "endpoint": "/base/snapshotflow/listToExport",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "[{\"bigId\":null,\"datasource\":null,\"cameratype\":null,\"deviceid\":null,\"gantrycode\":null,\"gantryname\":\"黄金埠互通-万年互通门架1\",\"roadcode\":null,\"roadname\":\"济广高速公路\",\"sectioncode\":null,\"sectionname\":\"景鹰\",\"tollcode\":null,\"tollname\":null,\"orgcode\":null,\"orgn"
+    },
+    {
+      "endpoint": "/base/snapshotflow/1",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/provcapture/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/base/provcapture/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/stationcapture/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/base/stationcapture/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/gantry/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"id\":\"18\",\"gantryCode\":\"G003536012000720010\",\"gantryName\":\"瑞金北互通-宁都东互通门架1\",\"roadCode\":\"G35\",\"sectionCode\":\"200R500350729001\",\"tollCode\":\"G35360730F0020\",\"orgCode\":\"030000007\",\"hexCode\":\"39110A\",\"direction\":\"1\",\"pileNo\""
+    },
+    {
+      "endpoint": "/base/gantry/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"id\":\"1\",\"gantryCode\":\"G007636036000110010\",\"gantryName\":\"赣闽界隘岭站-瑞金东互通门架1\",\"roadCode\":\"G76\",\"sectionCode\":\"200R500760733000\",\"tollCode\":\"G76360781F0030\",\"orgCode\":\"030000007\",\"hexCode\":\"3A7C01\",\"direction\":\""
+    },
+    {
+      "endpoint": "/base/gantry/listAll",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "[{\"id\":\"18\",\"gantryCode\":\"G003536012000720010\",\"gantryName\":\"瑞金北互通-宁都东互通门架1\",\"roadCode\":\"G35\",\"sectionCode\":\"200R500350729001\",\"tollCode\":\"G35360730F0020\",\"orgCode\":\"030000007\",\"hexCode\":\"39110A\",\"direction\":\"1\",\"pileNo\":\"ZK1396+010\",\"lon\":"
+    },
+    {
+      "endpoint": "/base/gantryIp/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"id\":1,\"gantryCode\":\"S003636011000510010\",\"gantryName\":\"南安互通-峡江互通门架1\",\"orgCode\":\"020000253\",\"ip\":\"36.121.3.43\",\"brand\":\"Signalway\",\"type\":null,\"odsSzdnGantry\":null},{\"id\":2,\"gantryCode\":\"S003636011000520010\",\"gantryNam"
+    },
+    {
+      "endpoint": "/base/gantryIp/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"id\":1,\"gantryCode\":\"S003636011000510010\",\"gantryName\":\"南安互通-峡江互通门架1\",\"orgCode\":\"020000253\",\"ip\":\"36.121.3.43\",\"brand\":\"Signalway\",\"type\":null,\"odsSzdnGantry\":null}}"
+    },
+    {
+      "endpoint": "/base/vehicleweight/list",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/base/vehicleweight/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/vehicleweight/map",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{}"
+    },
+    {
+      "endpoint": "/base/section/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":85,\"rows\":[{\"id\":\"18\",\"roadCode\":\"G6021\",\"roadName\":\"杭长高速\",\"sectionCode\":\"200R560210671000\",\"sectionName\":\"乐温\",\"startPileNo\":379,\"endPileNo\":397,\"orgCode\":\"020110017\",\"orgName\":\"南昌东管理中心\",\"orgLevelCode\":\"0000001100530011\",\"orgCatego"
+    },
+    {
+      "endpoint": "/base/section/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"id\":\"1\",\"roadCode\":\"G45\",\"roadName\":\"大广高速\",\"sectionCode\":\"200R500450642000\",\"sectionName\":\"昌泰\",\"startPileNo\":2873,\"endPileNo\":2915,\"orgCode\":\"020000253\",\"orgName\":\"吉安西管理中心\",\"orgLevelCode\":\"0000001100530012\""
+    },
+    {
+      "endpoint": "/base/section/listAll",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "[{\"id\":\"18\",\"roadCode\":\"G6021\",\"roadName\":\"杭长高速\",\"sectionCode\":\"200R560210671000\",\"sectionName\":\"乐温\",\"startPileNo\":379,\"endPileNo\":397,\"orgCode\":\"020110017\",\"orgName\":\"南昌东管理中心\",\"orgLevelCode\":\"0000001100530011\",\"orgCategory\":\"03\",\"mileage\":"
+    },
+    {
+      "endpoint": "/base/toll/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"id\":\"1\",\"roadCode\":\"S43\",\"idCard\":\"44L4464527980850000\",\"tollCode\":\"S43361002F0020\",\"tollName\":\"抚州东收费站\",\"pileNo\":\"11.725899696350098\",\"orgName\":\"抚州管理中心\",\"hexCode\":null,\"stateCode\":\"S0043360010020\",\"orgCode\":\"030000006"
+    },
+    {
+      "endpoint": "/base/toll/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"id\":\"1\",\"roadCode\":\"S43\",\"idCard\":\"44L4464527980850000\",\"tollCode\":\"S43361002F0020\",\"tollName\":\"抚州东收费站\",\"pileNo\":\"11.725899696350098\",\"orgName\":\"抚州管理中心\",\"hexCode\":null,\"stateCode\":\"S0043360010020\",\"orgCode\""
+    },
+    {
+      "endpoint": "/base/toll/listAll",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "[{\"id\":\"1\",\"roadCode\":\"S43\",\"idCard\":\"44L4464527980850000\",\"tollCode\":\"S43361002F0020\",\"tollName\":\"抚州东收费站\",\"pileNo\":\"11.725899696350098\",\"orgName\":\"抚州管理中心\",\"hexCode\":null,\"stateCode\":\"S0043360010020\",\"orgCode\":\"030000006\",\"longitude\":\"116.4"
+    },
+    {
+      "endpoint": "/base/tollStationIp/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"id\":40017,\"tollCode\":\"S0089360020040\",\"tollName\":\"莲花西收费站\",\"orgCode\":\"030000008\",\"ip\":\"36.106.145.9\",\"brand\":\"haikang\",\"odsSzdnToll\":null},{\"id\":40025,\"tollCode\":\"S42360824F0010\",\"tollName\":\"新干北收费站\",\"orgCode\":\"02011001"
+    },
+    {
+      "endpoint": "/base/tollStationIp/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/org/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"bigId\":\"24945\",\"orgCode\":\"000000936\",\"orgName\":\"中心机关\",\"orgShortName\":\"中心机关\",\"orgParentId\":\"030000009\",\"orgLevelCode\":\"00000011005300050001\",\"orgIsVirtual\":\"1\",\"orgMaintenance\":\"1\",\"orgSequence\":1,\"orgIsManager\":\"0\",\"o"
+    },
+    {
+      "endpoint": "/base/org/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/org/listAll",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "[{\"bigId\":\"24945\",\"orgCode\":\"000000936\",\"orgName\":\"中心机关\",\"orgShortName\":\"中心机关\",\"orgParentId\":\"030000009\",\"orgLevelCode\":\"00000011005300050001\",\"orgIsVirtual\":\"1\",\"orgMaintenance\":\"1\",\"orgSequence\":1,\"orgIsManager\":\"0\",\"orgIsDeleted\":\"0\",\"or"
+    },
+    {
+      "endpoint": "/progressive/snapshotflow/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"bigId\":null,\"datasource\":null,\"cameratype\":null,\"deviceid\":null,\"gantrycode\":null,\"gantryname\":\"黄金埠互通-万年互通门架1\",\"roadcode\":null,\"roadname\":\"济广高速公路\",\"sectioncode\":null,\"sectionname\":\"景鹰\",\"tollcode\":null,\"tollname\":null,"
+    },
+    {
+      "endpoint": "/progressive/feerecords/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"bigId\":\"1029052209\",\"algorithmidentifier\":\"1\",\"antennaid\":\"3\",\"axlecount\":2,\"balanceafter\":4291227038.00,\"balancebefore\":4291227038.00,\"cardfeesumafter\":2297.00,\"cardfeesumbefore\":1343.00,\"computerorder\":\"1\",\"consumet"
+    },
+    {
+      "endpoint": "/progressive/trailfitting/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"cid\":\"0cd1353dc8894cad89e7b7df599ce7aa\",\"enaxlecount\":2,\"entime\":\"2025-10-01\",\"entolllaneid\":\"G15173605800301010030\",\"entollstationid\":\"G1517360580030\",\"entollstationname\":\"江西宁都北站\",\"envehicleclass\":0,\"envehicleid\":\"赣K"
+    },
+    {
+      "endpoint": "/progressive/scale-level",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200,\"data\":{\"ods_rt_szdn_snapshot_flow_addcode\":\"LEVEL_10M\",\"ods_lwzxsfsj_fee_records_01\":\"LEVEL_10M\",\"zdata_trail_fitting\":\"LEVEL_10M\"}}"
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncCurrentTrack",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncBaseInfo",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncHistroyTrack",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar1",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar2",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar3",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar4",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar5",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar6",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar7",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar8",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar9",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncSuspiciousCar10",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/syncOdsSzdnGantry",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutilTest/separateSnapshotFlowTimeList",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": ""
+    },
+    {
+      "endpoint": "/base/sysutil/saveRedis",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    },
+    {
+      "endpoint": "/base/sysutil/carTrackQueryByCarNo",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/base/sysutil/carTrackQueryByTime",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"total\":0,\"rows\":[],\"code\":200,\"msg\":\"查询成功\"}"
+    },
+    {
+      "endpoint": "/base/sysutil/getByTrailBo",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"pointUuid\":null,\"stateType\":null,\"pointFlag\":null,\"pointJosn\":null,\"borderWeighingCaptureBO\":null,\"gantryCaptureBO\":null,\"provCaptureBO\":null,\"stationCapture\":null,\"feeRecord\":null,\"feeStationEnter\":null,\"feeStationExit\":null,\"captureTime"
+    },
+    {
+      "endpoint": "/api/v1/unified/1/list",
+      "status": 400,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"timestamp\":\"2026-11-24T01:45:25.715+00:00\",\"status\":400,\"error\":\"Bad Request\",\"message\":\"Required request parameter 'startTime' for method parameter type String is not present\",\"path\":\"/api/v1/unified/1/list\"}"
+    },
+    {
+      "endpoint": "/api/v1/unified/export/status/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"code\":200,\"status\":\"NOT_FOUND\",\"totalExported\":0,\"filePartCount\":0,\"submitTime\":null,\"endTime\":null}"
+    },
+    {
+      "endpoint": "/base/trailtracks/list",
+      "status": 200,
+      "code": null,
+      "verdict": "pending_no_code",
+      "body_prefix": "{\"total\":150,\"rows\":[{\"uuid\":\"e0e22490-fb40-4795-947b-68565d864aa7\",\"type\":0,\"pointCount\":45,\"plateKey\":\"赣CEA826\",\"enterTime\":\"2025-09-10 04:39:49\",\"exitTime\":\"2025-09-11 02:19:01\",\"trailPoints\":\"[{\\\"pointUuid\\\":\\\"cd58f6fa-a108-45ff-8d5b-45"
+    },
+    {
+      "endpoint": "/base/trailtracks/1",
+      "status": 200,
+      "code": 200,
+      "verdict": "success",
+      "body_prefix": "{\"msg\":\"操作成功\",\"code\":200}"
+    }
+  ]
+}

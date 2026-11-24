@@ -373,7 +373,13 @@ impl Settings {
                     .separator("__")
                     .try_parsing(true),
             );
-        let settings: Settings = builder.build()?.try_deserialize()?;
+        let mut settings: Settings = builder.build()?.try_deserialize()?;
+        // 本地全接口对拍统一使用 Java 下游 9902；配置文件的 9911 是历史双端部署默认值。
+        if let Ok(base) = env::var("VEHICLE_MONITOR_BASE_URL")
+            .or_else(|_| env::var("APP_VEHICLEMONITOR__BASEURL"))
+        {
+            settings.vehicle_monitor.base_url = base;
+        }
         Ok(settings)
     }
 

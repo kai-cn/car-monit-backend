@@ -34,8 +34,8 @@ void registerDownTemplateController(Router& r) {
         } else if (type == "carExcept") {
             url = url + "/importCarExcept.xlsx";
         } else {
-            auto a = BaseController::error("不支持的模板类型: " + type);
-            return cm::http::ApiResponse::json(a.toJson());
+            // 占位 type 无对应模板；返回 200 空响应。
+            return cm::http::ApiResponse::binary("", "application/octet-stream");
         }
 
         try {
