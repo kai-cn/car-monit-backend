@@ -39,7 +39,7 @@ void registerSysNoticeController(cm::web::Router& r) {
         if (notice) {
             return BaseController::ok(BaseController::success(notice->toJson()));
         }
-        return BaseController::ok(BaseController::success());
+        return BaseController::ok(BaseController::error("公告不存在"));
     });
 
     r.get("/system/notice/view/{noticeId}", [](RequestContext& ctx) -> cm::http::ApiResponse {

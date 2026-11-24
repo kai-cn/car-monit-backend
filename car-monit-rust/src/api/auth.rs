@@ -83,6 +83,16 @@ pub async fn get_info(
     let mut user_value = serde_json::to_value(user.for_http())?;
     if let Some(object) = user_value.as_object_mut() {
         object.remove("password");
+        // Java Jackson 对未标注 @JsonFormat 的 Date 输出 epoch 毫秒；但 /getInfo 基准
+        // 实测为带 +08:00 的 ISO 串，这里只在该端点修正 HTTP 投影，不改数据库语义。
+        if let Some(login_date) = &user.login_date {
+            object.insert(
+                "loginDate".to_string(),
+                serde_json::Value::String(
+                    login_date.format("%Y-%m-%dT%H:%M:%S.000+08:00").to_string(),
+                ),
+            );
+        }
         // Jackson 顺序：先排嵌套对象内部，再排外层。
         if let Some(dept) = object.get_mut("dept") {
             *dept = support::reorder_keys(dept.take(), crate::api::system::sys_dept::DEPT_KEYS);

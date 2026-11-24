@@ -18,8 +18,8 @@ public class TableDataInfo implements Serializable
     /** 列表数据 */
     private List<?> rows;
 
-    /** 消息状态码：统一成功口径为 200 */
-    private int code = 200;
+    /** 消息状态码 */
+    private int code;
 
     /** 消息内容 */
     private String msg;

@@ -31,6 +31,7 @@ def parse_args():
     ap.add_argument('--out', required=True)
     ap.add_argument('--port', type=int, default=19903)
     ap.add_argument('--start', default='', help='shell command to start service; must stay in foreground')
+    ap.add_argument('--endpoints', default='', help='optional endpoint list override')
     ap.add_argument('--skip-start', action='store_true')
     ap.add_argument('--no-contract', action='store_true')
     return ap.parse_args()
@@ -79,6 +80,8 @@ def main() -> None:
     ep = Path('/home/dev/IdeaProjects/car-monit-backend/scripts/v3/ops/parity/endpoints/backend-full.txt')
     if a.app == 'api':
         ep = Path('/home/dev/IdeaProjects/car-monit-api/scripts/v3/ops/parity/endpoints/api-full.txt')
+    if a.endpoints:
+        ep = Path(a.endpoints)
     env = os.environ.copy()
     env.update({
         'BASE_URL': f'http://127.0.0.1:{a.port}',

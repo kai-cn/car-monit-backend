@@ -762,8 +762,8 @@ async fn export_abnormal(
     State(_state): State<AppState>,
     RawQuery(_raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
-    // 当前 Java 基准已把全接口探测降级为成功空结构。
-    Ok(AjaxResult::success_data(serde_json::json!({})))
+    // Java 模板导出在缺少必需数据时抛出异常，最终 code=500。
+    Ok(AjaxResult::error_null_msg())
 }
 
 async fn get_history_info(

@@ -150,7 +150,7 @@ def export(job_log: JobLogParam) -> AjaxResult:
 @router.get("/{config_id}", response_model=None)
 @pre_authorize_permi("monitor:job:query")
 def get_info(config_id: str) -> AjaxResult:
-    """根据调度编号获取详细信息. Java: ``@GetMapping(value = "/{jobLogId}")``.
+    """根据调度编号获取详细信息. Java: ``@GetMapping(value = "/{configId}")``.
 
     **永远 500**：路径变量叫 ``configId``，参数名却是 ``jobLogId``，Spring 解析不到 ->
     ``MissingPathVariableException``。见模块 docstring。
@@ -158,8 +158,7 @@ def get_info(config_id: str) -> AjaxResult:
     路径参数声明成 ``str`` 是刻意的：Java 连 ``abc`` 都回同一句（参数缺失在类型转换之前），
     若在这里写 ``int``，非数字路径会变成 FastAPI 自己的 422，反而偏离。
     """
-    # Java 基准修复后占位 ID 返回成功空对象；Python 同步该结构，避免 body.code 非 200。
-    return AjaxResult.success({"jobLogId": config_id})
+    raise ServiceException(MISSING_PATH_VARIABLE_MESSAGE)
 
 
 # --------------------------------------------------------------------------- 删除

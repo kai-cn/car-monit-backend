@@ -112,7 +112,7 @@ public class EndpointContractTest {
             row.put("status", status);
             row.put("bytes", body.length);
             row.put("latency_ms", System.currentTimeMillis() - t0);
-            row.put("body", text.length() > 20000 ? text.substring(0, 20000) : text);
+            row.put("body", text);
             row.put("stable", Boolean.TRUE);
             row.put("error", "");
         } catch (Exception e) {

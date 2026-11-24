@@ -707,8 +707,7 @@ func (h *handler) confimFreeExcept(c *gin.Context) {
 	records := h.exceptRecordsByIDs(c, exceptIDs)
 	entity.CarExceptRecordList = records
 	if len(records) == 0 {
-		// 全接口探测使用占位 ID；无数据时返回成功空对象，保持与 Java 基准一致。
-		web.JSON(c, web.Success())
+		web.JSON(c, web.ErrorMsg("异常车辆流水不存在！"))
 		return
 	}
 	carNoSet := map[string]struct{}{}

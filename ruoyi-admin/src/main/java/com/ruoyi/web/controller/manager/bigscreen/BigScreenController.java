@@ -109,7 +109,7 @@ public class BigScreenController extends BaseController
      */
     @GetMapping(value = "/tollGantryFwqList")
     public AjaxResult getTollList(@RequestParam(name = "sectionCode", required = false) String sectionCode,
-                                  @RequestParam(value = "type", required = false, defaultValue = "") String type)
+                                  @RequestParam String type)
     {
         return AjaxResult.success(bigScreenDictService.tollGantryFwqList(sectionCode, type));
     }

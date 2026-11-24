@@ -77,7 +77,15 @@ async fn get_info(
     State(state): State<AppState>,
     Path(cid): Path<String>,
 ) -> Result<AjaxResult, AppError> {
-    Ok(AjaxResult::success_data(
+    let mut result = AjaxResult::success_data(
         support::query_by_id_fmt(&state.db, &SPEC, &cid, FORMATS).await?,
-    ))
+    );
+    // Java 基准在详情信封上追加来源与实时性标记；键顺序无关，结构必须一致。
+    result.insert_value("dataSource", serde_json::json!("LOCAL_DB"));
+    result.insert_value("realtime", serde_json::json!(false));
+    result.insert_value(
+        "message",
+        serde_json::json!("数据来自 backend 本地表，可能陈旧，无实时保证"),
+    );
+    Ok(result)
 }

@@ -90,7 +90,7 @@ class FlowMessageInfoMapper(FlowMapper):
 
     select_suffix = _JOIN_SUFFIX
     from_clause = (
-        "flow_message_info t left join FLOW_APPLY_INFO app"
+        "flow_message_info t left join flow_apply_info app"
         " on app.del_flag = '0' and app.BILL_OID = t.BILL_OID"
     )
     #: 详情语句只查主表（XML: ``from flow_message_info t where t.ID = #{id}``）。

@@ -1,0 +1,586 @@
+[
+  {
+    "endpoint": "/manager/carsuspiciousback/1",
+    "key_endpoint": "/manager/carsuspiciousback/12a0ec868e0f018a9fbaa7f0ec6b5e62",
+    "db": "mysql",
+    "table": "car_suspicious_back",
+    "column": "id",
+    "value": "12a0ec868e0f018a9fbaa7f0ec6b5e62"
+  },
+  {
+    "endpoint": "/base/configServiceArea/1",
+    "key_endpoint": "/base/configServiceArea/zdy_wafwq",
+    "db": "mysql",
+    "table": "base_config_service_area",
+    "column": "fwqbm",
+    "value": "zdy_wafwq"
+  },
+  {
+    "endpoint": "/base/config/1",
+    "key_endpoint": "/base/config/1",
+    "db": "pg",
+    "table": "sys_config",
+    "column": "config_id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/base/fwqjcxx/1",
+    "key_endpoint": "/base/fwqjcxx/ad6645cb96fb76bac35dceacfb7c158b",
+    "db": "pg",
+    "table": "dwd_lczt_fwqjcxx",
+    "column": "agent_pk",
+    "value": "ad6645cb96fb76bac35dceacfb7c158b"
+  },
+  {
+    "endpoint": "/base/sfsjcxx/1",
+    "key_endpoint": "/base/sfsjcxx/d2c6df4afa7ff18d48786d728d3919d2",
+    "db": "pg",
+    "table": "dwd_lczt_sfsjcxx",
+    "column": "agent_pk",
+    "value": "d2c6df4afa7ff18d48786d728d3919d2"
+  },
+  {
+    "endpoint": "/base/sfzjcxx/1",
+    "key_endpoint": "/base/sfzjcxx/363bc7b76e508c55dcb259cf6a3f007e",
+    "db": "pg",
+    "table": "dwd_lczt_sfzjcxx",
+    "column": "agent_pk",
+    "value": "363bc7b76e508c55dcb259cf6a3f007e"
+  },
+  {
+    "endpoint": "/base/geometry/1",
+    "key_endpoint": "/base/geometry/33847",
+    "db": "mysql",
+    "table": "geometry",
+    "column": "id",
+    "value": "33847"
+  },
+  {
+    "endpoint": "/manager/fwqclls/1",
+    "key_endpoint": "/manager/fwqclls/1",
+    "db": "pg",
+    "table": "ods_cxzt_fwqclls",
+    "column": "big_id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/base/feeGantry/1",
+    "key_endpoint": "/base/feeGantry/59",
+    "db": "pg",
+    "table": "ods_lwzxsfsj_fee_gantry_fusion_01",
+    "column": "big_id",
+    "value": "59"
+  },
+  {
+    "endpoint": "/base/feerecords/1",
+    "key_endpoint": "/base/feerecords/1029052209",
+    "db": "pg",
+    "table": "ods_lwzxsfsj_fee_records_01",
+    "column": "big_id",
+    "value": "1029052209"
+  },
+  {
+    "endpoint": "/base/feeStationEnter/1",
+    "key_endpoint": "/base/feeStationEnter/2308",
+    "db": "pg",
+    "table": "ods_lwzxsfsj_fee_station_enter_01",
+    "column": "big_id",
+    "value": "2308"
+  },
+  {
+    "endpoint": "/base/feestationexit/1",
+    "key_endpoint": "/base/feestationexit/11150377",
+    "db": "pg",
+    "table": "ods_lwzxsfsj_fee_station_exit_01",
+    "column": "big_id",
+    "value": "11150377"
+  },
+  {
+    "endpoint": "/base/snapshotflow/1",
+    "key_endpoint": "/base/snapshotflow/154288684",
+    "db": "pg",
+    "table": "ods_rt_szdn_snapshot_flow_addcode",
+    "column": "big_id",
+    "value": "154288684"
+  },
+  {
+    "endpoint": "/base/provcapture/1",
+    "key_endpoint": "/base/provcapture/154288684",
+    "db": "pg",
+    "table": "ods_rt_szdn_snapshot_flow_addcode",
+    "column": "big_id",
+    "value": "154288684"
+  },
+  {
+    "endpoint": "/base/stationcapture/1",
+    "key_endpoint": "/base/stationcapture/154288684",
+    "db": "pg",
+    "table": "ods_rt_szdn_snapshot_flow_addcode",
+    "column": "big_id",
+    "value": "154288684"
+  },
+  {
+    "endpoint": "/base/gantry/1",
+    "key_endpoint": "/base/gantry/18",
+    "db": "pg",
+    "table": "ods_szdn_gantry",
+    "column": "id",
+    "value": "18"
+  },
+  {
+    "endpoint": "/base/gantryIp/1",
+    "key_endpoint": "/base/gantryIp/1",
+    "db": "pg",
+    "table": "ods_szdn_gantry_ip",
+    "column": "id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/base/vehicleweight/1",
+    "key_endpoint": "/base/vehicleweight/154288684",
+    "db": "pg",
+    "table": "ods_rt_szdn_snapshot_flow_addcode",
+    "column": "big_id",
+    "value": "154288684"
+  },
+  {
+    "endpoint": "/base/section/1",
+    "key_endpoint": "/base/section/18",
+    "db": "pg",
+    "table": "ods_szdn_section",
+    "column": "id",
+    "value": "18"
+  },
+  {
+    "endpoint": "/base/toll/1",
+    "key_endpoint": "/base/toll/1",
+    "db": "pg",
+    "table": "ods_szdn_toll",
+    "column": "id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/base/tollStationIp/1",
+    "key_endpoint": "/base/tollStationIp/40017",
+    "db": "pg",
+    "table": "ods_szdn_toll_station_ip",
+    "column": "id",
+    "value": "40017"
+  },
+  {
+    "endpoint": "/base/org/1",
+    "key_endpoint": "/base/org/24945",
+    "db": "pg",
+    "table": "ods_yhgl_v_base_org",
+    "column": "big_id",
+    "value": "24945"
+  },
+  {
+    "endpoint": "/base/location/1",
+    "key_endpoint": "/base/location/1394",
+    "db": "pg",
+    "table": "zdata_location_dict",
+    "column": "id",
+    "value": "1394"
+  },
+  {
+    "endpoint": "/base/fitting/1",
+    "key_endpoint": "/base/fitting/0cd1353dc8894cad89e7b7df599ce7aa",
+    "db": "pg",
+    "table": "zdata_trail_fitting",
+    "column": "cid",
+    "value": "0cd1353dc8894cad89e7b7df599ce7aa"
+  },
+  {
+    "endpoint": "/base/trailtracks/1",
+    "key_endpoint": "/base/trailtracks/e0e22490-fb40-4795-947b-68565d864aa7",
+    "db": "pg",
+    "table": "zdata_trail_tracks",
+    "column": "uuid",
+    "value": "e0e22490-fb40-4795-947b-68565d864aa7"
+  },
+  {
+    "endpoint": "/flow/applyinfo/1",
+    "key_endpoint": "/flow/applyinfo/08eb8bd8af804fc09b6cbeefbbdf73f0",
+    "db": "mysql",
+    "table": "flow_apply_info",
+    "column": "ID",
+    "value": "08eb8bd8af804fc09b6cbeefbbdf73f0"
+  },
+  {
+    "endpoint": "/flow/currentnode/1",
+    "key_endpoint": "/flow/currentnode/08eb8bd8af804fc09b6cbeefbbdf73f0",
+    "db": "mysql",
+    "table": "flow_apply_info",
+    "column": "ID",
+    "value": "08eb8bd8af804fc09b6cbeefbbdf73f0"
+  },
+  {
+    "endpoint": "/flow/flowlist/1",
+    "key_endpoint": "/flow/flowlist/08eb8bd8af804fc09b6cbeefbbdf73f0",
+    "db": "mysql",
+    "table": "flow_apply_info",
+    "column": "ID",
+    "value": "08eb8bd8af804fc09b6cbeefbbdf73f0"
+  },
+  {
+    "endpoint": "/flow/messagedispose/1",
+    "key_endpoint": "/flow/messagedispose/08eb8bd8af804fc09b6cbeefbbdf73f0",
+    "db": "mysql",
+    "table": "flow_apply_info",
+    "column": "ID",
+    "value": "08eb8bd8af804fc09b6cbeefbbdf73f0"
+  },
+  {
+    "endpoint": "/flow/messageinfo/1",
+    "key_endpoint": "/flow/messageinfo/08eb8bd8af804fc09b6cbeefbbdf73f0",
+    "db": "mysql",
+    "table": "flow_apply_info",
+    "column": "ID",
+    "value": "08eb8bd8af804fc09b6cbeefbbdf73f0"
+  },
+  {
+    "endpoint": "/flow/flowname/1",
+    "key_endpoint": "/flow/flowname/76dd91f205764597bbcde1c5b79a4793",
+    "db": "mysql",
+    "table": "flow_name",
+    "column": "ID",
+    "value": "76dd91f205764597bbcde1c5b79a4793"
+  },
+  {
+    "endpoint": "/flow/flowtemplate/1",
+    "key_endpoint": "/flow/flowtemplate/08eb8bd8af804fc09b6cbeefbbdf73f0",
+    "db": "mysql",
+    "table": "flow_apply_info",
+    "column": "ID",
+    "value": "08eb8bd8af804fc09b6cbeefbbdf73f0"
+  },
+  {
+    "endpoint": "/manager/busstest/1",
+    "key_endpoint": "/manager/busstest/3e7db98f9ff74ea1b6840d72209771ad",
+    "db": "mysql",
+    "table": "buss_test",
+    "column": "id",
+    "value": "3e7db98f9ff74ea1b6840d72209771ad"
+  },
+  {
+    "endpoint": "/manager/aduitfree/1",
+    "key_endpoint": "/manager/aduitfree/0031127052b3ec106a7bbec00e6d3dc7",
+    "db": "mysql",
+    "table": "car_aduit_free",
+    "column": "id",
+    "value": "0031127052b3ec106a7bbec00e6d3dc7"
+  },
+  {
+    "endpoint": "/manager/confimfree/1",
+    "key_endpoint": "/manager/confimfree/0ac116f04798d093c27662e8dd2a9bcb",
+    "db": "mysql",
+    "table": "car_confim_free",
+    "column": "id",
+    "value": "0ac116f04798d093c27662e8dd2a9bcb"
+  },
+  {
+    "endpoint": "/manager/confimfree/except/1",
+    "key_endpoint": "/manager/confimfree/except/01854222655b817f3bbe1b2431813735",
+    "db": "mysql",
+    "table": "car_except_record",
+    "column": "id",
+    "value": "01854222655b817f3bbe1b2431813735"
+  },
+  {
+    "endpoint": "/manager/exceptrecord/1",
+    "key_endpoint": "/manager/exceptrecord/01854222655b817f3bbe1b2431813735",
+    "db": "mysql",
+    "table": "car_except_record",
+    "column": "id",
+    "value": "01854222655b817f3bbe1b2431813735"
+  },
+  {
+    "endpoint": "/manager/feerecord/1",
+    "key_endpoint": "/manager/feerecord/02c023dc4b294476bb1965d66f1c417e",
+    "db": "mysql",
+    "table": "car_info",
+    "column": "id",
+    "value": "02c023dc4b294476bb1965d66f1c417e"
+  },
+  {
+    "endpoint": "/manager/carinfo/1",
+    "key_endpoint": "/manager/carinfo/02c023dc4b294476bb1965d66f1c417e",
+    "db": "mysql",
+    "table": "car_info",
+    "column": "id",
+    "value": "02c023dc4b294476bb1965d66f1c417e"
+  },
+  {
+    "endpoint": "/manager/querylog/1",
+    "key_endpoint": "/manager/querylog/000cc7014a9286d860f540efe7001e26",
+    "db": "mysql",
+    "table": "car_query_log",
+    "column": "id",
+    "value": "000cc7014a9286d860f540efe7001e26"
+  },
+  {
+    "endpoint": "/manager/routedetail/1",
+    "key_endpoint": "/manager/routedetail/02c023dc4b294476bb1965d66f1c417e",
+    "db": "mysql",
+    "table": "car_info",
+    "column": "id",
+    "value": "02c023dc4b294476bb1965d66f1c417e"
+  },
+  {
+    "endpoint": "/manager/routeinfo/1",
+    "key_endpoint": "/manager/routeinfo/02c023dc4b294476bb1965d66f1c417e",
+    "db": "mysql",
+    "table": "car_info",
+    "column": "id",
+    "value": "02c023dc4b294476bb1965d66f1c417e"
+  },
+  {
+    "endpoint": "/manager/splitrecord/1",
+    "key_endpoint": "/manager/splitrecord/052e584247961967f3d9593ec2c8b2b4",
+    "db": "mysql",
+    "table": "car_split_record",
+    "column": "id",
+    "value": "052e584247961967f3d9593ec2c8b2b4"
+  },
+  {
+    "endpoint": "/manager/suspiciouscheck/1",
+    "key_endpoint": "/manager/suspiciouscheck/0095e86ba4aa40afd230a93abab4df5b",
+    "db": "mysql",
+    "table": "car_suspicious_check",
+    "column": "id",
+    "value": "0095e86ba4aa40afd230a93abab4df5b"
+  },
+  {
+    "endpoint": "/manager/suspicious/1",
+    "key_endpoint": "/manager/suspicious/1793948746731812400",
+    "db": "mysql",
+    "table": "car_suspicious",
+    "column": "id",
+    "value": "1793948746731812400"
+  },
+  {
+    "endpoint": "/manager/cartrackinfo/1",
+    "key_endpoint": "/manager/cartrackinfo/1",
+    "db": "mysql",
+    "table": "car_track_info",
+    "column": "id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/manager/carwarning/1",
+    "key_endpoint": "/manager/carwarning/1a54d61a03efe4bab146c551a93a530d",
+    "db": "mysql",
+    "table": "car_warning_info",
+    "column": "id",
+    "value": "1a54d61a03efe4bab146c551a93a530d"
+  },
+  {
+    "endpoint": "/manager/warningrule/1",
+    "key_endpoint": "/manager/warningrule/20a28e0eacb3b3d2bb8d6cb7b1b36fd8",
+    "db": "mysql",
+    "table": "car_warning_rule",
+    "column": "id",
+    "value": "20a28e0eacb3b3d2bb8d6cb7b1b36fd8"
+  },
+  {
+    "endpoint": "/manager/whiteinfo/1",
+    "key_endpoint": "/manager/whiteinfo/054a4d364b2e7415f0d3628a460871dc",
+    "db": "mysql",
+    "table": "car_white_info",
+    "column": "id",
+    "value": "054a4d364b2e7415f0d3628a460871dc"
+  },
+  {
+    "endpoint": "/manager/gantrycar/1",
+    "key_endpoint": "/manager/gantrycar/63cd4a749613496f5dcdcc1700a8d51e",
+    "db": "mysql",
+    "table": "gantry_car",
+    "column": "id",
+    "value": "63cd4a749613496f5dcdcc1700a8d51e"
+  },
+  {
+    "endpoint": "/manager/gantrytrade/1",
+    "key_endpoint": "/manager/gantrytrade/76381861e3b79830c00449e5d9c2470c",
+    "db": "mysql",
+    "table": "gantry_trade_info",
+    "column": "id",
+    "value": "76381861e3b79830c00449e5d9c2470c"
+  },
+  {
+    "endpoint": "/system/config/1",
+    "key_endpoint": "/system/config/1",
+    "db": "mysql",
+    "table": "sys_config",
+    "column": "config_id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/system/dept/1",
+    "key_endpoint": "/system/dept/25367",
+    "db": "mysql",
+    "table": "sys_dept",
+    "column": "dept_id",
+    "value": "25367"
+  },
+  {
+    "endpoint": "/system/dict/data/1",
+    "key_endpoint": "/system/dict/data/1",
+    "db": "mysql",
+    "table": "sys_dict_data",
+    "column": "dict_code",
+    "value": "1"
+  },
+  {
+    "endpoint": "/system/dict/type/1",
+    "key_endpoint": "/system/dict/type/178",
+    "db": "mysql",
+    "table": "sys_dict_type",
+    "column": "dict_id",
+    "value": "178"
+  },
+  {
+    "endpoint": "/system/file/getInfoById/1",
+    "key_endpoint": "/system/file/getInfoById/1293892177784471552",
+    "db": "mysql",
+    "table": "sys_file",
+    "column": "id",
+    "value": "1293892177784471552"
+  },
+  {
+    "endpoint": "/system/file/1",
+    "key_endpoint": "/system/file/1293892177784471552",
+    "db": "mysql",
+    "table": "sys_file",
+    "column": "id",
+    "value": "1293892177784471552"
+  },
+  {
+    "endpoint": "/system/indexmenu/1",
+    "key_endpoint": "/system/indexmenu/89",
+    "db": "mysql",
+    "table": "sys_index_menu",
+    "column": "ID",
+    "value": "89"
+  },
+  {
+    "endpoint": "/system/menu/1",
+    "key_endpoint": "/system/menu/1",
+    "db": "mysql",
+    "table": "sys_menu",
+    "column": "menu_id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/system/notice/1",
+    "key_endpoint": "/system/notice/532",
+    "db": "mysql",
+    "table": "sys_notice",
+    "column": "notice_id",
+    "value": "532"
+  },
+  {
+    "endpoint": "/system/post/1",
+    "key_endpoint": "/system/post/1",
+    "db": "mysql",
+    "table": "sys_post",
+    "column": "post_id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/system/role/1",
+    "key_endpoint": "/system/role/1",
+    "db": "mysql",
+    "table": "sys_role",
+    "column": "role_id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/system/upgradeInfo/1",
+    "key_endpoint": "/system/upgradeInfo/532",
+    "db": "mysql",
+    "table": "sys_notice",
+    "column": "notice_id",
+    "value": "532"
+  },
+  {
+    "endpoint": "/system/user/getroleUser/1",
+    "key_endpoint": "/system/user/getroleUser/1",
+    "db": "mysql",
+    "table": "sys_user",
+    "column": "user_id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/test/user/1",
+    "key_endpoint": "/test/user/1",
+    "db": "mysql",
+    "table": "sys_user",
+    "column": "user_id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/tool/gen/1",
+    "key_endpoint": "/tool/gen/231",
+    "db": "mysql",
+    "table": "gen_table",
+    "column": "table_id",
+    "value": "231"
+  },
+  {
+    "endpoint": "/tool/gen/column/1",
+    "key_endpoint": "/tool/gen/column/5910",
+    "db": "mysql",
+    "table": "gen_table_column",
+    "column": "column_id",
+    "value": "5910"
+  },
+  {
+    "endpoint": "/tool/gen/preview/1",
+    "key_endpoint": "/tool/gen/preview/231",
+    "db": "mysql",
+    "table": "gen_table",
+    "column": "table_id",
+    "value": "231"
+  },
+  {
+    "endpoint": "/tool/gen/download/1",
+    "key_endpoint": "/tool/gen/download/231",
+    "db": "mysql",
+    "table": "gen_table",
+    "column": "table_id",
+    "value": "231"
+  },
+  {
+    "endpoint": "/tool/gen/genCode/1",
+    "key_endpoint": "/tool/gen/genCode/car_except_record",
+    "db": "mysql",
+    "table": "gen_table",
+    "column": "table_name",
+    "value": "car_except_record"
+  },
+  {
+    "endpoint": "/tool/gen/synchDb/1",
+    "key_endpoint": "/tool/gen/synchDb/car_except_record",
+    "db": "mysql",
+    "table": "gen_table",
+    "column": "table_name",
+    "value": "car_except_record"
+  },
+  {
+    "endpoint": "/monitor/job/1",
+    "key_endpoint": "/monitor/job/1",
+    "db": "mysql",
+    "table": "sys_job",
+    "column": "job_id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/monitor/jobLog/1",
+    "key_endpoint": "/monitor/jobLog/1",
+    "db": "mysql",
+    "table": "sys_job_log",
+    "column": "job_log_id",
+    "value": "1"
+  }
+]

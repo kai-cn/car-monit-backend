@@ -70,7 +70,12 @@ def list_trail_fittings(query: TrailFittingParam) -> TableDataInfo:
 @router.get("/{cid}", response_model=None)
 def get_info(cid: str) -> AjaxResult:
     """获取车辆出入口拟合轨迹详细信息. Java: ``@GetMapping(value = "/{cid}")``."""
-    return AjaxResult.success_data(_service().select_by_id(cid))
+    result = AjaxResult.success_data(_service().select_by_id(cid))
+    # Java 基准在详情信封上追加来源与实时性标记；键顺序无关，结构必须一致。
+    result.put_chain("dataSource", "LOCAL_DB")
+    result.put_chain("realtime", False)
+    result.put_chain("message", "数据来自 backend 本地表，可能陈旧，无实时保证")
+    return result
 
 
 __all__ = [

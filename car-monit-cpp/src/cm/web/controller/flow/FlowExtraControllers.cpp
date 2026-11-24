@@ -317,8 +317,8 @@ void registerFlowExtraControllers(Router& r) {
         auto infoRows = selectAll("SELECT " + ms.selectColumns() + " FROM flow_message_info t WHERE t.ID = " +
                                   cm::db::bind(id));
         if (infoRows.rows.empty()) {
-            // 当前 Java 基准对占位 ID 返回成功空对象。
-            return cm::http::ApiResponse::json(BaseController::success(Json::object()).toJson());
+            // Java: messageInfo.getApplyName() 对 null 调用 -> NullPointerException -> 500
+            throw cm::exception::NullPointerException();
         }
         const auto& msg = infoRows.rows[0];
         Json map = Json::object();

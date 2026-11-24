@@ -42,7 +42,7 @@ void registerSysUpgradeInfoController(cm::web::Router& r) {
         if (info) {
             return BaseController::ok(BaseController::success(info->toJson()));
         }
-        return BaseController::ok(BaseController::success());
+        return BaseController::ok(BaseController::error("升级信息不存在"));
     });
 
     r.post("/system/upgradeInfo", [](RequestContext& ctx) -> cm::http::ApiResponse {

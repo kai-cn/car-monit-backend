@@ -22,6 +22,25 @@ def shape(value):
     return {'type': type(value).__name__}
 
 
+def compatible(a, b):
+    """比较两个 shape；空数组的 item=None 作为通配符。"""
+    if not isinstance(a, dict) or not isinstance(b, dict):
+        return a == b
+    if a.get('type') != b.get('type'):
+        return False
+    if a.get('type') == 'array':
+        ai, bi = a.get('item'), b.get('item')
+        if ai is None or bi is None:
+            return True
+        return compatible(ai, bi)
+    if a.get('type') == 'object':
+        ak, bk = a.get('keys', {}), b.get('keys', {})
+        if set(ak) != set(bk):
+            return False
+        return all(compatible(ak[k], bk[k]) for k in ak)
+    return True
+
+
 def body_of(row):
     """解析 body 字符串为对象。"""
     body = row.get('body', '')
@@ -46,15 +65,16 @@ def main():
         cb = cb if isinstance(cb, dict) else {}
         b_code, c_code = bb.get('code'), cb.get('code')
         b_shape, c_shape = shape(bb), shape(cb)
-        # 用户判据只适用于返回 JSON code 的端点；Java 基准无 code 的二进制/流响应
-        # 以 HTTP 200 与候选同为无 code 作为一致性口径。
-        if b_code == 200:
-            ok = c_code == 200 and b_shape == c_shape
+        shape_ok = compatible(b_shape, c_shape)
+        # 用户新判据：以 Java 基准为准，JSON 结构一致且键顺序无关；
+        # 业务错误 code 也必须与 Java 基准一致，不再强行要求所有 code=200。
+        if b_code is None:
+            ok = c_code is None and b.get('status') == c.get('status')
         else:
-            ok = b_code is None and c_code is None and b.get('status') == c.get('status') == 200
+            ok = c_code == b_code and shape_ok
         passed += int(ok)
         rows.append({'endpoint': endpoint, 'baseline_code': b_code, 'candidate_code': c_code,
-                     'structure_match': b_shape == c_shape, 'pass': ok,
+                     'structure_match': shape_ok, 'pass': ok,
                      'baseline_status': b.get('status'), 'candidate_status': c.get('status')})
     out = {'total': len(rows), 'passed': passed, 'failed': len(rows) - passed, 'rows': rows}
     Path(sys.argv[3]).write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding='utf-8')

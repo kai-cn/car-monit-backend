@@ -1,0 +1,154 @@
+[
+  {
+    "endpoint": "/base/fwqjcxx/1",
+    "key_endpoint": "/base/fwqjcxx/ad6645cb96fb76bac35dceacfb7c158b",
+    "db": "pg",
+    "table": "dwd_lczt_fwqjcxx",
+    "column": "agent_pk",
+    "value": "ad6645cb96fb76bac35dceacfb7c158b"
+  },
+  {
+    "endpoint": "/base/sfsjcxx/1",
+    "key_endpoint": "/base/sfsjcxx/d2c6df4afa7ff18d48786d728d3919d2",
+    "db": "pg",
+    "table": "dwd_lczt_sfsjcxx",
+    "column": "agent_pk",
+    "value": "d2c6df4afa7ff18d48786d728d3919d2"
+  },
+  {
+    "endpoint": "/base/sfzjcxx/1",
+    "key_endpoint": "/base/sfzjcxx/363bc7b76e508c55dcb259cf6a3f007e",
+    "db": "pg",
+    "table": "dwd_lczt_sfzjcxx",
+    "column": "agent_pk",
+    "value": "363bc7b76e508c55dcb259cf6a3f007e"
+  },
+  {
+    "endpoint": "/manager/fwqclls/1",
+    "key_endpoint": "/manager/fwqclls/1",
+    "db": "pg",
+    "table": "ods_cxzt_fwqclls",
+    "column": "big_id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/base/feeGantry/1",
+    "key_endpoint": "/base/feeGantry/59",
+    "db": "pg",
+    "table": "ods_lwzxsfsj_fee_gantry_fusion_01",
+    "column": "big_id",
+    "value": "59"
+  },
+  {
+    "endpoint": "/base/feerecords/1",
+    "key_endpoint": "/base/feerecords/1029052209",
+    "db": "pg",
+    "table": "ods_lwzxsfsj_fee_records_01",
+    "column": "big_id",
+    "value": "1029052209"
+  },
+  {
+    "endpoint": "/base/feeStationEnter/1",
+    "key_endpoint": "/base/feeStationEnter/2308",
+    "db": "pg",
+    "table": "ods_lwzxsfsj_fee_station_enter_01",
+    "column": "big_id",
+    "value": "2308"
+  },
+  {
+    "endpoint": "/base/feestationexit/1",
+    "key_endpoint": "/base/feestationexit/11150377",
+    "db": "pg",
+    "table": "ods_lwzxsfsj_fee_station_exit_01",
+    "column": "big_id",
+    "value": "11150377"
+  },
+  {
+    "endpoint": "/base/snapshotflow/1",
+    "key_endpoint": "/base/snapshotflow/154288684",
+    "db": "pg",
+    "table": "ods_rt_szdn_snapshot_flow_addcode",
+    "column": "big_id",
+    "value": "154288684"
+  },
+  {
+    "endpoint": "/base/provcapture/1",
+    "key_endpoint": "/base/provcapture/154288684",
+    "db": "pg",
+    "table": "ods_rt_szdn_snapshot_flow_addcode",
+    "column": "big_id",
+    "value": "154288684"
+  },
+  {
+    "endpoint": "/base/stationcapture/1",
+    "key_endpoint": "/base/stationcapture/154288684",
+    "db": "pg",
+    "table": "ods_rt_szdn_snapshot_flow_addcode",
+    "column": "big_id",
+    "value": "154288684"
+  },
+  {
+    "endpoint": "/base/gantry/1",
+    "key_endpoint": "/base/gantry/18",
+    "db": "pg",
+    "table": "ods_szdn_gantry",
+    "column": "id",
+    "value": "18"
+  },
+  {
+    "endpoint": "/base/gantryIp/1",
+    "key_endpoint": "/base/gantryIp/1",
+    "db": "pg",
+    "table": "ods_szdn_gantry_ip",
+    "column": "id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/base/vehicleweight/1",
+    "key_endpoint": "/base/vehicleweight/154288684",
+    "db": "pg",
+    "table": "ods_rt_szdn_snapshot_flow_addcode",
+    "column": "big_id",
+    "value": "154288684"
+  },
+  {
+    "endpoint": "/base/section/1",
+    "key_endpoint": "/base/section/18",
+    "db": "pg",
+    "table": "ods_szdn_section",
+    "column": "id",
+    "value": "18"
+  },
+  {
+    "endpoint": "/base/toll/1",
+    "key_endpoint": "/base/toll/1",
+    "db": "pg",
+    "table": "ods_szdn_toll",
+    "column": "id",
+    "value": "1"
+  },
+  {
+    "endpoint": "/base/tollStationIp/1",
+    "key_endpoint": "/base/tollStationIp/40017",
+    "db": "pg",
+    "table": "ods_szdn_toll_station_ip",
+    "column": "id",
+    "value": "40017"
+  },
+  {
+    "endpoint": "/base/org/1",
+    "key_endpoint": "/base/org/24945",
+    "db": "pg",
+    "table": "ods_yhgl_v_base_org",
+    "column": "big_id",
+    "value": "24945"
+  },
+  {
+    "endpoint": "/base/trailtracks/1",
+    "key_endpoint": "/base/trailtracks/e0e22490-fb40-4795-947b-68565d864aa7",
+    "db": "pg",
+    "table": "zdata_trail_tracks",
+    "column": "uuid",
+    "value": "e0e22490-fb40-4795-947b-68565d864aa7"
+  }
+]

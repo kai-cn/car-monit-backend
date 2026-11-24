@@ -329,8 +329,8 @@ def get_toll_list(
 ) -> AjaxResult:
     """收费站 / 门架 / 服务区列表. Java: ``@GetMapping(value = "/tollGantryFwqList")``."""
     if type_ is None:
-        # Java 基准已将 type 改为可选；占位探测无 type 时返回空数组。
-        return AjaxResult.success_data([])
+        # Java: ``@RequestParam String type`` 必填 → code 500 回信封
+        raise ServiceException(MISSING_TYPE_MESSAGE)
     if is_blank(section_code):
         # Java: ``return AjaxResult.success(new ArrayList<>())`` —— 空数组，不是全量
         return AjaxResult.success_data([])

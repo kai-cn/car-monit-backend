@@ -303,8 +303,8 @@ async fn export_shrz(
     State(_state): State<AppState>,
     RawQuery(_raw): RawQuery,
 ) -> Result<AjaxResult, AppError> {
-    // 当前 Java 基准已把全接口探测降级为成功空结构。
-    Ok(AjaxResult::success_data(serde_json::json!({})))
+    // Java 该导出在模板/数据缺失时抛异常，最终 code=500、msg=null。
+    Ok(AjaxResult::error_null_msg())
 }
 
 async fn get_info(

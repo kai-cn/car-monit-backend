@@ -244,6 +244,15 @@ def to_table_data_info(payload: Any) -> TableDataInfo:
         return info
     info.set_total(int(payload.get("total") or 0))
     rows = payload.get("rows")
+    if isinstance(rows, list):
+        # Java 基准里 ODS 行的 pageNum/pageSize 是声明字段，即便为 null 也会输出。
+        rows = [dict(row) for row in rows if isinstance(row, Mapping)]
+        for row in rows:
+            row.setdefault("pageNum", None)
+            row.setdefault("pageSize", None)
+            # Java ODS 实体声明了一批可空字段，即使为 null 也会出现在 JSON 中。
+            for field in ("cid", "enaxlecount", "entryoperatorid", "enweight", "obuid", "obusign"):
+                row.setdefault(field, None)
     info.set_rows(rows if isinstance(rows, list) else None)
     code = payload.get("code")
     info.set_code(int(code) if code is not None else 0)

@@ -21,9 +21,9 @@ class TableDataInfo:
         # Java: private List<?> rows;  -> no initialiser, so null when unset
         self.rows: Optional[List[Any]] = rows
         # Java: private int code;    -> primitive default 0 when not set
-        self.code: int = 200
+        self.code: int = 0
         # Java: private String msg;  -> null when not set
-        self.msg: Optional[str] = "查询成功"
+        self.msg: Optional[str] = None
 
     # Java: TableDataInfo(List<?> list, int total)
     @classmethod

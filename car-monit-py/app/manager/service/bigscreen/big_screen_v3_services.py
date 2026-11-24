@@ -285,7 +285,7 @@ class BigScreenExportService:
         with self._lock:
             task = self._tasks.get(task_id)
             if task is None:
-                return {"taskId": task_id, "status": "NOT_FOUND", "totalExported": 0, "filePartCount": 0}
+                raise ApiClientException(NOT_FOUND, "task not found", "/export/status")
             return task.public_view()
 
     def retry(self, task_id: str, user_id: Optional[int]) -> Dict[str, Any]:
@@ -343,8 +343,7 @@ class BigScreenExportService:
         由 Controller 转成 ``FileResponse``；错误分支返回 ``(status, body)``。
         """
         if not self.verify_download_token(task_id, header_token):
-            # 全接口探测没有前置 download-url；返回空字节流与 Java 基准 HTTP 200 对齐。
-            return b""
+            raise ApiClientException(FORBIDDEN, "下载令牌无效或已过期", "/export/download")
         with self._lock:
             task = self._tasks.get(task_id)
         if task is None or not task.filePath:

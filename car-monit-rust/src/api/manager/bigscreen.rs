@@ -440,8 +440,11 @@ async fn toll_gantry_fwq(
         .unwrap_or_default();
     let type_value = params.get("type").cloned().unwrap_or_default();
     if type_value.trim().is_empty() {
-        // 当前 Java 基准已将 type 改为可选；占位探测无 type 时返回空数组。
-        return Ok(AjaxResult::success_data(Vec::<serde_json::Value>::new()));
+        // Java: @RequestParam String type（required=true）缺失时由 Spring 返回 500。
+        return Err(AppError::BadRequest(
+            "Required request parameter 'type' for method parameter type String is not present"
+                .to_string(),
+        ));
     }
     if section_code.is_empty() {
         return Ok(AjaxResult::success_data(Vec::<Value>::new()));

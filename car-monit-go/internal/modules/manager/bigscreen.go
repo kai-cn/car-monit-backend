@@ -168,8 +168,8 @@ func (h *handler) bigSectionList(c *gin.Context) {
 func (h *handler) bigTollGantryFwqList(c *gin.Context) {
 	typeParam := queryParam(c, "type")
 	if typeParam == "" {
-		// Java 基准已将 type 改为可选；占位探测无 type 时返回空数组。
-		web.JSON(c, web.SuccessData([]*tollGantryFwqVO{}))
+		web.JSON(c, web.ErrorResult(web.NewServiceError(
+			"Required request parameter 'type' for method parameter type String is not present")))
 		return
 	}
 	sectionCode := queryParam(c, "sectionCode")

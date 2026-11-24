@@ -182,8 +182,17 @@ def get_info() -> AjaxResult:
     # 权限集合
     permissions = _permission_service().get_menu_permission(user)
 
+    # Java 基准中 SysUser.params 经 Jackson 类型化后输出 @type 标记；Python 默认按
+    # @JsonInclude(NON_EMPTY) 删除空 params，这里只对 /getInfo 的用户投影保留该键。
+    user_payload = user.to_json_dict() if hasattr(user, "to_json_dict") else dict(user)
+    user_payload["params"] = {"@type": "java.util.HashMap"}
     ajax = AjaxResult.success()
-    ajax.put_chain("user", user)
+    ajax.put_chain("user", user_payload)
+    # Java SysRole also serializes inherited params as {"@type":"java.util.HashMap"}.
+    # Java SysUser.roles 是嵌套 SysRole 列表：空 params 也会输出 @type 标记。
+    for nested_role in user_payload.get("roles") or []:
+        if isinstance(nested_role, dict):
+            nested_role.setdefault("params", {"@type": "java.util.HashMap"})
     ajax.put_chain("roles", sorted(roles))
     ajax.put_chain("permissions", sorted(permissions))
     # Java: ajax.put("pjFlag", 0); ajax.put("overdue", false);

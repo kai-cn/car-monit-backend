@@ -373,10 +373,9 @@ public class CarConfimFreeServiceImpl extends ServiceImpl<CarConfimFreeMapper, C
         List<CarExceptRecord> carExceptRecordList = carExceptRecordService.selectCarExceptRecordList(carExceptRecord);
         carConfimFree.setCarExceptRecordList(carExceptRecordList);
 
-        if (carExceptRecordList == null || carExceptRecordList.isEmpty())
-        {
-            // 全接口探测使用占位 ID；无数据时返回成功空对象，保持 JSON 结构与有数据时一致。
-            return AjaxResult.success(carConfimFree);
+        if(null !=carExceptRecordList && carExceptRecordList.size() > 0){
+        }else{
+            return AjaxResult.error("异常车辆流水不存在！");
         }
 
         List<String> carNoList = carExceptRecordList.stream().map(CarExceptRecord::getCarNo).distinct().collect(Collectors.toList());

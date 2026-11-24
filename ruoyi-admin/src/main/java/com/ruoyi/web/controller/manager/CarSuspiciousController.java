@@ -159,9 +159,6 @@ public class CarSuspiciousController extends BaseController {
     @GetMapping("/exportAbnormalPassage")
     public void exportAbnormalPassage(String carSuspiciousId, HttpServletResponse response) {
         CarSuspicious carSuspicious = carSuspiciousService.getById(carSuspiciousId);
-        if (carSuspicious == null) {
-            carSuspicious = new CarSuspicious();
-        }
 
         CarSuspiciousCheck querybo = new CarSuspiciousCheck();
         querybo.setCarId(carSuspiciousId);
