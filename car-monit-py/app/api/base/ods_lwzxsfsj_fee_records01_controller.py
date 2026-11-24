@@ -304,9 +304,11 @@ def export(query: FeeRecordsParam) -> Response:
 @router.get("/{big_id}", response_model=None)
 def get_info(big_id: str) -> AjaxResult:
     """获取基础-收费流水详细信息. Java: ``@GetMapping(value = "/{bigId}")``."""
-    return AjaxResult.success_data(
-        _collaborators()["client"].select_ods_lwzxsfsj_fee_records01_by_id(big_id)
-    )
+    row = _collaborators()["client"].select_ods_lwzxsfsj_fee_records01_by_id(big_id)
+    if isinstance(row, dict):
+        for field in ("plateColorMark", "plateColorName", "chargeStatus", "entimeStr", "receivetimeStr", "sectionName"):
+            row.setdefault(field, None)
+    return AjaxResult.success_data(row)
 
 
 __all__ = [

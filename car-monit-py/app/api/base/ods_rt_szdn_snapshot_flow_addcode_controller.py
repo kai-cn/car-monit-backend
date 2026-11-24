@@ -289,9 +289,11 @@ def get_earliest_snapshottime() -> AjaxResult:
 @router.get("/{big_id}", response_model=None)
 def get_info(big_id: str) -> AjaxResult:
     """获取门架抓拍流水详细信息. Java: ``@GetMapping(value = "/{bigId}")``."""
-    return AjaxResult.success_data(
-        _collaborators()["client"].select_ods_rt_szdn_snapshot_flow_addcode_by_id(big_id)
-    )
+    row = _collaborators()["client"].select_ods_rt_szdn_snapshot_flow_addcode_by_id(big_id)
+    if isinstance(row, dict):
+        for field in ("plateColorMark", "plateColorName", "directionStr"):
+            row.setdefault(field, None)
+    return AjaxResult.success_data(row)
 
 
 __all__ = [

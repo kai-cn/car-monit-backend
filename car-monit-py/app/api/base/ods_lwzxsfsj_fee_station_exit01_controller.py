@@ -120,7 +120,13 @@ def list_fee_station_exits(query: FeeStationExitParam) -> TableDataInfo:
     if HttpStatus.SUCCESS != int(code):
         logger.error("交易流水数据获取异常：%s", json_object)
         raise ServiceException(FETCH_ERROR_MESSAGE)
-    return to_table_data_info(json_object)
+    info = to_table_data_info(json_object)
+    # Java 基准声明的可空字段，即使值为 null 也必须出现在 JSON 中。
+    for row in info.rows or []:
+        if isinstance(row, dict):
+            for field in ("cid", "enaxlecount", "entryoperatorid", "enweight", "obuid", "obusign", "paycardid", "provfee", "specialtype"):
+                row.setdefault(field, None)
+        return to_table_data_info(json_object)
 
 
 @router.get("/{big_id}", response_model=None)

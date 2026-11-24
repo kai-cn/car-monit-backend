@@ -258,7 +258,11 @@ def export(query: CarWarningInfoParam) -> Response:
 @router.get("/{id}", response_model=None)
 def get_info(id: str) -> AjaxResult:  # noqa: A002 —— 形参名照抄 Java 的 ``String id``
     """获取预警车辆详细信息. Java: ``@GetMapping(value = "/{id}")``."""
-    return AjaxResult.success_data(_service().select_by_id(id))
+    row = _service().select_by_id(id) if hasattr(_service(), "select_by_id") else _service().get_by_id(id)
+    if isinstance(row, dict):
+        row.setdefault("plateColorMark", None)
+        row.setdefault("plateColorName", None)
+    return AjaxResult.success_data(row)
 
 
 @router.post("", response_model=None)

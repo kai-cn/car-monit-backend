@@ -188,6 +188,8 @@ def get_info() -> AjaxResult:
     user_payload["params"] = {"@type": "java.util.HashMap"}
     ajax = AjaxResult.success()
     ajax.put_chain("user", user_payload)
+    if isinstance(user_payload.get("dept"), dict):
+        user_payload["dept"]["params"] = {"@type": "java.util.HashMap"}
     # Java SysRole also serializes inherited params as {"@type":"java.util.HashMap"}.
     # Java SysUser.roles 是嵌套 SysRole 列表：空 params 也会输出 @type 标记。
     for nested_role in user_payload.get("roles") or []:

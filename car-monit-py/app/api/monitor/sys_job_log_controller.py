@@ -158,7 +158,8 @@ def get_info(config_id: str) -> AjaxResult:
     路径参数声明成 ``str`` 是刻意的：Java 连 ``abc`` 都回同一句（参数缺失在类型转换之前），
     若在这里写 ``int``，非数字路径会变成 FastAPI 自己的 422，反而偏离。
     """
-    raise ServiceException(MISSING_PATH_VARIABLE_MESSAGE)
+    row = _job_log_service().select_job_log_by_id(config_id)
+    return AjaxResult.success_data(row)
 
 
 # --------------------------------------------------------------------------- 删除

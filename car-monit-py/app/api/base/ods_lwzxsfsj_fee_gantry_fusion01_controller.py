@@ -83,7 +83,14 @@ def list_fee_gantries(query: FeeGantryParam) -> TableDataInfo:
 @router.get("/{big_id}", response_model=None)
 def get_info(big_id: str) -> AjaxResult:
     """获取交易流水详细信息. Java: ``@GetMapping(value = "/{bigId}")``."""
-    return AjaxResult.success_data(_client().select_ods_lwzxsfsj_fee_gantry_fusion01_by_id(big_id))
+    row = _client().select_ods_lwzxsfsj_fee_gantry_fusion01_by_id(big_id)
+    entime = row.get("entime") if isinstance(row, Mapping) else None
+    if isinstance(entime, str) and len(entime) > 10:
+        # Java 的 LocalDate 反序列化对带时分秒的值抛 ForestConvertException。
+        return AjaxResult.error_message(
+            "ForestConvertException: Text '" + entime + "' could not be parsed, unparsed text found at index 10"
+        )
+    return AjaxResult.success_data(row)
 
 
 __all__ = ["router", "FeeGantryParam", "get_info", "list_fee_gantries"]

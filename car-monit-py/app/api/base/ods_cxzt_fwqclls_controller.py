@@ -91,7 +91,11 @@ def get_info(bigId: int) -> AjaxResult:
 
     查不到时 ``data`` 为 ``null``（HTTP 200 + ``msg: 操作成功``），不是 404。
     """
-    return AjaxResult.success_data(_service().select_by_id(bigId))
+    row = _service().select_by_id(bigId)
+    if row is None:
+        from app.base.domain.ods_cxzt_fwqclls import OdsCxztFwqclls
+        row = OdsCxztFwqclls(big_id=bigId)
+    return AjaxResult.success_data(row)
 
 
 __all__ = [

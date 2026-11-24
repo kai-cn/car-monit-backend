@@ -200,7 +200,14 @@ def profile(request: Request) -> AjaxResult:
     """
     login_user = _current_login_user(request)
     user = login_user.user
-    ajax = AjaxResult.success_data(user)
+    user_payload = user.to_json_dict() if hasattr(user, "to_json_dict") else dict(user)
+    user_payload["params"] = {"@type": "java.util.HashMap"}
+    if isinstance(user_payload.get("dept"), dict):
+        user_payload["dept"]["params"] = {"@type": "java.util.HashMap"}
+    for role in user_payload.get("roles") or []:
+        if isinstance(role, dict):
+            role.setdefault("params", {"@type": "java.util.HashMap"})
+    ajax = AjaxResult.success_data(user_payload)
     ajax.put_chain("roleGroup", _user_service().select_user_role_group(login_user.get_username()))
     ajax.put_chain("postGroup", _user_service().select_user_post_group(login_user.get_username()))
     return ajax

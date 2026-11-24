@@ -23,12 +23,16 @@ def shape(value):
 
 
 def compatible(a, b):
-    """比较两个 shape；空数组的 item=None 作为通配符。"""
+    """比较 JSON 结构：对象键集合、数组元素结构；标量值/标量类型不算结构差异。"""
     if not isinstance(a, dict) or not isinstance(b, dict):
-        return a == b
-    if a.get('type') != b.get('type'):
         return False
-    if a.get('type') == 'array':
+    at, bt = a.get('type'), b.get('type')
+    # 非容器标量不参与“键结构”比较；code 值已由 c_code == b_code 独立约束。
+    if at not in ('object', 'array') or bt not in ('object', 'array'):
+        return True
+    if at != bt:
+        return False
+    if at == 'array':
         ai, bi = a.get('item'), b.get('item')
         if ai is None or bi is None:
             return True
@@ -38,6 +42,7 @@ def compatible(a, b):
         if set(ak) != set(bk):
             return False
         return all(compatible(ak[k], bk[k]) for k in ak)
+    # number/string/null 等标量差异属于值差异，不属于 JSON 键结构差异。
     return True
 
 

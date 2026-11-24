@@ -43,7 +43,13 @@ class HttpOdsRtSzdnSnapshotFlowAddcodeService:
             "/base/snapshotflow/list",
             to_query_params(entity),
         )
-        return to_table_data_info(payload)
+        info = to_table_data_info(payload)
+        # Java 实体声明的派生字段即使为 null 也会序列化。
+        for row in info.rows or []:
+            if isinstance(row, dict):
+                row.setdefault("plateColorMark", None)
+                row.setdefault("plateColorName", None)
+        return info
 
     # Java: List<OdsRtSzdnSnapshotFlowAddcode> getOdsRtSzdnSnapshotFlowAddcodeListToExport(@Query q)
     @staticmethod
