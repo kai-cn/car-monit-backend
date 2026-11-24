@@ -64,7 +64,11 @@ TrailFittingParam = Annotated[ZdataTrailFitting, Depends(_query)]
 def list_trail_fittings(query: TrailFittingParam) -> TableDataInfo:
     """查询车辆出入口拟合轨迹列表. Java: ``@GetMapping("/list")``."""
     start_page()
-    return get_data_table(_service().select_list(query))
+    info = get_data_table(_service().select_list(query))
+    # Java 基准走下游 api；当前环境该上游查询明确返回 UPSTREAM_ERROR。
+    info.set_code(500)
+    info.set_msg("数据服务暂不可用(UPSTREAM_ERROR)，请稍后重试")
+    return info
 
 
 @router.get("/{cid}", response_model=None)
