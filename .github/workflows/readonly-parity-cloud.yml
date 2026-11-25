@@ -439,7 +439,8 @@ jobs:
         run: |
           set -uo pipefail
           if [ ! -f out/junit-contract.json ]; then echo "::error::candidate contract missing"; exit 1; fi
-          python3 harness/runtime-logs/compare-json-structure.py \
+          # 比较器放在两仓库统一路径 scripts/v3/ops/parity/（api 仓库根目录无 runtime-logs/）
+          python3 harness/scripts/v3/ops/parity/compare-json-structure.py \
             baseline/junit-contract.json out/junit-contract.json out/structure-compare.json
           python3 - <<'PY'
           import json
