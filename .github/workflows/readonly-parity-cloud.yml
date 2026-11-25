@@ -1,11 +1,16 @@
-# @description 云端只读端点结构对齐：以 Java master 为基准，对 Python/Go/C++/Rust 的只读端点做 code + JSON 结构对拍。
+# @description 云端只读端点结构对齐：完整复刻本地 WSL 测试环境（MySQL/PG/Redis/ES + 9902 api 下游），
+#              以 Java master 为基准对 Python/Go/C++/Rust 只读端点做 code + JSON 结构对拍。
 # @author Tencent Hunyuan Hy
-# @date 2026-11-25 20:00:00
-# @usage workflow_dispatch：app=backend，endpoint_set=readonly（默认）；两仓库各放一份相同文件。
+# @date 2026-11-25 22:20:00
+# @usage workflow_dispatch（两仓库各放一份）：target_ref=master，app=backend/api，endpoint_set=readonly。
 # @dependencies 云 runner、Docker、JDK8/25、Python3、Go、CMake/vcpkg、Rust。
-# 判据：runtime-logs/compare-json-structure.py —— Java 基准 body.code 与 JSON 键结构一致（键顺序无关），
-#       与 crosslang-full 的 --strict 全字段对拍是两套判据；本 workflow 只做结构对齐，不做压测。
-# 端点：默认用带真实主键的只读端点清单（backend 190 / api 52），来自固定 seed，云端可复现。
+#
+# 与 crosslang-full-parity-cloud 的区别（不照抄）：
+#  1. 完整复刻 WSL：额外启动 ES 7.17.13 与 9902 api 下游（跨仓库 checkout api 源码构建 pro-business-api jar），
+#     并注入 ES_*/VEHICLE_MONITOR_BASE_URL env，避免 Java 基准因缺外部依赖熔断降级（UNAVAILABLE/CIRCUIT_OPEN）。
+#  2. 端点用带真实主键的只读清单（backend 190 / api 52），比较器为 compare-json-structure.py
+#     （Java code + JSON 键结构一致、键顺序无关），而非 --strict 全字段对拍。
+#  3. python/go/cpp/rust 四语言强制全跑，不因 input 跳过；只做结构对齐，不做压测。
 name: readonly-parity-cloud
 
 on:
@@ -26,10 +31,6 @@ on:
         type: choice
         options: [readonly, full]
         default: readonly
-      langs:
-        description: comma list of python,go,cpp,rust or all
-        type: string
-        default: all
 
 permissions:
   contents: read
@@ -41,12 +42,16 @@ concurrency:
 env:
   MAVEN_ARGS: -B -ntp
   BASE_URL: http://127.0.0.1:19903
+  # 云端 ES 地址为容器映射的 127.0.0.1:9200（WSL 为 172.18.0.1:9200）
+  ES_HOST: 127.0.0.1
+  ES_PORT: '9200'
+  ES_URI: http://127.0.0.1:9200
 
 jobs:
-  # ── Java master 基准：构建 + seed + JUnit 采集契约 ──
+  # ── Java master 基准：构建 Java jar + 9902 下游 + ES/DB，采集契约 ──
   baseline:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - name: Checkout harness
         uses: actions/checkout@v4
@@ -58,6 +63,12 @@ jobs:
         with:
           ref: ${{ inputs.target_ref }}
           path: src
+      - name: Checkout api source (for 9902 downstream)
+        uses: actions/checkout@v4
+        with:
+          repository: kai-cn/car-monit-api
+          ref: master
+          path: api-src
       - uses: actions/setup-java@v4
         with:
           distribution: corretto
@@ -80,18 +91,23 @@ jobs:
           fi
           echo "endpoints=$(wc -l < out/endpoints.txt)"
           head -5 out/endpoints.txt
-      - name: Start datastores
+      - name: Start datastores (MySQL/Redis/PG/ES)
         shell: bash
         run: |
           set -euo pipefail
           docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
           docker run -d --name rd -p 6379:6379 redis:7-alpine
+          docker run -d --name pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=RuoYi -p 5432:5432 postgres:16-alpine
+          # ES 7.17.13 single-node，堆 350m、容器内存 700m，复刻 WSL 配置
+          docker run -d --name es -e discovery.type=single-node -e 'ES_JAVA_OPTS=-Xms350m -Xmx350m' --memory=700m -p 9200:9200 -p 9300:9300 docker.elastic.co/elasticsearch/elasticsearch:7.17.13
           for i in $(seq 1 90); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
           for i in $(seq 1 30); do docker exec rd redis-cli ping >/dev/null 2>&1 && break; sleep 1; done
+          for i in $(seq 1 60); do docker exec pg pg_isready -U postgres -d RuoYi >/dev/null 2>&1 && break; sleep 2; done
+          for i in $(seq 1 90); do curl -s --max-time 3 http://127.0.0.1:9200 >/dev/null 2>&1 && break; sleep 2; done
+          curl -s http://127.0.0.1:9200 | head -c 200; echo
+          # seed：backend 用 carmonitdb（MySQL），api 用 jl_data01（PG）+ mysql_dict
+          export PGPASSWORD=postgres
           if [ '${{ inputs.app }}' = api ]; then
-            docker run -d --name pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=RuoYi -p 5432:5432 postgres:16-alpine
-            for i in $(seq 1 60); do docker exec pg pg_isready -U postgres -d RuoYi >/dev/null 2>&1 && break; sleep 2; done
-            export PGPASSWORD=postgres
             psql -h 127.0.0.1 -U postgres -d RuoYi -v ON_ERROR_STOP=1 -f harness/scripts/v3/ops/parity/sql/schema_jl_data01.sql >/dev/null
             gunzip -c harness/scripts/v3/ops/parity/sql/seed_jl_data01.sql.gz > /tmp/seed.sql
             psql -h 127.0.0.1 -U postgres -d RuoYi -v ON_ERROR_STOP=1 -f /tmp/seed.sql >/dev/null
@@ -101,7 +117,7 @@ jobs:
             docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
           fi
           echo "seed rows: $(docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -N -e 'select count(*) from carmonitdb.sys_user')"
-      - name: Build Java baseline and generate JUnit
+      - name: Build Java baseline + 9902 downstream + JUnit
         run: |
           set -euo pipefail
           sudo mkdir -p /home/ruoyi/logs
@@ -110,6 +126,13 @@ jobs:
           export PATH="$JAVA_HOME/bin:$PATH"
           export MAVEN_ARGS="$MAVEN_ARGS -Dspring-boot.aot.skip=true"
           java -version
+          # 9902 下游：api 仓库 pro-business-api jar（Boot2/JDK8 兼容，用 JDK8 构建更稳）
+          export JAVA_HOME="$JAVA_HOME_8_X64"; export PATH="$JAVA_HOME/bin:$PATH"
+          (cd api-src && mvn $MAVEN_ARGS -DskipTests -pl pro-business-api -am package)
+          cp $(ls api-src/pro-business-api/target/*.jar | grep -v original | head -1) out/downstream.jar
+          ls -lh out/downstream.jar
+          # Java 基准（被测 app）
+          export JAVA_HOME="$JAVA_HOME_25_X64"; export PATH="$JAVA_HOME/bin:$PATH"
           cd src
           if [ '${{ inputs.app }}' = api ]; then MODULE=pro-business-api; else MODULE=ruoyi-admin; fi
           mvn $MAVEN_ARGS -DskipTests -pl "$MODULE" -am package
@@ -123,28 +146,34 @@ jobs:
           done
           test -s ../out/junit.jar
           javac -encoding UTF-8 -source 8 -target 8 -cp ../out/junit.jar -d ../out/classes ../out/generated/*.java
-      - name: Start baseline and collect contract
+      - name: Start 9902 downstream + baseline, collect contract
         shell: bash
         env:
-          SPRING__DATASOURCE__DRUID__MASTER__URL: jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8
-          SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
-          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
-          SPRING__DATASOURCE__DRUID__MASTER__DRIVERCLASSNAME: com.mysql.cj.jdbc.Driver
-          SPRING__REDIS__HOST: 127.0.0.1
-          SPRING__REDIS__PORT: '6379'
-          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false
-          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
-          SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
+          # ES env（复刻 WSL 的多种别名，确保所有实现都能识别）
+          SPRING_ELASTICSEARCH_URIS: http://127.0.0.1:9200
+          ELASTICSEARCH_URIS: http://127.0.0.1:9200
+          ES_HOSTS: http://127.0.0.1:9200
+          ELASTICSEARCH_HOST: 127.0.0.1
+          ELASTICSEARCH_PORT: '9200'
+          SPRING__ELASTICSEARCH__URIS: http://127.0.0.1:9200
+          VEHICLE_MONITOR_BASE_URL: http://127.0.0.1:9902
+          APP_VEHICLEMONITOR__BASEURL: http://127.0.0.1:9902
           TOKEN__SECRET: junit-cloud-secret-deterministic-0123456789abcdef
-          VEHICLE_MONITOR_BASE_URL: "http://127.0.0.1:9902"
-          APP_VEHICLEMONITOR__BASEURL: "http://127.0.0.1:9902"
+          HENGDA__SECRET: pytest-only-hengda-signing-key-4d8e1a6b2f9c0357
+          EXPORT_DOWNLOAD_SECRET: local-parity-export-secret-0123456789abcdef
           CARMONIT_ADMIN_USER: ${{ secrets.CI_ADMIN_USER }}
           CARMONIT_ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD }}
           LOG_PATH: /tmp/car-monit-logs
         run: |
           set -euo pipefail
           sudo mkdir -p "$LOG_PATH" /home/ruoyi/logs; sudo chown -R "$(id -u):$(id -g)" "$LOG_PATH" /home/ruoyi; mkdir -p "$LOG_PATH" /home/ruoyi/logs
-          java -jar out/app.jar --server.port=19903 --spring.main.allow-circular-references=true --spring.main.lazy-initialization=true --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration > out/app.log 2>&1 &
+          export JAVA_HOME="$JAVA_HOME_8_X64"; export PATH="$JAVA_HOME/bin:$PATH"
+          java -jar out/downstream.jar --server.port=9902 --spring.main.allow-circular-references=true --spring.main.lazy-initialization=true --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration --spring.datasource.dynamic.datasource.master.url='jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false' --spring.datasource.dynamic.datasource.master.username=postgres --spring.datasource.dynamic.datasource.master.password=postgres --spring.redis.host=127.0.0.1 --spring.redis.port=6379 --token.secret=junit-cloud-secret-deterministic-0123456789abcdef > out/downstream.log 2>&1 &
+          echo $! > out/downstream.pid
+          for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/9902) >/dev/null 2>&1 && break; sleep 1; done
+          echo "downstream 9902: $((echo > /dev/tcp/127.0.0.1/9902) >/dev/null 2>&1 && echo READY || echo FAIL)"
+          export JAVA_HOME="$JAVA_HOME_25_X64"; export PATH="$JAVA_HOME/bin:$PATH"
+          java -jar out/app.jar --server.port=19903 --spring.main.allow-circular-references=true --spring.main.lazy-initialization=true --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration --spring.datasource.druid.master.url='jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8' --spring.datasource.druid.master.username=root --spring.datasource.druid.master.password=root --spring.redis.host=127.0.0.1 --spring.redis.port=6379 > out/app.log 2>&1 &
           echo $! > out/app.pid
           for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1 && break; sleep 1; done
           TOKEN=$(python3 harness/scripts/v3/ops/junit/junit-auth-token.py --base-url "$BASE_URL" || true)
@@ -156,7 +185,8 @@ jobs:
           python3 - <<'PY'
           import json, sys
           d = json.load(open('out/junit-contract.json', encoding='utf-8'))
-          print('java-master endpoints=%d error=%s' % (d.get('endpoint_count', 0), d.get('error')))
+          body_err = sum(1 for r in d.get('endpoints', []) if isinstance(r.get('body'), str) and ('UNAVAILABLE' in r['body'] or 'CIRCUIT_OPEN' in r['body']))
+          print('java-master endpoints=%d error=%s circuit_breaker=%d' % (d.get('endpoint_count', 0), d.get('error'), body_err))
           if d.get('error') or d.get('endpoint_count', 0) < 10:
               sys.exit('::error::java-master contract quality gate failed')
           PY
@@ -168,19 +198,20 @@ jobs:
             out/junit-contract.json
             out/junit.jar
             out/endpoints.txt
-            out/app.log
+            out/downstream.jar
+            out/*.log
           retention-days: 30
       - name: Cleanup
         if: always()
         run: |
-          if [ -f out/app.pid ]; then kill "$(cat out/app.pid)" 2>/dev/null || true; fi
-          docker rm -f pg my rd 2>/dev/null || true
+          for p in out/app.pid out/downstream.pid; do if [ -f "$p" ]; then kill "$(cat "$p")" 2>/dev/null || true; fi; done
+          docker rm -f pg my rd es 2>/dev/null || true
 
-  # ── 候选语言：构建 + seed + JUnit 采集 + 结构对拍 ──
+  # ── 候选语言：构建四语言服务 + 9902 下游 + ES，采集契约 + 结构对拍（强制全跑，不跳过）──
   candidates:
     needs: baseline
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -197,36 +228,45 @@ jobs:
         with:
           ref: ${{ inputs.target_ref }}
           path: src
-      - name: Gate language
-        id: gate
-        shell: bash
-        run: |
-          IN='${{ inputs.langs }}'; LANG='${{ matrix.lang }}'
-          if [ "$IN" = all ] || echo ",$IN," | grep -q ",$LANG,"; then echo run=yes >> "$GITHUB_OUTPUT"; else echo run=no >> "$GITHUB_OUTPUT"; fi
+      - name: Checkout api source (for 9902 downstream)
+        uses: actions/checkout@v4
+        with:
+          repository: kai-cn/car-monit-api
+          ref: master
+          path: api-src
       - name: Setup Python
-        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
+        if: matrix.lang == 'python'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Setup JDK8 (build 9902 downstream) + JDK (JUnit)
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: '8'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
       - name: Install native build dependencies
-        if: steps.gate.outputs.run == 'yes' && (matrix.lang == 'rust' || matrix.lang == 'cpp')
+        if: matrix.lang == 'rust' || matrix.lang == 'cpp'
         shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake build-essential pkg-config libpq-dev libssl-dev zlib1g-dev libcurl4-openssl-dev libsasl2-dev
-      - name: Start datastores
-        if: steps.gate.outputs.run == 'yes'
+      - name: Start datastores (MySQL/Redis/PG/ES)
         shell: bash
         run: |
           set -euo pipefail
           docker run -d --name my -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=carmonitdb -p 3306:3306 mysql:8.0 --default-authentication-plugin=mysql_native_password
           docker run -d --name rd -p 6379:6379 redis:7-alpine
+          docker run -d --name pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=RuoYi -p 5432:5432 postgres:16-alpine
+          docker run -d --name es -e discovery.type=single-node -e 'ES_JAVA_OPTS=-Xms350m -Xmx350m' --memory=700m -p 9200:9200 -p 9300:9300 docker.elastic.co/elasticsearch/elasticsearch:7.17.13
           for i in $(seq 1 90); do docker exec my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -e 'select 1' >/dev/null 2>&1 && break; sleep 2; done
-          for i in $(seq 1 30); do docker exec rd redis-cli ping >/dev/null 2>&1 && break; sleep 1; done
+          for i in $(seq 1 60); do docker exec pg pg_isready -U postgres -d RuoYi >/dev/null 2>&1 && break; sleep 2; done
+          for i in $(seq 1 90); do curl -s --max-time 3 http://127.0.0.1:9200 >/dev/null 2>&1 && break; sleep 2; done
+          export PGPASSWORD=postgres
           if [ '${{ inputs.app }}' = api ]; then
-            docker run -d --name pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=RuoYi -p 5432:5432 postgres:16-alpine
-            for i in $(seq 1 60); do docker exec pg pg_isready -U postgres -d RuoYi >/dev/null 2>&1 && break; sleep 2; done
-            export PGPASSWORD=postgres
             psql -h 127.0.0.1 -U postgres -d RuoYi -v ON_ERROR_STOP=1 -f harness/scripts/v3/ops/parity/sql/schema_jl_data01.sql >/dev/null
             gunzip -c harness/scripts/v3/ops/parity/sql/seed_jl_data01.sql.gz > /tmp/seed.sql
             psql -h 127.0.0.1 -U postgres -d RuoYi -v ON_ERROR_STOP=1 -f /tmp/seed.sql >/dev/null
@@ -235,14 +275,12 @@ jobs:
             docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/schema_carmonitdb.sql
             docker exec -i my mysql -h127.0.0.1 -P3306 --protocol=TCP -uroot -proot -D carmonitdb < harness/scripts/v3/ops/parity/sql/seed_carmonitdb.sql
           fi
-      - name: Download baseline contract + endpoint list
-        if: steps.gate.outputs.run == 'yes'
+      - name: Download baseline contract + endpoint list (reuse downstream.jar/junit.jar)
         uses: actions/download-artifact@v4
         with:
           name: readonly-baseline
           path: baseline
       - name: Prepare JUnit compile
-        if: steps.gate.outputs.run == 'yes'
         shell: bash
         run: |
           set -euo pipefail
@@ -251,20 +289,41 @@ jobs:
           python3 harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints baseline/endpoints.txt --out out/generated
           javac -encoding UTF-8 -source 8 -target 8 -cp out-junit.jar -d out/classes out/generated/*.java
           test -s out-junit.jar
+      - name: Build and start 9902 downstream
+        shell: bash
+        env:
+          SPRING_ELASTICSEARCH_URIS: http://127.0.0.1:9200
+          ELASTICSEARCH_URIS: http://127.0.0.1:9200
+          ES_HOSTS: http://127.0.0.1:9200
+          ELASTICSEARCH_HOST: 127.0.0.1
+          ELASTICSEARCH_PORT: '9200'
+          TOKEN__SECRET: junit-cloud-secret-deterministic-0123456789abcdef
+          HENGDA__SECRET: pytest-only-hengda-signing-key-4d8e1a6b2f9c0357
+        run: |
+          set -euo pipefail
+          export JAVA_HOME="$JAVA_HOME_8_X64"; export PATH="$JAVA_HOME/bin:$PATH"
+          java -jar baseline/downstream.jar --server.port=9902 --spring.main.allow-circular-references=true --spring.main.lazy-initialization=true --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration --spring.datasource.dynamic.datasource.master.url='jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false' --spring.datasource.dynamic.datasource.master.username=postgres --spring.datasource.dynamic.datasource.master.password=postgres --spring.redis.host=127.0.0.1 --spring.redis.port=6379 --token.secret=junit-cloud-secret-deterministic-0123456789abcdef > "$GITHUB_WORKSPACE/downstream.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/downstream.pid"
+          for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/9902) >/dev/null 2>&1 && break; sleep 1; done
+          echo "downstream 9902: $((echo > /dev/tcp/127.0.0.1/9902) >/dev/null 2>&1 && echo READY || echo FAIL)"
       - name: Build and start Python
-        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'python'
+        if: matrix.lang == 'python'
         shell: bash
         env:
           TOKEN__SECRET: junit-cloud-secret-deterministic-0123456789abcdef
           SPRING__DATASOURCE__DRUID__MASTER__URL: "jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8"
           SPRING__DATASOURCE__DRUID__MASTER__USERNAME: root
+          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
           SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: "jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false"
           SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
           SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
           VEHICLE_MONITOR_BASE_URL: "http://127.0.0.1:9902"
           APP_VEHICLEMONITOR__BASEURL: "http://127.0.0.1:9902"
-          SPRING__DATASOURCE__DRUID__MASTER__PASSWORD: root
-          SPRING__DATASOURCE__DRUID__MASTER__DRIVERCLASSNAME: com.mysql.cj.jdbc.Driver
+          SPRING_ELASTICSEARCH_URIS: http://127.0.0.1:9200
+          ELASTICSEARCH_URIS: http://127.0.0.1:9200
+          ES_HOSTS: http://127.0.0.1:9200
+          ELASTICSEARCH_HOST: 127.0.0.1
+          ELASTICSEARCH_PORT: '9200'
           HENGDA__SECRET: pytest-only-hengda-signing-key-4d8e1a6b2f9c0357
         run: |
           set -euo pipefail
@@ -272,21 +331,25 @@ jobs:
           (cd "$DIR" && python3 -m pip install -q -r requirements.txt && python3 -m uvicorn app.main:app --host 127.0.0.1 --port 19903 > "$GITHUB_WORKSPACE/app.log" 2>&1) &
           echo $! > app.pid
       - name: Build and start Go
-        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'go'
+        if: matrix.lang == 'go'
         shell: bash
         env:
           CARMONIT_DATABASE_DSN: "root:root@tcp(127.0.0.1:3306)/carmonitdb?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true"
           CARMONIT_REDIS_ADDR: "127.0.0.1:6379"
           CARMONIT_SERVER_PORT: "19903"
           CARMONIT_TOKEN_SECRET: "junit-cloud-secret-deterministic-0123456789abcdef"
+          CARMONIT_VEHICLEMONITOR_BASEURL: "http://127.0.0.1:9902"
           APP_SERVER_PORT: "19903"
           APP_REDIS_HOST: "127.0.0.1"
           APP_REDIS_PORT: "6379"
           APP_TOKEN_SECRET: "junit-cloud-secret-deterministic-0123456789abcdef"
           APP_KAFKA_BOOTSTRAP_SERVERS: ""
+          APP_VEHICLEMONITOR__BASEURL: "http://127.0.0.1:9902"
           APP_SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: "jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false"
           APP_SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
           APP_SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
+          ELASTICSEARCH_HOST: 127.0.0.1
+          ELASTICSEARCH_PORT: '9200'
         run: |
           set -euo pipefail
           if [ '${{ inputs.app }}' = api ]; then DIR=src/car-monit-api-go; BIN=bin/car-monit-api; CMD="./$BIN -config configs/config.yaml"; PKG=./cmd/api; else DIR=src/car-monit-go; BIN=bin/car-monit-go; CMD="./$BIN -c configs/config.yaml"; PKG=./cmd/server; fi
@@ -296,14 +359,15 @@ jobs:
           eval "$CMD" > "$GITHUB_WORKSPACE/app.log" 2>&1 &
           echo $! > "$GITHUB_WORKSPACE/app.pid"
       - name: Build and start C++
-        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'cpp'
+        if: matrix.lang == 'cpp'
         shell: bash
         env:
           CM_SERVER_PORT: "19903"
           CM_PG_PASSWORD: "postgres"
           CM_KAFKA_ENABLED: "false"
           CM_KAFKA_BOOTSTRAP: ""
-          CM_ES_HOST: ""
+          CM_ES_HOST: 127.0.0.1
+          CM_VEHICLEMONITOR_BASEURL: "http://127.0.0.1:9902"
         run: |
           set -euo pipefail
           if [ '${{ inputs.app }}' = api ]; then DIR=src/car-monit-api-cpp; BUILD=build-release; BIN="$BUILD/car-monit-api"; CONFIG=configs/config.yaml; else DIR=src/car-monit-cpp; BUILD=build; BIN="$BUILD/car-monit-cpp"; CONFIG=config; fi
@@ -314,7 +378,7 @@ jobs:
           "./$BIN" --config "$CONFIG" > "$GITHUB_WORKSPACE/app.log" 2>&1 &
           echo $! > "$GITHUB_WORKSPACE/app.pid"
       - name: Build and start Rust
-        if: steps.gate.outputs.run == 'yes' && matrix.lang == 'rust'
+        if: matrix.lang == 'rust'
         shell: bash
         env:
           APP_SERVER_PORT: "19903"
@@ -331,9 +395,12 @@ jobs:
           APP_REDIS__HOST: 127.0.0.1
           APP_REDIS__PORT: '6379'
           APP_SERVER__PORT: '19903'
+          APP_VEHICLEMONITOR__BASEURL: "http://127.0.0.1:9902"
           APP_SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_URL: "jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false"
           APP_SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_USERNAME: postgres
           APP_SPRING_DATASOURCE_DYNAMIC_DATASOURCE_MASTER_PASSWORD: postgres
+          ELASTICSEARCH_HOST: 127.0.0.1
+          ELASTICSEARCH_PORT: '9200'
         run: |
           set -euo pipefail
           if [ '${{ inputs.app }}' = api ]; then DIR=src/car-monit-api-rust; BIN=target/release/car-monit-api-rust; else DIR=src/car-monit-rust; BIN=target/release/car-monit-rust; fi
@@ -343,7 +410,6 @@ jobs:
           "./$BIN" > "$GITHUB_WORKSPACE/app.log" 2>&1 &
           echo $! > "$GITHUB_WORKSPACE/app.pid"
       - name: Wait candidate and collect contract
-        if: steps.gate.outputs.run == 'yes'
         shell: bash
         env:
           CARMONIT_ADMIN_USER: ${{ secrets.CI_ADMIN_USER }}
@@ -355,7 +421,6 @@ jobs:
           if [ -n "$TOKEN" ]; then export ENDPOINT_HEADERS="Authorization: Bearer ${TOKEN}"; fi
           OUT_DIR="$PWD/out" VARIANT="${{ matrix.lang }}" LABEL=readonly java -jar out-junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/contract-reports
       - name: Compare JSON structure (Java baseline vs candidate)
-        if: steps.gate.outputs.run == 'yes'
         shell: bash
         run: |
           set -uo pipefail
@@ -367,12 +432,11 @@ jobs:
           d = json.load(open('out/structure-compare.json', encoding='utf-8'))
           print("STRUCTURE_PARITY lang=${{ matrix.lang }} total=%d passed=%d failed=%d" % (
               d['total'], d['passed'], d['failed']))
-          # 只读对齐为“如实记录”门禁：不做 100% 强制，差异写入 artifact；由报告阅读方决定是否继续修复。
           with open('out/structure-summary.md', 'w', encoding='utf-8') as f:
               f.write('# 只读端点结构对齐：${{ inputs.app }} / ${{ matrix.lang }}\n\n')
-              f.write('- 判据：Java 基准 code + JSON 键结构一致（键顺序无关），来源 compare-json-structure.py\n')
-              ep_set = '${{ inputs.endpoint_set }}'
-              f.write('- 端点集合：%s\n' % ('真实主键只读端点' if ep_set == 'readonly' else '全量 GET'))
+              f.write('- 判据：Java 基准 code + JSON 键结构一致（键顺序无关），compare-json-structure.py\n')
+              f.write('- 环境：MySQL/PG/Redis/ES 7.17.13 + 9902 api 下游（完整复刻 WSL）\n')
+              f.write('- 端点集合：${{ inputs.endpoint_set }}\n')
               f.write('- 总数 %d / 通过 %d / 差异 %d\n\n' % (d['total'], d['passed'], d['failed']))
               f.write('| 端点 | Java code | 候选 code | Java status | 候选 status | 结构一致 | 通过 |\n')
               f.write('|---|---|---|---|---|---|---|\n')
@@ -382,15 +446,16 @@ jobs:
                       r['baseline_status'], r['candidate_status'], r['structure_match'], r['pass']))
           PY
       - uses: actions/upload-artifact@v4
-        if: always() && steps.gate.outputs.run == 'yes'
+        if: always()
         with:
           name: readonly-${{ matrix.lang }}
           path: |
             out/**
             app.log
+            downstream.log
           retention-days: 30
       - name: Cleanup
         if: always()
         run: |
-          if [ -f "$GITHUB_WORKSPACE/app.pid" ]; then kill "$(cat "$GITHUB_WORKSPACE/app.pid")" 2>/dev/null || true; fi
-          docker rm -f my rd pg 2>/dev/null || true
+          for p in "$GITHUB_WORKSPACE/app.pid" "$GITHUB_WORKSPACE/downstream.pid"; do if [ -f "$p" ]; then kill "$(cat "$p")" 2>/dev/null || true; fi; done
+          docker rm -f my rd pg es 2>/dev/null || true
