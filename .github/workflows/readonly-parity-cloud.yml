@@ -73,7 +73,7 @@ jobs:
           set -euo pipefail
           mkdir -p out
           if [ '${{ inputs.endpoint_set }}' = readonly ]; then
-            cp harness/runtime-logs/real-key-endpoints/${{ inputs.app }}-read-only.txt out/endpoints.txt
+            cp harness/scripts/v3/ops/parity/endpoints/${{ inputs.app }}-read-only.txt out/endpoints.txt
           else
             if [ '${{ inputs.app }}' = api ]; then EP=api-full.txt; else EP=backend-full.txt; fi
             cp "harness/scripts/v3/ops/parity/endpoints/$EP" out/endpoints.txt
