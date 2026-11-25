@@ -71,15 +71,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p selected
+          mkdir -p out
           if [ '${{ inputs.endpoint_set }}' = readonly ]; then
-            cp harness/runtime-logs/real-key-endpoints/${{ inputs.app }}-read-only.txt selected/endpoints.txt
+            cp harness/runtime-logs/real-key-endpoints/${{ inputs.app }}-read-only.txt out/endpoints.txt
           else
             if [ '${{ inputs.app }}' = api ]; then EP=api-full.txt; else EP=backend-full.txt; fi
-            cp "harness/scripts/v3/ops/parity/endpoints/$EP" selected/endpoints.txt
+            cp "harness/scripts/v3/ops/parity/endpoints/$EP" out/endpoints.txt
           fi
-          echo "endpoints=$(wc -l < selected/endpoints.txt)"
-          head -5 selected/endpoints.txt
+          echo "endpoints=$(wc -l < out/endpoints.txt)"
+          head -5 out/endpoints.txt
       - name: Start datastores
         shell: bash
         run: |
@@ -115,7 +115,7 @@ jobs:
           mvn $MAVEN_ARGS -DskipTests -pl "$MODULE" -am package
           mkdir -p ../out/generated ../out/classes
           cp $(ls "$MODULE"/target/*.jar | grep -v original | head -1) ../out/app.jar
-          python3 ../harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints ../selected/endpoints.txt --out ../out/generated
+          python3 ../harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints ../out/endpoints.txt --out ../out/generated
           URL=https://repo.maven.apache.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
           for i in 1 2 3 4; do
             curl -fsSL --retry 3 --retry-delay 5 -o ../out/junit.jar "$URL" && break
@@ -167,7 +167,7 @@ jobs:
           path: |
             out/junit-contract.json
             out/junit.jar
-            selected/endpoints.txt
+            out/endpoints.txt
             out/app.log
           retention-days: 30
       - name: Cleanup
