@@ -139,12 +139,21 @@ jobs:
           mkdir -p ../out/generated ../out/classes
           cp $(ls "$MODULE"/target/*.jar | grep -v original | head -1) ../out/app.jar
           python3 ../harness/scripts/v3/ops/junit/generate_junit_suite.py --endpoints ../out/endpoints.txt --out ../out/generated
-          URL=https://repo.maven.apache.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar
-          for i in 1 2 3 4; do
-            curl -fsSL --retry 3 --retry-delay 5 -o ../out/junit.jar "$URL" && break
-            sleep $((i*5))
+          # 多镜像源回退：CI 共享出口 IP 频繁下载会被 Maven Central 返回 429，单源重试无效
+          JUNIT_VER=1.10.2
+          JUNIT_PATH=org/junit/platform/junit-platform-console-standalone/$JUNIT_VER/junit-platform-console-standalone-$JUNIT_VER.jar
+          URLS=(
+            "https://repo.maven.apache.org/maven2/$JUNIT_PATH"
+            "https://repo1.maven.org/maven2/$JUNIT_PATH"
+            "https://maven.aliyun.com/repository/central/$JUNIT_PATH"
+            "https://mirrors.huaweicloud.com/repository/maven/$JUNIT_PATH"
+          )
+          for URL in "${URLS[@]}"; do
+            echo "try junit.jar from $URL"
+            if curl -fsSL --retry 2 --retry-delay 5 --max-time 120 -o ../out/junit.jar "$URL"; then break; fi
           done
-          test -s ../out/junit.jar
+          test -s ../out/junit.jar || { echo "::error::junit.jar download failed from all mirrors"; exit 1; }
+          ls -lh ../out/junit.jar
           javac -encoding UTF-8 -source 8 -target 8 -cp ../out/junit.jar -d ../out/classes ../out/generated/*.java
       - name: Start 9902 downstream + baseline, collect contract
         shell: bash
@@ -164,6 +173,9 @@ jobs:
           CARMONIT_ADMIN_USER: ${{ secrets.CI_ADMIN_USER }}
           CARMONIT_ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD }}
           LOG_PATH: /tmp/car-monit-logs
+          # 采集器单点读超时：默认 60000ms 会让挂起端点逐个等 60s，190 端点可卡数十分钟；
+          # 缩短到 12s 保证全量端点可在一个 job 内跑完（WSL 正常端点远快于此值）
+          HTTP_TIMEOUT_MS: '12000'
         run: |
           set -euo pipefail
           sudo mkdir -p "$LOG_PATH" /home/ruoyi/logs; sudo chown -R "$(id -u):$(id -g)" "$LOG_PATH" /home/ruoyi; mkdir -p "$LOG_PATH" /home/ruoyi/logs
@@ -414,6 +426,8 @@ jobs:
         env:
           CARMONIT_ADMIN_USER: ${{ secrets.CI_ADMIN_USER }}
           CARMONIT_ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD }}
+          # 同 baseline：缩短单点读超时，避免挂起端点拖垮整个采集（默认 60s）
+          HTTP_TIMEOUT_MS: '12000'
         run: |
           set -euo pipefail
           for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1 && break; sleep 1; done
