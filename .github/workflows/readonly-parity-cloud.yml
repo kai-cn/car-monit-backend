@@ -184,10 +184,20 @@ jobs:
           echo $! > out/downstream.pid
           for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/9902) >/dev/null 2>&1 && break; sleep 1; done
           echo "downstream 9902: $((echo > /dev/tcp/127.0.0.1/9902) >/dev/null 2>&1 && echo READY || echo FAIL)"
-          export JAVA_HOME="$JAVA_HOME_25_X64"; export PATH="$JAVA_HOME/bin:$PATH"
-          java -jar out/app.jar --server.port=19903 --spring.main.allow-circular-references=true --spring.main.lazy-initialization=true --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration --spring.datasource.druid.master.url='jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8' --spring.datasource.druid.master.username=root --spring.datasource.druid.master.password=root --spring.redis.host=127.0.0.1 --spring.redis.port=6379 > out/app.log 2>&1 &
+          # Java 基准 app.jar 必须与本地 WSL 口径一致：Boot 2.x 用 JDK8 启动（JDK25 会因 ASM/CGLIB 不兼容启动失败，
+          # 导致 19903 起不来、契约全 status=0）；数据源按 app 分流：backend=MySQL druid，api=PG dynamic。
+          export JAVA_HOME="$JAVA_HOME_8_X64"; export PATH="$JAVA_HOME/bin:$PATH"
+          if [ '${{ inputs.app }}' = api ]; then
+            java -jar out/app.jar --server.port=19903 --spring.main.allow-circular-references=true --spring.main.lazy-initialization=true --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration --spring.datasource.dynamic.datasource.master.url='jdbc:postgresql://127.0.0.1:5432/RuoYi?characterEncoding=UTF-8&useUnicode=true&useSSL=false' --spring.datasource.dynamic.datasource.master.username=postgres --spring.datasource.dynamic.datasource.master.password=postgres --spring.redis.host=127.0.0.1 --spring.redis.port=6379 --token.secret=junit-cloud-secret-deterministic-0123456789abcdef --spring.elasticsearch.uris=http://127.0.0.1:9200 --vehicle-monitor.base-url=http://127.0.0.1:9902 > out/app.log 2>&1 &
+          else
+            java -jar out/app.jar --server.port=19903 --spring.main.allow-circular-references=true --spring.main.lazy-initialization=true --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration --spring.datasource.druid.master.url='jdbc:mysql://127.0.0.1:3306/carmonitdb?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowMultiQueries=true&serverTimezone=GMT%2B8' --spring.datasource.druid.master.username=root --spring.datasource.druid.master.password=root --spring.datasource.druid.master.driver-class-name=com.mysql.cj.jdbc.Driver --spring.redis.host=127.0.0.1 --spring.redis.port=6379 --token.secret=junit-cloud-secret-deterministic-0123456789abcdef --vehicle-monitor.base-url=http://127.0.0.1:9902 --spring.elasticsearch.uris=http://127.0.0.1:9200 > out/app.log 2>&1 &
+          fi
           echo $! > out/app.pid
           for i in $(seq 1 180); do (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1 && break; sleep 1; done
+          # 启动失败快速止损：若 19903 未监听，打印 app.log 尾部并直接失败，避免产出全 status=0 的假契约
+          if ! (echo > /dev/tcp/127.0.0.1/19903) >/dev/null 2>&1; then
+            echo "::error::baseline app.jar failed to start on 19903"; tail -60 out/app.log; exit 1
+          fi
           TOKEN=$(python3 harness/scripts/v3/ops/junit/junit-auth-token.py --base-url "$BASE_URL" || true)
           if [ -n "$TOKEN" ]; then export ENDPOINT_HEADERS="Authorization: Bearer ${TOKEN}"; fi
           OUT_DIR="$PWD/out" VARIANT=java-master LABEL=readonly-java-master java -jar out/junit.jar execute --class-path out/classes --select-class com.ruoyi.parity.generated.EndpointContractTest --details=summary --reports-dir=out/contract-reports
@@ -197,10 +207,15 @@ jobs:
           python3 - <<'PY'
           import json, sys
           d = json.load(open('out/junit-contract.json', encoding='utf-8'))
-          body_err = sum(1 for r in d.get('endpoints', []) if isinstance(r.get('body'), str) and ('UNAVAILABLE' in r['body'] or 'CIRCUIT_OPEN' in r['body']))
-          print('java-master endpoints=%d error=%s circuit_breaker=%d' % (d.get('endpoint_count', 0), d.get('error'), body_err))
+          eps = d.get('endpoints', [])
+          body_err = sum(1 for r in eps if isinstance(r.get('body'), str) and ('UNAVAILABLE' in r['body'] or 'CIRCUIT_OPEN' in r['body']))
+          zero = sum(1 for r in eps if r.get('status') == 0)
+          print('java-master endpoints=%d error=%s circuit_breaker=%d status_zero=%d' % (d.get('endpoint_count', 0), d.get('error'), body_err, zero))
+          # status=0 表示基准服务未响应（连接失败），全 0 契约会让对拍假失败，必须拦截
           if d.get('error') or d.get('endpoint_count', 0) < 10:
               sys.exit('::error::java-master contract quality gate failed')
+          if eps and zero / float(len(eps)) > 0.5:
+              sys.exit('::error::java-master contract has >50%% status=0 (baseline service unreachable)')
           PY
       - uses: actions/upload-artifact@v4
         if: always()
