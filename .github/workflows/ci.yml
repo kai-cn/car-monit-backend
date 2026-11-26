@@ -168,7 +168,7 @@ jobs:
           retention-days: 14
 
   # ---------------------------------------------------------------------------
-  # Go：go 1.24
+  # Go：go 1.27
   # ---------------------------------------------------------------------------
   # ── job: go ──
   go:
@@ -187,11 +187,11 @@ jobs:
           # only-new-issues 要用 push 前的提交做 diff；多次提交的 push 需要完整历史
           fetch-depth: 0
 
-      - name: 安装 Go 1.24（欧拉仓库没有 1.24）
+      - name: 安装 Go 1.27.4（欧拉仓库没有 1.27）
         run: |
           set -euo pipefail
           dnf install -y tar gzip curl git
-          curl -fsSL https://go.dev/dl/go1.24.13.linux-amd64.tar.gz -o /tmp/go.tgz
+          curl -fsSL https://go.dev/dl/go1.27.4.linux-amd64.tar.gz -o /tmp/go.tgz
           tar -C /usr/local -xzf /tmp/go.tgz
           echo "/usr/local/go/bin" >> "$GITHUB_PATH"
           /usr/local/go/bin/go version
@@ -356,7 +356,7 @@ jobs:
           python3 scripts/parity/check_permissions_runtime.py --base-url http://127.0.0.1:9989
 
   # ---------------------------------------------------------------------------
-  # Rust：rust-toolchain.toml 锁 1.90.0
+  # Rust：rust-toolchain.toml 锁 1.100.0
   # ---------------------------------------------------------------------------
   # ── job: rust ──
   rust:
@@ -376,7 +376,7 @@ jobs:
       # 拉取仓库源码
       - uses: actions/checkout@v4
 
-      - name: 安装 Rust 1.90 + 构建工具（rustup 官方链路）
+      - name: 安装 Rust 1.100 + 构建工具（rustup 官方链路）
         run: |
           set -euo pipefail
           # tzdata 必须显式装：chrono 的 Local 依赖 zoneinfo，缺失时会退回 UTC，
@@ -384,7 +384,7 @@ jobs:
           dnf install -y curl git gcc gcc-c++ make tar gzip tzdata
           echo "时区检查: $(date '+%Y-%m-%dT%H:%M:%S%z')"
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
-            | sh -s -- -y --profile minimal --default-toolchain 1.90.0 --component rustfmt --component clippy
+            | sh -s -- -y --profile minimal --default-toolchain 1.100.0 --component rustfmt --component clippy
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           "$HOME/.cargo/bin/rustc" --version
 

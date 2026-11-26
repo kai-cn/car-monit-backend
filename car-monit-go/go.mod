@@ -1,6 +1,8 @@
 module car-monit-go
 
-go 1.24
+go 1.27
+
+toolchain go1.27.4
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2

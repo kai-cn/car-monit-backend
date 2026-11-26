@@ -43,13 +43,28 @@ sudo dnf install -y git curl tar gzip unzip jq \
 
 按需补装（与流水线保持一致）：
 
-| 工具 | 版本 | 安装方式 |
+> **2026-11-26 本机 WSL（`openEuler-24.03-LTS-SP4`）语言环境已更新**：
+> Go 1.27.4、Rust 最新 stable（rustup）、Python 3.15（uv 管理）已成为本机默认。
+> 旧的 Go 1.24.x / 系统 Rust / 源码编译 Python 3.12 不再作为本机默认工具链。
+> 项目版本已同步：`car-monit-go/go.mod` 为 `go 1.27` + `toolchain go1.27.4`，
+> `car-monit-rust/rust-toolchain.toml` 为 `1.100.0`，与本机全局工具链一致。
+
+| 工具 | 本机版本（2026-11-26） | 安装方式 / 关键环境变量 |
 |---|---|---|
-| Go | 1.24.x | 官方 tarball 解到 `/usr/local/go`，并写入 PATH |
-| Rust | 1.90.0 | `rustup`（`--profile minimal --component rustfmt,clippy`） |
-| Python | 3.12 | 源码编译到 `/usr/local`（欧拉仓库只到 3.11） |
+| Go | 1.27.4 | `sudo tar -C /usr/local -xzf /home/dev/go1.27.4.linux-amd64.tar.gz`；`GOROOT=/usr/local/go`、`GOPATH=/home/dev/go`（保留原有 `pkg/mod` 缓存）、`PATH=$GOROOT/bin:$GOPATH/bin:$PATH` |
+| Rust | latest stable = 1.100.0（rustup） | 删除旧 Rust 后安装 rustup 并 `rustup default stable`（profile minimal + rustfmt/clippy）；`CARGO_HOME=$HOME/.cargo`、`RUSTUP_HOME=$HOME/.rustup`、`PATH=$CARGO_HOME/bin:$PATH` |
+| Python | 3.15（uv 管理） | `uv python install 3.15`；`uv` 在 `$HOME/.local/bin`（加入 PATH），用 `uv venv` 建隔离环境，不再源码编译 |
 | Docker | 可选 | 跑 `cd.yml` 的 buildx 需要；否则把镜像构建留给托管 runner |
 | kubectl | 可选 | 仅在自托管上做 K8s 部署时需要 |
+
+版本校验：
+
+```bash
+go version                 # go1.27.4 linux/amd64
+rustup show                # default toolchain: stable 1.100.0（项目目录内同为 1.100.0）
+uv python list             # 含 cpython-3.15.x
+uv python find 3.15        # 3.15 解释器路径
+```
 
 ## 4. 注册 runner
 

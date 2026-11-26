@@ -17,7 +17,7 @@
 
 | 组件 | 版本 | 说明 |
 |---|---|---|
-| Rust | 1.90（见 `rust-toolchain.toml`） | `rustup default 1.90` |
+| Rust | 1.100.0（`rust-toolchain.toml` 与 `Cargo.toml` 的 `rust-version` 均为 1.100） | 2026-11-26 升级到 rustup stable 1.100.0；项目 `rust-toolchain.toml`、`Dockerfile`（`rust:1.100-bookworm`）、CI 均已同步。环境变量：`CARGO_HOME=$HOME/.cargo`、`RUSTUP_HOME=$HOME/.rustup`、`PATH=$CARGO_HOME/bin:$PATH` |
 | MySQL | 8.x | 与 Java 同一实例/库（默认 `carmonitdb`，端口 3307） |
 | Redis | 6+ | 与 Java 共用（单库 `database=0`） |
 | GaussDB/Forest 上游 | 可选 | `vehicleMonitor.baseUrl`，仅分表同步任务使用 |

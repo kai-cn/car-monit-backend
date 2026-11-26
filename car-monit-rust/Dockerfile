@@ -1,7 +1,7 @@
 # Rust 迁移版镜像。
 # 默认特性不需要 librdkafka（Cargo.toml 里 rdkafka 是 optional，只有 --features kafka 才引入），
 # 所以构建阶段不用装 cmake / libssl-dev，直接用官方 rust 镜像。
-FROM rust:1.90-bookworm AS build
+FROM rust:1.100-bookworm AS build
 WORKDIR /src
 COPY . .
 RUN cargo build --release
