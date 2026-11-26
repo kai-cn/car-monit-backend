@@ -1,0 +1,3008 @@
+[
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/configServiceArea/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/configServiceArea/listQuery",
+  "handler": "listQuery → `list_query`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/base/configServiceArea/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/base/configServiceArea/{fwqbm}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/base/configServiceArea",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/base/configServiceArea",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/base/configServiceArea/{fwqbms}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/config/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/config/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/base/config/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/base/config",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/base/config",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/base/config/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/cdc/status",
+  "handler": "getQueueStatus → `get_queue_status`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/cdc/dead-letters",
+  "handler": "getDeadLetterMessages → `get_dead_letter_messages`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/base/cdc/retry-messages",
+  "handler": "getRetryMessages → `get_retry_messages`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/base/cdc/retry/{messageId}",
+  "handler": "retryMessage → `retry_message`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/base/cdc/retry-all",
+  "handler": "retryAllDeadMessages → `retry_all_dead_messages`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/base/cdc/dead-letters/{messageId}",
+  "handler": "deleteDeadLetterMessage → `delete_dead_letter_message`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/base/cdc/dead-letters/clear",
+  "handler": "clearDeadLetterQueue → `clear_dead_letter_queue`"
+ },
+ {
+  "idx": 8,
+  "method": "GET",
+  "path": "/base/cdc/config",
+  "handler": "getConfig → `get_config`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/fwqjcxx/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/fwqjcxx/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/base/fwqjcxx/{agentPk}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/base/fwqjcxx",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/base/fwqjcxx",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/base/fwqjcxx/{agentPks}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/sfsjcxx/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/sfsjcxx/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/base/sfsjcxx/{agentPk}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/base/sfsjcxx",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/base/sfsjcxx",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/base/sfsjcxx/{agentPks}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/sfzjcxx/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/sfzjcxx/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/base/sfzjcxx/{agentPk}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/base/sfzjcxx",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/base/sfzjcxx",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/base/sfzjcxx/{agentPks}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/geometry/getHenDa",
+  "handler": "getHenDa → `get_hen_da`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/geometry/syncAllGeometry",
+  "handler": "syncAllGeometry → `sync_all_geometry`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/base/geometry/syncAllGeometry1",
+  "handler": "syncAllGeometry1 → `sync_all_geometry1`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/base/geometry/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 5,
+  "method": "GET",
+  "path": "/base/geometry/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 6,
+  "method": "GET",
+  "path": "/base/geometry/{ID}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 7,
+  "method": "POST",
+  "path": "/base/geometry",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 8,
+  "method": "PUT",
+  "path": "/base/geometry",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 9,
+  "method": "DELETE",
+  "path": "/base/geometry/{IDs}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/fwqclls/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/fwqclls/{bigId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/feeGantry/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/feeGantry/{bigId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/feerecords/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/feerecords/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/base/feerecords/{bigId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/feeStationEnter/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/feeStationEnter/{bigId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/feestationexit/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/feestationexit/{bigId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/snapshotflow/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/snapshotflow/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/base/snapshotflow/{bigId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/base/snapshotflow/earliest-time",
+  "handler": "getEarliestSnapshottime → `get_earliest_snapshottime`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/provcapture/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/provcapture/{bigId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/stationcapture/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/stationcapture/{bigId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/gantry/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/gantry/listAll",
+  "handler": "listAll → `list_all`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/base/gantry/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/base/gantry/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/base/gantry",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/base/gantry",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/base/gantry/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/gantryIp/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/gantryIp/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/vehicleweight/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/vehicleweight/{dataSource}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/section/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/section/listAll",
+  "handler": "listAll → `list_all`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/base/section/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/base/section/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/base/section",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/base/section",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/base/section/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/toll/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/toll/listAll",
+  "handler": "listAll → `list_all`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/base/toll/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/base/toll/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/base/toll",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/base/toll",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/base/toll/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/tollStationIp/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/tollStationIp/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/org/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/org/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/base/org/{bigId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/base/org",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/base/org",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/base/org/{bigIds}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/location/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/location/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/fitting/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/fitting/{cid}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/base/trailtracks/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/base/trailtracks/{uuid}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/captchaImage",
+  "handler": "getCode → `get_code`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/common/download",
+  "handler": "fileDownload → `file_download`"
+ },
+ {
+  "idx": 2,
+  "method": "POST",
+  "path": "/common/upload",
+  "handler": "uploadFile → `upload_file`"
+ },
+ {
+  "idx": 3,
+  "method": "POST",
+  "path": "/common/uploads",
+  "handler": "uploadFiles → `upload_files`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/common/download/resource",
+  "handler": "resourceDownload → `resource_download`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/downTemplate/{type}",
+  "handler": "downExcel → `down_excel`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/flow/applyinfo/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/flow/applyinfo/listAll",
+  "handler": "listAll → `list_all`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/flow/applyinfo/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/flow/applyinfo/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/flow/applyinfo",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/flow/applyinfo",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/flow/applyinfo/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/flow/currentnode/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/flow/currentnode/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/flow/currentnode/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/flow/currentnode/getInfoByBillId/{billOid}",
+  "handler": "getInfoByBillId → `get_info_by_bill_id`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/flow/currentnode",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/flow/currentnode",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/flow/currentnode/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 8,
+  "method": "PUT",
+  "path": "/flow/currentnode/saveFlowAuit",
+  "handler": "saveFlowAuit → `save_flow_auit`"
+ },
+ {
+  "idx": 9,
+  "method": "POST",
+  "path": "/flow/currentnode/submitReturn",
+  "handler": "submitReturn → `submit_return`"
+ },
+ {
+  "idx": 10,
+  "method": "POST",
+  "path": "/flow/currentnode/submitEntrustFlow",
+  "handler": "submitEntrustFlow → `submit_entrust_flow`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/flow/flowlist/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/flow/flowlist/listnew",
+  "handler": "listnew → `listnew`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/flow/flowlist/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/flow/flowlist/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/flow/flowlist",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/flow/flowlist",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/flow/flowlist/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/flow/messagedispose/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/flow/messagedispose/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/flow/messagedispose/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/flow/messagedispose",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/flow/messagedispose",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/flow/messagedispose/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/flow/messagedispose/delmes/{mid}",
+  "handler": "removeFlowMessage → `remove_flow_message`"
+ },
+ {
+  "idx": 8,
+  "method": "DELETE",
+  "path": "/flow/messagedispose/szzdmes/{mid}",
+  "handler": "szzdFlowMessage → `szzd_flow_message`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/flow/messageinfo/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/flow/messageinfo/listyb",
+  "handler": "listyb → `listyb`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/flow/messageinfo/listyj",
+  "handler": "listyj → `listyj`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/flow/messageinfo/listxx",
+  "handler": "listxx → `listxx`"
+ },
+ {
+  "idx": 5,
+  "method": "GET",
+  "path": "/flow/messageinfo/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 6,
+  "method": "GET",
+  "path": "/flow/messageinfo/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/flow/messageinfo/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 8,
+  "method": "GET",
+  "path": "/flow/messageinfo/exportShrz",
+  "handler": "exportShrz → `export_shrz`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/flow/flowname/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/flow/flowname/listQuery",
+  "handler": "listQuery → `list_query`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/flow/flowname/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/flow/flowname/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/flow/flowname",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/flow/flowname",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/flow/flowname/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 8,
+  "method": "POST",
+  "path": "/flow/flowname/tbFlow",
+  "handler": "tbFlow → `tb_flow`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/flow/flowtemplate/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/flow/flowtemplate/flowlist",
+  "handler": "flowlist → `flowlist`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/flow/flowtemplate/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/flow/flowtemplate/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/flow/flowtemplate",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/flow/flowtemplate",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/flow/flowtemplate/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/tool/gen/list",
+  "handler": "genList → `gen_list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/tool/gen/all/list",
+  "handler": "getAllGenerateTableList → `get_all_generate_table_list`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/tool/gen/{talbleId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/tool/gen/db/list",
+  "handler": "dataList → `data_list`"
+ },
+ {
+  "idx": 5,
+  "method": "GET",
+  "path": "/tool/gen/column/{talbleId}",
+  "handler": "columnList → `column_list`"
+ },
+ {
+  "idx": 6,
+  "method": "POST",
+  "path": "/tool/gen/getColumnList",
+  "handler": "getColumnList → `get_column_list`"
+ },
+ {
+  "idx": 7,
+  "method": "POST",
+  "path": "/tool/gen/getAllColumnList",
+  "handler": "getAllColumnList → `get_all_column_list`"
+ },
+ {
+  "idx": 8,
+  "method": "POST",
+  "path": "/tool/gen/importTable",
+  "handler": "importTableSave → `import_table_save`"
+ },
+ {
+  "idx": 9,
+  "method": "PUT",
+  "path": "/tool/gen",
+  "handler": "editSave → `edit_save`"
+ },
+ {
+  "idx": 10,
+  "method": "DELETE",
+  "path": "/tool/gen/{tableIds}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 11,
+  "method": "GET",
+  "path": "/tool/gen/preview/{tableId}",
+  "handler": "preview → `preview`"
+ },
+ {
+  "idx": 12,
+  "method": "GET",
+  "path": "/tool/gen/download/{tableName}",
+  "handler": "download → `download`"
+ },
+ {
+  "idx": 13,
+  "method": "GET",
+  "path": "/tool/gen/genCode/{tableName}",
+  "handler": "genCode → `gen_code`"
+ },
+ {
+  "idx": 14,
+  "method": "GET",
+  "path": "/tool/gen/synchDb/{tableName}",
+  "handler": "synchDb → `synch_db`"
+ },
+ {
+  "idx": 15,
+  "method": "GET",
+  "path": "/tool/gen/batchGenCode",
+  "handler": "batchGenCode → `batch_gen_code`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/bigScreen/carStatistics",
+  "handler": "getCarStatistics → `get_car_statistics`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/bigScreen/carLocation",
+  "handler": "getCarLocation → `get_car_location`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/bigScreen/sectionList",
+  "handler": "getSectionList → `get_section_list`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/manager/bigScreen/tollGantryFwqList",
+  "handler": "getTollList → `get_toll_list`"
+ },
+ {
+  "idx": 5,
+  "method": "GET",
+  "path": "/manager/bigScreen/carVoList",
+  "handler": "carVoList → `car_vo_list`"
+ },
+ {
+  "idx": 6,
+  "method": "GET",
+  "path": "/manager/bigScreen/carAudit",
+  "handler": "getCarAudit → `get_car_audit`"
+ },
+ {
+  "idx": 7,
+  "method": "GET",
+  "path": "/manager/bigScreen/carWarning",
+  "handler": "getCarWarning → `get_car_warning`"
+ },
+ {
+  "idx": 8,
+  "method": "GET",
+  "path": "/manager/bigScreen/exceptionCar",
+  "handler": "getExceptionCar → `get_exception_car`"
+ },
+ {
+  "idx": 9,
+  "method": "GET",
+  "path": "/manager/bigScreen/topTen",
+  "handler": "topTen → `top_ten`"
+ },
+ {
+  "idx": 10,
+  "method": "GET",
+  "path": "/manager/bigScreen/orgList",
+  "handler": "getOrgList → `get_org_list`"
+ },
+ {
+  "idx": 11,
+  "method": "GET",
+  "path": "/manager/bigScreen/incomeStatistic",
+  "handler": "incomeStatistic → `income_statistic`"
+ },
+ {
+  "idx": 12,
+  "method": "GET",
+  "path": "/manager/bigScreen/exceptRecordList",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/busstest/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/busstest/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/busstest/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/manager/busstest",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/manager/busstest",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/manager/busstest/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 7,
+  "method": "POST",
+  "path": "/manager/busstest/syncCurrentTrack",
+  "handler": "syncCurrentTrack → `sync_current_track`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/aduitfree/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/aduitfree/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/aduitfree/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/manager/aduitfree",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/manager/aduitfree",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/manager/aduitfree/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 7,
+  "method": "GET",
+  "path": "/manager/aduitfree/incomeStatics",
+  "handler": "incomeStatics → `income_statics`"
+ },
+ {
+  "idx": 8,
+  "method": "GET",
+  "path": "/manager/aduitfree/exportIncomeStatics",
+  "handler": "exportIncomeStatics → `export_income_statics`"
+ },
+ {
+  "idx": 9,
+  "method": "GET",
+  "path": "/manager/aduitfree/incomeDetailList",
+  "handler": "incomeDetailList → `income_detail_list`"
+ },
+ {
+  "idx": 10,
+  "method": "GET",
+  "path": "/manager/aduitfree/exportIncomeDetailList",
+  "handler": "exportIncomeDetailList → `export_income_detail_list`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/confimfree/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/confimfree/listCarNo",
+  "handler": "listCarNo → `list_car_no`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/confimfree/listCount",
+  "handler": "listCount → `list_count`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/manager/confimfree/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 5,
+  "method": "GET",
+  "path": "/manager/confimfree/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 6,
+  "method": "POST",
+  "path": "/manager/confimfree",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 7,
+  "method": "PUT",
+  "path": "/manager/confimfree",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 8,
+  "method": "DELETE",
+  "path": "/manager/confimfree/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 9,
+  "method": "GET",
+  "path": "/manager/confimfree/except/{exceptIds}",
+  "handler": "getExceptIds → `get_except_ids`"
+ },
+ {
+  "idx": 10,
+  "method": "GET",
+  "path": "/manager/confimfree/concernedList",
+  "handler": "concernedList → `concerned_list`"
+ },
+ {
+  "idx": 11,
+  "method": "GET",
+  "path": "/manager/confimfree/exportConcernedList",
+  "handler": "exportConcernedList → `export_concerned_list`"
+ },
+ {
+  "idx": 12,
+  "method": "GET",
+  "path": "/manager/confimfree/carStatics",
+  "handler": "getCarStatics → `get_car_statics`"
+ },
+ {
+  "idx": 13,
+  "method": "GET",
+  "path": "/manager/confimfree/exportCarStatics",
+  "handler": "exportCarStatics → `export_car_statics`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/exceptrecord/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/exceptrecord/listCarNo",
+  "handler": "listCarNo → `list_car_no`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/exceptrecord/listCarOrgId",
+  "handler": "listCarOrgId → `list_car_org_id`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/manager/exceptrecord/exportOrgId",
+  "handler": "exportOrgId → `export_org_id`"
+ },
+ {
+  "idx": 5,
+  "method": "GET",
+  "path": "/manager/exceptrecord/listExceptId",
+  "handler": "listExceptId → `list_except_id`"
+ },
+ {
+  "idx": 6,
+  "method": "GET",
+  "path": "/manager/exceptrecord/exceptRecordCount",
+  "handler": "exceptRecordCount → `except_record_count`"
+ },
+ {
+  "idx": 7,
+  "method": "GET",
+  "path": "/manager/exceptrecord/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 8,
+  "method": "GET",
+  "path": "/manager/exceptrecord/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 9,
+  "method": "POST",
+  "path": "/manager/exceptrecord",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 10,
+  "method": "PUT",
+  "path": "/manager/exceptrecord",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 11,
+  "method": "DELETE",
+  "path": "/manager/exceptrecord/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 12,
+  "method": "GET",
+  "path": "/manager/exceptrecord/getConfirmId/{id}",
+  "handler": "getConfirmId → `get_confirm_id`"
+ },
+ {
+  "idx": 13,
+  "method": "POST",
+  "path": "/manager/exceptrecord/import",
+  "handler": "doImport → `do_import`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/feerecord/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/feerecord/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/feerecord/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/manager/feerecord",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/manager/feerecord",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/manager/feerecord/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/carinfo/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/carinfo/listAll",
+  "handler": "listAll → `list_all`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/carinfo/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/manager/carinfo/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/manager/carinfo",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/manager/carinfo",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/manager/carinfo/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 8,
+  "method": "POST",
+  "path": "/manager/carinfo/import",
+  "handler": "doImport → `do_import`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/querylog/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/querylog/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 3,
+  "method": "POST",
+  "path": "/manager/querylog",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 4,
+  "method": "PUT",
+  "path": "/manager/querylog",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 5,
+  "method": "DELETE",
+  "path": "/manager/querylog/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 6,
+  "method": "GET",
+  "path": "/manager/querylog/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/routedetail/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/routedetail/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/routedetail/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/manager/routedetail",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/manager/routedetail",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/manager/routedetail/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/routeinfo/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/routeinfo/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/routeinfo/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/manager/routeinfo",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/manager/routeinfo",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/manager/routeinfo/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/splitrecord/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/splitrecord/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/splitrecord/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/manager/splitrecord",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/manager/splitrecord",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/manager/splitrecord/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/carsuspiciousback/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/carsuspiciousback/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/carsuspiciousback/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/manager/carsuspiciousback",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/manager/carsuspiciousback",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/manager/carsuspiciousback/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/suspiciouscheck/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/suspiciouscheck/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/suspiciouscheck/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/manager/suspiciouscheck",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/manager/suspiciouscheck",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/manager/suspiciouscheck/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/suspicious/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/suspicious/listCarNo",
+  "handler": "listCarNo → `list_car_no`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/suspicious/listFileCarNo",
+  "handler": "listFileCarNo → `list_file_car_no`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/manager/suspicious/exportAbnormalPassage",
+  "handler": "exportAbnormalPassage → `export_abnormal_passage`"
+ },
+ {
+  "idx": 5,
+  "method": "GET",
+  "path": "/manager/suspicious/listAll",
+  "handler": "listAll → `list_all`"
+ },
+ {
+  "idx": 6,
+  "method": "GET",
+  "path": "/manager/suspicious/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 7,
+  "method": "GET",
+  "path": "/manager/suspicious/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 8,
+  "method": "POST",
+  "path": "/manager/suspicious",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 9,
+  "method": "PUT",
+  "path": "/manager/suspicious",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 10,
+  "method": "DELETE",
+  "path": "/manager/suspicious/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 11,
+  "method": "PUT",
+  "path": "/manager/suspicious/check",
+  "handler": "check → `check`"
+ },
+ {
+  "idx": 12,
+  "method": "POST",
+  "path": "/manager/suspicious/syncSuspiciousCarTask",
+  "handler": "syncSuspiciousCarTask → `sync_suspicious_car_task`"
+ },
+ {
+  "idx": 13,
+  "method": "GET",
+  "path": "/manager/suspicious/listHistory",
+  "handler": "listHistory → `list_history`"
+ },
+ {
+  "idx": 14,
+  "method": "GET",
+  "path": "/manager/suspicious/history/{id}",
+  "handler": "gethistoryInfo → `gethistory_info`"
+ },
+ {
+  "idx": 15,
+  "method": "GET",
+  "path": "/manager/suspicious/exportHistory",
+  "handler": "exportHistory → `export_history`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/cartrackinfo/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/cartrackinfo/listByCarId",
+  "handler": "listByCarId → `list_by_car_id`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/cartrackinfo/listByCarByTime",
+  "handler": "listByCarByTime → `list_by_car_by_time`"
+ },
+ {
+  "idx": 4,
+  "method": "PUT",
+  "path": "/manager/cartrackinfo/changeTrailInfo",
+  "handler": "changeTrailInfo → `change_trail_info`"
+ },
+ {
+  "idx": 5,
+  "method": "GET",
+  "path": "/manager/cartrackinfo/carSnapShot",
+  "handler": "carSnapShot → `car_snap_shot`"
+ },
+ {
+  "idx": 6,
+  "method": "GET",
+  "path": "/manager/cartrackinfo/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 7,
+  "method": "GET",
+  "path": "/manager/cartrackinfo/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 8,
+  "method": "POST",
+  "path": "/manager/cartrackinfo",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 9,
+  "method": "PUT",
+  "path": "/manager/cartrackinfo",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 10,
+  "method": "DELETE",
+  "path": "/manager/cartrackinfo/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/carwarning/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/carwarning/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/carwarning/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/manager/carwarning",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/manager/carwarning",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/manager/carwarning/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/warningrule/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/warningrule/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/warningrule/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/manager/warningrule",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/manager/warningrule",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/manager/warningrule/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/whiteinfo/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/whiteinfo/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/whiteinfo/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/manager/whiteinfo",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/manager/whiteinfo",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/manager/whiteinfo/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/gantrycar/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/gantrycar/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/gantrycar/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/manager/gantrycar",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/manager/gantrycar",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/manager/gantrycar/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/manager/gantrytrade/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/manager/gantrytrade/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/manager/gantrytrade/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/manager/gantrytrade",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/manager/gantrytrade",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/manager/gantrytrade/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/monitor/cache",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/monitor/server",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/monitor/logininfor/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/monitor/logininfor/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "DELETE",
+  "path": "/monitor/logininfor/{infoIds}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 4,
+  "method": "DELETE",
+  "path": "/monitor/logininfor/clean",
+  "handler": "clean → `clean`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/monitor/operlog/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/monitor/operlog/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "DELETE",
+  "path": "/monitor/operlog/{operIds}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 4,
+  "method": "DELETE",
+  "path": "/monitor/operlog/clean",
+  "handler": "clean → `clean`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/monitor/online/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "DELETE",
+  "path": "/monitor/online/{tokenId}",
+  "handler": "forceLogout → `force_logout`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/monitor/job/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/monitor/job/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/monitor/job/{jobId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/monitor/job",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/monitor/job",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/monitor/job/changeStatus",
+  "handler": "changeStatus → `change_status`"
+ },
+ {
+  "idx": 7,
+  "method": "PUT",
+  "path": "/monitor/job/run",
+  "handler": "run → `run`"
+ },
+ {
+  "idx": 8,
+  "method": "DELETE",
+  "path": "/monitor/job/{jobIds}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/monitor/jobLog/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/monitor/jobLog/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/monitor/jobLog/{configId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "DELETE",
+  "path": "/monitor/jobLog/{jobLogIds}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 5,
+  "method": "DELETE",
+  "path": "/monitor/jobLog/clean",
+  "handler": "clean → `clean`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/system/config/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/system/config/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/system/config/{configId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/system/config/configKey/{configKey}",
+  "handler": "getConfigKey → `get_config_key`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/system/config",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/system/config",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/system/config/{configIds}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 8,
+  "method": "DELETE",
+  "path": "/system/config/clearCache",
+  "handler": "clearCache → `clear_cache`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/system/dept/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/system/dept/getList",
+  "handler": "getList → `get_list`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/system/dept/list/exclude/{deptId}",
+  "handler": "excludeChild → `exclude_child`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/system/dept/{deptId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 5,
+  "method": "GET",
+  "path": "/system/dept/treeselect",
+  "handler": "treeselect → `treeselect`"
+ },
+ {
+  "idx": 6,
+  "method": "GET",
+  "path": "/system/dept/treeselectNew",
+  "handler": "treeselectNew → `treeselect_new`"
+ },
+ {
+  "idx": 7,
+  "method": "GET",
+  "path": "/system/dept/roleDeptTreeselect/{roleId}",
+  "handler": "roleDeptTreeselect → `role_dept_treeselect`"
+ },
+ {
+  "idx": 8,
+  "method": "POST",
+  "path": "/system/dept",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 9,
+  "method": "PUT",
+  "path": "/system/dept",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 10,
+  "method": "DELETE",
+  "path": "/system/dept/{deptId}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 11,
+  "method": "GET",
+  "path": "/system/dept/getCompanyList",
+  "handler": "getCompanyList → `get_company_list`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/system/dict/data/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/system/dict/data/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/system/dict/data/{dictCode}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/system/dict/data/type/{dictType}",
+  "handler": "dictType → `dict_type`"
+ },
+ {
+  "idx": 5,
+  "method": "GET",
+  "path": "/system/dict/data/typemore/{dictType}",
+  "handler": "dictTypeMore → `dict_type_more`"
+ },
+ {
+  "idx": 6,
+  "method": "POST",
+  "path": "/system/dict/data",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 7,
+  "method": "PUT",
+  "path": "/system/dict/data",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 8,
+  "method": "DELETE",
+  "path": "/system/dict/data/{dictCodes}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/system/dict/type/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/system/dict/type/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/system/dict/type/{dictId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/system/dict/type",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/system/dict/type",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/system/dict/type/{dictIds}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/system/dict/type/clearCache",
+  "handler": "clearCache → `clear_cache`"
+ },
+ {
+  "idx": 8,
+  "method": "GET",
+  "path": "/system/dict/type/optionselect",
+  "handler": "optionselect → `optionselect`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/system/file/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/system/file/getInfoById/{id}",
+  "handler": "getInfoById → `get_info_by_id`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/system/file/{ids}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/system/file/upload",
+  "handler": "upload → `upload`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/system/file/uploadByUrl",
+  "handler": "uploadByUrl → `upload_by_url`"
+ },
+ {
+  "idx": 6,
+  "method": "POST",
+  "path": "/system/file/uploadSupplier",
+  "handler": "uploadSupplier → `upload_supplier`"
+ },
+ {
+  "idx": 7,
+  "method": "POST",
+  "path": "/system/file/uploadPdf",
+  "handler": "uploadPdf → `upload_pdf`"
+ },
+ {
+  "idx": 8,
+  "method": "GET",
+  "path": "/system/file/{bucket}/{fileName}",
+  "handler": "file → `file`"
+ },
+ {
+  "idx": 9,
+  "method": "GET",
+  "path": "/system/file/view/{bucket}/{fileName}",
+  "handler": "fileview → `fileview`"
+ },
+ {
+  "idx": 10,
+  "method": "DELETE",
+  "path": "/system/file/del/{id}",
+  "handler": "removeById → `remove_by_id`"
+ },
+ {
+  "idx": 11,
+  "method": "DELETE",
+  "path": "/system/file/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 12,
+  "method": "POST",
+  "path": "/system/file/uploadFileId",
+  "handler": "uploadFileId → `upload_file_id`"
+ },
+ {
+  "idx": 13,
+  "method": "POST",
+  "path": "/system/file/uploadFileEnc",
+  "handler": "uploadFileEnc → `upload_file_enc`"
+ },
+ {
+  "idx": 14,
+  "method": "PUT",
+  "path": "/system/file",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 15,
+  "method": "GET",
+  "path": "/system/file/getNewCa",
+  "handler": "getNewCa → `get_new_ca`"
+ },
+ {
+  "idx": 16,
+  "method": "POST",
+  "path": "/system/file/updateCAFile",
+  "handler": "updateCAFile → `update_ca_file`"
+ },
+ {
+  "idx": 17,
+  "method": "POST",
+  "path": "/system/file/uploadFile",
+  "handler": "upload → `upload`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/",
+  "handler": "index → `index`"
+ },
+ {
+  "idx": 2,
+  "method": "POST",
+  "path": "/",
+  "handler": "index → `index`"
+ },
+ {
+  "idx": 3,
+  "method": "PUT",
+  "path": "/",
+  "handler": "index → `index`"
+ },
+ {
+  "idx": 4,
+  "method": "DELETE",
+  "path": "/",
+  "handler": "index → `index`"
+ },
+ {
+  "idx": 5,
+  "method": "PATCH",
+  "path": "/",
+  "handler": "index → `index`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/system/indexmenu/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/system/indexmenu/mylist",
+  "handler": "getSysIndexMenulist → `get_sys_index_menulist`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/system/indexmenu/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/system/indexmenu/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/system/indexmenu",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/system/indexmenu",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/system/indexmenu/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "POST",
+  "path": "/login",
+  "handler": "login → `login`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/getInfo",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/getRouters",
+  "handler": "getRouters → `get_routers`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/system/menu/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/system/menu/{menuId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/system/menu/treeselect",
+  "handler": "treeselect → `treeselect`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/system/menu/roleMenuTreeselect/{roleId}",
+  "handler": "roleMenuTreeselect → `role_menu_treeselect`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/system/menu",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/system/menu",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/system/menu/{menuId}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/system/notice/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/system/notice/listquery",
+  "handler": "listquery → `listquery`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/system/notice/{noticeId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/system/notice/view/{noticeId}",
+  "handler": "getViewInfo → `get_view_info`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/system/notice",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/system/notice",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/system/notice/{noticeIds}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/system/post/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/system/post/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/system/post/{postId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/system/post",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/system/post",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "DELETE",
+  "path": "/system/post/{postIds}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 7,
+  "method": "GET",
+  "path": "/system/post/optionselect",
+  "handler": "optionselect → `optionselect`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/system/user/profile",
+  "handler": "profile → `profile`"
+ },
+ {
+  "idx": 2,
+  "method": "PUT",
+  "path": "/system/user/profile",
+  "handler": "updateProfile → `update_profile`"
+ },
+ {
+  "idx": 3,
+  "method": "PUT",
+  "path": "/system/user/profile/updatePwd",
+  "handler": "updatePwd → `update_pwd`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/system/user/profile/avatar",
+  "handler": "avatar → `avatar`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/system/role/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/system/role/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/system/role/{roleId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 4,
+  "method": "POST",
+  "path": "/system/role",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 5,
+  "method": "PUT",
+  "path": "/system/role",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/system/role/dataScope",
+  "handler": "dataScope → `data_scope`"
+ },
+ {
+  "idx": 7,
+  "method": "PUT",
+  "path": "/system/role/changeStatus",
+  "handler": "changeStatus → `change_status`"
+ },
+ {
+  "idx": 8,
+  "method": "DELETE",
+  "path": "/system/role/{roleIds}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 9,
+  "method": "GET",
+  "path": "/system/role/optionselect",
+  "handler": "optionselect → `optionselect`"
+ },
+ {
+  "idx": 10,
+  "method": "GET",
+  "path": "/system/role/selectlist",
+  "handler": "selectlist → `selectlist`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/system/upgradeInfo/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/system/upgradeInfo/newest",
+  "handler": "newest → `newest`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/system/upgradeInfo/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/system/upgradeInfo/{id}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 5,
+  "method": "POST",
+  "path": "/system/upgradeInfo",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 6,
+  "method": "PUT",
+  "path": "/system/upgradeInfo",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 7,
+  "method": "DELETE",
+  "path": "/system/upgradeInfo/{ids}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/system/user/list",
+  "handler": "list → `list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/system/user/listAll",
+  "handler": "listAll → `list_all`"
+ },
+ {
+  "idx": 3,
+  "method": "GET",
+  "path": "/system/user/listTenantIdAll",
+  "handler": "listTenantIdAll → `list_tenant_id_all`"
+ },
+ {
+  "idx": 4,
+  "method": "GET",
+  "path": "/system/user/listutil",
+  "handler": "listutil → `listutil`"
+ },
+ {
+  "idx": 5,
+  "method": "GET",
+  "path": "/system/user/listSameUtil",
+  "handler": "listSameUtil → `list_same_util`"
+ },
+ {
+  "idx": 6,
+  "method": "GET",
+  "path": "/system/user/listMy",
+  "handler": "listMy → `list_my`"
+ },
+ {
+  "idx": 7,
+  "method": "GET",
+  "path": "/system/user/export",
+  "handler": "export → `export`"
+ },
+ {
+  "idx": 8,
+  "method": "POST",
+  "path": "/system/user/importData",
+  "handler": "importData → `import_data`"
+ },
+ {
+  "idx": 9,
+  "method": "GET",
+  "path": "/system/user/importTemplate",
+  "handler": "importTemplate → `import_template`"
+ },
+ {
+  "idx": 10,
+  "method": "GET",
+  "path": "/system/user/",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 11,
+  "method": "GET",
+  "path": "/system/user/{userId}",
+  "handler": "getInfo → `get_info`"
+ },
+ {
+  "idx": 12,
+  "method": "POST",
+  "path": "/system/user",
+  "handler": "add → `add`"
+ },
+ {
+  "idx": 13,
+  "method": "PUT",
+  "path": "/system/user",
+  "handler": "edit → `edit`"
+ },
+ {
+  "idx": 14,
+  "method": "DELETE",
+  "path": "/system/user/{userIds}",
+  "handler": "remove → `remove`"
+ },
+ {
+  "idx": 15,
+  "method": "PUT",
+  "path": "/system/user/resetPwd",
+  "handler": "resetPwd → `reset_pwd`"
+ },
+ {
+  "idx": 16,
+  "method": "PUT",
+  "path": "/system/user/changeStatus",
+  "handler": "changeStatus → `change_status`"
+ },
+ {
+  "idx": 17,
+  "method": "PUT",
+  "path": "/system/user/bindUky",
+  "handler": "bindUky → `bind_uky`"
+ },
+ {
+  "idx": 18,
+  "method": "GET",
+  "path": "/system/user/getroleUser/{roleCode}",
+  "handler": "getroleUser → `getrole_user`"
+ },
+ {
+  "idx": 19,
+  "method": "GET",
+  "path": "/system/user/list/dept",
+  "handler": "listByDept → `list_by_dept`"
+ },
+ {
+  "idx": 20,
+  "method": "GET",
+  "path": "/system/user/currentUser",
+  "handler": "selectCurrentUser → `select_current_user`"
+ },
+ {
+  "idx": 1,
+  "method": "GET",
+  "path": "/test/user/list",
+  "handler": "userList → `user_list`"
+ },
+ {
+  "idx": 2,
+  "method": "GET",
+  "path": "/test/user/{userId}",
+  "handler": "getUser → `get_user`"
+ },
+ {
+  "idx": 3,
+  "method": "POST",
+  "path": "/test/user/save",
+  "handler": "save → `save`"
+ },
+ {
+  "idx": 4,
+  "method": "PUT",
+  "path": "/test/user/update",
+  "handler": "update → `update`"
+ },
+ {
+  "idx": 5,
+  "method": "DELETE",
+  "path": "/test/user/{userId}",
+  "handler": "delete → `delete`"
+ }
+]
