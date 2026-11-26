@@ -5,7 +5,7 @@ GO ?= go
 BIN_DIR := bin
 SERVER := $(BIN_DIR)/carmonit-server
 CONFIG ?= configs/config.yaml
-GOLANGCI_LINT_VERSION ?= v2.1.6
+GOLANGCI_LINT_VERSION ?= v2.15.0
 BASE_URL ?= http://127.0.0.1:9989
 
 # -buildvcs=false：worktree / CI 环境下 .git 状态可能不完整，避免 VCS stamping 失败。

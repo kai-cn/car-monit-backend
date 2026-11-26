@@ -230,7 +230,9 @@ jobs:
         # "只比上一个提交"，在迁移分支上则只拦分支自己引入的问题。
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v2.1.6
+          # Go 1.27 目标需要用 go1.27+ 编译的 golangci-lint；v2.1.6 是 go1.24 编译的会报
+          # "Go language version (go1.24) ... lower than the targeted Go version (1.27.4)"。
+          version: v2.15.0
           working-directory: car-monit-go
           args: --timeout=5m ${{ github.ref == 'refs/heads/master' && '--new-from-rev=HEAD~' || '--new-from-merge-base=origin/master' }}
 
