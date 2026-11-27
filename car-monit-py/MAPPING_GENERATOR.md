@@ -100,21 +100,21 @@
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/tool/gen/{tableIds}` | `tool:gen:remove` | 代码生成 / DELETE |
-| `getAllGenerateTableList` | `—` | GET `/tool/gen/all/list` | `—` | — |
-| `batchGenCode` | `—` | GET `/tool/gen/batchGenCode` | `tool:gen:code` | 代码生成 / GENCODE |
-| `columnList` | `—` | GET `/tool/gen/column/{talbleId}` | `tool:gen:list` | — |
-| `dataList` | `—` | GET `/tool/gen/db/list` | `tool:gen:list` | — |
-| `download` | `—` | GET `/tool/gen/download/{tableName}` | `tool:gen:code` | 代码生成 / GENCODE |
-| `genCode` | `—` | GET `/tool/gen/genCode/{tableName}` | `tool:gen:code` | 代码生成 / GENCODE |
-| `genList` | `—` | GET `/tool/gen/list` | `tool:gen:list` | — |
-| `preview` | `—` | GET `/tool/gen/preview/{tableId}` | `tool:gen:preview` | — |
-| `synchDb` | `—` | GET `/tool/gen/synchDb/{tableName}` | `tool:gen:edit` | 代码生成 / UPDATE |
-| `getInfo` | `—` | GET `/tool/gen/{talbleId}` | `tool:gen:query` | — |
-| `getAllColumnList` | `—` | POST `/tool/gen/getAllColumnList` | `—` | — |
-| `getColumnList` | `—` | POST `/tool/gen/getColumnList` | `—` | — |
-| `importTableSave` | `—` | POST `/tool/gen/importTable` | `tool:gen:list` | 代码生成 / IMPORT |
-| `editSave` | `—` | PUT `/tool/gen` | `tool:gen:edit` | 代码生成 / UPDATE |
+| `remove` | `remove` | DELETE `/tool/gen/{tableIds}` | `tool:gen:remove` | 代码生成 / DELETE |
+| `getAllGenerateTableList` | `get_all_generate_table_list` | GET `/tool/gen/all/list` | `—` | — |
+| `batchGenCode` | `batch_gen_code` | GET `/tool/gen/batchGenCode` | `tool:gen:code` | 代码生成 / GENCODE |
+| `columnList` | `column_list` | GET `/tool/gen/column/{talbleId}` | `tool:gen:list` | — |
+| `dataList` | `data_list` | GET `/tool/gen/db/list` | `tool:gen:list` | — |
+| `download` | `download` | GET `/tool/gen/download/{tableName}` | `tool:gen:code` | 代码生成 / GENCODE |
+| `genCode` | `gen_code` | GET `/tool/gen/genCode/{tableName}` | `tool:gen:code` | 代码生成 / GENCODE |
+| `genList` | `gen_list` | GET `/tool/gen/list` | `tool:gen:list` | — |
+| `preview` | `preview` | GET `/tool/gen/preview/{tableId}` | `tool:gen:preview` | — |
+| `synchDb` | `synch_db` | GET `/tool/gen/synchDb/{tableName}` | `tool:gen:edit` | 代码生成 / UPDATE |
+| `getInfo` | `get_info` | GET `/tool/gen/{talbleId}` | `tool:gen:query` | — |
+| `getAllColumnList` | `get_all_column_list` | POST `/tool/gen/getAllColumnList` | `—` | — |
+| `getColumnList` | `get_column_list` | POST `/tool/gen/getColumnList` | `—` | — |
+| `importTableSave` | `import_table_save` | POST `/tool/gen/importTable` | `tool:gen:list` | 代码生成 / IMPORT |
+| `editSave` | `edit_save` | PUT `/tool/gen` | `tool:gen:edit` | 代码生成 / UPDATE |
 
 ## 5. 测试
 

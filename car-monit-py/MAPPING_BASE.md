@@ -260,232 +260,232 @@
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/base/configServiceArea/{fwqbms}` | `base:configServiceArea:remove` | 服务区 / DELETE |
-| `export` | `—` | GET `/base/configServiceArea/export` | `base:configServiceArea:export` | 服务区 / EXPORT |
-| `list` | `—` | GET `/base/configServiceArea/list` | `base:configServiceArea:list` | — |
-| `listQuery` | `—` | GET `/base/configServiceArea/listQuery` | `—` | — |
-| `getInfo` | `—` | GET `/base/configServiceArea/{fwqbm}` | `—` | — |
-| `add` | `—` | POST `/base/configServiceArea` | `base:configServiceArea:add` | 服务区 / INSERT |
-| `edit` | `—` | PUT `/base/configServiceArea` | `base:configServiceArea:edit` | 服务区 / UPDATE |
+| `remove` | `remove` | DELETE `/base/configServiceArea/{fwqbms}` | `base:configServiceArea:remove` | 服务区 / DELETE |
+| `export` | `export` | GET `/base/configServiceArea/export` | `base:configServiceArea:export` | 服务区 / EXPORT |
+| `list` | `list_config_service_areas` | GET `/base/configServiceArea/list` | `base:configServiceArea:list` | — |
+| `listQuery` | `list_query` | GET `/base/configServiceArea/listQuery` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/configServiceArea/{fwqbm}` | `—` | — |
+| `add` | `add` | POST `/base/configServiceArea` | `base:configServiceArea:add` | 服务区 / INSERT |
+| `edit` | `edit` | PUT `/base/configServiceArea` | `base:configServiceArea:edit` | 服务区 / UPDATE |
 
 ### 4.2 `CarWarningConfigController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/base/config/{ids}` | `base:config:remove` | 服务区判定规则 / DELETE |
-| `export` | `—` | GET `/base/config/export` | `base:config:export` | 服务区判定规则 / EXPORT |
-| `list` | `—` | GET `/base/config/list` | `base:config:list` | — |
-| `getInfo` | `—` | GET `/base/config/{id}` | `—` | — |
-| `add` | `—` | POST `/base/config` | `base:config:add` | 服务区判定规则 / INSERT |
-| `edit` | `—` | PUT `/base/config` | `base:config:edit` | 服务区判定规则 / UPDATE |
+| `remove` | `remove` | DELETE `/base/config/{ids}` | `base:config:remove` | 服务区判定规则 / DELETE |
+| `export` | `export` | GET `/base/config/export` | `base:config:export` | 服务区判定规则 / EXPORT |
+| `list` | `list_car_warning_configs` | GET `/base/config/list` | `base:config:list` | — |
+| `getInfo` | `get_info` | GET `/base/config/{id}` | `—` | — |
+| `add` | `add` | POST `/base/config` | `base:config:add` | 服务区判定规则 / INSERT |
+| `edit` | `edit` | PUT `/base/config` | `base:config:edit` | 服务区判定规则 / UPDATE |
 
 ### 4.3 `CdcController`（8 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `clearDeadLetterQueue` | `—` | DELETE `/base/cdc/dead-letters/clear` | `—` | — |
-| `deleteDeadLetterMessage` | `—` | DELETE `/base/cdc/dead-letters/{messageId}` | `—` | — |
-| `getConfig` | `—` | GET `/base/cdc/config` | `—` | — |
-| `getDeadLetterMessages` | `—` | GET `/base/cdc/dead-letters` | `—` | — |
-| `getRetryMessages` | `—` | GET `/base/cdc/retry-messages` | `—` | — |
-| `getQueueStatus` | `—` | GET `/base/cdc/status` | `—` | — |
-| `retryAllDeadMessages` | `—` | POST `/base/cdc/retry-all` | `—` | — |
-| `retryMessage` | `—` | POST `/base/cdc/retry/{messageId}` | `—` | — |
+| `clearDeadLetterQueue` | `clear_dead_letter_queue` | DELETE `/base/cdc/dead-letters/clear` | `—` | — |
+| `deleteDeadLetterMessage` | `delete_dead_letter_message` | DELETE `/base/cdc/dead-letters/{messageId}` | `—` | — |
+| `getConfig` | `get_config` | GET `/base/cdc/config` | `—` | — |
+| `getDeadLetterMessages` | `get_dead_letter_messages` | GET `/base/cdc/dead-letters` | `—` | — |
+| `getRetryMessages` | `get_retry_messages` | GET `/base/cdc/retry-messages` | `—` | — |
+| `getQueueStatus` | `get_queue_status` | GET `/base/cdc/status` | `—` | — |
+| `retryAllDeadMessages` | `retry_all_dead_messages` | POST `/base/cdc/retry-all` | `—` | — |
+| `retryMessage` | `retry_message` | POST `/base/cdc/retry/{messageId}` | `—` | — |
 
 ### 4.4 `DwdLcztFwqjcxxController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/base/fwqjcxx/{agentPks}` | `base:fwqjcxx:remove` | 服务区基础信息 / DELETE |
-| `export` | `—` | GET `/base/fwqjcxx/export` | `base:fwqjcxx:export` | 服务区基础信息 / EXPORT |
-| `list` | `—` | GET `/base/fwqjcxx/list` | `—` | — |
-| `getInfo` | `—` | GET `/base/fwqjcxx/{agentPk}` | `—` | — |
-| `add` | `—` | POST `/base/fwqjcxx` | `base:fwqjcxx:add` | 服务区基础信息 / INSERT |
-| `edit` | `—` | PUT `/base/fwqjcxx` | `base:fwqjcxx:edit` | 服务区基础信息 / UPDATE |
+| `remove` | `remove` | DELETE `/base/fwqjcxx/{agentPks}` | `base:fwqjcxx:remove` | 服务区基础信息 / DELETE |
+| `export` | `export` | GET `/base/fwqjcxx/export` | `base:fwqjcxx:export` | 服务区基础信息 / EXPORT |
+| `list` | `list_fwqjcxx` | GET `/base/fwqjcxx/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/fwqjcxx/{agentPk}` | `—` | — |
+| `add` | `add` | POST `/base/fwqjcxx` | `base:fwqjcxx:add` | 服务区基础信息 / INSERT |
+| `edit` | `edit` | PUT `/base/fwqjcxx` | `base:fwqjcxx:edit` | 服务区基础信息 / UPDATE |
 
 ### 4.5 `DwdLcztSfsjcxxController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/base/sfsjcxx/{agentPks}` | `base:sfsjcxx:remove` | 收费所基础信息 / DELETE |
-| `export` | `—` | GET `/base/sfsjcxx/export` | `base:sfsjcxx:export` | 收费所基础信息 / EXPORT |
-| `list` | `—` | GET `/base/sfsjcxx/list` | `—` | — |
-| `getInfo` | `—` | GET `/base/sfsjcxx/{agentPk}` | `—` | — |
-| `add` | `—` | POST `/base/sfsjcxx` | `base:sfsjcxx:add` | 收费所基础信息 / INSERT |
-| `edit` | `—` | PUT `/base/sfsjcxx` | `base:sfsjcxx:edit` | 收费所基础信息 / UPDATE |
+| `remove` | `remove` | DELETE `/base/sfsjcxx/{agentPks}` | `base:sfsjcxx:remove` | 收费所基础信息 / DELETE |
+| `export` | `export` | GET `/base/sfsjcxx/export` | `base:sfsjcxx:export` | 收费所基础信息 / EXPORT |
+| `list` | `list_sfsjcxx` | GET `/base/sfsjcxx/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/sfsjcxx/{agentPk}` | `—` | — |
+| `add` | `add` | POST `/base/sfsjcxx` | `base:sfsjcxx:add` | 收费所基础信息 / INSERT |
+| `edit` | `edit` | PUT `/base/sfsjcxx` | `base:sfsjcxx:edit` | 收费所基础信息 / UPDATE |
 
 ### 4.6 `DwdLcztSfzjcxxController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/base/sfzjcxx/{agentPks}` | `base:sfzjcxx:remove` | 收费站基础信息 / DELETE |
-| `export` | `—` | GET `/base/sfzjcxx/export` | `base:sfzjcxx:export` | 收费站基础信息 / EXPORT |
-| `list` | `—` | GET `/base/sfzjcxx/list` | `—` | — |
-| `getInfo` | `—` | GET `/base/sfzjcxx/{agentPk}` | `—` | — |
-| `add` | `—` | POST `/base/sfzjcxx` | `base:sfzjcxx:add` | 收费站基础信息 / INSERT |
-| `edit` | `—` | PUT `/base/sfzjcxx` | `base:sfzjcxx:edit` | 收费站基础信息 / UPDATE |
+| `remove` | `remove` | DELETE `/base/sfzjcxx/{agentPks}` | `base:sfzjcxx:remove` | 收费站基础信息 / DELETE |
+| `export` | `export` | GET `/base/sfzjcxx/export` | `base:sfzjcxx:export` | 收费站基础信息 / EXPORT |
+| `list` | `list_sfzjcxx` | GET `/base/sfzjcxx/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/sfzjcxx/{agentPk}` | `—` | — |
+| `add` | `add` | POST `/base/sfzjcxx` | `base:sfzjcxx:add` | 收费站基础信息 / INSERT |
+| `edit` | `edit` | PUT `/base/sfzjcxx` | `base:sfzjcxx:edit` | 收费站基础信息 / UPDATE |
 
 ### 4.7 `GeometryController`（9 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/base/geometry/{IDs}` | `base:geometry:remove` | 车辆信息 / DELETE |
-| `export` | `—` | GET `/base/geometry/export` | `base:geometry:export` | 车辆信息 / EXPORT |
-| `getHenDa` | `—` | GET `/base/geometry/getHenDa` | `base:geometry:list` | — |
-| `list` | `—` | GET `/base/geometry/list` | `base:geometry:list` | — |
-| `syncAllGeometry` | `—` | GET `/base/geometry/syncAllGeometry` | `—` | — |
-| `syncAllGeometry1` | `—` | GET `/base/geometry/syncAllGeometry1` | `—` | — |
-| `getInfo` | `—` | GET `/base/geometry/{ID}` | `—` | — |
-| `add` | `—` | POST `/base/geometry` | `base:geometry:add` | 车辆信息 / INSERT |
-| `edit` | `—` | PUT `/base/geometry` | `base:geometry:edit` | 车辆信息 / UPDATE |
+| `remove` | `remove` | DELETE `/base/geometry/{IDs}` | `base:geometry:remove` | 车辆信息 / DELETE |
+| `export` | `export` | GET `/base/geometry/export` | `base:geometry:export` | 车辆信息 / EXPORT |
+| `getHenDa` | `get_hen_da` | GET `/base/geometry/getHenDa` | `base:geometry:list` | — |
+| `list` | `list_geometries` | GET `/base/geometry/list` | `base:geometry:list` | — |
+| `syncAllGeometry` | `sync_all_geometry` | GET `/base/geometry/syncAllGeometry` | `—` | — |
+| `syncAllGeometry1` | `sync_all_geometry_1` | GET `/base/geometry/syncAllGeometry1` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/geometry/{ID}` | `—` | — |
+| `add` | `add` | POST `/base/geometry` | `base:geometry:add` | 车辆信息 / INSERT |
+| `edit` | `edit` | PUT `/base/geometry` | `base:geometry:edit` | 车辆信息 / UPDATE |
 
 ### 4.8 `OdsCxztFwqcllsController`（2 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `list` | `—` | GET `/manager/fwqclls/list` | `manager:fwqclls:list` | — |
-| `getInfo` | `—` | GET `/manager/fwqclls/{bigId}` | `—` | — |
+| `list` | `list_fwqclls` | GET `/manager/fwqclls/list` | `manager:fwqclls:list` | — |
+| `getInfo` | `get_info` | GET `/manager/fwqclls/{bigId}` | `—` | — |
 
 ### 4.9 `OdsLwzxsfsjFeeGantryFusion01Controller`（2 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `list` | `—` | GET `/base/feeGantry/list` | `base:feeGantry:list` | — |
-| `getInfo` | `—` | GET `/base/feeGantry/{bigId}` | `—` | — |
+| `list` | `list_fee_gantries` | GET `/base/feeGantry/list` | `base:feeGantry:list` | — |
+| `getInfo` | `get_info` | GET `/base/feeGantry/{bigId}` | `—` | — |
 
 ### 4.10 `OdsLwzxsfsjFeeRecords01Controller`（3 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `export` | `—` | GET `/base/feerecords/export` | `base:feerecords:list` | — |
-| `list` | `—` | GET `/base/feerecords/list` | `base:feerecords:list` | — |
-| `getInfo` | `—` | GET `/base/feerecords/{bigId}` | `—` | — |
+| `export` | `export` | GET `/base/feerecords/export` | `base:feerecords:list` | — |
+| `list` | `list_fee_records` | GET `/base/feerecords/list` | `base:feerecords:list` | — |
+| `getInfo` | `get_info` | GET `/base/feerecords/{bigId}` | `—` | — |
 
 ### 4.11 `OdsLwzxsfsjFeeStationEnter01Controller`（2 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `list` | `—` | GET `/base/feeStationEnter/list` | `—` | — |
-| `getInfo` | `—` | GET `/base/feeStationEnter/{bigId}` | `—` | — |
+| `list` | `list_fee_station_enters` | GET `/base/feeStationEnter/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/feeStationEnter/{bigId}` | `—` | — |
 
 ### 4.12 `OdsLwzxsfsjFeeStationExit01Controller`（2 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `list` | `—` | GET `/base/feestationexit/list` | `base:feestationexit:list` | — |
-| `getInfo` | `—` | GET `/base/feestationexit/{bigId}` | `—` | — |
+| `list` | `list_fee_station_exits` | GET `/base/feestationexit/list` | `base:feestationexit:list` | — |
+| `getInfo` | `get_info` | GET `/base/feestationexit/{bigId}` | `—` | — |
 
 ### 4.13 `OdsRtSzdnSnapshotFlowAddcodeController`（4 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `getEarliestSnapshottime` | `—` | GET `/base/snapshotflow/earliest-time` | `—` | — |
-| `export` | `—` | GET `/base/snapshotflow/export` | `base:snapshotflow:list` | — |
-| `list` | `—` | GET `/base/snapshotflow/list` | `base:snapshotflow:list` | — |
-| `getInfo` | `—` | GET `/base/snapshotflow/{bigId}` | `—` | — |
+| `getEarliestSnapshottime` | `get_earliest_snapshottime` | GET `/base/snapshotflow/earliest-time` | `—` | — |
+| `export` | `export` | GET `/base/snapshotflow/export` | `base:snapshotflow:list` | — |
+| `list` | `list_snapshot_flows` | GET `/base/snapshotflow/list` | `base:snapshotflow:list` | — |
+| `getInfo` | `get_info` | GET `/base/snapshotflow/{bigId}` | `—` | — |
 
 ### 4.14 `OdsRtSzdnSnapshotFlowProvcaptureAddcodeController`（2 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `list` | `—` | GET `/base/provcapture/list` | `—` | — |
-| `getInfo` | `—` | GET `/base/provcapture/{bigId}` | `—` | — |
+| `list` | `list_prov_captures` | GET `/base/provcapture/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/provcapture/{bigId}` | `—` | — |
 
 ### 4.15 `OdsRtSzdnSnapshotFlowStationcaptureAddcodeController`（2 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `list` | `—` | GET `/base/stationcapture/list` | `—` | — |
-| `getInfo` | `—` | GET `/base/stationcapture/{bigId}` | `—` | — |
+| `list` | `list_station_captures` | GET `/base/stationcapture/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/stationcapture/{bigId}` | `—` | — |
 
 ### 4.16 `OdsSzdnGantryController`（7 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/base/gantry/{ids}` | `base:gantry:remove` | 门架信息 / DELETE |
-| `export` | `—` | GET `/base/gantry/export` | `base:gantry:export` | 门架信息 / EXPORT |
-| `list` | `—` | GET `/base/gantry/list` | `—` | — |
-| `listAll` | `—` | GET `/base/gantry/listAll` | `—` | — |
-| `getInfo` | `—` | GET `/base/gantry/{id}` | `—` | — |
-| `add` | `—` | POST `/base/gantry` | `base:gantry:add` | 门架信息 / INSERT |
-| `edit` | `—` | PUT `/base/gantry` | `base:gantry:edit` | 门架信息 / UPDATE |
+| `remove` | `remove` | DELETE `/base/gantry/{ids}` | `base:gantry:remove` | 门架信息 / DELETE |
+| `export` | `export` | GET `/base/gantry/export` | `base:gantry:export` | 门架信息 / EXPORT |
+| `list` | `list_gantries` | GET `/base/gantry/list` | `—` | — |
+| `listAll` | `list_all_gantries` | GET `/base/gantry/listAll` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/gantry/{id}` | `—` | — |
+| `add` | `add` | POST `/base/gantry` | `base:gantry:add` | 门架信息 / INSERT |
+| `edit` | `edit` | PUT `/base/gantry` | `base:gantry:edit` | 门架信息 / UPDATE |
 
 ### 4.17 `OdsSzdnGantryIpController`（2 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `list` | `—` | GET `/base/gantryIp/list` | `—` | — |
-| `getInfo` | `—` | GET `/base/gantryIp/{id}` | `—` | — |
+| `list` | `list_gantry_ips` | GET `/base/gantryIp/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/gantryIp/{id}` | `—` | — |
 
 ### 4.18 `OdsSzdnProvinceBorderVehicleWeightNewstructureController`（2 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `list` | `—` | GET `/base/vehicleweight/list` | `—` | — |
-| `getInfo` | `—` | GET `/base/vehicleweight/{dataSource}` | `—` | — |
+| `list` | `list_vehicle_weights` | GET `/base/vehicleweight/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/vehicleweight/{dataSource}` | `—` | — |
 
 ### 4.19 `OdsSzdnSectionController`（7 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/base/section/{ids}` | `base:section:remove` | 路段信息 / DELETE |
-| `export` | `—` | GET `/base/section/export` | `base:section:export` | 路段信息 / EXPORT |
-| `list` | `—` | GET `/base/section/list` | `—` | — |
-| `listAll` | `—` | GET `/base/section/listAll` | `—` | — |
-| `getInfo` | `—` | GET `/base/section/{id}` | `—` | — |
-| `add` | `—` | POST `/base/section` | `base:section:add` | 路段信息 / INSERT |
-| `edit` | `—` | PUT `/base/section` | `base:section:edit` | 路段信息 / UPDATE |
+| `remove` | `remove` | DELETE `/base/section/{ids}` | `base:section:remove` | 路段信息 / DELETE |
+| `export` | `export` | GET `/base/section/export` | `base:section:export` | 路段信息 / EXPORT |
+| `list` | `list_sections` | GET `/base/section/list` | `—` | — |
+| `listAll` | `list_all_sections` | GET `/base/section/listAll` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/section/{id}` | `—` | — |
+| `add` | `add` | POST `/base/section` | `base:section:add` | 路段信息 / INSERT |
+| `edit` | `edit` | PUT `/base/section` | `base:section:edit` | 路段信息 / UPDATE |
 
 ### 4.20 `OdsSzdnTollController`（7 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/base/toll/{ids}` | `base:toll:remove` | 收费站基础信息 / DELETE |
-| `export` | `—` | GET `/base/toll/export` | `base:toll:export` | 收费站基础信息 / EXPORT |
-| `list` | `—` | GET `/base/toll/list` | `—` | — |
-| `listAll` | `—` | GET `/base/toll/listAll` | `—` | — |
-| `getInfo` | `—` | GET `/base/toll/{id}` | `—` | — |
-| `add` | `—` | POST `/base/toll` | `base:toll:add` | 收费站基础信息 / INSERT |
-| `edit` | `—` | PUT `/base/toll` | `base:toll:edit` | 收费站基础信息 / UPDATE |
+| `remove` | `remove` | DELETE `/base/toll/{ids}` | `base:toll:remove` | 收费站基础信息 / DELETE |
+| `export` | `export` | GET `/base/toll/export` | `base:toll:export` | 收费站基础信息 / EXPORT |
+| `list` | `list_tolls` | GET `/base/toll/list` | `—` | — |
+| `listAll` | `list_all_tolls` | GET `/base/toll/listAll` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/toll/{id}` | `—` | — |
+| `add` | `add` | POST `/base/toll` | `base:toll:add` | 收费站基础信息 / INSERT |
+| `edit` | `edit` | PUT `/base/toll` | `base:toll:edit` | 收费站基础信息 / UPDATE |
 
 ### 4.21 `OdsSzdnTollStationIpController`（2 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `list` | `—` | GET `/base/tollStationIp/list` | `—` | — |
-| `getInfo` | `—` | GET `/base/tollStationIp/{id}` | `—` | — |
+| `list` | `list_toll_station_ips` | GET `/base/tollStationIp/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/tollStationIp/{id}` | `—` | — |
 
 ### 4.22 `OdsYhglVBaseOrgController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/base/org/{bigIds}` | `base:org:remove` | 机构信息 / DELETE |
-| `export` | `—` | GET `/base/org/export` | `base:org:export` | 机构信息 / EXPORT |
-| `list` | `—` | GET `/base/org/list` | `—` | — |
-| `getInfo` | `—` | GET `/base/org/{bigId}` | `—` | — |
-| `add` | `—` | POST `/base/org` | `base:org:add` | 机构信息 / INSERT |
-| `edit` | `—` | PUT `/base/org` | `base:org:edit` | 机构信息 / UPDATE |
+| `remove` | `remove` | DELETE `/base/org/{bigIds}` | `base:org:remove` | 机构信息 / DELETE |
+| `export` | `export` | GET `/base/org/export` | `base:org:export` | 机构信息 / EXPORT |
+| `list` | `list_orgs` | GET `/base/org/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/org/{bigId}` | `—` | — |
+| `add` | `add` | POST `/base/org` | `base:org:add` | 机构信息 / INSERT |
+| `edit` | `edit` | PUT `/base/org` | `base:org:edit` | 机构信息 / UPDATE |
 
 ### 4.23 `ZdataLocationDictController`（2 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `list` | `—` | GET `/base/location/list` | `—` | — |
-| `getInfo` | `—` | GET `/base/location/{id}` | `—` | — |
+| `list` | `list_locations` | GET `/base/location/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/location/{id}` | `—` | — |
 
 ### 4.24 `ZdataTrailFittingController`（2 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `list` | `—` | GET `/base/fitting/list` | `—` | — |
-| `getInfo` | `—` | GET `/base/fitting/{cid}` | `—` | — |
+| `list` | `list_trail_fittings` | GET `/base/fitting/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/fitting/{cid}` | `—` | — |
 
 ### 4.25 `ZdataTrailTracksController`（2 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `list` | `—` | GET `/base/trailtracks/list` | `—` | — |
-| `getInfo` | `—` | GET `/base/trailtracks/{uuid}` | `—` | — |
+| `list` | `list_trail_tracks` | GET `/base/trailtracks/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/base/trailtracks/{uuid}` | `—` | — |
 
 ## 5. 测试
 

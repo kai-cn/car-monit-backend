@@ -53,9 +53,25 @@ sudo dnf install -y git curl tar gzip unzip jq \
 |---|---|---|
 | Go | 1.27.4 | `sudo tar -C /usr/local -xzf /home/dev/go1.27.4.linux-amd64.tar.gz`；`GOROOT=/usr/local/go`、`GOPATH=/home/dev/go`（保留原有 `pkg/mod` 缓存）、`PATH=$GOROOT/bin:$GOPATH/bin:$PATH` |
 | Rust | latest stable = 1.100.0（rustup） | 删除旧 Rust 后安装 rustup 并 `rustup default stable`（profile minimal + rustfmt/clippy）；`CARGO_HOME=$HOME/.cargo`、`RUSTUP_HOME=$HOME/.rustup`、`PATH=$CARGO_HOME/bin:$PATH` |
-| Python | 3.15（uv 管理） | `uv python install 3.15`；`uv` 在 `$HOME/.local/bin`（加入 PATH），用 `uv venv` 建隔离环境，不再源码编译 |
+| Python | 3.15.2（uv 管理） | 最初以 root 安装，2026-11-27 迁移到 dev：`uv`/`uvx` 在 `/home/dev/.local/bin`，解释器在 `/home/dev/.local/share/uv/python/cpython-3.15.2-linux-x86_64-gnu/bin/python3.15`（短名软链已修正为相对路径，不再指向 `/root`）；用 `uv venv` 建隔离环境，不再源码编译 |
 | Docker | 可选 | 跑 `cd.yml` 的 buildx 需要；否则把镜像构建留给托管 runner |
 | kubectl | 可选 | 仅在自托管上做 K8s 部署时需要 |
+
+### 3.1 本机编译内存约束
+
+- 主机物理内存约 15.3 GB，`.wslconfig` 设 `memory=10GB` / `processors=8`。
+- 直接裸跑 `go build` / `cargo build` 会按 8 核起并行编译器，瞬时内存可把 WSL2 虚拟机顶爆并被
+  Windows 宿主回收（表现为"一编译 WSL 就重启"）。
+- 统一用 `scripts/build-wsl-caged.sh` 编译：`systemd-run --scope` 把单路编译关进
+  `MemoryMax=10G` / `TasksMax=512` 的 cgroup，`-p User=dev` 保证复用 dev 的模块缓存；
+  超限只会杀编译进程，不会拖垮整个 WSL。线程上限不能设太小（如 16 会让 Go 编译器
+  `newosproc` 报 EAGAIN panic）。
+
+```bash
+bash scripts/build-wsl-caged.sh go      # 仅 Go
+bash scripts/build-wsl-caged.sh rust    # 仅 Rust
+bash scripts/build-wsl-caged.sh all     # 两者（默认）
+```
 
 版本校验：
 

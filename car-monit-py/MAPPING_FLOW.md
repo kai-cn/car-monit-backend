@@ -105,91 +105,91 @@
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/flow/applyinfo/{ids}` | `—` | 我的申请 / DELETE |
-| `export` | `—` | GET `/flow/applyinfo/export` | `—` | 我的申请 / EXPORT |
-| `list` | `—` | GET `/flow/applyinfo/list` | `—` | — |
-| `listAll` | `—` | GET `/flow/applyinfo/listAll` | `flow:applyinfo:list` | — |
-| `getInfo` | `—` | GET `/flow/applyinfo/{id}` | `—` | — |
-| `add` | `—` | POST `/flow/applyinfo` | `—` | 我的申请 / INSERT |
-| `edit` | `—` | PUT `/flow/applyinfo` | `—` | 我的申请 / UPDATE |
+| `remove` | `remove` | DELETE `/flow/applyinfo/{ids}` | `—` | 我的申请 / DELETE |
+| `export` | `export` | GET `/flow/applyinfo/export` | `—` | 我的申请 / EXPORT |
+| `list` | `list_apply_infos` | GET `/flow/applyinfo/list` | `—` | — |
+| `listAll` | `list_all_apply_infos` | GET `/flow/applyinfo/listAll` | `flow:applyinfo:list` | — |
+| `getInfo` | `get_info` | GET `/flow/applyinfo/{id}` | `—` | — |
+| `add` | `add` | POST `/flow/applyinfo` | `—` | 我的申请 / INSERT |
+| `edit` | `edit` | PUT `/flow/applyinfo` | `—` | 我的申请 / UPDATE |
 
 ### 4.2 `FlowCurrentNodeController`（10 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/flow/currentnode/{ids}` | `—` | 流程_当前节点 / DELETE |
-| `export` | `—` | GET `/flow/currentnode/export` | `—` | 流程_当前节点 / EXPORT |
-| `getInfoByBillId` | `—` | GET `/flow/currentnode/getInfoByBillId/{billOid}` | `—` | — |
-| `list` | `—` | GET `/flow/currentnode/list` | `—` | — |
-| `getInfo` | `—` | GET `/flow/currentnode/{id}` | `—` | — |
-| `add` | `—` | POST `/flow/currentnode` | `—` | 流程_当前节点 / INSERT |
-| `submitEntrustFlow` | `—` | POST `/flow/currentnode/submitEntrustFlow` | `—` | — |
-| `submitReturn` | `—` | POST `/flow/currentnode/submitReturn` | `—` | — |
-| `edit` | `—` | PUT `/flow/currentnode` | `—` | 流程_当前节点 / UPDATE |
-| `saveFlowAuit` | `—` | PUT `/flow/currentnode/saveFlowAuit` | `—` | — |
+| `remove` | `remove` | DELETE `/flow/currentnode/{ids}` | `—` | 流程_当前节点 / DELETE |
+| `export` | `export` | GET `/flow/currentnode/export` | `—` | 流程_当前节点 / EXPORT |
+| `getInfoByBillId` | `get_info_by_bill_id` | GET `/flow/currentnode/getInfoByBillId/{billOid}` | `—` | — |
+| `list` | `list_current_nodes` | GET `/flow/currentnode/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/flow/currentnode/{id}` | `—` | — |
+| `add` | `add` | POST `/flow/currentnode` | `—` | 流程_当前节点 / INSERT |
+| `submitEntrustFlow` | `submit_entrust_flow` | POST `/flow/currentnode/submitEntrustFlow` | `—` | — |
+| `submitReturn` | `submit_return` | POST `/flow/currentnode/submitReturn` | `—` | — |
+| `edit` | `edit` | PUT `/flow/currentnode` | `—` | 流程_当前节点 / UPDATE |
+| `saveFlowAuit` | `save_flow_auit` | PUT `/flow/currentnode/saveFlowAuit` | `—` | — |
 
 ### 4.3 `FlowListController`（7 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/flow/flowlist/{ids}` | `—` | 审核历史记录 / DELETE |
-| `export` | `—` | GET `/flow/flowlist/export` | `—` | 审核历史记录 / EXPORT |
-| `list` | `—` | GET `/flow/flowlist/list` | `—` | — |
-| `listnew` | `—` | GET `/flow/flowlist/listnew` | `—` | — |
-| `getInfo` | `—` | GET `/flow/flowlist/{id}` | `—` | — |
-| `add` | `—` | POST `/flow/flowlist` | `—` | 审核历史记录 / INSERT |
-| `edit` | `—` | PUT `/flow/flowlist` | `—` | 审核历史记录 / UPDATE |
+| `remove` | `remove` | DELETE `/flow/flowlist/{ids}` | `—` | 审核历史记录 / DELETE |
+| `export` | `export` | GET `/flow/flowlist/export` | `—` | 审核历史记录 / EXPORT |
+| `list` | `list_flow_lists` | GET `/flow/flowlist/list` | `—` | — |
+| `listnew` | `listnew` | GET `/flow/flowlist/listnew` | `—` | — |
+| `getInfo` | `get_info` | GET `/flow/flowlist/{id}` | `—` | — |
+| `add` | `add` | POST `/flow/flowlist` | `—` | 审核历史记录 / INSERT |
+| `edit` | `edit` | PUT `/flow/flowlist` | `—` | 审核历史记录 / UPDATE |
 
 ### 4.4 `FlowMessageDisposeController`（8 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `removeFlowMessage` | `—` | DELETE `/flow/messagedispose/delmes/{mid}` | `—` | — |
-| `szzdFlowMessage` | `—` | DELETE `/flow/messagedispose/szzdmes/{mid}` | `—` | — |
-| `remove` | `—` | DELETE `/flow/messagedispose/{ids}` | `—` | 系统消息处理人 / DELETE |
-| `export` | `—` | GET `/flow/messagedispose/export` | `—` | 系统消息处理人 / EXPORT |
-| `list` | `—` | GET `/flow/messagedispose/list` | `—` | — |
-| `getInfo` | `—` | GET `/flow/messagedispose/{id}` | `—` | — |
-| `add` | `—` | POST `/flow/messagedispose` | `—` | 系统消息处理人 / INSERT |
-| `edit` | `—` | PUT `/flow/messagedispose` | `—` | 系统消息处理人 / UPDATE |
+| `removeFlowMessage` | `remove_flow_message` | DELETE `/flow/messagedispose/delmes/{mid}` | `—` | — |
+| `szzdFlowMessage` | `szzd_flow_message` | DELETE `/flow/messagedispose/szzdmes/{mid}` | `—` | — |
+| `remove` | `remove` | DELETE `/flow/messagedispose/{ids}` | `—` | 系统消息处理人 / DELETE |
+| `export` | `export` | GET `/flow/messagedispose/export` | `—` | 系统消息处理人 / EXPORT |
+| `list` | `list_disposes` | GET `/flow/messagedispose/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/flow/messagedispose/{id}` | `—` | — |
+| `add` | `add` | POST `/flow/messagedispose` | `—` | 系统消息处理人 / INSERT |
+| `edit` | `edit` | PUT `/flow/messagedispose` | `—` | 系统消息处理人 / UPDATE |
 
 ### 4.5 `FlowMessageInfoController`（8 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/flow/messageinfo/{ids}` | `—` | 系统内部消息 / DELETE |
-| `export` | `—` | GET `/flow/messageinfo/export` | `—` | 系统内部消息 / EXPORT |
-| `exportShrz` | `—` | GET `/flow/messageinfo/exportShrz` | `—` | 导出审核日志 / EXPORT |
-| `list` | `—` | GET `/flow/messageinfo/list` | `—` | — |
-| `listxx` | `—` | GET `/flow/messageinfo/listxx` | `—` | — |
-| `listyb` | `—` | GET `/flow/messageinfo/listyb` | `—` | — |
-| `listyj` | `—` | GET `/flow/messageinfo/listyj` | `—` | — |
-| `getInfo` | `—` | GET `/flow/messageinfo/{id}` | `—` | — |
+| `remove` | `remove` | DELETE `/flow/messageinfo/{ids}` | `—` | 系统内部消息 / DELETE |
+| `export` | `export` | GET `/flow/messageinfo/export` | `—` | 系统内部消息 / EXPORT |
+| `exportShrz` | `export_shrz` | GET `/flow/messageinfo/exportShrz` | `—` | 导出审核日志 / EXPORT |
+| `list` | `list_pending` | GET `/flow/messageinfo/list` | `—` | — |
+| `listxx` | `list_messages` | GET `/flow/messageinfo/listxx` | `—` | — |
+| `listyb` | `list_done` | GET `/flow/messageinfo/listyb` | `—` | — |
+| `listyj` | `list_finished` | GET `/flow/messageinfo/listyj` | `—` | — |
+| `getInfo` | `get_info` | GET `/flow/messageinfo/{id}` | `—` | — |
 
 ### 4.6 `FlowNameController`（8 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/flow/flowname/{ids}` | `flow:flowname:remove` | 流程名称 / DELETE |
-| `export` | `—` | GET `/flow/flowname/export` | `flow:flowname:export` | 流程名称 / EXPORT |
-| `list` | `—` | GET `/flow/flowname/list` | `flow:flowname:list` | — |
-| `listQuery` | `—` | GET `/flow/flowname/listQuery` | `—` | — |
-| `getInfo` | `—` | GET `/flow/flowname/{id}` | `flow:flowname:query` | — |
-| `add` | `—` | POST `/flow/flowname` | `flow:flowname:add` | 流程名称 / INSERT |
-| `tbFlow` | `—` | POST `/flow/flowname/tbFlow` | `flow:flowname:edit` | 同步其他单位的工作流 / UPDATE |
-| `edit` | `—` | PUT `/flow/flowname` | `flow:flowname:edit` | 流程名称 / UPDATE |
+| `remove` | `remove` | DELETE `/flow/flowname/{ids}` | `flow:flowname:remove` | 流程名称 / DELETE |
+| `export` | `export` | GET `/flow/flowname/export` | `flow:flowname:export` | 流程名称 / EXPORT |
+| `list` | `list_flow_names` | GET `/flow/flowname/list` | `flow:flowname:list` | — |
+| `listQuery` | `list_query` | GET `/flow/flowname/listQuery` | `—` | — |
+| `getInfo` | `get_info` | GET `/flow/flowname/{id}` | `flow:flowname:query` | — |
+| `add` | `add` | POST `/flow/flowname` | `flow:flowname:add` | 流程名称 / INSERT |
+| `tbFlow` | `tb_flow` | POST `/flow/flowname/tbFlow` | `flow:flowname:edit` | 同步其他单位的工作流 / UPDATE |
+| `edit` | `edit` | PUT `/flow/flowname` | `flow:flowname:edit` | 流程名称 / UPDATE |
 
 ### 4.7 `FlowTemplateController`（7 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/flow/flowtemplate/{ids}` | `—` | 流程节点 / DELETE |
-| `export` | `—` | GET `/flow/flowtemplate/export` | `—` | 流程节点 / EXPORT |
-| `flowlist` | `—` | GET `/flow/flowtemplate/flowlist` | `—` | — |
-| `list` | `—` | GET `/flow/flowtemplate/list` | `—` | — |
-| `getInfo` | `—` | GET `/flow/flowtemplate/{id}` | `—` | — |
-| `add` | `—` | POST `/flow/flowtemplate` | `—` | 流程节点 / INSERT |
-| `edit` | `—` | PUT `/flow/flowtemplate` | `—` | 流程节点 / UPDATE |
+| `remove` | `remove` | DELETE `/flow/flowtemplate/{ids}` | `—` | 流程节点 / DELETE |
+| `export` | `export` | GET `/flow/flowtemplate/export` | `—` | 流程节点 / EXPORT |
+| `flowlist` | `flowlist` | GET `/flow/flowtemplate/flowlist` | `—` | — |
+| `list` | `list_flow_templates` | GET `/flow/flowtemplate/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/flow/flowtemplate/{id}` | `—` | — |
+| `add` | `add` | POST `/flow/flowtemplate` | `—` | 流程节点 / INSERT |
+| `edit` | `edit` | PUT `/flow/flowtemplate` | `—` | 流程节点 / UPDATE |
 
 ## 5. 测试
 

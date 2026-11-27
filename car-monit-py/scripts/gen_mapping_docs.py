@@ -15,7 +15,9 @@
 
 ``scripts/`` 下其余三个脚本是**校验**用的（``audit_endpoints`` / ``audit_domains`` /
 ``audit_envelopes``），本脚本只负责出版；两者口径一致：都用
-``audit_endpoints.iter_java_endpoints`` 解析 Java，都读 ``create_app().routes`` 读 Python。
+``audit_endpoints.iter_java_endpoints`` 解析 Java。Python 侧不能只读
+``create_app().routes``（新版本 FastAPI 会返回不带 path/endpoint 的 ``_IncludedRouter``
+包装），必须展开 ``effective_route_contexts()`` 才能拿到真实处理函数名。
 """
 
 from __future__ import annotations
@@ -24,7 +26,7 @@ import collections
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, Iterator, List, Tuple
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = ROOT.parent
@@ -209,15 +211,30 @@ def _collect_python_names() -> Dict[Tuple[str, str], str]:
     from app.main import create_app  # noqa: PLC0415 -- 需要 sys.path 先就位
 
     names: Dict[Tuple[str, str], str] = {}
-    for route in create_app().routes:
-        path = getattr(route, "path", "")
-        if not path.startswith("/"):
-            continue
-        for method in sorted(getattr(route, "methods", None) or set()):
-            if method in {"HEAD", "OPTIONS"}:
+    app = create_app()
+
+    # app.routes 顶层可能是 _IncludedRouter（FastAPI 新版本延迟装配），本身没有 path/endpoint；
+    # 只有展开 effective_route_contexts() 才能得到真实路由，否则会生成一整表 "—"。
+    def walk(route: Any) -> Iterator[Any]:
+        if hasattr(route, "effective_route_contexts"):
+            for context in route.effective_route_contexts():
+                yield context
+        elif hasattr(route, "routes"):
+            for child in route.routes:
+                yield from walk(child)
+        elif getattr(route, "path", None):
+            yield route
+
+    for route in app.routes:
+        for context in walk(route):
+            path = getattr(context, "path", "")
+            if not path.startswith("/"):
                 continue
-            endpoint = getattr(route, "endpoint", None)
-            names[(method, base.normalize_path(path))] = getattr(endpoint, "__name__", "?")
+            for method in sorted(getattr(context, "methods", None) or set()):
+                if method in {"HEAD", "OPTIONS"}:
+                    continue
+                endpoint = getattr(context, "endpoint", None)
+                names[(method, base.normalize_path(path))] = getattr(endpoint, "__name__", "?")
     return names
 
 

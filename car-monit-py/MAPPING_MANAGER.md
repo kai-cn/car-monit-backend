@@ -207,276 +207,276 @@
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `getCarAudit` | `—` | GET `/manager/bigScreen/carAudit` | `—` | — |
-| `getCarLocation` | `—` | GET `/manager/bigScreen/carLocation` | `—` | — |
-| `getCarStatistics` | `—` | GET `/manager/bigScreen/carStatistics` | `—` | — |
-| `carVoList` | `—` | GET `/manager/bigScreen/carVoList` | `—` | — |
-| `getCarWarning` | `—` | GET `/manager/bigScreen/carWarning` | `—` | — |
-| `list` | `—` | GET `/manager/bigScreen/exceptRecordList` | `—` | — |
-| `getExceptionCar` | `—` | GET `/manager/bigScreen/exceptionCar` | `—` | — |
-| `incomeStatistic` | `—` | GET `/manager/bigScreen/incomeStatistic` | `—` | — |
-| `getOrgList` | `—` | GET `/manager/bigScreen/orgList` | `—` | — |
-| `getSectionList` | `—` | GET `/manager/bigScreen/sectionList` | `—` | — |
-| `getTollList` | `—` | GET `/manager/bigScreen/tollGantryFwqList` | `—` | — |
-| `topTen` | `—` | GET `/manager/bigScreen/topTen` | `—` | — |
+| `getCarAudit` | `get_car_audit` | GET `/manager/bigScreen/carAudit` | `—` | — |
+| `getCarLocation` | `get_car_location` | GET `/manager/bigScreen/carLocation` | `—` | — |
+| `getCarStatistics` | `get_car_statistics` | GET `/manager/bigScreen/carStatistics` | `—` | — |
+| `carVoList` | `car_vo_list` | GET `/manager/bigScreen/carVoList` | `—` | — |
+| `getCarWarning` | `get_car_warning` | GET `/manager/bigScreen/carWarning` | `—` | — |
+| `list` | `list` | GET `/manager/bigScreen/exceptRecordList` | `—` | — |
+| `getExceptionCar` | `get_exception_car` | GET `/manager/bigScreen/exceptionCar` | `—` | — |
+| `incomeStatistic` | `income_statistic` | GET `/manager/bigScreen/incomeStatistic` | `—` | — |
+| `getOrgList` | `get_org_list` | GET `/manager/bigScreen/orgList` | `—` | — |
+| `getSectionList` | `get_section_list` | GET `/manager/bigScreen/sectionList` | `—` | — |
+| `getTollList` | `get_toll_list` | GET `/manager/bigScreen/tollGantryFwqList` | `—` | — |
+| `topTen` | `top_ten` | GET `/manager/bigScreen/topTen` | `—` | — |
 
 ### 4.2 `BigScreenExportController`（10 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `approvals` | `—` | GET `/manager/bigScreen/export/approvals` | `manager:bigscreen:exportApprove` | — |
-| `download` | `—` | GET `/manager/bigScreen/export/download/{taskId}` | `—` | — |
-| `status` | `—` | GET `/manager/bigScreen/export/status/{taskId}` | `—` | — |
-| `approve` | `—` | POST `/manager/bigScreen/export/approvals/{requestId}/approve` | `manager:bigscreen:exportApprove` | — |
-| `reject` | `—` | POST `/manager/bigScreen/export/approvals/{requestId}/reject` | `manager:bigscreen:exportApprove` | — |
-| `display` | `—` | POST `/manager/bigScreen/export/display` | `manager:bigscreen:export` | — |
-| `full` | `—` | POST `/manager/bigScreen/export/full` | `manager:bigscreen:export` | — |
-| `downloadUrl` | `—` | POST `/manager/bigScreen/export/{taskId}/download-url` | `—` | — |
-| `resume` | `—` | POST `/manager/bigScreen/export/{taskId}/resume` | `manager:bigscreen:export` | — |
-| `retry` | `—` | POST `/manager/bigScreen/export/{taskId}/retry` | `manager:bigscreen:export` | — |
+| `approvals` | `approvals` | GET `/manager/bigScreen/export/approvals` | `manager:bigscreen:exportApprove` | — |
+| `download` | `download` | GET `/manager/bigScreen/export/download/{taskId}` | `—` | — |
+| `status` | `status` | GET `/manager/bigScreen/export/status/{taskId}` | `—` | — |
+| `approve` | `approve` | POST `/manager/bigScreen/export/approvals/{requestId}/approve` | `manager:bigscreen:exportApprove` | — |
+| `reject` | `reject` | POST `/manager/bigScreen/export/approvals/{requestId}/reject` | `manager:bigscreen:exportApprove` | — |
+| `display` | `display` | POST `/manager/bigScreen/export/display` | `manager:bigscreen:export` | — |
+| `full` | `full` | POST `/manager/bigScreen/export/full` | `manager:bigscreen:export` | — |
+| `downloadUrl` | `download_url` | POST `/manager/bigScreen/export/{taskId}/download-url` | `—` | — |
+| `resume` | `resume` | POST `/manager/bigScreen/export/{taskId}/resume` | `manager:bigscreen:export` | — |
+| `retry` | `retry` | POST `/manager/bigScreen/export/{taskId}/retry` | `manager:bigscreen:export` | — |
 
 ### 4.3 `BussTestController`（7 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/busstest/{ids}` | `manager:busstest:remove` | 业务测试 / DELETE |
-| `export` | `—` | GET `/manager/busstest/export` | `manager:busstest:export` | 业务测试 / EXPORT |
-| `list` | `—` | GET `/manager/busstest/list` | `manager:busstest:list` | — |
-| `getInfo` | `—` | GET `/manager/busstest/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/busstest` | `manager:busstest:add` | 业务测试 / INSERT |
-| `syncCurrentTrack` | `—` | POST `/manager/busstest/syncCurrentTrack` | `manager:busstest:syncTest` | — |
-| `edit` | `—` | PUT `/manager/busstest` | `manager:busstest:edit` | 业务测试 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/busstest/{ids}` | `manager:busstest:remove` | 业务测试 / DELETE |
+| `export` | `export` | GET `/manager/busstest/export` | `manager:busstest:export` | 业务测试 / EXPORT |
+| `list` | `list_buss_tests` | GET `/manager/busstest/list` | `manager:busstest:list` | — |
+| `getInfo` | `get_info` | GET `/manager/busstest/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/busstest` | `manager:busstest:add` | 业务测试 / INSERT |
+| `syncCurrentTrack` | `sync_current_track` | POST `/manager/busstest/syncCurrentTrack` | `manager:busstest:syncTest` | — |
+| `edit` | `edit` | PUT `/manager/busstest` | `manager:busstest:edit` | 业务测试 / UPDATE |
 
 ### 4.4 `CarAduitFreeController`（10 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/aduitfree/{ids}` | `—` | 补缴处理 / DELETE |
-| `export` | `—` | GET `/manager/aduitfree/export` | `—` | 补缴处理 / EXPORT |
-| `exportIncomeDetailList` | `—` | GET `/manager/aduitfree/exportIncomeDetailList` | `—` | — |
-| `exportIncomeStatics` | `—` | GET `/manager/aduitfree/exportIncomeStatics` | `—` | — |
-| `incomeDetailList` | `—` | GET `/manager/aduitfree/incomeDetailList` | `—` | — |
-| `incomeStatics` | `—` | GET `/manager/aduitfree/incomeStatics` | `—` | — |
-| `list` | `—` | GET `/manager/aduitfree/list` | `—` | — |
-| `getInfo` | `—` | GET `/manager/aduitfree/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/aduitfree` | `—` | 补缴处理 / INSERT |
-| `edit` | `—` | PUT `/manager/aduitfree` | `—` | 补缴处理 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/aduitfree/{ids}` | `—` | 补缴处理 / DELETE |
+| `export` | `export` | GET `/manager/aduitfree/export` | `—` | 补缴处理 / EXPORT |
+| `exportIncomeDetailList` | `export_income_detail_list` | GET `/manager/aduitfree/exportIncomeDetailList` | `—` | — |
+| `exportIncomeStatics` | `export_income_statics` | GET `/manager/aduitfree/exportIncomeStatics` | `—` | — |
+| `incomeDetailList` | `income_detail_list` | GET `/manager/aduitfree/incomeDetailList` | `—` | — |
+| `incomeStatics` | `income_statics` | GET `/manager/aduitfree/incomeStatics` | `—` | — |
+| `list` | `list_aduit_frees` | GET `/manager/aduitfree/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/manager/aduitfree/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/aduitfree` | `—` | 补缴处理 / INSERT |
+| `edit` | `edit` | PUT `/manager/aduitfree` | `—` | 补缴处理 / UPDATE |
 
 ### 4.5 `CarConfimFreeController`（13 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/confimfree/{ids}` | `—` | 确认补缴 / DELETE |
-| `getCarStatics` | `—` | GET `/manager/confimfree/carStatics` | `—` | — |
-| `concernedList` | `—` | GET `/manager/confimfree/concernedList` | `—` | — |
-| `getExceptIds` | `—` | GET `/manager/confimfree/except/{exceptIds}` | `—` | — |
-| `export` | `—` | GET `/manager/confimfree/export` | `—` | 确认补缴 / EXPORT |
-| `exportCarStatics` | `—` | GET `/manager/confimfree/exportCarStatics` | `—` | — |
-| `exportConcernedList` | `—` | GET `/manager/confimfree/exportConcernedList` | `—` | — |
-| `list` | `—` | GET `/manager/confimfree/list` | `—` | — |
-| `listCarNo` | `—` | GET `/manager/confimfree/listCarNo` | `—` | — |
-| `listCount` | `—` | GET `/manager/confimfree/listCount` | `—` | — |
-| `getInfo` | `—` | GET `/manager/confimfree/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/confimfree` | `—` | 确认补缴 / INSERT |
-| `edit` | `—` | PUT `/manager/confimfree` | `—` | 确认补缴 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/confimfree/{ids}` | `—` | 确认补缴 / DELETE |
+| `getCarStatics` | `get_car_statics` | GET `/manager/confimfree/carStatics` | `—` | — |
+| `concernedList` | `concerned_list` | GET `/manager/confimfree/concernedList` | `—` | — |
+| `getExceptIds` | `get_except_ids` | GET `/manager/confimfree/except/{exceptIds}` | `—` | — |
+| `export` | `export` | GET `/manager/confimfree/export` | `—` | 确认补缴 / EXPORT |
+| `exportCarStatics` | `export_car_statics` | GET `/manager/confimfree/exportCarStatics` | `—` | — |
+| `exportConcernedList` | `export_concerned_list` | GET `/manager/confimfree/exportConcernedList` | `—` | — |
+| `list` | `list_confim_frees` | GET `/manager/confimfree/list` | `—` | — |
+| `listCarNo` | `list_car_no` | GET `/manager/confimfree/listCarNo` | `—` | — |
+| `listCount` | `list_count` | GET `/manager/confimfree/listCount` | `—` | — |
+| `getInfo` | `get_info` | GET `/manager/confimfree/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/confimfree` | `—` | 确认补缴 / INSERT |
+| `edit` | `edit` | PUT `/manager/confimfree` | `—` | 确认补缴 / UPDATE |
 
 ### 4.6 `CarExceptRecordController`（13 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/exceptrecord/{ids}` | `—` | 异常车辆流水 / DELETE |
-| `exceptRecordCount` | `—` | GET `/manager/exceptrecord/exceptRecordCount` | `—` | — |
-| `export` | `—` | GET `/manager/exceptrecord/export` | `—` | 异常车辆流水 / EXPORT |
-| `exportOrgId` | `—` | GET `/manager/exceptrecord/exportOrgId` | `—` | 异常车辆流水 / EXPORT |
-| `getConfirmId` | `—` | GET `/manager/exceptrecord/getConfirmId/{id}` | `—` | — |
-| `list` | `—` | GET `/manager/exceptrecord/list` | `—` | — |
-| `listCarNo` | `—` | GET `/manager/exceptrecord/listCarNo` | `—` | — |
-| `listCarOrgId` | `—` | GET `/manager/exceptrecord/listCarOrgId` | `—` | — |
-| `listExceptId` | `—` | GET `/manager/exceptrecord/listExceptId` | `—` | — |
-| `getInfo` | `—` | GET `/manager/exceptrecord/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/exceptrecord` | `—` | 异常车辆流水 / INSERT |
-| `doImport` | `—` | POST `/manager/exceptrecord/import` | `—` | 新增流水导入 / IMPORT |
-| `edit` | `—` | PUT `/manager/exceptrecord` | `—` | 异常车辆流水 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/exceptrecord/{ids}` | `—` | 异常车辆流水 / DELETE |
+| `exceptRecordCount` | `except_record_count` | GET `/manager/exceptrecord/exceptRecordCount` | `—` | — |
+| `export` | `export` | GET `/manager/exceptrecord/export` | `—` | 异常车辆流水 / EXPORT |
+| `exportOrgId` | `export_org_id` | GET `/manager/exceptrecord/exportOrgId` | `—` | 异常车辆流水 / EXPORT |
+| `getConfirmId` | `get_confirm_id` | GET `/manager/exceptrecord/getConfirmId/{id}` | `—` | — |
+| `list` | `list_car_except_records` | GET `/manager/exceptrecord/list` | `—` | — |
+| `listCarNo` | `list_car_except_records_by_car_no` | GET `/manager/exceptrecord/listCarNo` | `—` | — |
+| `listCarOrgId` | `list_car_org_id` | GET `/manager/exceptrecord/listCarOrgId` | `—` | — |
+| `listExceptId` | `list_except_id` | GET `/manager/exceptrecord/listExceptId` | `—` | — |
+| `getInfo` | `get_info` | GET `/manager/exceptrecord/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/exceptrecord` | `—` | 异常车辆流水 / INSERT |
+| `doImport` | `do_import` | POST `/manager/exceptrecord/import` | `—` | 新增流水导入 / IMPORT |
+| `edit` | `edit` | PUT `/manager/exceptrecord` | `—` | 异常车辆流水 / UPDATE |
 
 ### 4.7 `CarFeeRecordController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/feerecord/{ids}` | `manager:feerecord:remove` | 收费流水 / DELETE |
-| `export` | `—` | GET `/manager/feerecord/export` | `manager:feerecord:export` | 收费流水 / EXPORT |
-| `list` | `—` | GET `/manager/feerecord/list` | `manager:feerecord:list` | — |
-| `getInfo` | `—` | GET `/manager/feerecord/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/feerecord` | `manager:feerecord:add` | 收费流水 / INSERT |
-| `edit` | `—` | PUT `/manager/feerecord` | `manager:feerecord:edit` | 收费流水 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/feerecord/{ids}` | `manager:feerecord:remove` | 收费流水 / DELETE |
+| `export` | `export` | GET `/manager/feerecord/export` | `manager:feerecord:export` | 收费流水 / EXPORT |
+| `list` | `list_fee_records` | GET `/manager/feerecord/list` | `manager:feerecord:list` | — |
+| `getInfo` | `get_info` | GET `/manager/feerecord/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/feerecord` | `manager:feerecord:add` | 收费流水 / INSERT |
+| `edit` | `edit` | PUT `/manager/feerecord` | `manager:feerecord:edit` | 收费流水 / UPDATE |
 
 ### 4.8 `CarInfoController`（8 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/carinfo/{ids}` | `manager:carinfo:remove` | 车辆信息 / DELETE |
-| `export` | `—` | GET `/manager/carinfo/export` | `manager:carinfo:export` | 车辆信息 / EXPORT |
-| `list` | `—` | GET `/manager/carinfo/list` | `manager:carinfo:list` | — |
-| `listAll` | `—` | GET `/manager/carinfo/listAll` | `—` | — |
-| `getInfo` | `—` | GET `/manager/carinfo/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/carinfo` | `—` | 车辆信息 / INSERT |
-| `doImport` | `—` | POST `/manager/carinfo/import` | `—` | 车辆信息 / IMPORT |
-| `edit` | `—` | PUT `/manager/carinfo` | `manager:carinfo:edit` | 车辆信息 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/carinfo/{ids}` | `manager:carinfo:remove` | 车辆信息 / DELETE |
+| `export` | `export` | GET `/manager/carinfo/export` | `manager:carinfo:export` | 车辆信息 / EXPORT |
+| `list` | `list_car_infos` | GET `/manager/carinfo/list` | `manager:carinfo:list` | — |
+| `listAll` | `list_all_car_infos` | GET `/manager/carinfo/listAll` | `—` | — |
+| `getInfo` | `get_info` | GET `/manager/carinfo/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/carinfo` | `—` | 车辆信息 / INSERT |
+| `doImport` | `do_import` | POST `/manager/carinfo/import` | `—` | 车辆信息 / IMPORT |
+| `edit` | `edit` | PUT `/manager/carinfo` | `manager:carinfo:edit` | 车辆信息 / UPDATE |
 
 ### 4.9 `CarQueryLogController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/querylog/{ids}` | `manager:querylog:remove` | 查询日志 / DELETE |
-| `export` | `—` | GET `/manager/querylog/export` | `manager:querylog:export` | 日志信息 / EXPORT |
-| `list` | `—` | GET `/manager/querylog/list` | `manager:querylog:list` | — |
-| `getInfo` | `—` | GET `/manager/querylog/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/querylog` | `manager:querylog:add` | 查询日志 / INSERT |
-| `edit` | `—` | PUT `/manager/querylog` | `manager:querylog:edit` | 查询日志 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/querylog/{ids}` | `manager:querylog:remove` | 查询日志 / DELETE |
+| `export` | `export` | GET `/manager/querylog/export` | `manager:querylog:export` | 日志信息 / EXPORT |
+| `list` | `list_query_logs` | GET `/manager/querylog/list` | `manager:querylog:list` | — |
+| `getInfo` | `get_info` | GET `/manager/querylog/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/querylog` | `manager:querylog:add` | 查询日志 / INSERT |
+| `edit` | `edit` | PUT `/manager/querylog` | `manager:querylog:edit` | 查询日志 / UPDATE |
 
 ### 4.10 `CarRouteDetailController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/routedetail/{ids}` | `manager:routedetail:remove` | 常用路线明细 / DELETE |
-| `export` | `—` | GET `/manager/routedetail/export` | `manager:routedetail:export` | 常用路线明细 / EXPORT |
-| `list` | `—` | GET `/manager/routedetail/list` | `manager:routedetail:list` | — |
-| `getInfo` | `—` | GET `/manager/routedetail/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/routedetail` | `manager:routedetail:add` | 常用路线明细 / INSERT |
-| `edit` | `—` | PUT `/manager/routedetail` | `manager:routedetail:edit` | 常用路线明细 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/routedetail/{ids}` | `manager:routedetail:remove` | 常用路线明细 / DELETE |
+| `export` | `export` | GET `/manager/routedetail/export` | `manager:routedetail:export` | 常用路线明细 / EXPORT |
+| `list` | `list_route_details` | GET `/manager/routedetail/list` | `manager:routedetail:list` | — |
+| `getInfo` | `get_info` | GET `/manager/routedetail/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/routedetail` | `manager:routedetail:add` | 常用路线明细 / INSERT |
+| `edit` | `edit` | PUT `/manager/routedetail` | `manager:routedetail:edit` | 常用路线明细 / UPDATE |
 
 ### 4.11 `CarRouteInfoController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/routeinfo/{ids}` | `manager:routeinfo:remove` | 常用路线 / DELETE |
-| `export` | `—` | GET `/manager/routeinfo/export` | `manager:routeinfo:export` | 常用路线 / EXPORT |
-| `list` | `—` | GET `/manager/routeinfo/list` | `manager:routeinfo:list` | — |
-| `getInfo` | `—` | GET `/manager/routeinfo/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/routeinfo` | `manager:routeinfo:add` | 常用路线 / INSERT |
-| `edit` | `—` | PUT `/manager/routeinfo` | `manager:routeinfo:edit` | 常用路线 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/routeinfo/{ids}` | `manager:routeinfo:remove` | 常用路线 / DELETE |
+| `export` | `export` | GET `/manager/routeinfo/export` | `manager:routeinfo:export` | 常用路线 / EXPORT |
+| `list` | `list_route_infos` | GET `/manager/routeinfo/list` | `manager:routeinfo:list` | — |
+| `getInfo` | `get_info` | GET `/manager/routeinfo/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/routeinfo` | `manager:routeinfo:add` | 常用路线 / INSERT |
+| `edit` | `edit` | PUT `/manager/routeinfo` | `manager:routeinfo:edit` | 常用路线 / UPDATE |
 
 ### 4.12 `CarSplitRecordController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/splitrecord/{ids}` | `manager:splitrecord:remove` | 拆分流水 / DELETE |
-| `export` | `—` | GET `/manager/splitrecord/export` | `manager:splitrecord:export` | 拆分流水 / EXPORT |
-| `list` | `—` | GET `/manager/splitrecord/list` | `manager:splitrecord:list` | — |
-| `getInfo` | `—` | GET `/manager/splitrecord/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/splitrecord` | `manager:splitrecord:add` | 拆分流水 / INSERT |
-| `edit` | `—` | PUT `/manager/splitrecord` | `manager:splitrecord:edit` | 拆分流水 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/splitrecord/{ids}` | `manager:splitrecord:remove` | 拆分流水 / DELETE |
+| `export` | `export` | GET `/manager/splitrecord/export` | `manager:splitrecord:export` | 拆分流水 / EXPORT |
+| `list` | `list_split_records` | GET `/manager/splitrecord/list` | `manager:splitrecord:list` | — |
+| `getInfo` | `get_info` | GET `/manager/splitrecord/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/splitrecord` | `manager:splitrecord:add` | 拆分流水 / INSERT |
+| `edit` | `edit` | PUT `/manager/splitrecord` | `manager:splitrecord:edit` | 拆分流水 / UPDATE |
 
 ### 4.13 `CarSuspiciousBackController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/carsuspiciousback/{ids}` | `manager:carsuspiciousback:remove` | 可疑车辆备份 / DELETE |
-| `export` | `—` | GET `/manager/carsuspiciousback/export` | `manager:carsuspiciousback:export` | 可疑车辆备份 / EXPORT |
-| `list` | `—` | GET `/manager/carsuspiciousback/list` | `manager:carsuspiciousback:list` | — |
-| `getInfo` | `—` | GET `/manager/carsuspiciousback/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/carsuspiciousback` | `manager:carsuspiciousback:add` | 可疑车辆备份 / INSERT |
-| `edit` | `—` | PUT `/manager/carsuspiciousback` | `manager:carsuspiciousback:edit` | 可疑车辆备份 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/carsuspiciousback/{ids}` | `manager:carsuspiciousback:remove` | 可疑车辆备份 / DELETE |
+| `export` | `export` | GET `/manager/carsuspiciousback/export` | `manager:carsuspiciousback:export` | 可疑车辆备份 / EXPORT |
+| `list` | `list_suspicious_backs` | GET `/manager/carsuspiciousback/list` | `manager:carsuspiciousback:list` | — |
+| `getInfo` | `get_info` | GET `/manager/carsuspiciousback/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/carsuspiciousback` | `manager:carsuspiciousback:add` | 可疑车辆备份 / INSERT |
+| `edit` | `edit` | PUT `/manager/carsuspiciousback` | `manager:carsuspiciousback:edit` | 可疑车辆备份 / UPDATE |
 
 ### 4.14 `CarSuspiciousCheckController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/suspiciouscheck/{ids}` | `manager:suspiciouscheck:remove` | 可疑车辆人工核实 / DELETE |
-| `export` | `—` | GET `/manager/suspiciouscheck/export` | `manager:suspiciouscheck:export` | 可疑车辆人工核实 / EXPORT |
-| `list` | `—` | GET `/manager/suspiciouscheck/list` | `manager:suspiciouscheck:list` | — |
-| `getInfo` | `—` | GET `/manager/suspiciouscheck/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/suspiciouscheck` | `manager:suspiciouscheck:add` | 可疑车辆人工核实 / INSERT |
-| `edit` | `—` | PUT `/manager/suspiciouscheck` | `manager:suspiciouscheck:edit` | 可疑车辆人工核实 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/suspiciouscheck/{ids}` | `manager:suspiciouscheck:remove` | 可疑车辆人工核实 / DELETE |
+| `export` | `export` | GET `/manager/suspiciouscheck/export` | `manager:suspiciouscheck:export` | 可疑车辆人工核实 / EXPORT |
+| `list` | `list_suspicious_checks` | GET `/manager/suspiciouscheck/list` | `manager:suspiciouscheck:list` | — |
+| `getInfo` | `get_info` | GET `/manager/suspiciouscheck/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/suspiciouscheck` | `manager:suspiciouscheck:add` | 可疑车辆人工核实 / INSERT |
+| `edit` | `edit` | PUT `/manager/suspiciouscheck` | `manager:suspiciouscheck:edit` | 可疑车辆人工核实 / UPDATE |
 
 ### 4.15 `CarSuspiciousController`（15 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/suspicious/{ids}` | `manager:suspicious:remove` | 可疑车辆 / DELETE |
-| `export` | `—` | GET `/manager/suspicious/export` | `manager:suspicious:export` | 可疑车辆 / EXPORT |
-| `exportAbnormalPassage` | `—` | GET `/manager/suspicious/exportAbnormalPassage` | `—` | — |
-| `exportHistory` | `—` | GET `/manager/suspicious/exportHistory` | `manager:suspicious:export` | 可疑车辆 / EXPORT |
-| `gethistoryInfo` | `—` | GET `/manager/suspicious/history/{id}` | `—` | — |
-| `list` | `—` | GET `/manager/suspicious/list` | `manager:suspicious:list` | — |
-| `listAll` | `—` | GET `/manager/suspicious/listAll` | `—` | — |
-| `listCarNo` | `—` | GET `/manager/suspicious/listCarNo` | `—` | — |
-| `listFileCarNo` | `—` | GET `/manager/suspicious/listFileCarNo` | `—` | — |
-| `listHistory` | `—` | GET `/manager/suspicious/listHistory` | `manager:suspicious:list` | — |
-| `getInfo` | `—` | GET `/manager/suspicious/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/suspicious` | `manager:suspicious:add` | 可疑车辆 / INSERT |
-| `syncSuspiciousCarTask` | `—` | POST `/manager/suspicious/syncSuspiciousCarTask` | `—` | — |
-| `edit` | `—` | PUT `/manager/suspicious` | `manager:suspicious:edit` | 可疑车辆 / UPDATE |
-| `check` | `—` | PUT `/manager/suspicious/check` | `—` | 可疑车辆 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/suspicious/{ids}` | `manager:suspicious:remove` | 可疑车辆 / DELETE |
+| `export` | `export` | GET `/manager/suspicious/export` | `manager:suspicious:export` | 可疑车辆 / EXPORT |
+| `exportAbnormalPassage` | `export_abnormal_passage` | GET `/manager/suspicious/exportAbnormalPassage` | `—` | — |
+| `exportHistory` | `export_history` | GET `/manager/suspicious/exportHistory` | `manager:suspicious:export` | 可疑车辆 / EXPORT |
+| `gethistoryInfo` | `get_history_info` | GET `/manager/suspicious/history/{id}` | `—` | — |
+| `list` | `list_car_suspicious` | GET `/manager/suspicious/list` | `manager:suspicious:list` | — |
+| `listAll` | `list_all_car_suspicious` | GET `/manager/suspicious/listAll` | `—` | — |
+| `listCarNo` | `list_car_suspicious_by_car_no` | GET `/manager/suspicious/listCarNo` | `—` | — |
+| `listFileCarNo` | `list_file_car_no` | GET `/manager/suspicious/listFileCarNo` | `—` | — |
+| `listHistory` | `list_history` | GET `/manager/suspicious/listHistory` | `manager:suspicious:list` | — |
+| `getInfo` | `get_info` | GET `/manager/suspicious/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/suspicious` | `manager:suspicious:add` | 可疑车辆 / INSERT |
+| `syncSuspiciousCarTask` | `sync_suspicious_car_task` | POST `/manager/suspicious/syncSuspiciousCarTask` | `—` | — |
+| `edit` | `edit` | PUT `/manager/suspicious` | `manager:suspicious:edit` | 可疑车辆 / UPDATE |
+| `check` | `check` | PUT `/manager/suspicious/check` | `—` | 可疑车辆 / UPDATE |
 
 ### 4.16 `CarTrackInfoController`（10 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/cartrackinfo/{ids}` | `manager:cartrackinfo:remove` | 车辆行驶轨迹 / DELETE |
-| `carSnapShot` | `—` | GET `/manager/cartrackinfo/carSnapShot` | `—` | — |
-| `export` | `—` | GET `/manager/cartrackinfo/export` | `manager:cartrackinfo:export` | 车辆行驶轨迹 / EXPORT |
-| `list` | `—` | GET `/manager/cartrackinfo/list` | `manager:cartrackinfo:list` | — |
-| `listByCarByTime` | `—` | GET `/manager/cartrackinfo/listByCarByTime` | `—` | — |
-| `listByCarId` | `—` | GET `/manager/cartrackinfo/listByCarId` | `—` | — |
-| `getInfo` | `—` | GET `/manager/cartrackinfo/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/cartrackinfo` | `manager:cartrackinfo:add` | 车辆行驶轨迹 / INSERT |
-| `edit` | `—` | PUT `/manager/cartrackinfo` | `manager:cartrackinfo:edit` | 车辆行驶轨迹 / UPDATE |
-| `changeTrailInfo` | `—` | PUT `/manager/cartrackinfo/changeTrailInfo` | `—` | 车辆行驶轨迹 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/cartrackinfo/{ids}` | `manager:cartrackinfo:remove` | 车辆行驶轨迹 / DELETE |
+| `carSnapShot` | `car_snap_shot` | GET `/manager/cartrackinfo/carSnapShot` | `—` | — |
+| `export` | `export` | GET `/manager/cartrackinfo/export` | `manager:cartrackinfo:export` | 车辆行驶轨迹 / EXPORT |
+| `list` | `list_tracks` | GET `/manager/cartrackinfo/list` | `manager:cartrackinfo:list` | — |
+| `listByCarByTime` | `list_by_car_by_time` | GET `/manager/cartrackinfo/listByCarByTime` | `—` | — |
+| `listByCarId` | `list_by_car_id` | GET `/manager/cartrackinfo/listByCarId` | `—` | — |
+| `getInfo` | `get_info` | GET `/manager/cartrackinfo/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/cartrackinfo` | `manager:cartrackinfo:add` | 车辆行驶轨迹 / INSERT |
+| `edit` | `edit` | PUT `/manager/cartrackinfo` | `manager:cartrackinfo:edit` | 车辆行驶轨迹 / UPDATE |
+| `changeTrailInfo` | `change_trail_info` | PUT `/manager/cartrackinfo/changeTrailInfo` | `—` | 车辆行驶轨迹 / UPDATE |
 
 ### 4.17 `CarWarningInfoController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/carwarning/{ids}` | `manager:carwarning:remove` | 预警车辆 / DELETE |
-| `export` | `—` | GET `/manager/carwarning/export` | `manager:carwarning:export` | 预警车辆 / EXPORT |
-| `list` | `—` | GET `/manager/carwarning/list` | `—` | — |
-| `getInfo` | `—` | GET `/manager/carwarning/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/carwarning` | `manager:carwarning:add` | 预警车辆 / INSERT |
-| `edit` | `—` | PUT `/manager/carwarning` | `manager:carwarning:edit` | 预警车辆 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/carwarning/{ids}` | `manager:carwarning:remove` | 预警车辆 / DELETE |
+| `export` | `export` | GET `/manager/carwarning/export` | `manager:carwarning:export` | 预警车辆 / EXPORT |
+| `list` | `list_warning_infos` | GET `/manager/carwarning/list` | `—` | — |
+| `getInfo` | `get_info` | GET `/manager/carwarning/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/carwarning` | `manager:carwarning:add` | 预警车辆 / INSERT |
+| `edit` | `edit` | PUT `/manager/carwarning` | `manager:carwarning:edit` | 预警车辆 / UPDATE |
 
 ### 4.18 `CarWarningRuleController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/warningrule/{ids}` | `manager:warningrule:remove` | 预警规则 / DELETE |
-| `export` | `—` | GET `/manager/warningrule/export` | `manager:warningrule:export` | 预警规则 / EXPORT |
-| `list` | `—` | GET `/manager/warningrule/list` | `manager:warningrule:list` | — |
-| `getInfo` | `—` | GET `/manager/warningrule/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/warningrule` | `manager:warningrule:add` | 预警规则 / INSERT |
-| `edit` | `—` | PUT `/manager/warningrule` | `manager:warningrule:edit` | 预警规则 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/warningrule/{ids}` | `manager:warningrule:remove` | 预警规则 / DELETE |
+| `export` | `export` | GET `/manager/warningrule/export` | `manager:warningrule:export` | 预警规则 / EXPORT |
+| `list` | `list_warning_rules` | GET `/manager/warningrule/list` | `manager:warningrule:list` | — |
+| `getInfo` | `get_info` | GET `/manager/warningrule/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/warningrule` | `manager:warningrule:add` | 预警规则 / INSERT |
+| `edit` | `edit` | PUT `/manager/warningrule` | `manager:warningrule:edit` | 预警规则 / UPDATE |
 
 ### 4.19 `CarWhiteInfoController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/whiteinfo/{ids}` | `manager:whiteinfo:remove` | 车俩白名单 / DELETE |
-| `export` | `—` | GET `/manager/whiteinfo/export` | `manager:whiteinfo:export` | 车俩白名单 / EXPORT |
-| `list` | `—` | GET `/manager/whiteinfo/list` | `manager:whiteinfo:list` | — |
-| `getInfo` | `—` | GET `/manager/whiteinfo/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/whiteinfo` | `manager:whiteinfo:add` | 车俩白名单 / INSERT |
-| `edit` | `—` | PUT `/manager/whiteinfo` | `manager:whiteinfo:edit` | 车俩白名单 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/whiteinfo/{ids}` | `manager:whiteinfo:remove` | 车俩白名单 / DELETE |
+| `export` | `export` | GET `/manager/whiteinfo/export` | `manager:whiteinfo:export` | 车俩白名单 / EXPORT |
+| `list` | `list_white_infos` | GET `/manager/whiteinfo/list` | `manager:whiteinfo:list` | — |
+| `getInfo` | `get_info` | GET `/manager/whiteinfo/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/whiteinfo` | `manager:whiteinfo:add` | 车俩白名单 / INSERT |
+| `edit` | `edit` | PUT `/manager/whiteinfo` | `manager:whiteinfo:edit` | 车俩白名单 / UPDATE |
 
 ### 4.20 `GantryCarController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/gantrycar/{ids}` | `manager:gantrycar:remove` | 门架拍识查询 / DELETE |
-| `export` | `—` | GET `/manager/gantrycar/export` | `manager:gantrycar:export` | 门架拍识查询 / EXPORT |
-| `list` | `—` | GET `/manager/gantrycar/list` | `manager:gantrycar:list` | — |
-| `getInfo` | `—` | GET `/manager/gantrycar/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/gantrycar` | `manager:gantrycar:add` | 门架拍识查询 / INSERT |
-| `edit` | `—` | PUT `/manager/gantrycar` | `manager:gantrycar:edit` | 门架拍识查询 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/gantrycar/{ids}` | `manager:gantrycar:remove` | 门架拍识查询 / DELETE |
+| `export` | `export` | GET `/manager/gantrycar/export` | `manager:gantrycar:export` | 门架拍识查询 / EXPORT |
+| `list` | `list_gantry_cars` | GET `/manager/gantrycar/list` | `manager:gantrycar:list` | — |
+| `getInfo` | `get_info` | GET `/manager/gantrycar/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/gantrycar` | `manager:gantrycar:add` | 门架拍识查询 / INSERT |
+| `edit` | `edit` | PUT `/manager/gantrycar` | `manager:gantrycar:edit` | 门架拍识查询 / UPDATE |
 
 ### 4.21 `GantryTradeInfoController`（6 个映射）
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `remove` | `—` | DELETE `/manager/gantrytrade/{ids}` | `manager:gantrytrade:remove` | 门架交易查询 / DELETE |
-| `export` | `—` | GET `/manager/gantrytrade/export` | `manager:gantrytrade:export` | 门架交易查询 / EXPORT |
-| `list` | `—` | GET `/manager/gantrytrade/list` | `manager:gantrytrade:list` | — |
-| `getInfo` | `—` | GET `/manager/gantrytrade/{id}` | `—` | — |
-| `add` | `—` | POST `/manager/gantrytrade` | `manager:gantrytrade:add` | 门架交易查询 / INSERT |
-| `edit` | `—` | PUT `/manager/gantrytrade` | `manager:gantrytrade:edit` | 门架交易查询 / UPDATE |
+| `remove` | `remove` | DELETE `/manager/gantrytrade/{ids}` | `manager:gantrytrade:remove` | 门架交易查询 / DELETE |
+| `export` | `export` | GET `/manager/gantrytrade/export` | `manager:gantrytrade:export` | 门架交易查询 / EXPORT |
+| `list` | `list_gantry_trade_infos` | GET `/manager/gantrytrade/list` | `manager:gantrytrade:list` | — |
+| `getInfo` | `get_info` | GET `/manager/gantrytrade/{id}` | `—` | — |
+| `add` | `add` | POST `/manager/gantrytrade` | `manager:gantrytrade:add` | 门架交易查询 / INSERT |
+| `edit` | `edit` | PUT `/manager/gantrytrade` | `manager:gantrytrade:edit` | 门架交易查询 / UPDATE |
 
 ## 5. 测试
 

@@ -52,11 +52,11 @@
 
 | Java | Python | Method / Path | 权限点 | `@Log` |
 |---|---|---|---|---|
-| `delete` | `—` | DELETE `/test/user/{userId}` | `—` | — |
-| `userList` | `—` | GET `/test/user/list` | `—` | — |
-| `getUser` | `—` | GET `/test/user/{userId}` | `—` | — |
-| `save` | `—` | POST `/test/user/save` | `—` | — |
-| `update` | `—` | PUT `/test/user/update` | `—` | — |
+| `delete` | `delete` | DELETE `/test/user/{userId}` | `—` | — |
+| `userList` | `user_list` | GET `/test/user/list` | `—` | — |
+| `getUser` | `get_user` | GET `/test/user/{userId}` | `—` | — |
+| `save` | `save` | POST `/test/user/save` | `—` | — |
+| `update` | `update` | PUT `/test/user/update` | `—` | — |
 
 ## 5. 测试
 
