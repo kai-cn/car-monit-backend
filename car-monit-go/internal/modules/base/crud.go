@@ -127,7 +127,7 @@ func (h *handler) respondList(c *gin.Context, spec *tableSpec, clause string, ar
 // nonNilSlice 把 nil 切片替换成空切片（Jackson 对空 List 输出 []，不会输出 null）。
 func nonNilSlice(dest any) any {
 	v := reflect.ValueOf(dest)
-	if v.Kind() == reflect.Ptr && !v.IsNil() && v.Elem().Kind() == reflect.Slice && v.Elem().IsNil() {
+	if v.Kind() == reflect.Pointer && !v.IsNil() && v.Elem().Kind() == reflect.Slice && v.Elem().IsNil() {
 		return reflect.MakeSlice(v.Elem().Type(), 0, 0).Interface()
 	}
 	return dest

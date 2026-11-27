@@ -154,7 +154,7 @@ func buildWorkbook(sheet string, cols []exportCol, rows [][]any) ([]byte, error)
 
 // jsonTagIndex 建立 "json 名 -> 字段访问路径" 的索引（用于导出取值）。
 func jsonTagIndex(t reflect.Type) map[string][]int {
-	for t.Kind() == reflect.Ptr {
+	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	index := make(map[string][]int, t.NumField())
@@ -186,7 +186,7 @@ func fieldValue(row reflect.Value, index map[string][]int, key string) any {
 	}
 	v := row
 	for _, i := range path {
-		for v.Kind() == reflect.Ptr {
+		for v.Kind() == reflect.Pointer {
 			if v.IsNil() {
 				return nil
 			}
@@ -206,7 +206,7 @@ func buildRows(dest any, cols []exportCol) [][]any {
 	index := jsonTagIndex(reflectTypeOf(dest))
 	var out [][]any
 	v := reflect.ValueOf(dest)
-	if v.Kind() != reflect.Ptr || v.IsNil() || v.Elem().Kind() != reflect.Slice {
+	if v.Kind() != reflect.Pointer || v.IsNil() || v.Elem().Kind() != reflect.Slice {
 		return out
 	}
 	slice := v.Elem()
@@ -308,7 +308,7 @@ func cellValue(m map[string]any, key string) any {
 	}
 	// 行里可能混入 GORM 模型的 *string 字段（enrich 直接 put 结构体字段），
 	// 不解引用会让单元格写成指针地址；JSON 编码会自动解引用，所以只有导出会暴露。
-	if rv := reflect.ValueOf(v); rv.Kind() == reflect.Ptr {
+	if rv := reflect.ValueOf(v); rv.Kind() == reflect.Pointer {
 		if rv.IsNil() {
 			return ""
 		}

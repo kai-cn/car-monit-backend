@@ -159,7 +159,7 @@ func placeholders(n int) string { return sqlx.Placeholders(n) }
 // newSliceOf 返回 *[]*T（T 为 prototype 的元素类型），供 GORM Scan 使用。
 func newSliceOf(prototype any) any {
 	t := reflect.TypeOf(prototype).Elem()
-	return reflect.New(reflect.SliceOf(reflect.PtrTo(t))).Interface()
+	return reflect.New(reflect.SliceOf(reflect.PointerTo(t))).Interface()
 }
 
 // newElemOf 返回 *T。
@@ -170,7 +170,7 @@ func newElemOf(prototype any) any {
 // reflectTypeOf 取指针/切片指向的元素类型。
 func reflectTypeOf(dest any) reflect.Type {
 	t := reflect.TypeOf(dest)
-	for t.Kind() == reflect.Ptr || t.Kind() == reflect.Slice {
+	for t.Kind() == reflect.Pointer || t.Kind() == reflect.Slice {
 		t = t.Elem()
 	}
 	return t
@@ -179,7 +179,7 @@ func reflectTypeOf(dest any) reflect.Type {
 // structFields 建立 "json 名 -> 列名" 的索引（跳过没有 gorm column 标签的瞬态字段）。
 // 匿名嵌入结构（entityBase）按提升字段展开。
 func structFields(t reflect.Type) map[string]string {
-	for t.Kind() == reflect.Ptr {
+	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	out := make(map[string]string)

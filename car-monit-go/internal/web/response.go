@@ -79,7 +79,7 @@ func IsNilValue(v any) bool {
 	}
 	rv := reflect.ValueOf(v)
 	switch rv.Kind() {
-	case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Interface:
+	case reflect.Pointer, reflect.Map, reflect.Slice, reflect.Interface:
 		return rv.IsNil()
 	}
 	return false
@@ -139,7 +139,7 @@ func nonNilRows(rows any) any {
 		return []any{}
 	}
 	rv := reflect.ValueOf(rows)
-	if rv.Kind() == reflect.Ptr && !rv.IsNil() && rv.Elem().Kind() == reflect.Slice && rv.Elem().IsNil() {
+	if rv.Kind() == reflect.Pointer && !rv.IsNil() && rv.Elem().Kind() == reflect.Slice && rv.Elem().IsNil() {
 		return reflect.MakeSlice(rv.Elem().Type(), 0, 0).Interface()
 	}
 	if rv.Kind() == reflect.Slice && rv.IsNil() {

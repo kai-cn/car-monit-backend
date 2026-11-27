@@ -22,7 +22,7 @@ import (
 // 多级指针与 nil 指针分别按"取到底 / 空串"处理。
 func Unbox(v any) any {
 	rv := reflect.ValueOf(v)
-	for rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface {
+	for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
 		if rv.IsNil() {
 			return ""
 		}

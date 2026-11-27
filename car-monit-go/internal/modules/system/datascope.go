@@ -43,19 +43,19 @@ func dataScopeCond(lu *model.LoginUser, deptAlias, userAlias string) (string, []
 			// Java: 命中“全部数据权限”后清空已累计的条件并跳出循环。
 			return "", nil
 		case dataScopeCustom:
-			sb.WriteString(fmt.Sprintf(" OR %s.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = ? ) ", deptAlias))
+			fmt.Fprintf(&sb, " OR %s.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = ? ) ", deptAlias)
 			args = append(args, role.RoleID)
 		case dataScopeDept:
-			sb.WriteString(fmt.Sprintf(" OR %s.dept_id = ? ", deptAlias))
+			fmt.Fprintf(&sb, " OR %s.dept_id = ? ", deptAlias)
 			args = append(args, user.DeptID)
 		case dataScopeDeptAndChild:
-			sb.WriteString(fmt.Sprintf(
+			fmt.Fprintf(&sb,
 				" OR %s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = ? or find_in_set( ? , ancestors ) )",
-				deptAlias))
+				deptAlias)
 			args = append(args, user.DeptID, user.DeptID)
 		case dataScopeSelf:
 			if strings.TrimSpace(userAlias) != "" {
-				sb.WriteString(fmt.Sprintf(" OR %s.user_id = ? ", userAlias))
+				fmt.Fprintf(&sb, " OR %s.user_id = ? ", userAlias)
 				args = append(args, user.UserID)
 			} else {
 				// 数据权限为仅本人且没有 userAlias 别名时不查询任何数据。

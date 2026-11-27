@@ -101,7 +101,7 @@ func newElemOf(prototype any) any {
 // jsonTagIndex 建立 "json 名 -> 字段访问路径" 的索引（用于导出取值）。
 // 匿名嵌入结构（entityBase）按提升字段展开。
 func jsonTagIndex(t reflect.Type) map[string][]int {
-	for t.Kind() == reflect.Ptr {
+	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	index := make(map[string][]int, t.NumField())
@@ -134,7 +134,7 @@ func fieldValue(row reflect.Value, index map[string][]int, key string) any {
 	}
 	v := row
 	for _, i := range path {
-		for v.Kind() == reflect.Ptr {
+		for v.Kind() == reflect.Pointer {
 			if v.IsNil() {
 				return nil
 			}
@@ -151,7 +151,7 @@ func fieldValue(row reflect.Value, index map[string][]int, key string) any {
 // reflectTypeOf 取指针/切片指向的元素类型。
 func reflectTypeOf(dest any) reflect.Type {
 	t := reflect.TypeOf(dest)
-	for t.Kind() == reflect.Ptr || t.Kind() == reflect.Slice {
+	for t.Kind() == reflect.Pointer || t.Kind() == reflect.Slice {
 		t = t.Elem()
 	}
 	return t
@@ -160,7 +160,7 @@ func reflectTypeOf(dest any) reflect.Type {
 // forEachElement 遍历 *[]T 的每个元素（导出用）。
 func forEachElement(dest any, fn func(any)) error {
 	v := reflect.ValueOf(dest)
-	if v.Kind() != reflect.Ptr || v.IsNil() || v.Elem().Kind() != reflect.Slice {
+	if v.Kind() != reflect.Pointer || v.IsNil() || v.Elem().Kind() != reflect.Slice {
 		return fmt.Errorf("dest 不是切片指针")
 	}
 	slice := v.Elem()

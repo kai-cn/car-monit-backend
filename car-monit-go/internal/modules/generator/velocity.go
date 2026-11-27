@@ -166,7 +166,7 @@ func (n *foreachNode) render(ctx *velocityContext, out *strings.Builder) error {
 		return nil
 	}
 	rvs := reflect.ValueOf(items)
-	for rvs.Kind() == reflect.Ptr || rvs.Kind() == reflect.Interface {
+	for rvs.Kind() == reflect.Pointer || rvs.Kind() == reflect.Interface {
 		if rvs.IsNil() {
 			return nil
 		}
@@ -690,7 +690,7 @@ func truthy(value any) bool {
 	switch rv.Kind() {
 	case reflect.Slice, reflect.Array, reflect.Map:
 		return rv.Len() > 0
-	case reflect.Ptr, reflect.Interface:
+	case reflect.Pointer, reflect.Interface:
 		return !rv.IsNil()
 	}
 	return true
@@ -1116,7 +1116,7 @@ func getProperty(target any, name string) any {
 		return undefined
 	}
 	rv := reflect.ValueOf(target)
-	for rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface {
+	for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
 		if rv.IsNil() {
 			return undefined
 		}
@@ -1142,7 +1142,7 @@ func unwrapValue(value reflect.Value) any {
 		return undefined
 	}
 	switch value.Kind() {
-	case reflect.Ptr, reflect.Interface:
+	case reflect.Pointer, reflect.Interface:
 		if value.IsNil() {
 			return undefined
 		}

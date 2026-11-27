@@ -172,7 +172,7 @@ func (h *handler) list(ctx context.Context, q listQuery, dest any) (int64, error
 // sliceLen 返回 dest 指向的切片长度（dest 必须是 *[]T）。
 func sliceLen(dest any) int64 {
 	v := reflect.ValueOf(dest)
-	if v.Kind() == reflect.Ptr && !v.IsNil() && v.Elem().Kind() == reflect.Slice {
+	if v.Kind() == reflect.Pointer && !v.IsNil() && v.Elem().Kind() == reflect.Slice {
 		return int64(v.Elem().Len())
 	}
 	return 0
@@ -315,7 +315,7 @@ func mpNonNullCols(cols map[string]any) map[string]any {
 			continue
 		}
 		rv := reflect.ValueOf(value)
-		if rv.Kind() == reflect.Ptr && rv.IsNil() {
+		if rv.Kind() == reflect.Pointer && rv.IsNil() {
 			continue
 		}
 		out[name] = value

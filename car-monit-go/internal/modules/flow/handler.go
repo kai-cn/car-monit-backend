@@ -97,7 +97,7 @@ func queryList(ctx context.Context, db *gorm.DB, selectSQL, fromSQL, cond, order
 // sliceLen 返回 dest 指向的切片长度（dest 必须是 *[]T）。
 func sliceLen(dest any) int64 {
 	v := reflect.ValueOf(dest)
-	if v.Kind() == reflect.Ptr && !v.IsNil() && v.Elem().Kind() == reflect.Slice {
+	if v.Kind() == reflect.Pointer && !v.IsNil() && v.Elem().Kind() == reflect.Slice {
 		return int64(v.Elem().Len())
 	}
 	return 0

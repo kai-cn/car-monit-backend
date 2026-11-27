@@ -93,7 +93,7 @@ func (c *colset) add(col string, v any) {
 	}
 	rv := reflect.ValueOf(v)
 	switch rv.Kind() {
-	case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Slice:
+	case reflect.Pointer, reflect.Interface, reflect.Map, reflect.Slice:
 		if rv.IsNil() {
 			return
 		}
