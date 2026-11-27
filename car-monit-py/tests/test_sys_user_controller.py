@@ -1009,14 +1009,14 @@ class TestRoutesOverHttp:
         self, client: Any
     ) -> None:
         """``GET /system/user/list`` 不能被当成 ``userId = "list"``。"""
-        paths = [getattr(route, "path", "") for route in client.app.routes]
+        paths = list(client.app.openapi()["paths"])
         assert "/system/user/list" in paths
         assert "/system/user/{user_id}" in paths
         assert paths.index("/system/user/list") < paths.index("/system/user/{user_id}")
 
     def test_both_trailing_slash_forms_exist(self, client: Any) -> None:
         """Java: ``@GetMapping({"/", "/{userId}"})``；FastAPI 需要显式两条路由。"""
-        paths = [getattr(route, "path", "") for route in client.app.routes]
+        paths = list(client.app.openapi()["paths"])
         assert "/system/user" in paths
         assert "/system/user/" in paths
 
@@ -1027,7 +1027,7 @@ class TestRoutesOverHttp:
         就会被当成 ``userId = "export"`` 而转 int 失败；``/importData`` 是 POST，
         同理不能被 POST ``""`` 掩住（不是同一个路径，但位置仍然统一）。
         """
-        paths = [getattr(route, "path", "") for route in client.app.routes]
+        paths = list(client.app.openapi()["paths"])
 
         assert "/system/user/export" in paths
         assert "/system/user/importTemplate" in paths

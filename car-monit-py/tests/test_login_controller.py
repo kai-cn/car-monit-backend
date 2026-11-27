@@ -498,7 +498,10 @@ class TestGetInfo:
         authenticate(SysUser(user_id=2, user_name="ry", password="$2a$10$hash"))
         use_permission_service(monkeypatch, _StubPermissionService())
 
-        payload = get_info()["user"].to_json_dict()
+        # parity commit 62b8dbec 起 /getInfo 的 user 是 camelCase dict（Java Jackson 形状），
+        # 不再是 SysUser 实例；to_json_dict() 已在控制器层完成。
+        user = get_info()["user"]
+        payload = user if isinstance(user, dict) else user.to_json_dict()
 
         assert payload["userName"] == "ry"
         assert payload["userId"] == 2

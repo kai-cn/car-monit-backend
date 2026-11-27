@@ -51,10 +51,14 @@ def test_v3_routes_registered(monkeypatch: pytest.MonkeyPatch):
     from app.main import create_app
 
     app = create_app()
-    actual = {(next(iter(r.methods)) if getattr(r, "methods", None) else "", r.path)
-              for r in app.routes if getattr(r, "methods", None)}
-    # FastAPI 的 APIRoute.methods 是 set（GET 路由同时含 HEAD），统一取第一个并规范化
-    normalized = {(m if m not in ("HEAD",) else "GET", p) for m, p in actual}
+    # app.routes 顶层是 _IncludedRouter 包装对象，拿不到子路由；用 OpenAPI 取展平后的路径。
+    actual = {
+        (method.upper(), path)
+        for path, item in app.openapi()["paths"].items()
+        for method in item
+        if method.lower() in ("get", "post", "put", "delete", "patch")
+    }
+    normalized = actual
     missing = {("POST" if m == "POST" else m, p.replace("{taskId}", "{task_id}").replace("{requestId}", "{request_id}"))
                for m, p in EXPECTED_NEW_ROUTES} - normalized
     assert not missing, f"缺失 V3 端点: {sorted(missing)}"

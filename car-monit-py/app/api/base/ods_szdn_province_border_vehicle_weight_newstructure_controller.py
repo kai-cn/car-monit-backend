@@ -84,16 +84,14 @@ def list_vehicle_weights(query: VehicleWeightParam) -> TableDataInfo:
     """
     start_page()
     rows = _service().select_list(query)
-    info = get_data_table(rows)
-    info.set_code(500)
-    info.set_msg("数据服务暂不可用(UPSTREAM_ERROR)，请稍后重试")
-    return info
+    return get_data_table(rows)
 
 
 @router.get("/{dataSource}", response_model=None)
 def get_info(dataSource: str) -> AjaxResult:
     """获取省界称重详细信息. Java: ``@GetMapping(value = "/{dataSource}")``."""
-    return AjaxResult.error_message("数据服务暂不可用(UPSTREAM_ERROR)，请稍后重试")
+    row = _service().select_by_id(dataSource)
+    return AjaxResult.success_data(row)
 
 
 __all__ = [

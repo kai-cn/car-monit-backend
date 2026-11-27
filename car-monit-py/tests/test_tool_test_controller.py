@@ -314,6 +314,6 @@ class TestSecurity:
         assert body["msg"] == "请求访问：/test/user/list，认证失败，无法访问系统资源"
 
     def test_the_router_is_registered_on_the_real_app(self, client: Any) -> None:
-        paths = {route.path for route in client.app.routes}
+        paths = set(client.app.openapi()["paths"])
 
         assert "/test/user/list" in paths

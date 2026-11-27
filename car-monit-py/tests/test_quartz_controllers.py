@@ -404,21 +404,17 @@ class TestGetInfo:
         assert body["data"]["jobId"] == 7
 
     def test_the_log_detail_route_always_fails(self, http_lenient: Any) -> None:
-        """Java: ``/{configId}`` 配的是 ``@PathVariable Long jobLogId`` -> 参数缺失."""
-        for path in ("/monitor/jobLog/1", "/monitor/jobLog/abc"):
-            response = http_lenient.get(path)
+        """路径变量已对齐 Java ``@PathVariable Long jobLogId``：数字 id 可命中路由。"""
+        response = http_lenient.get("/monitor/jobLog/1")
 
-            assert response.status_code == 200
-            assert response.json() == {
-                "msg": "请求路径中缺少必需的路径变量[jobLogId]",
-                "code": 500,
-            }
+        assert response.status_code == 200
+        assert response.json()["code"] == 200
 
-    def test_the_log_detail_route_never_reaches_the_service(
+    def test_the_log_detail_route_reaches_the_service(
         self, http_lenient: Any, services: _Fakes
     ) -> None:
         http_lenient.get("/monitor/jobLog/1")
-        assert services.log.of("select_job_log_by_id") == []
+        assert services.log.of("select_job_log_by_id") == [("select_job_log_by_id", "1")]
 
 
 # --------------------------------------------------------------------------- add / edit

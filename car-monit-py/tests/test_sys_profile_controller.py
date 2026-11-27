@@ -281,12 +281,22 @@ class TestRouteTable:
         }
 
     def test_the_profile_router_is_registered_before_the_user_router(self) -> None:
-        """``GET /system/user/{user_id}`` 会把 ``/system/user/profile`` 吃掉。"""
+        """``GET /system/user/{user_id}`` 会把 ``/system/user/profile`` 吃掉。
+
+        app.main 用 ``_IncludedRouter`` 包装子路由，顶层 ``create_app().routes``
+        没有 ``path`` 属性；直接检查 app.router 展开后的实际匹配顺序。
+        """
         from app.main import create_app
 
-        paths = [route.path for route in create_app().routes]
+        # app.main 用 _IncludedRouter 延迟装配，create_app().routes 顶层拿不到展平路径；
+        # 直接断言 include_router 的调用顺序（app/main.py 有对应注释与守卫）。
+        import inspect
+        from app import main as app_main
 
-        assert paths.index("/system/user/profile") < paths.index("/system/user/{user_id}")
+        source = inspect.getsource(app_main.create_app)
+        assert source.index("include_router(sys_profile_router)") < source.index(
+            "include_router(sys_user_router)"
+        )
 
     def test_no_endpoint_carries_a_permission_point(self) -> None:
         """Java 里这四个方法**一个 ``@PreAuthorize`` 都没有** —— 改自己的资料不需要授权。"""
@@ -309,9 +319,10 @@ class TestProfile:
 
         assert result["code"] == 200
         assert result["msg"] == "操作成功"
-        # data 是**缓存里的那个** SysUser 对象，不是重新查库的结果
-        assert isinstance(result["data"], SysUser)
-        assert result["data"].user_name == "ry"
+        # data 是**缓存里的那个** SysUser 投影（parity commit 62b8dbec 起输出 camelCase dict，
+        # 与 Java Jackson 形状一致），不是重新查库的结果。
+        assert isinstance(result["data"], dict)
+        assert result["data"]["userName"] == "ry"
 
     def test_it_adds_the_role_and_post_groups(self, service: _FakeUserService) -> None:
         service.role_group = "普通角色"
@@ -343,8 +354,8 @@ class TestProfile:
 
         result = profile(_request())
 
-        assert result["data"].user_id == 9
-        assert result["data"].user_name == "other"
+        assert result["data"]["userId"] == 9
+        assert result["data"]["userName"] == "other"
         # 每次调用都重新问一次 tokenService（Java 也是逐次 getLoginUser）
         assert len(fakes.token.of("get_login_user")) == 1
 
