@@ -1,6 +1,6 @@
-# Python 3.12 迁移版镜像。
-# 依赖均有 manylinux wheel（PyMySQL / bcrypt / Pillow / psutil），因此不需要编译工具链。
-FROM python:3.12-slim
+# Python 3.15.2 迁移版镜像。
+# Pillow 13 / orjson 3.13 提供 cp315 wheel；其余依赖也都有 manylinux wheel。
+FROM python:3.15.2-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

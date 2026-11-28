@@ -15,9 +15,9 @@
 
 for p in 7000 7001 7002 7003 7004 7005; do
 
-  systemctl start redis-cluster@$p
+  sudo systemctl start redis-cluster@$p
 
-  ln -sf /etc/systemd/system/redis-cluster@.service /etc/systemd/system/multi-user.target.wants/redis-cluster@$p.service
+  # ln -sf /etc/systemd/system/redis-cluster@.service /etc/systemd/system/multi-user.target.wants/redis-cluster@$p.service
 
 done
 

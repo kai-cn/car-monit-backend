@@ -1,6 +1,6 @@
 # car-monit-py
 
-`car-monit-backend-new`（RuoYi-Vue 3.8.7 / Spring Boot 2.5.15）的 **Python 3.12 + FastAPI**
+`car-monit-backend-new`（RuoYi-Vue 3.8.7 / Spring Boot 2.5.15）的 **Python 3.15.2 + FastAPI**
 等价实现。与 Java 工程并排放在同一个仓库里，便于逐文件 diff。
 
 > **目标不是「重写一个更好的后端」，而是「让同一份前端、同一批调用方察觉不到后端换了语言」。**
@@ -52,7 +52,7 @@ car-monit-py/
 
 | 依赖 | 版本 | 说明 |
 |---|---|---|
-| Python | **3.12+** | `pyproject.toml` 的 `requires-python`；本机验证用 3.12.9 |
+| Python | **3.15.2+** | `pyproject.toml` 的 `requires-python`；本机/云端统一用 3.15.2，复现脚本 `scripts/verify-py3152.sh` |
 | MySQL | 5.7 / 8.x | 沿用 Java 工程的库表，**Python 侧不建表、不改 schema** |
 | Redis | 5+ | 缓存、验证码、token、登录失败计数 |
 

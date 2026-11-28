@@ -265,7 +265,7 @@ jobs:
         if: matrix.lang == 'python'
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.15.2'
       - name: Setup JDK8 (build 9902 downstream) + JDK (JUnit)
         uses: actions/setup-java@v4
         with:

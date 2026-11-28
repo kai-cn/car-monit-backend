@@ -78,9 +78,24 @@ bash scripts/build-wsl-caged.sh all     # 两者（默认）
 ```bash
 go version                 # go1.27.4 linux/amd64
 rustup show                # default toolchain: stable 1.100.0（项目目录内同为 1.100.0）
-uv python list             # 含 cpython-3.15.x
+uv python list             # 含 cpython-3.15.2
 uv python find 3.15        # 3.15 解释器路径
 ```
+
+### 3.2 Python 3.15.2 项目验证（2026-11-28）
+
+本地与云端已统一到 Python 3.15.2：
+
+- 本地：`uv venv --clear --python <3.15.2>` + `uv pip install -r requirements.txt`，
+  统一用 `car-monit-py/scripts/verify-py3152.sh` 复现（脚本幂等，退出码 0）
+- 云端：`ci.yml` 从源码编译 3.15.2（dnf 加 `libjpeg-devel`）；其余 workflow 的
+  `actions/setup-python` 与 `car-monit-py/Dockerfile` 同步为 3.15.2
+- 依赖调整（3.15 兼容）：`orjson 3.10.13 → 3.13.0`、`Pillow 11.1.0 → 13.0.0`、
+  `pydantic 2.10.4 → 2.14.4`、`pydantic-settings 2.7.0 → 2.16.3`；
+  `requires-python` 改为 `>=3.15.2`
+- 实测：`compileall` 通过、`3691 passed / 1 skipped`、wheel + sdist 构建成功
+- 告警：pydantic 2.14 对 `Field(validation_alias=...)` 产生大量
+  `UnsupportedFieldAttributeWarning`，不影响结果，待单独治理
 
 ## 4. 注册 runner
 

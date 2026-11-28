@@ -435,7 +435,7 @@ jobs:
           retention-days: 14
 
   # ---------------------------------------------------------------------------
-  # Python：3.12，单元测试不依赖外部中间件
+  # Python：3.15.2，单元测试不依赖外部中间件
   # ---------------------------------------------------------------------------
   # ── job: py ──
   py:
@@ -456,19 +456,20 @@ jobs:
       # 拉取仓库源码
       - uses: actions/checkout@v4
 
-      - name: 从源码安装 Python 3.12（欧拉仓库没有 3.12）
-        # pyproject 要求 >=3.12；欧拉 24.03 仓库只到 3.11，因此源码编译（约 3-5 分钟）。
+      - name: 从源码安装 Python 3.15.2（欧拉仓库没有 3.15）
+        # pyproject 要求 >=3.15.2；欧拉 24.03 仓库只到 3.11，因此源码编译。
+        # libjpeg-devel 是 Pillow 13 在该环境源码兜底编译时需要的头文件。
         run: |
           set -euo pipefail
           dnf install -y gcc gcc-c++ make openssl-devel libffi-devel bzip2-devel \
-            zlib-devel xz-devel sqlite-devel tar gzip curl
-          curl -fsSL https://www.python.org/ftp/python/3.12.10/Python-3.12.10.tgz -o /tmp/py.tgz
+            zlib-devel xz-devel sqlite-devel libjpeg-devel tar gzip curl
+          curl -fsSL https://www.python.org/ftp/python/3.15.2/Python-3.15.2.tgz -o /tmp/py.tgz
           tar -xzf /tmp/py.tgz -C /tmp
-          cd /tmp/Python-3.12.10
+          cd /tmp/Python-3.15.2
           ./configure --prefix=/usr/local --with-ensurepip=install --quiet
           make -j"$(nproc)" --quiet
           make install --quiet
-          ln -sf /usr/local/bin/python3.12 /usr/local/bin/python3
+          ln -sf /usr/local/bin/python3.15 /usr/local/bin/python3
           /usr/local/bin/python3 -m pip --version
 
       - name: 安装依赖
@@ -555,18 +556,18 @@ jobs:
       - uses: actions/checkout@v4
 
       # 用 mysql 客户端还原 MySQL schema/种子数据
-      - name: 安装 Python 3.12 与 mysql 客户端
+      - name: 安装 Python 3.15.2 与 mysql 客户端
         run: |
           set -euo pipefail
           dnf install -y gcc gcc-c++ make openssl-devel libffi-devel bzip2-devel \
-            zlib-devel xz-devel sqlite-devel tar gzip curl mariadb
-          curl -fsSL https://www.python.org/ftp/python/3.12.10/Python-3.12.10.tgz -o /tmp/py.tgz
+            zlib-devel xz-devel sqlite-devel libjpeg-devel tar gzip curl mariadb
+          curl -fsSL https://www.python.org/ftp/python/3.15.2/Python-3.15.2.tgz -o /tmp/py.tgz
           tar -xzf /tmp/py.tgz -C /tmp
-          cd /tmp/Python-3.12.10
+          cd /tmp/Python-3.15.2
           ./configure --prefix=/usr/local --with-ensurepip=install --quiet
           make -j"$(nproc)" --quiet
           make install --quiet
-          ln -sf /usr/local/bin/python3.12 /usr/local/bin/python3
+          ln -sf /usr/local/bin/python3.15 /usr/local/bin/python3
           python3 --version
           mysql --version
 

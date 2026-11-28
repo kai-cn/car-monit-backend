@@ -5,8 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "car-monit-py"
 version = "3.8.7"
-description = "Python 3.12 port of the car-monit-backend-new Java project (RuoYi-Vue 3.8.7 / Spring Boot 2.5.15)"
-requires-python = ">=3.12"
+description = "Python 3.15 port of the car-monit-backend-new Java project (RuoYi-Vue 3.8.7 / Spring Boot 2.5.15)"
+requires-python = ">=3.15.2"
 readme = "README_PY.md"
 
 # Runtime dependencies. See requirements.txt for the pinned lock-step list.
@@ -31,19 +31,22 @@ dependencies = [
     "starlette==0.41.3",
     "anyio==4.15.1",
     "uvicorn[standard]==0.34.0",
-    "pydantic==2.10.4",
-    "pydantic-settings==2.7.0",
+    # pydantic 2.10.4 锁的 pydantic-core 2.27.2 用 PyO3 0.22，3.15 下无法构建。
+    "pydantic==2.14.4",
+    "pydantic-settings==2.16.3",
     "SQLAlchemy==2.0.36",
     "PyMySQL==1.1.1",
     "redis==5.2.1",
     "PyJWT==2.10.1",
     "bcrypt==4.2.1",
     "python-multipart==0.0.20",
-    "orjson==3.10.13",
+    # 3.15 无旧版 wheel：orjson 3.10.13 的 PyO3 0.23 不支持 3.15，升到 3.13.0。
+    "orjson==3.13.0",
     "httpx==0.28.1",
     "psutil==6.1.1",
     "openpyxl==3.1.5",
-    "Pillow==11.1.0",
+    # Pillow 11.1.0 在 3.15 下无 wheel，需源码编译；13.0.0 提供 cp315 wheel。
+    "Pillow==13.0.0",
     "PyYAML==6.0.2",
     "alembic==1.14.0",
     "user-agents==2.2.0",

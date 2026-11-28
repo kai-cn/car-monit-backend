@@ -35,9 +35,9 @@ if [ "$MODE" = "single" ]; then
 
   echo ">>> 切换到 单节点 (6379)"
 
-  for p in $PORTS; do systemctl stop redis-cluster@$p 2>/dev/null || true; done
+  for p in $PORTS; do sudo systemctl stop redis-cluster@$p 2>/dev/null || true; done
 
-  systemctl start redis-single
+  sudo systemctl start redis-single
 
   sleep 2; redis-cli -p 6379 ping
 
@@ -47,9 +47,9 @@ else
 
   echo ">>> 切换到 Cluster (7000-7005)"
 
-  systemctl stop redis-single 2>/dev/null || true
+  sudo systemctl stop redis-single 2>/dev/null || true
 
-  for p in $PORTS; do systemctl start redis-cluster@$p; done
+  for p in $PORTS; do sudo systemctl start redis-cluster@$p; done
 
   sleep 3; redis-cli -p 7000 cluster info | grep cluster_state
 

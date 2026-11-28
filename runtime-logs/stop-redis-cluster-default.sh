@@ -15,15 +15,15 @@
 
 for p in 7000 7001 7002 7003 7004 7005; do
 
-  systemctl stop redis-cluster@$p 2>/dev/null || true
+  sudo systemctl stop redis-cluster@$p 2>/dev/null || true
 
   rm -f /etc/systemd/system/multi-user.target.wants/redis-cluster@$p.service
 
 done
 
-systemctl daemon-reload
+sudo systemctl daemon-reload
 
-echo -n "redis-single: "; systemctl is-active redis-single
+echo -n "redis-single: "; sudo systemctl is-active redis-single
 
 echo -n "single ping: "; redis-cli -p 6379 ping
 
